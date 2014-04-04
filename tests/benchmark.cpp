@@ -288,9 +288,7 @@ void bench(void){
     b=new double[maxsize*maxsize];
     c=new double[maxsize*maxsize];
     for(m=minsize;m<=maxsize;m++){
-      //	n=k=m;
-      for(k=minsize;k<=maxsize;k++){
-	for(n=minsize;n<=maxsize;n++){
+      	n=k=m;
 	  fillrandom(a,m,k);
 	  fillrandom(b,k,n);
 	  fillrandom(c,m,n);
@@ -307,8 +305,7 @@ void bench(void){
 	  }
 	  perf=double(iterations)*double(flopspermm)/t2/double(1000)/double(1000);
 	  printf("%d %d %d = %f\n",m,k,n,perf); //fflush(stdout);
-	}
-      }
+
     }
     free(a);
     free(b);
