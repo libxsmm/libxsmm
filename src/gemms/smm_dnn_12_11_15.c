@@ -1,8 +1,8 @@
 #include <immintrin.h>
 #include <micsmmmisc.h>
 #include <mkl.h>
-__declspec( target (mic))
-void smm_dnn_12_11_15(double* a,double* b,double* c){
+__declspec(target(mic))
+void smm_dnn_12_11_15(const double* a, const double* b, double* c){
 #ifdef __MIC__
 int i;
 __m512d xa0;

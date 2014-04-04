@@ -1,7 +1,7 @@
 #include<micsmm.h>
 #include <mkl.h>
-__declspec( target (mic))
-void smm_dnn(int M, int N, int K, double* a, double* b, double* c){
+__declspec(target(mic))
+void smm_dnn(int M, int N, int K, const double* a, const double* b, double* c){
 if((M<=24)&&(K<=24)&&(N<=24)){
    int v=((M-1)<<10)+((K-1)<<5)+(N-1);
    switch(v){
@@ -41482,6 +41482,6 @@ if((M<=24)&&(K<=24)&&(N<=24)){
             break;
    }
 } else{
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, (double)1,a, K, b,N, (double)1, c, N);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);
 }
 }
