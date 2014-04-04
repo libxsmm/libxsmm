@@ -55,7 +55,7 @@ void print512d(__m512d a){
 #endif
 
 __declspec( target (mic)) 
-void cmicmm_23_(const double* c, const double* a, double* b){
+void cmicmm_23_(double* c, const double* a, const double* b){
 #ifdef __MIC__
     int i;
     
@@ -401,7 +401,7 @@ void cmicmm_23_(const double* c, const double* a, double* b){
 }
 
 __declspec( target (mic)) 
-void cmicmm_23x_(const double* c, const double* a, double* b){
+void cmicmm_23x_(double* c, const double* a, const double* b){
 #ifdef __MIC__
     int i;
     
