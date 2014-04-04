@@ -1,4 +1,11 @@
+#!/bin/sh
+
 SIZE=16
+
+if [ "$1" != "" ] ; then
+  SIZE=$1
+fi
+
 
 python scripts/generate_inc.py $SIZE $SIZE $SIZE  > include/micsmm.h
 #python scripts/generate_lib.py 1 $SIZE > src/micsmm.c
@@ -12,10 +19,10 @@ rm src/gemms/*.a
 #echo "#include <mkl.h>" >> src/gemms/igemm.c
 
 for m in `seq 1 $SIZE`; do
-         echo $m $n $k
-         #python scripts/generate_singleigemm.py $m $k $n > src/gemms/igemm_"$m"_"$k"_"$n".c
-         python scripts/generate_singleigemm.py $m $m $m>> src/gemms/smm_dnn_"$m"_"$m"_"$m".c
-done	
+  echo $m $n $k
+  #python scripts/generate_singleigemm.py $m $k $n > src/gemms/igemm_"$m"_"$k"_"$n".c
+  python scripts/generate_singleigemm.py $m $m $m>> src/gemms/smm_dnn_"$m"_"$m"_"$m".c
+done
 
 python scripts/generate_switchingfunction.py $SIZE $SIZE $SIZE  >> src/gemms/smm.c
 
