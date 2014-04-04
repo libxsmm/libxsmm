@@ -1,5 +1,6 @@
 #include<micsmm.h>
 #include <mkl.h>
+#include <stdio.h>
 __declspec(target(mic))
 void smm_dnn(int M, int N, int K, const double* a, const double* b, double* c){
 if((M<=24)&&(K<=24)&&(N<=24)){
@@ -41478,7 +41479,7 @@ if((M<=24)&&(K<=24)&&(N<=24)){
             smm_dnn_24_24_24(a,b,c);
             break;
       default:
-            printf("Can't find this matrix size \n ");
+            printf("Can't find this matrix size\n");
             break;
    }
 } else{

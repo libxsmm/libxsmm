@@ -4,6 +4,7 @@ import sys
 def create_symmetric_interface(M,K,N):
     print "#include<micsmm.h>"
     print "#include <mkl.h>"
+    print "#include <stdio.h>"
     print "__declspec(target(mic))"
     print "void smm_dnn(int M, int N, int K, const double* a, const double* b, double* c){"
     print "if((M<="+str(M)+")&&(K<="+str(N)+")&&(N<="+str(K)+")){"
@@ -16,7 +17,7 @@ def create_symmetric_interface(M,K,N):
                 print "            smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(a,b,c);"
                 print "            break;"  
     print "      default:"
-    print "            printf(\"Can't find this matrix size \\n \");"
+    print "            printf(\"Can't find this matrix size\\n\");"
     print "            break;"
     print "   }"
     print "} else{"
