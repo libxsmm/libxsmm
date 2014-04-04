@@ -4,8 +4,8 @@ import sys
 def create_symmetric_interface(M,K,N):
     print "#include<micsmm.h>"
     print "#include <mkl.h>"
-    print "__declspec( target (mic))"
-    print "void smm_dnn(int M, int N, int K, double* a, double* b, double* c){"
+    print "__declspec(target(mic))"
+    print "void smm_dnn(int M, int N, int K, const double* a, const double* b, double* c){"
     print "if((M<="+str(M)+")&&(K<="+str(N)+")&&(N<="+str(K)+")){"
     print "   int v=((M-1)<<10)+((K-1)<<5)+(N-1);"
     print "   switch(v){"
@@ -20,7 +20,7 @@ def create_symmetric_interface(M,K,N):
     print "            break;"
     print "   }"
     print "} else{"
-    print "    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, (double)1,a, K, b,N, (double)1, c, N);"
+    print "    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
     print "}"
     print "}"
 

@@ -13,8 +13,8 @@ def createigemm2(M,K,N):
         nparts=iparts+1
 #    print "#include <immintrin.h>"
 #    print "#include <micsmmmisc.h>"
-    print "__declspec( target (mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
     print "int i;"
     for n in range(0,K):
@@ -71,8 +71,8 @@ def createigemm20130803(M,K,N):
         nparts=iparts
     else:
         nparts=iparts+1
-    print "__declspec( target (mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
     print "printf(\"micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
     print "int i;"
@@ -126,8 +126,8 @@ def createigemm(M,N,K):
     print "#include <mkl.h>"
 
 
-    print "__declspec( target (mic))"
-    print "void smm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void smm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
 #    print "printf(\"micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
     print "int i;"

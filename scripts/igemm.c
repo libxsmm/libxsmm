@@ -5,7 +5,7 @@
 
 #ifdef __MIC__
 __declspec( target (mic)) 
-inline __m512d   _MM512_LOADU_PD(double* a) {
+inline __m512d   _MM512_LOADU_PD(const double* a) {
     __m512d va= _mm512_setzero_pd();
     /* va=_mm512_extloadunpacklo_pd(va, &a[0],_MM_UPCONV_PD_NONE, _MM_HINT_NONE); */
     /* va=_mm512_extloadunpackhi_pd(va, &a[8],_MM_UPCONV_PD_NONE, _MM_HINT_NONE); */
@@ -16,7 +16,7 @@ inline __m512d   _MM512_LOADU_PD(double* a) {
 
 
 __declspec( target (mic)) 
-inline void _MM512_STOREU_PD(double* a,__m512d v) {
+inline void _MM512_STOREU_PD(const double* a,__m512d v) {
 //  __m512i vindex= _mm512_set_epi32(0,0,0,0,0,0,0,0,7,6,5,4,3,2,1,0);
 //  _mm512_i32loscatter_pd(a,vindex, v, 8);
     _mm512_packstorelo_pd(&a[0], v);
@@ -26,7 +26,7 @@ inline void _MM512_STOREU_PD(double* a,__m512d v) {
 
 
 __declspec( target (mic)) 
-inline __m512d _MM512_MASK_LOADU_PD(double* a, char mask) {
+inline __m512d _MM512_MASK_LOADU_PD(const double* a, char mask) {
     __m512d va= _mm512_setzero_pd();
     /* va=_mm512_mask_extloadunpacklo_pd(va, mask,&a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NONE); */
     /* va=_mm512_mask_extloadunpackhi_pd(va, mask,&a[8], _MM_UPCONV_PD_NONE, _MM_HINT_NONE); */
@@ -36,7 +36,7 @@ inline __m512d _MM512_MASK_LOADU_PD(double* a, char mask) {
 }
 
 __declspec( target (mic)) 
-inline void _MM512_MASK_STOREU_PD(double* a,__m512d v, char mask) {
+inline void _MM512_MASK_STOREU_PD(const double* a,__m512d v, char mask) {
 //  __m512i vindex= _mm512_set_epi32(0,0,0,0,0,0,0,0,7,6,5,4,3,2,1,0);
 //  _mm512_mask_i32loscatter_pd(a,mask,vindex, v, 8);
     _mm512_mask_packstorelo_pd(&a[0], mask,v);
@@ -55,7 +55,7 @@ void print512d(__m512d a){
 #endif
 
 __declspec( target (mic)) 
-void cmicmm_23_(double* c, double* a, double* b){
+void cmicmm_23_(const double* c, const double* a, double* b){
 #ifdef __MIC__
     int i;
     
@@ -401,7 +401,7 @@ void cmicmm_23_(double* c, double* a, double* b){
 }
 
 __declspec( target (mic)) 
-void cmicmm_23x_(double* c, double* a, double* b){
+void cmicmm_23x_(const double* c, const double* a, double* b){
 #ifdef __MIC__
     int i;
     

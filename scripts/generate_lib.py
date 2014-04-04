@@ -11,8 +11,8 @@ import math
 import sys
 
 def createsgemm(M,K,N):
-    print "__declspec( target (mic))"
-    print "void micgemm_0_"+str(M)+"_"+str(K)+"_"+str(N)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void micgemm_0_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "int n,m,k;"
     print "#pragma simd"
     print "for (m=0;m<"+str(M)+";m++)"
@@ -30,8 +30,8 @@ def createsgemm(M,K,N):
 
 
 def createvgemm(M,K,N):
-    print "__declspec( target (mic))"
-    print "void micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "int i,j,n;"
     print "#pragma simd"
     print "for (i=0;i<"+str(M)+";i++)"
@@ -59,8 +59,8 @@ def createigemm(M,K,N):
         nparts=iparts
     else:
         nparts=iparts+1
-    print "__declspec( target (mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(double* a,double* b,double* c){"
+    print "__declspec(target(mic))"
+    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
     print "int i;"
     for n in range(0,K):
@@ -104,8 +104,8 @@ def createigemm(M,K,N):
 
 
 def create_symmetric_interface():
-    print "__declspec( target (mic))"
-    print "void micssm2(double* a, double* b, double* c, int M, int K, int N){"
+    print "__declspec(target(mic))"
+    print "void micssm2(const double* a, const double* b, double* c, int M, int K, int N){"
     print "if((M<=32)&&(K<=32)&&(N<=32)){"
     print "   int v=((M-1)<<10)+((K-1)<<5)+(N-1);"
     print "   switch(v){"
