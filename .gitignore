@@ -2,3 +2,6 @@ tmp
 *.*~
 *.o
 a.out
+fit.log
+gemx-avg.txt
+gemx-cdf.txt
