@@ -3,15 +3,15 @@ FNAME = 2
 TNAME = 3
 PNAME = 4
 NOTES = 5
-MPARM = 6
-KPARM = 7
-NPARM = 8
+MPARM = 1
+KPARM = 3
+NPARM = 2
 NVALS = 8
 MSIZE = 9
 DURMS = 11
 DEVMS = 13
 VALID = 15
-FLOPS = 19
+FLOPS = 4
 XTEND = 21
 
 # GEN =-1: multiple files; no titles
@@ -19,24 +19,24 @@ XTEND = 21
 # GEN = 1: single file with titles
 GEN = 1
 
-GEMX = "gemm"
-FUNC = "smm"
-NAME = "LIBSMM/Xeon_Phi-3120"
+GEMX = "libcusmm"
+FUNC = ""
+NAME = "Tesla_K20X"
 PREC = "f64"
 
-#FUNCB = "goto"
-NAMEB = "OpenBLAS"
+#FUNCB = "smm"
+NAMEB = "Xeon_Phi-3120"
 SHIFT = 20
 
-PEAK_SP_GFLOPS = 17.6
+PEAK_SP_GFLOPS = 1311.7
 PEAK_DP_GFLOPS = 0.5 * PEAK_SP_GFLOPS
-HIM = 24
+HIM = 9
 HIN = HIM
 HIK = HIM
-MN = 16
+MN = 4
 
 FILECOUNT = 0
-BASENAME = GEMX."-".FUNC."-".PREC
+BASENAME = GEMX."-raw"
 stats BASENAME.".txt" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.1f", exp(STATS_sum/STATS_records))
 stats BASENAME.".txt" using FLOPS nooutput; MED = sprintf("%.1f", STATS_median)
 stats BASENAME.".txt" using NPARM nooutput; XN = int(STATS_max)
@@ -60,7 +60,7 @@ set terminal TERMINAL
 
 EXT = TERMINAL[1:3]
 
-if (GEN==1) set output BASENAME.".".EXT
+if (GEN==1) set output GEMX.".".EXT
 if (PREC eq "f64") {
   PEAK = PEAK_DP_GFLOPS
   PRECISION = "D"

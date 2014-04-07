@@ -28,7 +28,7 @@ FUNCB = "mkl"
 NAMEB = "MKL/Xeon_Phi-3120-C0"
 SHIFT = 20
 
-PEAK_SP_GFLOPS = 8.8
+PEAK_SP_GFLOPS = 17.6
 PEAK_DP_GFLOPS = 0.5 * PEAK_SP_GFLOPS
 HIM = 24
 HIN = HIM
@@ -60,7 +60,7 @@ set terminal TERMINAL
 
 EXT = TERMINAL[1:3]
 
-if (GEN==1) set output "gemm-smm.".EXT
+if (GEN==1) set output "gemm-smm-mkl.".EXT
 if (PREC eq "f64") {
   PEAK = PEAK_DP_GFLOPS
   PRECISION = "D"
