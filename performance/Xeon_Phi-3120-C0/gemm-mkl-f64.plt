@@ -20,12 +20,12 @@ XTEND = 21
 GEN = 1
 
 GEMX = "gemm"
-FUNC = "smm"
-NAME = "LIBSMM/Xeon_Phi-3120-C0"
+FUNC = "mkl"
+NAME = "MKL/Xeon_Phi-3120-C0"
 PREC = "f64"
 
-FUNCB = "mkl"
-NAMEB = "MKL/Xeon_Phi-3120-C0"
+#FUNCB = "goto"
+NAMEB = "OpenBLAS"
 SHIFT = 20
 
 PEAK_SP_GFLOPS = 8.8
@@ -60,7 +60,7 @@ set terminal TERMINAL
 
 EXT = TERMINAL[1:3]
 
-if (GEN==1) set output "gemm-smm.".EXT
+if (GEN==1) set output BASENAME.".".EXT
 if (PREC eq "f64") {
   PEAK = PEAK_DP_GFLOPS
   PRECISION = "D"
