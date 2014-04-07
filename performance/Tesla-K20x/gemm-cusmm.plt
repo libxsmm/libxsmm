@@ -19,9 +19,9 @@ XTEND = 21
 # GEN = 1: single file with titles
 GEN = 1
 
-GEMX = "libcusmm"
-FUNC = ""
-NAME = "Tesla_K20X"
+GEMX = "gemm"
+FUNC = "cusmm"
+NAME = "CUSMM/Tesla_K20X"
 PREC = "f64"
 
 #FUNCB = "smm"
@@ -36,7 +36,7 @@ HIK = HIM
 MN = 4
 
 FILECOUNT = 0
-BASENAME = GEMX."-raw"
+BASENAME = GEMX."-".FUNC."-raw"
 stats BASENAME.".txt" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.1f", exp(STATS_sum/STATS_records))
 stats BASENAME.".txt" using FLOPS nooutput; MED = sprintf("%.1f", STATS_median)
 stats BASENAME.".txt" using NPARM nooutput; XN = int(STATS_max)
@@ -60,7 +60,7 @@ set terminal TERMINAL
 
 EXT = TERMINAL[1:3]
 
-if (GEN==1) set output GEMX.".".EXT
+if (GEN==1) set output GEMX."-".FUNC.".".EXT
 if (PREC eq "f64") {
   PEAK = PEAK_DP_GFLOPS
   PRECISION = "D"
