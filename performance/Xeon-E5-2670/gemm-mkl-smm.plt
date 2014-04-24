@@ -21,20 +21,19 @@ GEN = 1
 
 GEMX = "gemm"
 FUNC = "mkl"
-NAME = "MKL/SMM/Xeon_E5-2670"
+NAME = "MKL"
 PREC = "f64"
 
-#FUNCB = "goto"
-NAMEB = "OpenBLAS"
+#FUNCB = "ipp"
+NAMEB = "IPP"
 SHIFT = 20
 
 NCORES = 16
 PEAK_SP_GFLOPS = 41.6 * NCORES
 PEAK_DP_GFLOPS = 0.5 * PEAK_SP_GFLOPS
-HIM = 9
+HIM = 16
 HIN = HIM
 HIK = HIM
-MN = 4
 
 FILECOUNT = 0
 BASENAME = GEMX."-".FUNC."-".PREC
@@ -151,7 +150,7 @@ plot "gemx-cdf.txt" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 no
 if (0 < PEAK) {
   reset
   if (GEN<=0) { set output GEMX."-".FUNC."-".PREC."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
-  if (GEN>-1) { set title PRECISION.GEMX."/".NAME." - Performance (M = N = ".MN.")" }
+  if (GEN>-1) { set title PRECISION.GEMX."/".NAME." - Performance (M = N = {3, 4, 5, 8, 16})" }
   set xlabel "K"
   set ylabel "Efficiency"
   set y2label "GFLOP/s"
@@ -165,9 +164,21 @@ if (0 < PEAK) {
   set yrange [0:100]
   set y2range [0:PEAK]
   if (exists("FUNCB") && (FUNCB ne "") && exists("NAMEB") && (NAMEB ne "")) {
-    plot BASENAME.".txt" using KPARM:((MN==column(MPARM)&&MN==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME smooth sbezier with points pointtype 7 pointsize 0.5, \
-         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((MN==column(MPARM)&&MN==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB smooth sbezier with points pointtype 7 pointsize 0.5
+    plot BASENAME.".txt" using KPARM:((3==column(MPARM)&&3==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME."-3" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 1, \
+         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((3==column(MPARM)&&3==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB."-3" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 2, \
+         BASENAME.".txt" using KPARM:((4==column(MPARM)&&4==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME."-4" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 1, \
+         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((4==column(MPARM)&&4==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB."-4" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 2, \
+         BASENAME.".txt" using KPARM:((5==column(MPARM)&&5==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME."-5" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 1, \
+         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((5==column(MPARM)&&5==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB."-5" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 2, \
+         BASENAME.".txt" using KPARM:((8==column(MPARM)&&8==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME."-8" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 1, \
+         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((8==column(MPARM)&&8==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB."-8" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 2, \
+         BASENAME.".txt" using KPARM:((16==column(MPARM)&&16==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAME."-16" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 1, \
+         GEMX."-".FUNCB."-".PREC.".txt" using KPARM:((16==column(MPARM)&&16==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title NAMEB."-16" smooth sbezier with points pointtype 7 pointsize 0.5 linetype 2
   } else {
-    plot BASENAME.".txt" using KPARM:((MN==column(MPARM)&&MN==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) notitle smooth sbezier with points pointtype 7 pointsize 0.5
+    plot BASENAME.".txt" using KPARM:((3==column(MPARM)&&3==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title "M = N = 3" smooth sbezier with points pointtype 7 pointsize 0.5, \
+         BASENAME.".txt" using KPARM:((4==column(MPARM)&&4==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title "M = N = 4" smooth sbezier with points pointtype 7 pointsize 0.5, \
+         BASENAME.".txt" using KPARM:((5==column(MPARM)&&5==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title "M = N = 5" smooth sbezier with points pointtype 7 pointsize 0.5, \
+         BASENAME.".txt" using KPARM:((8==column(MPARM)&&8==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title "M = N = 8" smooth sbezier with points pointtype 7 pointsize 0.5, \
+         BASENAME.".txt" using KPARM:((16==column(MPARM)&&16==column(NPARM))?(100.0*column(FLOPS)*NCORES/PEAK):(1/0)) title "M = N = 16" smooth sbezier with points pointtype 7 pointsize 0.5
   }
 }
