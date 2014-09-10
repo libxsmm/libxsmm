@@ -2,7 +2,7 @@
 
 DIRINC=include
 DIRSRC=src/mic
-SIZE=24
+SIZE=8
 
 if [ "$1" != "" ] ; then
   SIZE=$1
