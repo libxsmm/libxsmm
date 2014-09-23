@@ -56,4 +56,4 @@ $(OBJDIR_MIC)/%.o: $(SRCDIR_MIC)/%.c header_mic #main_mic
 all: $(LIBDIR_MIC)/$(LIB_MIC)
 
 clean:
-	rm -rf $(SRCDIR_MIC) $(OBJDIR_MIC) $(LIBDIR_MIC) $(DIR_MIC)/*~
+	rm -rf $(SRCDIR_MIC) $(OBJDIR_MIC) $(LIBDIR_MIC) $(INCDIR_MIC)/$(INC_MIC) $(DIR_MIC)/*~
