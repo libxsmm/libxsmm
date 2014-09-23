@@ -30,11 +30,3 @@ for m in $(seq 1 $SIZE); do
 done
 
 python scripts/generate_switchingfunction.py $SIZE $SIZE $SIZE >> $DIRSRC/xsmm.c
-
-cd $DIRSRC
-make -j 16
-cd ../..
-cd tests
-icc -offload-attribute-target=mic -mkl=sequential -I ../$DIRINC -c benchmark.cpp
-icc -offload-attribute-target=mic -mkl=sequential benchmark.o ../$DIRSRC/libxsmmknc.a
-cd ..
