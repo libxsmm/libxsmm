@@ -7,7 +7,7 @@ SOURCES=$(wildcard $(SOURCE_PATH)/*.c)
 OBJECTS=$(addprefix $(BUILD_PATH)/,$($(notdir $(SOURCES)):.c=.o))
 
 knc: $(OBJECTS)
-	xiar -r -qoffload-build $(LIB_PATH)/libxsmmknc.a $(OBJECTS) 
+	xiar -rs -qoffload-build $(LIB_PATH)/libxsmmknc.a $(OBJECTS) 
 
 .c.o:
 	icc -offload-attribute-target=mic -mkl=sequential -std=c99 -I$(INCLUDE_PATH) -c $<
