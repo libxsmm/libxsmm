@@ -1,6 +1,0 @@
-Compiler and Libraries
-Intel C++ Compiler V15 Beta
-Intel MKL 11.2 Beta
-
-Environment
-KMP_AFFINITY=compact,1,granularity=fine
