@@ -1,8 +1,8 @@
 #!/bin/bash
 
-DIRINC=include
 DIRSRC=knc
-DIRTST=tests
+DIRINC=.
+DIRSCR=.
 SIZE=8
 
 if [ "$1" != "" ] ; then
@@ -10,7 +10,7 @@ if [ "$1" != "" ] ; then
 fi
 
 
-python scripts/generate_inc.py $SIZE $SIZE $SIZE > $DIRINC/xsmmknc.h
+python $DIRSCR/generate_inc.py $SIZE $SIZE $SIZE > $DIRINC/xsmm_knc.h
 
 rm $DIRSRC/*.cpp
 rm $DIRSRC/*.c
@@ -20,9 +20,9 @@ for m in $(seq 1 $SIZE); do
   for n in $(seq 1 $SIZE); do
     for k in $(seq 1 $SIZE); do
       echo $m $n $k
-      python scripts/generate_src.py $m $n $k >> $DIRSRC/xsmm_dnn_"$m"_"$n"_"$k".c
+      python $DIRSCR/generate_src.py $m $n $k >> $DIRSRC/xsmm_dnn_"$m"_"$n"_"$k".c
     done
   done
 done
 
-python scripts/generate_main.py $SIZE $SIZE $SIZE >> $DIRSRC/xsmm.c
+python $DIRSCR/generate_main.py $SIZE $SIZE $SIZE >> $DIRSRC/xsmm_knc.c

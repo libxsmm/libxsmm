@@ -1,7 +1,7 @@
-INCLUDE_PATH := include
-SOURCE_PATH := src/knc
-BUILD_PATH := build
-LIB_PATH := lib
+INCLUDE_PATH := .
+SOURCE_PATH := knc
+BUILD_PATH := knc
+LIB_PATH := .
 
 SOURCES=$(wildcard $(SOURCE_PATH)/*.c)
 OBJECTS=$(addprefix $(BUILD_PATH)/,$($(notdir $(SOURCES)):.c=.o))
@@ -12,9 +12,5 @@ knc: $(OBJECTS)
 .c.o:
 	icc -offload-attribute-target=mic -mkl=sequential -std=c99 -I$(INCLUDE_PATH) -c $<
 
-tests:
-	icc -offload-attribute-target=mic -mkl=sequential -I$(INCLUDE_PATH) -c benchmark.cpp
-	icc -offload-attribute-target=mic -mkl=sequential benchmark.o $(LIB_PATH)/libxsmmknc.a
-
-all: knc tests
+all: knc
 

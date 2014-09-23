@@ -1,7 +1,6 @@
-include/xsmmknc.h
 knc/xsmm_dnn_*_*_*.c
 knc/xsmm.c
-tests/benchmark.c
-build/*.o
-lib/*.a
+xsmmknc.h
+*.o
+*.a
 *.*~
