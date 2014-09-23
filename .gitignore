@@ -1,7 +1,5 @@
-tmp
+src/knc/xsmm_dnn_*_*_*.c
+src/knc/xsmm.c
+build/*.o
+lib/*.a
 *.*~
-*.o
-a.out
-fit.log
-gemx-avg.txt
-gemx-cdf.txt
