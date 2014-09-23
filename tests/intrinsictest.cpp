@@ -1,6 +1,7 @@
 #include <immintrin.h>
 #include <micsmmmisc.h>
 
+
 int main(void){
 #pragma offload target(mic:0)
   {
@@ -40,10 +41,6 @@ int main(void){
     xb= _MM512_MASK_LOADU_PD(&b[0],255);
     xb=_mm512_mask3_fmadd_pd(xb,xa,xa,85);
     print512d(xb);
-
-
-
-
 #else
     printf("not offloading \n");
 #endif 

@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <micsmm.h>
+
 __declspec( target (mic))
 double mytime() {
   timeval a;
   gettimeofday(&a, 0);
   return (double)(a.tv_sec*1000 + a.tv_usec/1000.0);
 }
+
 __declspec( target (mic))
 void bench_4(void){
 int length=1;

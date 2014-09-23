@@ -1,18 +1,9 @@
-# N=8
-# M=8
-# K=8
-
-# for n in range(0,N):
-#     for m in range(0,M):
-#         for k in range(0,K):
-#             print "c["+str(n*N+m)+"]=c["+str(n*N+m)+"]+a["+str(n*N+k)+"]*b["+str(k*K+m)+"];"
-
 import math
 import sys
 
 def createsgemm(M,K,N):
     print "__declspec(target(mic))"
-    print "void micgemm_0_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
+    print "void xgemm_0_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "int n,m,k;"
     print "#pragma simd"
     print "for (m=0;m<"+str(M)+";m++)"
@@ -31,7 +22,7 @@ def createsgemm(M,K,N):
 
 def createvgemm(M,K,N):
     print "__declspec(target(mic))"
-    print "void micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
+    print "void xgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "int i,j,n;"
     print "#pragma simd"
     print "for (i=0;i<"+str(M)+";i++)"
@@ -60,7 +51,7 @@ def createigemm(M,K,N):
     else:
         nparts=iparts+1
     print "__declspec(target(mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
+    print "void xgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
     print "int i;"
     for n in range(0,K):
@@ -97,7 +88,7 @@ def createigemm(M,K,N):
 
         print "}"
     print "#else"    
-#    print "micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
+#    print "xgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
     print "#endif"
     print "}"
     print " "
@@ -105,7 +96,7 @@ def createigemm(M,K,N):
 
 def create_symmetric_interface():
     print "__declspec(target(mic))"
-    print "void micssm2(const double* a, const double* b, double* c, int M, int K, int N){"
+    print "void xssm2(const double* a, const double* b, double* c, int M, int K, int N){"
     print "if((M<=32)&&(K<=32)&&(N<=32)){"
     print "   int v=((M-1)<<10)+((K-1)<<5)+(N-1);"
     print "   switch(v){"
@@ -114,7 +105,7 @@ def create_symmetric_interface():
             for n in range(1,3):
                 print "      case "+str(((m-1)<<10)+((k-1)<<5)+(n-1))+":"
 #                print "      __attribute__((target(mic)))"
-                print "      micgemm_2_"+str(m)+"_"+str(k)+"_"+str(n)+"(a,b,c);"
+                print "      xgemm_2_"+str(m)+"_"+str(k)+"_"+str(n)+"(a,b,c);"
                 print "      break;"
     print "   }"    
     print "} else{"
@@ -124,7 +115,7 @@ def create_symmetric_interface():
 
 
 print "#include <immintrin.h>"
-print "#include <micsmmmisc.h>"
+print "#include <xsmmkncmisc.h>"
 if(len(sys.argv)==3):
     start=int(sys.argv[1])
     stop=int(sys.argv[2])
@@ -136,18 +127,6 @@ if(len(sys.argv)==3):
 #        for k in range(start,stop):
 #            for n in range(start,stop):
 #                createvgemm(m,k,n)
-#    for m in range(start,stop):
-#        for k in range(start,stop):
-#            for n in range(start,stop):
 #                createsgemm(m,k,n)
 
 create_symmetric_interface()
-
-
-
-
-
-
-#creategemm(9,9,9)
-
-#for n in range(0,N,nblocksize):

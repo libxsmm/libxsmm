@@ -12,9 +12,9 @@ def createigemm2(M,K,N):
     else:
         nparts=iparts+1
 #    print "#include <immintrin.h>"
-#    print "#include <micsmmmisc.h>"
+#    print "#include <xsmmkncmisc.h>"
     print "__declspec(target(mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
+    print "void xgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
     print "int i;"
     for n in range(0,K):
@@ -58,7 +58,7 @@ def createigemm2(M,K,N):
     print "   }"
     print "}"
 #    print "exit(0);"
-#    print "micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
+#    print "xgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
     print "#endif"
     print "}"
     print " "
@@ -72,9 +72,9 @@ def createigemm20130803(M,K,N):
     else:
         nparts=iparts+1
     print "__declspec(target(mic))"
-    print "void micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
+    print "void xgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
-    print "printf(\"micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
+    print "printf(\"xgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
     print "int i;"
     for n in range(0,K):
         print "__m512d xa"+str(n)+";"
@@ -107,7 +107,7 @@ def createigemm20130803(M,K,N):
     print "   }"
     print "}"
 #    print "exit(0);"
-#    print "micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
+#    print "xgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
     print "#endif"
     print "}"
     print " "
@@ -122,14 +122,14 @@ def createigemm(M,N,K):
     else:
         nparts=iparts+1
     print "#include <immintrin.h>"
-    print "#include <micsmmmisc.h>"
+    print "#include <xsmmkncmisc.h>"
     print "#include <mkl.h>"
 
 
     print "__declspec(target(mic))"
-    print "void smm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(const double* a, const double* b, double* c){"
+    print "void xsmm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(const double* a, const double* b, double* c){"
     print "#ifdef __MIC__"
-#    print "printf(\"micgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
+#    print "printf(\"xgemm_2_"+str(M)+"_"+str(K)+"_"+str(N)+"\\n\");"
     print "int i;"
     for n in range(0,K):
         print "__m512d xa"+str(n)+";"
@@ -161,12 +161,10 @@ def createigemm(M,N,K):
     print "   }"
     print "}"
 #    print "exit(0);"
-#    print "micgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
+#    print "xgemm_1_"+str(M)+"_"+str(K)+"_"+str(N)+"(a,b,c);"
     print "#endif"
     print "}"
     print " "
-
-
 
 
 createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
