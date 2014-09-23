@@ -1,29 +1,45 @@
 DIR_MIC := .
 OBJDIR_MIC := build
-SRCDIR_MIC := knc
+INCDIR_MIC := .
+SRCDIR_MIC := src
 LIBDIR_MIC := lib
 
-TARGET_COMPILE_C_MIC := icc -offload-attribute-target=mic -mkl=sequential -std=c99
+INDICES_M := $(shell seq 1 3)
+INDICES_N := $(shell seq 1 3)
+INDICES_K := $(shell seq 1 3)
+INDICES := $(shell bash -c 'for m in $(INDICES_M); do ( for n in $(INDICES_N); do ( for k in $(INDICES_K); do echo "$${m}_$${n}_$${k}"; done ); done ); done')
+
+#TARGET_COMPILE_C_MIC := icc -offload-attribute-target=mic -mkl=sequential -std=c99
+TARGET_COMPILE_C_MIC := gcc
+#AR := xiar -qoffload-build
+AR := ar
 
 SRCFILES_MIC=$(patsubst %,dc_small_dnn_%.c,$(INDICES))
 OBJFILES_MIC=$(patsubst %,$(OBJDIR_MIC)/dc_small_dnn_%.o,$(INDICES))
 LIB_MIC=libmic_$(firstword $(INDICES))__$(lastword $(INDICES)).a
 
-knc: $(LIBDIR_MIC)/$(LIB_MIC)
-
-$(SRCDIR_MIC)/%.c:
-	@mkdir -p $(SRCDIR_MIC)
-	python $(DIR_MIC)/xsmm_knc_gensrc.py `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` > $@
-
+lib_mic: $(LIBDIR_MIC)/$(LIB_MIC)
 $(LIBDIR_MIC)/$(LIB_MIC): $(OBJFILES_MIC)
 	@mkdir -p $(LIBDIR_MIC)
-	xiar -rs -qoffload-build $@ $^
+	$(AR) -rs $@ $^
 
+compile_mic: $(OBJFILES_MIC)
 $(OBJDIR_MIC)/%.o: $(SRCDIR_MIC)/%.c
 	@mkdir -p $(OBJDIR_MIC)
 	${TARGET_COMPILE_C_MIC} -I$(DIR_MIC) -c $< -o $@
 
-all: knc
+$(INCDIR_MIC)/xsmm_knc.h:
+	@mkdir -p $(INCDIR_MIC)
+	@python $(DIR_MIC)/xsmm_knc_geninc.py > $@
+
+source_mic: $(addprefix $(SRCDIR_MIC)/,$(SRCFILES_MIC)) $(INCDIR_MIC)/xsmm_knc.h
+$(SRCDIR_MIC)/%.c:
+	@mkdir -p $(SRCDIR_MIC)
+	@python $(DIR_MIC)/xsmm_knc_geninc.py `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` >> $(INCDIR_MIC)/xsmm_knc.h
+	@python $(DIR_MIC)/xsmm_knc_gensrc.py `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` > $@
+
 
 clean:
 	rm -rf $(SRCDIR_MIC) $(OBJDIR_MIC) $(LIBDIR_MIC) $(DIR_MIC)/*~
+
+all: lib_mic
