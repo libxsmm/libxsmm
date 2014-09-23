@@ -1,5 +1,7 @@
+include/xsmmknc.h
 src/knc/xsmm_dnn_*_*_*.c
 src/knc/xsmm.c
+tests/benchmark.c
 build/*.o
 lib/*.a
 *.*~
