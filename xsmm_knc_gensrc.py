@@ -40,7 +40,7 @@ def createigemm(M,N,K):
     else:
         mparts=iparts+1
     print "#include <immintrin.h>"
-    print "#include <xsmmkncmisc.h>"
+    print "#include <xsmm_knc_util.h>"
     print " "
 
     print "void dc_smm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(const double* a, const double* b, double* c) {"
