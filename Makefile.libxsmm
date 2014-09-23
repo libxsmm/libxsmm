@@ -13,10 +13,8 @@ LIB_MIC := libmic_$(firstword $(INDICES))__$(lastword $(INDICES)).a
 SRC_MIC := xsmm_knc.c
 INC_MIC := xsmm_knc.h
 
-#TARGET_COMPILE_C_MIC := icc -offload-attribute-target=mic -mkl=sequential -std=c99
-TARGET_COMPILE_C_MIC := gcc
-#AR := xiar -qoffload-build
-AR := ar
+TARGET_COMPILE_C_MIC := icc -offload-attribute-target=mic -mkl=sequential -std=c99
+AR := xiar -qoffload-build
 
 SRCFILES_MIC := $(patsubst %,dc_small_dnn_%.c,$(INDICES))
 OBJFILES_MIC := $(patsubst %,$(OBJDIR_MIC)/dc_small_dnn_%.o,$(INDICES))
