@@ -13,7 +13,7 @@ def create_symmetric_interface(M,K,N):
     for m in range(1,M+1):
         for n in range(1,N+1):
            for k in range(1,K+1):
-                print "      case "+str(((m-1)<<10)+((k-1)<<5)+(n-1))+":"
+                print "      case "+str(((m-1)<<10)+((n-1)<<5)+(k-1))+":"
                 print "            xsmm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(a,b,c);"
                 print "            break;"  
     print "      default:"
