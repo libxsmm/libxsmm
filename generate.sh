@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIRINC=include
-DIRSRC=src/knc
+DIRSRC=knc
 DIRTST=tests
 SIZE=8
 
@@ -26,4 +26,3 @@ for m in $(seq 1 $SIZE); do
 done
 
 python scripts/generate_main.py $SIZE $SIZE $SIZE >> $DIRSRC/xsmm.c
-python scripts/generate_ben.py 4 32 > $DIRTST/benchmark.c

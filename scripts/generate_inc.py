@@ -36,7 +36,7 @@ if(len(sys.argv)==4):
             for n in range(1,int(sys.argv[3])+1):
 #                print "extern \"C\" {"
                 print "__declspec(target(mic))"
-                print "void xsmm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(const double* a, const double* b, double* c);"
+                print "void dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(const double* a, const double* b, double* c);"
 #                print "}"
 
 #    print "extern \"C\" {"
