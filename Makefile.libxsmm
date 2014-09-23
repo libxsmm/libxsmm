@@ -1,12 +1,12 @@
 DIR_MIC := .
 OBJDIR_MIC := build
-INCDIR_MIC := .
+INCDIR_MIC := $(DIR_MIC)
 SRCDIR_MIC := src
 LIBDIR_MIC := lib
 
-INDICES_M := $(shell seq 1 2)
-INDICES_N := $(shell seq 1 2)
-INDICES_K := $(shell seq 1 2)
+INDICES_M := $(shell seq 1 8)
+INDICES_N := $(shell seq 1 8)
+INDICES_K := $(shell seq 1 8)
 INDICES := $(shell bash -c 'for m in $(INDICES_M); do ( for n in $(INDICES_N); do ( for k in $(INDICES_K); do echo "$${m}_$${n}_$${k}"; done ); done ); done')
 
 LIB_MIC := libmic_$(firstword $(INDICES))__$(lastword $(INDICES)).a
