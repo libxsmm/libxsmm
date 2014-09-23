@@ -1,9 +1,10 @@
 INCLUDE_PATH := include
 SOURCE_PATH := src/knc
+BUILD_PATH := build
 LIB_PATH := lib
 
 SOURCES=$(wildcard $(SOURCE_PATH)/*.c)
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=$(addprefix $(BUILD_PATH)/,$($(notdir $(SOURCES)):.c=.o))
 
 knc: $(OBJECTS)
 	xiar -r -qoffload-build $(LIB_PATH)/libxsmmknc.a $(OBJECTS) 
