@@ -20,7 +20,7 @@ for m in $(seq 1 $SIZE); do
   for n in $(seq 1 $SIZE); do
     for k in $(seq 1 $SIZE); do
       echo $m $n $k
-      python $DIRSCR/xsmm_knc_gensrc.py $m $n $k >> $DIRSRC/xsmm_dnn_"$m"_"$n"_"$k".c
+      python $DIRSCR/xsmm_knc_gensrc.py $m $n $k >> $DIRSRC/dc_small_dnn_"$m"_"$n"_"$k".c
     done
   done
 done
