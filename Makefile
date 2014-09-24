@@ -33,7 +33,7 @@ $(LIB_KNC): $(OBJFILES_KNC)
 compile_knc: $(OBJFILES_KNC)
 $(OBJDIR_KNC)/%.o: $(SRCDIR_KNC)/%.c header_knc
 	@mkdir -p $(OBJDIR_KNC)
-	${TARGET_COMPILE_C_KNC} -I$(DIR_KNC) -I$(INCDIR_KNC) -c $< -o $@
+	${TARGET_COMPILE_C_KNC} -I$(INCDIR_KNC) -c $< -o $@
 
 source_knc: $(addprefix $(SRCDIR_KNC)/,$(SRCFILES_KNC))
 $(SRCDIR_KNC)/%.c:
