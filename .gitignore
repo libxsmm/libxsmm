@@ -1,6 +1,6 @@
+include/xsmm_knc.h
+src/xsmm_knc.c
 src/dc_small_dnn_*_*_*.c
-src/xsmm.c
-xsmm_knc.h
 *.o
 *.a
 *.*~
