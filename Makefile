@@ -1,3 +1,12 @@
+
+# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
+ROW_MAJOR := 1
+
+# M, N, K values of the generated matrices
+INDICES_M := $(shell seq 1 8)
+INDICES_N := $(shell seq 1 8)
+INDICES_K := $(shell seq 1 8)
+
 DIR_KNC    := .
 SCRDIR_KNC := $(DIR_KNC)/scripts
 OBJDIR_KNC := $(DIR_KNC)/build
@@ -5,9 +14,6 @@ INCDIR_KNC := $(DIR_KNC)/include
 SRCDIR_KNC := $(DIR_KNC)/src
 LIBDIR_KNC := $(DIR_KNC)/lib
 
-INDICES_M := $(shell seq 1 3)
-INDICES_N := $(shell seq 1 3)
-INDICES_K := $(shell seq 1 3)
 INDICES   := $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDICES_K),$m_$n_$k)))
 
 TARGET_COMPILE_C_KNC := icc -offload-attribute-target=mic -mkl=sequential -std=c99 -openmp
@@ -38,7 +44,7 @@ $(OBJDIR_KNC)/%.o: $(SRCDIR_KNC)/%.c header_knc
 source_knc: $(addprefix $(SRCDIR_KNC)/,$(SRCFILES_KNC))
 $(SRCDIR_KNC)/%.c:
 	@mkdir -p $(SRCDIR_KNC)
-	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` > $@
+	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` $(ROW_MAJOR) > $@
 
 header_knc: $(INC_KNC)
 $(INC_KNC):
@@ -46,17 +52,17 @@ $(INC_KNC):
 	@echo "#define XSMM_KNC_H" >> $@
 	@echo >> $@
 	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py >> $@
-	@bash -c 'for i in $(INDICES); do ( python $(SCRDIR_KNC)/xsmm_knc_geninc.py `echo $${i} | tr "_" " "` ); done' >> $@
+	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py $(INDICES) >> $@
 	@echo >> $@
 	@echo "#endif // XSMM_KNC_H" >> $@
 
 main_knc: $(MAIN_KNC)
 $(MAIN_KNC):
 	@mkdir -p $(SRCDIR_KNC)
-	@python $(SCRDIR_KNC)/xsmm_knc_genmain.py $(lastword $(INDICES_M)) $(lastword $(INDICES_K)) $(lastword $(INDICES_N)) > $@
+	@python $(SCRDIR_KNC)/xsmm_knc_genmain.py $(words $(INDICES_M)) $(words $(INDICES_N)) $(ROW_MAJOR) $(INDICES_M) $(INDICES_N) $(INDICES_K) > $@
 
 clean:
-	rm -rf $(SRCDIR_KNC) $(OBJDIR_KNC) $(DIR_KNC)/*~
+	rm -rf $(SRCDIR_KNC) $(OBJDIR_KNC) $(DIR_KNC)/*~ $(DIR_KNC)/*/*~
 
 realclean: clean
 	rm -rf $(LIBDIR_KNC) $(INC_KNC)

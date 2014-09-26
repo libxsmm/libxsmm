@@ -32,13 +32,19 @@
 import math
 import sys
 
-def createigemm(M,N,K):
-    iparts=int(math.floor(M/8))
-    fparts=M%8
-    if fparts==0:
-        mparts=iparts
+def createigemm(M,N,K,RowMajor):
+    if RowMajor==1:
+        Rows, Cols = N, M
+        l1, l2 = "b", "a"
     else:
-        mparts=iparts+1
+        Rows, Cols = M, N
+        l1, l2 = "a", "b"
+    iparts=int(math.floor(Rows/8))
+    fparts=Rows%8
+    if fparts==0:
+        mnparts=iparts
+    else:
+        mnparts=iparts+1
     print "#include <immintrin.h>"
     print "#include <xsmm_knc_util.h>"
     print " "
@@ -48,29 +54,31 @@ def createigemm(M,N,K):
     print "  int i;"
     for k in range(0,K):
         print "  __m512d xa"+str(k)+";"
-    for k in range(0,K):
         print "  __m512d xb"+str(k)+";"
     print "  __m512d xc0;"
 
-    for m in range(0,8*mparts,8):
-        mm=min(m+7,M-1)
-        maskval=(1<<(mm-m+1))-1
+    for mn in range(0,8*mnparts,8):
+        mnm=min(mn+7,Rows-1)
+        maskval=(1<<(mnm-mn+1))-1
         for k in range(0,K):
-            print "  xa"+str(k)+" = _MM512_MASK_LOADU_PD(&a["+str(M*k)+"+"+str(m)+"]," +str(maskval)+");"
-        print "  for(i=0;i<"+str(N)+";++i) {"
-        print "    xc0 = _MM512_MASK_LOADU_PD(&c[i*"+str(M)+"+"+str(m)+"]," +str(maskval)+");"
+            print "  x"+l1+str(k)+" = _MM512_MASK_LOADU_PD(&"+l1+"["+str(Rows*k)+"+"+str(mn)+"]," +str(maskval)+");"
+        print "  for(i=0;i<"+str(Cols)+";++i) {"
+        print "    xc0 = _MM512_MASK_LOADU_PD(&c[i*"+str(Rows)+"+"+str(mn)+"]," +str(maskval)+");"
         for k in range(0,K):
-            print "    xb"+str(k)+"=_mm512_set1_pd(b[i*"+str(K)+"+"+str(k)+"]);"
+            print "    x"+l2+str(k)+"=_mm512_set1_pd("+l2+"[i*"+str(K)+"+"+str(k)+"]);"
         for k in range(0,K):
             print "    xc0=_mm512_mask3_fmadd_pd(xa"+str(k)+",xb"+str(k)+",xc0," +str(maskval)+");"
-        print "    _MM512_MASK_STOREU_PD(&c[i*"+str(M)+"+"+str(m)+"],xc0," +str(maskval)+");"
+        print "    _MM512_MASK_STOREU_PD(&c[i*"+str(Rows)+"+"+str(mn)+"],xc0," +str(maskval)+");"
         print "  }"
     print "#else"
     print "  int m, n, k;"
     print "  for (m=0; m<"+str(M)+"; m++) {"
     print "    for (n=0; n<"+str(N)+"; n++) {"
     print "      for (k=0; k<"+str(K)+"; k++) {"
-    print "        c[n*"+str(M)+"+m]+=a[k*"+str(M)+"+m]*b[n*"+str(K)+"+k];"
+    if RowMajor==1:
+        print "        c[m*"+str(N)+"+n]+=a[m*"+str(K)+"+k]*b[k*"+str(N)+"+n];"
+    else:
+        print "        c[n*"+str(M)+"+m]+=a[k*"+str(M)+"+m]*b[n*"+str(K)+"+k];"
     print "      }"
     print "    }"
     print "  }"
@@ -79,4 +87,7 @@ def createigemm(M,N,K):
     print " "
 
 
-createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
+if (len(sys.argv)==5):
+    createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]))
+else:
+    createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]),0)

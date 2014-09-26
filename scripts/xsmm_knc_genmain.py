@@ -32,27 +32,33 @@
 import math
 import sys
 
-def create_symmetric_interface(M,K,N):
-    print "#include<xsmm_knc.h>"
+def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
+    print "#include <xsmm_knc.h>"
     print "#include <mkl.h>"
     print "#include <stdio.h>"
-    print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c){"
-    print "if((M<="+str(M)+")&&(K<="+str(N)+")&&(N<="+str(K)+")){"
-    print "   int v=((M-1)<<10)+((K-1)<<5)+(N-1);"
-    print "   switch(v){"
-    for m in range(1,M+1):
-        for n in range(1,N+1):
-           for k in range(1,K+1):
-                print "      case "+str(((m-1)<<10)+((n-1)<<5)+(k-1))+":"
-                print "            dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(a,b,c);"
-                print "            break;"  
-    print "      default:"
-    print "            printf(\"Can't find this matrix size\\n\");"
-    print "            break;"
-    print "   }"
-    print "} else{"
-    print "    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
-    print "}"
+    print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c) {"
+    print "  int v=((M-1)<<10)+((N-1)<<5)+(K-1);"
+    print "  switch(v) {"
+    for m in dimsM:
+        for n in dimsN:
+           for k in dimsK:
+                print "    case "+str(((m-1)<<10)+((n-1)<<5)+(k-1))+":"
+                print "         dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(a,b,c);"
+                print "         break;"  
+    print "    default:"
+    if RowMajor==1:
+        print "         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+    else:
+        print "         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+    print "  }"
     print "}"
 
-create_symmetric_interface(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
+def load_dims(dims):
+    dims=map(int, dims) ; dims.sort()
+    return list(set(dims))
+
+dimsM = load_dims(sys.argv[4:4+int(sys.argv[1])])
+dimsN = load_dims(sys.argv[4+int(sys.argv[1]):4+int(sys.argv[1])+int(sys.argv[2])])
+dimsK = load_dims(sys.argv[4+int(sys.argv[1])+int(sys.argv[2]):])
+
+create_symmetric_interface(dimsM,dimsN,dimsK,int(sys.argv[3]))

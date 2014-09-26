@@ -31,10 +31,8 @@
 ###############################################################################
 import sys
 
-if (len(sys.argv)==4):
-    m = int(sys.argv[1])
-    n = int(sys.argv[2])
-    k = int(sys.argv[3])
-    print "void dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(const double* a, const double* b, double* c);"
+if (len(sys.argv)>1):
+    for i in range(1,len(sys.argv)):
+        print "void dc_smm_dnn_"+sys.argv[i]+"(const double* a, const double* b, double* c);"
 else:
     print "void dc_smm_dnn(int M, int N, int K, const double* a, const double* b, double* c);"
