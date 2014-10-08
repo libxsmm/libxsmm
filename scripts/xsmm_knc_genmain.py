@@ -33,23 +33,45 @@ import math
 import sys
 
 def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
-    print "#include <xsmm_knc.h>"
+    print "#include \"xsmm_knc.h\""
+    print "#include <stdlib.h>"
     print "#include <mkl.h>"
-    print "#include <stdio.h>"
-    print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c) {"
-    print "  int v=((M-1)<<10)+((N-1)<<5)+(K-1);"
-    print "  switch(v) {"
+    print
+    print
+    print "int compareints(const void* a, const void* b)"
+    print "{"
+    print "  return *((const int*)a) - *((const int*)b);"
+    print "}"
+    print
+    print
+    print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c)"
+    print "{"
+    print "  static const int index_m[] = { "+str(dimsM).strip("[]")+" }, nm = sizeof(index_m) / sizeof(M);"
+    print "  static const int index_n[] = { "+str(dimsN).strip("[]")+" }, nn = sizeof(index_n) / sizeof(N);"
+    print "  static const int index_k[] = { "+str(dimsK).strip("[]")+" }, nk = sizeof(index_k) / sizeof(K);"
+    print "  static void (*ftable[])(const double*, const double*, double*) = {"
     for m in dimsM:
         for n in dimsN:
+           sys.stdout.write("    ")
            for k in dimsK:
-                print "    case "+str(((m-1)<<10)+((n-1)<<5)+(k-1))+":"
-                print "         dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+"(a,b,c);"
-                print "         break;"  
-    print "    default:"
-    if RowMajor==1:
-        print "         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+                sys.stdout.write("dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+", ")
+           print "// m = %d" % m
+    print "  };"
+    print
+    print "  int m, n, k;"
+    print "  if ((m = (int*)bsearch(&M, index_m, nm, sizeof(M), compareints) - index_m) < nm"
+    print "   && (n = (int*)bsearch(&N, index_n, nn, sizeof(N), compareints) - index_n) < nn"
+    print "   && (k = (int*)bsearch(&K, index_k, nk, sizeof(K), compareints) - index_k) < nk)"
+    print "  {"
+    print "    const int i = nk * (m * nn + n) + k;"
+    print "    void (*f)(const double*, const double*, double*) = ftable[i];"
+    print "    (*f)(a, b, c);"
+    print "  }"
+    print "  else {"
+    if 0 != RowMajor:
+        print "    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
     else:
-        print "         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+        print "    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
     print "  }"
     print "}"
 
