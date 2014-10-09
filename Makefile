@@ -53,13 +53,11 @@ $(MAIN_KNC): $(INC_KNC)
 
 header_knc: $(INC_KNC)
 $(INC_KNC):
-	@echo "#ifndef XSMM_KNC_H" > $@
-	@echo "#define XSMM_KNC_H" >> $@
-	@echo >> $@
+	@cat $(INCDIR_KNC)/xsmm_knc.begin > $@
 	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py >> $@
-	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py $(INDICES) >> $@
 	@echo >> $@
-	@echo "#endif // XSMM_KNC_H" >> $@
+	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py $(INDICES) >> $@
+	@cat $(INCDIR_KNC)/xsmm_knc.end >> $@
 
 clean:
 	rm -rf $(SRCDIR_KNC) $(OBJDIR_KNC) $(DIR_KNC)/*~ $(DIR_KNC)/*/*~
