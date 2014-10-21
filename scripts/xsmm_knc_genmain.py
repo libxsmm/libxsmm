@@ -64,13 +64,13 @@ def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print "       && (k = (int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints) - index_k) < nk)"
     print "    ? functions[nk*(m*nn+n)+k]"
     print "    : 0;"
-    print "  }"
     print "}"
     print
     print
     print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c)"
     print "{"
-    print "  if (const dc_smm_dnn_function_type function = dc_smm_dnn_function(M, N, K)) {"
+    print "  const dc_smm_dnn_function_type function = dc_smm_dnn_function(M, N, K);"
+    print "  if (function) {"
     print "    (*function)(a, b, c);"
     print "  }"
     print "  else {"
