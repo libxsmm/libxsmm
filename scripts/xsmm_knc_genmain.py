@@ -68,9 +68,9 @@ def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print "  };"
     print
     print "  int m, n, k;"
-    print "  return ((m = (int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints) - index_m) < nm"
-    print "       && (n = (int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints) - index_n) < nn"
-    print "       && (k = (int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints) - index_k) < nk)"
+    print "  return ((m = (int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints) - index_m) >= 0"
+    print "       && (n = (int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints) - index_n) >= 0"
+    print "       && (k = (int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints) - index_k) >= 0)"
     print "    ? functions[nk*(m*nn+n)+k]"
     print "    : 0;"
     print "}"
