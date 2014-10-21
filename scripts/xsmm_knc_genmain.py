@@ -35,7 +35,16 @@ import sys
 def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print "#include \"xsmm_knc.h\""
     print "#include <stdlib.h>"
+    print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
     print "#include <mkl.h>"
+    print "#else"
+    print "# if defined(__cplusplus)"
+    print "extern \"C\""
+    print "# endif"
+    print "void dgemm(const char*, const char*, const int*, const int*, const int*,"
+    print "  const double*, const double*, const int*, const double*, const int*,"
+    print "  const double*, double*, const int*);"
+    print "#endif"
     print
     print
     print "int compareints(const void* a, const void* b)"
@@ -74,10 +83,12 @@ def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print "    (*function)(a, b, c);"
     print "  }"
     print "  else {"
+    print "    double alpha = 1.0, beta = 1.0;"
+    print "    char trans = 'N';"
     if 0 != RowMajor:
-        print "    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+        print "    dgemm(&trans, &trans, &N, &M, &K, &alpha, b, &N, a, &K, &beta, c, &N);"
     else:
-        print "    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0, a, K, b, N, 1.0, c, N);"
+        print "    dgemm(&trans, &trans, &M, &N, &K, &alpha, a, &K, b, &N, &beta, c, &N);"
     print "  }"
     print "}"
 
