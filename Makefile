@@ -16,30 +16,49 @@ LIBDIR_KNC = $(DIR_KNC)/lib
 
 INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDICES_K),$m_$n_$k)))
 
-TARGET_COMPILE_C_KNC := icc -offload-attribute-target=mic -mkl=sequential -std=c99 -openmp
-AR := xiar -qoffload-build
+TARGET_COMPILE_C_KNC := icc -std=c99 -mkl=sequential -mmic
+TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -offload-attribute-target=mic
+AR := xiar
 
 SRCFILES_KNC = $(patsubst %,dc_small_dnn_%.c,$(INDICES))
-OBJFILES_KNC = $(patsubst %,$(OBJDIR_KNC)/dc_small_dnn_%.o,$(INDICES))
+OBJFILES_KNC = $(patsubst %,$(OBJDIR_KNC)/mic/dc_small_dnn_%.o,$(INDICES))
+OBJFILES_HST = $(patsubst %,$(OBJDIR_KNC)/intel64/dc_small_dnn_%.o,$(INDICES))
 
-LIB_KNC  ?= $(LIBDIR_KNC)/libxsmm.a
+LIB_KNC  ?= $(LIBDIR_KNC)/mic/libxsmm.a
+LIB_HST  ?= $(LIBDIR_KNC)/intel64/libxsmm.a
 INC_KNC   = $(INCDIR_KNC)/xsmm_knc.h
 MAIN_KNC  = $(SRCDIR_KNC)/xsmm_knc.c
 
 
+lib_all: lib_knc lib_hst
+
 lib_knc: $(LIB_KNC)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_KNC): $(OBJFILES_KNC) $(patsubst $(SRCDIR_KNC)/%.c,$(OBJDIR_KNC)/%.o,$(MAIN_KNC))
+$(LIB_KNC): $(OBJFILES_KNC) $(patsubst $(SRCDIR_KNC)/%.c,$(OBJDIR_KNC)/mic/%.o,$(MAIN_KNC))
 else
 $(LIB_KNC): $(OBJFILES_KNC)
 endif
-	@mkdir -p $(LIBDIR_KNC)
+	@mkdir -p $(LIBDIR_KNC)/mic
+	$(AR) -rs $@ $^
+
+lib_hst: $(LIB_HST)
+ifeq ($(origin NO_MAIN), undefined)
+$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR_KNC)/%.c,$(OBJDIR_KNC)/intel64/%.o,$(MAIN_KNC))
+else
+$(LIB_HST): $(OBJFILES_HST)
+endif
+	@mkdir -p $(LIBDIR_KNC)/intel64
 	$(AR) -rs $@ $^
 
 compile_knc: $(OBJFILES_KNC)
-$(OBJDIR_KNC)/%.o: $(SRCDIR_KNC)/%.c
-	@mkdir -p $(OBJDIR_KNC)
+$(OBJDIR_KNC)/mic/%.o: $(SRCDIR_KNC)/%.c
+	@mkdir -p $(OBJDIR_KNC)/mic
 	$(TARGET_COMPILE_C_KNC) -I$(INCDIR_KNC) -c $< -o $@
+
+compile_hst: $(OBJFILES_HST)
+$(OBJDIR_KNC)/intel64/%.o: $(SRCDIR_KNC)/%.c
+	@mkdir -p $(OBJDIR_KNC)/intel64
+	$(TARGET_COMPILE_C_HST) -I$(INCDIR_KNC) -c $< -o $@
 
 source_knc: $(addprefix $(SRCDIR_KNC)/,$(SRCFILES_KNC))
 $(SRCDIR_KNC)/%.c:
