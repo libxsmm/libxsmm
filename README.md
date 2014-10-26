@@ -2,7 +2,9 @@ libxsmm
 =======
 Library for small matrix-matrix multiplications targeting Intel Architecture (x86). This initial version of the library is targeting the Intel Xeon Phi coprocessor (an instance of the Intel Many Integrated Core Architecture "MIC") particularly using KNC intrinsic functions.
 
-The code can be compiled to native code which is also usable in an offloaded code section (via a FORTRAN directive or a C/C++ pragma). The prerequisite for offloading the code is to compile it to position-independent code (PIC) even when building a static library.
+The code can be compiled to native code which is also usable in an offloaded code section (via a FORTRAN directive or a C/C++ pragma). The prerequisite for offloading the code is to compile it to position-independent (PIC) code even when building a static library.
+
+Performance: the presented code is by no means "optimal" or "best-performing"; it just uses Intrinsic functions. In fact, a well-optimizing compiler may produce better performing code.
 
 INSTRUCTIONS
 ============
@@ -18,7 +20,7 @@ or to remove generated files and the built library use:
 ```
 make realclean
 ```
-The interface to the library is (see include/xsmm_knc.h):
+The interface (see include/xsmm_knc.h) to the library is:
 ```
 dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K);
 void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c)
