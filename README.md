@@ -1,4 +1,4 @@
-libxsmm
+LIBXSMM
 =======
 Library for small matrix-matrix multiplications targeting Intel Architecture (x86). This initial version of the library is targeting the Intel Xeon Phi coprocessor (an instance of the Intel Many Integrated Core Architecture "MIC") particularly using KNC intrinsic functions.
 
@@ -6,7 +6,7 @@ The code can be compiled to native code which is also usable in an offloaded cod
 
 Performance: the presented code is by no means "optimal" or "best-performing"; it just uses Intrinsic functions. In fact, a well-optimizing compiler may produce better performing code.
 
-INSTRUCTIONS
+Instructions
 ============
 To compile the library just use:
 ```
