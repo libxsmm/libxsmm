@@ -88,6 +88,7 @@ endif
 	@echo >> $@
 	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py $(INDICES) >> $@
 	@echo >> $@
+	@echo >> $@
 	@cat $(INCDIR_KNC)/xsmm_knc.end >> $@
 
 clean:

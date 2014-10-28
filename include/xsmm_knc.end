@@ -1,1 +1,5 @@
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif // XSMM_KNC_H

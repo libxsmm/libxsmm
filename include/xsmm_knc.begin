@@ -31,3 +31,7 @@
 ******************************************************************************/
 #ifndef XSMM_KNC_H
 #define XSMM_KNC_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
