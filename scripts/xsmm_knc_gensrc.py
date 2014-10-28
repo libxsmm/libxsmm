@@ -57,19 +57,17 @@ def createigemm(M, N, K, RowMajor):
         print "  {"
         mnm = min(mn + 7, Rows - 1)
         maskval = (1 << (mnm - mn + 1)) - 1
+        print "    const __m512d x" + l1 + "[] = {"
         for k in range(0, K):
-            print "    const __m512d x" + l1 + str(k) + " = _MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows*k) + " + " + str(mn) + ", " + str(maskval) + ");"
+            print "      _MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + ", " + str(maskval) + "),"
+        print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        sys.stdout.write("      __m512d x" + l2 + "0")
-        for k in range(1, K):
-            sys.stdout.write(", x" + l2 + str(k))
-        print ";"
-        print "      __m512d xc0 = _MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
+        print "      __m512d x" + l2 + "[" + str(K) + "], xc = _MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
         for k in range(0, K):
-            print "      x" + l2 + str(k) + " = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
-            print "      xc0 = _mm512_mask3_fmadd_pd(xa" + str(k) + ", xb" + str(k) + ", xc0, " + str(maskval) + ");"
-        print "      _MM512_MASK_STOREU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", xc0, " + str(maskval) + ");"
+            print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
+            print "      xc = _mm512_mask3_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc, " + str(maskval) + ");"
+        print "      _MM512_MASK_STOREU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", xc, " + str(maskval) + ");"
         print "    }"
         print "  }"
     print "#else"
