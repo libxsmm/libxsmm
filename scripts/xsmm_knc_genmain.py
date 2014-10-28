@@ -32,7 +32,8 @@
 import math
 import sys
 
-def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
+
+def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
     print "#include \"xsmm_knc.h\""
     print "#include <stdlib.h>"
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
@@ -55,15 +56,15 @@ def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print
     print "dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K)"
     print "{"
-    print "  static const int index_m[] = { "+str(dimsM).strip("[]")+" }, nm = sizeof(index_m) / sizeof(*index_m);"
-    print "  static const int index_n[] = { "+str(dimsN).strip("[]")+" }, nn = sizeof(index_n) / sizeof(*index_n);"
-    print "  static const int index_k[] = { "+str(dimsK).strip("[]")+" }, nk = sizeof(index_k) / sizeof(*index_k);"
+    print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
+    print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
+    print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
     print "  static const dc_smm_dnn_function_type functions[] = {"
     for m in dimsM:
         for n in dimsN:
            sys.stdout.write("    ")
            for k in dimsK:
-                sys.stdout.write("dc_smm_dnn_"+str(m)+"_"+str(n)+"_"+str(k)+", ")
+                sys.stdout.write("dc_smm_dnn_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
            print "// m = %d" % m
     print "  };"
     print
@@ -93,11 +94,11 @@ def create_symmetric_interface(dimsM,dimsN,dimsK,RowMajor):
     print "}"
 
 def load_dims(dims):
-    dims=map(int, dims) ; dims.sort()
+    dims = map(int, dims) ; dims.sort()
     return list(set(dims))
 
 dimsM = load_dims(sys.argv[4:4+int(sys.argv[1])])
 dimsN = load_dims(sys.argv[4+int(sys.argv[1]):4+int(sys.argv[1])+int(sys.argv[2])])
 dimsK = load_dims(sys.argv[4+int(sys.argv[1])+int(sys.argv[2]):])
 
-create_symmetric_interface(dimsM,dimsN,dimsK,int(sys.argv[3]))
+create_symmetric_interface(dimsM, dimsN, dimsK, int(sys.argv[3]))
