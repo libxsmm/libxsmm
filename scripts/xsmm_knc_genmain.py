@@ -36,8 +36,9 @@ import sys
 def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
     print "#include \"xsmm_knc.h\""
     print "#include <stdlib.h>"
+    print
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
-    print "#include <mkl.h>"
+    print "# include <mkl.h>"
     print "#else"
     print "# if defined(__cplusplus)"
     print "extern \"C\""
@@ -45,6 +46,10 @@ def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
     print "void dgemm(const char*, const char*, const int*, const int*, const int*,"
     print "  const double*, const double*, const int*, const double*, const int*,"
     print "  const double*, double*, const int*);"
+    print "#endif"
+    print
+    print "#ifdef __cplusplus"
+    print "extern \"C\" {"
     print "#endif"
     print
     print
@@ -92,6 +97,11 @@ def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
         print "    dgemm(&trans, &trans, &M, &N, &K, &alpha, a, &K, b, &N, &beta, c, &N);"
     print "  }"
     print "}"
+    print
+    print
+    print "#ifdef __cplusplus"
+    print "} // extern \"C\""
+    print "#endif"
 
 def load_dims(dims):
     dims = map(int, dims) ; dims.sort()

@@ -49,8 +49,13 @@ def createigemm(M, N, K, RowMajor):
     print "#include <immintrin.h>"
     print "#include <xsmm_knc_util.h>"
     print
+    print "#ifdef __cplusplus"
+    print "extern \"C\" {"
+    print "#endif"
     print
-    print "void dc_smm_dnn_" + str(M) + "_" + str(N) + "_" + str(K) + "(const double* a, const double* b, double* c) {"
+    print
+    print "void dc_smm_dnn_" + str(M) + "_" + str(N) + "_" + str(K) + "(const double* a, const double* b, double* c)"
+    print "{"
     print "#if defined(__MIC__)"
     print "  int i;"
     for mn in range(0, 8 * mnparts, 8):
@@ -85,6 +90,10 @@ def createigemm(M, N, K, RowMajor):
     print "#endif"
     print "}"
     print
+    print
+    print "#ifdef __cplusplus"
+    print "} // extern \"C\""
+    print "#endif"
 
 
 if (len(sys.argv) == 5):
