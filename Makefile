@@ -16,8 +16,8 @@ LIBDIR_KNC = $(DIR_KNC)/lib
 
 INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDICES_K),$m_$n_$k)))
 
-TARGET_COMPILE_C_KNC := icc -std=c99 -mkl=sequential -mmic
-TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -offload-attribute-target=mic
+TARGET_COMPILE_C_KNC := icc -std=c99 -mkl=sequential -fPIC -mmic
+TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -fPIC -offload-attribute-target=mic
 AR := xiar
 
 SRCFILES_KNC = $(patsubst %,dc_small_dnn_%.c,$(INDICES))
@@ -73,9 +73,21 @@ $(MAIN_KNC): $(INC_KNC)
 header_knc: $(INC_KNC)
 $(INC_KNC):
 	@cat $(INCDIR_KNC)/xsmm_knc.begin > $@
+	@echo >> $@
+ifeq (0,$(ROW_MAJOR))
+	@echo "#define LIBXSMM_ROW_MAJOR 0" >> $@
+	@echo "#define LIBXSMM_COL_MAJOR 1" >> $@
+else
+	@echo "#define LIBXSMM_ROW_MAJOR 1" >> $@
+	@echo "#define LIBXSMM_COL_MAJOR 0" >> $@
+endif
+	@echo >> $@
+	@echo >> $@
+	@cat $(INCDIR_KNC)/xsmm_knc.next >> $@
 	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py >> $@
 	@echo >> $@
 	@python $(SCRDIR_KNC)/xsmm_knc_geninc.py $(INDICES) >> $@
+	@echo >> $@
 	@cat $(INCDIR_KNC)/xsmm_knc.end >> $@
 
 clean:

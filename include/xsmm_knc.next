@@ -1,0 +1,14 @@
+/** Type of a function generated for a specific M, N, and K. */
+typedef void (*dc_smm_dnn_function_type)(const double*, const double*, double*);
+
+/**
+ * Returns the pointer of the generated function; zero if it does not exist.
+ * Allows to amortize the cost of the dispatch over multiple calls.
+ */
+dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K);
+
+/**
+ * Executes a generated function or falls back to the linked LAPACK implementation.
+ * If M, N, and K does not change for multiple calls, it is more efficient to query
+ * and reuse the function pointer (dc_smm_dnn_function).
+ */
