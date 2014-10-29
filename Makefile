@@ -96,3 +96,5 @@ clean:
 
 realclean: clean
 	rm -rf $(LIBDIR_KNC) $(INC_KNC)
+
+install: lib_all clean
