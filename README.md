@@ -41,8 +41,8 @@ The interface of the library (include/xsmm_knc.h) defines the preprocessor symbo
 To perform the matrix-matrix multiplication C(M,N) = C(M,N) + A(M,K) \* B(K,N), one of the following two interfaces can be used:
 
 ```C
-dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K); // if non-zero call (*function)(M, N, K)
-void xsmm_dnn(int M, int N, int K, const double* A, const double* B, double* C); // automatic dispatch
+libxsmm_dmm_function libxsmm_dmm_dispatch(int M, int N, int K); // if non-zero call (*function)(M, N, K)
+void dc_smm_dnn(int M, int N, int K, const double* A, const double* B, double* C); // automatic dispatch
 ```
 
 The values of the matrix sizes (M, N, and K values) can be set by changing the variables inside the Makefile file or by running for example:
@@ -60,12 +60,12 @@ which generates the following (M,N,K) values:
 
 More Details
 ============
-The function *dc_smm_dnn_function* helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. The symbol *xsmm_dnn* is actually a macro that allows to inline the dispatch logic; use *LIBXSMM_DMM* in new code rather than *xsmm_dnn*. The code dispatch uses three levels:
+The function *dc_smm_dnn_function* helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. The symbol *dc_smm_dnn* is actually a macro that allows to inline the dispatch logic; use *LIBXSMM_MM(double, ...)* in new code rather than *dc_smm_dnn(...)*. The code dispatch uses three levels:
 
 1. Specialized routine,
 2. Inlined code, and
 3. BLAS library call.
 
-The level 2 and 3 may be supplied by the Intel MKL DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., *xsmm_dnn_4_4_4*.
+The level 2 and 3 may be supplied by the Intel MKL DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., *libxsmm_dmm_4_4_4*.
 
-Further, the preprocessor symbols *LIBXSMM_MAX_M*, *LIBXSMM_MAX_N*, and *LIBXSMM_MAX_K* are defined each as the largest value of the corresponding parameter sets *INDICES_M*, *INDICES_N*, or *INDICES_K*. The product of the thee values (problem size) determines if the multiplication belongs to level (1) and (2), or if it falls back to level (3) calling the BLAS library linked with LIBXSMM.
+Further, the preprocessor symbol *LIBXSMM_MAX_MNK* is defined to be the largest problem size defined by the parameter sets *INDICES_M*, *INDICES_N*, or *INDICES_K*. This threshold determines if the matrix-matrix multiplication belongs to level (1) and (2), or if it falls back to level (3) calling the BLAS library linked with LIBXSMM.

@@ -55,8 +55,8 @@ void sgemm(const char*, const char*, const int*, const int*, const int*,
 # define LIBXSMM_PRAGMA(DIRECTIVE)
 #endif
 
-#define LIBXSMM_BLAS(REAL,  FUNCTION) LIBXSMM_BLAS_##REAL(FUNCTION)
-#define LIBXSMM_BLAS_double(FUNCTION) d##FUNCTION
-#define LIBXSMM_BLAS_float (FUNCTION) s##FUNCTION
+#define LIBXSMM_BLASPREC(PREFIX, REAL,  FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
+#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
+#define LIBXSMM_BLASPREC_float (PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
 /** Parameters the library was built for. */

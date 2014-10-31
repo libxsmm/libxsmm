@@ -33,19 +33,17 @@ import math
 import sys
 
 
-def create_macros(RowMajor, maxM, maxN, maxK):
-    print "#define LIBXSMM_MAX_M " + str(maxM)
-    print "#define LIBXSMM_MAX_N " + str(maxN)
-    print "#define LIBXSMM_MAX_K " + str(maxK)
+def create_macros(RowMajor, maxMNK):
+    print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
     if (0 != RowMajor):
         print "#define LIBXSMM_ROW_MAJOR 1"
         print "#define LIBXSMM_COL_MAJOR 0"
         print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
         print "  REAL alpha = 1, beta = 1; \\"
-        print "  UINT m = M, n = N, k = K; \\"
+        print "  UINT m = (M), n = (N), k = (K); \\"
         print "  char trans = 'N'; \\"
-        print "  LIBXSMM_BLAS(REAL, gemm)(&trans, &trans, &n, &m, &k, &alpha, B, &n, A, &k, &beta, C, &n); \\"
+        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&trans, &trans, &n, &m, &k, &alpha, (B), &n, (A), &k, &beta, (C), &n); \\"
         print "}"
     else:
         print "#define LIBXSMM_ROW_MAJOR 0"
@@ -53,9 +51,9 @@ def create_macros(RowMajor, maxM, maxN, maxK):
         print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
         print "  REAL alpha = 1, beta = 1; \\"
-        print "  UINT m = M, n = N, k = K; \\"
+        print "  UINT m = (M), n = (N), k = (K); \\"
         print "  char trans = 'N'; \\"
-        print "  LIBXSMM_BLAS(REAL, gemm)(&trans, &trans, &m, &n, &k, &alpha, A, &k, B, &n, &beta, C, &n); \\"
+        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&trans, &trans, &m, &n, &k, &alpha, (A), &k, (B), &n, &beta, (C), &n); \\"
         print "}"
     print
     print "#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)"
@@ -63,35 +61,37 @@ def create_macros(RowMajor, maxM, maxN, maxK):
     print "#else"
     if (0 != RowMajor):
         print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(C)) \\"
+        print "    REAL *const c = (C); \\"
+        print "    LIBXSMM_PRAGMA(vector nontemporal(c)) \\"
         print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
         print "    for (UINT j = 0; j < N; ++j) { \\"
-        print "      for (UINT i = 0; i < M; ++i) { \\"
-        print "        const UINT index = i * N + j; \\"
-        print "        REAL r = C[index]; \\"
+        print "      for (UINT i = 0; i < (M); ++i) { \\"
+        print "        const UINT index = i * (N) + j; \\"
+        print "        REAL r = c[index]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:r)) \\"
-        print "        for (UINT k = 0; k < K; ++k) { \\"
-        print "          r += A[i*K+k] * B[k*N+j]; \\"
+        print "        for (UINT k = 0; k < (K); ++k) { \\"
+        print "          r += (A)[i*K+k] * (B)[k*N+j]; \\"
         print "        } \\"
-        print "        C[index] = r; \\"
+        print "        c[index] = r; \\"
         print "      } \\"
         print "    } \\"
         print "  }"
     else:
         print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(C)) \\"
+        print "    REAL *const c = (C); \\"
+        print "    LIBXSMM_PRAGMA(vector nontemporal(c)) \\"
         print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
-        print "    for (UINT j = 0; j < M; ++j) { \\"
-        print "      for (UINT i = 0; i < N; ++i) { \\"
-        print "        const UINT index = i * M + j; \\"
-        print "        REAL r = C[index]; \\"
+        print "    for (UINT j = 0; j < (M); ++j) { \\"
+        print "      for (UINT i = 0; i < (N); ++i) { \\"
+        print "        const UINT index = i * (M) + j; \\"
+        print "        REAL r = c[index]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:r)) \\"
-        print "        for (UINT k = 0; k < K; ++k) { \\"
-        print "          r += A[k*M+j] * B[i*K+k]; \\"
+        print "        for (UINT k = 0; k < (K); ++k) { \\"
+        print "          r += (A)[k*M+j] * (B)[i*K+k]; \\"
         print "        } \\"
-        print "        C[index] = r; \\"
+        print "        c[index] = r; \\"
         print "      } \\"
         print "    } \\"
         print "  }"
@@ -118,7 +118,7 @@ def create_xsmm(RowMajor, M, N, K):
     print "#endif"
     print
     print
-    print "void dc_smm_dnn_" + str(M) + "_" + str(N) + "_" + str(K) + "(const double* a, const double* b, double* c)"
+    print "void libxsmm_dmm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const double* a, const double* b, double* c)"
     print "{"
     print "#if defined(__MIC__)"
     print "  int i;"
@@ -164,7 +164,12 @@ if (6 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
         dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])
         dimsK = load_dims(sys.argv[5+int(sys.argv[3])+int(sys.argv[4]):])
-        create_macros(RowMajor, max(dimsM), max(dimsN), max(dimsK))
+        maxMNK = 24 * 24 * 24
+        for m in dimsM:
+            for n in dimsN:
+                for k in dimsK:
+                    maxMNK = max(maxMNK, m * n * k)
+        create_macros(RowMajor, maxMNK)
     else:
         sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
 else:

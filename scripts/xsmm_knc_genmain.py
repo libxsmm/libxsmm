@@ -48,22 +48,23 @@ def create_dispatch(dimsM, dimsN, dimsK):
     print "}"
     print
     print
-    print "dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K)"
+    print "libxsmm_dmm_function libxsmm_dmm_dispatch(int M, int N, int K)"
     print "{"
     print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
     print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
     print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
-    print "  static const dc_smm_dnn_function_type functions[] = {"
+    print "  static const libxsmm_dmm_function functions[] = {"
     for m in dimsM:
         for n in dimsN:
            sys.stdout.write("    ")
            for k in dimsK:
-                sys.stdout.write("dc_smm_dnn_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
+                sys.stdout.write("libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
            print "// m = %d" % m
     print "  };"
     print
     print "  int m, n, k;"
-    print "  return ((m = (int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints) - index_m) >= 0"
+    print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
+    print "       && (m = (int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints) - index_m) >= 0"
     print "       && (n = (int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints) - index_n) >= 0"
     print "       && (k = (int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints) - index_k) >= 0)"
     print "    ? functions[nk*(m*nn+n)+k]"
