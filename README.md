@@ -68,4 +68,4 @@ The function *dc_smm_dnn_function* helps to amortize the cost of the dispatch wh
 
 The level 2 and 3 may be supplied by the Intel MKL DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., *xsmm_dnn_4_4_4*.
 
-Further, the preprocessor symbols *LIBXSMM_MAX_M*, *LIBXSMM_MAX_N*, and *LIBXSMM_MAX_K* are defined each as the largest value of the corresponding parameter sets *INDICES_M*, *INDICES_N*, or *INDICES_K* (set at build time). The product of the thee values (problem size) determines if the multiplication belongs to level (1) and (2), or if it falls back to level (3) calling the BLAS library linked with LIBXSMM.
+Further, the preprocessor symbols *LIBXSMM_MAX_M*, *LIBXSMM_MAX_N*, and *LIBXSMM_MAX_K* are defined each as the largest value of the corresponding parameter sets *INDICES_M*, *INDICES_N*, or *INDICES_K*. The product of the thee values (problem size) determines if the multiplication belongs to level (1) and (2), or if it falls back to level (3) calling the BLAS library linked with LIBXSMM.
