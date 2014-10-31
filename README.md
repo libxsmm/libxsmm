@@ -36,14 +36,14 @@ The library can be configured to accept row-major (default) or column-major orde
 make ROW_MAJOR=0
 ```
 
-The interface (see include/xsmm_knc.h) of the library is mainly given by two functions:
+The interface of the library (include/xsmm_knc.h) defines the preprocessor symbols *LIBXSMM_ROW_MAJOR* and *LIBXSMM_COL_MAJOR* to mark the storage order the library was built for.
+
+To perform the matrix-matrix multiplication C(M,N) = C(M,N) + A(M,K) \* B(K,N), one of the following two interfaces can be used:
 
 ```C
-dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K);
-void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c);
+dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K); // if non-zero call (*function)(M, N, K)
+void xsmm_dnn(int M, int N, int K, const double* A, const double* B, double* C); // automatic dispatch
 ```
-
-where C(M,N) = C(M,N) + A(M,K) \* B(K,N). Beside of the generic interface, one can call a specific kernel as well e.g., *xsmm_dnn_4_4_4*. The function *dc_smm_dnn_function* helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. Further, the header file defines preprocessor symbols to mark the storage order the library was built for (*LIBXSMM_ROW_MAJOR* and *LIBXSMM_COL_MAJOR*).
 
 The values of the matrix sizes (M, N, and K values) can be set by changing the variables inside the Makefile file or by running for example:
 
@@ -58,4 +58,14 @@ which generates the following (M,N,K) values:
 (4,1,2), (4,1,3), (4,1,4), (4,1,5)
 ```
 
-The fallback of the library is DGEMM if it is called for values other than specified by *INDICES_M*, *INDICES_N*, or *INDICES_K*.
+More Details
+============
+The function *dc_smm_dnn_function* helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. The symbol *xsmm_dnn* is actually a macro that allows to inline the dispatch logic; use *LIBXSMM_DMM* in new code rather than *xsmm_dnn*. The code dispatch uses three levels:
+
+1. Specialized routine,
+2. Inlined code, and
+3. BLAS library call.
+
+The level 2 and 3 may be supplied by the Intel MKL DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., *xsmm_dnn_4_4_4*.
+
+Further, the preprocessor symbols *LIBXSMM_MAX_M*, *LIBXSMM_MAX_N*, and *LIBXSMM_MAX_K* are defined each as the largest value of the corresponding parameter sets *INDICES_M*, *INDICES_N*, or *INDICES_K* (set at build time). The product of the thee values (problem size) determines if the multiplication belongs to level (1) and (2), or if it falls back to level (3) calling the BLAS library linked with LIBXSMM.
