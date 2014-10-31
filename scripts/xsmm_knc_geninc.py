@@ -31,8 +31,19 @@
 ###############################################################################
 import sys
 
-if (len(sys.argv)>1):
-    for i in range(1,len(sys.argv)):
-        print "void dc_smm_dnn_"+sys.argv[i]+"(const double* a, const double* b, double* c);"
+
+def load_dims(dims):
+    dims = map(int, dims) ; dims.sort()
+    return list(set(dims))
+
+
+if (7 <= len(sys.argv)):
+    dimsM = load_dims(sys.argv[4:4+int(sys.argv[2])])
+    dimsN = load_dims(sys.argv[4+int(sys.argv[2]):4+int(sys.argv[2])+int(sys.argv[3])])
+    dimsK = load_dims(sys.argv[4+int(sys.argv[2])+int(sys.argv[3]):])
+    for m in dimsM:
+        for n in dimsN:
+           for k in dimsK:
+               print "void dc_smm_dnn_" + str(m) + "_" + str(n) + "_" + str(k) + "(const double* a, const double* b, double* c);"
 else:
-    print "void dc_smm_dnn(int M, int N, int K, const double* a, const double* b, double* c);"
+    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")

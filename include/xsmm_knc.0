@@ -32,6 +32,31 @@
 #ifndef XSMM_KNC_H
 #define XSMM_KNC_H
 
-#ifdef __cplusplus
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+# ifdef __cplusplus
 extern "C" {
+# endif
+#else
+# ifdef __cplusplus
+extern "C" {
+# endif
+void dgemm(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+void sgemm(const char*, const char*, const int*, const int*, const int*,
+  const float*, const float*, const int*, const float*, const int*,
+  const float*, float*, const int*);
 #endif
+
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+#else
+# define LIBXSMM_PRAGMA(DIRECTIVE)
+#endif
+
+#define LIBXSMM_BLAS(REAL,  FUNCTION) LIBXSMM_BLAS_##REAL(FUNCTION)
+#define LIBXSMM_BLAS_double(FUNCTION) d##FUNCTION
+#define LIBXSMM_BLAS_float (FUNCTION) s##FUNCTION
+
+/** Parameters the library was built for. */

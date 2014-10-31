@@ -33,20 +33,9 @@ import math
 import sys
 
 
-def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
+def create_dispatch(dimsM, dimsN, dimsK):
     print "#include \"xsmm_knc.h\""
     print "#include <stdlib.h>"
-    print
-    print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
-    print "# include <mkl.h>"
-    print "#else"
-    print "# if defined(__cplusplus)"
-    print "extern \"C\""
-    print "# endif"
-    print "void dgemm(const char*, const char*, const int*, const int*, const int*,"
-    print "  const double*, const double*, const int*, const double*, const int*,"
-    print "  const double*, double*, const int*);"
-    print "#endif"
     print
     print "#ifdef __cplusplus"
     print "extern \"C\" {"
@@ -82,33 +71,20 @@ def create_symmetric_interface(dimsM, dimsN, dimsK, RowMajor):
     print "}"
     print
     print
-    print "void xsmm_dnn(int M, int N, int K, const double* a, const double* b, double* c)"
-    print "{"
-    print "  const dc_smm_dnn_function_type function = dc_smm_dnn_function(M, N, K);"
-    print "  if (function) {"
-    print "    (*function)(a, b, c);"
-    print "  }"
-    print "  else {"
-    print "    double alpha = 1.0, beta = 1.0;"
-    print "    char trans = 'N';"
-    if 0 != RowMajor:
-        print "    dgemm(&trans, &trans, &N, &M, &K, &alpha, b, &N, a, &K, &beta, c, &N);"
-    else:
-        print "    dgemm(&trans, &trans, &M, &N, &K, &alpha, a, &K, b, &N, &beta, c, &N);"
-    print "  }"
-    print "}"
-    print
-    print
     print "#ifdef __cplusplus"
     print "} // extern \"C\""
     print "#endif"
+
 
 def load_dims(dims):
     dims = map(int, dims) ; dims.sort()
     return list(set(dims))
 
-dimsM = load_dims(sys.argv[4:4+int(sys.argv[1])])
-dimsN = load_dims(sys.argv[4+int(sys.argv[1]):4+int(sys.argv[1])+int(sys.argv[2])])
-dimsK = load_dims(sys.argv[4+int(sys.argv[1])+int(sys.argv[2]):])
 
-create_symmetric_interface(dimsM, dimsN, dimsK, int(sys.argv[3]))
+if (6 <= len(sys.argv)):
+    dimsM = load_dims(sys.argv[3:3+int(sys.argv[1])])
+    dimsN = load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])])
+    dimsK = load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):])
+    create_dispatch(dimsM, dimsN, dimsK)
+else:
+    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
