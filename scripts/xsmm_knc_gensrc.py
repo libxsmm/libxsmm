@@ -45,7 +45,7 @@ def create_macros(RowMajor, maxMNK):
         print "  char libxsmm_trans_ = 'N'; \\"
         print "  LIBXSMM_BLASPREC(, REAL, gemm)(&libxsmm_trans_, &libxsmm_trans_, \\"
         print "    &libxsmm_n_, &libxsmm_m_, &libxsmm_k_, \\"
-        print "    &libxsmm_alpha_, (B), &libxsmm_n_, (A), &libxsmm_k_, \\"
+        print "    &libxsmm_alpha_, (REAL*)(B), &libxsmm_n_, (REAL*)(A), &libxsmm_k_, \\"
         print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
         print "}"
     else:
@@ -58,7 +58,7 @@ def create_macros(RowMajor, maxMNK):
         print "  char libxsmm_trans_ = 'N'; \\"
         print "  LIBXSMM_BLASPREC(, REAL, gemm)(&libxsmm_trans_, &libxsmm_trans_, \\"
         print "    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, \\"
-        print "    &libxsmm_alpha_, (A), &libxsmm_k_, (B), &libxsmm_n_, \\"
+        print "    &libxsmm_alpha_, (REAL*)(A), &libxsmm_k_, (REAL*)(B), &libxsmm_n_, \\"
         print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
         print "}"
     print
