@@ -40,58 +40,64 @@ def create_macros(RowMajor, maxMNK):
         print "#define LIBXSMM_COL_MAJOR 0"
         print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "  REAL alpha = 1, beta = 1; \\"
-        print "  UINT m = (M), n = (N), k = (K); \\"
-        print "  char trans = 'N'; \\"
-        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&trans, &trans, &n, &m, &k, &alpha, (B), &n, (A), &k, &beta, (C), &n); \\"
+        print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
+        print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
+        print "  char libxsmm_trans_ = 'N'; \\"
+        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&libxsmm_trans_, &libxsmm_trans_, \\"
+        print "    &libxsmm_n_, &libxsmm_m_, &libxsmm_k_, \\"
+        print "    &libxsmm_alpha_, (B), &libxsmm_n_, (A), &libxsmm_k_, \\"
+        print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
         print "}"
     else:
         print "#define LIBXSMM_ROW_MAJOR 0"
         print "#define LIBXSMM_COL_MAJOR 1"
         print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "  REAL alpha = 1, beta = 1; \\"
-        print "  UINT m = (M), n = (N), k = (K); \\"
-        print "  char trans = 'N'; \\"
-        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&trans, &trans, &m, &n, &k, &alpha, (A), &k, (B), &n, &beta, (C), &n); \\"
+        print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
+        print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
+        print "  char libxsmm_trans_ = 'N'; \\"
+        print "  LIBXSMM_BLASPREC(, REAL, gemm)(&libxsmm_trans_, &libxsmm_trans_, \\"
+        print "    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, \\"
+        print "    &libxsmm_alpha_, (A), &libxsmm_k_, (B), &libxsmm_n_, \\"
+        print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
         print "}"
     print
-    print "#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)"
+    print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
     print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)"
     print "#else"
     if (0 != RowMajor):
         print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    REAL *const c = (C); \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(c)) \\"
+        print "    REAL *const libxsmm_c_ = (C); \\"
+        print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
         print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
-        print "    for (UINT j = 0; j < N; ++j) { \\"
-        print "      for (UINT i = 0; i < (M); ++i) { \\"
-        print "        const UINT index = i * (N) + j; \\"
-        print "        REAL r = c[index]; \\"
+        print "    for (UINT libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
+        print "      for (UINT libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
+        print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
+        print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
-        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:r)) \\"
-        print "        for (UINT k = 0; k < (K); ++k) { \\"
-        print "          r += (A)[i*K+k] * (B)[k*N+j]; \\"
+        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
+        print "        for (UINT libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
+        print "          libxsmm_r_ += (A)[libxsmm_i_*K+libxsmm_k_] * (B)[libxsmm_k_*N+libxsmm_j_]; \\"
         print "        } \\"
-        print "        c[index] = r; \\"
+        print "        libxsmm_c_[libxsmm_index_] = libxsmm_r_; \\"
         print "      } \\"
         print "    } \\"
         print "  }"
     else:
         print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    REAL *const c = (C); \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(c)) \\"
+        print "    REAL *const libxsmm_c_ = (C); \\"
+        print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
         print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
-        print "    for (UINT j = 0; j < (M); ++j) { \\"
-        print "      for (UINT i = 0; i < (N); ++i) { \\"
-        print "        const UINT index = i * (M) + j; \\"
-        print "        REAL r = c[index]; \\"
+        print "    for (UINT libxsmm_j_ = 0; libxsmm_j_ < (M); ++libxsmm_j_) { \\"
+        print "      for (UINT libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
+        print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
+        print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
-        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:r)) \\"
-        print "        for (UINT k = 0; k < (K); ++k) { \\"
-        print "          r += (A)[k*M+j] * (B)[i*K+k]; \\"
+        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
+        print "        for (UINT libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
+        print "          libxsmm_r_ += (A)[libxsmm_k_*M+libxsmm_j_] * (B)[libxsmm_i_*K+libxsmm_k_]; \\"
         print "        } \\"
-        print "        c[index] = r; \\"
+        print "        libxsmm_c_[libxsmm_index_] = libxsmm_r_; \\"
         print "      } \\"
         print "    } \\"
         print "  }"
@@ -158,13 +164,13 @@ def load_dims(dims):
 if (6 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
 
-    if (0 != int(sys.argv[2])):
+    if (0 > int(sys.argv[2])):
         create_xsmm(RowMajor, int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
     elif (7 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
         dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])
         dimsK = load_dims(sys.argv[5+int(sys.argv[3])+int(sys.argv[4]):])
-        maxMNK = 24 * 24 * 24
+        maxMNK = int(sys.argv[2])
         for m in dimsM:
             for n in dimsN:
                 for k in dimsK:

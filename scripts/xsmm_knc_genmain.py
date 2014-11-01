@@ -64,9 +64,9 @@ def create_dispatch(dimsM, dimsN, dimsK):
     print
     print "  int m, n, k;"
     print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
-    print "       && (m = (int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints) - index_m) >= 0"
-    print "       && (n = (int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints) - index_n) >= 0"
-    print "       && (k = (int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints) - index_k) >= 0)"
+    print "       && (m = ((const int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints)) - index_m) >= 0"
+    print "       && (n = ((const int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints)) - index_n) >= 0"
+    print "       && (k = ((const int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints)) - index_k) >= 0)"
     print "    ? functions[nk*(m*nn+n)+k]"
     print "    : 0;"
     print "}"

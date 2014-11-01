@@ -7,6 +7,9 @@ INDICES_M ?= $(shell seq 1 8)
 INDICES_N ?= $(shell seq 1 8)
 INDICES_K ?= $(shell seq 1 8)
 
+# THRESHOLD problem size (M x N x K); determines when to use BLAS 
+THRESHOLD ?= $(shell echo $$((24 * 24 * 24)))
+
 DIR_KNC   ?= .
 SCRDIR_KNC = $(DIR_KNC)/scripts
 OBJDIR_KNC = $(DIR_KNC)/build
@@ -35,7 +38,7 @@ lib_all: lib_knc lib_hst
 header_knc: $(INC_KNC)
 $(INC_KNC):
 	@cat $(INCDIR_KNC)/xsmm_knc.0 > $@
-	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py $(ROW_MAJOR) 0 $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
+	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py $(ROW_MAJOR) $(THRESHOLD) $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
 	@echo >> $@
 	@cat $(INCDIR_KNC)/xsmm_knc.1 >> $@
 	@echo >> $@
@@ -46,7 +49,7 @@ $(INC_KNC):
 source_knc: $(addprefix $(SRCDIR_KNC)/,$(SRCFILES_KNC))
 $(SRCDIR_KNC)/%.c: $(INC_KNC)
 	@mkdir -p $(SRCDIR_KNC)
-	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py $(ROW_MAJOR) 1 `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` > $@
+	@python $(SCRDIR_KNC)/xsmm_knc_gensrc.py $(ROW_MAJOR) -1 `echo $* | awk -F_ '{ print $$4" "$$5" "$$6 }'` > $@
 
 main_knc: $(MAIN_KNC)
 $(MAIN_KNC): $(INC_KNC)
