@@ -5,9 +5,9 @@
  */
 #define LIBXSMM_MM(REAL, M, N, K, A, B, C) { \
   if (LIBXSMM_MAX_MNK >= ((M) * (N) * (K))) { \
-    const libxsmm_dmm_function mm_mnk = LIBXSMM_BLASPREC(libxsmm_, REAL, mm_dispatch)((M), (N), (K)); \
-    if (mm_mnk) { \
-      (*mm_mnk)((A), (B), (C)); \
+    const libxsmm_dmm_function libxsmm_dmm_ = LIBXSMM_BLASPREC(libxsmm_, REAL, mm_dispatch)((M), (N), (K)); \
+    if (libxsmm_dmm_) { \
+      (*libxsmm_dmm_)((A), (B), (C)); \
     } \
     else { \
       LIBXSMM_SMM(REAL, int, M, N, K, A, B, C); \
