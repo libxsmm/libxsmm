@@ -3,7 +3,7 @@
  * If M, N, and K does not change for multiple calls, it is more efficient to query
  * and reuse the function pointer (libxsmm_dmm_dispatch).
  */
-#define LIBXSMM_MM(REAL, M, N, K, A, B, C) { \
+#define LIBXSMM_MM(REAL, M, N, K, A, B, C) \
   if (LIBXSMM_MAX_MNK >= ((M) * (N) * (K))) { \
     const LIBXSMM_BLASPREC(libxsmm_, REAL, mm_function) libxsmm_mm_function_ = \
       LIBXSMM_BLASPREC(libxsmm_, REAL, mm_dispatch)((M), (N), (K)); \
@@ -16,8 +16,7 @@
   } \
   else { \
     LIBXSMM_BLASMM(REAL, int, M, N, K, A, B, C); \
-  } \
-}
+  }
 
 /** For compatibility with earlier versions of LIBXSMM. */
 #define dc_smm_dnn(M, N, K, A, B, C) LIBXSMM_MM(double, M, N, K, A, B, C)
