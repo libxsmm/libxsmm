@@ -161,7 +161,7 @@ if (6 <= len(sys.argv)):
 
     if (0 > int(sys.argv[2])):
         print "#include \"libxsmm.h\""
-        print "#include <libxsmm_util.h>"
+        print "#include <libxsmm_knc.h>"
         print
         print "#ifdef __cplusplus"
         print "extern \"C\" {"
