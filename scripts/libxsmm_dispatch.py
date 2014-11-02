@@ -33,8 +33,38 @@ import math
 import sys
 
 
-def create_dispatch(dimsM, dimsN, dimsK):
-    print "#include \"xsmm_knc.h\""
+def create_dispatch(typeflag, dimsM, dimsN, dimsK):
+    print "libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
+    print "{"
+    print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
+    print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
+    print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
+    print "  static const libxsmm_" + typeflag + "mm_function functions[] = {"
+    for m in dimsM:
+        for n in dimsN:
+           sys.stdout.write("    ")
+           for k in dimsK:
+                sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
+           print "// m = %d" % m
+    print "  };"
+    print
+    print "  int m, n, k;"
+    print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
+    print "       && (m = ((const int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints)) - index_m) >= 0"
+    print "       && (n = ((const int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints)) - index_n) >= 0"
+    print "       && (k = ((const int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints)) - index_k) >= 0)"
+    print "    ? functions[nk*(m*nn+n)+k]"
+    print "    : 0;"
+    print "}"
+
+
+def load_dims(dims):
+    dims = map(int, dims) ; dims.sort()
+    return list(set(dims))
+
+
+if (6 <= len(sys.argv)):
+    print "#include \"libxsmm.h\""
     print "#include <stdlib.h>"
     print
     print "#ifdef __cplusplus"
@@ -48,44 +78,17 @@ def create_dispatch(dimsM, dimsN, dimsK):
     print "}"
     print
     print
-    print "libxsmm_dmm_function libxsmm_dmm_dispatch(int M, int N, int K)"
-    print "{"
-    print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
-    print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
-    print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
-    print "  static const libxsmm_dmm_function functions[] = {"
-    for m in dimsM:
-        for n in dimsN:
-           sys.stdout.write("    ")
-           for k in dimsK:
-                sys.stdout.write("libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
-           print "// m = %d" % m
-    print "  };"
+    dimsM = load_dims(sys.argv[3:3+int(sys.argv[1])])
+    dimsN = load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])])
+    dimsK = load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):])
+    create_dispatch("s", dimsM, dimsN, dimsK)
     print
-    print "  int m, n, k;"
-    print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
-    print "       && (m = ((const int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints)) - index_m) >= 0"
-    print "       && (n = ((const int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints)) - index_n) >= 0"
-    print "       && (k = ((const int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints)) - index_k) >= 0)"
-    print "    ? functions[nk*(m*nn+n)+k]"
-    print "    : 0;"
-    print "}"
+    print
+    create_dispatch("d", dimsM, dimsN, dimsK)
     print
     print
     print "#ifdef __cplusplus"
     print "} // extern \"C\""
     print "#endif"
-
-
-def load_dims(dims):
-    dims = map(int, dims) ; dims.sort()
-    return list(set(dims))
-
-
-if (6 <= len(sys.argv)):
-    dimsM = load_dims(sys.argv[3:3+int(sys.argv[1])])
-    dimsN = load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])])
-    dimsK = load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):])
-    create_dispatch(dimsM, dimsN, dimsK)
 else:
     sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")

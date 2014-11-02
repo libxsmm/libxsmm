@@ -44,7 +44,8 @@ if (7 <= len(sys.argv)):
     for m in dimsM:
         for n in dimsN:
            for k in dimsK:
-               print "//void libxsmm_smm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const float* a, const float* b, float* c);"
+               print "void libxsmm_smm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const float* a, const float* b, float* c);"
                print "void libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const double* a, const double* b, double* c);"
+               print
 else:
     sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")

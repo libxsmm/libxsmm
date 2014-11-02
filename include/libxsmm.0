@@ -29,37 +29,34 @@
 /* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
  * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
 ******************************************************************************/
-#include <immintrin.h>
+#ifndef LIBXSMM_H
+#define LIBXSMM_H
 
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+# ifdef __cplusplus
+extern "C" {
+# endif
+#else
+# ifdef __cplusplus
+extern "C" {
+# endif
+void dgemm(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+void sgemm(const char*, const char*, const int*, const int*, const int*,
+  const float*, const float*, const int*, const float*, const int*,
+  const float*, float*, const int*);
+#endif
 
-#ifdef __MIC__
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+#else
+# define LIBXSMM_PRAGMA(DIRECTIVE)
+#endif
 
-inline __m512d _MM512_LOADU_PD(const double* a)
-{
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_loadunpacklo_pd(va, &a[0]);
-  va = _mm512_loadunpackhi_pd(va, &a[8]);
-  return va;
-}
+#define LIBXSMM_BLASPREC(PREFIX, REAL,  FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
+#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
+#define LIBXSMM_BLASPREC_float (PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
-inline void _MM512_STOREU_PD(double* a,__m512d v)
-{
-  _mm512_packstorelo_pd(&a[0], v);
-  _mm512_packstorehi_pd(&a[8], v);
-}
-
-inline __m512d _MM512_MASK_LOADU_PD(const double* a, char mask)
-{
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_mask_loadunpacklo_pd(va, mask, &a[0]);
-  va = _mm512_mask_loadunpackhi_pd(va, mask, &a[8]);
-  return va;
-}
-
-inline void _MM512_MASK_STOREU_PD(double* a,__m512d v, char mask)
-{
-  _mm512_mask_packstorelo_pd(&a[0], mask, v);
-  _mm512_mask_packstorehi_pd(&a[8], mask, v);
-}
-
-#endif // __MIC__
+/** Parameters the library was built for. */

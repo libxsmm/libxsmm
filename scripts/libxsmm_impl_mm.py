@@ -104,7 +104,15 @@ def create_macros(RowMajor, maxMNK):
     print "#endif"
 
 
-def create_xsmm(RowMajor, M, N, K):
+def make_typeflag(Real):
+    return ["s", "d"]["float" != Real]
+
+
+def make_typepfix(Real):
+    return ["", "d"]["float" != Real]
+
+
+def create_mm(Real, RowMajor, M, N, K):
     if (0 != RowMajor):
         Rows, Cols = N, M
         l1, l2 = "b", "a"
@@ -116,15 +124,7 @@ def create_xsmm(RowMajor, M, N, K):
         mnparts = iparts
     else:
         mnparts = iparts + 1
-    print "#include \"xsmm_knc.h\""
-    print "#include <xsmm_knc_util.h>"
-    print
-    print "#ifdef __cplusplus"
-    print "extern \"C\" {"
-    print "#endif"
-    print
-    print
-    print "void libxsmm_dmm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const double* a, const double* b, double* c)"
+    print "void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__)"
     print "  int i;"
@@ -132,13 +132,13 @@ def create_xsmm(RowMajor, M, N, K):
         print "  {"
         mnm = min(mn + 7, Rows - 1)
         maskval = (1 << (mnm - mn + 1)) - 1
-        print "    const __m512d x" + l1 + "[] = {"
+        print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
         for k in range(0, K):
             print "      _MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + ", " + str(maskval) + "),"
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        print "      __m512d x" + l2 + "[" + str(K) + "], xc = _MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
+        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = _MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
         for k in range(0, K):
             print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
             print "      xc = _mm512_mask3_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc, " + str(maskval) + ");"
@@ -146,14 +146,9 @@ def create_xsmm(RowMajor, M, N, K):
         print "    }"
         print "  }"
     print "#else"
-    print "  LIBXSMM_SMM(double, int, "+ str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+    print "  LIBXSMM_SMM(" + Real + ", int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
     print "#endif"
     print "}"
-    print
-    print
-    print "#ifdef __cplusplus"
-    print "} // extern \"C\""
-    print "#endif"
 
 
 def load_dims(dims):
@@ -165,7 +160,30 @@ if (6 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
 
     if (0 > int(sys.argv[2])):
-        create_xsmm(RowMajor, int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
+        print "#include \"libxsmm.h\""
+        print "#include <libxsmm_util.h>"
+        print
+        print "#ifdef __cplusplus"
+        print "extern \"C\" {"
+        print "#endif"
+        print
+        print
+        M = int(sys.argv[3])
+        N = int(sys.argv[4])
+        K = int(sys.argv[5])
+        # Note: create_mm is not yet ready to generate the single-precision implementation
+        print "void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
+        print "{"
+        print "  LIBXSMM_SMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+        print "}"
+        print
+        print
+        create_mm("double", RowMajor, M, N, K)
+        print
+        print
+        print "#ifdef __cplusplus"
+        print "} // extern \"C\""
+        print "#endif"
     elif (7 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
         dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])
