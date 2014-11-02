@@ -14,7 +14,7 @@ To compile the library run:
 make
 ```
 
-The interface is produced inside of the *include* directory and the library archives are produced inside of the *lib* directory. The *mic* subdirectory stores the native library whereas the *intel64* folder contains the hybrid archive containing host and MIC code.
+The interface is produced inside of the *include* directory. The library archives are produced inside of the *lib* directory with the *mic* subdirectory containing the native library and the *intel64* folder storing the hybrid archive containing host and MIC code.
 
 To remove intermediate files use:
 
@@ -22,7 +22,7 @@ To remove intermediate files use:
 make clean
 ```
 
-or to remove all generated files including the library interface and archive files:
+or to remove all generated files including the interface and library archive files:
 
 ```sh
 make realclean
@@ -30,7 +30,7 @@ make realclean
 
 The usual `make install` is simply a shortcut for `make; make clean`.
 
-The library can be configured to accept row-major (default) or column-major order matrices. Change the variable *ROW_MAJOR* inside of the Makefile (0 for columns-major, and row-major order otherwise), or build the library in the following way to configure the column-major format:
+The library can be configured to accept row-major (default) or column-major order matrices. Change the variable *ROW_MAJOR* inside of the Makefile (0 for column-major, and row-major order otherwise), or build the library in the following way to configure the column-major format:
 
 ```sh
 make ROW_MAJOR=0
@@ -45,7 +45,7 @@ libxsmm_dmm_function libxsmm_dmm_dispatch(int M, int N, int K); // if non-zero c
 void dc_smm_dnn(int M, int N, int K, const double* A, const double* B, double* C); // automatic dispatch
 ```
 
-To specialize for certain matrix sizes (M, N, and K values), one can adjust the variables inside the Makefile file or for example build in the following way:
+To specialize for certain matrix sizes (M, N, and K values), one can adjust the variables inside of the Makefile or for example build in the following way:
 
 ```sh
 make INDICES_M="2 4" INDICES_N="1" INDICES_K="$(echo $(seq 2 5))"
@@ -68,12 +68,10 @@ The function *libxsmm_dmm_dispatch* helps to amortize the cost of the dispatch w
 
 The level 2 and 3 may be supplied by the Intel MKL 11.2 DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., *libxsmm_dmm_4_4_4*.
 
-Further, the preprocessor symbol *LIBXSMM_MAX_MNK* denotes the largest problem size (M x N x K) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) calling the BLAS library linked with LIBXSMM.
-
-This threshold can be configured using for example:
+Further, the preprocessor symbol *LIBXSMM_MAX_MNK* denotes the largest problem size (M x N x K) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) calling the BLAS library linked with LIBXSMM. This threshold can be configured using for example:
 
 ```sh
 make THRESHOLD=$((24 * 24 * 24))
 ```
 
-and together with the largest specialization (according to the parameter sets *INDICES_M*, *INDICES_N*, and *INDICES_K*), the value of *LIBXSMM_MAX_MNK* is calculated.
+The maximum of the given threshold together with the largest requested specialization (according to *INDICES_M*, *INDICES_N*, and *INDICES_K*) defines the value of *LIBXSMM_MAX_MNK*.
