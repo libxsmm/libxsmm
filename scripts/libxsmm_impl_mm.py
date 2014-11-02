@@ -134,15 +134,15 @@ def create_mm(Real, RowMajor, M, N, K):
         maskval = (1 << (mnm - mn + 1)) - 1
         print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
         for k in range(0, K):
-            print "      _MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + ", " + str(maskval) + "),"
+            print "      MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + ", " + str(maskval) + "),"
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = _MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
+        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
         for k in range(0, K):
             print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
             print "      xc = _mm512_mask3_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc, " + str(maskval) + ");"
-        print "      _MM512_MASK_STOREU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", xc, " + str(maskval) + ");"
+        print "      MM512_MASK_STOREU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", xc, " + str(maskval) + ");"
         print "    }"
         print "  }"
     print "#else"
