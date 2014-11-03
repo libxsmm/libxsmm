@@ -38,7 +38,7 @@ make ROW_MAJOR=0
 
 The interface of the library (see 'include/libxsmm.h') defines the preprocessor symbols LIBXSMM_ROW_MAJOR and LIBXSMM_COL_MAJOR to mark the storage order the library was built for.
 
-To perform the matrix-matrix multiplication c<sub>m*x *n</sub> = c<sub>m*x *n</sub> + a<sub>m*x *k</sub> \* b<sub>k*x *n</sub>, one of the following two interfaces can be used:
+To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, one of the following two interfaces can be used:
 
 ```C
 /** if non-zero function pointer is returned, call (*function)(M, N, K) */
@@ -74,7 +74,7 @@ The function 'libxsmm_dmm_dispatch' helps to amortize the cost of the dispatch w
 
 The level 2 and 3 may be supplied by the Intel MKL 11.2 DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., 'libxsmm_dmm_4_4_4'.
 
-Further, the preprocessor symbol LIBXSMM_MAX_MNK denotes the largest problem size (M*x *N*x *K) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) calling the BLAS library linked with LIBXSMM. This threshold can be configured using for example:
+Further, the preprocessor symbol LIBXSMM_MAX_MNK denotes the largest problem size (*M* x *N* x *K*) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) calling the BLAS library linked with LIBXSMM. This threshold can be configured using for example:
 
 ```sh
 make THRESHOLD=$((24 * 24 * 24))
