@@ -124,7 +124,7 @@ def create_mm(Real, RowMajor, M, N, K):
         mnparts = iparts
     else:
         mnparts = iparts + 1
-    print "void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
+    print "LIBXSMM_EXTERN_C void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__)"
     print "  int i;"
@@ -152,8 +152,8 @@ def create_mm(Real, RowMajor, M, N, K):
 
 
 def load_dims(dims):
-    dims = map(int, dims) #; dims.sort()
-    return list(set(dims))
+    dims = list(map(int, dims)) #; dims.sort()
+    return dims
 
 
 if (6 <= len(sys.argv)):
@@ -163,27 +163,18 @@ if (6 <= len(sys.argv)):
         print "#include \"libxsmm.h\""
         print "#include <libxsmm_knc.h>"
         print
-        print "#ifdef __cplusplus"
-        print "extern \"C\" {"
-        print "#endif"
-        print
         print
         M = int(sys.argv[3])
         N = int(sys.argv[4])
         K = int(sys.argv[5])
         # Note: create_mm is not yet ready to generate the single-precision implementation
-        print "void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
+        print "LIBXSMM_EXTERN_C void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
         print "{"
         print "  LIBXSMM_SMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
         print "}"
         print
         print
         create_mm("double", RowMajor, M, N, K)
-        print
-        print
-        print "#ifdef __cplusplus"
-        print "} // extern \"C\""
-        print "#endif"
     elif (7 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
         dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])

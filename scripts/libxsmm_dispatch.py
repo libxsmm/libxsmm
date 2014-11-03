@@ -34,7 +34,7 @@ import sys
 
 
 def create_dispatch(typeflag, dimsM, dimsN, dimsK):
-    print "libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
+    print "LIBXSMM_EXTERN_C libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
     print "{"
     print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
     print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
@@ -59,17 +59,13 @@ def create_dispatch(typeflag, dimsM, dimsN, dimsK):
 
 
 def load_dims(dims):
-    dims = map(int, dims) ; dims.sort()
-    return list(set(dims))
+    dims = list(map(int, dims)) ; dims.sort()
+    return dims
 
 
 if (6 <= len(sys.argv)):
     print "#include \"libxsmm.h\""
     print "#include <stdlib.h>"
-    print
-    print "#ifdef __cplusplus"
-    print "extern \"C\" {"
-    print "#endif"
     print
     print
     print "int compareints(const void* a, const void* b)"
@@ -85,10 +81,5 @@ if (6 <= len(sys.argv)):
     print
     print
     create_dispatch("d", dimsM, dimsN, dimsK)
-    print
-    print
-    print "#ifdef __cplusplus"
-    print "} // extern \"C\""
-    print "#endif"
 else:
     sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")

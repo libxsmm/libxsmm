@@ -32,19 +32,21 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
+#if defined(__cplusplus)
+# define LIBXSMM_EXTERN_C extern "C"
+#else
+# define LIBXSMM_EXTERN_C
+#endif // __cplusplus
+
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
-# ifdef __cplusplus
-extern "C" {
-# endif
 #else
-# ifdef __cplusplus
-extern "C" {
-# endif
-void dgemm(const char*, const char*, const int*, const int*, const int*,
+LIBXSMM_EXTERN_C void dgemm(
+  const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
-void sgemm(const char*, const char*, const int*, const int*, const int*,
+LIBXSMM_EXTERN_C void sgemm(
+  const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
 #endif
@@ -53,7 +55,7 @@ void sgemm(const char*, const char*, const int*, const int*, const int*,
 # define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
 #else
 # define LIBXSMM_PRAGMA(DIRECTIVE)
-#endif
+#endif // __INTEL_COMPILER
 
 #define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
 #define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
