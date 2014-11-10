@@ -30,17 +30,17 @@ LIBXSMM_EXTERN_C libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 LIBXSMM_EXTERN_C libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
 
 /** For compatibility with earlier versions of LIBXSMM. */
-inline void dc_smm_dnn(int m, int n, int k, const double* a, const double* b, double* c) {
+LIBXSMM_INLINE void dc_smm_dnn(int m, int n, int k, const double* a, const double* b, double* c) {
   LIBXSMM_MM(double, m, n, k, a, b, c);
 }
 
 /** Dispatched matrix-matrix multiplication; single-precision. */
-inline void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c) {
+LIBXSMM_INLINE void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c) {
   LIBXSMM_MM(float, m, n, k, a, b, c);
 }
 
 /** Dispatched matrix-matrix multiplication; double-precision. */
-inline void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c) {
+LIBXSMM_INLINE void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c) {
   LIBXSMM_MM(double, m, n, k, a, b, c);
 }
 

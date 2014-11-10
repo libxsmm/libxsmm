@@ -51,11 +51,17 @@ LIBXSMM_EXTERN_C void sgemm(
   const float*, float*, const int*);
 #endif
 
-#if defined(__INTEL_COMPILER)
+#define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
+#if (199901L <= __STDC_VERSION__)
+# define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+# define LIBXSMM_INLINE inline
+#elif defined(__INTEL_COMPILER) || defined(_MSC_VER)
 # define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+# define LIBXSMM_INLINE static
 #else
 # define LIBXSMM_PRAGMA(DIRECTIVE)
-#endif // __INTEL_COMPILER
+# define LIBXSMM_INLINE static
+#endif
 
 #define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
 #define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
