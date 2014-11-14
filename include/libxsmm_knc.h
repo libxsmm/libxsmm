@@ -32,40 +32,73 @@
 #ifndef LIBXSMM_KNC_H
 #define LIBXSMM_KNC_H
 
+#include "libxsmm.h"
 #include <immintrin.h>
 
 
 #ifdef __MIC__
 
-inline __m512d MM512_LOADU_PD(const double* a)
+LIBXSMM_INLINE __m512d MM512_LOADU_PD(const double* a)
 {
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_loadunpacklo_pd(va, &a[0]);
-  va = _mm512_loadunpackhi_pd(va, &a[8]);
+  __m512d va;
+  va = _mm512_extloadunpacklo_pd(va, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NONE);
+  va = _mm512_extloadunpackhi_pd(va, &a[8], _MM_UPCONV_PD_NONE, _MM_HINT_NONE);
   return va;
 }
 
 
-inline void MM512_STOREU_PD(double* a, __m512d v)
+LIBXSMM_INLINE __m512d MM512_LOADNTU_PD(const double* a)
 {
-  _mm512_packstorelo_pd(&a[0], v);
-  _mm512_packstorehi_pd(&a[8], v);
-}
-
-
-inline __m512d MM512_MASK_LOADU_PD(const double* a, char mask)
-{
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_mask_loadunpacklo_pd(va, mask, &a[0]);
-  va = _mm512_mask_loadunpackhi_pd(va, mask, &a[8]);
+  __m512d va;
+  va = _mm512_extloadunpacklo_pd(va, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NT);
+  va = _mm512_extloadunpackhi_pd(va, &a[8], _MM_UPCONV_PD_NONE, _MM_HINT_NT);
   return va;
 }
 
 
-inline void MM512_MASK_STOREU_PD(double* a, __m512d v, char mask)
+LIBXSMM_INLINE __m512d MM512_MASK_LOADU_PD(const double* a, char mask)
 {
-  _mm512_mask_packstorelo_pd(&a[0], mask, v);
-  _mm512_mask_packstorehi_pd(&a[8], mask, v);
+  __m512d va = _mm512_setzero_pd();
+  va = _mm512_mask_extloadunpacklo_pd(va, mask, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NONE);
+  va = _mm512_mask_extloadunpackhi_pd(va, mask, &a[8], _MM_UPCONV_PD_NONE, _MM_HINT_NONE);
+  return va;
+}
+
+
+LIBXSMM_INLINE __m512d MM512_MASK_LOADNTU_PD(const double* a, char mask)
+{
+  __m512d va = _mm512_setzero_pd();
+  va = _mm512_mask_extloadunpacklo_pd(va, mask, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NT);
+  va = _mm512_mask_extloadunpackhi_pd(va, mask, &a[8], _MM_UPCONV_PD_NONE, _MM_HINT_NT);
+  return va;
+}
+
+
+LIBXSMM_INLINE void MM512_STOREU_PD(double* a, __m512d v)
+{
+  _mm512_extpackstorelo_pd(&a[0], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+  _mm512_extpackstorehi_pd(&a[8], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+}
+
+
+LIBXSMM_INLINE void MM512_STORENTU_PD(double* a, __m512d v)
+{
+  _mm512_extpackstorelo_pd(&a[0], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
+  _mm512_extpackstorehi_pd(&a[8], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
+}
+
+
+LIBXSMM_INLINE void MM512_MASK_STOREU_PD(double* a, __m512d v, char mask)
+{
+  _mm512_mask_extpackstorelo_pd(&a[0], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+  _mm512_mask_extpackstorehi_pd(&a[8], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+}
+
+
+LIBXSMM_INLINE void MM512_MASK_STORENTU_PD(double* a, __m512d v, char mask)
+{
+  _mm512_mask_extpackstorelo_pd(&a[0], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
+  _mm512_mask_extpackstorehi_pd(&a[8], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
 }
 
 #endif // __MIC__
