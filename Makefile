@@ -20,7 +20,7 @@ LIBDIR_KNC = $(DIR_KNC)/lib
 INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDICES_K),$m_$n_$k)))
 
 TARGET_COMPILE_C_KNC := icc -std=c99 -mkl=sequential -fPIC -ansi-alias -mmic
-TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -fPIC -ansi-alias -msse3 -axCORE-AVX2 -offload-attribute-target=mic
+TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -fPIC -ansi-alias -mavx -axCORE-AVX2 -offload-attribute-target=mic
 AR := xiar
 
 SRCFILES_KNC = $(patsubst %,mm_%.c,$(INDICES))
