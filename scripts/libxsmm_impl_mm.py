@@ -114,7 +114,7 @@ def make_typepfix(Real):
     return ["", "d"]["float" != Real]
 
 
-def create_mm(Real, RowMajor, M, N, K):
+def create_mm(Real, M, N, K, RowMajor):
     if (0 != RowMajor):
         Rows, Cols = N, M
         l1, l2 = "b", "a"
@@ -135,17 +135,21 @@ def create_mm(Real, RowMajor, M, N, K):
         mnm = min(mn + 7, Rows - 1)
         maskval = (1 << (mnm - mn + 1)) - 1
         print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
+        if (255 != maskval):
+            mask_inst, mask_argv, mask3 = "MASK_", ", " + str(maskval), "mask3_"
+        else:
+            mask_inst, mask_argv, mask3 = "", "", ""
         for k in range(0, K):
-            print "      MM512_MASK_LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + ", " + str(maskval) + "),"
+            print "      MM512_" + mask_inst + "LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + "),"
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
         print "      const int index = i * " + str(Rows) + " + " + str(mn) + ";"
-        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = MM512_MASK_LOADU_PD(c + index, " + str(maskval) + ");"
+        print "      __m512" + make_typepfix(Real) + " xc = MM512_" + mask_inst + "LOADNTU_PD(c + index" + mask_argv + "), x" + l2 + "[" + str(K) + "];"
         for k in range(0, K):
             print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
-            print "      xc = _mm512_mask3_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc, " + str(maskval) + ");"
-        print "      MM512_MASK_STOREU_PD(c + index, xc, " + str(maskval) + ");"
+            print "      xc = _mm512_" + mask3 + "fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
+        print "      MM512_" + mask_inst + "STORENTU_PD(c + index, xc" + mask_argv + ");"
         print "    }"
         print "  }"
     print "#else"
@@ -163,7 +167,6 @@ if (6 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
 
     if (0 > int(sys.argv[2])):
-        print "#include \"libxsmm.h\""
         print "#include <libxsmm_knc.h>"
         print
         print
@@ -177,7 +180,7 @@ if (6 <= len(sys.argv)):
         print "}"
         print
         print
-        create_mm("double", RowMajor, M, N, K)
+        create_mm("double", M, N, K, RowMajor)
     elif (7 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
         dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])
