@@ -32,11 +32,38 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
+#define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
+# define LIBXSMM_INLINE inline
 #else
 # define LIBXSMM_EXTERN_C
+# if (199901L <= __STDC_VERSION__)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#   define LIBXSMM_RESTRICT restrict
+#   define LIBXSMM_INLINE inline
+# else
+#   define LIBXSMM_INLINE static
+# endif // C99
 #endif // __cplusplus
+
+#if !defined(LIBXSMM_RESTRICT)
+# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
+#   define LIBXSMM_RESTRICT __restrict__
+# elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+#   define LIBXSMM_RESTRICT __restrict
+# else
+#   define LIBXSMM_RESTRICT
+# endif
+#endif // LIBXSMM_RESTRICT
+
+#if !defined(LIBXSMM_PRAGMA)
+# if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+# else
+#   define LIBXSMM_PRAGMA(DIRECTIVE)
+# endif
+#endif // LIBXSMM_PRAGMA
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
@@ -49,18 +76,6 @@ LIBXSMM_EXTERN_C void sgemm(
   const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
-#endif
-
-#define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
-#if (199901L <= __STDC_VERSION__)
-# define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
-# define LIBXSMM_INLINE inline
-#elif defined(__INTEL_COMPILER) || defined(_MSC_VER)
-# define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
-# define LIBXSMM_INLINE static
-#else
-# define LIBXSMM_PRAGMA(DIRECTIVE)
-# define LIBXSMM_INLINE static
 #endif
 
 #define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
