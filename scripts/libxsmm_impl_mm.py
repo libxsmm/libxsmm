@@ -140,11 +140,12 @@ def create_mm(Real, RowMajor, M, N, K):
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = MM512_MASK_LOADU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", " + str(maskval) + ");"
+        print "      const int index = i * " + str(Rows) + " + " + str(mn) + ";"
+        print "      __m512" + make_typepfix(Real) + " x" + l2 + "[" + str(K) + "], xc = MM512_MASK_LOADU_PD(c + index, " + str(maskval) + ");"
         for k in range(0, K):
             print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
             print "      xc = _mm512_mask3_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc, " + str(maskval) + ");"
-        print "      MM512_MASK_STOREU_PD(c + i * " + str(Rows) + " + " + str(mn) + ", xc, " + str(maskval) + ");"
+        print "      MM512_MASK_STOREU_PD(c + index, xc, " + str(maskval) + ");"
         print "    }"
         print "  }"
     print "#else"
