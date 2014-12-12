@@ -62,16 +62,16 @@ smm-c: smm-c.o
 	$(LD) -o $@ $(CFLAGS) $< $(LFLAGS)
 
 %-c.o: %.c
-	$(CC) -o $@ -c $(CFLAGS) $(DFLAGS) $(IFLAGS) $<
+	$(CC) -o $@ -$(CFLAGS) $(DFLAGS) $(IFLAGS) -c $<
 
 %-cpp.o: %.cpp
-	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
 
 %-cpp.o: %.cxx
-	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
 
 %-cpp.o: %.cc
-	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
 
 all: smm
 
