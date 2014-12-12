@@ -1,0 +1,116 @@
+/******************************************************************************
+** Copyright (c) 2013-2014, Intel Corporation                                **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
+/* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
+ * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+******************************************************************************/
+#include <algorithm>
+#include <cstdlib>
+#include <cstdio>
+#include <vector>
+#include <cmath>
+
+#include <libxsmm.h>
+
+//#define USE_PRINT
+
+
+template<typename T> void nrand(T& a)
+{
+  static const double scale = 1.0 / RAND_MAX;
+  a = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
+}
+
+
+inline void gemm(int m, int n, int k, const float* a, const float* b, float* c) {
+  LIBXSMM_BLASMM(float, int, m, n, k, a, b, c);
+}
+
+inline void gemm(int m, int n, int k, const double* a, const double* b, double* c) {
+  LIBXSMM_BLASMM(double, int, m, n, k, a, b, c);
+}
+
+
+int main(int argc, char* argv[])
+{
+  try {
+    typedef float T;
+    const int m = 1 < argc ? std::atoi(argv[1]) : 23;
+    const int n = 2 < argc ? std::atoi(argv[2]) : m;
+    const int k = 3 < argc ? std::atoi(argv[3]) : m;
+
+    const int asize = m * k, bsize = k * n, csize = m * n;
+    std::vector<T> va(asize), vb(bsize);
+    std::for_each(va.begin(), va.end(), nrand<T>);
+    std::for_each(vb.begin(), vb.end(), nrand<T>);
+    std::vector<T> vresult(csize, 0.0), vexpect(csize, 0.0);
+    T *result = &vresult[0], *expect = &vexpect[0];
+    const T *a = &va[0], *b = &vb[0];
+
+    gemm(m, n, k, a, b, expect);
+    const libxsmm_mm_dispatch<T> smm(m, n, k);
+    if (smm) {
+      fprintf(stderr, "specialized routine found for m=%i, n=%i, and k=%i!\n", m, n, k);
+      smm(a, b, result);
+    }
+    else {
+      libxsmm_mm(m, n, k, a, b, result);
+    }
+
+#if defined(USE_PRINT)
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        fprintf(stderr, "%6.2f", expect[i*n+j]);
+      }
+      fprintf(stderr, "\n");
+    }
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        fprintf(stderr, "%6.2f", result[i*n+j]);
+      }
+      fprintf(stderr, "\n");
+    }
+#endif
+
+    double diff = 0;
+    for (int i = 0; i < csize; ++i) {
+      diff = std::max(diff, std::abs(static_cast<double>(result[i]) - static_cast<double>(expect[i])));
+    }
+    fprintf(stderr, "diff = %f\n", diff);
+  }
+  catch(const std::exception& e) {
+    fprintf(stderr, "Error: %s\n", e.what());
+    return EXIT_FAILURE;
+  }
+  catch(...) {
+    fprintf(stderr, "Error: unknown exception caught!\n");
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}

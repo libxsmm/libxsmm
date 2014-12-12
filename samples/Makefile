@@ -1,0 +1,84 @@
+CXXFLAGS :=
+CFLAGS :=
+DFLAGS :=
+IFLAGS := -I../include
+LFLAGS := ../lib/intel64/libxsmm.a
+
+ICPC := $(notdir $(shell which icpc 2> /dev/null))
+ICC := $(notdir $(shell which icc 2> /dev/null))
+
+ifneq (,$(ICPC))
+	CXX := $(ICPC)
+	ifeq (,$(ICC))
+		CC := $(ICPC)
+	endif
+endif
+ifneq (,$(ICC))
+	CC := $(ICC)
+	ifeq (,$(ICPC))
+		CXX := $(ICC)
+	endif
+endif
+
+LD := $(CXX)
+
+ifneq (,$(filter $(CXX),icpc))
+	ifneq (0,$(DBG))
+		CXXFLAGS += -O2 -xHost -ansi-alias
+		DFLAGS += -DNDEBUG
+	else
+		CXXFLAGS += -O0 -g
+	endif
+	LFLAGS += -mkl=sequential
+else ifneq (,$(filter $(CC),icc))
+	ifneq (0,$(DBG))
+		CFLAGS += -O2 -xHost -ansi-alias
+		DFLAGS += -DNDEBUG
+	else
+		CFLAGS += -O0 -g
+	endif
+	LFLAGS += -mkl=sequential
+else
+        ifneq (0,$(DBG))
+                CXXFLAGS += -O2 -march=native
+                DFLAGS += -DNDEBUG
+        else
+                CXXFLAGS += -O0 -g
+        endif
+        LFLAGS += -llapack -lblas
+endif
+
+ifeq (,$(CXXFLAGS))
+	CXXFLAGS := $(CFLAGS)
+endif
+ifeq (,$(CFLAGS))
+	CFLAGS := $(CXXFLAGS)
+endif
+
+smm-cpp: smm-cpp.o
+	$(LD) -o $@ $(CXXFLAGS) $< $(LFLAGS)
+
+smm-c: smm-c.o
+	$(LD) -o $@ $(CFLAGS) $< $(LFLAGS)
+
+%-c.o: %.c
+	$(CC) -o $@ -c $(CFLAGS) $(DFLAGS) $(IFLAGS) $<
+
+%-cpp.o: %.cpp
+	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+
+%-cpp.o: %.cxx
+	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+
+%-cpp.o: %.cc
+	$(CXX) -o $@ -c $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $<
+
+all: smm
+
+clean:
+	@-rm -f *.o
+
+realclean: clean
+	@-rm -f smm smm.exe
+
+install: all clean
