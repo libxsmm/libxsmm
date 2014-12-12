@@ -33,6 +33,9 @@
 #define LIBXSMM_H
 
 #define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
+#define LIBXSMM_CONCATENATE(A, B) A##B
+#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
+
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
 # define LIBXSMM_INLINE inline
@@ -68,11 +71,11 @@
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #else
-LIBXSMM_EXTERN_C void dgemm(
+LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
-LIBXSMM_EXTERN_C void sgemm(
+LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
