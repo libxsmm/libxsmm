@@ -21,9 +21,10 @@ ifneq (,$(ICC))
 endif
 
 LD := $(CXX)
+DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
-	ifneq (0,$(DBG))
+	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -xHost -ansi-alias
 		DFLAGS += -DNDEBUG
 	else
@@ -31,7 +32,7 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 	LFLAGS += -mkl=sequential
 else ifneq (,$(filter $(CC),icc))
-	ifneq (0,$(DBG))
+	ifeq (0,$(DBG))
 		CFLAGS += -O2 -xHost -ansi-alias
 		DFLAGS += -DNDEBUG
 	else
@@ -39,7 +40,7 @@ else ifneq (,$(filter $(CC),icc))
 	endif
 	LFLAGS += -mkl=sequential
 else
-        ifneq (0,$(DBG))
+        ifeq (0,$(DBG))
                 CXXFLAGS += -O2 -march=native
                 DFLAGS += -DNDEBUG
         else
