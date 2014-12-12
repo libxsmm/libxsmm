@@ -55,11 +55,16 @@ ifeq (,$(CFLAGS))
 	CFLAGS := $(CXXFLAGS)
 endif
 
-smm-cpp: smm-cpp.o
-	$(LD) -o $@ $(CXXFLAGS) $< $(LFLAGS)
+
+all: smm-cpp
+
 
 smm-c: smm-c.o
 	$(LD) -o $@ $(CFLAGS) $< $(LFLAGS)
+
+smm-cpp: smm-cpp.o
+	$(LD) -o $@ $(CXXFLAGS) $< $(LFLAGS)
+
 
 %-c.o: %.c
 	$(CC) -o $@ -$(CFLAGS) $(DFLAGS) $(IFLAGS) -c $<
@@ -73,12 +78,12 @@ smm-c: smm-c.o
 %-cpp.o: %.cc
 	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
 
-all: smm
 
 clean:
 	@-rm -f *.o
 
 realclean: clean
-	@-rm -f smm smm.exe
+	@-rm -f smm-c smm-c.exe
+	@-rm -f smm-cpp smm-cpp.exe
 
 install: all clean
