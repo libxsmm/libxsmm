@@ -52,7 +52,11 @@ template<typename T> void print(T* matrix, int nrows, int ncols)
 {
   for (int i = 0; i < nrows; ++i) {
     for (int j = 0; j < ncols; ++j) {
+#if (0 != LIBXSMM_ROW_MAJOR)
       fprintf(stderr, "%6.2f", matrix[i*ncols+j]);
+#else
+      fprintf(stderr, "%6.2f", matrix[j*nrows+i]);
+#endif
     }
     fprintf(stderr, "\n");
   }
