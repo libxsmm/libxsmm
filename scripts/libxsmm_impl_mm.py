@@ -58,8 +58,8 @@ def create_macros(RowMajor, maxMNK):
         print "  char libxsmm_trans_ = 'N'; \\"
         print "  LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \\"
         print "    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, \\"
-        print "    &libxsmm_alpha_, (REAL*)(A), &libxsmm_k_, (REAL*)(B), &libxsmm_n_, \\"
-        print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
+        print "    &libxsmm_alpha_, (REAL*)(A), &libxsmm_m_, (REAL*)(B), &libxsmm_k_, \\"
+        print "    &libxsmm_beta_, (C), &libxsmm_m_); \\"
         print "}"
     print
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
