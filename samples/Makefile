@@ -27,6 +27,8 @@ ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -xHost -ansi-alias
 		DFLAGS += -DNDEBUG
+	else ifneq (1,$(DBG))
+		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
 		CXXFLAGS += -O0 -g
 	endif
@@ -35,18 +37,22 @@ else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
 		CFLAGS += -O2 -xHost -ansi-alias
 		DFLAGS += -DNDEBUG
+	else ifneq (1,$(DBG))
+		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
 		CFLAGS += -O0 -g
 	endif
 	LFLAGS += -mkl=sequential
 else
-        ifeq (0,$(DBG))
-                CXXFLAGS += -O2 -march=native
-                DFLAGS += -DNDEBUG
-        else
-                CXXFLAGS += -O0 -g
-        endif
-        LFLAGS += -llapack -lblas
+	ifeq (0,$(DBG))
+		CXXFLAGS += -O2 -march=native
+		DFLAGS += -DNDEBUG
+	else ifneq (1,$(DBG))
+		CXXFLAGS += -O0 -g3 -gdwarf-2
+	else
+		CXXFLAGS += -O0 -g
+	endif
+	LFLAGS += -llapack -lblas
 endif
 
 ifeq (,$(CXXFLAGS))
@@ -60,10 +66,10 @@ endif
 all: smm-cpp
 
 
-smm-c: smm-c.o
+%-c: %-c.o
 	$(LD) -o $@ $(CFLAGS) $< $(LFLAGS)
 
-smm-cpp: smm-cpp.o
+%-cpp: %-cpp.o
 	$(LD) -o $@ $(CXXFLAGS) $< $(LFLAGS)
 
 
@@ -81,7 +87,7 @@ smm-cpp: smm-cpp.o
 
 
 clean:
-	@-rm -f *.o
+	@-rm -f *.o *.i *.ii *.s
 
 realclean: clean
 	@-rm -f smm-c smm-c.exe
