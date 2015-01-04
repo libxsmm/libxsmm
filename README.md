@@ -66,7 +66,7 @@ The above example generates the following (M,N,K) values:
 
 More Details
 ============
-The function 'libxsmm_dmm_dispatch' helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. The code dispatch uses three levels:
+The function 'libxsmm_?mm_dispatch' helps to amortize the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch uses three levels:
 
 1. Specialized routine,
 2. Inlined code, and
