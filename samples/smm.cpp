@@ -48,7 +48,7 @@ template<typename T> void nrand(T& a)
 }
 
 
-template<typename T> void print(T* matrix, int nrows, int ncols)
+template<typename T> void print(const T* matrix, int nrows, int ncols)
 {
   for (int i = 0; i < nrows; ++i) {
     for (int j = 0; j < ncols; ++j) {
