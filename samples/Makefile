@@ -25,7 +25,7 @@ DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -xHost -ansi-alias
+		CXXFLAGS += -O2 -fno-alias -ansi-alias -xHost
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -35,7 +35,7 @@ ifneq (,$(filter $(CXX),icpc))
 	LFLAGS += -mkl=sequential
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -O2 -xHost -ansi-alias
+		CFLAGS += -O2 -fno-alias -ansi-alias -xHost
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
