@@ -30,33 +30,72 @@ LIBXSMM_EXTERN_C libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 LIBXSMM_EXTERN_C libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
 
 /** For compatibility with earlier versions of LIBXSMM. */
-LIBXSMM_INLINE void dc_smm_dnn(int m, int n, int k, const double* a, const double* b, double* c) {
+LIBXSMM_INLINE void dc_smm_dnn(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
   LIBXSMM_MM(double, m, n, k, a, b, c);
 }
 
 /** Dispatched matrix-matrix multiplication; single-precision. */
-LIBXSMM_INLINE void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c) {
+LIBXSMM_INLINE void libxsmm_smm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
   LIBXSMM_MM(float, m, n, k, a, b, c);
 }
 
 /** Dispatched matrix-matrix multiplication; double-precision. */
-LIBXSMM_INLINE void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c) {
+LIBXSMM_INLINE void libxsmm_dmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
   LIBXSMM_MM(double, m, n, k, a, b, c);
+}
+
+/** Non-dispatched matrix-matrix multiplication using inline code; single-precision. */
+LIBXSMM_INLINE void libxsmm_xsmm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
+  LIBXSMM_BLASMM(float, int, m, n, k, a, b, c);
+}
+
+/** Non-dispatched matrix-matrix multiplication using inline code; double-precision. */
+LIBXSMM_INLINE void libxsmm_xdmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
+  LIBXSMM_BLASMM(double, int, m, n, k, a, b, c);
+}
+
+/** Non-dispatched matrix-matrix multiplication using BLAS; single-precision. */
+LIBXSMM_INLINE void libxsmm_blassmm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
+  LIBXSMM_BLASMM(float, int, m, n, k, a, b, c);
+}
+
+/** Non-dispatched matrix-matrix multiplication using BLAS; double-precision. */
+LIBXSMM_INLINE void libxsmm_blasdmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
+  LIBXSMM_BLASMM(double, int, m, n, k, a, b, c);
 }
 
 #if defined(__cplusplus)
 
-inline void libxsmm_mm(int m, int n, int k, const float* a, const float* b, float* c) {
+inline void libxsmm_mm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
   libxsmm_smm(m, n, k, a, b, c);
 }
 
-inline void libxsmm_mm(int m, int n, int k, const double* a, const double* b, double* c) {
+inline void libxsmm_mm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
   libxsmm_dmm(m, n, k, a, b, c);
 }
 
-template<typename T> class libxsmm_mm_dispatch {
+inline void libxsmm_xmm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
+  libxsmm_xsmm(m, n, k, a, b, c);
+}
+
+inline void libxsmm_xmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
+  libxsmm_xdmm(m, n, k, a, b, c);
+}
+
+inline void libxsmm_blasmm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) {
+  libxsmm_blassmm(m, n, k, a, b, c);
+}
+
+inline void libxsmm_blasmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) {
+  libxsmm_blasdmm(m, n, k, a, b, c);
+}
+
+template<typename T> class libxsmm_mm_dispatch {};
+
+template<> class libxsmm_mm_dispatch<float> {
   libxsmm_smm_function m_function;
 public:
+  libxsmm_mm_dispatch(): m_function(0) {}
   libxsmm_mm_dispatch(int m, int n, int k): m_function(libxsmm_smm_dispatch(m, n, k)) {}
   operator libxsmm_smm_function() const { return m_function; }
 };
@@ -64,6 +103,7 @@ public:
 template<> class libxsmm_mm_dispatch<double> {
   libxsmm_dmm_function m_function;
 public:
+  libxsmm_mm_dispatch(): m_function(0) {}
   libxsmm_mm_dispatch(int m, int n, int k): m_function(libxsmm_dmm_dispatch(m, n, k)) {}
   operator libxsmm_dmm_function() const { return m_function; }
 };

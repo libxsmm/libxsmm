@@ -63,15 +63,6 @@ template<typename T> void print(const T* matrix, int nrows, int ncols)
 }
 
 
-inline void gemm(int m, int n, int k, const float* a, const float* b, float* c) {
-  LIBXSMM_BLASMM(float, int, m, n, k, a, b, c);
-}
-
-inline void gemm(int m, int n, int k, const double* a, const double* b, double* c) {
-  LIBXSMM_BLASMM(double, int, m, n, k, a, b, c);
-}
-
-
 int main(int argc, char* argv[])
 {
   try {
@@ -88,8 +79,8 @@ int main(int argc, char* argv[])
     T *const result = &vresult[0], *const expect = &vexpect[0];
     const T *const a = &va[0], *const b = &vb[0];
 
-    const libxsmm_mm_dispatch<T> smm(m, n, k);
-    if (smm) {
+    const libxsmm_mm_dispatch<T> xsmm(m, n, k);
+    if (xsmm) {
       fprintf(stderr, "specialized routine found for m=%i, n=%i, and k=%i!\n", m, n, k);
     }
 
@@ -100,8 +91,8 @@ int main(int argc, char* argv[])
     print(b, k, n);
 #endif
 
-    if (smm) {
-      smm(a, b, result);
+    if (xsmm) {
+      xsmm(a, b, result);
     }
     else {
       libxsmm_mm(m, n, k, a, b, result);
@@ -113,7 +104,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_CHECK)
-    gemm(m, n, k, a, b, expect);
+    libxsmm_blasmm(m, n, k, a, b, expect);
 # if defined(USE_PRINT)
     fprintf(stderr, "expect =\n");
     print(expect, m, n);
