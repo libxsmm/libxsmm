@@ -37,6 +37,7 @@
 
 #include <libxsmm.h>
 
+#define USE_AUTODISPATCH
 #define USE_CHECK
 //#define USE_PRINT
 
@@ -91,12 +92,19 @@ int main(int argc, char* argv[])
     print(b, k, n);
 #endif
 
+#if defined(USE_AUTODISPATCH)
+    libxsmm_mm(m, n, k, a, b, result);
+#else // custom dispatch
     if (xsmm) {
       xsmm(a, b, result);
     }
-    else {
-      libxsmm_mm(m, n, k, a, b, result);
+    else if (LIBXSMM_MAX_MNK >= (m * n * k) {
+      libxsmm_xmm(m, n, k, a, b, result);
     }
+    else {
+      libxsmm_blasmm(m, n, k, a, b, result);
+    }
+#endif
 
 #if defined(USE_PRINT)
     fprintf(stderr, "result =\n");
