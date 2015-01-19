@@ -29,14 +29,42 @@
 /* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
  * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
 ******************************************************************************/
-#ifndef LIBXSMM_KNC_H
-#define LIBXSMM_KNC_H
+#ifndef LIBXSMM_ISA_H
+#define LIBXSMM_ISA_H
 
 #include "libxsmm.h"
 #include <immintrin.h>
 
 
-#ifdef __MIC__
+#if defined(__AVX512__)
+
+// TODO: AVX-512 implementation
+
+#elif defined(__MIC__)
+
+LIBXSMM_INLINE __m512d MM512_LOAD_PD(const double* a)
+{
+  return _mm512_extload_pd(a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, _MM_HINT_NONE);
+}
+
+LIBXSMM_INLINE __m512d MM512_LOADNT_PD(const double* a)
+{
+  return _mm512_extload_pd(a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, _MM_HINT_NT);
+}
+
+LIBXSMM_INLINE __m512d MM512_LOAD_MASK_PD(const double* a, __mmask8 mask)
+{
+  __m512d va = _mm512_setzero_pd();
+  va = _mm512_mask_extload_pd(va, mask, a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, _MM_HINT_NONE);
+  return va;
+}
+
+LIBXSMM_INLINE __m512d MM512_LOADNT_MASK_PD(const double* a, __mmask8 mask)
+{
+  __m512d va = _mm512_setzero_pd();
+  va = _mm512_mask_extload_pd(va, mask, a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, _MM_HINT_NT);
+  return va;
+}
 
 LIBXSMM_INLINE __m512d MM512_LOADU_PD(const double* a)
 {
@@ -46,7 +74,6 @@ LIBXSMM_INLINE __m512d MM512_LOADU_PD(const double* a)
   return va;
 }
 
-
 LIBXSMM_INLINE __m512d MM512_LOADNTU_PD(const double* a)
 {
   __m512d va;
@@ -55,8 +82,7 @@ LIBXSMM_INLINE __m512d MM512_LOADNTU_PD(const double* a)
   return va;
 }
 
-
-LIBXSMM_INLINE __m512d MM512_MASK_LOADU_PD(const double* a, char mask)
+LIBXSMM_INLINE __m512d MM512_LOADU_MASK_PD(const double* a, __mmask8 mask)
 {
   __m512d va = _mm512_setzero_pd();
   va = _mm512_mask_extloadunpacklo_pd(va, mask, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NONE);
@@ -64,8 +90,7 @@ LIBXSMM_INLINE __m512d MM512_MASK_LOADU_PD(const double* a, char mask)
   return va;
 }
 
-
-LIBXSMM_INLINE __m512d MM512_MASK_LOADNTU_PD(const double* a, char mask)
+LIBXSMM_INLINE __m512d MM512_LOADNTU_MASK_PD(const double* a, __mmask8 mask)
 {
   __m512d va = _mm512_setzero_pd();
   va = _mm512_mask_extloadunpacklo_pd(va, mask, &a[0], _MM_UPCONV_PD_NONE, _MM_HINT_NT);
@@ -73,6 +98,26 @@ LIBXSMM_INLINE __m512d MM512_MASK_LOADNTU_PD(const double* a, char mask)
   return va;
 }
 
+LIBXSMM_INLINE void MM512_STORE_PD(double* a, __m512d v)
+{
+  _mm512_extstore_pd(a, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+}
+
+LIBXSMM_INLINE void MM512_STORENT_PD(double* a, __m512d v)
+{
+  //_mm512_extstore_pd(a, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
+  _mm512_storenrngo_pd(a, v);
+}
+
+LIBXSMM_INLINE void MM512_STORE_MASK_PD(double* a, __m512d v, __mmask8 mask)
+{
+  _mm512_mask_extstore_pd(a, mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
+}
+
+LIBXSMM_INLINE void MM512_STORENT_MASK_PD(double* a, __m512d v, __mmask8 mask)
+{
+  _mm512_mask_extstore_pd(a, mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
+}
 
 LIBXSMM_INLINE void MM512_STOREU_PD(double* a, __m512d v)
 {
@@ -80,26 +125,23 @@ LIBXSMM_INLINE void MM512_STOREU_PD(double* a, __m512d v)
   _mm512_extpackstorehi_pd(&a[8], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
 }
 
-
 LIBXSMM_INLINE void MM512_STORENTU_PD(double* a, __m512d v)
 {
   _mm512_extpackstorelo_pd(&a[0], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
   _mm512_extpackstorehi_pd(&a[8], v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
 }
 
-
-LIBXSMM_INLINE void MM512_MASK_STOREU_PD(double* a, __m512d v, char mask)
+LIBXSMM_INLINE void MM512_STOREU_MASK_PD(double* a, __m512d v, __mmask8 mask)
 {
   _mm512_mask_extpackstorelo_pd(&a[0], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
   _mm512_mask_extpackstorehi_pd(&a[8], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NONE);
 }
 
-
-LIBXSMM_INLINE void MM512_MASK_STORENTU_PD(double* a, __m512d v, char mask)
+LIBXSMM_INLINE void MM512_STORENTU_MASK_PD(double* a, __m512d v, __mmask8 mask)
 {
   _mm512_mask_extpackstorelo_pd(&a[0], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
   _mm512_mask_extpackstorehi_pd(&a[8], mask, v, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
 }
 
 #endif // __MIC__
-#endif // LIBXSMM_KNC_H
+#endif // LIBXSMM_ISA_H

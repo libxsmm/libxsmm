@@ -33,12 +33,14 @@ import math
 import sys
 
 
-def create_macros(RowMajor, maxMNK):
+def create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK):
     print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
+    print "#define LIBXSMM_ALIGNED_STORES " + ["0", "1"][0 != AlignedStores]
+    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", "1"][0 != AlignedLoads]
+    print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
+    print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
+    print
     if (0 != RowMajor):
-        print "#define LIBXSMM_ROW_MAJOR 1"
-        print "#define LIBXSMM_COL_MAJOR 0"
-        print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
         print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
         print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
@@ -49,9 +51,6 @@ def create_macros(RowMajor, maxMNK):
         print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
         print "}"
     else:
-        print "#define LIBXSMM_ROW_MAJOR 0"
-        print "#define LIBXSMM_COL_MAJOR 1"
-        print
         print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
         print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
         print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
@@ -114,7 +113,7 @@ def make_typepfix(Real):
     return ["", "d"]["float" != Real]
 
 
-def create_mm(Real, M, N, K, RowMajor):
+def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
     if (0 != RowMajor):
         Rows, Cols = N, M
         l1, l2 = "b", "a"
@@ -136,20 +135,20 @@ def create_mm(Real, M, N, K, RowMajor):
         maskval = (1 << (mnm - mn + 1)) - 1
         print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
         if (255 != maskval):
-            mask_inst, mask_argv, mask3 = "MASK_", ", " + str(maskval), "mask3_"
+            mask_inst, mask_argv, mask3 = "_MASK", ", " + str(maskval), "_mask3"
         else:
             mask_inst, mask_argv, mask3 = "", "", ""
         for k in range(0, K):
-            print "      MM512_" + mask_inst + "LOADU_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + "),"
+            print "      MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + "),"
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
         print "      const int index = i * " + str(Rows) + " + " + str(mn) + ";"
-        print "      __m512" + make_typepfix(Real) + " xc = MM512_" + mask_inst + "LOADNTU_PD(c + index" + mask_argv + "), x" + l2 + "[" + str(K) + "];"
+        print "      __m512" + make_typepfix(Real) + " xc = MM512_LOADNT" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(c + index" + mask_argv + "), x" + l2 + "[" + str(K) + "];"
         for k in range(0, K):
             print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
-            print "      xc = _mm512_" + mask3 + "fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
-        print "      MM512_" + mask_inst + "STORENTU_PD(c + index, xc" + mask_argv + ");"
+            print "      xc = _mm512" + mask3 + "_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
+        print "      MM512_STORENT" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(c + index, xc" + mask_argv + ");"
         print "    }"
         print "  }"
     print "#else"
@@ -163,34 +162,37 @@ def load_dims(dims):
     return dims
 
 
-if (6 <= len(sys.argv)):
+if (7 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
+    AlignedStores = int(sys.argv[2])
+    AlignedLoads = int(sys.argv[3])
+    Threshold = int(sys.argv[4])
 
-    if (0 > int(sys.argv[2])):
-        print "#include <libxsmm_knc.h>"
+    if (0 > Threshold):
+        print "#include <libxsmm_isa.h>"
         print
         print
-        M = int(sys.argv[3])
-        N = int(sys.argv[4])
-        K = int(sys.argv[5])
-        # Note: create_mm is not yet ready to generate the single-precision implementation
+        M = int(sys.argv[5])
+        N = int(sys.argv[6])
+        K = int(sys.argv[7])
+        # Note: create_implementation is not yet ready to generate the single-precision implementation
         print "LIBXSMM_EXTERN_C void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
         print "{"
         print "  LIBXSMM_SMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
         print "}"
         print
         print
-        create_mm("double", M, N, K, RowMajor)
-    elif (7 <= len(sys.argv)):
-        dimsM = load_dims(sys.argv[5:5+int(sys.argv[3])])
-        dimsN = load_dims(sys.argv[5+int(sys.argv[3]):5+int(sys.argv[3])+int(sys.argv[4])])
-        dimsK = load_dims(sys.argv[5+int(sys.argv[3])+int(sys.argv[4]):])
-        maxMNK = int(sys.argv[2])
+        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads)
+    elif (9 <= len(sys.argv)):
+        maxMNK = Threshold
+        dimsM = load_dims(sys.argv[7:7+int(sys.argv[5])])
+        dimsN = load_dims(sys.argv[7+int(sys.argv[5]):7+int(sys.argv[5])+int(sys.argv[6])])
+        dimsK = load_dims(sys.argv[7+int(sys.argv[5])+int(sys.argv[6]):])
         for m in dimsM:
             for n in dimsN:
                 for k in dimsK:
                     maxMNK = max(maxMNK, m * n * k)
-        create_macros(RowMajor, maxMNK)
+        create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK)
     else:
         sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
 else:
