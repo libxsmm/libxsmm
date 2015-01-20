@@ -7,6 +7,9 @@ INDICES_M ?= $(shell seq 1 8)
 INDICES_N ?= $(shell seq 1 8)
 INDICES_K ?= $(shell seq 1 8)
 
+# Specify an alignment (Bytes)
+ALIGNMENT ?= 64
+
 # Use aligned Store and/or aligned Load instructions
 ALIGNED_STORES ?= 0
 ALIGNED_LOADS ?= 0
@@ -42,7 +45,7 @@ lib_all: lib_knc lib_hst
 header_knc: $(INC_KNC)
 $(INC_KNC): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@cat $(INCDIR)/libxsmm.0 > $@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(THRESHOLD) $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
 	@echo >> $@
 	@cat $(INCDIR)/libxsmm.1 >> $@
 	@echo >> $@
@@ -52,7 +55,7 @@ $(INC_KNC): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 source_knc: $(addprefix $(SRCDIR)/,$(SRCFILES))
 $(SRCDIR)/%.c: $(INC_KNC)
 	@mkdir -p $(SRCDIR)
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) -1 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -1 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
 
 main_knc: $(MAIN)
 $(MAIN): $(INC_KNC)

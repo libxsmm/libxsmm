@@ -68,6 +68,12 @@
 # endif
 #endif // LIBXSMM_PRAGMA
 
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
+#else
+# define LIBXSMM_ASSUME_ALIGNED(A, N)
+#endif
+
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #else

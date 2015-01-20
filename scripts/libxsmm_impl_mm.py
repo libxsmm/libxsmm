@@ -33,10 +33,11 @@ import math
 import sys
 
 
-def create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK):
+def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
-    print "#define LIBXSMM_ALIGNED_STORES " + ["0", "1"][0 != AlignedStores]
-    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", "1"][0 != AlignedLoads]
+    print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
+    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 < AlignedStores]
+    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 < AlignedLoads]
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print
@@ -64,12 +65,18 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK):
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
     print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)"
     print "#else"
+    print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
+    print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
+    print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
+    print "    REAL *const libxsmm_c_ = (C); \\"
+    if (0 != AlignedStores):
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES) \\"
+    if (0 != AlignedLoads):
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS) \\"
+    print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
+    print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
     if (0 != RowMajor):
-        print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
-        print "    REAL *const libxsmm_c_ = (C); \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
-        print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
         print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
@@ -77,18 +84,12 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK):
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
-        print "          libxsmm_r_ += (A)[libxsmm_i_*K+libxsmm_k_] * (B)[libxsmm_k_*N+libxsmm_j_]; \\"
+        print "          libxsmm_r_ += libxsmm_a_[libxsmm_i_*K+libxsmm_k_] * libxsmm_b_[libxsmm_k_*N+libxsmm_j_]; \\"
         print "        } \\"
         print "        libxsmm_c_[libxsmm_index_] = libxsmm_r_; \\"
         print "      } \\"
         print "    } \\"
-        print "  }"
     else:
-        print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
-        print "    REAL *const libxsmm_c_ = (C); \\"
-        print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
-        print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (M); ++libxsmm_j_) { \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
         print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
@@ -96,12 +97,12 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK):
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
-        print "          libxsmm_r_ += (A)[libxsmm_k_*M+libxsmm_j_] * (B)[libxsmm_i_*K+libxsmm_k_]; \\"
+        print "          libxsmm_r_ += libxsmm_a_[libxsmm_k_*M+libxsmm_j_] * libxsmm_b_[libxsmm_i_*K+libxsmm_k_]; \\"
         print "        } \\"
         print "        libxsmm_c_[libxsmm_index_] = libxsmm_r_; \\"
         print "      } \\"
         print "    } \\"
-        print "  }"
+    print "  }"
     print "#endif"
 
 
@@ -113,7 +114,7 @@ def make_typepfix(Real):
     return ["", "d"]["float" != Real]
 
 
-def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
+def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, Alignment):
     if (0 != RowMajor):
         Rows, Cols = N, M
         l1, l2 = "b", "a"
@@ -166,15 +167,16 @@ if (7 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
     AlignedStores = int(sys.argv[2])
     AlignedLoads = int(sys.argv[3])
-    Threshold = int(sys.argv[4])
+    Alignment = int(sys.argv[4])
+    Threshold = int(sys.argv[5])
 
     if (0 > Threshold):
         print "#include <libxsmm_isa.h>"
         print
         print
-        M = int(sys.argv[5])
-        N = int(sys.argv[6])
-        K = int(sys.argv[7])
+        M = int(sys.argv[6])
+        N = int(sys.argv[7])
+        K = int(sys.argv[8])
         # Note: create_implementation is not yet ready to generate the single-precision implementation
         print "LIBXSMM_EXTERN_C void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
         print "{"
@@ -182,17 +184,20 @@ if (7 <= len(sys.argv)):
         print "}"
         print
         print
-        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads)
-    elif (9 <= len(sys.argv)):
+        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, Alignment)
+    elif (10 <= len(sys.argv)):
+        indxM, indxN = 6, 7
+        sizeM = int(sys.argv[indxM])
+        sizeN = int(sys.argv[indxN])
+        dimsM = load_dims(sys.argv[indxN+1:indxN+1+sizeM])
+        dimsN = load_dims(sys.argv[indxN+1+sizeM:indxN+1+sizeM+sizeN])
+        dimsK = load_dims(sys.argv[indxN+1+sizeM+sizeN:])
         maxMNK = Threshold
-        dimsM = load_dims(sys.argv[7:7+int(sys.argv[5])])
-        dimsN = load_dims(sys.argv[7+int(sys.argv[5]):7+int(sys.argv[5])+int(sys.argv[6])])
-        dimsK = load_dims(sys.argv[7+int(sys.argv[5])+int(sys.argv[6]):])
         for m in dimsM:
             for n in dimsN:
                 for k in dimsK:
                     maxMNK = max(maxMNK, m * n * k)
-        create_macros(RowMajor, AlignedStores, AlignedLoads, maxMNK)
+        create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK)
     else:
         sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
 else:
