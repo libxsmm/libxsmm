@@ -96,12 +96,14 @@ int main(int argc, char* argv[])
     libxsmm_mm(m, n, k, a, b, result);
 #else // custom dispatch
     if (xsmm) {
+      // specialized routine
       xsmm(a, b, result);
     }
     else if (LIBXSMM_MAX_MNK >= (m * n * k) {
+      // inline an optimized implementation
       libxsmm_xmm(m, n, k, a, b, result);
     }
-    else {
+    else { // LAPACK/BLAS3 (fallback)
       libxsmm_blasmm(m, n, k, a, b, result);
     }
 #endif
