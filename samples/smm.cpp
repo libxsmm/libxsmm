@@ -114,7 +114,13 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_CHECK)
-    libxsmm_blasmm(m, n, k, a, b, expect);
+    // check against a different implementation
+    if (LIBXSMM_MAX_MNK >= (m * n * k)) {
+      libxsmm_blasmm(m, n, k, a, b, expect);
+    }
+    else {
+      libxsmm_imm(m, n, k, a, b, expect);
+    }
 # if defined(USE_PRINT)
     fprintf(stderr, "expect =\n");
     print(expect, m, n);
