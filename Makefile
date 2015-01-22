@@ -3,9 +3,9 @@
 ROW_MAJOR ?= 1
 
 # M, N, K values of the generated matrices
-INDICES_M ?= $(shell seq 1 8)
-INDICES_N ?= $(shell seq 1 8)
-INDICES_K ?= $(shell seq 1 8)
+INDICES_M ?= $(shell seq 1 5)
+INDICES_N ?= $(shell seq 1 5)
+INDICES_K ?= $(shell seq 1 5)
 
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
