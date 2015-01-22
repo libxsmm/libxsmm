@@ -45,137 +45,70 @@
 # define _MM_HINT_NT 1
 #endif
 
-LIBXSMM_INLINE __m512d MM512_SET1_PD(double value)
-{
-  return _mm512_set1_pd(value);
-}
+#define MM512_SET1_PD(V) \
+  _mm512_set1_pd(V)
+#define MM512_FMADD_PD(U, V, W) \
+  _mm512_fmadd_pd(U, V, W)
+#define MM512_FMADD_MASK_PD(U, V, W, MASK) \
+  _mm512_mask3_fmadd_pd(U, V, W, MASK)
 
-LIBXSMM_INLINE __m512d MM512_FMADD_PD(__m512d u, __m512d v, __m512d w)
-{
-  return _mm512_fmadd_pd(u, v, w);
-}
+#define MM512_LOAD_PD(A, HINT) \
+  _mm512_load_pd(A)
+#define MM512_LOAD_MASK_PD(A, MASK, HINT) \
+  _mm512_maskz_load_pd(MASK, A)
+#define MM512_LOADU_PD(A, HINT) \
+  _mm512_loadu_pd(A)
+#define MM512_LOADU_MASK_PD(A, MASK, HINT) \
+  _mm512_maskz_loadu_pd(MASK, A)
 
-LIBXSMM_INLINE __m512d MM512_FMADD_MASK_PD(__m512d u, __m512d v, __m512d w, __mmask8 mask)
-{
-  return _mm512_mask3_fmadd_pd(u, v, w, mask);
-}
-
-LIBXSMM_INLINE __m512d MM512_LOAD_PD(const double* a, int hint)
-{
-  return _mm512_load_pd(a); // no hint
-}
-
-LIBXSMM_INLINE __m512d MM512_LOAD_MASK_PD(const double* a, __mmask8 mask, int hint)
-{
-  return _mm512_maskz_load_pd(mask, a); // no hint
-}
-
-LIBXSMM_INLINE __m512d MM512_LOADU_PD(const double* a, int hint)
-{
-  return _mm512_loadu_pd(a); // no hint
-}
-
-LIBXSMM_INLINE __m512d MM512_LOADU_MASK_PD(const double* a, __mmask8 mask, int hint)
-{
-  return _mm512_maskz_loadu_pd(mask, a); // no hint
-}
-
-LIBXSMM_INLINE void MM512_STORE_PD(double* a, __m512d v, int hint)
-{
-  _mm512_store_pd(a, v); // no hint
-}
-
-LIBXSMM_INLINE void MM512_STORENRNGO_PD(double* a, __m512d v)
-{
-  _mm512_stream_pd(a, v);
-}
-
-LIBXSMM_INLINE void MM512_STORE_MASK_PD(double* a, __m512d v, __mmask8 mask, int hint)
-{
-  _mm512_mask_store_pd(a, mask, v); // no hint
-}
-
-LIBXSMM_INLINE void MM512_STOREU_PD(double* a, __m512d v, int hint)
-{
-  _mm512_storeu_pd(a, v); // no hint
-}
-
-LIBXSMM_INLINE void MM512_STOREU_MASK_PD(double* a, __m512d v, __mmask8 mask, int hint)
-{
-  _mm512_mask_storeu_pd(a, mask, v); // no hint
-}
+#define MM512_STORE_PD(A, V, HINT) \
+  _mm512_store_pd(A, V)
+#define MM512_STORENRNGO_PD(A, V) \
+  _mm512_stream_pd(A, V)
+#define MM512_STORE_MASK_PD(A, V, MASK, HINT) \
+  _mm512_mask_store_pd(A, MASK, V)
+#define MM512_STOREU_PD(A, V, HINT) \
+  _mm512_storeu_pd(A, V)
+#define MM512_STOREU_MASK_PD(A, V, MASK, HINT) \
+  _mm512_mask_storeu_pd(A, MASK, V)
 
 #elif defined(__MIC__)
 
-LIBXSMM_INLINE __m512d MM512_SET1_PD(double value)
-{
-  return _mm512_set1_pd(value);
+LIBXSMM_INLINE __m512d MM512_GET_PD() {
+  __m512d value; return value;
 }
+#define MM512_SET1_PD(V) \
+  _mm512_set1_pd(V)
+#define MM512_FMADD_PD(U, V, W) \
+  _mm512_fmadd_pd(U, V, W)
+#define MM512_FMADD_MASK_PD(U, V, W, MASK) \
+  _mm512_mask3_fmadd_pd(U, V, W, MASK)
 
-LIBXSMM_INLINE __m512d MM512_FMADD_PD(__m512d u, __m512d v, __m512d w)
-{
-  return _mm512_fmadd_pd(u, v, w);
-}
+#define MM512_LOAD_PD(A, HINT) \
+  _mm512_extload_pd(A, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, HINT)
+#define MM512_LOAD_MASK_PD(A, MASK, HINT) \
+  _mm512_mask_extload_pd(_mm512_setzero_pd(), MASK, A, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, HINT)
+#define MM512_LOADU_PD(A, HINT) \
+  _mm512_extloadunpackhi_pd( \
+    _mm512_extloadunpacklo_pd(MM512_GET_PD(), A, _MM_UPCONV_PD_NONE, HINT), \
+    (A) + 8, _MM_UPCONV_PD_NONE, HINT)
+#define MM512_LOADU_MASK_PD(A, MASK, HINT) \
+  _mm512_mask_extloadunpackhi_pd( \
+    _mm512_mask_extloadunpacklo_pd(_mm512_setzero_pd(), MASK, A, _MM_UPCONV_PD_NONE, HINT), \
+    MASK, (A) + 8, _MM_UPCONV_PD_NONE, HINT)
 
-LIBXSMM_INLINE __m512d MM512_FMADD_MASK_PD(__m512d u, __m512d v, __m512d w, __mmask8 mask)
-{
-  return _mm512_mask3_fmadd_pd(u, v, w, mask);
-}
-
-LIBXSMM_INLINE __m512d MM512_LOAD_PD(const double* a, int hint)
-{
-  return _mm512_extload_pd(a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, hint);
-}
-
-LIBXSMM_INLINE __m512d MM512_LOAD_MASK_PD(const double* a, __mmask8 mask, int hint)
-{
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_mask_extload_pd(va, mask, a, _MM_UPCONV_PD_NONE, _MM_BROADCAST64_NONE, hint);
-  return va;
-}
-
-LIBXSMM_INLINE __m512d MM512_LOADU_PD(const double* a, int hint)
-{
-  __m512d va;
-  va = _mm512_extloadunpacklo_pd(va, &a[0], _MM_UPCONV_PD_NONE, hint);
-  va = _mm512_extloadunpackhi_pd(va, &a[8], _MM_UPCONV_PD_NONE, hint);
-  return va;
-}
-
-LIBXSMM_INLINE __m512d MM512_LOADU_MASK_PD(const double* a, __mmask8 mask, int hint)
-{
-  __m512d va = _mm512_setzero_pd();
-  va = _mm512_mask_extloadunpacklo_pd(va, mask, &a[0], _MM_UPCONV_PD_NONE, hint);
-  va = _mm512_mask_extloadunpackhi_pd(va, mask, &a[8], _MM_UPCONV_PD_NONE, hint);
-  return va;
-}
-
-LIBXSMM_INLINE void MM512_STORE_PD(double* a, __m512d v, int hint)
-{
-  _mm512_extstore_pd(a, v, _MM_DOWNCONV_PD_NONE, hint);
-}
-
-LIBXSMM_INLINE void MM512_STORENRNGO_PD(double* a, __m512d v)
-{
-  _mm512_storenrngo_pd(a, v);
-}
-
-LIBXSMM_INLINE void MM512_STORE_MASK_PD(double* a, __m512d v, __mmask8 mask, int hint)
-{
-  _mm512_mask_extstore_pd(a, mask, v, _MM_DOWNCONV_PD_NONE, hint);
-}
-
-LIBXSMM_INLINE void MM512_STOREU_PD(double* a, __m512d v, int hint)
-{
-  _mm512_extpackstorelo_pd(&a[0], v, _MM_DOWNCONV_PD_NONE, hint);
-  _mm512_extpackstorehi_pd(&a[8], v, _MM_DOWNCONV_PD_NONE, hint);
-}
-
-LIBXSMM_INLINE void MM512_STOREU_MASK_PD(double* a, __m512d v, __mmask8 mask, int hint)
-{
-  _mm512_mask_extpackstorelo_pd(&a[0], mask, v, _MM_DOWNCONV_PD_NONE, hint);
-  _mm512_mask_extpackstorehi_pd(&a[8], mask, v, _MM_DOWNCONV_PD_NONE, hint);
-}
+#define MM512_STORE_PD(A, V, HINT) \
+  _mm512_extstore_pd(A, V, _MM_DOWNCONV_PD_NONE, HINT)
+#define MM512_STORENRNGO_PD(A, V) \
+  _mm512_storenrngo_pd(A, V)
+#define MM512_STORE_MASK_PD(A, V, MASK, HINT) \
+  _mm512_mask_extstore_pd(A, MASK, V, _MM_DOWNCONV_PD_NONE, HINT)
+#define MM512_STOREU_PD(A, V, HINT) \
+  _mm512_extpackstorelo_pd(A, V, _MM_DOWNCONV_PD_NONE, HINT); \
+  _mm512_extpackstorehi_pd((A) + 8, V, _MM_DOWNCONV_PD_NONE, HINT)
+#define MM512_STOREU_MASK_PD(A, V, MASK, HINT) \
+  _mm512_mask_extpackstorelo_pd(A, MASK, V, _MM_DOWNCONV_PD_NONE, HINT); \
+  _mm512_mask_extpackstorehi_pd((A) + 8, MASK, V, _MM_DOWNCONV_PD_NONE, HINT)
 
 #endif // __MIC__
 #endif // LIBXSMM_ISA_H
