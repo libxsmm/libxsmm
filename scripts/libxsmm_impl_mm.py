@@ -63,9 +63,9 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
         print "}"
     print
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
-    print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)"
+    print "# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)"
     print "#else"
-    print "# define LIBXSMM_SMM(REAL, UINT, M, N, K, A, B, C) { \\"
+    print "# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
     print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
     print "    REAL *const libxsmm_c_ = (C); \\"
@@ -74,7 +74,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     if (0 != AlignedLoads):
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS) \\"
-    print "    LIBXSMM_PRAGMA(vector nontemporal(libxsmm_c_)) \\"
     print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
     if (0 != RowMajor):
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
@@ -128,7 +127,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         mnparts = iparts + 1
     print "LIBXSMM_EXTERN_C void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
-    print "#if defined(__MIC__)"
+    print "#if defined(__MIC__) || defined(__AVX512F__)"
     print "  int i;"
     for mn in range(0, 8 * mnparts, 8):
         print "  {"
@@ -136,24 +135,24 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         maskval = (1 << (mnm - mn + 1)) - 1
         print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
         if (255 != maskval):
-            mask_inst, mask_argv, mask3 = "_MASK", ", " + str(maskval), "_mask3"
+            mask_inst, mask_argv = "_MASK", ", " + str(maskval)
         else:
-            mask_inst, mask_argv, mask3 = "", "", ""
+            mask_inst, mask_argv = "", ""
         for k in range(0, K):
-            print "      MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + "),"
+            print "      MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
         print "      const int index = i * " + str(Rows) + " + " + str(mn) + ";"
-        print "      __m512" + make_typepfix(Real) + " xc = MM512_LOADNT" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(c + index" + mask_argv + "), x" + l2 + "[" + str(K) + "];"
+        print "      __m512" + make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(c + index" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
         for k in range(0, K):
-            print "      x" + l2 + "[" + str(k) + "] = _mm512_set1_pd(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
-            print "      xc = _mm512" + mask3 + "_fmadd_pd(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
-        print "      MM512_STORENT" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(c + index, xc" + mask_argv + ");"
+            print "      x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(" + l2 + "[i*" + str(K) + "+" + str(k) + "]);"
+            print "      xc = MM512_FMADD" + mask_inst +"_PD(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
+        print "      MM512_STORE" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(c + index, xc" + mask_argv + ", _MM_HINT_NONE);"
         print "    }"
         print "  }"
     print "#else"
-    print "  LIBXSMM_SMM(" + Real + ", int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+    print "  LIBXSMM_IMM(" + Real + ", int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
     print "#endif"
     print "}"
 
@@ -180,7 +179,7 @@ if (7 <= len(sys.argv)):
         # Note: create_implementation is not yet ready to generate the single-precision implementation
         print "LIBXSMM_EXTERN_C void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
         print "{"
-        print "  LIBXSMM_SMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+        print "  LIBXSMM_IMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
         print "}"
         print
         print

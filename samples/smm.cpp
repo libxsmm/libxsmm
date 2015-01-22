@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
     T *const result = &vresult[0], *const expect = &vexpect[0];
     const T *const a = &va[0], *const b = &vb[0];
 
-    const libxsmm_mm_dispatch<T> xsmm(m, n, k);
-    if (xsmm) {
+    const libxsmm_mm_dispatch<T> xmm(m, n, k);
+    if (xmm) {
       fprintf(stderr, "specialized routine found for m=%i, n=%i, and k=%i!\n", m, n, k);
     }
 
@@ -95,13 +95,13 @@ int main(int argc, char* argv[])
 #if defined(USE_AUTODISPATCH)
     libxsmm_mm(m, n, k, a, b, result);
 #else // custom dispatch
-    if (xsmm) {
+    if (xmm) {
       // specialized routine
-      xsmm(a, b, result);
+      xmm(a, b, result);
     }
     else if (LIBXSMM_MAX_MNK >= (m * n * k) {
       // inline an optimized implementation
-      libxsmm_xmm(m, n, k, a, b, result);
+      libxsmm_imm(m, n, k, a, b, result);
     }
     else { // LAPACK/BLAS3 (fallback)
       libxsmm_blasmm(m, n, k, a, b, result);
