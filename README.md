@@ -4,7 +4,7 @@ Library for small matrix-matrix multiplications targeting Intel Architecture (x8
 
 The library provides a sophisticated dispatch mechanism (see [More Details](#more-details)) which is also targeting other instruction sets (beside of the Intrinsic code paths). The library can be also compiled to "MIC native code" which is able to run self-hosted as well as in an offloaded code region (via a FORTRAN directive or via C/C++ preprocessor pragma). The prerequisite for offloading the code is to compile it to position-independent (PIC) code even when building a static library.
 
-Performance: the presented code is by no means "optimal" or "best-performing" - it just uses Intrinsics. In fact, a well-optimizing compiler may arrange better code compared to what is layed out via the library's Python scripts. The latter can be exploited by just relying on the "inlinable code" and by not generating specialized functions.
+Performance: the presented code is by no means "optimal" or "best-performing" - it just uses Intrinsics. In fact, a well-optimizing compiler may arrange better code compared to what is laid out via the library's Python scripts. The latter can be exploited by just relying on the "inlinable code" and by not generating specialized functions.
 
 Interface
 =========
@@ -27,7 +27,7 @@ void libxsmm_sblasmm(int m, int n, int k, const float* a, const float* b, float*
 void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, double* c);
 ```
 
-With function overloading, C++ simply allows for a function called 'libxsmm_mm'. Further, a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor.
+With C++ function overloading, the library allows to omit the 's' and 'd' denoting the numeric type in the above C interface. Further, a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mm_dispatch'.
 
 Build Instructions
 ==================
@@ -80,7 +80,7 @@ The function 'libxsmm_?mm_dispatch' helps to amortize the cost of the dispatch w
 2. Inlined code, and
 3. BLAS library call.
 
-The level 2 and 3 may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., 'libxsmm_dmm_4_4_4'.
+All three levels are accessible directly (see [Interface](#interface)) in order to allow a customized code dispatch. The level 2 and 3 may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., 'libxsmm_dmm_4_4_4'.
 
 Further, the preprocessor symbol LIBXSMM_MAX_MNK denotes the largest problem size (*M* x *N* x *K*) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) calling the BLAS library linked with LIBXSMM. This threshold can be configured using for example:
 
