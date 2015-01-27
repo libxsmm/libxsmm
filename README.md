@@ -8,7 +8,7 @@ Performance: the presented code is by no means "optimal" or "best-performing" - 
 
 Interface
 =========
-The interface of the library is *generated* according to the [Build Instructions](#build-instructions) (therefore the header file 'include/libxsmm.h' is **not** stored in the code repository). The generated interface also defines certain  preprocessor symbols to store the properties the library was built for. For example, LIBXSMM_ROW_MAJOR and LIBXSMM_COL_MAJOR to mark down the storage order.
+The interface of the library is *generated* according to the [Build Instructions](#build-instructions) (therefore the header file 'include/libxsmm.h' is **not** stored in the code repository). The generated interface also defines certain preprocessor symbols to store the properties the library was built for. For example, LIBXSMM_ROW_MAJOR and LIBXSMM_COL_MAJOR are used to mark down the storage order.
 
 To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, one of the following interfaces can be used:
 
@@ -16,7 +16,7 @@ To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
 libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
-/** Automatically dispatched  matrix-matrix multiplication. */
+/** Automatically dispatched matrix-matrix multiplication. */
 void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c);
 void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c);
 /** Non-dispatched matrix-matrix multiplication using inline code. */
