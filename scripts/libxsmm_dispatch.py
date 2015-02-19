@@ -1,5 +1,5 @@
 ###############################################################################
-## Copyright (c) 2013-2014, Intel Corporation                                ##
+## Copyright (c) 2013-2015, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
 ##                                                                           ##
 ## Redistribution and use in source and binary forms, with or without        ##
@@ -32,62 +32,54 @@
 import math
 import sys
 
-def createigemm(M,N,K,RowMajor):
-    if RowMajor==1:
-        Rows, Cols = N, M
-        l1, l2 = "b", "a"
-    else:
-        Rows, Cols = M, N
-        l1, l2 = "a", "b"
-    iparts=int(math.floor(Rows/8))
-    fparts=Rows%8
-    if fparts==0:
-        mnparts=iparts
-    else:
-        mnparts=iparts+1
-    print "#include <immintrin.h>"
-    print "#include <xsmm_knc_util.h>"
-    print " "
 
-    print "void dc_smm_dnn_"+str(M)+"_"+str(N)+"_"+str(K)+"(const double* a, const double* b, double* c) {"
-    print "#ifdef __MIC__"
-    print "  int i;"
-    for k in range(0,K):
-        print "  __m512d xa"+str(k)+";"
-        print "  __m512d xb"+str(k)+";"
-    print "  __m512d xc0;"
-
-    for mn in range(0,8*mnparts,8):
-        mnm=min(mn+7,Rows-1)
-        maskval=(1<<(mnm-mn+1))-1
-        for k in range(0,K):
-            print "  x"+l1+str(k)+" = _MM512_MASK_LOADU_PD(&"+l1+"["+str(Rows*k)+"+"+str(mn)+"]," +str(maskval)+");"
-        print "  for(i=0;i<"+str(Cols)+";++i) {"
-        print "    xc0 = _MM512_MASK_LOADU_PD(&c[i*"+str(Rows)+"+"+str(mn)+"]," +str(maskval)+");"
-        for k in range(0,K):
-            print "    x"+l2+str(k)+"=_mm512_set1_pd("+l2+"[i*"+str(K)+"+"+str(k)+"]);"
-        for k in range(0,K):
-            print "    xc0=_mm512_mask3_fmadd_pd(xa"+str(k)+",xb"+str(k)+",xc0," +str(maskval)+");"
-        print "    _MM512_MASK_STOREU_PD(&c[i*"+str(Rows)+"+"+str(mn)+"],xc0," +str(maskval)+");"
-        print "  }"
-    print "#else"
+def create_dispatch(typeflag, dimsM, dimsN, dimsK):
+    print "LIBXSMM_EXTERN_C libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
+    print "{"
+    print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
+    print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
+    print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
+    print "  static const libxsmm_" + typeflag + "mm_function functions[] = {"
+    for m in dimsM:
+        for n in dimsN:
+           sys.stdout.write("    ")
+           for k in dimsK:
+                sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
+           print "// m = %d" % m
+    print "  };"
+    print
     print "  int m, n, k;"
-    print "  for (m=0; m<"+str(M)+"; m++) {"
-    print "    for (n=0; n<"+str(N)+"; n++) {"
-    print "      for (k=0; k<"+str(K)+"; k++) {"
-    if RowMajor==1:
-        print "        c[m*"+str(N)+"+n]+=a[m*"+str(K)+"+k]*b[k*"+str(N)+"+n];"
-    else:
-        print "        c[n*"+str(M)+"+m]+=a[k*"+str(M)+"+m]*b[n*"+str(K)+"+k];"
-    print "      }"
-    print "    }"
-    print "  }"
-    print "#endif"
+    print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
+    print "       && (m = ((const int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints)) - index_m) >= 0"
+    print "       && (n = ((const int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints)) - index_n) >= 0"
+    print "       && (k = ((const int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints)) - index_k) >= 0)"
+    print "    ? functions[nk*(m*nn+n)+k]"
+    print "    : 0;"
     print "}"
-    print " "
 
 
-if (len(sys.argv)==5):
-    createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]))
+def load_dims(dims):
+    dims = list(map(int, dims)) ; dims.sort()
+    return dims
+
+
+if (6 <= len(sys.argv)):
+    print "#include \"libxsmm.h\""
+    print "#include <stdlib.h>"
+    print
+    print
+    print "int compareints(const void* a, const void* b)"
+    print "{"
+    print "  return *((const int*)a) - *((const int*)b);"
+    print "}"
+    print
+    print
+    dimsM = load_dims(sys.argv[3:3+int(sys.argv[1])])
+    dimsN = load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])])
+    dimsK = load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):])
+    create_dispatch("s", dimsM, dimsN, dimsK)
+    print
+    print
+    create_dispatch("d", dimsM, dimsN, dimsK)
 else:
-    createigemm(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]),0)
+    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")

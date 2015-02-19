@@ -1,6 +1,7 @@
-include/xsmm_knc.h
-src/xsmm_knc.c
-src/dc_small_dnn_*_*_*.c
+include/libxsmm.h
+src/libxsmm.c
+src/mm_*_*_*.c
+samples/smm-*
 *.o
 *.a
 *.*~

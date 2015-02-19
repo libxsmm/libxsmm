@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2013-2014, Intel Corporation                                **
+** Copyright (c) 2013-2015, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -29,20 +29,66 @@
 /* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
  * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
 ******************************************************************************/
-#ifndef XSMM_KNC_H
-#define XSMM_KNC_H
+#ifndef LIBXSMM_H
+#define LIBXSMM_H
 
-/** Type of a function generated for a specific M, N, and K. */
-typedef void (*dc_smm_dnn_function_type)(const double*, const double*, double*);
+#define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
+#define LIBXSMM_CONCATENATE(A, B) A##B
+#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
 
-/**
- * Returns the pointer of the generated function; zero if it does not exist.
- * Allows to amortize the cost of the dispatch over multiple calls.
- */
-dc_smm_dnn_function_type dc_smm_dnn_function(int M, int N, int K);
+#if defined(__cplusplus)
+# define LIBXSMM_EXTERN_C extern "C"
+# define LIBXSMM_INLINE inline
+#else
+# define LIBXSMM_EXTERN_C
+# if (199901L <= __STDC_VERSION__)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#   define LIBXSMM_RESTRICT restrict
+#   define LIBXSMM_INLINE inline
+# else
+#   define LIBXSMM_INLINE static
+# endif // C99
+#endif // __cplusplus
 
-/**
- * Executes a generated function or falls back to the linked LAPACK implementation.
- * If M, N, and K does not change for multiple calls, it is more efficient to query
- * and reuse the function pointer (dc_smm_dnn_function).
- */
+#if !defined(LIBXSMM_RESTRICT)
+# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
+#   define LIBXSMM_RESTRICT __restrict__
+# elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+#   define LIBXSMM_RESTRICT __restrict
+# else
+#   define LIBXSMM_RESTRICT
+# endif
+#endif // LIBXSMM_RESTRICT
+
+#if !defined(LIBXSMM_PRAGMA)
+# if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+# else
+#   define LIBXSMM_PRAGMA(DIRECTIVE)
+# endif
+#endif // LIBXSMM_PRAGMA
+
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
+#else
+# define LIBXSMM_ASSUME_ALIGNED(A, N)
+#endif
+
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+#else
+LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(dgemm)(
+  const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(sgemm)(
+  const char*, const char*, const int*, const int*, const int*,
+  const float*, const float*, const int*, const float*, const int*,
+  const float*, float*, const int*);
+#endif
+
+#define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
+#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
+#define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
+
+/** Parameters the library was built for. */
