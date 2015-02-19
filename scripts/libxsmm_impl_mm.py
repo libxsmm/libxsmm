@@ -69,9 +69,9 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
     print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
     print "    REAL *const libxsmm_c_ = (C); \\"
-    if (0 != AlignedStores):
+    if (0 != AlignedStores and False): # TODO: bump up LDX
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES) \\"
-    if (0 != AlignedLoads):
+    if (0 != AlignedLoads and False): # TODO: bump up LDX
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS) \\"
     print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
@@ -162,12 +162,23 @@ def load_dims(dims):
     return dims
 
 
+def is_pot(num):
+    return 0 <= num or 0 == (num & (num - 1))
+
+
 if (7 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
     AlignedStores = int(sys.argv[2])
     AlignedLoads = int(sys.argv[3])
     Alignment = int(sys.argv[4])
     Threshold = int(sys.argv[5])
+
+    if (False == is_pot(AlignedStores)):
+      raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
+    if (False == is_pot(AlignedLoads)):
+      raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
+    if (False == is_pot(Alignment)):
+      raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
     if (0 > Threshold):
         print "#include <libxsmm_isa.h>"
@@ -198,6 +209,6 @@ if (7 <= len(sys.argv)):
                     maxMNK = max(maxMNK, m * n * k)
         create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK)
     else:
-        sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
+        raise ValueError(sys.argv[0] + ": wrong number of arguments!")
 else:
-    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
+    raise ValueError(sys.argv[0] + ": wrong number of arguments!")

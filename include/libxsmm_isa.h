@@ -45,6 +45,15 @@
 # define _MM_HINT_NT 1
 #endif
 
+#define MM_PREFETCH_L1(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_L2(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_L3(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_NT(A) \
+  MM_PREFETCH_L2(A)
+
 #define MM512_SET1_PD(V) \
   _mm512_set1_pd(V)
 #define MM512_FMADD_PD(U, V, W) \
@@ -73,6 +82,15 @@
   _mm512_mask_storeu_pd(A, MASK, V)
 
 #elif defined(__MIC__)
+
+#define MM_PREFETCH_L1(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_L2(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_L3(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_NT(A) \
+  MM_PREFETCH_L2(A)
 
 LIBXSMM_INLINE __m512d MM512_GET_PD() {
   __m512d value; return value;

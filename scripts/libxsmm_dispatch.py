@@ -82,4 +82,4 @@ if (6 <= len(sys.argv)):
     print
     create_dispatch("d", dimsM, dimsN, dimsK)
 else:
-    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
+    raise ValueError(sys.argv[0] + ": wrong number of arguments!")

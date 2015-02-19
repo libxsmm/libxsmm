@@ -48,4 +48,4 @@ if (7 <= len(sys.argv)):
                print "LIBXSMM_EXTERN_C void libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const double* a, const double* b, double* c);"
                print
 else:
-    sys.stderr.write(sys.argv[0] + ": wrong number of arguments!\n")
+    raise ValueError(sys.argv[0] + ": wrong number of arguments!")
