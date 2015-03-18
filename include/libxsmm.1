@@ -79,22 +79,24 @@ inline void libxsmm_blasmm(int m, int n, int k, const float *LIBXSMM_RESTRICT a,
 inline void libxsmm_blasmm(int m, int n, int k, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) { libxsmm_dblasmm(m, n, k, a, b, c); }
 
 /** Calls libxsmm_smm_dispatch, or libxsmm_dmm_dispatch depending on the type of T. */
-template<typename T> class libxsmm_mm_dispatch {};
+template<typename T> class libxsmm_mm_dispatch { typedef void function_type; };
 
 template<> class libxsmm_mm_dispatch<float> {
-  libxsmm_smm_function m_function;
+  typedef libxsmm_smm_function function_type;
+  function_type m_function;
 public:
   libxsmm_mm_dispatch(): m_function(0) {}
   libxsmm_mm_dispatch(int m, int n, int k): m_function(libxsmm_smm_dispatch(m, n, k)) {}
-  operator libxsmm_smm_function() const { return m_function; }
+  operator function_type() const { return m_function; }
 };
 
 template<> class libxsmm_mm_dispatch<double> {
-  libxsmm_dmm_function m_function;
+  typedef libxsmm_dmm_function function_type;
+  function_type m_function;
 public:
   libxsmm_mm_dispatch(): m_function(0) {}
   libxsmm_mm_dispatch(int m, int n, int k): m_function(libxsmm_dmm_dispatch(m, n, k)) {}
-  operator libxsmm_dmm_function() const { return m_function; }
+  operator function_type() const { return m_function; }
 };
 
 #endif // __cplusplus
