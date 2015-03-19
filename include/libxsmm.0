@@ -39,6 +39,7 @@
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
 # define LIBXSMM_INLINE inline
+# include <cstdint>
 #else
 # define LIBXSMM_EXTERN_C
 # if (199901L <= __STDC_VERSION__)
@@ -47,8 +48,9 @@
 #   define LIBXSMM_INLINE inline
 # else
 #   define LIBXSMM_INLINE static
-# endif // C99
-#endif // __cplusplus
+# endif /*C99*/
+# include <stdint.h>
+#endif /*__cplusplus*/
 
 #if !defined(LIBXSMM_RESTRICT)
 # if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
@@ -58,7 +60,7 @@
 # else
 #   define LIBXSMM_RESTRICT
 # endif
-#endif // LIBXSMM_RESTRICT
+#endif /*LIBXSMM_RESTRICT*/
 
 #if !defined(LIBXSMM_PRAGMA)
 # if defined(__INTEL_COMPILER) || defined(_MSC_VER)
@@ -66,14 +68,14 @@
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
-#endif // LIBXSMM_PRAGMA
+#endif /*LIBXSMM_PRAGMA*/
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
 #endif
-#define LIBXSMM_ALIGN(A, ALIGNMENT) ((uintptr_t)(-(-((intptr_t)A) & -((intptr_t)(ALIGNMENT)))))
+#define LIBXSMM_ALIGN(TYPE, A, ALIGNMENT) ((TYPE)(-(-((intptr_t)A) & -((intptr_t)(ALIGNMENT)))))
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
