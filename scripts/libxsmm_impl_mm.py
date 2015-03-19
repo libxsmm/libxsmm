@@ -150,7 +150,8 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         print "    };"
         print
         print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        print "      const int index = i * " + str(Rows) + " + " + str(mn) + ", i1 = i + 1, j = 0, k = 0;"
+        print "      const int index = i * " + str(Rows) + " + " + str(mn) + ";"
+        print "      int i1 = i + 1, j = 0, k = 0;"
         print "      __m512" + make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(c + index" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
         print "      for (k = 0; k < " + str(K) + "; ++k) {"
         print "        x" + l2 + "[k] = MM512_SET1_PD(" + l2 + "[j]);"
