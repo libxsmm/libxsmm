@@ -57,15 +57,6 @@
 # define _MM_HINT_NT 1
 #endif
 
-#define MM_PREFETCH_L1(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_L2(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_L3(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_NT(A) \
-  MM_PREFETCH_L2(A)
-
 #define MM512_SET1_PD(V) \
   _mm512_set1_pd(V)
 #define MM512_FMADD_PD(U, V, W) \
