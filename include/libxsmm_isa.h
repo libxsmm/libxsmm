@@ -140,5 +140,5 @@ LIBXSMM_INLINE __m512d MM512_GET_PD() {
   _mm512_mask_extpackstorelo_pd(A, MASK, V, _MM_DOWNCONV_PD_NONE, HINT); \
   _mm512_mask_extpackstorehi_pd((A) + 8, MASK, V, _MM_DOWNCONV_PD_NONE, HINT)
 
-#endif // __MIC__
-#endif // LIBXSMM_ISA_H
+#endif /*__MIC__*/
+#endif /*LIBXSMM_ISA_H*/

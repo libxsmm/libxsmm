@@ -71,8 +71,26 @@ int main(int argc, char* argv[])
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
+#if (0 != LIBXSMM_ROW_MAJOR)
+# if (0 != LIBXSMM_ALIGNED_STORES)
+    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, n, LIBXSMM_ALIGNED_STORES);
+# else
+    const int ldc = n;
+# endif
+#else
+# if (0 != LIBXSMM_ALIGNED_STORES)
+    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, m, LIBXSMM_ALIGNED_STORES);
+# else
+    const int ldc = m;
+# endif
+#endif
 
-    const int asize = m * k, bsize = k * n, csize = m * n;
+    const int asize = m * k, bsize = k * n;
+#if (0 != LIBXSMM_ROW_MAJOR)
+    const int csize = m * ldc;
+#else
+    const int csize = n * ldc;
+#endif
     std::vector<T> va(asize), vb(bsize);
     std::for_each(va.begin(), va.end(), nrand<T>);
     std::for_each(vb.begin(), vb.end(), nrand<T>);
@@ -80,9 +98,10 @@ int main(int argc, char* argv[])
     T *const result = &vresult[0], *const expect = &vexpect[0];
     const T *const a = &va[0], *const b = &vb[0];
 
+    fprintf(stderr, "m=%i n=%i k=%i ldc=%i\n", m, n, k, ldc);
     const libxsmm_mm_dispatch<T> xmm(m, n, k);
     if (xmm) {
-      fprintf(stderr, "specialized routine found for m=%i, n=%i, and k=%i!\n", m, n, k);
+      fprintf(stderr, "using a specialized routine\n");
     }
 
 #if defined(USE_PRINT)
@@ -129,7 +148,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < csize; ++i) {
       diff = std::max(diff, std::abs(static_cast<double>(result[i]) - static_cast<double>(expect[i])));
     }
-    fprintf(stderr, "diff = %f\n", diff);
+    fprintf(stderr, "diff=%f\n", diff);
 #endif
   }
   catch(const std::exception& e) {

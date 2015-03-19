@@ -19,8 +19,8 @@
   }
 
 /** Type of a function generated for a specific M, N, and K. */
-LIBXSMM_EXTERN_C typedef void (*libxsmm_smm_function)(const float*, const float*, float*);
-LIBXSMM_EXTERN_C typedef void (*libxsmm_dmm_function)(const double*, const double*, double*);
+typedef void (*libxsmm_smm_function)(const float*, const float*, float*);
+typedef void (*libxsmm_dmm_function)(const double*, const double*, double*);
 
 /**
  * Returns the pointer of the generated function; zero if it does not exist.
@@ -99,4 +99,4 @@ public:
   operator function_type() const { return m_function; }
 };
 
-#endif // __cplusplus
+#endif /*__cplusplus*/

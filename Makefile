@@ -26,24 +26,67 @@ LIBDIR = $(ROOTDIR)/lib
 
 INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDICES_K),$m_$n_$k)))
 
-TARGET_COMPILE_C_KNC := icc -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mmic
-TARGET_COMPILE_C_HST := icc -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mavx -axCORE-AVX2 -offload-attribute-target=mic
-AR := xiar
+# prefer the Intel compiler and prefer a C compiler (over C++)
+ifneq ($(shell which icc 2> /dev/null),)
+	CC := icc
+	AR := xiar
+	CFLAGS := -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -xHost -offload-attribute-target=mic
+	CFLAGS_MIC := -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mmic
+else ifneq ($(shell which icpc 2> /dev/null),)
+	CC := icpc
+	AR := xiar
+	CFLAGS := -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -xHost -offload-attribute-target=mic
+	CFLAGS_MIC := -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mmic
+#else ifneq ($(shell which icl 2> /dev/null),)
+#	CC := icl
+#	AR := xilib
+#else ifneq ($(shell which cl 2> /dev/null),)
+#	CC := cl
+else ifneq ($(shell which gcc 2> /dev/null),)
+	CC := gcc
+	CFLAGS := -std=c99 -O2 -march=native
+else ifneq ($(shell which g++ 2> /dev/null),)
+	CC := g++
+	CFLAGS := -O2 -march=native
+else ifneq ($(shell which pgc 2> /dev/null),)
+	CC := pgc
+else ifneq ($(shell which pgcpp 2> /dev/null),)
+	CC := pgcpp
+else ifneq ($(shell which cc 2> /dev/null),)
+	CC := cc
+else ifneq ($(shell which CC 2> /dev/null),)
+	CC := CC
+else ifneq ($(CXX),)
+	CC := $(CXX)
+endif
+
+ifeq ($(CFLAGS),)
+	CFLAGS := $(CXXFLAGS)
+endif
+ifeq ($(CFLAGS_MIC),)
+	CFLAGS_MIC := $(CFLAGS)
+endif
+ifeq ($(CC_HST),)
+	CC_HST := $(CC) $(CFLAGS)
+endif
+ifeq ($(CC_MIC),)
+	CC_MIC := $(CC) $(CFLAGS_MIC)
+endif
 
 SRCFILES = $(patsubst %,mm_%.c,$(INDICES))
-OBJFILES_KNC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
 OBJFILES_HST = $(patsubst %,$(OBJDIR)/intel64/mm_%.o,$(INDICES))
+OBJFILES_MIC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
 
-LIB_KNC  ?= $(LIBDIR)/mic/libxsmm.a
 LIB_HST  ?= $(LIBDIR)/intel64/libxsmm.a
-INC_KNC   = $(INCDIR)/libxsmm.h
+LIB_MIC  ?= $(LIBDIR)/mic/libxsmm.a
+INC_MIC   = $(INCDIR)/libxsmm.h
 MAIN  = $(SRCDIR)/libxsmm.c
 
 
-lib_all: lib_knc lib_hst
+lib_all: lib_hst lib_mic
 
-header_knc: $(INC_KNC)
-$(INC_KNC): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
+header_mic: $(INC_MIC)
+$(INC_MIC): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@cat $(INCDIR)/libxsmm.0 > $@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
 	@echo >> $@
@@ -52,31 +95,31 @@ $(INC_KNC): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@python $(SCRDIR)/libxsmm_interface.py $(ROW_MAJOR) $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) >> $@
 	@cat $(INCDIR)/libxsmm.2 >> $@
 
-source_knc: $(addprefix $(SRCDIR)/,$(SRCFILES))
-$(SRCDIR)/%.c: $(INC_KNC)
+source_mic: $(addprefix $(SRCDIR)/,$(SRCFILES))
+$(SRCDIR)/%.c: $(INC_MIC)
 	@mkdir -p $(SRCDIR)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -1 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
 
-main_knc: $(MAIN)
-$(MAIN): $(INC_KNC)
+main_mic: $(MAIN)
+$(MAIN): $(INC_MIC)
 	@mkdir -p $(SRCDIR)
 	@python $(SCRDIR)/libxsmm_dispatch.py $(words $(INDICES_M)) $(words $(INDICES_N)) $(INDICES_M) $(INDICES_N) $(INDICES_K) > $@
 
-compile_knc: $(OBJFILES_KNC)
+compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm_isa.h
 	@mkdir -p $(OBJDIR)/mic
-	$(TARGET_COMPILE_C_KNC) -I$(INCDIR) -c $< -o $@
+	$(CC_MIC) -I$(INCDIR) -c $< -o $@
 
 compile_hst: $(OBJFILES_HST)
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)/intel64
-	$(TARGET_COMPILE_C_HST) -I$(INCDIR) -c $< -o $@
+	$(CC_HST) -I$(INCDIR) -c $< -o $@
 
-lib_knc: $(LIB_KNC)
+lib_mic: $(LIB_MIC)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_KNC): $(OBJFILES_KNC) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/mic/%.o,$(MAIN))
+$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/mic/%.o,$(MAIN))
 else
-$(LIB_KNC): $(OBJFILES_KNC)
+$(LIB_MIC): $(OBJFILES_MIC)
 endif
 	@mkdir -p $(LIBDIR)/mic
 	$(AR) -rs $@ $^
@@ -94,6 +137,6 @@ clean:
 	rm -rf $(SRCDIR) $(OBJDIR) $(ROOTDIR)/*~ $(ROOTDIR)/*/*~
 
 realclean: clean
-	rm -rf $(LIBDIR) $(INC_KNC)
+	rm -rf $(LIBDIR) $(INC_MIC)
 
 install: lib_all clean
