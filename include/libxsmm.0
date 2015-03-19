@@ -32,6 +32,8 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
+#include <stdint.h>
+
 #define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
 #define LIBXSMM_CONCATENATE(A, B) A##B
 #define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
@@ -39,7 +41,6 @@
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
 # define LIBXSMM_INLINE inline
-# include <cstdint>
 #else
 # define LIBXSMM_EXTERN_C
 # if (199901L <= __STDC_VERSION__)
@@ -49,7 +50,6 @@
 # else
 #   define LIBXSMM_INLINE static
 # endif /*C99*/
-# include <stdint.h>
 #endif /*__cplusplus*/
 
 #if !defined(LIBXSMM_RESTRICT)
