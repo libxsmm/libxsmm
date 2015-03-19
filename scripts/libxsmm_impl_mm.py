@@ -41,26 +41,27 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print
+    print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
+    print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
     if (0 != RowMajor):
-        print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
-        print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
-        print "  char libxsmm_trans_ = 'N'; \\"
-        print "  LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \\"
-        print "    &libxsmm_n_, &libxsmm_m_, &libxsmm_k_, \\"
-        print "    &libxsmm_alpha_, (REAL*)(B), &libxsmm_n_, (REAL*)(A), &libxsmm_k_, \\"
-        print "    &libxsmm_beta_, (C), &libxsmm_n_); \\"
-        print "}"
+        mnk = "&libxsmm_n_, &libxsmm_m_, &libxsmm_k_"
+        amb = "(REAL*)(B), &libxsmm_n_, (REAL*)(A)"
+        ldc = "(N)"
     else:
-        print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
-        print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
-        print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
-        print "  char libxsmm_trans_ = 'N'; \\"
-        print "  LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \\"
-        print "    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, \\"
-        print "    &libxsmm_alpha_, (REAL*)(A), &libxsmm_m_, (REAL*)(B), &libxsmm_k_, \\"
-        print "    &libxsmm_beta_, (C), &libxsmm_m_); \\"
-        print "}"
+        mnk = "&libxsmm_m_, &libxsmm_n_, &libxsmm_k_"
+        amb = "(REAL*)(A), &libxsmm_m_, (REAL*)(B)"
+        ldc = "(M)"
+    if (0 != AlignedStores):
+        print "  UINT libxsmm_ldc_ = LIBXSMM_ALIGN(UINT, " + ldc + ", LIBXSMM_ALIGNED_STORES); \\"
+    else:
+        print "  UINT libxsmm_ldc_ = " + ldc + "; \\"
+    print "  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \\"
+    print "  char libxsmm_trans_ = 'N'; \\"
+    print "  LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \\"
+    print "    " + mnk + ", \\"
+    print "    &libxsmm_alpha_, " + amb + ", &libxsmm_k_, \\"
+    print "    &libxsmm_beta_, (C), &libxsmm_ldc_); \\"
+    print "}"
     print
     print "#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)"
     print "# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)"
