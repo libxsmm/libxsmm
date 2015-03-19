@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 #if (0 != LIBXSMM_ROW_MAJOR)
 # if (0 != LIBXSMM_ALIGNED_STORES)
-    const int ldc = LIBXSMM_ALIGN(int, n, LIBXSMM_ALIGNED_STORES);
+    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, n, LIBXSMM_ALIGNED_STORES);
 # else
     const int ldc = n;
 # endif
 #else
 # if (0 != LIBXSMM_ALIGNED_STORES)
-    const int ldc = LIBXSMM_ALIGN(int, m, LIBXSMM_ALIGNED_STORES);
+    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, m, LIBXSMM_ALIGNED_STORES);
 # else
     const int ldc = m;
 # endif
