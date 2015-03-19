@@ -69,16 +69,19 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
     print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
     print "    REAL *const libxsmm_c_ = (C); \\"
-    if (0 != AlignedStores and False): # TODO: bump up LDC
+    if (0 != AlignedStores):
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES) \\"
-    if (0 != AlignedLoads and False): # TODO: bump up LDX
+    if (0 != AlignedLoads and False): # TODO
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS) \\"
     print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
     if (0 != RowMajor):
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
-        print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
+        if (0 != AlignedStores):
+            print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN(N, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
+        else:
+            print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
@@ -91,7 +94,10 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     else:
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (M); ++libxsmm_j_) { \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
-        print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
+        if (0 != AlignedStores):
+            print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN(M, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
+        else:
+            print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA(unroll(16)) \\"
         print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
