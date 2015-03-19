@@ -69,7 +69,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \\"
     print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
     print "    REAL *const libxsmm_c_ = (C); \\"
-    if (0 != AlignedStores and False): # TODO: bump up LDX
+    if (0 != AlignedStores and False): # TODO: bump up LDC
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES) \\"
     if (0 != AlignedLoads and False): # TODO: bump up LDX
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
