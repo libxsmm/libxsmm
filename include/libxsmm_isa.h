@@ -36,6 +36,18 @@
 #include <immintrin.h>
 
 
+#define MM_PREFETCH_L1(A) \
+  _mm_prefetch(A, _MM_HINT_T0)
+#define MM_PREFETCH_L2(A) \
+  _mm_prefetch(A, _MM_HINT_T1)
+#define MM_PREFETCH_NT(A) \
+  _mm_prefetch(A, _MM_HINT_NTA)
+#define MM_PREFETCH_EX(A) \
+  _mm_prefetch(A, _MM_HINT_ET0)
+#define MM_PREFETCH_EXNT(A) \
+  _mm_prefetch(A, _MM_HINT_ENTA)
+
+
 #if defined(__AVX512F__)
 
 #if !defined(_MM_HINT_NONE)
