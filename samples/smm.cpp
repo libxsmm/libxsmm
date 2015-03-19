@@ -97,9 +97,11 @@ int main(int argc, char* argv[])
 
     std::vector<T> vresult(csize, 0.0), vexpect(csize, 0.0);
     T *const result = LIBXSMM_ALIGN(T*, &vresult[0], LIBXSMM_ALIGNED_STORES);
-    assert(0 == (reinterpret_cast<uintptr_t>(result) % (LIBXSMM_ALIGNED_STORES)));
     T *const expect = LIBXSMM_ALIGN(T*, &vexpect[0], LIBXSMM_ALIGNED_STORES);
+#if (0 != LIBXSMM_ALIGNED_STORES)
+    assert(0 == (reinterpret_cast<uintptr_t>(result) % (LIBXSMM_ALIGNED_STORES)));
     assert(0 == (reinterpret_cast<uintptr_t>(expect) % (LIBXSMM_ALIGNED_STORES)));
+#endif
 
     fprintf(stderr, "m=%i n=%i k=%i ldc=%i\n", m, n, k, ldc);
     const libxsmm_mm_dispatch<T> xmm(m, n, k);
