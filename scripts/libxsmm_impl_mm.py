@@ -36,8 +36,8 @@ import sys
 def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
     print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
-    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 < AlignedStores]
-    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 < AlignedLoads]
+    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
+    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print
@@ -186,12 +186,14 @@ if (7 <= len(sys.argv)):
     Alignment = int(sys.argv[4])
     Threshold = int(sys.argv[5])
 
-    if (False == is_pot(AlignedStores)):
-      raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
-    if (False == is_pot(AlignedLoads)):
-      raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
-    if (False == is_pot(Alignment)):
-      raise ValueError("Memory alignment must be a Power of Two (POT) number!")
+    if (1 < AlignedStores and False == is_pot(AlignedStores)):
+        raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
+    if (1 < AlignedLoads and False == is_pot(AlignedLoads)):
+        raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
+    if (0 >= Alignment):
+        Alignment = [1, 64][0 != Alignment] # sanitize/fallback
+    elif (False == is_pot(Alignment)):
+        raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
     if (0 > Threshold):
         print "#include <libxsmm_isa.h>"
