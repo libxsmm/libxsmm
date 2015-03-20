@@ -47,7 +47,6 @@
 #define MM_PREFETCH_EXNT(A) \
   _mm_prefetch(A, _MM_HINT_ENTA)
 
-
 #if defined(__AVX512F__)
 
 #if !defined(_MM_HINT_NONE)
