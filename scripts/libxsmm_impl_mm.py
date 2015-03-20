@@ -71,10 +71,10 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     print "    const REAL *const libxsmm_a_ = (A), *const libxsmm_b_ = (B); \\"
     print "    REAL *const libxsmm_c_ = (C); \\"
     if (0 != AlignedStores):
-        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES) \\"
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES); \\"
     if (0 != AlignedLoads and False): # TODO
-        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS) \\"
-        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS) \\"
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS); \\"
+        print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
     print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
     if (0 != RowMajor):
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
