@@ -85,15 +85,6 @@
 
 #elif defined(__MIC__)
 
-#define MM_PREFETCH_L1(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_L2(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_L3(A) \
-  _mm_prefetch(A, _MM_HINT_T0)
-#define MM_PREFETCH_NT(A) \
-  MM_PREFETCH_L2(A)
-
 LIBXSMM_INLINE __m512d MM512_GET_PD() {
   __m512d value; return value;
 }
