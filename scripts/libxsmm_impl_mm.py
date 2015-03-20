@@ -159,7 +159,10 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         print "        xc = MM512_FMADD" + mask_inst +"_PD(xa[k], xb[k], xc" + mask_argv + ");"
         print "      }"
         print "      MM512_STORE" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(dst, xc" + mask_argv + ", _MM_HINT_NONE);"
-        print "      dst += " + str(Rows) + ";"
+        if (0 != AlignedStores):
+            print "      dst += LIBXSMM_ALIGN_VALUE(int, " + Real + ", " + str(Rows) + ", LIBXSMM_ALIGNED_STORES);"
+        else:
+            print "      dst += " + str(Rows) + ";"
         print "      in += " + str(K) + ";"
         print "    }"
         print "  }"
