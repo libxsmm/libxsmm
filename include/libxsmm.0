@@ -70,12 +70,23 @@
 # endif
 #endif /*LIBXSMM_PRAGMA*/
 
+#define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
+#define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
+
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
+# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
+# if defined(_MSC_VER)
+#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
+# elif (40500 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
+# endif
 #endif
-#define LIBXSMM_ALIGN_VALUE(DST_TYPE, SRC_TYPE, VALUE, ALIGNMENT) ((DST_TYPE)((-(-((intptr_t)(VALUE) * ((intptr_t)sizeof(SRC_TYPE))) & -((intptr_t)(ALIGNMENT)))) / sizeof(SRC_TYPE)))
+#define LIBXSMM_ALIGN_VALUE(DST_TYPE, SRC_TYPE, VALUE, ALIGNMENT) ((DST_TYPE)((-( \
+  -((intptr_t)(VALUE) * ((intptr_t)sizeof(SRC_TYPE))) & \
+  -((intptr_t)(LIBXSMM_MAX(ALIGNMENT, 1))))) / sizeof(SRC_TYPE)))
 #define LIBXSMM_ALIGN(TYPE, PTR, ALIGNMENT) LIBXSMM_ALIGN_VALUE(TYPE, char, PTR, ALIGNMENT)
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
