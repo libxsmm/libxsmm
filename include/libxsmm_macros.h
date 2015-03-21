@@ -85,19 +85,6 @@
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N)
 #endif
 
-#if defined(__INTEL_COMPILER)
-# if defined(LIBMICSMM_USE_LOOPHINTS)
-#   pragma loop_count min(1), max(LIBMICSMM_MAX_RESULT_SIZE), avg(23*23)
-# endif
-#   if (defined(LIBMICSMM_USE_LIBXSMM) && defined(__LIBXSMM) && (0 < (LIBXSMM_ALIGNED_STORES))) || defined(LIBMICSMM_USE_XALIGN)
-#   pragma simd aligned(c:1)
-#   endif
-#elif (201307 <= _OPENMP) // V4.0
-#   if (defined(LIBMICSMM_USE_LIBXSMM) && defined(__LIBXSMM) && (0 < (LIBXSMM_ALIGNED_STORES))) || defined(LIBMICSMM_USE_XALIGN)
-#   pragma omp simd aligned(c:1)
-#   endif
-#endif
-
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 
