@@ -33,11 +33,7 @@
 
 #define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
 #define LIBXSMM_CONCATENATE(A, B) A##B
-#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
-
-#define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
-#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
-#define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
+#define LIBXSMM_TOSTRING(SYMBOL) LIBSXMM_STRINGIFY(SYMBOL)
 
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
@@ -99,14 +95,6 @@
 # define LIBXSMM_ALIGNED(DECL, N)
 #endif
 
-#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# define LIBXSMM_OFFLOAD 1
-# define LIBXSMM_TARGET(A) LIBXSMM_ATTRIBUTE(target(A))
-#else
-/*# define LIBXSMM_OFFLOAD 0*/
-# define LIBXSMM_TARGET(A)
-#endif
-
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 # define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
@@ -122,6 +110,30 @@
   -((intptr_t)(VALUE) * ((intptr_t)sizeof(SRC_TYPE))) & \
   -((intptr_t)(LIBXSMM_MAX(ALIGNMENT, 1))))) / sizeof(SRC_TYPE)))
 #define LIBXSMM_ALIGN(TYPE, PTR, ALIGNMENT) LIBXSMM_ALIGN_VALUE(TYPE, char, PTR, ALIGNMENT)
+
+#if defined(_WIN32) && !defined(__GNUC__)
+# define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
+#elif defined(__GNUC__)
+# define LIBXSMM_TLS __thread
+#elif defined(LIBXSMM_STDFEATURES)
+# define LIBXSMM_TLS thread_local
+#endif
+#if !defined(LIBXSMM_TLS)
+# define LIBXSMM_TLS
+#endif
+
+#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+# define LIBXSMM_OFFLOAD 1
+# define LIBXSMM_TARGET(A) LIBXSMM_ATTRIBUTE(target(A))
+#else
+/*# define LIBXSMM_OFFLOAD 0*/
+# define LIBXSMM_TARGET(A)
+#endif
+
+#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
+#define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
+#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
+#define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
 #if defined(LIBXMM_OFFLOAD)
 # pragma offload_attribute(push,target(mic))
