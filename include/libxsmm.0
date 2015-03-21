@@ -73,6 +73,14 @@
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 
+#if defined(_WIN32) && !defined(__GNUC__)
+# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
+# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
+#elif defined(__GNUC__)
+# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
+# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 # define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
