@@ -28,6 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm.h>
+
 #if defined(LIBXSMM_OFFLOAD)
 # pragma offload_attribute(push,target(mic))
 #endif
@@ -47,8 +49,6 @@
 #if defined(LIBXSMM_OFFLOAD)
 # pragma offload_attribute(pop)
 #endif
-
-#include <libxsmm.h>
 
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (5 * LIBXSMM_MAX_MNK)
