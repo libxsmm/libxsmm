@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const int default_psize = 500000, default_batch = 100;
+    const int default_psize = 30000, default_batch = 1000;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int s = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
       ? (default_psize << std::strlen(argv[2]))
