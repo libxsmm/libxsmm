@@ -33,8 +33,15 @@ import math
 import sys
 
 
-def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
-    print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
+def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, maxM, maxN, maxK, avgM, avgN, avgK):
+    maxMNK = int(Threshold ** (1.0 / 3.0) + 0.5)
+    print "#define LIBXSMM_MAX_MNK " + str(Threshold)
+    print "#define LIBXSMM_MAX_M " + str(max(maxMNK, maxM))
+    print "#define LIBXSMM_MAX_N " + str(max(maxMNK, maxN))
+    print "#define LIBXSMM_MAX_K " + str(max(maxMNK, maxK))
+    print "#define LIBXSMM_AVG_M " + str(avgM)
+    print "#define LIBXSMM_AVG_N " + str(avgN)
+    print "#define LIBXSMM_AVG_K " + str(avgK)
     print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
     print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
     print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
@@ -77,7 +84,9 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
     print "    LIBXSMM_PRAGMA_SIMD_COLLAPSE(2) \\"
     if (0 != RowMajor):
+        print "    LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_N) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
+        print "      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_M) \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
         if (0 != AlignedStores):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN_VALUE(UINT, REAL, N, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
@@ -85,6 +94,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \\"
+        print "        LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_K) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
         print "          libxsmm_r_ += libxsmm_a_[libxsmm_i_*(K)+libxsmm_k_] * libxsmm_b_[libxsmm_k_*(N)+libxsmm_j_]; \\"
         print "        } \\"
@@ -92,7 +102,9 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
         print "      } \\"
         print "    } \\"
     else:
+        print "    LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_M) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (M); ++libxsmm_j_) { \\"
+        print "      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_N) \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
         if (0 != AlignedStores):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN_VALUE(UINT, REAL, M, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
@@ -100,6 +112,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
         print "        LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \\"
+        print "        LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_MNK, LIBXSMM_AVG_K) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
         print "          libxsmm_r_ += libxsmm_a_[libxsmm_k_*(M)+libxsmm_j_] * libxsmm_b_[libxsmm_i_*(K)+libxsmm_k_]; \\"
         print "        } \\"
@@ -218,12 +231,12 @@ if (7 <= len(sys.argv)):
         dimsM = load_dims(sys.argv[indxN+1:indxN+1+sizeM])
         dimsN = load_dims(sys.argv[indxN+1+sizeM:indxN+1+sizeM+sizeN])
         dimsK = load_dims(sys.argv[indxN+1+sizeM+sizeN:])
-        maxMNK = Threshold
         for m in dimsM:
             for n in dimsN:
                 for k in dimsK:
-                    maxMNK = max(maxMNK, m * n * k)
-        create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK)
+                    Threshold = max(Threshold, m * n * k)
+        create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, max(dimsM), max(dimsN), max(dimsK), \
+            int(float(sum(dimsM)) / len(dimsM) + 0.5), int(float(sum(dimsN)) / len(dimsN) + 0.5), int(float(sum(dimsK)) / len(dimsK) + 0.5))
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
 else:
