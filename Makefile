@@ -30,13 +30,13 @@ INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDIC
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
-	CFLAGS_MIC := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential
+	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+	CFLAGS_MIC := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 else ifneq ($(shell which icpc 2> /dev/null),)
 	CC := icpc
 	AR := xiar
-	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
-	CFLAGS_MIC := -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential
+	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+	CFLAGS_MIC := -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
 #	AR := xilib
@@ -44,10 +44,10 @@ else ifneq ($(shell which icpc 2> /dev/null),)
 #	CC := cl
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
-	CFLAGS := -Wall -std=c99 -O2 -march=native
+	CFLAGS := -Wall -std=c99 -O2 -march=native -DNDEBUG
 else ifneq ($(shell which g++ 2> /dev/null),)
 	CC := g++
-	CFLAGS := -Wall -O2 -march=native
+	CFLAGS := -Wall -O2 -march=native -DNDEBUG
 else ifneq ($(shell which pgc 2> /dev/null),)
 	CC := pgc
 else ifneq ($(shell which pgcpp 2> /dev/null),)

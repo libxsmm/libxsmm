@@ -26,7 +26,7 @@ DBG := 0
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
-		DFLAGS += -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
@@ -34,13 +34,13 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
+		CXXFLAGS += -no-offload -DMKL_DIRECT_CALL_SEQ
 		LFLAGS += -no-offload
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
 		CFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
-		DFLAGS += -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
@@ -48,7 +48,7 @@ else ifneq (,$(filter $(CC),icc))
 	endif
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
+		CXXFLAGS += -no-offload -DMKL_DIRECT_CALL_SEQ
 		LFLAGS += -no-offload
 	endif
 else
