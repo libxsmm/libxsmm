@@ -104,6 +104,9 @@
 #elif defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+#else
+# define LIBXSMM_ATTRIBUTE(A)
+# define LIBXSMM_ALIGNED(DECL, N)
 #endif
 
 #if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
