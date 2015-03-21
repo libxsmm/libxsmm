@@ -64,7 +64,7 @@ template<typename T> void nrand(T& a)
 template<typename T> void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
 {
 #if (0 < LIBXSMM_ALIGNED_STORES)
-  LIBXSMM_ASSUME_ALIGNED(c, LIBMICSMM_ALIGNMENT);
+  LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
 #endif
   for (int i = 0; i < m; ++i) {
     for (int j = 0; j < n; ++j) {
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     fprintf(stdout, "psize=%i batch=%i m=%i n=%i k=%i ldc=%i\n", s, t, m, n, k, ldc);
 
     { // LAPACK/BLAS3 (fallback)
-      fprintf(stdout, "LAPACK/BLAS...\n", m, n, k, ldc);
+      fprintf(stdout, "LAPACK/BLAS...\n");
       std::fill(result.begin(), result.end(), 0);
 #if defined(_OPENMP)
       const double start = omp_get_wtime();
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     }
 
     { // auto-dispatched
-      fprintf(stdout, "Dispatched...\n", m, n, k, ldc);
+      fprintf(stdout, "Dispatched...\n");
       std::fill(result.begin(), result.end(), 0);
 #if defined(_OPENMP)
       const double start = omp_get_wtime();
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     }
 
     { // inline an optimized implementation
-      fprintf(stdout, "Inlined...\n", m, n, k, ldc);
+      fprintf(stdout, "Inlined...\n");
       std::fill(result.begin(), result.end(), 0);
 #if defined(_OPENMP)
       const double start = omp_get_wtime();
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
 
     const libxsmm_mm_dispatch<T> xmm(m, n, k);
     if (xmm) { // specialized routine
-      fprintf(stdout, "Specialized...\n", m, n, k, ldc);
+      fprintf(stdout, "Specialized...\n");
       std::fill(result.begin(), result.end(), 0);
 #if defined(_OPENMP)
       const double start = omp_get_wtime();
