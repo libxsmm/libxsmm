@@ -129,7 +129,7 @@ def make_typepfix(Real):
     return ["", "d"]["float" != Real]
 
 
-def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, Alignment):
+def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
     if (0 != RowMajor):
         Rows, Cols = N, M
         l1, l2 = "b", "a"
@@ -144,35 +144,41 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__) || defined(__AVX512F__)"
+    if (0 != AlignedStores):
+        print "  const int r = LIBXSMM_ALIGN_VALUE(int, " + Real + ", " + str(Rows) + ", LIBXSMM_ALIGNED_STORES);"
+    else:
+        print "  const int r = " + str(Rows) + ";"
     print "  int i;"
     for mn in range(0, 8 * mnparts, 8):
         print "  {"
         mnm = min(mn + 7, Rows - 1)
         maskval = (1 << (mnm - mn + 1)) - 1
-        print "    const __m512" + make_typepfix(Real) + " x" + l1 + "[] = {"
         if (255 != maskval):
             mask_inst, mask_argv = "_MASK", ", " + str(maskval)
         else:
             mask_inst, mask_argv = "", ""
-        for k in range(0, K):
-            print "      MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(Rows * k) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
-        print "    };"
-        print "    const " + Real + "* in = " + l2 + ";"
+        print "    const " + Real + "* src = " + l2 + ";"
         print "    " + Real + "* dst = c + " + str(mn) + ";"
+        print "    __m512" + make_typepfix(Real) + " x" + l1 + "[" + str(K) + "];"
+        print "    int k = 0;"
         print
-        print "    for (i = 0; i < " + str(Cols) + "; ++i) {"
-        print "      int k = 0;"
-        print "      __m512" + make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
+        print "    __m512" + make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
+        print "    for (k = 0; k < " + str(K) + "; ++k) {"
+        print "      x" + l1 + "[k] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + k * " + str(Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
+        print "      x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
+        print "      xc = MM512_FMADD" + mask_inst +"_PD(xa[k], xb[k], xc" + mask_argv + ");"
+        print "    }"
+        print "    MM512_STORE" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(dst, xc" + mask_argv + ", _MM_HINT_NONE);"
+        print
+        print "    for (i = 1; i < " + str(Cols) + "; ++i) {"
+        print "      src += " + str(K) + "; dst += r;"
+        print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
+        print
         print "      for (k = 0; k < " + str(K) + "; ++k) {"
-        print "        x" + l2 + "[k] = MM512_SET1_PD(in[k]);"
+        print "        x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
         print "        xc = MM512_FMADD" + mask_inst +"_PD(xa[k], xb[k], xc" + mask_argv + ");"
         print "      }"
         print "      MM512_STORE" + ["U", ""][0 != AlignedStores] + mask_inst + "_PD(dst, xc" + mask_argv + ", _MM_HINT_NONE);"
-        if (0 != AlignedStores):
-            print "      dst += LIBXSMM_ALIGN_VALUE(int, " + Real + ", " + str(Rows) + ", LIBXSMM_ALIGNED_STORES);"
-        else:
-            print "      dst += " + str(Rows) + ";"
-        print "      in += " + str(K) + ";"
         print "    }"
         print "  }"
     print "#else"
@@ -221,7 +227,7 @@ if (7 <= len(sys.argv)):
         print "}"
         print
         print
-        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, Alignment)
+        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads)
     elif (10 <= len(sys.argv)):
         indxM, indxN = 6, 7
         sizeM = int(sys.argv[indxM])
