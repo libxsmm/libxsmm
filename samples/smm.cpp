@@ -31,16 +31,27 @@
 ******************************************************************************/
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <cassert>
 #include <cstdio>
 #include <vector>
 #include <cmath>
 
 #include <libxsmm.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 
-#define USE_AUTODISPATCH
-#define USE_CHECK
-//#define USE_PRINT
+// make sure that stacksize is covering the problem size
+#define SMM_MAX_PROBLEM_SIZE (5 * LIBXSMM_MAX_MNK)
+
+#if (0 < (LIBXSMM_ALIGNED_STORES))
+# define SMM_ALIGNMENT LIBXSMM_ALIGNED_STORES
+#else
+# define SMM_ALIGNMENT LIBXSMM_ALIGNMENT
+#endif
+
+#define SMM_CHECK
 
 
 template<typename T> void nrand(T& a)
@@ -50,18 +61,45 @@ template<typename T> void nrand(T& a)
 }
 
 
-template<typename T> void print(const T* matrix, int nrows, int ncols)
+template<typename T> void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
 {
-  for (int i = 0; i < nrows; ++i) {
-    for (int j = 0; j < ncols; ++j) {
+#if (0 < LIBXSMM_ALIGNED_STORES)
+  LIBXSMM_ASSUME_ALIGNED(c, LIBMICSMM_ALIGNMENT);
+#endif
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < n; ++j) {
 #if (0 != LIBXSMM_ROW_MAJOR)
-      fprintf(stderr, "%6.2f", matrix[i*ncols+j]);
+      const T value = c[i*ldc+j];
 #else
-      fprintf(stderr, "%6.2f", matrix[j*nrows+i]);
+      const T value = c[j*ldc+i];
+#endif
+#if defined(_OPENMP)
+#     pragma omp atomic
+#endif
+#if (0 != LIBXSMM_ROW_MAJOR)
+      dst[i*n+j] += value;
+#else
+      dst[j*m+i] += value;
 #endif
     }
-    fprintf(stderr, "\n");
   }
+}
+
+
+template<typename T> double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ldc)
+{
+  double diff = 0;
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < n; ++j) {
+#if (0 != LIBXSMM_ROW_MAJOR)
+      const int k = i * ldc + j;
+#else
+      const int k = j * ldc + i;
+#endif
+      diff = std::max(diff, std::abs(static_cast<double>(result[k]) - static_cast<double>(expect[k])));
+    }
+  }
+  return diff;
 }
 
 
@@ -69,9 +107,16 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
+    const int default_psize = 500000, default_batch = 100;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int n = 2 < argc ? std::atoi(argv[2]) : m;
-    const int k = 3 < argc ? std::atoi(argv[3]) : m;
+    const int s = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
+      ? (default_psize << std::strlen(argv[2]))
+      : (default_psize >> std::strlen(argv[2])))) : default_psize;
+    const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
+      ? (default_batch << std::strlen(argv[3]))
+      : (default_batch >> std::strlen(argv[3])))) : default_batch;
+    const int n = 4 < argc ? std::atoi(argv[4]) : m;
+    const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
 #if (0 != LIBXSMM_ALIGNED_STORES)
 # if (0 != LIBXSMM_ROW_MAJOR)
@@ -89,79 +134,126 @@ int main(int argc, char* argv[])
 # endif
 #endif
 
+#if defined(_OPENMP)
+    const double gflops = (2ULL * s * m * n * k) * 1E-9;
+#endif
     const int asize = m * k, bsize = k * n;
-    std::vector<T> va(asize), vb(bsize);
-    std::for_each(va.begin(), va.end(), nrand<T>);
-    std::for_each(vb.begin(), vb.end(), nrand<T>);
-    const T *const a = &va[0], *const b = &vb[0];
-
-    std::vector<T> vresult(csize, 0.0), vexpect(csize, 0.0);
-    T *const result = LIBXSMM_ALIGN(T*, &vresult[0], LIBXSMM_ALIGNED_STORES);
-    T *const expect = LIBXSMM_ALIGN(T*, &vexpect[0], LIBXSMM_ALIGNED_STORES);
-#if (0 != LIBXSMM_ALIGNED_STORES)
-    assert(0 == (reinterpret_cast<uintptr_t>(result) % (LIBXSMM_ALIGNED_STORES)));
-    assert(0 == (reinterpret_cast<uintptr_t>(expect) % (LIBXSMM_ALIGNED_STORES)));
+    std::vector<T> a(s * asize), b(s * bsize), result(csize);
+#if defined(SMM_CHECK)
+    std::vector<T> expect(csize);
 #endif
+    std::for_each(a.begin(), a.end(), nrand<T>);
+    std::for_each(b.begin(), b.end(), nrand<T>);
+    fprintf(stdout, "psize=%i batch=%i m=%i n=%i k=%i ldc=%i\n", s, t, m, n, k, ldc);
 
-    fprintf(stderr, "m=%i n=%i k=%i ldc=%i\n", m, n, k, ldc);
-    const libxsmm_mm_dispatch<T> xmm(m, n, k);
-    if (xmm) {
-      fprintf(stderr, "using a specialized routine\n");
-    }
-
-#if defined(USE_PRINT)
-    fprintf(stderr, "a =\n");
-    print(a, m, k);
-    fprintf(stderr, "b =\n");
-    print(b, k, n);
+    { // LAPACK/BLAS3 (fallback)
+      fprintf(stdout, "LAPACK/BLAS...\n", m, n, k, ldc);
+      std::fill(result.begin(), result.end(), 0);
+#if defined(_OPENMP)
+      const double start = omp_get_wtime();
 #endif
-
-#if defined(USE_AUTODISPATCH)
-    libxsmm_mm(m, n, k, a, b, result);
-#else // custom dispatch
-    if (xmm) {
-      // specialized routine
-      xmm(a, b, result);
-    }
-    else if (LIBXSMM_MAX_MNK >= (m * n * k)) {
-      // inline an optimized implementation
-      libxsmm_imm(m, n, k, a, b, result);
-    }
-    else { // LAPACK/BLAS3 (fallback)
-      libxsmm_blasmm(m, n, k, a, b, result);
-    }
-#endif
-
-#if defined(USE_PRINT)
-    fprintf(stderr, "result =\n");
-    print(result, m, n);
-#endif
-
-#if defined(USE_CHECK)
-    // check against a different implementation
-    if (LIBXSMM_MAX_MNK >= (m * n * k)) {
-      libxsmm_blasmm(m, n, k, a, b, expect);
-    }
-    else {
-      libxsmm_imm(m, n, k, a, b, expect);
-    }
-# if defined(USE_PRINT)
-    fprintf(stderr, "expect =\n");
-    print(expect, m, n);
-# endif
-    double diff = 0;
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < n; ++j) {
-#if (0 != LIBXSMM_ROW_MAJOR)
-        const int k = i * ldc + j;
-#else
-        const int k = j * ldc + i;
-#endif
-        diff = std::max(diff, std::abs(static_cast<double>(result[k]) - static_cast<double>(expect[k])));
+#     pragma omp parallel for
+      for (int i = 0; i < s; i += t) {
+        LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+        for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+        for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+        }
+        add(&result[0], tmp, m, n, ldc); // atomic
       }
-    }
-    fprintf(stderr, "diff=%f\n", diff);
+#if defined(_OPENMP)
+      const double duration = omp_get_wtime() - start;
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+      }
+      fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
+#if defined(SMM_CHECK)
+      std::copy(result.begin(), result.end(), expect.begin());
+#endif
+    }
+
+    { // auto-dispatched
+      fprintf(stdout, "Dispatched...\n", m, n, k, ldc);
+      std::fill(result.begin(), result.end(), 0);
+#if defined(_OPENMP)
+      const double start = omp_get_wtime();
+#endif
+#     pragma omp parallel for
+      for (int i = 0; i < s; i += t) {
+        LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+        for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+        for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+        }
+        add(&result[0], tmp, m, n, ldc); // atomic
+      }
+#if defined(_OPENMP)
+      const double duration = omp_get_wtime() - start;
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+      }
+      fprintf(stdout, "\tduration: %.1f s\n", duration);
+#endif
+#if defined(SMM_CHECK)
+      fprintf(stdout, "\tdiff=%f\n", max_diff(&result[0], &expect[0], m, n, ldc));
+#endif
+    }
+
+    { // inline an optimized implementation
+      fprintf(stdout, "Inlined...\n", m, n, k, ldc);
+      std::fill(result.begin(), result.end(), 0);
+#if defined(_OPENMP)
+      const double start = omp_get_wtime();
+#endif
+#     pragma omp parallel for
+      for (int i = 0; i < s; i += t) {
+        LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+        for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+        for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+        }
+        add(&result[0], tmp, m, n, ldc); // atomic
+      }
+#if defined(_OPENMP)
+      const double duration = omp_get_wtime() - start;
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+      }
+      fprintf(stdout, "\tduration: %.1f s\n", duration);
+#endif
+#if defined(SMM_CHECK)
+      fprintf(stdout, "\tdiff=%f\n", max_diff(&result[0], &expect[0], m, n, ldc));
+#endif
+    }
+
+    const libxsmm_mm_dispatch<T> xmm(m, n, k);
+    if (xmm) { // specialized routine
+      fprintf(stdout, "Specialized...\n", m, n, k, ldc);
+      std::fill(result.begin(), result.end(), 0);
+#if defined(_OPENMP)
+      const double start = omp_get_wtime();
+#endif
+#     pragma omp parallel for
+      for (int i = 0; i < s; i += t) {
+        LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+        for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+        for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+        }
+        add(&result[0], tmp, m, n, ldc); // atomic
+      }
+#if defined(_OPENMP)
+      const double duration = omp_get_wtime() - start;
+      if (0 < duration) {
+        fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+      }
+      fprintf(stdout, "\tduration: %.1f s\n", duration);
+#endif
+#if defined(SMM_CHECK)
+      fprintf(stdout, "\tdiff=%f\n", max_diff(&result[0], &expect[0], m, n, ldc));
+#endif
+    }
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
