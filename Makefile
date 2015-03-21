@@ -66,12 +66,6 @@ endif
 ifeq ($(CFLAGS_MIC),)
 	CFLAGS_MIC := $(CFLAGS)
 endif
-ifeq ($(CC_HST),)
-	CC_HST := $(CC) $(CFLAGS)
-endif
-ifeq ($(CC_MIC),)
-	CC_MIC := $(CC) $(CFLAGS_MIC)
-endif
 
 SRCFILES = $(patsubst %,mm_%.c,$(INDICES))
 OBJFILES_HST = $(patsubst %,$(OBJDIR)/intel64/mm_%.o,$(INDICES))
@@ -106,12 +100,12 @@ $(MAIN): $(HEADER)
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/mic
-	$(CC_MIC) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS_MIC) -I$(INCDIR) -c $< -o $@
 
 compile_hst: $(OBJFILES_HST)
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/intel64
-	$(CC_HST) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 lib_mic: $(LIB_MIC)
 ifeq ($(origin NO_MAIN), undefined)

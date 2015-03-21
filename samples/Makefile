@@ -25,7 +25,7 @@ DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding
+		CXXFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -39,7 +39,7 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding
+		CFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -76,10 +76,10 @@ all: smm
 smm: smm-cpp.o
 
 %: %-c.o
-	$(LD) -o $@ $(CFLAGS) $< $(LFLAGS)
+	$(LD) -o $@ $< $(LFLAGS)
 
 %: %-cpp.o
-	$(LD) -o $@ $(CXXFLAGS) $< $(LFLAGS)
+	$(LD) -o $@ $< $(LFLAGS)
 
 
 %-c.o: %.c
