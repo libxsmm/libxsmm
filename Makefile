@@ -30,13 +30,13 @@ INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDIC
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	CFLAGS := -Wall -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -xHost #-offload-attribute-target=mic
-	CFLAGS_MIC := -Wall -std=c99 -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mmic
+	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
+	CFLAGS_MIC := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential
 else ifneq ($(shell which icpc 2> /dev/null),)
 	CC := icpc
 	AR := xiar
-	CFLAGS := -Wall -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -xHost #-offload-attribute-target=mic
-	CFLAGS_MIC := -Wall -mkl=sequential -O2 -fPIC -fno-alias -ansi-alias -mmic
+	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
+	CFLAGS_MIC := -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
 #	AR := xilib
