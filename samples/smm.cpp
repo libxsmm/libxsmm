@@ -158,6 +158,7 @@ int main(int argc, char* argv[])
 #endif
     {
       const double mbytes = 1.0 * s * (asize + bsize) * sizeof(T) / (1024 * 1024);
+      const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
 #if defined(_OPENMP)
       const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
@@ -185,6 +186,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -212,6 +214,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -239,6 +242,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -267,6 +271,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
