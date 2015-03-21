@@ -25,7 +25,7 @@ DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
+		CXXFLAGS += -O3 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -39,7 +39,7 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
+		CFLAGS += -O3 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -53,7 +53,7 @@ else ifneq (,$(filter $(CC),icc))
 	endif
 else
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -march=native -fopenmp
+		CXXFLAGS += -O3 -march=native -fopenmp
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
