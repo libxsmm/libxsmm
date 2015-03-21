@@ -26,9 +26,12 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
- * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#if defined(LIBXSMM_OFFLOAD)
+# pragma offload_attribute(push,target(mic))
+#endif
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -40,6 +43,10 @@
 #include <libxsmm.h>
 #if defined(_OPENMP)
 # include <omp.h>
+#endif
+
+#if defined(LIBXSMM_OFFLOAD)
+# pragma offload_attribute(pop)
 #endif
 
 // make sure that stacksize is covering the problem size
@@ -54,14 +61,16 @@
 #define SMM_CHECK
 
 
-template<typename T> void nrand(T& a)
+template<typename T>
+LIBXSMM_TARGET(mic) void nrand(T& a)
 {
   static const double scale = 1.0 / RAND_MAX;
   a = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
 }
 
 
-template<typename T> void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
+template<typename T>
+LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
 {
 #if (0 < LIBXSMM_ALIGNED_STORES)
   LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
@@ -86,7 +95,8 @@ template<typename T> void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 }
 
 
-template<typename T> double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ldc)
+template<typename T>
+LIBXSMM_TARGET(mic) double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ldc)
 {
   double diff = 0;
   for (int i = 0; i < m; ++i) {

@@ -66,7 +66,7 @@ def load_dims(dims):
 if (6 <= len(sys.argv)):
     print "#include <libxsmm.h>"
     print
-    print "#if defined(LIBXSTREAM_OFFLOAD)"
+    print "#if defined(LIBXSMM_OFFLOAD)"
     print "# pragma offload_attribute(push,target(mic))"
     print "# include <stdlib.h>"
     print "# pragma offload_attribute(pop)"

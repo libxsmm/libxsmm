@@ -34,7 +34,7 @@
 #include "libxsmm_macros.h"
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# if defined(LIBXSTREAM_OFFLOAD)
+# if defined(LIBXSMM_OFFLOAD)
 #   pragma offload_attribute(push,target(mic))
 #   include <mkl.h>
 #   pragma offload_attribute(pop)
