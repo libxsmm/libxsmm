@@ -84,7 +84,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, m
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
     print "    LIBXSMM_PRAGMA_SIMD_COLLAPSE(2) \\"
     if (0 != RowMajor):
-        print "    LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
         print "      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M) \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
@@ -102,7 +101,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, m
         print "      } \\"
         print "    } \\"
     else:
-        print "    LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M) \\"
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (M); ++libxsmm_j_) { \\"
         print "      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N) \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
