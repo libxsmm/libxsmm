@@ -30,12 +30,12 @@ INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDIC
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 	CFLAGS_MIC := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 else ifneq ($(shell which icpc 2> /dev/null),)
 	CC := icpc
 	AR := xiar
-	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG -DMKL_DIRECT_CALL_SEQ
+	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 	CFLAGS_MIC := -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
@@ -65,6 +65,14 @@ ifeq ($(CFLAGS),)
 endif
 ifeq ($(CFLAGS_MIC),)
 	CFLAGS_MIC := $(CFLAGS)
+endif
+
+MKLDIRECT := 0
+ifneq ($(MKLDIRECT),0)
+	CFLAGS := -DMKL_DIRECT_CALL_SEQ
+	ifneq ($(MKLDIRECT),1)
+		CFLAGS_MIC := -DMKL_DIRECT_CALL_SEQ
+	endif
 endif
 
 SRCFILES = $(patsubst %,mm_%.c,$(INDICES))

@@ -34,7 +34,7 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload -DMKL_DIRECT_CALL_SEQ
+		CXXFLAGS += -no-offload
 		LFLAGS += -no-offload
 	endif
 else ifneq (,$(filter $(CC),icc))
@@ -48,7 +48,7 @@ else ifneq (,$(filter $(CC),icc))
 	endif
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload -DMKL_DIRECT_CALL_SEQ
+		CXXFLAGS += -no-offload
 		LFLAGS += -no-offload
 	endif
 else
@@ -68,6 +68,12 @@ ifeq (,$(CXXFLAGS))
 endif
 ifeq (,$(CFLAGS))
 	CFLAGS := $(CXXFLAGS)
+endif
+
+MKLDIRECT := 0
+ifneq ($(MKLDIRECT),0)
+	CXXFLAGS := -DMKL_DIRECT_CALL_SEQ
+	CFLAGS   := -DMKL_DIRECT_CALL_SEQ
 endif
 
 
