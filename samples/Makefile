@@ -33,6 +33,10 @@ ifneq (,$(filter $(CXX),icpc))
 		CXXFLAGS += -O0 -g
 	endif
 	LFLAGS += -mkl=sequential
+	ifeq (0,$(OFFLOAD))
+		CXXFLAGS += -no-offload
+		LFLAGS += -no-offload
+	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
 		CFLAGS += -O2 -fno-alias -ansi-alias -xHost -openmp
@@ -43,6 +47,10 @@ else ifneq (,$(filter $(CC),icc))
 		CFLAGS += -O0 -g
 	endif
 	LFLAGS += -mkl=sequential
+	ifeq (0,$(OFFLOAD))
+		CXXFLAGS += -no-offload
+		LFLAGS += -no-offload
+	endif
 else
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -march=native -fopenmp
