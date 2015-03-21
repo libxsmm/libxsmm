@@ -45,7 +45,7 @@ def create_dispatch(typeflag, dimsM, dimsN, dimsK):
            sys.stdout.write("    ")
            for k in dimsK:
                 sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
-           print "// m = %d" % m
+           print "/*m = %d*/" % m
     print "  };"
     print
     print "  int m, n, k;"
