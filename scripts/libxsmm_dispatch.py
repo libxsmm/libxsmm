@@ -75,7 +75,7 @@ if (6 <= len(sys.argv)):
     print "#endif"
     print
     print
-    print "LIBXSMM_INLINE LIBXSMM_TARGET(mic) int compareints(const void* a, const void* b)"
+    print "LIBXSMM_TARGET(mic) int compareints(const void* a, const void* b)"
     print "{"
     print "  return *((const int*)a) - *((const int*)b);"
     print "}"
