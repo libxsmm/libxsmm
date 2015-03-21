@@ -145,9 +145,6 @@ int main(int argc, char* argv[])
 # endif
 #endif
 
-#if defined(_OPENMP)
-    const double gflops = (2ULL * s * m * n * k) * 1E-9;
-#endif
     const int asize = m * k, bsize = k * n;
     std::vector<T> va(s * asize), vb(s * bsize), vc(csize);
     std::for_each(va.begin(), va.end(), nrand<T>);
@@ -159,10 +156,14 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
-      fprintf(stdout, "psize=%i batch=%i m=%i n=%i k=%i ldc=%i\n", s, t, m, n, k, ldc);
+      const double mbytes = 1.0 * s * (asize + bsize) * sizeof(T) / (1024 * 1024);
+#if defined(_OPENMP)
+      const double gflops = 2.0 * s * m * n * k * 1E-9;
+#endif
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n", m, n, k, ldc, s, t, mbytes);
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
