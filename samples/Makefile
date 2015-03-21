@@ -25,42 +25,42 @@ DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
+		CXXFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
 		CXXFLAGS += -O0 -g
 	endif
-	LFLAGS += -mkl=sequential
+	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 		LFLAGS += -no-offload
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -openmp -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential
+		CFLAGS += -O2 -ipo -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -openmp -mkl=sequential
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
 		CFLAGS += -O0 -g
 	endif
-	LFLAGS += -mkl=sequential
+	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 		LFLAGS += -no-offload
 	endif
 else
 	ifeq (0,$(DBG))
-		CXXFLAGS += -fopenmp -O2 -march=native
+		CXXFLAGS += -O2 -march=native -fopenmp
 		DFLAGS += -DNDEBUG
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
 	else
 		CXXFLAGS += -O0 -g
 	endif
-	LFLAGS += -llapack -lblas
+	LFLAGS += -fopenmp -llapack -lblas
 endif
 
 ifeq (,$(CXXFLAGS))
