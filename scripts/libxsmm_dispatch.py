@@ -34,7 +34,7 @@ import sys
 
 
 def create_dispatch(typeflag, dimsM, dimsN, dimsK):
-    print "LIBXSMM_EXTERN_C libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
     print "{"
     print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
     print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
@@ -64,11 +64,18 @@ def load_dims(dims):
 
 
 if (6 <= len(sys.argv)):
-    print "#include \"libxsmm.h\""
-    print "#include <stdlib.h>"
+    print "#include <libxsmm.h>"
+    print
+    print "#if defined(LIBXSTREAM_OFFLOAD)"
+    print "# pragma offload_attribute(push,target(mic))"
+    print "# include <stdlib.h>"
+    print "# pragma offload_attribute(pop)"
+    print "#else"
+    print "# include <stdlib.h>"
+    print "#endif"
     print
     print
-    print "int compareints(const void* a, const void* b)"
+    print "LIBXSMM_INLINE LIBXSMM_TARGET(mic) int compareints(const void* a, const void* b)"
     print "{"
     print "  return *((const int*)a) - *((const int*)b);"
     print "}"

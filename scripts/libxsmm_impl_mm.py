@@ -75,7 +75,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
     if (0 != AlignedLoads and False): # TODO
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS); \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
-    print "    LIBXSMM_PRAGMA(/*omp*/ simd collapse(2)) \\"
+    print "    LIBXSMM_PRAGMA_SIMD_COLLAPSE(2) \\"
     if (0 != RowMajor):
         print "    for (libxsmm_j_ = 0; libxsmm_j_ < (N); ++libxsmm_j_) { \\"
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
@@ -84,7 +84,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
         else:
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
-        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
+        print "        LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
         print "          libxsmm_r_ += libxsmm_a_[libxsmm_i_*(K)+libxsmm_k_] * libxsmm_b_[libxsmm_k_*(N)+libxsmm_j_]; \\"
         print "        } \\"
@@ -99,7 +99,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, maxMNK):
         else:
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
-        print "        LIBXSMM_PRAGMA(/*omp*/ simd reduction(+:libxsmm_r_)) \\"
+        print "        LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \\"
         print "        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \\"
         print "          libxsmm_r_ += libxsmm_a_[libxsmm_k_*(M)+libxsmm_j_] * libxsmm_b_[libxsmm_i_*(K)+libxsmm_k_]; \\"
         print "        } \\"
@@ -130,7 +130,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         mnparts = iparts
     else:
         mnparts = iparts + 1
-    print "LIBXSMM_EXTERN_C void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__) || defined(__AVX512F__)"
     print "  int i;"
@@ -196,14 +196,15 @@ if (7 <= len(sys.argv)):
         raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
     if (0 > Threshold):
-        print "#include <libxsmm_isa.h>"
+        print "#include \"libxsmm_isa.h\""
+        print "#include <libxsmm.h>"
         print
         print
         M = int(sys.argv[6])
         N = int(sys.argv[7])
         K = int(sys.argv[8])
         # Note: create_implementation is not yet ready to generate the single-precision implementation
-        print "LIBXSMM_EXTERN_C void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
         print "{"
         print "  LIBXSMM_IMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
         print "}"

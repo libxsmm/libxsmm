@@ -26,15 +26,20 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
- * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_ISA_H
 #define LIBXSMM_ISA_H
 
-#include "libxsmm.h"
-#include <immintrin.h>
+#include <libxsmm_macros.h>
 
+#if defined(LIBXSTREAM_OFFLOAD)
+# pragma offload_attribute(push,target(mic))
+# include <immintrin.h>
+# pragma offload_attribute(pop)
+#else
+# include <immintrin.h>
+#endif
 
 #define MM_PREFETCH_L1(A) \
   _mm_prefetch(A, _MM_HINT_T0)
@@ -85,7 +90,7 @@
 
 #elif defined(__MIC__)
 
-LIBXSMM_INLINE __m512d MM512_GET_PD() {
+LIBXSMM_INLINE LIBXSMM_TARGET(mic) __m512d MM512_GET_PD() {
   __m512d value; return value;
 }
 #define MM512_SET1_PD(V) \

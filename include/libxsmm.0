@@ -26,92 +26,30 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
- * Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
-#include <stdint.h>
-
-#define LIBXSMM_STRINGIFY(SYMBOL) #SYMBOL
-#define LIBXSMM_CONCATENATE(A, B) A##B
-#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
-
-#if defined(__cplusplus)
-# define LIBXSMM_EXTERN_C extern "C"
-# define LIBXSMM_INLINE inline
-#else
-# define LIBXSMM_EXTERN_C
-# if (199901L <= __STDC_VERSION__)
-#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
-#   define LIBXSMM_RESTRICT restrict
-#   define LIBXSMM_INLINE inline
-# else
-#   define LIBXSMM_INLINE static
-# endif /*C99*/
-#endif /*__cplusplus*/
-
-#if !defined(LIBXSMM_RESTRICT)
-# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
-#   define LIBXSMM_RESTRICT __restrict__
-# elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
-#   define LIBXSMM_RESTRICT __restrict
-# else
-#   define LIBXSMM_RESTRICT
-# endif
-#endif /*LIBXSMM_RESTRICT*/
-
-#if !defined(LIBXSMM_PRAGMA)
-# if defined(__INTEL_COMPILER) || defined(_MSC_VER)
-#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
-# else
-#   define LIBXSMM_PRAGMA(DIRECTIVE)
-# endif
-#endif /*LIBXSMM_PRAGMA*/
-
-#define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
-#define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
-
-#if defined(_WIN32) && !defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
-# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-#elif defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
-# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-#endif
-
-#if defined(__INTEL_COMPILER)
-# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
-# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
-#else
-# define LIBXSMM_ASSUME_ALIGNED(A, N)
-# if defined(_MSC_VER)
-#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
-# elif (40500 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
-# endif
-#endif
-#define LIBXSMM_ALIGN_VALUE(DST_TYPE, SRC_TYPE, VALUE, ALIGNMENT) ((DST_TYPE)((-( \
-  -((intptr_t)(VALUE) * ((intptr_t)sizeof(SRC_TYPE))) & \
-  -((intptr_t)(LIBXSMM_MAX(ALIGNMENT, 1))))) / sizeof(SRC_TYPE)))
-#define LIBXSMM_ALIGN(TYPE, PTR, ALIGNMENT) LIBXSMM_ALIGN_VALUE(TYPE, char, PTR, ALIGNMENT)
+#include "libxsmm_macros.h"
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl.h>
+# if defined(LIBXSTREAM_OFFLOAD)
+#   pragma offload_attribute(push,target(mic))
+#   include <mkl.h>
+#   pragma offload_attribute(pop)
+# else
+#   include <mkl.h>
+# endif
 #else
-LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
-LIBXSMM_EXTERN_C void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
 #endif
-
-#define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
-#define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
-#define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
 /** Parameters the library was built for. */
