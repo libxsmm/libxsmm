@@ -1,7 +1,9 @@
 include/libxsmm.h
 src/libxsmm.c
 src/mm_*_*_*.c
-samples/smm-*
+samples/smm*
+*.zip
+*.pyc
 *.o
 *.a
 *.*~

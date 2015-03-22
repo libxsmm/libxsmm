@@ -29,6 +29,7 @@
 ## Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
 ## Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
 ###############################################################################
+import libxsmm_utilities
 import math
 import sys
 
@@ -121,14 +122,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, m
     print "#endif"
 
 
-def make_typeflag(Real):
-    return ["s", "d"]["float" != Real]
-
-
-def make_typepfix(Real):
-    return ["", "d"]["float" != Real]
-
-
 def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
     if (0 != RowMajor):
         Rows, Cols = N, M
@@ -141,7 +134,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
         mnparts = iparts
     else:
         mnparts = iparts + 1
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + libxsmm_utilities.make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__) || defined(__AVX512F__)"
     if (0 != AlignedStores):
@@ -158,7 +151,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
         else:
             mask_inst, mask_argv = "", ""
         print "    const " + Real + "* src = " + l2 + "; " + Real + "* dst = c + " + str(mn) + ";"
-        print "    __m512" + make_typepfix(Real) + " x" + l1 + "[" + str(K) + "], x" + l2 + "[" + str(K) + "], xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
+        print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " x" + l1 + "[" + str(K) + "], x" + l2 + "[" + str(K) + "], xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
         print
         print "    for (k = 0; k < " + str(K) + "; ++k) {"
         print "      x" + l1 + "[k] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + k * " + str(Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
@@ -184,15 +177,6 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
     print "}"
 
 
-def load_dims(dims):
-    dims = list(map(int, dims)) #; dims.sort()
-    return dims
-
-
-def is_pot(num):
-    return 0 <= num or 0 == (num & (num - 1))
-
-
 if (7 <= len(sys.argv)):
     RowMajor = int(sys.argv[1])
     AlignedStores = int(sys.argv[2])
@@ -200,13 +184,13 @@ if (7 <= len(sys.argv)):
     Alignment = int(sys.argv[4])
     Threshold = int(sys.argv[5])
 
-    if (1 < AlignedStores and False == is_pot(AlignedStores)):
+    if (1 < AlignedStores and False == libxsmm_utilities.is_pot(AlignedStores)):
         raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
-    if (1 < AlignedLoads and False == is_pot(AlignedLoads)):
+    if (1 < AlignedLoads and False == libxsmm_utilities.is_pot(AlignedLoads)):
         raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
     if (0 >= Alignment):
         Alignment = [1, 64][0 != Alignment] # sanitize/fallback
-    elif (False == is_pot(Alignment)):
+    elif (False == libxsmm_utilities.is_pot(Alignment)):
         raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
     if (0 > Threshold):
@@ -229,9 +213,9 @@ if (7 <= len(sys.argv)):
         indxM, indxN = 6, 7
         sizeM = int(sys.argv[indxM])
         sizeN = int(sys.argv[indxN])
-        dimsM = load_dims(sys.argv[indxN+1:indxN+1+sizeM])
-        dimsN = load_dims(sys.argv[indxN+1+sizeM:indxN+1+sizeM+sizeN])
-        dimsK = load_dims(sys.argv[indxN+1+sizeM+sizeN:])
+        dimsM = libxsmm_utilities.load_dims(sys.argv[indxN+1:indxN+1+sizeM], False)
+        dimsN = libxsmm_utilities.load_dims(sys.argv[indxN+1+sizeM:indxN+1+sizeM+sizeN], False)
+        dimsK = libxsmm_utilities.load_dims(sys.argv[indxN+1+sizeM+sizeN:], False)
         for m in dimsM:
             for n in dimsN:
                 for k in dimsK:

@@ -26,22 +26,25 @@
 ## NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        ##
 ## SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              ##
 ###############################################################################
-## Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
-## Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+## Hans Pabst (Intel Corp.)
 ###############################################################################
-import libxsmm_utilities
-import sys
+#import math
+#import sys
 
 
-if (7 <= len(sys.argv)):
-    dimsM = libxsmm_utilities.load_dims(sys.argv[4:4+int(sys.argv[2])], True)
-    dimsN = libxsmm_utilities.load_dims(sys.argv[4+int(sys.argv[2]):4+int(sys.argv[2])+int(sys.argv[3])], True)
-    dimsK = libxsmm_utilities.load_dims(sys.argv[4+int(sys.argv[2])+int(sys.argv[3]):], True)
-    for m in dimsM:
-        for n in dimsN:
-           for k in dimsK:
-               print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const float* a, const float* b, float* c);"
-               print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const double* a, const double* b, double* c);"
-               print
-else:
-    raise ValueError(sys.argv[0] + ": wrong number of arguments!")
+def make_typeflag(Real):
+    return ["s", "d"]["float" != Real]
+
+
+def make_typepfix(Real):
+    return ["", "d"]["float" != Real]
+
+
+def load_dims(dims, sort):
+    dims = list(map(int, dims))
+    if (sort): dims.sort()
+    return dims
+
+
+def is_pot(num):
+    return 0 <= num or 0 == (num & (num - 1))

@@ -29,7 +29,7 @@
 ## Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
 ## Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
 ###############################################################################
-import math
+import libxsmm_utilities
 import sys
 
 
@@ -58,11 +58,6 @@ def create_dispatch(typeflag, dimsM, dimsN, dimsK):
     print "}"
 
 
-def load_dims(dims):
-    dims = list(map(int, dims)) ; dims.sort()
-    return dims
-
-
 if (6 <= len(sys.argv)):
     print "#include <libxsmm.h>"
     print
@@ -81,9 +76,9 @@ if (6 <= len(sys.argv)):
     print "}"
     print
     print
-    dimsM = load_dims(sys.argv[3:3+int(sys.argv[1])])
-    dimsN = load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])])
-    dimsK = load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):])
+    dimsM = libxsmm_utilities.load_dims(sys.argv[3:3+int(sys.argv[1])], True)
+    dimsN = libxsmm_utilities.load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])], True)
+    dimsK = libxsmm_utilities.load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):], True)
     create_dispatch("s", dimsM, dimsN, dimsK)
     print
     print
