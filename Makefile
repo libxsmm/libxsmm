@@ -31,14 +31,32 @@ ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
 	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -std=c99
-	CFLAGS := $(FLAGS) -O3 -ipo -xHost -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
+	ifeq ($(AVX),1)
+		CFLAGS += -xAVX
+	else ifeq ($(AVX),2)
+		CFLAGS += -xCORE-AVX2
+	else ifeq ($(AVX),3)
+		CFLAGS += -xCOMMON-AVX512
+	else
+		CFLAGS += -xHost
+	endif
 else ifneq ($(shell which icpc 2> /dev/null),)
 	CC := icpc
 	AR := xiar
 	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
-	CFLAGS := $(FLAGS) -O3 -ipo -xHost -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
+	ifeq ($(AVX),1)
+		CFLAGS += -xAVX
+	else ifeq ($(AVX),2)
+		CFLAGS += -xCORE-AVX2
+	else ifeq ($(AVX),3)
+		CFLAGS += -xCOMMON-AVX512
+	else
+		CFLAGS += -xHost
+	endif
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
 #	AR := xilib
@@ -46,10 +64,28 @@ else ifneq ($(shell which icpc 2> /dev/null),)
 #	CC := cl
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
-	CFLAGS := -Wall -std=c99 -O2 -march=native -DNDEBUG
+	CFLAGS := -Wall -std=c99 -O3 -DNDEBUG
+	ifeq ($(AVX),1)
+		CFLAGS += -mavx
+	else ifeq ($(AVX),2)
+		CFLAGS += -mavx2
+	else ifeq ($(AVX),3)
+		CFLAGS += -mavx512f
+	else
+		CFLAGS += -march=native
+	endif
 else ifneq ($(shell which g++ 2> /dev/null),)
 	CC := g++
-	CFLAGS := -Wall -O2 -march=native -DNDEBUG
+	CFLAGS := -Wall -O3 -DNDEBUG
+	ifeq ($(AVX),1)
+		CFLAGS += -mavx
+	else ifeq ($(AVX),2)
+		CFLAGS += -mavx2
+	else ifeq ($(AVX),3)
+		CFLAGS += -mavx512f
+	else
+		CFLAGS += -march=native
+	endif
 else ifneq ($(shell which pgc 2> /dev/null),)
 	CC := pgc
 else ifneq ($(shell which pgcpp 2> /dev/null),)

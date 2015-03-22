@@ -27,6 +27,15 @@ ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
 		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -fopenmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
 		DFLAGS += -DNDEBUG
+		ifeq ($(AVX),1)
+			CXXFLAGS += -xAVX
+		else ifeq ($(AVX),2)
+			CXXFLAGS += -xCORE-AVX2
+		else ifeq ($(AVX),3)
+			CXXFLAGS += -xCOMMON-AVX512
+		else
+			CXXFLAGS += -xHost
+		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
@@ -41,20 +50,38 @@ else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
 		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -fopenmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
 		DFLAGS += -DNDEBUG
+		ifeq ($(AVX),1)
+			CFLAGS += -xAVX
+		else ifeq ($(AVX),2)
+			CFLAGS += -xCORE-AVX2
+		else ifeq ($(AVX),3)
+			CFLAGS += -xCOMMON-AVX512
+		else
+			CFLAGS += -xHost
+		endif
 	else ifneq (1,$(DBG))
-		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
+		CFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
 		CFLAGS += -Wall -O0 -g
 	endif
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
+		CFLAGS += -no-offload
 		LFLAGS += -no-offload
 	endif
-else
+else # GCC assumed
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -O3 -march=native -fopenmp
+		CXXFLAGS += -Wall -O3 -fopenmp
 		DFLAGS += -DNDEBUG
+		ifeq ($(AVX),1)
+			CXXFLAGS += -mavx
+		else ifeq ($(AVX),2)
+			CXXFLAGS += -mavx2
+		else ifeq ($(AVX),3)
+			CXXFLAGS += -mavx512f
+		else
+			CXXFLAGS += -march=native
+		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2
 	else
