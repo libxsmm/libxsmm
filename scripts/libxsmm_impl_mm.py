@@ -35,6 +35,11 @@ import sys
 
 def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, maxM, maxN, maxK, avgM, avgN, avgK):
     maxMNK = int(Threshold ** (1.0 / 3.0) + 0.5)
+    print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
+    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
+    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
+    print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
+    print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print "#define LIBXSMM_MAX_MNK " + str(Threshold)
     print "#define LIBXSMM_MAX_M " + str(max(maxMNK, maxM))
     print "#define LIBXSMM_MAX_N " + str(max(maxMNK, maxN))
@@ -42,11 +47,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, m
     print "#define LIBXSMM_AVG_M " + str(avgM)
     print "#define LIBXSMM_AVG_N " + str(avgN)
     print "#define LIBXSMM_AVG_K " + str(avgK)
-    print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
-    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
-    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
-    print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
-    print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print
     print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
