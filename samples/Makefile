@@ -129,10 +129,10 @@ smm: smm-cpp.o
 
 
 clean:
-	@-rm -f *.o *.i *.ii *.s
+	rm -f *.o *.i *.ii *.s
 
 realclean: clean
-	@-rm -f smm smm.exe
-	@-rm -f smm smm.exe
+	rm -f smm smm.exe
+	rm -f smm smm.exe
 
 install: all clean
