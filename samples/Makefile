@@ -25,7 +25,7 @@ DBG := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -fopenmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -openmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -48,7 +48,7 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -fopenmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -xHost -openmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
