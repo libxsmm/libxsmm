@@ -148,7 +148,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
         print "  const int r = LIBXSMM_ALIGN_VALUE(int, " + Real + ", " + str(Rows) + ", LIBXSMM_ALIGNED_STORES);"
     else:
         print "  const int r = " + str(Rows) + ";"
-    print "  int i;"
+    print "  int i = 0, k = 0;"
     for mn in range(0, 8 * mnparts, 8):
         print "  {"
         mnm = min(mn + 7, Rows - 1)
@@ -157,12 +157,9 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
             mask_inst, mask_argv = "_MASK", ", " + str(maskval)
         else:
             mask_inst, mask_argv = "", ""
-        print "    const " + Real + "* src = " + l2 + ";"
-        print "    " + Real + "* dst = c + " + str(mn) + ";"
-        print "    __m512" + make_typepfix(Real) + " x" + l1 + "[" + str(K) + "];"
-        print "    int k = 0;"
+        print "    const " + Real + "* src = " + l2 + "; " + Real + "* dst = c + " + str(mn) + ";"
+        print "    __m512" + make_typepfix(Real) + " x" + l1 + "[" + str(K) + "], x" + l2 + "[" + str(K) + "], xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT);"
         print
-        print "    __m512" + make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
         print "    for (k = 0; k < " + str(K) + "; ++k) {"
         print "      x" + l1 + "[k] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + k * " + str(Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
         print "      x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
@@ -172,7 +169,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
         print
         print "    for (i = 1; i < " + str(Cols) + "; ++i) {"
         print "      src += " + str(K) + "; dst += r;"
-        print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT), x" + l2 + "[" + str(K) + "];"
+        print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NT);"
         print
         print "      for (k = 0; k < " + str(K) + "; ++k) {"
         print "        x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
