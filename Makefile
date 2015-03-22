@@ -30,13 +30,15 @@ INDICES ?= $(foreach m,$(INDICES_M),$(foreach n,$(INDICES_N),$(foreach k,$(INDIC
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	CFLAGS     := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG
-	CFLAGS_MIC := -Wall -std=c99 -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
+	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -std=c99
+	CFLAGS := $(FLAGS) -O3 -ipo -xHost -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
 else ifneq ($(shell which icpc 2> /dev/null),)
 	CC := icpc
 	AR := xiar
-	CFLAGS :=     -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -xHost -opt-assume-safe-padding -mkl=sequential -DNDEBUG
-	CFLAGS_MIC := -Wall -O2 -ipo -fPIC -fno-alias -ansi-alias -mmic  -opt-assume-safe-padding -mkl=sequential -DNDEBUG
+	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
+	CFLAGS := $(FLAGS) -O3 -ipo -xHost -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
 #	AR := xilib
