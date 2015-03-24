@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 ###############################################################################
 ## Copyright (c) 2013-2015, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
@@ -34,20 +35,23 @@ import math
 import sys
 
 
-def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, maxM, maxN, maxK, avgM, avgN, avgK):
-    maxMNK = int(Threshold ** (1.0 / 3.0) + 0.5)
+def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Threshold):
     print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
     print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
     print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print "#define LIBXSMM_MAX_MNK " + str(Threshold)
-    print "#define LIBXSMM_MAX_M " + str(max(maxMNK, maxM))
-    print "#define LIBXSMM_MAX_N " + str(max(maxMNK, maxN))
-    print "#define LIBXSMM_MAX_K " + str(max(maxMNK, maxK))
-    print "#define LIBXSMM_AVG_M " + str(avgM)
-    print "#define LIBXSMM_AVG_N " + str(avgN)
-    print "#define LIBXSMM_AVG_K " + str(avgK)
+    maxMNK = int(Threshold ** (1.0 / 3.0) + 0.5)
+    print "#define LIBXSMM_MAX_M " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 0))
+    print "#define LIBXSMM_MAX_N " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 1))
+    print "#define LIBXSMM_MAX_K " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 2))
+    listM = libxsmm_utilities.make_mlist(listMNK)
+    listN = libxsmm_utilities.make_nlist(listMNK)
+    listK = libxsmm_utilities.make_klist(listMNK)
+    print "#define LIBXSMM_AVG_M " + str(int(float(sum(listM)) / len(listM) + 0.5))
+    print "#define LIBXSMM_AVG_N " + str(int(float(sum(listN)) / len(listN) + 0.5))
+    print "#define LIBXSMM_AVG_K " + str(int(float(sum(listK)) / len(listK) + 0.5))
     print
     print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
@@ -177,52 +181,39 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads):
     print "}"
 
 
-if (7 <= len(sys.argv)):
-    RowMajor = int(sys.argv[1])
-    AlignedStores = int(sys.argv[2])
-    AlignedLoads = int(sys.argv[3])
-    Alignment = int(sys.argv[4])
-    Threshold = int(sys.argv[5])
+if __name__ == '__main__':
+    if (7 < len(sys.argv)):
+        RowMajor = int(sys.argv[1])
+        AlignedStores = int(sys.argv[2])
+        AlignedLoads = int(sys.argv[3])
+        Alignment = int(sys.argv[4])
+        Threshold = int(sys.argv[5])
 
-    if (1 < AlignedStores and False == libxsmm_utilities.is_pot(AlignedStores)):
-        raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
-    if (1 < AlignedLoads and False == libxsmm_utilities.is_pot(AlignedLoads)):
-        raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
-    if (0 >= Alignment):
-        Alignment = [1, 64][0 != Alignment] # sanitize/fallback
-    elif (False == libxsmm_utilities.is_pot(Alignment)):
-        raise ValueError("Memory alignment must be a Power of Two (POT) number!")
+        if (1 < AlignedStores and False == libxsmm_utilities.is_pot(AlignedStores)):
+            raise ValueError("Memory alignment for Store instructions must be a Power of Two (POT) number!")
+        if (1 < AlignedLoads and False == libxsmm_utilities.is_pot(AlignedLoads)):
+            raise ValueError("Memory alignment for Load instructions must be a Power of Two (POT) number!")
+        if (0 >= Alignment):
+            Alignment = [1, 64][0 != Alignment] # sanitize/fallback
+        elif (False == libxsmm_utilities.is_pot(Alignment)):
+            raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
-    if (0 > Threshold):
-        print "#include \"libxsmm_isa.h\""
-        print "#include <libxsmm.h>"
-        print
-        print
-        M = int(sys.argv[6])
-        N = int(sys.argv[7])
-        K = int(sys.argv[8])
-        # Note: create_implementation is not yet ready to generate the single-precision implementation
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
-        print "{"
-        print "  LIBXSMM_IMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
-        print "}"
-        print
-        print
-        create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads)
-    elif (10 <= len(sys.argv)):
-        indxM, indxN = 6, 7
-        sizeM = int(sys.argv[indxM])
-        sizeN = int(sys.argv[indxN])
-        dimsM = libxsmm_utilities.load_dims(sys.argv[indxN+1:indxN+1+sizeM], False)
-        dimsN = libxsmm_utilities.load_dims(sys.argv[indxN+1+sizeM:indxN+1+sizeM+sizeN], False)
-        dimsK = libxsmm_utilities.load_dims(sys.argv[indxN+1+sizeM+sizeN:], False)
-        for m in dimsM:
-            for n in dimsN:
-                for k in dimsK:
-                    Threshold = max(Threshold, m * n * k)
-        create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, Threshold, max(dimsM), max(dimsN), max(dimsK), \
-            int(float(sum(dimsM)) / len(dimsM) + 0.5), int(float(sum(dimsN)) / len(dimsN) + 0.5), int(float(sum(dimsK)) / len(dimsK) + 0.5))
+        if (0 > Threshold):
+            print "#include \"libxsmm_isa.h\""
+            print "#include <libxsmm.h>"
+            print
+            print
+            M, N, K = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
+            # Note: create_implementation is not yet ready to generate the single-precision implementation
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
+            print "{"
+            print "  LIBXSMM_IMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+            print "}"
+            print
+            print
+            create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads)
+        else:
+            mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:])
+            create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, libxsmm_utilities.max_mnk(mnklist, Threshold))
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
-else:
-    raise ValueError(sys.argv[0] + ": wrong number of arguments!")

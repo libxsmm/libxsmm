@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 ###############################################################################
 ## Copyright (c) 2013-2015, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
@@ -28,8 +29,11 @@
 ###############################################################################
 ## Hans Pabst (Intel Corp.)
 ###############################################################################
-#import math
-#import sys
+import sys
+
+
+def is_pot(num):
+    return 0 <= num or 0 == (num & (num - 1))
 
 
 def make_typeflag(Real):
@@ -40,11 +44,91 @@ def make_typepfix(Real):
     return ["", "d"]["float" != Real]
 
 
-def load_dims(dims, sort):
-    dims = list(map(int, dims))
-    if (sort): dims.sort()
-    return dims
+def upper_list(lists, level):
+    upper = [level, level + len(lists)][1>level] - 1
+    above = lists[upper]
+    if above:
+        return above
+    else:
+        return upper_list(lists, level - 1)
 
 
-def is_pot(num):
-    return 0 <= num or 0 == (num & (num - 1))
+def make_mnklist(mlist, nlist, klist):
+    mnk = [mlist, nlist, klist]
+    top = [ \
+      [mlist, upper_list(mnk, 0)][0==len(mlist)], \
+      [nlist, upper_list(mnk, 1)][0==len(nlist)], \
+      [klist, upper_list(mnk, 2)][0==len(klist)]  \
+    ]
+    result = set()
+    for m in top[0]:
+        for n in top[1]:
+            if not nlist: n = m
+            for k in top[2]:
+                if not klist: k = n
+                if not mlist: m = k
+                result.add((m, n, k))
+    mnklist = list(result)
+    mnklist.sort()
+    return mnklist
+
+
+def make_mlist(mnklist):
+    return map(lambda mnk: mnk[0], mnklist)
+
+
+def make_nlist(mnklist):
+    return map(lambda mnk: mnk[1], mnklist)
+
+
+def make_klist(mnklist):
+    return map(lambda mnk: mnk[2], mnklist)
+
+
+def load_mlist(argv):
+    begin = 3; end = begin + int(argv[1])
+    if (begin > end or end > len(argv)):
+        raise ValueError("load_mlist: wrong number of elements!")
+    return map(int, argv[begin:end])
+
+
+def load_nlist(argv):
+    begin = 3 + int(argv[1]); end = begin + int(argv[2])
+    if (begin > end or end > len(argv)):
+        raise ValueError("load_nlist: wrong number of elements!")
+    return map(int, argv[begin:end])
+
+
+def load_klist(argv):
+    begin = 3 + int(argv[1]) + int(argv[2])
+    if (begin > len(argv)):
+        raise ValueError("load_klist: wrong number of elements!")
+    return map(int, argv[begin:])
+
+
+def load_mnklist(argv):
+    return make_mnklist(load_mlist(argv), load_nlist(argv), load_klist(argv))
+
+
+def load_mnksize(argv):
+    msize = int(argv[1])
+    nsize = int(argv[2])
+    mnsize = msize + nsize + 2
+    mnksize = len(argv) - 1
+    if (mnsize > mnksize):
+        raise ValueError("load_mnksize: malformed index list!")
+    return (msize, nsize, mnksize - mnsize)
+
+
+def max_mnk(mnklist, init = 0, index = None):
+    return reduce(max, map(lambda mnk: \
+      mnk[index] if (None != index and 0 <= index and index < 3) \
+      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
+
+
+if __name__ == '__main__':
+    if (3 < len(sys.argv)):
+        mnklist = load_mnklist(sys.argv)
+        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), mnklist))
+    else:
+        raise ValueError(sys.argv[0] + ": wrong number of arguments!")

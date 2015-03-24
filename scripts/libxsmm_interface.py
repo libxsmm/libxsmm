@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 ###############################################################################
 ## Copyright (c) 2013-2015, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
@@ -33,15 +34,12 @@ import libxsmm_utilities
 import sys
 
 
-if (7 <= len(sys.argv)):
-    dimsM = libxsmm_utilities.load_dims(sys.argv[4:4+int(sys.argv[2])], True)
-    dimsN = libxsmm_utilities.load_dims(sys.argv[4+int(sys.argv[2]):4+int(sys.argv[2])+int(sys.argv[3])], True)
-    dimsK = libxsmm_utilities.load_dims(sys.argv[4+int(sys.argv[2])+int(sys.argv[3]):], True)
-    for m in dimsM:
-        for n in dimsN:
-           for k in dimsK:
-               print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const float* a, const float* b, float* c);"
-               print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + str(m) + "_" + str(n) + "_" + str(k) + "(const double* a, const double* b, double* c);"
-               print
-else:
-    raise ValueError(sys.argv[0] + ": wrong number of arguments!")
+if __name__ == '__main__':
+    if (3 < len(sys.argv)):
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv)
+        for mnk in mnklist:
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]) + "(const float* a, const float* b, float* c);"
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]) + "(const double* a, const double* b, double* c);"
+            print
+    else:
+        raise ValueError(sys.argv[0] + ": wrong number of arguments!")

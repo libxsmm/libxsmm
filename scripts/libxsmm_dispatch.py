@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 ###############################################################################
 ## Copyright (c) 2013-2015, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
@@ -33,55 +34,63 @@ import libxsmm_utilities
 import sys
 
 
-def create_dispatch(typeflag, dimsM, dimsN, dimsK):
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int M, int N, int K)"
+def create_dispatch(typeflag, mnklist):
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
-    print "  static const int index_m[] = { " + str(dimsM).strip("[]") + " }, nm = sizeof(index_m) / sizeof(*index_m);"
-    print "  static const int index_n[] = { " + str(dimsN).strip("[]") + " }, nn = sizeof(index_n) / sizeof(*index_n);"
-    print "  static const int index_k[] = { " + str(dimsK).strip("[]") + " }, nk = sizeof(index_k) / sizeof(*index_k);"
     print "  static const libxsmm_" + typeflag + "mm_function functions[] = {"
-    for m in dimsM:
-        for n in dimsN:
-           sys.stdout.write("    ")
-           for k in dimsK:
-                sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(m) + "_" + str(n) + "_" + str(k) + ", ")
-           print "/*m = %d*/" % m
+    i, n, mnklen = 0, 5, len(mnklist)
+    for mnk in mnklist:
+        if (0 == ((i + 0) % n)): sys.stdout.write("    ")
+        sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]))
+        i = i + 1
+        if (i < mnklen):
+            sys.stdout.write([",\n", ", "][0 != (i % n)])
+        else:
+            print
     print "  };"
+    print "  const int i = index(m, n, k);"
     print
-    print "  int m, n, k;"
-    print "  return (LIBXSMM_MAX_MNK >= (M * N * K)"
-    print "       && (m = ((const int*)bsearch(&M, index_m, nm, sizeof(*index_m), compareints)) - index_m) >= 0"
-    print "       && (n = ((const int*)bsearch(&N, index_n, nn, sizeof(*index_n), compareints)) - index_n) >= 0"
-    print "       && (k = ((const int*)bsearch(&K, index_k, nk, sizeof(*index_k), compareints)) - index_k) >= 0)"
-    print "    ? functions[nk*(m*nn+n)+k]"
-    print "    : 0;"
+    print "  return 0 <= i ? functions[i] : 0;"
     print "}"
 
 
-if (6 <= len(sys.argv)):
-    print "#include <libxsmm.h>"
-    print
-    print "#if defined(LIBXSMM_OFFLOAD)"
-    print "# pragma offload_attribute(push,target(mic))"
-    print "# include <stdlib.h>"
-    print "# pragma offload_attribute(pop)"
-    print "#else"
-    print "# include <stdlib.h>"
-    print "#endif"
-    print
-    print
-    print "LIBXSMM_TARGET(mic) int compareints(const void* a, const void* b)"
-    print "{"
-    print "  return *((const int*)a) - *((const int*)b);"
-    print "}"
-    print
-    print
-    dimsM = libxsmm_utilities.load_dims(sys.argv[3:3+int(sys.argv[1])], True)
-    dimsN = libxsmm_utilities.load_dims(sys.argv[3+int(sys.argv[1]):3+int(sys.argv[1])+int(sys.argv[2])], True)
-    dimsK = libxsmm_utilities.load_dims(sys.argv[3+int(sys.argv[1])+int(sys.argv[2]):], True)
-    create_dispatch("s", dimsM, dimsN, dimsK)
-    print
-    print
-    create_dispatch("d", dimsM, dimsN, dimsK)
-else:
-    raise ValueError(sys.argv[0] + ": wrong number of arguments!")
+if __name__ == '__main__':
+    if (3 < len(sys.argv)):
+        print "#include <libxsmm.h>"
+        print
+        print "#if defined(LIBXSMM_OFFLOAD)"
+        print "# pragma offload_attribute(push,target(mic))"
+        print "# include <stdlib.h>"
+        print "# pragma offload_attribute(pop)"
+        print "#else"
+        print "# include <stdlib.h>"
+        print "#endif"
+        print
+        print
+        print "LIBXSMM_TARGET(mic) int compare(const void* a, const void* b)"
+        print "{"
+        print "  const int *const ia = (const int*)a, *const ib = (const int*)b;"
+        print "  const int d0 = ia[0] - ib[0], d1 = ia[1] - ib[1], d2 = ia[2] - ib[2];"
+        print "  return 0 != d0 ? d0 : (0 != d1 ? d1 : d2);"
+        print "}"
+        print
+        print
+        print "LIBXSMM_TARGET(mic) int index(int m, int n, int k)"
+        print "{"
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv)
+        print "  static const int indices[] = { " + ", ".join(  map(lambda mnk: ", ".join(map(str, mnk)), mnklist)).strip("[]") + " };"
+        print "  const int mnk[] = { m, n, k };"
+        print "  int i = 0;"
+        print
+        print "  return (LIBXSMM_MAX_MNK >= (m * n * k) && 0 <= (i = ((const int*)bsearch("
+        print "      mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare)) - indices))"
+        print "    ? (i / 3) : -1;"
+        print "}"
+        print
+        print
+        create_dispatch("s", mnklist)
+        print
+        print
+        create_dispatch("d", mnklist)
+    else:
+        raise ValueError(sys.argv[0] + ": wrong number of arguments!")
