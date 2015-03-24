@@ -158,8 +158,8 @@ int main(int argc, char* argv[])
 #endif
     {
       const double mbytes = 1.0 * s * (asize + bsize) * sizeof(T) / (1024 * 1024);
-      const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
 #if defined(_OPENMP)
+      const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 #if defined(SMM_CHECK)
