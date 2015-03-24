@@ -27,8 +27,7 @@
 ## NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        ##
 ## SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              ##
 ###############################################################################
-## Christopher Dahnken (Intel Corp.), Hans Pabst (Intel Corp.),
-## Alfio Lazzaro (CRAY Inc.), and Gilles Fourestey (CSCS)
+## Hans Pabst (Intel Corp.)
 ###############################################################################
 import libxsmm_utilities
 import sys
@@ -38,10 +37,10 @@ def create_dispatch(typeflag, mnklist):
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
     print "  static const libxsmm_" + typeflag + "mm_function functions[] = {"
-    i, n, mnklen = 0, 5, len(mnklist)
+    i, n, mnklen = 0, 6, len(mnklist)
     for mnk in mnklist:
         if (0 == ((i + 0) % n)): sys.stdout.write("    ")
-        sys.stdout.write("libxsmm_" + typeflag + "mm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]))
+        sys.stdout.write("libxsmm_" + typeflag + "mm_" + "_".join(map(str, mnk)))
         i = i + 1
         if (i < mnklen):
             sys.stdout.write([",\n", ", "][0 != (i % n)])
@@ -49,7 +48,6 @@ def create_dispatch(typeflag, mnklist):
             print
     print "  };"
     print "  const int i = index(m, n, k);"
-    print
     print "  return 0 <= i ? functions[i] : 0;"
     print "}"
 
@@ -77,14 +75,20 @@ if __name__ == '__main__':
         print
         print "LIBXSMM_TARGET(mic) int index(int m, int n, int k)"
         print "{"
+        print "  static const int indices[] = {"
         mnklist = libxsmm_utilities.load_mnklist(sys.argv)
-        print "  static const int indices[] = { " + ", ".join(  map(lambda mnk: ", ".join(map(str, mnk)), mnklist)).strip("[]") + " };"
-        print "  const int mnk[] = { m, n, k };"
-        print "  int i = 0;"
-        print
-        print "  return (LIBXSMM_MAX_MNK >= (m * n * k) && 0 <= (i = ((const int*)bsearch("
-        print "      mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare)) - indices))"
-        print "    ? (i / 3) : -1;"
+        i, n, mnklen = 0, 30, len(mnklist)
+        for mnk in mnklist:
+            if (0 == ((i + 0) % n)): sys.stdout.write("    ")
+            sys.stdout.write(", ".join(map(str, mnk)))
+            i = i + 1
+            if (i < mnklen):
+                sys.stdout.write([",\n", ", "][0 != (i % n)])
+            else:
+                print
+        print "  };"
+        print "  const int mnk[] = { m, n, k }, *const hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare);"
+        print "  return 0 != hit ? ((hit - indices) / 3) : -1;"
         print "}"
         print
         print
