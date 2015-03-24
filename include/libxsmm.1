@@ -4,11 +4,11 @@
  * and reuse the function pointer (libxsmm_dmm_dispatch).
  */
 #define LIBXSMM_MM(REAL, M, N, K, A, B, C) \
-  if (LIBXSMM_MAX_MNK >= ((M) * (N) * (K))) { \
+  if ((LIBXSMM_MAX_MNK) >= ((M) * (N) * (K))) { \
     const LIBXSMM_BLASPREC(libxsmm_, REAL, mm_function) libxsmm_mm_function_ = \
       LIBXSMM_BLASPREC(libxsmm_, REAL, mm_dispatch)((M), (N), (K)); \
     if (libxsmm_mm_function_) { \
-      (*libxsmm_mm_function_)((A), (B), (C)); \
+      libxsmm_mm_function_((A), (B), (C)); \
     } \
     else { \
       LIBXSMM_IMM(REAL, int, M, N, K, A, B, C); \
