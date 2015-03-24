@@ -37,8 +37,10 @@ import sys
 
 def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Threshold):
     print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
-    print "#define LIBXSMM_ALIGNED_STORES " + ["0", [str(Alignment), str(AlignedStores)][1 < AlignedStores]][0 != AlignedStores]
-    print "#define LIBXSMM_ALIGNED_LOADS " + ["0", [str(Alignment), str(AlignedLoads)][1 < AlignedLoads]][0 != AlignedLoads]
+    AlignedStores2 = [0, [Alignment, AlignedStores][1 < AlignedStores]][0 != AlignedStores]
+    print "#define LIBXSMM_ALIGNED_STORES " + str(AlignedStores2)
+    AlignedLoads2 = [0, [Alignment, AlignedLoads][1 < AlignedLoads]][0 != AlignedLoads]
+    print "#define LIBXSMM_ALIGNED_LOADS " + str(AlignedLoads2)
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
     print "#define LIBXSMM_MAX_MNK " + str(Threshold)
@@ -84,6 +86,10 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     print "    REAL *const libxsmm_c_ = (C); \\"
     if (0 != AlignedStores):
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES); \\"
+        if (0 != RowMajor):
+            print "    LIBXSMM_ASSUME(0 == N % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
+        else:
+            print "    LIBXSMM_ASSUME(0 == M % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
     if (0 != AlignedLoads and False): # TODO
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS); \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
