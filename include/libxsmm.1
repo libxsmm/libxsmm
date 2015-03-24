@@ -18,9 +18,6 @@
     LIBXSMM_BLASMM(REAL, int, M, N, K, A, B, C); \
   }
 
-/** Library initialization routine (optional); speeding up the auto-dispatch. */
-LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_init();
-
 /** Type of a function generated for a specific M, N, and K. */
 typedef LIBXSMM_TARGET(mic) void (*libxsmm_smm_function)(const float*, const float*, float*);
 typedef LIBXSMM_TARGET(mic) void (*libxsmm_dmm_function)(const double*, const double*, double*);

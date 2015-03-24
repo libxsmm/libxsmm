@@ -96,12 +96,5 @@ if __name__ == '__main__':
         print
         print
         create_dispatch("d", mnklist)
-        print
-        print
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_init()"
-        print "{"
-        print "  libxsmm_smm_dispatch(0, 0, 0);"
-        print "  libxsmm_dmm_dispatch(0, 0, 0);"
-        print "}"
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
