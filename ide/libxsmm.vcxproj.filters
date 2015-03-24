@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{9c7d8219-7adb-4410-8ceb-c7422106af6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{df2aad30-e992-4052-8f3a-f1343f4e3f33}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\libxsmm.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_macros.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_isa.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\include\libxsmm.0">
+      <Filter>include</Filter>
+    </None>
+    <None Include="..\include\libxsmm.1">
+      <Filter>include</Filter>
+    </None>
+    <None Include="..\include\libxsmm.2">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\mm_4_4_4.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mm_5_5_5.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mm_23_23_23.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mm_1_1_1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mm_2_2_2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mm_3_3_3.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
