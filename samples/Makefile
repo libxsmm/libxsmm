@@ -133,6 +133,5 @@ clean:
 
 realclean: clean
 	rm -f smm smm.exe
-	rm -f smm smm.exe
 
 install: all clean
