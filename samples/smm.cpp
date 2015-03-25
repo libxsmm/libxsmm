@@ -35,6 +35,7 @@
 #endif
 
 #include <algorithm>
+#include <stdexcept>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
