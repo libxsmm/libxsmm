@@ -126,7 +126,7 @@ $(HEADER): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 
 source: $(addprefix $(SRCDIR)/,$(SRCFILES))
 $(SRCDIR)/%.c: $(HEADER)
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -1 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -2 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
