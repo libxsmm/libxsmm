@@ -52,7 +52,7 @@ ifneq ($(shell which icc 2> /dev/null),)
 	endif
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
-	FLAGS := -Wall -O3 -DNDEBUG
+	FLAGS := -Wall -O2 -DNDEBUG
 	CFLAGS := $(FLAGS) -std=c99
 	ifneq ($(shell which g++ 2> /dev/null),)
 		CXX := g++
