@@ -87,8 +87,12 @@ if __name__ == '__main__':
             else:
                 print
         print "  };"
-        print "  const int mnk[] = { m, n, k }, *const hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare);"
-        print "  return 0 != hit ? ((hit - indices) / 3) : -1;"
+        print "  const int* hit = 0;"
+        print "  int mnk[3];"
+        print
+        print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
+        print "  hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare);"
+        print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
         print "}"
         print
         print
