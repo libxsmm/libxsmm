@@ -105,6 +105,8 @@
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 # elif (40500 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 #   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
+# else
+#   define LIBXSMM_ASSUME(EXPRESSION)
 # endif
 #endif
 #define LIBXSMM_ALIGN_VALUE(DST_TYPE, SRC_TYPE, VALUE, ALIGNMENT) ((DST_TYPE)((-( \
