@@ -30,43 +30,46 @@ ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
 	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
-	ifeq ($(AVX),1)
-		FLAGS += -xAVX
-	else ifeq ($(AVX),2)
-		FLAGS += -xCORE-AVX2
-	else ifeq ($(AVX),3)
-		FLAGS += -xCOMMON-AVX512
-	else
-		FLAGS += -xHost
-	endif
 	CFLAGS := $(FLAGS) -std=c99 -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-	CFLAGS_MIC := $(FLAGS) -std=c99 -O2 -ipo -mmic -opt-assume-safe-padding
+	CFLMIC := $(FLAGS) -std=c99 -O2 -ipo -mmic -opt-assume-safe-padding
 	ifneq ($(shell which icpc 2> /dev/null),)
 		CXX := icpc
 		CXXFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-		CXXFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
+		CXXFLMIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
 	endif
-#else ifneq ($(shell which icl 2> /dev/null),)
-#	CC := icl
-#	AR := xilib
-#else ifneq ($(shell which cl 2> /dev/null),)
-#	CC := cl
+	ifeq ($(AVX),1)
+		CFLAGS += -xAVX
+		CXXFLAGS += -xAVX
+	else ifeq ($(AVX),2)
+		CFLAGS += -xCORE-AVX2
+		CXXFLAGS += -xCORE-AVX2
+	else ifeq ($(AVX),3)
+		CFLAGS += -xCOMMON-AVX512
+		CXXFLAGS += -xCOMMON-AVX512
+	else
+		CFLAGS += -xHost
+		CXXFLAGS += -xHost
+	endif
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
 	FLAGS := -Wall -O3 -DNDEBUG
-	ifeq ($(AVX),1)
-		FLAGS += -mavx
-	else ifeq ($(AVX),2)
-		FLAGS += -mavx2
-	else ifeq ($(AVX),3)
-		FLAGS += -mavx512f
-	else
-		FLAGS += -march=native
-	endif
 	CFLAGS := $(FLAGS) -std=c99
 	ifneq ($(shell which g++ 2> /dev/null),)
 		CXX := g++
 		CXXFLAGS := $(FLAGS) 
+	endif
+	ifeq ($(AVX),1)
+		CFLAGS += -mavx
+		CXXFLAGS += -mavx
+	else ifeq ($(AVX),2)
+		CFLAGS += -mavx2
+		CXXFLAGS += -mavx2
+	else ifeq ($(AVX),3)
+		CFLAGS += -mavx512f
+		CXXFLAGS += -mavx512f
+	else
+		CFLAGS += -march=native
+		CXXFLAGS += -march=native
 	endif
 endif
 
@@ -79,21 +82,23 @@ endif
 ifeq ($(CFLAGS),)
 	CFLAGS := $(CXXFLAGS)
 endif
-ifeq ($(CFLAGS_MIC),)
-	CFLAGS_MIC := $(CFLAGS)
+ifeq ($(CFLMIC),)
+	CFLMIC := $(CFLAGS)
 endif
 ifeq ($(CXXFLAGS),)
 	CXXFLAGS := $(CFLAGS)
 endif
-ifeq ($(CXXFLAGS_MIC),)
-	CXXFLAGS_MIC := $(CXXFLAGS)
+ifeq ($(CXXFLMIC),)
+	CXXFLMIC := $(CXXFLAGS)
 endif
 
 MKL_DIRECT := 0
 ifneq ($(MKL_DIRECT),0)
 	CFLAGS := -DMKL_DIRECT_CALL_SEQ
+	CXXFLAGS := -DMKL_DIRECT_CALL_SEQ
 	ifneq ($(MKL_DIRECT),1)
-		CFLAGS_MIC := -DMKL_DIRECT_CALL_SEQ
+		CFLMIC := -DMKL_DIRECT_CALL_SEQ
+		CXXFLMIC := -DMKL_DIRECT_CALL_SEQ
 	endif
 endif
 
@@ -130,9 +135,9 @@ $(MAIN): $(HEADER)
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/mic
-	$(CC) $(CFLAGS_MIC) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLMIC) -I$(INCDIR) -c $< -o $@
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/libxsmm_isa.h $(HEADER)
-	$(CXX) $(CXXFLAGS_MIC) -I$(INCDIR) -c $< -o $@
+	$(CXX) $(CXXFLMIC) -I$(INCDIR) -c $< -o $@
 
 compile_hst: $(OBJFILES_HST)
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
