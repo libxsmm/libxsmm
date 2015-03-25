@@ -108,4 +108,4 @@ Further, the preprocessor symbol LIBXSMM_MAX_MNK denotes the largest problem siz
 make THRESHOLD=$((24 * 24 * 24))
 ```
 
-The maximum of the given threshold and the largest requested specialization (according to INDICES_M, INDICES_N, and INDICES_K) defines the value of LIBXSMM_MAX_MNK.
+The maximum of the given threshold and the largest requested specialization defines the value of LIBXSMM_MAX_MNK.
