@@ -31,6 +31,7 @@
 ###############################################################################
 import libxsmm_utilities
 import sys
+import os
 
 
 def create_dispatch(typeflag, mnklist):
@@ -47,7 +48,7 @@ def create_dispatch(typeflag, mnklist):
         else:
             print
     print "  };"
-    print "  const int i = index(m, n, k);"
+    print "  const int i = libxsmm_dispatch_index(m, n, k);"
     print "  return 0 <= i ? functions[i] : 0;"
     print "}"
 
@@ -58,14 +59,17 @@ if __name__ == '__main__':
         print
         print "#if defined(LIBXSMM_OFFLOAD)"
         print "# pragma offload_attribute(push,target(mic))"
-        print "# include <stdlib.h>"
+        print "#endif"
+        fileName, fileExtension = os.path.splitext(sys.argv[1])
+        if (".c" != fileExtension):
+            print "#include <algorithm>"
+        print "#include <stdlib.h>"
+        print "#if defined(LIBXSMM_OFFLOAD)"
         print "# pragma offload_attribute(pop)"
-        print "#else"
-        print "# include <stdlib.h>"
         print "#endif"
         print
         print
-        print "LIBXSMM_TARGET(mic) int compare(const void* a, const void* b)"
+        print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_compare3(const void* a, const void* b)"
         print "{"
         print "  const int *const ia = (const int*)a, *const ib = (const int*)b;"
         print "  const int d0 = ia[0] - ib[0], d1 = ia[1] - ib[1], d2 = ia[2] - ib[2];"
@@ -73,10 +77,17 @@ if __name__ == '__main__':
         print "}"
         print
         print
-        print "LIBXSMM_TARGET(mic) int index(int m, int n, int k)"
+        if (".c" != fileExtension):
+            print "LIBXSMM_TARGET(mic) bool libxsmm_dispatch_compare2(const int* a, const int* b)"
+            print "{"
+            print "  return 0 > libxsmm_dispatch_compare3(a, b);"
+            print "}"
+            print
+            print
+        print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
         print "{"
         print "  static const int indices[] = {"
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv)
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[1:])
         i, n, mnklen = 0, 30, len(mnklist)
         for mnk in mnklist:
             if (0 == ((i + 0) % n)): sys.stdout.write("    ")
@@ -87,12 +98,18 @@ if __name__ == '__main__':
             else:
                 print
         print "  };"
-        print "  const int* hit = 0;"
-        print "  int mnk[3];"
-        print
-        print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
-        print "  hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), compare);"
-        print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
+        if (".c" == fileExtension):
+            print "  const int* hit = 0;"
+            print "  int mnk[3];"
+            print
+            print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
+            print "  hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), libxsmm_dispatch_compare3);"
+            print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
+        else:
+            print "  typedef int mnk_type[3];"
+            print "  const mnk_type mnk = { m, n, k }, *const begin = reinterpret_cast<const mnk_type*>(indices), *const end = begin + " + str(len(mnklist)) + ";"
+            print "  const mnk_type *const hit = std::lower_bound(begin, end, mnk, libxsmm_dispatch_compare2);"
+            print "  return (end != hit && 0 == libxsmm_dispatch_compare3(hit, mnk)) ? static_cast<int>(hit - begin) : -1;"
         print "}"
         print
         print

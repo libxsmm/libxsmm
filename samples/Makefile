@@ -97,8 +97,8 @@ ifeq (,$(CFLAGS))
 	CFLAGS := $(CXXFLAGS)
 endif
 
-MKLDIRECT := 0
-ifneq ($(MKLDIRECT),0)
+MKL_DIRECT := 0
+ifneq ($(MKL_DIRECT),0)
 	CXXFLAGS := -DMKL_DIRECT_CALL_SEQ
 	CFLAGS   := -DMKL_DIRECT_CALL_SEQ
 endif

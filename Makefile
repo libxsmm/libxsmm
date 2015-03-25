@@ -25,36 +25,26 @@ LIBDIR = $(ROOTDIR)/lib
 
 INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 
-# prefer the Intel compiler and prefer a C compiler (over C++)
+# prefer the Intel compiler
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -std=c99
-	CFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
-	ifeq ($(AVX),1)
-		CFLAGS += -xAVX
-	else ifeq ($(AVX),2)
-		CFLAGS += -xCORE-AVX2
-	else ifeq ($(AVX),3)
-		CFLAGS += -xCOMMON-AVX512
-	else
-		CFLAGS += -xHost
-	endif
-else ifneq ($(shell which icpc 2> /dev/null),)
-	CC := icpc
-	AR := xiar
 	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
-	CFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-	CFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
 	ifeq ($(AVX),1)
-		CFLAGS += -xAVX
+		FLAGS += -xAVX
 	else ifeq ($(AVX),2)
-		CFLAGS += -xCORE-AVX2
+		FLAGS += -xCORE-AVX2
 	else ifeq ($(AVX),3)
-		CFLAGS += -xCOMMON-AVX512
+		FLAGS += -xCOMMON-AVX512
 	else
-		CFLAGS += -xHost
+		FLAGS += -xHost
+	endif
+	CFLAGS := $(FLAGS) -std=c99 -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLAGS_MIC := $(FLAGS) -std=c99 -O2 -ipo -mmic -opt-assume-safe-padding
+	ifneq ($(shell which icpc 2> /dev/null),)
+		CXX := icpc
+		CXXFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+		CXXFLAGS_MIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
 	endif
 #else ifneq ($(shell which icl 2> /dev/null),)
 #	CC := icl
@@ -63,51 +53,46 @@ else ifneq ($(shell which icpc 2> /dev/null),)
 #	CC := cl
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
-	CFLAGS := -Wall -std=c99 -O3 -DNDEBUG
+	FLAGS := -Wall -O3 -DNDEBUG
 	ifeq ($(AVX),1)
-		CFLAGS += -mavx
+		FLAGS += -mavx
 	else ifeq ($(AVX),2)
-		CFLAGS += -mavx2
+		FLAGS += -mavx2
 	else ifeq ($(AVX),3)
-		CFLAGS += -mavx512f
+		FLAGS += -mavx512f
 	else
-		CFLAGS += -march=native
+		FLAGS += -march=native
 	endif
-else ifneq ($(shell which g++ 2> /dev/null),)
-	CC := g++
-	CFLAGS := -Wall -O3 -DNDEBUG
-	ifeq ($(AVX),1)
-		CFLAGS += -mavx
-	else ifeq ($(AVX),2)
-		CFLAGS += -mavx2
-	else ifeq ($(AVX),3)
-		CFLAGS += -mavx512f
-	else
-		CFLAGS += -march=native
+	CFLAGS := $(FLAGS) -std=c99
+	ifneq ($(shell which g++ 2> /dev/null),)
+		CXX := g++
+		CXXFLAGS := $(FLAGS) 
 	endif
-else ifneq ($(shell which pgc 2> /dev/null),)
-	CC := pgc
-else ifneq ($(shell which pgcpp 2> /dev/null),)
-	CC := pgcpp
-else ifneq ($(shell which cc 2> /dev/null),)
-	CC := cc
-else ifneq ($(shell which CC 2> /dev/null),)
-	CC := CC
-else ifneq ($(CXX),)
-	CC := $(CXX)
 endif
 
+ifeq ($(CXX),)
+	CXX := $(CC)
+endif
+ifeq ($(CC),)
+	CC := $(CXX)
+endif
 ifeq ($(CFLAGS),)
 	CFLAGS := $(CXXFLAGS)
 endif
 ifeq ($(CFLAGS_MIC),)
 	CFLAGS_MIC := $(CFLAGS)
 endif
+ifeq ($(CXXFLAGS),)
+	CXXFLAGS := $(CFLAGS)
+endif
+ifeq ($(CXXFLAGS_MIC),)
+	CXXFLAGS_MIC := $(CXXFLAGS)
+endif
 
-MKLDIRECT := 0
-ifneq ($(MKLDIRECT),0)
+MKL_DIRECT := 0
+ifneq ($(MKL_DIRECT),0)
 	CFLAGS := -DMKL_DIRECT_CALL_SEQ
-	ifneq ($(MKLDIRECT),1)
+	ifneq ($(MKL_DIRECT),1)
 		CFLAGS_MIC := -DMKL_DIRECT_CALL_SEQ
 	endif
 endif
@@ -119,7 +104,7 @@ OBJFILES_MIC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
 LIB_HST ?= $(LIBDIR)/intel64/libxsmm.a
 LIB_MIC ?= $(LIBDIR)/mic/libxsmm.a
 HEADER = $(INCDIR)/libxsmm.h
-MAIN = $(SRCDIR)/libxsmm.c
+MAIN = $(SRCDIR)/libxsmm.cpp
 
 
 lib_all: lib_hst lib_mic
@@ -140,17 +125,21 @@ $(SRCDIR)/%.c: $(HEADER)
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $@ $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
 
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/mic
 	$(CC) $(CFLAGS_MIC) -I$(INCDIR) -c $< -o $@
+$(OBJDIR)/mic/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/libxsmm_isa.h $(HEADER)
+	$(CXX) $(CXXFLAGS_MIC) -I$(INCDIR) -c $< -o $@
 
 compile_hst: $(OBJFILES_HST)
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/intel64
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/libxsmm_isa.h $(HEADER)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
 lib_mic: $(LIB_MIC)
 ifeq ($(origin NO_MAIN), undefined)
@@ -163,7 +152,7 @@ endif
 
 lib_hst: $(LIB_HST)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/intel64/%.o,$(MAIN))
+$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(OBJDIR)/intel64/%.o,$(basename $(MAIN)))
 else
 $(LIB_HST): $(OBJFILES_HST)
 endif
@@ -171,7 +160,7 @@ endif
 	$(AR) -rs $@ $^
 
 clean:
-	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(SRCDIR)/*.c $(OBJDIR)
+	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(SRCDIR)/*.c $(SRCDIR)/*.cpp $(OBJDIR)
 
 realclean: clean
 	rm -rf $(LIBDIR) $(HEADER)
