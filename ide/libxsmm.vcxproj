@@ -35,6 +35,10 @@
     <None Include="..\include\libxsmm.0" />
     <None Include="..\include\libxsmm.1" />
     <None Include="..\include\libxsmm.2" />
+    <None Include="..\scripts\libxsmm_dispatch.py" />
+    <None Include="..\scripts\libxsmm_impl_mm.py" />
+    <None Include="..\scripts\libxsmm_interface.py" />
+    <None Include="..\scripts\libxsmm_utilities.py" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm.c" />
@@ -164,7 +168,6 @@
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
@@ -204,7 +207,6 @@
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -248,7 +250,6 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
@@ -289,7 +290,6 @@
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -324,7 +324,6 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -362,7 +361,6 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <Cpp0xSupport>true</Cpp0xSupport>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>

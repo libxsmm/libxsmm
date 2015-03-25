@@ -7,6 +7,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{df2aad30-e992-4052-8f3a-f1343f4e3f33}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{345eb68d-f854-475a-9e02-198c6fe1db35}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h">
@@ -28,6 +31,18 @@
     </None>
     <None Include="..\include\libxsmm.2">
       <Filter>include</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_impl_mm.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_interface.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_utilities.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_dispatch.py">
+      <Filter>scripts</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
