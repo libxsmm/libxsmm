@@ -180,12 +180,12 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         print "    for (i = 1; i < " + str(Cols) + "; ++i) {"
         print "      src += " + str(K) + "; dst += r;"
         print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
-        print
         if (0 != Unroll):
             for k in range(0, K):
                 print "      x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(src[" + str(k) + "]);"
                 print "      xc = MM512_FMADD" + mask_inst +"_PD(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
         else:
+            print
             print "      for (k = 0; k < " + str(K) + "; ++k) {"
             print "        x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
             print "        xc = MM512_FMADD" + mask_inst +"_PD(xa[k], xb[k], xc" + mask_argv + ");"
