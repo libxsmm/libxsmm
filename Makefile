@@ -124,7 +124,7 @@ MAIN = $(SRCDIR)/libxsmm.c
 
 lib_all: lib_hst lib_mic
 
-header_mic: $(HEADER)
+header: $(HEADER)
 $(HEADER): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@cat $(INCDIR)/libxsmm.0 > $@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(words $(M)) $(words $(N)) $(M) $(N) $(K) >> $@
@@ -134,7 +134,7 @@ $(HEADER): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@python $(SCRDIR)/libxsmm_interface.py $(words $(M)) $(words $(N)) $(M) $(N) $(K) >> $@
 	@cat $(INCDIR)/libxsmm.2 >> $@
 
-source_mic: $(addprefix $(SRCDIR)/,$(SRCFILES))
+source: $(addprefix $(SRCDIR)/,$(SRCFILES))
 $(SRCDIR)/%.c: $(HEADER)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -1 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
 
