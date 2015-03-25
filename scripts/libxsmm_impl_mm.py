@@ -86,10 +86,6 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     print "    REAL *const libxsmm_c_ = (C); \\"
     if (0 != AlignedStores):
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_c_, LIBXSMM_ALIGNED_STORES); \\"
-        if (0 != RowMajor):
-            print "    LIBXSMM_ASSUME(0 == N % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
-        else:
-            print "    LIBXSMM_ASSUME(0 == M % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
     if (0 != AlignedLoads and False): # TODO
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_a_, LIBXSMM_ALIGNED_LOADS); \\"
         print "    LIBXSMM_ASSUME_ALIGNED(libxsmm_b_, LIBXSMM_ALIGNED_LOADS); \\"
@@ -100,6 +96,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (M); ++libxsmm_i_) { \\"
         if (0 != AlignedStores):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN_VALUE(UINT, REAL, N, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
+            print "        LIBXSMM_ASSUME(0 == libxsmm_index_ % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
         else:
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (N) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
@@ -117,6 +114,7 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
         print "      for (libxsmm_i_ = 0; libxsmm_i_ < (N); ++libxsmm_i_) { \\"
         if (0 != AlignedStores):
             print "        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_ALIGN_VALUE(UINT, REAL, M, LIBXSMM_ALIGNED_STORES) + libxsmm_j_; \\"
+            print "        LIBXSMM_ASSUME(0 == libxsmm_index_ % (" + str(AlignedStores2) + " / sizeof(REAL))); \\"
         else:
             print "        const UINT libxsmm_index_ = libxsmm_i_ * (M) + libxsmm_j_; \\"
         print "        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \\"
