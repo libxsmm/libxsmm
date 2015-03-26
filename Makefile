@@ -160,12 +160,22 @@ ifeq ($(GENASM),0)
 $(SRCDIR)/%.c: $(HEADER)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
+ifneq ($(ALIGNED_STORES),0) # aligned stores
 ifneq ($(ROW_MAJOR),0) # row-major
 	$(eval DPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(NVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
 	$(eval SPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(NVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
 else # column-major
 	$(eval DPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
 	$(eval SPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
+endif
+else # unaligned stores
+ifneq ($(ROW_MAJOR),0) # row-major
+	$(eval DPLDC := $(NVALUE))
+	$(eval SPLDC := $(NVALUE))
+else # column-major
+	$(eval DPLDC := $(MVALUE))
+	$(eval SPLDC := $(MVALUE))
+endif
 endif
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) pfsigonly DP
 	@sed -i \
