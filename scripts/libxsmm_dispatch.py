@@ -54,7 +54,8 @@ def create_dispatch(typeflag, mnklist):
 
 
 if __name__ == '__main__':
-    if (3 < len(sys.argv)):
+    argc = len(sys.argv)
+    if (3 < argc):
         print "#include <libxsmm.h>"
         print
         print "#if defined(LIBXSMM_OFFLOAD)"
@@ -103,11 +104,11 @@ if __name__ == '__main__':
             print "  int mnk[3];"
             print
             print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
-            print "  hit = (const int*)bsearch(mnk, indices, " + str(len(mnklist)) + ", 3 * sizeof(*indices), libxsmm_dispatch_compare3);"
+            print "  hit = (const int*)bsearch(mnk, indices, " + str(mnklen) + ", 3 * sizeof(*indices), libxsmm_dispatch_compare3);"
             print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
         else:
             print "  typedef int mnk_type[3];"
-            print "  const mnk_type mnk = { m, n, k }, *const begin = reinterpret_cast<const mnk_type*>(indices), *const end = begin + " + str(len(mnklist)) + ";"
+            print "  const mnk_type mnk = { m, n, k }, *const begin = reinterpret_cast<const mnk_type*>(indices), *const end = begin + " + str(mnklen) + ";"
             print "  const mnk_type *const hit = std::lower_bound(begin, end, mnk, libxsmm_dispatch_compare2);"
             print "  return (end != hit && 0 == libxsmm_dispatch_compare3(hit, mnk)) ? static_cast<int>(hit - begin) : -1;"
         print "}"

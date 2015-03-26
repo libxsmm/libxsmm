@@ -6,6 +6,9 @@ ROW_MAJOR ?= 1
 # with an empty set 
 M ?= $(shell seq 1 5)
 
+# Use assembly kernel generator
+GENASM ?= 0
+
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
@@ -23,7 +26,10 @@ INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
 LIBDIR = $(ROOTDIR)/lib
 
-INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+LIB_HST ?= $(LIBDIR)/intel64/libxsmm.a
+LIB_MIC ?= $(LIBDIR)/mic/libxsmm.a
+HEADER = $(INCDIR)/libxsmm.h
+MAIN = $(SRCDIR)/libxsmm.c
 
 # prefer the Intel compiler
 ifneq ($(shell which icc 2> /dev/null),)
@@ -102,14 +108,22 @@ ifneq ($(MKL_DIRECT),0)
 	endif
 endif
 
-SRCFILES = $(patsubst %,mm_%.c,$(INDICES))
+ifeq ($(AVX),1)
+	GENTARGET := snb
+else ifeq ($(AVX),2)
+	GENTARGET := hsw
+else ifeq ($(AVX),3)
+	GENTARGET := knl
+else
+	GENTARGET := knc
+endif
+
+INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py 0 $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+SRCFILES = $(addprefix $(SRCDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
+SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
+OBJFILES_GEN = $(patsubst %,$(OBJDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
 OBJFILES_HST = $(patsubst %,$(OBJDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
-
-LIB_HST ?= $(LIBDIR)/intel64/libxsmm.a
-LIB_MIC ?= $(LIBDIR)/mic/libxsmm.a
-HEADER = $(INCDIR)/libxsmm.h
-MAIN = $(SRCDIR)/libxsmm.c
 
 
 lib_all: lib_hst lib_mic
@@ -124,9 +138,50 @@ $(HEADER): $(INCDIR)/libxsmm.0 $(INCDIR)/libxsmm.1 $(INCDIR)/libxsmm.2
 	@python $(SCRDIR)/libxsmm_interface.py $(words $(M)) $(words $(N)) $(M) $(N) $(K) >> $@
 	@cat $(INCDIR)/libxsmm.2 >> $@
 
-source: $(addprefix $(SRCDIR)/,$(SRCFILES))
+compile_gen: $(SRCFILES_GEN)
+$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(OBJDIR)/intel64
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+generator: $(OBJFILES_GEN)
+$(SCRDIR)/generator: $(OBJFILES_GEN)
+	$(CXX) $(OBJFILES_GEN) -o $@
+
+source: $(SRCFILES)
+ifeq ($(GENASM),0)
 $(SRCDIR)/%.c: $(HEADER)
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 `echo $* | awk -F_ '{ print $$2" "$$3" "$$4 }'` > $@
+else
+$(SRCDIR)/%.c: $(HEADER) $(SCRDIR)/generator
+endif
+	$(eval MVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f2))
+	$(eval NVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f3))
+	$(eval KVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f4))
+ifeq ($(GENASM),0)
+$(SRCDIR)/%.c: $(HEADER)
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
+else
+ifneq ($(ROW_MAJOR),0) # row-major
+	$(eval DPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(NVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
+	$(eval SPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(NVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
+else # column-major
+	$(eval DPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
+	$(eval SPLDC := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE) $(ALIGNMENT) $(ALIGNED_STORES)))
+endif
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) pfsigonly DP
+	@sed -i \
+		-e 's/double\* A, double\* B, double\* C/const double\* A, const double\* B, double\* C/' \
+		-e 's/, double\* A_prefetch = NULL, double\* B_prefetch = NULL, double\* C_prefetch = NULL//' \
+		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(double, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) pfsigonly SP
+	@sed -i \
+		-e 's/float\* A, float\* B, float\* C/const float\* A, const float\* B, float\* C/' \
+		-e 's/, float\* A_prefetch = NULL, float\* B_prefetch = NULL, float\* C_prefetch = NULL//' \
+		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(float, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
+	@sed -i \
+		-e '1i#include <libxsmm.h>\n\n' \
+		-e 's/void libxsmm_/LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_/' \
+		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' $@
+endif
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
@@ -144,6 +199,7 @@ $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
 	@mkdir -p $(OBJDIR)/intel64
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/libxsmm_isa.h $(HEADER)
+	@mkdir -p $(OBJDIR)/intel64
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
 lib_mic: $(LIB_MIC)

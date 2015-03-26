@@ -126,9 +126,19 @@ def max_mnk(mnklist, init = 0, index = None):
       else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
 
 
+def calc_alignment(alignment, default = None):
+    inherit = [alignment, default][None != default]
+    return [0, [inherit, alignment][1 < alignment]][0 != alignment]
+
+
 if __name__ == '__main__':
-    if (3 < len(sys.argv)):
-        mnklist = load_mnklist(sys.argv)
+    argc = len(sys.argv)
+    if (4 < argc and 0 == int(sys.argv[1])):
+        mnklist = load_mnklist(sys.argv[1:])
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), mnklist))
+    elif (5 == argc and 0 != int(sys.argv[1])):
+        elem_size, unaligned = int(sys.argv[1]), int(sys.argv[2])
+        elements = calc_alignment(int(sys.argv[3]), int(sys.argv[4])) / elem_size
+        print (unaligned + elements - 1) / elements * elements
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

@@ -35,7 +35,8 @@ import sys
 
 
 if __name__ == '__main__':
-    if (3 < len(sys.argv)):
+    argc = len(sys.argv)
+    if (3 < argc):
         mnklist = libxsmm_utilities.load_mnklist(sys.argv)
         for mnk in mnklist:
             print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]) + "(const float* a, const float* b, float* c);"

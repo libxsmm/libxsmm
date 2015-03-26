@@ -37,9 +37,9 @@ import sys
 
 def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Threshold):
     print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
-    AlignedStores2 = [0, [Alignment, AlignedStores][1 < AlignedStores]][0 != AlignedStores]
+    AlignedStores2 = libxsmm_utilities.calc_alignment(AlignedStores, Alignment)
     print "#define LIBXSMM_ALIGNED_STORES " + str(AlignedStores2)
-    AlignedLoads2 = [0, [Alignment, AlignedLoads][1 < AlignedLoads]][0 != AlignedLoads]
+    AlignedLoads2 = libxsmm_utilities.calc_alignment(AlignedLoads, Alignment)
     print "#define LIBXSMM_ALIGNED_LOADS " + str(AlignedLoads2)
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
@@ -200,7 +200,8 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
 
 
 if __name__ == '__main__':
-    if (7 < len(sys.argv)):
+    argc = len(sys.argv)
+    if (7 < argc):
         RowMajor = int(sys.argv[1])
         AlignedStores = int(sys.argv[2])
         AlignedLoads = int(sys.argv[3])

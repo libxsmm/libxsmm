@@ -132,6 +132,6 @@ clean:
 	rm -f *.o *.i *.ii *.s
 
 realclean: clean
-	rm -f smm smm.exe
+	rm -f smm smm.exe smm.exe.stackdump
 
 install: all clean
