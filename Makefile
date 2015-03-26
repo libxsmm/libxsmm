@@ -165,7 +165,7 @@ endif
 	$(AR) -rs $@ $^
 
 clean:
-	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(SRCDIR)/*.c $(SRCDIR)/*.cpp $(OBJDIR)
+	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SRCDIR)/mm_*_*_*.c $(MAIN)
 
 realclean: clean
 	rm -rf $(LIBDIR) $(HEADER)
