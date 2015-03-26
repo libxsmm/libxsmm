@@ -35,6 +35,7 @@
     <None Include="..\include\libxsmm.0" />
     <None Include="..\include\libxsmm.1" />
     <None Include="..\include\libxsmm.2" />
+    <None Include="..\Makefile" />
     <None Include="..\scripts\libxsmm_dispatch.py" />
     <None Include="..\scripts\libxsmm_impl_mm.py" />
     <None Include="..\scripts\libxsmm_interface.py" />

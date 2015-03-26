@@ -163,7 +163,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
             mask_inst, mask_argv = "", ""
         print "    const " + Real + "* src = " + l2 + "; " + Real + "* dst = c + " + str(mn) + ";"
         print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " x" + l1 + "[" + str(K) + "], x" + l2 + "[" + str(K) + "], xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
-        if (0 != Unroll):
+        if (1 <= Unroll):
             for k in range(0, K):
                 print "    x" + l1 + "[" + str(k) + "] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(k * Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
                 print "    x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(src[" + str(k) + "]);"
@@ -180,7 +180,7 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         print "    for (i = 1; i < " + str(Cols) + "; ++i) {"
         print "      src += " + str(K) + "; dst += r;"
         print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
-        if (0 != Unroll):
+        if (2 <= Unroll):
             for k in range(0, K):
                 print "      x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(src[" + str(k) + "]);"
                 print "      xc = MM512_FMADD" + mask_inst +"_PD(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
@@ -229,7 +229,7 @@ if __name__ == '__main__':
             print "}"
             print
             print
-            create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, -1 > Threshold)
+            create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
         else:
             mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:])
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, libxsmm_utilities.max_mnk(mnklist, Threshold))

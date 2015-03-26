@@ -44,6 +44,7 @@
     <None Include="..\scripts\libxsmm_dispatch.py">
       <Filter>scripts</Filter>
     </None>
+    <None Include="..\Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\mm_4_4_4.c">
