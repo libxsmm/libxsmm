@@ -130,6 +130,20 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     print "#endif"
 
 
+def declare_variables(name, n, unroll):
+    result = ""
+    for i in range(0, min(unroll, n)): result += [name, ", " + name][0<i] + str(i)
+    if (0 < (n - unroll)): result = [name, ", " + name][0<unroll] + "[" + str(n - unroll) + "]"
+    return result
+
+
+def get_var(name, i, unroll):
+    if (0 <= (i - unroll)):
+        return name + "[" + str(i) + "]"
+    else:
+        return name + str(i)
+
+
 def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, Unroll):
     if (0 != RowMajor):
         Rows, Cols = N, M
@@ -162,14 +176,16 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         else:
             mask_inst, mask_argv = "", ""
         print "    const " + Real + "* src = " + l2 + "; " + Real + "* dst = c + " + str(mn) + ";"
-        print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " x" + l1 + "[" + str(K) + "], x" + l2 + "[" + str(K) + "], xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
+        print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
+        print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " " + declare_variables("x" + l1, K, Unroll - 2) + ";"
+        print "    __m512" + libxsmm_utilities.make_typepfix(Real) + " " + declare_variables("x" + l2, K, Unroll - 2) + ";"
+        print
         if (1 <= Unroll):
             for k in range(0, K):
-                print "    x" + l1 + "[" + str(k) + "] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(k * Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
-                print "    x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(src[" + str(k) + "]);"
-                print "    xc = MM512_FMADD" + mask_inst +"_PD(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
+                print "    " + get_var("x" + l1, k, Unroll - 2) + " = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + " + str(k * Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
+                print "    " + get_var("x" + l2, k, Unroll - 2) + " = MM512_SET1_PD(src[" + str(k) + "]);"
+                print "    xc = MM512_FMADD" + mask_inst +"_PD(" + get_var("xa", k, Unroll - 2) + ", " + get_var("xb", k, Unroll - 2) + ", xc" + mask_argv + ");"
         else:
-            print
             print "    for (k = 0; k < " + str(K) + "; ++k) {"
             print "      x" + l1 + "[k] = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(" + l1 + " + k * " + str(Rows) + " + " + str(mn) + mask_argv + ", _MM_HINT_NONE),"
             print "      x" + l2 + "[k] = MM512_SET1_PD(src[k]);"
@@ -182,8 +198,8 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         print "      xc = MM512_LOAD" + ["U", ""][0 != AlignedLoads] + mask_inst + "_PD(dst" + mask_argv + ", _MM_HINT_NONE);"
         if (2 <= Unroll):
             for k in range(0, K):
-                print "      x" + l2 + "[" + str(k) + "] = MM512_SET1_PD(src[" + str(k) + "]);"
-                print "      xc = MM512_FMADD" + mask_inst +"_PD(xa[" + str(k) + "], xb[" + str(k) + "], xc" + mask_argv + ");"
+                print "      " + get_var("x" + l2, k, Unroll - 2) + " = MM512_SET1_PD(src[" + str(k) + "]);"
+                print "      xc = MM512_FMADD" + mask_inst +"_PD(" + get_var("xa", k, Unroll -2) + ", " + get_var("xb", k, Unroll -2) + ", xc" + mask_argv + ");"
         else:
             print
             print "      for (k = 0; k < " + str(K) + "; ++k) {"
