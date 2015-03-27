@@ -179,15 +179,19 @@ endif
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) nopf DP
 	@sed -i \
 		-e 's/double\* A, double\* B, double\* C/const double\* A, const double\* B, double\* C/' \
-		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(double, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
+		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(double, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' \
+		$@
 	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) nopf SP
 	@sed -i \
 		-e 's/float\* A, float\* B, float\* C/const float\* A, const float\* B, float\* C/' \
-		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(float, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
+		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(float, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' \
+		$@
 	@sed -i \
 		-e '1i#include <libxsmm.h>\n\n' \
 		-e 's/void libxsmm_/LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_/' \
-		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' $@
+		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' \
+		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
+		$@
 endif
 
 main: $(MAIN)
