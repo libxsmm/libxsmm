@@ -65,7 +65,7 @@
 #define SMM_MIN_NLOCAL 150
 #define SMM_MAX_NLOCAL 250
 // OpenMP schedule policy
-#define SMM_SCHEDULE dynamic
+#define SMM_SCHEDULE static
 // enable result validation
 #define SMM_CHECK
 
