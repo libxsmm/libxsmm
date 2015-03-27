@@ -60,7 +60,7 @@
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
 // ensures sufficient parallel slack
-#define SMM_MIN_NPARALLEL 200
+#define SMM_MIN_NPARALLEL 210
 // ensures amortized atomic overhead
 #define SMM_MIN_NLOCAL 150
 #define SMM_MAX_NLOCAL 250
