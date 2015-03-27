@@ -123,11 +123,11 @@ int main(int argc, char* argv[])
     const int default_psize = 30000, default_batch = 1000;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int s = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
-      ? (default_psize << std::strlen(argv[2]))
-      : (default_psize >> std::strlen(argv[2])))) : default_psize;
+      ? (default_psize << std::strlen(argv[2])) : ('-' == *argv[2]
+      ? (default_psize >> std::strlen(argv[2])) : default_psize))) : default_psize;
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
-      ? (default_batch << std::strlen(argv[3]))
-      : (default_batch >> std::strlen(argv[3])))) : default_batch;
+      ? (default_batch << std::strlen(argv[3])) : ('-' == *argv[3]
+      ? (default_batch >> std::strlen(argv[3])) : default_batch))) : default_batch;
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
