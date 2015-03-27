@@ -60,9 +60,10 @@
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
 // ensures sufficient parallel slack
-#define SMM_MIN_NPARALLEL 1000
+#define SMM_MIN_NPARALLEL 200
 // ensures amortized atomic overhead
-#define SMM_MIN_NLOCAL 200
+#define SMM_MIN_NLOCAL 150
+#define SMM_MAX_NLOCAL 250
 // OpenMP schedule policy
 #define SMM_SCHEDULE dynamic
 // enable result validation
@@ -171,7 +172,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
-      const int u = std::max(s / std::max(s / t, SMM_MIN_NPARALLEL), SMM_MIN_NLOCAL);
+      const int u = std::max(SMM_MIN_NLOCAL, std::min(s / std::max(SMM_MIN_NPARALLEL, s / t), SMM_MAX_NLOCAL));
 #else
       const int u = t;
 #endif
