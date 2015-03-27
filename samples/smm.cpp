@@ -60,7 +60,9 @@
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
 // ensures sufficient parallel slack
-#define SMM_MIN_PARALLEL_ITERATIONS 1000
+#define SMM_MIN_NPARALLEL 1000
+// ensures amortized atomic overhead
+#define SMM_MIN_NLOCAL 200
 // OpenMP schedule policy
 #define SMM_SCHEDULE dynamic
 // enable result validation
@@ -169,18 +171,14 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
-      const int u = s / std::max(SMM_MIN_PARALLEL_ITERATIONS, s / t);
+      const int u = std::max(s / std::max(s / t, SMM_MIN_NPARALLEL), SMM_MIN_NLOCAL);
 #else
       const int u = t;
 #endif
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n", m, n, k, ldc, s, u, mbytes);
-      if (t != u) {
-        fprintf(stdout, "batch size adjusted to minimum number of parallel iterations!\n");
-      }
-      fprintf(stdout, "\n");
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n\n", m, n, k, ldc, s, u, mbytes);
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
