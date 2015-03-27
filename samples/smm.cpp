@@ -59,8 +59,11 @@
 
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
-
+// ensures sufficient parallel slack
+#define SMM_MIN_PARALLEL_ITERATIONS 1000
+// OpenMP schedule policy
 #define SMM_SCHEDULE dynamic
+// enable result validation
 #define SMM_CHECK
 
 
@@ -166,11 +169,18 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
+      const int u = s / std::max(SMM_MIN_PARALLEL_ITERATIONS, s / t);
+#else
+      const int u = t;
 #endif
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n", m, n, k, ldc, s, t, mbytes);
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n", m, n, k, ldc, s, u, mbytes);
+      if (t != u) {
+        fprintf(stdout, "batch size adjusted to minimum number of parallel iterations!\n");
+      }
+      fprintf(stdout, "\n");
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
@@ -179,10 +189,10 @@ int main(int argc, char* argv[])
         const double start = omp_get_wtime();
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
-        for (int i = 0; i < s; i += t) {
+        for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
           add(c, tmp, m, n, ldc); // atomic
@@ -207,10 +217,10 @@ int main(int argc, char* argv[])
         const double start = omp_get_wtime();
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
-        for (int i = 0; i < s; i += t) {
+        for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
           add(c, tmp, m, n, ldc); // atomic
@@ -235,10 +245,10 @@ int main(int argc, char* argv[])
         const double start = omp_get_wtime();
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
-        for (int i = 0; i < s; i += t) {
+        for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
           add(c, tmp, m, n, ldc); // atomic
@@ -264,10 +274,10 @@ int main(int argc, char* argv[])
         const double start = omp_get_wtime();
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
-        for (int i = 0; i < s; i += t) {
+        for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(t, s - i); ++j) {
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
           add(c, tmp, m, n, ldc); // atomic
