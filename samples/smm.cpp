@@ -64,8 +64,8 @@
 // ensures amortized atomic overhead
 #define SMM_MIN_NLOCAL 150
 #define SMM_MAX_NLOCAL 250
-// OpenMP schedule policy
-#define SMM_SCHEDULE static
+// OpenMP schedule policy (and chunk size)
+#define SMM_SCHEDULE static,1
 // enable result validation
 #define SMM_CHECK
 
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
-      const int u = std::max(SMM_MIN_NLOCAL, std::min(s / std::max(SMM_MIN_NPARALLEL, s / t), SMM_MAX_NLOCAL));
+      const int u = std::max(SMM_MIN_NLOCAL, std::min(SMM_MAX_NLOCAL, s / std::max(SMM_MIN_NPARALLEL, s / t)));
 #else
       const int u = t;
 #endif
