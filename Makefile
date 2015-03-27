@@ -176,15 +176,13 @@ else # column-major
 	$(eval SPLDC := $(MVALUE))
 endif
 endif
-	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) pfsigonly DP
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) nopf DP
 	@sed -i \
 		-e 's/double\* A, double\* B, double\* C/const double\* A, const double\* B, double\* C/' \
-		-e 's/, double\* A_prefetch = NULL, double\* B_prefetch = NULL, double\* C_prefetch = NULL//' \
 		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(double, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
-	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) pfsigonly SP
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@)) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) nopf SP
 	@sed -i \
 		-e 's/float\* A, float\* B, float\* C/const float\* A, const float\* B, float\* C/' \
-		-e 's/, float\* A_prefetch = NULL, float\* B_prefetch = NULL, float\* C_prefetch = NULL//' \
 		-e 's/#error No kernel was compiled, lacking support for current architecture?/    LIBXSMM_IMM(float, int, $(MVALUE), $(NVALUE), $(KVALUE), A, B, C);/' $@
 	@sed -i \
 		-e '1i#include <libxsmm.h>\n\n' \
@@ -230,7 +228,7 @@ endif
 	$(AR) -rs $@ $^
 
 clean:
-	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SRCDIR)/mm_*_*_*.c $(MAIN)
+	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
 
 realclean: clean
 	rm -rf $(LIBDIR) $(HEADER)
