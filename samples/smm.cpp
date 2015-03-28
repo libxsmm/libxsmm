@@ -126,14 +126,14 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const int default_psize = 30000, default_batch = 1000;
+    const int default_psize = (SMM_MIN_NPARALLEL) * (SMM_MIN_NLOCAL), default_batch = SMM_MAX_NLOCAL;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int s = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
       ? (default_psize << std::strlen(argv[2])) : ('-' == *argv[2]
       ? (default_psize >> std::strlen(argv[2])) : default_psize))) : default_psize;
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
       ? (default_batch << std::strlen(argv[3])) : ('-' == *argv[3]
-      ? (default_batch >> std::strlen(argv[3])) : default_batch))) : default_batch;
+      ? (default_batch >> std::strlen(argv[3])) : -1))) : -1;
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
-      const int u = std::max(SMM_MIN_NLOCAL, std::min(SMM_MAX_NLOCAL, s / std::max(SMM_MIN_NPARALLEL, s / t)));
+      const int u = 0 < t ? t : std::max(SMM_MIN_NLOCAL, std::min(SMM_MAX_NLOCAL, s / std::max(SMM_MIN_NPARALLEL, s / default_batch)));
 #else
       const int u = t;
 #endif
