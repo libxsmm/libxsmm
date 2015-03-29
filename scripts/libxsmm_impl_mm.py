@@ -43,17 +43,19 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     print "#define LIBXSMM_ALIGNED_LOADS " + str(AlignedLoads2)
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
-    print "#define LIBXSMM_MAX_MNK " + str(Threshold)
-    maxMNK = int(Threshold ** (1.0 / 3.0) + 0.5)
-    print "#define LIBXSMM_MAX_M " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 0))
-    print "#define LIBXSMM_MAX_N " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 1))
-    print "#define LIBXSMM_MAX_K " + str(libxsmm_utilities.max_mnk(listMNK, maxMNK, 2))
+    maxMNK = libxsmm_utilities.max_mnk(mnklist, Threshold)
+    print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
+    maxDim = int(maxMNK ** (1.0 / 3.0) + 0.5)
+    print "#define LIBXSMM_MAX_M " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 0))
+    print "#define LIBXSMM_MAX_N " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 1))
+    print "#define LIBXSMM_MAX_K " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 2))
     listM = libxsmm_utilities.make_mlist(listMNK)
     listN = libxsmm_utilities.make_nlist(listMNK)
     listK = libxsmm_utilities.make_klist(listMNK)
-    print "#define LIBXSMM_AVG_M " + str(int(float(sum(listM)) / len(listM) + 0.5))
-    print "#define LIBXSMM_AVG_N " + str(int(float(sum(listN)) / len(listN) + 0.5))
-    print "#define LIBXSMM_AVG_K " + str(int(float(sum(listK)) / len(listK) + 0.5))
+    invLen = 1.0 / len(listM) # same for listN and listK
+    print "#define LIBXSMM_AVG_M " + str(int(sum(listM) * invLen + 0.5))
+    print "#define LIBXSMM_AVG_N " + str(int(sum(listN) * invLen + 0.5))
+    print "#define LIBXSMM_AVG_K " + str(int(sum(listK) * invLen + 0.5))
     print
     print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
@@ -249,6 +251,6 @@ if __name__ == '__main__':
             create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
         else:
             mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:])
-            create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, libxsmm_utilities.max_mnk(mnklist, Threshold))
+            create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
