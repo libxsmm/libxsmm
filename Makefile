@@ -203,7 +203,7 @@ endif
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
-	@python $(SCRDIR)/libxsmm_dispatch.py $@ $(THRESHOLD) $(SPARSITY) $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
 
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h

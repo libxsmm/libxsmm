@@ -93,14 +93,12 @@ def create_dispatch_bsearch_function(typeflag, mnklist):
     print "}"
 
 
-def create_dispatch_bsearch(mnklist, generate_cpp):
+def create_dispatch_bsearch(mnklist):
     print "#include <libxsmm.h>"
     print
     print "#if defined(LIBXSMM_OFFLOAD)"
     print "# pragma offload_attribute(push,target(mic))"
     print "#endif"
-    if (0 != generate_cpp):
-        print "#include <algorithm>"
     print "#include <stdlib.h>"
     print "#if defined(LIBXSMM_OFFLOAD)"
     print "# pragma offload_attribute(pop)"
@@ -115,13 +113,6 @@ def create_dispatch_bsearch(mnklist, generate_cpp):
     print "}"
     print
     print
-    if (0 != generate_cpp):
-        print "LIBXSMM_TARGET(mic) bool libxsmm_dispatch_compare2(const int* a, const int* b)"
-        print "{"
-        print "  return 0 > libxsmm_dispatch_compare3(a, b);"
-        print "}"
-        print
-        print
     print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
     print "{"
     print "  static /*const*/ int indices[] = {"
@@ -134,18 +125,12 @@ def create_dispatch_bsearch(mnklist, generate_cpp):
             sys.stdout.write([",\n", ", "][0 != (i % m)])
     print
     print "  };"
-    if (0 != generate_cpp):
-        print "  typedef int mnk_type[3];"
-        print "  const mnk_type mnk = { m, n, k }, *const begin = reinterpret_cast<const mnk_type*>(indices), *const end = begin + " + str(mnklen) + ";"
-        print "  const mnk_type *const hit = std::lower_bound(begin, end, mnk, libxsmm_dispatch_compare2);"
-        print "  return (end != hit && 0 == libxsmm_dispatch_compare3(hit, mnk)) ? static_cast<int>(hit - begin) : -1;"
-    else:
-        print "  const int* hit = 0;"
-        print "  int mnk[3];"
-        print
-        print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
-        print "  hit = (const int*)bsearch(mnk, indices, " + str(mnklen) + ", 3 * sizeof(*indices), libxsmm_dispatch_compare3);"
-        print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
+    print "  const int* hit = 0;"
+    print "  int mnk[3];"
+    print
+    print "  mnk[0] = m; mnk[1] = n; mnk[2] = k;"
+    print "  hit = (const int*)bsearch(mnk, indices, " + str(mnklen) + ", 3 * sizeof(*indices), libxsmm_dispatch_compare3);"
+    print "  return 0 != hit ? ((int)(hit - indices) / 3) : -1;"
     print "}"
     print
     print
@@ -157,18 +142,17 @@ def create_dispatch_bsearch(mnklist, generate_cpp):
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (5 < argc):
-        fileName, fileExtension = os.path.splitext(sys.argv[1])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:])
-        threshold = int(sys.argv[2])
+    if (4 < argc):
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[2:])
+        threshold = int(sys.argv[1])
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         maxm = libxsmm_utilities.max_mnk(mnklist, maxdim, 0)
         maxn = libxsmm_utilities.max_mnk(mnklist, maxdim, 1)
         maxk = libxsmm_utilities.max_mnk(mnklist, maxdim, 2)
-        sparsity = int(sys.argv[3])
+        sparsity = int(sys.argv[2])
         if ((maxm * maxn * maxk) > (sparsity * maxmnk)):
-            create_dispatch_bsearch(mnklist, ".c" != fileExtension)
+            create_dispatch_bsearch(mnklist)
         else:
             create_dispatch_direct(mnklist, maxmnk)
     else:
