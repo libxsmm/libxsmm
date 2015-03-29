@@ -1,8 +1,16 @@
+DBG := 0
+MIC := 0
+
 CXXFLAGS :=
 CFLAGS :=
 DFLAGS :=
 IFLAGS := -I../include
-LFLAGS := ../lib/intel64/libxsmm.a
+
+ifeq ($(MIC),0)
+	LFLAGS := ../lib/intel64/libxsmm.a
+else
+	LFLAGS := ../lib/mic/libxsmm.a
+endif
 
 ICPC := $(notdir $(shell which icpc 2> /dev/null))
 ICC := $(notdir $(shell which icc 2> /dev/null))
@@ -21,12 +29,10 @@ ifneq (,$(ICC))
 endif
 
 LD := $(CXX)
-DBG := 0
-MIC := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -36,6 +42,7 @@ ifneq (,$(filter $(CXX),icpc))
 			CXXFLAGS += -xCOMMON-AVX512
 		else ifneq ($(MIC),0)
 			CXXFLAGS += -mmic
+			LFLAGS += -mmic
 		else
 			CXXFLAGS += -xHost
 		endif
@@ -44,13 +51,15 @@ ifneq (,$(filter $(CXX),icpc))
 	else
 		CXXFLAGS += -Wall -O0 -g
 	endif
-	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
+	else ifeq ($(MIC),0)
+		CXXFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
 	endif
+	LFLAGS += -openmp -mkl=sequential
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
@@ -60,6 +69,7 @@ else ifneq (,$(filter $(CC),icc))
 			CFLAGS += -xCOMMON-AVX512
 		else ifneq ($(MIC),0)
 			CFLAGS += -mmic
+			LFLAGS += -mmic
 		else
 			CFLAGS += -xHost
 		endif
@@ -68,10 +78,12 @@ else ifneq (,$(filter $(CC),icc))
 	else
 		CFLAGS += -Wall -O0 -g
 	endif
-	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
+	else ifeq ($(MIC),0)
+		CFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
 	endif
+	LFLAGS += -openmp -mkl=sequential
 else # GCC assumed
 	ifeq (0,$(DBG))
 		CXXFLAGS += -Wall -O3 -fopenmp
