@@ -52,9 +52,8 @@ def create_dispatch_direct_function(typeflag, mnklist, maxmnk):
             i = i + 1
             sys.stdout.write(["0, ", "0,\n    "][0 == (i % m)])
         i = i + n
-        if (n >= (i % m) and 0 != ((i - n) % m)): print
         sys.stdout.write("libxsmm_" + typeflag + "mm_" + "_".join(map(str, mnk)))
-        if (mnk != mnklist[-1]): sys.stdout.write(", ")
+        if (mnk != mnklist[-1]): sys.stdout.write([", ", ",\n    "][n > (i % m)])
         last = next + 1
     for j in range(last, maxmnk):
         i = i + 1
