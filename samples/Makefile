@@ -54,7 +54,7 @@ ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CXXFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CXXFLAGS += -offload-option,mic,compiler,"-O2 -ipo -opt-assume-safe-padding"
 	endif
 	LFLAGS += -openmp -mkl=sequential
 else ifneq (,$(filter $(CC),icc))
@@ -81,7 +81,7 @@ else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
+		CFLAGS += -offload-option,mic,compiler,"-O2 -ipo -opt-assume-safe-padding"
 	endif
 	LFLAGS += -openmp -mkl=sequential
 else # GCC assumed
