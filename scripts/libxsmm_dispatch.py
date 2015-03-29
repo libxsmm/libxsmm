@@ -36,15 +36,6 @@ import sys
 import os
 
 
-def create_dispatch_init():
-    print "LIBXSMM_TARGET(mic) static const struct libxsmm_dispatch_init_helper {"
-    print "  libxsmm_dispatch_init_helper() {"
-    print "    libxsmm_smm_dispatch(0, 0, 0);"
-    print "    libxsmm_dmm_dispatch(0, 0, 0);"
-    print "  }"
-    print "} libxsmm_dispatch_init;"
-
-
 def calc_direct_index(mnk):
     return (mnk[0] * mnk[1]) * (mnk[2] + 1) + mnk[0]
 
@@ -74,12 +65,8 @@ def create_dispatch_direct_function(typeflag, mnklist, maxmnk):
     print "}"
 
 
-def create_dispatch_direct(mnklist, maxmnk, generate_cpp):
+def create_dispatch_direct(mnklist, maxmnk):
     print "#include <libxsmm.h>"
-    if (0 != generate_cpp):
-        print
-        print
-        create_dispatch_init()
     print
     print
     create_dispatch_direct_function("s", mnklist, maxmnk)
@@ -118,10 +105,6 @@ def create_dispatch_bsearch(mnklist, generate_cpp):
     print "#if defined(LIBXSMM_OFFLOAD)"
     print "# pragma offload_attribute(pop)"
     print "#endif"
-    if (0 != generate_cpp):
-        print
-        print
-        create_dispatch_init()
     print
     print
     print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_compare3(const void* a, const void* b)"
@@ -187,6 +170,6 @@ if __name__ == '__main__':
         if (1 < sparsity and (maxm * maxn * maxk) > (sparsity * maxmnk)):
             create_dispatch_bsearch(mnklist, ".c" != fileExtension)
         else:
-            create_dispatch_direct(mnklist, maxmnk, ".c" != fileExtension)
+            create_dispatch_direct(mnklist, maxmnk)
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
