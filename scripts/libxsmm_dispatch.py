@@ -43,7 +43,7 @@ def calc_direct_index(mnk):
 def create_dispatch_direct_function(typeflag, mnklist, maxmnk):
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
-    print "  LIBXSMM_TARGET(mic) static const libxsmm_" + typeflag + "mm_function functions[] = {"
+    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[] = {"
     sys.stdout.write("    ")
     i, m, n, last = 0, 48, 6, 0
     for mnk in mnklist:
@@ -79,7 +79,7 @@ def create_dispatch_direct(mnklist, maxmnk):
 def create_dispatch_bsearch_function(typeflag, mnklist):
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
-    print "  LIBXSMM_TARGET(mic) static const libxsmm_" + typeflag + "mm_function functions[] = {"
+    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[] = {"
     sys.stdout.write("    ")
     i, m, mnklen = 0, 6, len(mnklist)
     for mnk in mnklist:
@@ -125,7 +125,7 @@ def create_dispatch_bsearch(mnklist, generate_cpp):
         print
     print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
     print "{"
-    print "  LIBXSMM_TARGET(mic) static const int indices[] = {"
+    print "  static /*const*/ int indices[] = {"
     sys.stdout.write("    ")
     i, m, mnklen = 0, 30, len(mnklist)
     for mnk in mnklist:
