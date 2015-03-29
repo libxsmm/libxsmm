@@ -19,6 +19,10 @@ ALIGNED_LOADS ?= 0
 # THRESHOLD problem size (M x N x K); determines when to use BLAS 
 THRESHOLD ?= $(shell echo $$((24 * 24 * 24)))
 
+# SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
+# use binary search in auto-dispatch when SPARSITY exceeds the given value
+SPARSITY ?= 2
+
 ROOTDIR ?= .
 SCRDIR = $(ROOTDIR)/scripts
 OBJDIR = $(ROOTDIR)/build
@@ -196,7 +200,7 @@ endif
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
-	@python $(SCRDIR)/libxsmm_dispatch.py $@ $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $@ $(THRESHOLD) $(SPARSITY) $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
 
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(SRCDIR)/libxsmm_isa.h $(HEADER)
