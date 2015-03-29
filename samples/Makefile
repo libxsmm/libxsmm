@@ -22,6 +22,7 @@ endif
 
 LD := $(CXX)
 DBG := 0
+MIC := 0
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
@@ -33,6 +34,8 @@ ifneq (,$(filter $(CXX),icpc))
 			CXXFLAGS += -xCORE-AVX2
 		else ifeq ($(AVX),3)
 			CXXFLAGS += -xCOMMON-AVX512
+		else ifneq ($(MIC),0)
+			CXXFLAGS += -mmic
 		else
 			CXXFLAGS += -xHost
 		endif
@@ -55,6 +58,8 @@ else ifneq (,$(filter $(CC),icc))
 			CFLAGS += -xCORE-AVX2
 		else ifeq ($(AVX),3)
 			CFLAGS += -xCOMMON-AVX512
+		else ifneq ($(MIC),0)
+			CFLAGS += -mmic
 		else
 			CFLAGS += -xHost
 		endif
