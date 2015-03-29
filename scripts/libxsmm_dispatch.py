@@ -167,7 +167,7 @@ if __name__ == '__main__':
         maxn = libxsmm_utilities.max_mnk(mnklist, maxdim, 1)
         maxk = libxsmm_utilities.max_mnk(mnklist, maxdim, 2)
         sparsity = int(sys.argv[3])
-        if (1 < sparsity and (maxm * maxn * maxk) > (sparsity * maxmnk)):
+        if ((maxm * maxn * maxk) > (sparsity * maxmnk)):
             create_dispatch_bsearch(mnklist, ".c" != fileExtension)
         else:
             create_dispatch_direct(mnklist, maxmnk)
