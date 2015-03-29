@@ -239,6 +239,7 @@ int main(int argc, char* argv[])
 
       { // auto-dispatched
         fprintf(stdout, "Dispatched...\n");
+        libxsmm_mm(m, n, k, &a[0], &b[0], &c[0]); // warmup/workaround
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         const double start = omp_get_wtime();

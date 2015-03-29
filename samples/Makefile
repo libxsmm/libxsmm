@@ -32,7 +32,7 @@ LD := $(CXX)
 
 ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp
+		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -54,12 +54,12 @@ ifneq (,$(filter $(CXX),icpc))
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CXXFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+		CXXFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
 	endif
 	LFLAGS += -openmp -mkl=sequential
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
-		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -openmp
+		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
@@ -81,7 +81,7 @@ else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+		CFLAGS += -offload-option,mic,compiler,"-opt-assume-safe-padding"
 	endif
 	LFLAGS += -openmp -mkl=sequential
 else # GCC assumed
