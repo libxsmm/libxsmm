@@ -20,8 +20,9 @@ ALIGNED_LOADS ?= 0
 THRESHOLD ?= $(shell echo $$((24 * 24 * 24)))
 
 # SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
-# use binary search in auto-dispatch when SPARSITY exceeds the given value
-SPARSITY ?= 2
+# Use binary search in auto-dispatch when SPARSITY exceeds the given value.
+# With SPARSITY < 1, the binary search is enabled by default (no threshold).
+SPARSITY ?= 0
 
 ROOTDIR ?= .
 SCRDIR = $(ROOTDIR)/scripts
