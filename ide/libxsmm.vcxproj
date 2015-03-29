@@ -29,12 +29,12 @@
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
+    <ClInclude Include="..\src\libxsmm.0.h" />
+    <ClInclude Include="..\src\libxsmm.1.h" />
+    <ClInclude Include="..\src\libxsmm.2.h" />
     <ClInclude Include="..\src\libxsmm_isa.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\include\libxsmm.0" />
-    <None Include="..\include\libxsmm.1" />
-    <None Include="..\include\libxsmm.2" />
     <None Include="..\Makefile" />
     <None Include="..\scripts\libxsmm_dispatch.py" />
     <None Include="..\scripts\libxsmm_impl_mm.py" />

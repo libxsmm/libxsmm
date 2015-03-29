@@ -21,17 +21,17 @@
     <ClInclude Include="..\src\libxsmm_isa.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm.1.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm.2.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm.0.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\include\libxsmm.0">
-      <Filter>include</Filter>
-    </None>
-    <None Include="..\include\libxsmm.1">
-      <Filter>include</Filter>
-    </None>
-    <None Include="..\include\libxsmm.2">
-      <Filter>include</Filter>
-    </None>
     <None Include="..\scripts\libxsmm_impl_mm.py">
       <Filter>scripts</Filter>
     </None>
