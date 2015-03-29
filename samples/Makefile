@@ -44,7 +44,6 @@ ifneq (,$(filter $(CXX),icpc))
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
-		LFLAGS += -no-offload
 	endif
 else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(DBG))
@@ -67,7 +66,6 @@ else ifneq (,$(filter $(CC),icc))
 	LFLAGS += -openmp -mkl=sequential
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
-		LFLAGS += -no-offload
 	endif
 else # GCC assumed
 	ifeq (0,$(DBG))
