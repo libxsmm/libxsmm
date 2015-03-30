@@ -158,7 +158,8 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
         mnparts = iparts
     else:
         mnparts = iparts + 1
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + libxsmm_utilities.make_typeflag(Real) + "mm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
+    mnk = str(M) + "_" + str(N) + "_" + str(K)
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + libxsmm_utilities.make_typeflag(Real) + "mm_" + mnk + "(const " + Real + "* a, const " + Real + "* b, " + Real + "* c)"
     print "{"
     print "#if defined(__MIC__) || defined(__AVX512F__)"
     if (0 != AlignedStores):
@@ -217,6 +218,31 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
     print "}"
 
 
+def create_gentarget(type, m, n, k):
+    mnk = str(m) + "_" + str(n) + "_" + str(k)
+    typeflag = libxsmm_utilities.make_typeflag(type)
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + typeflag + "mm_" + mnk + "(const " + type + "* a, const " + type + "* b, " + type + "* c)"
+    print "{"
+    print "#if defined(LIBXSMM_GENTARGET)"
+    print "# if defined(__AVX512F__)"
+    print "  libxsmm_" + typeflag + "mm_" + mnk + "_knl(a, b, c);"
+    print "# elif defined(__MIC__)"
+    print "  libxsmm_" + typeflag + "mm_" + mnk + "_knc(a, b, c);"
+    print "# elif defined(__AVX2__)"
+    print "  libxsmm_" + typeflag + "mm_" + mnk + "_hsw(a, b, c);"
+    print "# elif defined(__AVX__)"
+    print "  libxsmm_" + typeflag + "mm_" + mnk + "_snb(a, b, c);"
+    print "# elif defined(__SSE3__)"
+    print "  libxsmm_" + typeflag + "mm_" + mnk + "_wsm(a, b, c);"
+    print "# else"
+    print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(m) + ", " + str(k) + ", a, b, c);"
+    print "# endif"
+    print "#else"
+    print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(m) + ", " + str(k) + ", a, b, c);"
+    print "#endif"
+    print "}"
+
+
 if __name__ == '__main__':
     argc = len(sys.argv)
     if (7 < argc):
@@ -240,15 +266,23 @@ if __name__ == '__main__':
             print "#include <libxsmm.h>"
             print
             print
-            M, N, K = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
+            m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
+            mnk = str(m) + "_" + str(n) + "_" + str(k)
             # Note: create_implementation is not yet ready to generate the single-precision implementation
-            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(M) + "_" + str(N) + "_" + str(K) + "(const float* a, const float* b, float* c)"
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnk + "(const float* a, const float* b, float* c)"
             print "{"
-            print "  LIBXSMM_IMM(float, int, " + str(M) + ", " + str(N) + ", " + str(K) + ", a, b, c);"
+            print "  LIBXSMM_IMM(float, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c);"
             print "}"
             print
             print
-            create_implementation("double", M, N, K, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
+            create_implementation("double", m, n, k, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
+        if (0 == Threshold):
+            print
+            m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
+            create_gentarget("float", m, n, k)
+            print
+            print
+            create_gentarget("double", m, n, k)
         else:
             mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:])
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
