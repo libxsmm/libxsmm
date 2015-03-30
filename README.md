@@ -109,3 +109,12 @@ make THRESHOLD=$((24 * 24 * 24))
 ```
 
 The maximum of the given threshold and the largest requested specialization defines the value of LIBXSMM_MAX_MNK.
+
+## Applications and References
+**\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly optimized assembly kernels.
+
+**\[2] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications. Due to LIBXSMM's roadmap, this is a related project.
+
+**\[3] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
+
+**\[4] [http://goo.gl/qsnOOf](https://software.intel.com/en-us/articles/intel-and-third-party-tools-and-libraries-available-with-support-for-intelr-xeon-phitm)**: Intel 3rd Party Tools and Libraries.
