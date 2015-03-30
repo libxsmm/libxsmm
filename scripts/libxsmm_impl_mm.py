@@ -276,7 +276,7 @@ if __name__ == '__main__':
             print
             print
             create_implementation("double", m, n, k, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
-        if (0 == Threshold):
+        elif (0 == Threshold):
             print
             m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
             create_gentarget("float", m, n, k)
