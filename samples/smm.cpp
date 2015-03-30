@@ -65,6 +65,8 @@
 #define SMM_MIN_NLOCAL 160
 // OpenMP schedule policy (and chunk size)
 #define SMM_SCHEDULE static,1
+// Kind of thread-private data
+#define SMM_THREADPRIVATE 1
 // enable result validation
 #define SMM_CHECK
 
@@ -175,6 +177,16 @@ int main(int argc, char* argv[])
 #else
       const int u = t;
 #endif
+#if defined(SMM_THREADPRIVATE) && defined(_OPENMP)
+# if 1 == (SMM_THREADPRIVATE) // native OpenMP TLS
+      LIBXSMM_ALIGNED(static T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#     pragma omp threadprivate(tmp)
+#else
+      LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+# endif
+#else // without OpenMP nothing needs to be thread-local due to a single-threaded program
+      LIBXSMM_ALIGNED(static T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#endif
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
@@ -188,7 +200,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
         for (int i = 0; i < s; i += u) {
+#if !defined(SMM_THREADPRIVATE)
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#endif
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -216,7 +230,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
         for (int i = 0; i < s; i += u) {
+#if !defined(SMM_THREADPRIVATE)
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#endif
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -245,7 +261,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
         for (int i = 0; i < s; i += u) {
+#if !defined(SMM_THREADPRIVATE)
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#endif
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -274,7 +292,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for schedule(SMM_SCHEDULE)
 #endif
         for (int i = 0; i < s; i += u) {
+#if !defined(SMM_THREADPRIVATE)
           LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#endif
           for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
