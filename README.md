@@ -6,7 +6,7 @@ The library provides a sophisticated dispatch mechanism (see [More Details](#mor
 Performance: the presented code is by no means "optimal" or "best-performing" - it just uses Intrinsics. In fact, a well-optimizing compiler may arrange better code compared to what is laid out via the library's Python scripts. The latter can be exploited by just relying on the "inlinable code" and by not generating specialized functions.
 
 ## Interface
-The interface of the library is *generated* according to the [Build Instructions](#build-instructions) (therefore the header file 'include/libxsmm.h' is **not** stored in the code repository). The generated interface also defines certain preprocessor symbols to store the properties the library was built for. For example, LIBXSMM_ROW_MAJOR and LIBXSMM_COL_MAJOR are used to mark down the storage order.
+The interface of the library is *generated* according to the [Build Instructions](#build-instructions) (therefore the header file 'include/libxsmm.h' is **not** stored in the code repository). The generated interface also defines certain preprocessor symbols to store the properties the library was built for.
 
 To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, one of the following interfaces can be used:
 
@@ -85,7 +85,7 @@ make AVX=3
 
 A future version of the library may support an auto-tuning stage when generating the code (to find M,N,K-combinations for the Intrinsic code path which are beneficial compared to inlined compiler-generated code). Auto-tuning the compiler code generation using a profile-guided optimization may be another option to be incorporated into the build system (Makefile).
 
-The library supports generating code using an "implicitly aligned leading dimension" for the destination matrix of a multiplication. The latter is enabling unaligned store instructions, and also hints the inlined code accordingly. The client code may be arranged at compile-time by checking whether the preprocessor symbol LIBXSMM_ALIGNED_STORES is zero or not. Aligned store instructions imply a leading dimension which is a multiple of the default alignment:
+The library supports generating code using an "implicitly aligned leading dimension" for the destination matrix of a multiplication. The latter is enabling unaligned store instructions, and also hints the inlined code accordingly. The client code may be arranged at compile-time (preprocessor) by checking the build parameters of the library. Aligned store instructions imply a leading dimension which is a multiple of the default alignment:
 
 ```
 make ALIGNED_STORES=1
@@ -102,13 +102,19 @@ The function 'libxsmm_?mm_dispatch' helps amortizing the cost of the dispatch wh
 
 All three levels are accessible directly (see [Interface](#interface)) in order to allow a customized code dispatch. The level 2 and 3 may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. Beside of the generic interface, one can call a specific kernel e.g., 'libxsmm_dmm_4_4_4' multiplying 4x4 matrices.
 
-Further, the preprocessor symbol LIBXSMM_MAX_MNK denotes the largest problem size (*M* x *N* x *K*) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) of calling the BLAS library linked with the library. This threshold can be configured using for example:
+Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*) that belongs to level (1) and (2), and therefore determines if a matrix-matrix multiplication falls back to level (3) of calling the BLAS library linked with the library. This threshold can be configured using for example:
 
 ```
 make THRESHOLD=$((24 * 24 * 24))
 ```
 
-The maximum of the given threshold and the largest requested specialization defines the value of LIBXSMM_MAX_MNK.
+The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size falls below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not. This is implemented searching a table of the specialized functions in a binary manner. At the expense of storing function pointers for the entire problem space below the threshold, a direct lookup can be implemented as well. This can be configured using for example:
+
+```
+make SPARSITY=2
+```
+
+A sparsity is calculated at construction time of the library determining whether to use binary search (value above given SPARSITY or in case of SPARSITY <= 1) or direct lookup (raising the given SPARSITY allows to prevent the binary search). However, the overhead of the binary search is negligible which still holds (~2%) when using a relatively slower clocked single core of an Intel Xeon Phi coprocessor.
 
 ## Applications and References
 **\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly optimized assembly kernels.
