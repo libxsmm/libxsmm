@@ -1,5 +1,5 @@
 # LIBXSMM
-Library for small matrix-matrix multiplications targeting Intel Architecture (x86). The initial version of the library was targeting the Intel Xeon Phi coprocessor (an instance of the Intel Many Integrated Core Architecture "MIC") particularly by using KNC intrinsic functions (called KNCni or IMCI). Today, the library reaches the Many Integrated Core Architecture as well as other hardware which is capable of executing Intel Advanced Vector Extensions 512 (Intel AVX-512). Please also have a look at the collection of upcoming [enhancements](https://github.com/hfp/libxsmm/labels/enhancement). [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/0.8.4.zip)]
+Library for small matrix-matrix multiplications targeting Intel Architecture (x86). The initial version of the library was targeting the Intel Xeon Phi coprocessor (an instance of the Intel Many Integrated Core Architecture "MIC") particularly by using KNC intrinsic functions (called KNCni or IMCI). Today, the library reaches the Many Integrated Core Architecture as well as other hardware which is capable of executing Intel Advanced Vector Extensions 512 (Intel AVX-512). Please also have a look at the collection of upcoming [enhancements](https://github.com/hfp/libxsmm/labels/enhancement). [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/0.8.5.zip)]
 
 The library provides a sophisticated dispatch mechanism (see [More Details](#more-details)) which is also targeting other instruction sets (beside of the Intrinsic code path). The library can be also compiled to "MIC native code" which is able to run self-hosted as well as in an offloaded code region (via a FORTRAN directive or via C/C++ preprocessor pragma). The prerequisite for offloading the code is to compile it to position-independent (PIC) code even when building a static library.
 
@@ -77,13 +77,17 @@ make M="$(echo $(seq 2 5))"
 
 ## Performance
 ### Tuning
-The build system allows to conveniently select the target system using an AVX flag when invoking "make". The default is to generate code according to the feature bits of the host system running the compiler. The device-side defaults to "MIC" targeting the Intel Xeon Phi family of coprocessors ("KNC"). However beside of AVX=1 and AVX=2 (with FMA), the following switch targets the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using Intel AVX-512 foundational instructions (AVX-512F):
+The build system allows to conveniently select the target system using an AVX flag when invoking "make". The default is to generate code according to the feature bits of the host system running the compiler. The device-side defaults to "MIC" targeting the Intel Xeon Phi family of coprocessors ("KNC"). However beside of AVX=1 and AVX=2 (with FMA), an AVX=3 targets the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using Intel AVX-512 foundational instructions (AVX-512F):
 
 ```
 make AVX=3
 ```
 
-A future version of the library may support an auto-tuning stage when generating the code (to find M,N,K-combinations for the Intrinsic code path which are beneficial compared to inlined compiler-generated code). Auto-tuning the compiler code generation using a profile-guided optimization may be another option to be incorporated into the build system (Makefile).
+It can be highly beneficial in terms of performance to use an alternative code generator creating highly optimized assembly code. Enabling the assembly code generator may become the default in a future version of the library. Meanwhile, the assembly code generator is enabled using the following flag:
+
+```
+make GENASM=1
+```
 
 The library supports generating code using an "implicitly aligned leading dimension" for the destination matrix of a multiplication. The latter is enabling aligned store instructions, and also hints the inlined code accordingly. The client code may be arranged at compile-time (preprocessor) by checking the build parameters of the library. Aligned store instructions imply a leading dimension which is a multiple of the default alignment:
 
@@ -115,6 +119,20 @@ make SPARSITY=2
 ```
 
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
+
+## Implementation
+### Limitations
+Beside of the flexible inlinable code path, the library is currently only built for a single fixed code path which is selected at build time of the library (SSE=1, AVX=1|2|3). If not specific request is made, at least the assembly code generator is used to emit code for all supported Instruction Set Architectures (ISA). However, the compiler is picking only one of the source code paths according to what native on the compiler-host. A future version of the library may introduce runtime dynamic dispatch of the most suitable code path while all supported ISAs are included at build time of the library.
+
+A future version of the library may support an auto-tuning stage when generating the code (to find M,N,K-combinations for specialized routines which are beneficial compared to inlined compiler-generated code). Auto-tuning the compiler code generation using a profile-guided optimization may be another option to be incorporated into the build system (Makefile).
+
+### Roadmap
+Although the library is under development, the published interface is rather stable and may only be extended in future revisions. The following issues are being addressed in upcoming revisions:
+
+* Extended Application Programming Interface (API) supporting sparse matrices and other cases
+* Runtime dynamic selection of the most suitable Instruction Set Architecture (ISA dispatch)
+* Just-in-Time (JIT) code generation as part of an application (JIT compiler)
+* Native FORTRAN interface
 
 ## Applications and References
 **\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly-optimized assembly kernels.
