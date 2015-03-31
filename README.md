@@ -108,13 +108,13 @@ Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*
 make THRESHOLD=$((24 * 24 * 24))
 ```
 
-The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size falls below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not. This is implemented searching a table of the specialized functions in a binary manner. At the expense of storing function pointers for the entire problem space below the threshold, a direct lookup can be implemented as well. This can be configured using for example:
+The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size falls below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not. This can be implemented by bisecting a table of all specialized functions (binary search). At the expense of storing function pointers for the entire problem space below the threshold, a direct lookup can be used instead. The actual behavior can be configured using for example:
 
 ```
 make SPARSITY=2
 ```
 
-A sparsity is calculated at construction time of the library determining whether to use binary search (value above given SPARSITY or in case of SPARSITY <= 1) or direct lookup (raising the given SPARSITY allows to prevent the binary search). However, the overhead of the binary search is negligible which still holds (~2%) when using a relatively slower clocked single core of an Intel Xeon Phi coprocessor.
+A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
 ## Applications and References
 **\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly optimized assembly kernels.
