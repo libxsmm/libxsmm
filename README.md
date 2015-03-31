@@ -117,10 +117,12 @@ make SPARSITY=2
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
 ## Applications and References
-**\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly optimized assembly kernels.
+**\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly-optimized assembly kernels.
 
-**\[2] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications. Due to LIBXSMM's roadmap, this is a related project.
+**\[2] http://www.seissol.org/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LBXSMM provides highly-optimized assembly kernels which form the compuational back-bone of SeisSol. The current usage of LIBXSMM in the context of SeisSol can be found [[here](https://github.com/TUM-I5/seissol_kernels/tree/lts_compressed)].
 
-**\[3] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
+**\[3] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications. Due to LIBXSMM's roadmap, this is a related project.
 
-**\[4] [http://goo.gl/qsnOOf](https://software.intel.com/en-us/articles/intel-and-third-party-tools-and-libraries-available-with-support-for-intelr-xeon-phitm)**: Intel 3rd Party Tools and Libraries.
+**\[4] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
+
+**\[5] [http://goo.gl/qsnOOf](https://software.intel.com/en-us/articles/intel-and-third-party-tools-and-libraries-available-with-support-for-intelr-xeon-phitm)**: Intel 3rd Party Tools and Libraries.
