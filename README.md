@@ -122,9 +122,11 @@ A binary search is implemented when a sparsity (calculated at construction time 
 
 ## Implementation
 ### Limitations
-Beside of the flexible inlinable code path, the library is currently only built for a single fixed code path which is selected at build time of the library (SSE=1, AVX=1|2|3). If not specific request is made, at least the assembly code generator is used to emit code for all supported Instruction Set Architectures (ISA). However, the compiler is picking only one of the source code paths according to what native on the compiler-host. A future version of the library may introduce runtime dynamic dispatch of the most suitable code path while all supported ISAs are included at build time of the library.
+Beside of the inlinable code path, the library is currently limited to a single code path which is selected at build time of the library. Without a specific flag (SSE=1, AVX=1|2|3), the assembly code generator emits code for all supported instruction set extensions whereas the Intrinsic code generator is actually covering only IMCI (KNCni) and Intel AVX-512F. However, the compiler is picking only one of the generated code paths according to its code generation flags (or according to what is native with respect to the compiler-host). A future version of the library may be including all code paths at build time and allow for runtime-dynamic dispatch of the most suitable code path.
 
 A future version of the library may support an auto-tuning stage when generating the code (to find M,N,K-combinations for specialized routines which are beneficial compared to inlined compiler-generated code). Auto-tuning the compiler code generation using a profile-guided optimization may be another option to be incorporated into the build system (Makefile).
+
+The assembly code generator is currently limited to an M, N, and K combination where N is a multiple of three. This limitation does not exist for the assembly code targeting Intel Xeon Phi coprocessors, and it will be relaxed for the other code paths as well.
 
 ### Roadmap
 Although the library is under development, the published interface is rather stable and may only be extended in future revisions. The following issues are being addressed in upcoming revisions:
