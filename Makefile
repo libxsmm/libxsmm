@@ -215,8 +215,11 @@ else
 		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) nopf SP; \
 	fi
 endif
-	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 knc nopf DP
-	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 knc nopf SP
+	@if [[ 30 -ge $(NVALUE) ]]; then \
+		PS4=''; set -x; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 knc nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 knc nopf SP; \
+	fi
 	@sed -i \
 		-e '1i#include <libxsmm.h>' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
