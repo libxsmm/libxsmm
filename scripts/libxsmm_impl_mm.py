@@ -231,7 +231,7 @@ def create_gentarget(type, m, n, k):
     print "  libxsmm_" + typeflag + "mm_" + mnk + "_snb(a, b, c);"
     print "#elif defined(__SSE3__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_wsm))"
     print "  libxsmm_" + typeflag + "mm_" + mnk + "_wsm(a, b, c);"
-    print "#elif defined(__MIC__)"
+    print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc)"
     print "  libxsmm_" + typeflag + "mm_" + mnk + "_knc(a, b, c);"
     print "#else"
     print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(m) + ", " + str(k) + ", a, b, c);"

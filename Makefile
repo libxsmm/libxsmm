@@ -196,6 +196,7 @@ else # column-major
 endif
 endif
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then echo "#define LIBXSMM_GENTARGET_$(GENTARGET)" >> $@; fi
+	@if [[ 30 -ge $(NVALUE) ]]; then echo "#define LIBXSMM_GENTARGET_knc" >> $@; fi
 	@echo >> $@
 	@echo >> $@
 ifeq ($(GENTARGET),noarch)
