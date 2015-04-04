@@ -87,6 +87,18 @@ def make_klist(mnklist):
     return map(lambda mnk: mnk[2], mnklist)
 
 
+def median(list_of_numbers):
+    # TODO: use nth element
+    list_of_numbers.sort()
+    size = len(list_of_numbers)
+    size2 = size / 2
+    if (0 == (size - size2 * 2)):
+        result = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
+    else:
+        result = list_of_numbers[size2]
+    return result
+
+
 def load_mlist(argv):
     begin = 3; end = begin + int(argv[1])
     if (begin > end or end > len(argv)):

@@ -29,63 +29,71 @@
 ###############################################################################
 ## Hans Pabst (Intel Corp.)
 ###############################################################################
-from functools import reduce
-import operator
 import libxsmm_utilities
 import sys
 import os
 
 
-def calc_direct_index(mnk):
-    return (mnk[0] * mnk[1]) * (mnk[2] + 1) + mnk[0]
+def calc_direct_index(mnk, d, h):
+    return d * (h * (mnk[0]) + mnk[1]) + mnk[2]
 
 
-def create_dispatch_direct_function(typeflag, mnklist, maxmnk):
+def create_dispatch_direct_function(typeflag, mnklist):
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
-    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[] = {"
+    maxm = libxsmm_utilities.max_mnk(mnklist, 0, 0)
+    maxn = libxsmm_utilities.max_mnk(mnklist, 0, 1)
+    maxk = libxsmm_utilities.max_mnk(mnklist, 0, 2)
+    d, h = maxk + 1, maxn + 1
+    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[/*" + str(d * h * (maxm + 1)) + "*/] = {"
     sys.stdout.write("    ")
-    i, m, n, last = 0, 48, 6, 0
+    begin, m, n, r = 0, 0, 0, 8
+    s = r * 6
     for mnk in mnklist:
-        next = calc_direct_index(mnk)
-        for j in range(last, next):
-            i = i + 1
-            sys.stdout.write(["0, ", "0,\n    "][0 == (i % m)])
-        i = i + n
+        end = calc_direct_index(mnk, d, h)
+        for i in range(begin, end):
+            m = m + 1; n = n + 1
+            if (0 == (m % s)):
+                sys.stdout.write(",\n    ")
+            elif (1 < n):
+                sys.stdout.write(", ")
+            sys.stdout.write("0")
+        begin, m, n = end + 1, m + r, n + 1
+        if (r > (m % s)):
+            sys.stdout.write(",\n    ")
+            m = m + m % s
+        elif (1 < n):
+            sys.stdout.write(", ")
         sys.stdout.write("libxsmm_" + typeflag + "mm_" + "_".join(map(str, mnk)))
-        if (mnk != mnklist[-1]): sys.stdout.write([", ", ",\n    "][n > (i % m)])
-        last = next + 1
-    for j in range(last, maxmnk):
-        i = i + 1
-        sys.stdout.write([", 0", ",\n    0"][0 == (i % m)])
     print
     print "  };"
-    print "  const int i = (m * n) * (k + 1) + m;"
-    print "  return functions[i];"
+    print "  return (" + str(maxm) + " >= m && " + str(maxn) + " >= n && " + str(maxk) + " >= k) " + \
+                "? functions[" + str(d) + "*(" + str(h) + "*m+n)+k] " + \
+                ": 0;"
     print "}"
 
 
-def create_dispatch_direct(mnklist, maxmnk):
+def create_dispatch_direct(mnklist):
     print "#include <libxsmm.h>"
     print
     print
-    create_dispatch_direct_function("s", mnklist, maxmnk)
+    create_dispatch_direct_function("s", mnklist)
     print
     print
-    create_dispatch_direct_function("d", mnklist, maxmnk)
+    create_dispatch_direct_function("d", mnklist)
 
 
 def create_dispatch_bsearch_function(typeflag, mnklist):
     print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
-    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[] = {"
+    i, n, mnklen = 0, 6, len(mnklist)
+    print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[/*" + str(mnklen) + "*/] = {"
     sys.stdout.write("    ")
-    i, m, mnklen = 0, 6, len(mnklist)
     for mnk in mnklist:
         i = i + 1
         sys.stdout.write("libxsmm_" + typeflag + "mm_" + "_".join(map(str, mnk)))
         if (i < mnklen):
-            sys.stdout.write([",\n", ", "][0 != (i % m)])
+            sys.stdout.write([", ", ",\n    "][0 == (i % n)])
     print
     print "  };"
     print "  const int i = libxsmm_dispatch_index(m, n, k);"
@@ -115,14 +123,14 @@ def create_dispatch_bsearch(mnklist):
     print
     print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
     print "{"
-    print "  static /*const*/ int indices[] = {"
+    i, n, mnklen = 0, 30, len(mnklist)
+    print "  static /*const*/ int indices[/*" + str(3 * mnklen) + "*/] = {"
     sys.stdout.write("    ")
-    i, m, mnklen = 0, 30, len(mnklist)
     for mnk in mnklist:
         i = i + 1
         sys.stdout.write(", ".join(map(str, mnk)))
         if (i < mnklen):
-            sys.stdout.write([",\n", ", "][0 != (i % m)])
+            sys.stdout.write([", ", ",\n"][0 == (i % n)])
     print
     print "  };"
     print "  const int* hit = 0;"
@@ -143,17 +151,17 @@ def create_dispatch_bsearch(mnklist):
 if __name__ == '__main__':
     argc = len(sys.argv)
     if (4 < argc):
+        threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[2:])
-        threshold = int(sys.argv[1])
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
-        maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
-        maxm = libxsmm_utilities.max_mnk(mnklist, maxdim, 0)
-        maxn = libxsmm_utilities.max_mnk(mnklist, maxdim, 1)
-        maxk = libxsmm_utilities.max_mnk(mnklist, maxdim, 2)
-        sparsity = int(sys.argv[2])
-        if ((maxm * maxn * maxk) > (sparsity * maxmnk)):
-            create_dispatch_bsearch(mnklist)
+        avgdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
+        maxdim = sparsity * avgdim
+        maxm = libxsmm_utilities.max_mnk(mnklist, 0, 0)
+        maxn = libxsmm_utilities.max_mnk(mnklist, 0, 1)
+        maxk = libxsmm_utilities.max_mnk(mnklist, 0, 2)
+        if ((maxm * maxn * maxk) <= (sparsity * maxmnk) and maxm <= maxdim and maxn <= maxdim and maxk <= maxdim):
+            create_dispatch_direct(mnklist)
         else:
-            create_dispatch_direct(mnklist, maxmnk)
+            create_dispatch_bsearch(mnklist)
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

@@ -43,19 +43,21 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     print "#define LIBXSMM_ALIGNED_LOADS " + str(AlignedLoads2)
     print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
     print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
-    maxMNK = libxsmm_utilities.max_mnk(mnklist, Threshold)
+    maxMNK = libxsmm_utilities.max_mnk(listMNK, Threshold)
+    avgDim = int(maxMNK ** (1.0 / 3.0) + 0.5)
+    maxM = libxsmm_utilities.max_mnk(listMNK, avgDim, 0)
+    maxN = libxsmm_utilities.max_mnk(listMNK, avgDim, 1)
+    maxK = libxsmm_utilities.max_mnk(listMNK, avgDim, 2)
     print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
-    maxDim = int(maxMNK ** (1.0 / 3.0) + 0.5)
-    print "#define LIBXSMM_MAX_M " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 0))
-    print "#define LIBXSMM_MAX_N " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 1))
-    print "#define LIBXSMM_MAX_K " + str(libxsmm_utilities.max_mnk(listMNK, maxDim, 2))
-    listM = libxsmm_utilities.make_mlist(listMNK)
-    listN = libxsmm_utilities.make_nlist(listMNK)
-    listK = libxsmm_utilities.make_klist(listMNK)
-    invLen = 1.0 / len(listM) # same for listN and listK
-    print "#define LIBXSMM_AVG_M " + str(int(sum(listM) * invLen + 0.5))
-    print "#define LIBXSMM_AVG_N " + str(int(sum(listN) * invLen + 0.5))
-    print "#define LIBXSMM_AVG_K " + str(int(sum(listK) * invLen + 0.5))
+    print "#define LIBXSMM_MAX_M " + str(maxM)
+    print "#define LIBXSMM_MAX_N " + str(maxN)
+    print "#define LIBXSMM_MAX_K " + str(maxK)
+    listM = libxsmm_utilities.make_mlist(listMNK); listM.append(avgDim)
+    listN = libxsmm_utilities.make_nlist(listMNK); listN.append(avgDim)
+    listK = libxsmm_utilities.make_klist(listMNK); listK.append(avgDim)
+    print "#define LIBXSMM_AVG_M " + str(min(libxsmm_utilities.median(listM), max(maxM - 1, 1)))
+    print "#define LIBXSMM_AVG_N " + str(min(libxsmm_utilities.median(listN), max(maxN - 1, 1)))
+    print "#define LIBXSMM_AVG_K " + str(min(libxsmm_utilities.median(listK), max(maxK - 1, 1)))
     print
     print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
