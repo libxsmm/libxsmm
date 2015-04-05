@@ -123,14 +123,14 @@ def create_dispatch_bsearch(mnklist):
     print
     print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
     print "{"
-    i, n, mnklen = 0, 30, len(mnklist)
+    i, n, mnklen = 0, 12, len(mnklist)
     print "  static /*const*/ int indices[/*" + str(3 * mnklen) + "*/] = {"
     sys.stdout.write("    ")
     for mnk in mnklist:
         i = i + 1
         sys.stdout.write(", ".join(map(str, mnk)))
         if (i < mnklen):
-            sys.stdout.write([", ", ",\n"][0 == (i % n)])
+            sys.stdout.write([", ", ",\n    "][0 == (i % n)])
     print
     print "  };"
     print "  const int* hit = 0;"
@@ -154,12 +154,11 @@ if __name__ == '__main__':
         threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
-        avgdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
-        maxdim = sparsity * avgdim
         maxm = libxsmm_utilities.max_mnk(mnklist, 0, 0)
         maxn = libxsmm_utilities.max_mnk(mnklist, 0, 1)
         maxk = libxsmm_utilities.max_mnk(mnklist, 0, 2)
-        if ((maxm * maxn * maxk) <= (sparsity * maxmnk) and maxm <= maxdim and maxn <= maxdim and maxk <= maxdim):
+        maxsize = maxm * maxn * maxk
+        if (maxsize <= (sparsity * maxmnk) and maxsize <= 65536):
             create_dispatch_direct(mnklist)
         else:
             create_dispatch_bsearch(mnklist)
