@@ -210,24 +210,24 @@ endif
 ifeq ($(GENTARGET),noarch)
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then \
 		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 wsm nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 wsm nopf SP; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 snb nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 snb nopf SP; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 hsw nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 hsw nopf SP; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(DPLDC) 1 wsm nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(SPLDC) 1 wsm nopf SP; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(DPLDC) 1 snb nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(SPLDC) 1 snb nopf SP; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(DPLDC) 1 hsw nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(SPLDC) 1 hsw nopf SP; \
 	fi
 else
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then \
 		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 $(GENTARGET) nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 $(GENTARGET) nopf SP; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(DPLDC) 1 $(GENTARGET) nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(SPLDC) 1 $(GENTARGET) nopf SP; \
 	fi
 endif
 	@if [[ 30 -ge $(NVALUE) ]]; then \
 		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(DPLDC) 1 knc nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(NVALUE) $(SPLDC) 1 knc nopf SP; \
+		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(DPLDC) 1 knc nopf DP; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE) $(NVALUE) $(KVALUE) $(MVALUE) $(KVALUE) $(SPLDC) 1 knc nopf SP; \
 	fi
 	@sed -i \
 		-e '1i#include <libxsmm.h>' \
