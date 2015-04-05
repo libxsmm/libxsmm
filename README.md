@@ -52,13 +52,13 @@ The library can be configured to accept row-major (default) or column-major orde
 make ROW_MAJOR=0
 ```
 
-To specialize LIBXSMM for certain matrix sizes (M, N, and K values). For example, one can adjust the build process in the following way:
+To specialize LIBXSMM for certain matrix sizes (M, N, and K values), the build process needs to be adjusted. For example:
 
 ```
 make M="2 4" N="1" K="$(echo $(seq 2 5))"
 ```
 
-The above example generates the following set of (M,N,K) values:
+The above example is generating the following set of (M,N,K) values:
 
 ```
 (2,1,2), (2,1,3), (2,1,4), (2,1,5),
@@ -130,7 +130,7 @@ make SPARSITY=2
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
 ### Results
-The generated code does not claim to be "optimal" or "best-performing" -- it is just generating source code using Intrinsics or assembly code. Therefore a well-optimizing compiler may arrange better code based on the inlinable C code path when compared to what is laid out by the library's code generator.
+The generated code does not claim to be "optimal" or "best-performing" - it is just generating source code using Intrinsics or assembly code. Therefore a well-optimizing compiler may arrange better code based on the inlinable C code path when compared to what is laid out by the library's code generator.
 
 ## Implementation
 ### Limitations
