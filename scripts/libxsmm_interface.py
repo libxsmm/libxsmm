@@ -36,11 +36,10 @@ import sys
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (3 < argc):
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv)
-        for mnk in mnklist:
-            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]) + "(const float* a, const float* b, float* c);"
-            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + str(mnk[0]) + "_" + str(mnk[1]) + "_" + str(mnk[2]) + "(const double* a, const double* b, double* c);"
+    if (2 < argc):
+        for mnk in sys.argv[1:]:
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnk + "(const float* a, const float* b, float* c);"
+            print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnk + "(const double* a, const double* b, double* c);"
             print
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

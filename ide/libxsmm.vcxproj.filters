@@ -53,9 +53,6 @@
     <ClCompile Include="..\src\mm_5_5_5.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_23_23_23.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\mm_1_1_1.c">
       <Filter>src</Filter>
     </ClCompile>

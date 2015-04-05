@@ -282,7 +282,7 @@ if __name__ == '__main__':
             print
             create_gentarget("double", m, n, k)
         else:
-            mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:])
+            mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0)
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

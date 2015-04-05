@@ -152,7 +152,7 @@ if __name__ == '__main__':
     argc = len(sys.argv)
     if (4 < argc):
         threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[2:])
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         avgdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         maxdim = sparsity * avgdim

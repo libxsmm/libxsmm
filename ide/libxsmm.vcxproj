@@ -44,7 +44,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm.c" />
     <ClCompile Include="..\src\mm_1_1_1.c" />
-    <ClCompile Include="..\src\mm_23_23_23.c" />
     <ClCompile Include="..\src\mm_2_2_2.c" />
     <ClCompile Include="..\src\mm_3_3_3.c" />
     <ClCompile Include="..\src\mm_4_4_4.c" />

@@ -30,6 +30,7 @@
 ## Hans Pabst (Intel Corp.)
 ###############################################################################
 from functools import reduce
+import itertools
 import operator
 import sys
 
@@ -53,26 +54,6 @@ def upper_list(lists, level):
         return above
     else:
         return upper_list(lists, level - 1)
-
-
-def make_mnklist(mlist, nlist, klist):
-    mnk = [mlist, nlist, klist]
-    top = [ \
-      [mlist, upper_list(mnk, 0)][0==len(mlist)], \
-      [nlist, upper_list(mnk, 1)][0==len(nlist)], \
-      [klist, upper_list(mnk, 2)][0==len(klist)]  \
-    ]
-    result = set()
-    for m in top[0]:
-        for n in top[1]:
-            if not nlist: n = m
-            for k in top[2]:
-                if not klist: k = n
-                if not mlist: m = k
-                result.add((m, n, k))
-    mnklist = list(result)
-    mnklist.sort()
-    return mnklist
 
 
 def make_mlist(mnklist):
@@ -99,6 +80,17 @@ def median(list_of_numbers):
     return result
 
 
+def max_mnk(mnklist, init = 0, index = None):
+    return reduce(max, map(lambda mnk: \
+      mnk[index] if (None != index and 0 <= index and index < 3) \
+      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
+
+
+def calc_alignment(alignment, default = None):
+    inherit = [alignment, default][None != default]
+    return [0, [inherit, alignment][1 < alignment]][0 != alignment]
+
+
 def load_mlist(argv):
     begin = 3; end = begin + int(argv[1])
     if (begin > end or end > len(argv)):
@@ -120,38 +112,46 @@ def load_klist(argv):
     return map(int, argv[begin:])
 
 
-def load_mnklist(argv):
-    return make_mnklist(load_mlist(argv), load_nlist(argv), load_klist(argv))
-
-
-def load_mnksize(argv):
-    msize = int(argv[1])
-    nsize = int(argv[2])
-    mnsize = msize + nsize + 2
-    mnksize = len(argv) - 1
-    if (mnsize > mnksize):
-        raise ValueError("load_mnksize: malformed index list!")
-    return (msize, nsize, mnksize - mnsize)
-
-
-def max_mnk(mnklist, init = 0, index = None):
-    return reduce(max, map(lambda mnk: \
-      mnk[index] if (None != index and 0 <= index and index < 3) \
-      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
-
-
-def calc_alignment(alignment, default = None):
-    inherit = [alignment, default][None != default]
-    return [0, [inherit, alignment][1 < alignment]][0 != alignment]
+def load_mnklist(argv, format):
+    if (0 == format): # indexes format
+        result = map(lambda mnk: tuple(map(int, mnk.split("_"))), argv)
+    elif (-1 == format): # new input format
+        groups = map(lambda group: [int(i) for i in group.split()], argv.split(","))
+        result = list(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
+    elif (-2 == format): # legacy format
+        mlist, nlist, klist = load_mlist(argv), load_nlist(argv), load_klist(argv)
+        mnk = [mlist, nlist, klist]
+        top = [ \
+          [mlist, upper_list(mnk, 0)][0==len(mlist)], \
+          [nlist, upper_list(mnk, 1)][0==len(nlist)], \
+          [klist, upper_list(mnk, 2)][0==len(klist)]  \
+        ]
+        resultset = set()
+        for m in top[0]:
+            for n in top[1]:
+                if not nlist: n = m
+                for k in top[2]:
+                    if not klist: k = n
+                    if not mlist: m = k
+                    resultset.add((m, n, k))
+        result = list(resultset)
+        result.sort()
+    else:
+        raise ValueError("load_mnklist: unexpected format!")
+    return result
 
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (4 < argc and 0 == int(sys.argv[1])):
-        mnklist = load_mnklist(sys.argv[1:])
-        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), mnklist))
-    elif (5 == argc and 0 != int(sys.argv[1])):
-        elem_size, unaligned = int(sys.argv[1]), int(sys.argv[2])
+    format = int(sys.argv[1])
+    if (2 < argc and -1 == format): # new input format
+        dims = load_mnklist(str(*sys.argv[2:]), format)
+        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
+    elif (4 < argc and -2 == format): # legacy format
+        dims = load_mnklist(sys.argv[1:], format)
+        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
+    elif (5 == argc and 0 < format):
+        elem_size, unaligned = format, int(sys.argv[2])
         elements = calc_alignment(int(sys.argv[3]), int(sys.argv[4])) / elem_size
         print (unaligned + elements - 1) / elements * elements
     else:

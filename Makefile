@@ -2,9 +2,12 @@
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 1
 
-# M, N, K sets generate value combinations according to the loop nest M(N(K)))
-# with an empty set 
-M ?= $(shell seq 1 5)
+# Separate M, N, and K lists allow generating M,N,K-combinations according to the loop nest M(N(K)))
+# However, using the MNK variable is even more powerful: generate M,N,K-combinations for each comma
+# separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2), and (3,3,3). This way a heterogeneous
+# set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2), (1,2,1), (1,2,2), (2,1,1), (2,1,2)
+# (2,2,1) out of the first group, and a (3,3,3) for the second group (which contains just 3).
+MNK ?= $(shell seq -s, 1 5)
 
 # limit to certain code path(s)
 SSE ?= 0
@@ -135,7 +138,12 @@ else
 	GENTARGET := noarch
 endif
 
-INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py 0 $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+ifneq ("$(M)$(N)$(K)","")
+	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -2 $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+else
+	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -1 '$(MNK)')
+endif
+
 SRCFILES = $(addprefix $(SRCDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
 OBJFILES_GEN = $(patsubst %,$(OBJDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
@@ -148,11 +156,11 @@ lib_all: lib_hst lib_mic
 header: $(HEADER)
 $(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@cat $(SRCDIR)/libxsmm.0.h > $@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(words $(M)) $(words $(N)) $(M) $(N) $(K) >> $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(INDICES) >> $@
 	@echo >> $@
 	@cat $(SRCDIR)/libxsmm.1.h >> $@
 	@echo >> $@
-	@python $(SCRDIR)/libxsmm_interface.py $(words $(M)) $(words $(N)) $(M) $(N) $(K) >> $@
+	@python $(SCRDIR)/libxsmm_interface.py $(INDICES) >> $@
 	@cat $(SRCDIR)/libxsmm.2.h >> $@
 
 ifneq ($(GENASM),0)
@@ -236,7 +244,7 @@ endif
 
 main: $(MAIN)
 $(MAIN): $(HEADER)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(words $(M)) $(words $(N)) $(M) $(N) $(K) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
 
 compile_mic: $(OBJFILES_MIC)
 $(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
