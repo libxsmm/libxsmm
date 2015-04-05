@@ -89,8 +89,8 @@ else ifneq ($(shell which gcc 2> /dev/null),)
 		CFLAGS += -mavx512f
 		CXXFLAGS += -mavx512f
 	else ifneq ($(SSE),0)
-		CFLAGS += -xSSE3
-		CXXFLAGS += -xSSE3
+		CFLAGS += -msse3
+		CXXFLAGS += -msse3
 	else
 		CFLAGS += -march=native
 		CXXFLAGS += -march=native
