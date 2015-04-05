@@ -113,11 +113,12 @@ def load_klist(argv):
 
 
 def load_mnklist(argv, format):
+    resultset = set()
     if (0 == format): # indexes format
-        result = map(lambda mnk: tuple(map(int, mnk.split("_"))), argv)
+        resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == format): # new input format
         groups = map(lambda group: [int(i) for i in group.split()], argv.split(","))
-        result = list(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
+        resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
         mlist, nlist, klist = load_mlist(argv), load_nlist(argv), load_klist(argv)
         mnk = [mlist, nlist, klist]
@@ -126,7 +127,6 @@ def load_mnklist(argv, format):
           [nlist, upper_list(mnk, 1)][0==len(nlist)], \
           [klist, upper_list(mnk, 2)][0==len(klist)]  \
         ]
-        resultset = set()
         for m in top[0]:
             for n in top[1]:
                 if not nlist: n = m
@@ -134,11 +134,9 @@ def load_mnklist(argv, format):
                     if not klist: k = n
                     if not mlist: m = k
                     resultset.add((m, n, k))
-        result = list(resultset)
-        result.sort()
     else:
         raise ValueError("load_mnklist: unexpected format!")
-    return result
+    return sorted(resultset)
 
 
 if __name__ == '__main__':
