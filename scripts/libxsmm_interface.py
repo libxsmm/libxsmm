@@ -36,7 +36,7 @@ import sys
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (2 < argc):
+    if (1 < argc):
         for mnk in sys.argv[1:]:
             print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnk + "(const float* a, const float* b, float* c);"
             print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnk + "(const double* a, const double* b, double* c);"

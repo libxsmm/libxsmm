@@ -243,7 +243,7 @@ def create_gentarget(type, m, n, k):
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (7 < argc):
+    if (6 < argc):
         RowMajor = int(sys.argv[1])
         AlignedStores = int(sys.argv[2])
         AlignedLoads = int(sys.argv[3])

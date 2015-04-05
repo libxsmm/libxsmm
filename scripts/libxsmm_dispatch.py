@@ -150,7 +150,7 @@ def create_dispatch_bsearch(mnklist):
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (4 < argc):
+    if (3 < argc):
         threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
