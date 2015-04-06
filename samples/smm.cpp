@@ -169,13 +169,11 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
+      const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s * SMM_MIN_NLOCAL) / SMM_MIN_NPARALLEL) + 0.5);
       const double mbytes = 1.0 * s * (asize + bsize) * sizeof(T) / (1024 * 1024);
 #if defined(_OPENMP)
       const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
       const double gflops = 2.0 * s * m * n * k * 1E-9;
-      const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s * SMM_MIN_NLOCAL) / SMM_MIN_NPARALLEL) + 0.5);
-#else
-      const int u = t;
 #endif
 #if defined(SMM_THREADPRIVATE) && defined(_OPENMP)
 # if 1 == (SMM_THREADPRIVATE) // native OpenMP TLS
