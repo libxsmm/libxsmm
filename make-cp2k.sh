@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make $* ROW_MAJOR=0 ALIGNED_STORES=1 GENASM=0 MNK=\
+make $* ROW_MAJOR=0 ALIGNED_STORES=1 MNK=\
 "23,"\
 "6,"\
 "14 16 29,"\

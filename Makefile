@@ -14,7 +14,7 @@ SSE ?= 0
 AVX ?= 0
 
 # Use assembly kernel generator
-GENASM ?= 0
+GENASM ?= 1
 
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
