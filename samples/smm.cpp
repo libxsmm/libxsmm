@@ -190,7 +190,8 @@ int main(int argc, char* argv[])
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i size=%i batch=%i memory=%.1f MB\n\n", m, n, k, ldc, s, u, mbytes);
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.1f MB\n\n",
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u, mbytes);
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
