@@ -166,6 +166,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -207,6 +208,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -250,6 +252,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -292,6 +295,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -326,6 +330,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -364,6 +369,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>

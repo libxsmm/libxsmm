@@ -101,8 +101,7 @@
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -172,6 +171,7 @@
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -212,6 +212,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -254,6 +255,7 @@
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -295,6 +297,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -328,6 +331,7 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -365,6 +369,7 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>HOST</UseProcessorExtensions>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -386,6 +391,5 @@
     <BuildLog />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
