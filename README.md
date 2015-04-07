@@ -84,6 +84,14 @@ Each group of indexes is combined into all possible triplets generating the foll
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
+Testing the generated cases as part of the code specialization is simply capturing the console output of the the [smm](https://github.com/hfp/libxsmm/blob/master/samples/smm.cpp) code sample:
+
+```
+make MNK="2 3, 23" test
+```
+
+The output (samples/smm-test.txt) can be further evaluated using e.g., GNU's regular expression tool (grep).
+
 ## Performance
 ### Tuning
 The build system allows to conveniently select the target system using an AVX flag when invoking "make". The default is to generate code according to the feature bits of the host system running the compiler. The device-side defaults to "MIC" targeting the Intel Xeon Phi family of coprocessors ("KNC"). However beside of AVX=1 and AVX=2 (with FMA), an AVX=3 targets the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using Intel AVX-512 foundational instructions (AVX-512F):
