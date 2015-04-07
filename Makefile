@@ -143,6 +143,7 @@ ifneq ("$(M)$(N)$(K)","")
 else
 	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -1 '$(MNK)')
 endif
+NINDICES := $(words $(INDICES))
 
 SRCFILES = $(addprefix $(SRCDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
@@ -278,6 +279,29 @@ $(LIB_HST): $(OBJFILES_HST)
 endif
 	@mkdir -p $(LIBDIR)/intel64
 	$(AR) -rs $@ $^
+
+samples: smm
+
+smm: lib_hst
+	@cd samples && $(MAKE)
+
+smm_hst: lib_hst
+	@cd samples && $(MAKE) OFFLOAD=0
+
+smm_mic: lib_mic
+	@cd samples && $(MAKE) MIC=1
+
+test: smm
+	@cat /dev/null > samples/smm-test.txt
+	@for RUN in $(INDICES) ; do \
+		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
+		NVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f2); \
+		KVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f3); \
+		if [[ -z "$${N}" ]]; then N=1; else N=$$(($${N} + 1)); fi; \
+		echo "Test $${N} of $(NINDICES) (M=$${MVALUE} N=$${NVALUE} K=$${KVALUE})"; \
+		samples/smm.sh $${MVALUE} 0 0 $${NVALUE} $${KVALUE} >> samples/smm-test.txt; \
+		echo >> samples/smm-test.txt; \
+	done
 
 clean:
 	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
