@@ -240,7 +240,7 @@ def create_gentarget(type, m, n, k, row_major):
     print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc)"
     print "  libxsmm_" + typeflag + "mm_" + mnk + "_knc(" + a + ", " + b + ", c);"
     print "#else"
-    print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(m) + ", " + str(k) + ", a, b, c);"
+    print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c);"
     print "#endif"
     print "}"
 
