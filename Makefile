@@ -283,13 +283,13 @@ endif
 samples: smm
 
 smm: lib_hst
-	@cd samples && $(MAKE)
+	@cd samples && $(MAKE) clean && $(MAKE)
 
 smm_hst: lib_hst
-	@cd samples && $(MAKE) OFFLOAD=0
+	@cd samples && $(MAKE) clean && $(MAKE) OFFLOAD=0
 
 smm_mic: lib_mic
-	@cd samples && $(MAKE) MIC=1
+	@cd samples && $(MAKE) clean && $(MAKE) MIC=1
 
 test: smm
 	@cat /dev/null > samples/smm-test.txt
@@ -297,8 +297,8 @@ test: smm
 		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
 		NVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f2); \
 		KVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f3); \
-		if [[ -z "$${N}" ]]; then N=1; else N=$$(($${N} + 1)); fi; \
-		echo "Test $${N} of $(NINDICES) (M=$${MVALUE} N=$${NVALUE} K=$${KVALUE})"; \
+		if [[ -z "$${NRUN}" ]]; then NRUN=1; else NRUN=$$((NRUN + 1)); fi; \
+		echo "Test $${NRUN} of $(NINDICES) (M=$${MVALUE} N=$${NVALUE} K=$${KVALUE})"; \
 		samples/smm.sh $${MVALUE} 0 0 $${NVALUE} $${KVALUE} >> samples/smm-test.txt; \
 		echo >> samples/smm-test.txt; \
 	done
