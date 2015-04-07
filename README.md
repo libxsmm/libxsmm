@@ -84,13 +84,17 @@ Each group of indexes is combined into all possible triplets generating the foll
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Testing the generated cases as part of the code specialization is simply capturing the console output of the the [smm](https://github.com/hfp/libxsmm/blob/master/samples/smm.cpp) code sample:
+Testing the generated cases means capturing the console output of the [smm](https://github.com/hfp/libxsmm/blob/master/samples/smm.cpp) code sample:
 
 ```
 make MNK="2 3, 23" test
 ```
 
-The output (samples/smm-test.txt) can be further evaluated using e.g., GNU's regular expression tool (grep).
+The recorded output file can be further evaluated. For example:
+
+```
+grep "diff" samples/smm-test.txt | grep -v "diff=0.000"
+```
 
 ## Performance
 ### Tuning
