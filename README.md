@@ -155,11 +155,11 @@ Although the library is under development, the published interface is rather sta
 * Native FORTRAN interface
 
 ## Applications and References
-**\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly-optimized assembly kernels.
+**\[1] http://cp2k.org/**: Open Source Molecular Dynamics application. Beside of CP2K's own SMM module, LIBXSMM aims to provide highly optimized assembly kernels.
 
-**\[2] http://www.seissol.org/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly-optimized assembly kernels which form the computational back-bone of SeisSol. The current usage of LIBXSMM in the context of SeisSol can be found [[here](https://github.com/TUM-I5/seissol_kernels/tree/lts_compressed)].
+**\[2] http://www.seissol.org/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol. The current usage of LIBXSMM in the context of SeisSol can be found [[here](https://github.com/TUM-I5/seissol_kernels/tree/lts_compressed)].
 
-**\[3] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications. Due to LIBXSMM's roadmap, this is a related project.
+**\[3] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications.
 
 **\[4] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
 
