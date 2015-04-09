@@ -79,15 +79,15 @@
 void generate_custom_signature_right(std::ofstream& out, std::string tRoutineName, bool bSP, std::string tPrefetch) {
   if (bSP == true) {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(float* A, float* values, float* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* A, const float* values, float* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(float* A, float* values, float* C, float* A_prefetch = NULL, float* B_prefetch = NULL, float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* A, const float* values, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   } else {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(double* A, double* values, double* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* A, const double* values, double* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(double* A, double* values, double* C, double* A_prefetch = NULL, double* B_prefetch = NULL, double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* A, const double* values, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   }
 }
@@ -95,15 +95,15 @@ void generate_custom_signature_right(std::ofstream& out, std::string tRoutineNam
 void generate_custom_signature_left(std::ofstream& out, std::string tRoutineName, bool bSP, std::string tPrefetch) {
   if (bSP == true) {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(float* values, float* B, float* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* values, const float* B, float* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(float* values, float* B, float* C, float* A_prefetch = NULL, float* B_prefetch = NULL, float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* values, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   } else {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(double* values, double* B, double* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* values, const double* B, double* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(double* values, double* B, double* C, double* A_prefetch = NULL, double* B_prefetch = NULL, double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* values, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   }
 }
@@ -111,15 +111,15 @@ void generate_custom_signature_left(std::ofstream& out, std::string tRoutineName
 void generate_custom_signature_dense(std::ofstream& out, std::string tRoutineName, bool bSP, std::string tPrefetch) {
   if (bSP == true) {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(float* A, float* B, float* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* A, const float* B, float* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(float* A, float* B, float* C, float* A_prefetch = NULL, float* B_prefetch = NULL, float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const float* A, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   } else {
     if (tPrefetch.compare("nopf") == 0) {
-      out << "void " << tRoutineName << "(double* A, double* B, double* C)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* A, const double* B, double* C)" << std::endl << "{" << std::endl;
     } else {
-      out << "void " << tRoutineName << "(double* A, double* B, double* C, double* A_prefetch = NULL, double* B_prefetch = NULL, double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
+      out << "void " << tRoutineName << "(const double* A, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL)" << std::endl << "{" << std::endl;
     }
   }
 }

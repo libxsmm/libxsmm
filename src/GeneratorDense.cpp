@@ -333,7 +333,10 @@ namespace seissolgen {
     ////////////////////////////
 
     codestream << "#ifndef NDEBUG" << std::endl;
-    codestream << "num_flops += " << 2 * N* M* K << ";" << std::endl;
+    codestream << "#ifdef _OPENMP" << std::endl;
+    codestream << "#pragma omp atomic" << std::endl;
+    codestream << "#endif" << std::endl;
+    codestream << "libxsmm_num_total_flops += " << 2 * N* M* K << ";" << std::endl;
     codestream << "#endif" << std::endl << std::endl;
 
     return codestream.str();
