@@ -199,8 +199,6 @@ namespace seissolgen {
     }
 
     if (   (tVec_.compare("knc") == 0)
-        || (tVec_.compare("knl") == 0)                                                                              //TSNDA
-        || (tVec_.compare("knh") == 0)                                                                              //TSNDA
        ) {
       if (nM > 1) {
         codestream << "#pragma simd vectorlength(32)" << std::endl;
@@ -230,7 +228,7 @@ namespace seissolgen {
     codestream << "#ifdef _OPENMP" << std::endl;
     codestream << "#pragma omp atomic" << std::endl;
     codestream << "#endif" << std::endl;
-    codestream << "libxsmm_num_total_flops += " << num_local_flops*nN << ";" << std::endl;
+    codestream << "libxsmm_num_total_flops += " << num_local_flops*nM << ";" << std::endl;
     codestream << "#endif" << std::endl << std::endl;
 
     _mm_free(ptr_rowidx);
