@@ -13,6 +13,9 @@ MNK ?= $(shell seq -s, 1 5)
 SSE ?= 0
 AVX ?= 0
 
+# Embed InterProcedural Optimization information into libraries
+IPO ?= 0
+
 # Use assembly kernel generator
 GENASM ?= 1
 
@@ -48,6 +51,9 @@ ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
 	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
+	ifneq ($(IPO),0)
+		FLAGS += -ipo
+	endif
 	CFLAGS := $(FLAGS) -std=c99 -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	CFLMIC := $(FLAGS) -std=c99 -O2 -ipo -mmic -opt-assume-safe-padding
 	ifneq ($(shell which icpc 2> /dev/null),)
@@ -74,6 +80,9 @@ ifneq ($(shell which icc 2> /dev/null),)
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
 	FLAGS := -Wall -O2 -DNDEBUG
+	ifneq ($(IPO),0)
+		FLAGS += -flto
+	endif
 	CFLAGS := $(FLAGS) -std=c99
 	ifneq ($(shell which g++ 2> /dev/null),)
 		CXX := g++
