@@ -54,12 +54,12 @@ ifneq ($(shell which icc 2> /dev/null),)
 	ifneq ($(IPO),0)
 		FLAGS += -ipo
 	endif
-	CFLAGS := $(FLAGS) -std=c99 -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-	CFLMIC := $(FLAGS) -std=c99 -O2 -ipo -mmic -opt-assume-safe-padding
+	CFLAGS := $(FLAGS) -std=c99 -O3 -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+	CFLMIC := $(FLAGS) -std=c99 -O2 -mmic -opt-assume-safe-padding
 	ifneq ($(shell which icpc 2> /dev/null),)
 		CXX := icpc
-		CXXFLAGS := $(FLAGS) -O3 -ipo -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-		CXXFLMIC := $(FLAGS) -O2 -ipo -mmic -opt-assume-safe-padding
+		CXXFLAGS := $(FLAGS) -O3 -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+		CXXFLMIC := $(FLAGS) -O2 -mmic -opt-assume-safe-padding
 	endif
 	ifeq ($(AVX),1)
 		CFLAGS += -xAVX
