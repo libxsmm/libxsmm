@@ -2,7 +2,7 @@
 SETLOCAL
 
 cd ..
-bash -c "make realclean ; make ALIGNED_STORES=1 header source main"
+bash -c "make realclean ; make header source main"
 cd ide
 
 SET LIBXSMMROOT=%~d0%~p0\..
