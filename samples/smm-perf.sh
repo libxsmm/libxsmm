@@ -9,7 +9,7 @@ fi
 PERF=$(grep -A1 -i "${VARIANT}" smm-test.txt | \
   grep -e "performance" | \
   cut -d" " -f2 | \
-  sort)
+  sort -n)
 
 #AVG=$((echo -n "scale=3;"; echo "${PERF}0" | tr "\n" "+") | bc)
 #echo ${AVG}
