@@ -177,7 +177,7 @@ ifneq ($(GENASM),0)
 compile_gen: $(SRCFILES_GEN)
 $(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp
 	@mkdir -p $(OBJDIR)/intel64
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -c $< -o $@
 
 generator: $(OBJFILES_GEN)
 $(SCRDIR)/generator: $(OBJFILES_GEN)
