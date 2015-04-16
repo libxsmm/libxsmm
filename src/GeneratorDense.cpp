@@ -80,10 +80,10 @@
 
 namespace seissolgen {
 
-  GeneratorDense::GeneratorDense() : bAdd_(true), tVec_("noarch"), bSP_(false) {
+  GeneratorDense::GeneratorDense() : bAlignedA_(true), bAlignedC_(true), bAdd_(true), tVec_("noarch"), bSP_(false) {
   }
 
-  GeneratorDense::GeneratorDense(bool bAdd, std::string tVec, std::string tPrefetch, bool bSP) : bAdd_(bAdd), tVec_(tVec), tPrefetch_(tPrefetch), bSP_(bSP) {
+  GeneratorDense::GeneratorDense(bool bAlignedA, bool bAlignedC, bool bAdd, std::string tVec, std::string tPrefetch, bool bSP) : bAlignedA_(bAlignedA), bAlignedC_(bAlignedC), bAdd_(bAdd), tVec_(tVec), tPrefetch_(tPrefetch), bSP_(bSP) {
   }
 
   GeneratorDense::~GeneratorDense() {
@@ -154,9 +154,9 @@ namespace seissolgen {
       codestream << "#endif" << std::endl;
 
       if (bSP_ == false) {
-        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       } else {
-        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -203,9 +203,9 @@ namespace seissolgen {
       codestream << "#endif" << std::endl;
 
       if (this->bSP_ == false) {
-        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       } else {
-        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -252,9 +252,9 @@ namespace seissolgen {
       codestream << "#endif" << std::endl;
       
       if (this->bSP_ == false) {
-        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       } else {
-        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
       }
       
       codestream << "#else" << std::endl;
@@ -298,9 +298,9 @@ namespace seissolgen {
       
         codestream << "#ifdef __MIC__" << std::endl;
         if (bSP_ == false) { 
-          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
+          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_);
         } else {
-          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
+          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_);
         }
      
       codestream << "#else" << std::endl;

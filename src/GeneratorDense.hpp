@@ -81,6 +81,8 @@ namespace seissolgen {
    */
   class GeneratorDense {
     private:
+      bool bAlignedA_;
+      bool bAlignedC_;
       bool bAdd_;
       std::string tVec_;
       std::string tPrefetch_;
@@ -89,7 +91,7 @@ namespace seissolgen {
     public:
       GeneratorDense();
 
-      GeneratorDense(bool bAdd, std::string tVec, std::string tPrefetch, bool SP);
+      GeneratorDense(bool bAlignedA, bool bAlignedC, bool bAdd, std::string tVec, std::string tPrefetch, bool SP);
 
       ~GeneratorDense();
 

@@ -134,17 +134,15 @@ void generator_seissol_sparse(std::string tFileOut, std::string tRoutineName, st
 
   out.open(tFileOut.c_str(), std::ios::app);
 
-  seissolgen::GeneratorCSC* gen;
-
-  gen = new seissolgen::GeneratorCSC(bAdd, bSP, tVec);
+  seissolgen::GeneratorCSC gen(bAdd, bSP, tVec);
 
   if (nDenseLDB < 1) {
     generate_custom_signature_right(out, tRoutineName, bSP, tPrefetch);
-    generated_code = gen->generate_code_right(tFileIn, nM, nN, nK, nDenseLDA, nDenseLDC);
+    generated_code = gen.generate_code_right(tFileIn, nM, nN, nK, nDenseLDA, nDenseLDC);
     out << generated_code;
   } else if (nDenseLDA < 1) {
     generate_custom_signature_left(out, tRoutineName, bSP, tPrefetch);
-    generated_code = gen->generate_code_left(tFileIn, nM, nN, nK, nDenseLDB, nDenseLDC);
+    generated_code = gen.generate_code_left(tFileIn, nM, nN, nK, nDenseLDB, nDenseLDC);
     out << generated_code;
   }
 
@@ -154,20 +152,16 @@ void generator_seissol_sparse(std::string tFileOut, std::string tRoutineName, st
 #endif
   generate_epilogue(out);
   out.close();
-
-  delete gen;
 }
 
-void generator_seissol_dense(std::string tFileOut, std::string tRoutineName, int nDenseM, int nDenseN, int nDenseK, int nDenseLDA, int nDenseLDB, int nDenseLDC, bool bAdd, std::string tVec, std::string tPrefetch, bool bSP) {
+void generator_seissol_dense(std::string tFileOut, std::string tRoutineName, int nDenseM, int nDenseN, int nDenseK, int nDenseLDA, int nDenseLDB, int nDenseLDC, bool bAlignedA, bool bAlignedC, bool bAdd, std::string tVec, std::string tPrefetch, bool bSP) {
   std::string generated_code;
   std::ofstream out;
-  seissolgen::GeneratorDense* gen;
-
-  gen = new seissolgen::GeneratorDense(bAdd, tVec, tPrefetch, bSP);
+  seissolgen::GeneratorDense gen(bAlignedA, bAlignedC, bAdd, tVec, tPrefetch, bSP);
 
   out.open(tFileOut.c_str(), std::ios::app);
   // generate code
-  generated_code = gen->generate_dense(true, nDenseM, nDenseN, nDenseK, nDenseLDA, nDenseLDB, nDenseLDC);
+  generated_code = gen.generate_dense(true, nDenseM, nDenseN, nDenseK, nDenseLDA, nDenseLDB, nDenseLDC);
 
   // generate code
   generate_custom_signature_dense(out, tRoutineName, bSP, tPrefetch);
@@ -184,8 +178,6 @@ void generator_seissol_dense(std::string tFileOut, std::string tRoutineName, int
   std::cout << "code was generated and exported to " << tFileOut << ":" << std::endl;
   //  std::cout << generated_code << std::endl << std::endl;
 #endif
-
-  delete gen;
 }
 
 void print_help() {
@@ -204,7 +196,7 @@ void print_help() {
   std::cout << "    LDC" << std::endl;
   std::cout << "    0: no add, otherwise: add" << std::endl;
   std::cout << "    ARCH: noarch, wsm, snb, hsw, knc" << std::endl;
-  std::cout << "    PREFETCH: none, pfsigonly, other dense options fall-back to pfsigonly" << std::endl;
+  std::cout << "    PREFETCH: nopf (none), pfsigonly, other dense options fall-back to pfsigonly" << std::endl;
   std::cout << "    PRECISION: SP, DP" << std::endl;
   std::cout << std::endl << std::endl;
   std::cout << "Usage (dense*dense=dense):" << std::endl;
@@ -217,9 +209,11 @@ void print_help() {
   std::cout << "    LDA" << std::endl;
   std::cout << "    LDB" << std::endl;
   std::cout << "    LDC" << std::endl;
+  std::cout << "    0: unaligned A, otherwise aligned" << std::endl;
+  std::cout << "    0: unaligned C, otherwise aligned" << std::endl;
   std::cout << "    0: no add, otherwise: add" << std::endl;
   std::cout << "    ARCH: noarch, wsm, snb, hsw, knc" << std::endl;
-  std::cout << "    PREFETCH: none, pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC" << std::endl;
+  std::cout << "    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC" << std::endl;
   std::cout << "    PRECISION: SP, DP" << std::endl;
   std::cout << std::endl << std::endl;
   std::cout << std::endl << std::endl;
@@ -227,7 +221,7 @@ void print_help() {
 
 int main(int argc, char* argv []) {
   // check argument count for a valid range
-  if (argc != 14 && argc != 15) {
+  if (argc != 15 && argc != 16) {
     print_help();
     return -1;
   }
@@ -246,7 +240,7 @@ int main(int argc, char* argv []) {
     print_help();
     return -1;
   }
-  if ( (tType == "sparse" && argc != 15) || (tType == "dense" && argc != 14) ) {
+  if ( (tType == "sparse" && argc != 15) || (tType == "dense" && argc != 16) ) {
     print_help();
     return -1;
   }
@@ -331,8 +325,12 @@ int main(int argc, char* argv []) {
     int nDenseLDA = 0;
     int nDenseLDB = 0;
     int nDenseLDC = 0;
+    int nAlignedA = 0;
+    int nAlignedC = 0;
     int nAdd = 0;
 
+    bool bAlignedA = true;
+    bool bAlignedC = true;
     bool bAdd = true;
     bool bSP = false;
 
@@ -344,10 +342,12 @@ int main(int argc, char* argv []) {
     nDenseLDA = atoi(argv[7]);
     nDenseLDB = atoi(argv[8]);
     nDenseLDC = atoi(argv[9]);
-    nAdd = atoi(argv[10]);
-    tVec.assign(argv[11]);
-    tPrefetch.assign(argv[12]);
-    tPrecision.assign(argv[13]);
+    nAlignedA = atoi(argv[10]);
+    nAlignedC = atoi(argv[11]);
+    nAdd = atoi(argv[12]);
+    tVec.assign(argv[13]);
+    tPrefetch.assign(argv[14]);
+    tPrecision.assign(argv[15]);
 
     if ( (tVec.compare("wsm") != 0)        && 
          (tVec.compare("snb") != 0)        && 
@@ -380,10 +380,16 @@ int main(int argc, char* argv []) {
       return -1;
     }
 
+    if (nAlignedA == 0)
+      bAlignedA = false;
+
+    if (nAlignedC == 0)
+      bAlignedC = false;
+
     if (nAdd == 0)
       bAdd = false;
 
-    generator_seissol_dense(tFileOut, tRoutineName, nDenseM, nDenseN, nDenseK, nDenseLDA, nDenseLDB, nDenseLDC, bAdd, tVec, tPrefetch, bSP);
+    generator_seissol_dense(tFileOut, tRoutineName, nDenseM, nDenseN, nDenseK, nDenseLDA, nDenseLDB, nDenseLDC, bAlignedA, bAlignedC, bAdd, tVec, tPrefetch, bSP);
   }
 }
 
