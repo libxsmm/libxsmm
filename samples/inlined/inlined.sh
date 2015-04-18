@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HERE=$(cd $(dirname $0); pwd -P)
-NAME=smm
+NAME=$(basename ${HERE})
 
 if [[ "-mic" != "$1" ]] ; then
   env \
