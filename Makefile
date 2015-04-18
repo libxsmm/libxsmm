@@ -287,16 +287,42 @@ endif
 	@mkdir -p $(LIBDIR)/intel64
 	$(AR) -rs $@ $^
 
-samples: smm
+samples: blas smm dispatched inlined specialized
+
+blas: lib_hst
+	@cd samples/blas && $(MAKE) clean && $(MAKE)
+blas_hst: lib_hst
+	@cd samples/blas && $(MAKE) clean && $(MAKE) OFFLOAD=0
+blas_mic: lib_mic
+	@cd samples/blas && $(MAKE) clean && $(MAKE) MIC=1
 
 smm: lib_hst
-	@cd samples && $(MAKE) clean && $(MAKE)
-
+	@cd samples/cp2k && $(MAKE) clean && $(MAKE)
 smm_hst: lib_hst
-	@cd samples && $(MAKE) clean && $(MAKE) OFFLOAD=0
-
+	@cd samples/cp2k && $(MAKE) clean && $(MAKE) OFFLOAD=0
 smm_mic: lib_mic
-	@cd samples && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/cp2k && $(MAKE) clean && $(MAKE) MIC=1
+
+dispatched: lib_hst
+	@cd samples/dispatched && $(MAKE) clean && $(MAKE)
+dispatched_hst: lib_hst
+	@cd samples/dispatched && $(MAKE) clean && $(MAKE) OFFLOAD=0
+dispatched_mic: lib_mic
+	@cd samples/dispatched && $(MAKE) clean && $(MAKE) MIC=1
+
+inlined: lib_hst
+	@cd samples/inlined && $(MAKE) clean && $(MAKE)
+inlined_hst: lib_hst
+	@cd samples/inlined && $(MAKE) clean && $(MAKE) OFFLOAD=0
+inlined_mic: lib_mic
+	@cd samples/inlined && $(MAKE) clean && $(MAKE) MIC=1
+
+specialized: lib_hst
+	@cd samples/specialized && $(MAKE) clean && $(MAKE)
+specialized_hst: lib_hst
+	@cd samples/specialized && $(MAKE) clean && $(MAKE) OFFLOAD=0
+specialized_mic: lib_mic
+	@cd samples/specialized && $(MAKE) clean && $(MAKE) MIC=1
 
 test: smm
 	@cat /dev/null > samples/smm-test.txt

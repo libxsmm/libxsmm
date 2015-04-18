@@ -1,15 +1,16 @@
 DBG := 0
 MIC := 0
 
+LIBXSMMROOT := ../..
 CXXFLAGS :=
 CFLAGS :=
 DFLAGS :=
-IFLAGS := -I../include
+IFLAGS := -I$(LIBXSMMROOT)/include
 
 ifeq ($(MIC),0)
-	LFLAGS := ../lib/intel64/libxsmm.a
+	LFLAGS := $(LIBXSMMROOT)/lib/intel64/libxsmm.a
 else
-	LFLAGS := ../lib/mic/libxsmm.a
+	LFLAGS := $(LIBXSMMROOT)/lib/mic/libxsmm.a
 endif
 
 ICPC := $(notdir $(shell which icpc 2> /dev/null))
