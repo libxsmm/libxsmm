@@ -325,15 +325,15 @@ specialized_mic: lib_mic
 	@cd samples/specialized && $(MAKE) clean && $(MAKE) MIC=1
 
 test: smm
-	@cat /dev/null > samples/smm-test.txt
+	@cat /dev/null > samples/cp2k/smm-test.txt
 	@for RUN in $(INDICES) ; do \
 		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
 		NVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f2); \
 		KVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f3); \
 		if [[ -z "$${NRUN}" ]]; then NRUN=1; else NRUN=$$((NRUN + 1)); fi; \
 		echo "Test $${NRUN} of $(NINDICES) (M=$${MVALUE} N=$${NVALUE} K=$${KVALUE})"; \
-		samples/smm.sh $${MVALUE} 0 0 $${NVALUE} $${KVALUE} >> samples/smm-test.txt; \
-		echo >> samples/smm-test.txt; \
+		samples/cp2k/smm.sh $${MVALUE} 0 0 $${NVALUE} $${KVALUE} >> samples/cp2k/smm-test.txt; \
+		echo >> samples/cp2k/smm-test.txt; \
 	done
 
 clean:
