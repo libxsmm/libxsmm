@@ -84,7 +84,7 @@ Each group of indexes is combined into all possible triplets generating the foll
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Testing the generated cases means capturing the console output of the [smm](https://github.com/hfp/libxsmm/blob/master/samples/smm.cpp) code sample:
+Testing the generated cases means capturing the console output of the [smm](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/smm.cpp) code sample:
 
 ```
 make MNK="2 3, 23" test
@@ -93,7 +93,7 @@ make MNK="2 3, 23" test
 The recorded output file can be further evaluated. For example:
 
 ```
-grep "diff" samples/smm-test.txt | grep -v "diff=0.000"
+grep "diff" samples/cp2k/smm-test.txt | grep -v "diff=0.000"
 ```
 
 ## Performance
@@ -110,7 +110,7 @@ The library supports generating code using an "implicitly aligned leading dimens
 make ALIGNED_STORES=1
 ```
 
-The default alignment (ALIGNMENT=64) as well as a non-default alignment for the store instructions (ALIGNED_STORES=n) can be specified when invoking "make". The "implicitly aligned leading dimension" optimization is not expected to have a big impact due to the relatively low amount of store instructions in the instruction mix. In contrast, supporting an "implicitly aligned leading dimension" for loading the input matrices is supposed to make a bigger impact, however this is not yet implemented. There are two reasons: (1) aligning a batch of input matrices implies usually larger code changes for the client code whereas accumulating into a local temporary destination matrix is a relatively minor change, and (2) the AVX-512 capable hardware supports unaligned load/store instructions. For further details, one may have a look at the [sample code](https://github.com/hfp/libxsmm/blob/master/samples/smm.cpp).
+The default alignment (ALIGNMENT=64) as well as a non-default alignment for the store instructions (ALIGNED_STORES=n) can be specified when invoking "make". The "implicitly aligned leading dimension" optimization is not expected to have a big impact due to the relatively low amount of store instructions in the instruction mix. In contrast, supporting an "implicitly aligned leading dimension" for loading the input matrices is supposed to make a bigger impact, however this is not yet implemented. There are two reasons: (1) aligning a batch of input matrices implies usually larger code changes for the client code whereas accumulating into a local temporary destination matrix is a relatively minor change, and (2) the AVX-512 capable hardware supports unaligned load/store instructions.
 
 ### Auto-dispatch
 The function 'libxsmm_?mm_dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch uses three levels:
