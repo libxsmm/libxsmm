@@ -324,8 +324,8 @@ specialized_hst: lib_hst
 specialized_mic: lib_mic
 	@cd samples/specialized && $(MAKE) MIC=1
 
-test: smm
-samples/cp2k/smm-test.txt: test
+test: samples/cp2k/smm-test.txt
+samples/cp2k/smm-test.txt: smm
 	@cat /dev/null > samples/cp2k/smm-test.txt
 	@for RUN in $(INDICES) ; do \
 		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
