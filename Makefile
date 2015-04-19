@@ -290,39 +290,39 @@ endif
 samples: blas smm dispatched inlined specialized
 
 blas: lib_hst
-	@cd samples/blas && $(MAKE) clean && $(MAKE)
+	@cd samples/blas && $(MAKE)
 blas_hst: lib_hst
-	@cd samples/blas && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/blas && $(MAKE) OFFLOAD=0
 blas_mic: lib_mic
-	@cd samples/blas && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/blas && $(MAKE) MIC=1
 
 smm: lib_hst
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE)
+	@cd samples/cp2k && $(MAKE)
 smm_hst: lib_hst
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/cp2k && $(MAKE) OFFLOAD=0
 smm_mic: lib_mic
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/cp2k && $(MAKE) MIC=1
 
 dispatched: lib_hst
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE)
+	@cd samples/dispatched && $(MAKE)
 dispatched_hst: lib_hst
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/dispatched && $(MAKE) OFFLOAD=0
 dispatched_mic: lib_mic
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/dispatched && $(MAKE) MIC=1
 
 inlined: lib_hst
-	@cd samples/inlined && $(MAKE) clean && $(MAKE)
+	@cd samples/inlined && $(MAKE)
 inlined_hst: lib_hst
-	@cd samples/inlined && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/inlined && $(MAKE) OFFLOAD=0
 inlined_mic: lib_mic
-	@cd samples/inlined && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/inlined && $(MAKE) MIC=1
 
 specialized: lib_hst
-	@cd samples/specialized && $(MAKE) clean && $(MAKE)
+	@cd samples/specialized && $(MAKE)
 specialized_hst: lib_hst
-	@cd samples/specialized && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/specialized && $(MAKE) OFFLOAD=0
 specialized_mic: lib_mic
-	@cd samples/specialized && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/specialized && $(MAKE) MIC=1
 
 test: smm
 samples/cp2k/smm-test.txt: test
