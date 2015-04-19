@@ -64,7 +64,6 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const int s = 100000;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
@@ -86,6 +85,12 @@ int main(int argc, char* argv[])
 #endif
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
+    const int s = (1ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 1 GByte
+    const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
+#if defined(_OPENMP)
+    const double gflops = 2.0 * s * m * n * k * 1E-9;
+#endif
+
     std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(s * csize + aspace - 1);
     std::for_each(va.begin(), va.end(), nrand<T>);
     std::for_each(vb.begin(), vb.end(), nrand<T>);
@@ -98,7 +103,8 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(s * csize))
 #endif
     {
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i\n\n", m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s);
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, 1024 * gbytes);
 
       { // streaming
         fprintf(stdout, "Streaming...\n");
@@ -113,8 +119,8 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double gflops = 2.0 * s * m * n * k * 1E-9;
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -133,8 +139,8 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double gflops = 2.0 * s * m * n * k * 1E-9;
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif

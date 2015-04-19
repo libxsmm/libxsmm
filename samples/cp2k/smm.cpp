@@ -127,14 +127,14 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const int default_psize = (SMM_MIN_NPARALLEL) * (SMM_MIN_NLOCAL), default_batch = SMM_MIN_NLOCAL;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int s = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
-      ? (default_psize << std::strlen(argv[2])) : ('-' == *argv[2]
-      ? (default_psize >> std::strlen(argv[2])) : default_psize))) : default_psize;
+    const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
+    const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
+      ? (q << std::strlen(argv[2])) : ('-' == *argv[2]
+      ? (q >> std::strlen(argv[2])) : 0))) : 0;
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
-      ? (default_batch << std::strlen(argv[3])) : ('-' == *argv[3]
-      ? (default_batch >> std::strlen(argv[3])) : -1))) : -1;
+      ? ((SMM_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
+      ? ((SMM_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
@@ -159,23 +159,25 @@ int main(int argc, char* argv[])
 #endif
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
+    const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
+    const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * SMM_MIN_NLOCAL / SMM_MIN_NPARALLEL) + 0.5);
+    const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
+#if defined(_OPENMP)
+    const double gflops = 2.0 * s * m * n * k * 1E-9;
+#endif
+
     std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(csize);
     std::for_each(va.begin(), va.end(), nrand<T>);
     std::for_each(vb.begin(), vb.end(), nrand<T>);
+
     const T *const a = LIBXSMM_ALIGN(const T*, &va[0], LIBXSMM_ALIGNMENT);
     const T *const b = LIBXSMM_ALIGN(const T*, &vb[0], LIBXSMM_ALIGNMENT);
-    T * /*const*/ c = &vc[0];
+    T * /*const*/ c = &vc[0]; // no alignment, but thread-local array will be aligned
 
 #if defined(LIBXSMM_OFFLOAD)
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
-      const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s * SMM_MIN_NLOCAL) / SMM_MIN_NPARALLEL) + 0.5);
-      const double mbytes = 1.0 * s * (asize + bsize) * sizeof(T) / (1024 * 1024);
-#if defined(_OPENMP)
-      const double nbytes = 1.0 * s * (csize) * sizeof(T) / (1024 * 1024);
-      const double gflops = 2.0 * s * m * n * k * 1E-9;
-#endif
 #if defined(SMM_THREADPRIVATE) && defined(_OPENMP)
 # if 1 == (SMM_THREADPRIVATE) // native OpenMP TLS
       LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
@@ -189,8 +191,8 @@ int main(int argc, char* argv[])
 #if defined(SMM_CHECK)
       std::vector<T> expect(csize);
 #endif
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.1f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u, mbytes);
+      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u, 1024 * gbytes);
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
@@ -213,7 +215,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -243,7 +245,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -254,7 +256,6 @@ int main(int argc, char* argv[])
 
       { // auto-dispatched
         fprintf(stdout, "Dispatched...\n");
-        //libxsmm_mm(1, 1, 1, &a[0], &b[0], &c[0]); // warmup/workaround
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         const double start = omp_get_wtime();
@@ -274,7 +275,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -305,7 +306,7 @@ int main(int argc, char* argv[])
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", (mbytes + nbytes) * 1E-3 / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
