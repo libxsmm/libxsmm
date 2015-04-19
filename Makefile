@@ -184,7 +184,7 @@ $(SCRDIR)/generator: $(OBJFILES_GEN)
 	$(CXX) $(OBJFILES_GEN) -o $@
 endif
 
-source: $(SRCFILES)
+sources: $(SRCFILES)
 ifeq ($(GENASM),0)
 $(SRCDIR)/%.c: $(HEADER)
 else
@@ -212,6 +212,7 @@ endif
 ifeq ($(GENASM),0)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
+	@echo '#include <libxsmm.h>' > $@
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then echo "#define LIBXSMM_GENTARGET_$(GENTARGET)" >> $@; fi
 	@if [[ 30 -ge $(NVALUE) ]]; then echo "#define LIBXSMM_GENTARGET_knc" >> $@; fi
 	@echo >> $@
@@ -238,8 +239,7 @@ endif
 		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knc nopf DP; \
 		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP; \
 	fi
-	@sed -i \
-		-e '1i#include <libxsmm.h>' \
+	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' \
@@ -325,6 +325,7 @@ specialized_mic: lib_mic
 	@cd samples/specialized && $(MAKE) clean && $(MAKE) MIC=1
 
 test: smm
+samples/cp2k/smm-test.txt: test
 	@cat /dev/null > samples/cp2k/smm-test.txt
 	@for RUN in $(INDICES) ; do \
 		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
@@ -336,9 +337,11 @@ test: smm
 		echo >> samples/cp2k/smm-test.txt; \
 	done
 
+.PHONY: clean
 clean:
 	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
 
+.PHONY: realclean
 realclean: clean
 	rm -rf $(LIBDIR) $(HEADER)
 
