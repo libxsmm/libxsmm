@@ -1,4 +1,5 @@
 include/libxsmm.h
+scripts/generator
 src/libxsmm.c
 src/mm_*_*_*.c
 src/*.cpp
@@ -20,6 +21,7 @@ out*.txt
 *.ilk
 *.pdb
 *.obj
+*.lib
 *.o
 *.a
 *.*~
