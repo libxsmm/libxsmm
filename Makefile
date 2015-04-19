@@ -1,3 +1,5 @@
+# export all variables to sub-make processes
+export
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 1
