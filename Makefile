@@ -36,7 +36,7 @@ SPARSITY ?= 2
 
 ROOTDIR ?= .
 SCRDIR = $(ROOTDIR)/scripts
-OBJDIR = $(ROOTDIR)/build
+BLDDIR = $(ROOTDIR)/build
 INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
 LIBDIR = $(ROOTDIR)/lib
@@ -156,9 +156,9 @@ NINDICES := $(words $(INDICES))
 
 SRCFILES = $(addprefix $(SRCDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
-OBJFILES_GEN = $(patsubst %,$(OBJDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
-OBJFILES_HST = $(patsubst %,$(OBJDIR)/intel64/mm_%.o,$(INDICES))
-OBJFILES_MIC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
+OBJFILES_GEN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
 
 lib_all: lib_hst lib_mic
@@ -175,8 +175,8 @@ $(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 
 ifneq ($(GENASM),0)
 compile_gen: $(SRCFILES_GEN)
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(BLDDIR)/intel64
 	$(CXX) -c $< -o $@
 
 generator: $(OBJFILES_GEN)
@@ -212,7 +212,7 @@ endif
 ifeq ($(GENASM),0)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
-	@echo '#include <libxsmm.h>' > $@
+	@echo "#include <libxsmm.h>" > $@
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then echo "#define LIBXSMM_GENTARGET_$(GENTARGET)" >> $@; fi
 	@if [[ 30 -ge $(NVALUE) ]]; then echo "#define LIBXSMM_GENTARGET_knc" >> $@; fi
 	@echo >> $@
@@ -254,24 +254,24 @@ $(MAIN): $(HEADER)
 	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
 
 compile_mic: $(OBJFILES_MIC)
-$(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/mic
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/mic
 	$(CC) $(CFLMIC) -I$(INCDIR) -c $< -o $@
-$(OBJDIR)/mic/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/mic
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/mic
 	$(CXX) $(CXXFLMIC) -I$(INCDIR) -c $< -o $@
 
 compile_hst: $(OBJFILES_HST)
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/intel64
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/intel64
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
 lib_mic: $(LIB_MIC)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/mic/%.o,$(MAIN))
+$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/mic/%.o,$(MAIN))
 else
 $(LIB_MIC): $(OBJFILES_MIC)
 endif
@@ -280,7 +280,7 @@ endif
 
 lib_hst: $(LIB_HST)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(OBJDIR)/intel64/%.o,$(basename $(MAIN)))
+$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(BLDDIR)/intel64/%.o,$(basename $(MAIN)))
 else
 $(LIB_HST): $(OBJFILES_HST)
 endif
@@ -339,7 +339,7 @@ samples/cp2k/smm-test.txt: test
 
 .PHONY: clean
 clean:
-	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
+	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(BLDDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
 
 .PHONY: realclean
 realclean: clean
