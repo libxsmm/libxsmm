@@ -74,7 +74,7 @@
 
 #include <string>
 
-namespace seissolgen {
+namespace libxsmm {
 
   /**
    * This class generates a dense matrix multiply kernel

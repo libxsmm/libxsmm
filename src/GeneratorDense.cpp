@@ -78,7 +78,7 @@
 
 #include "GeneratorDense.hpp"
 
-namespace seissolgen {
+namespace libxsmm {
 
   GeneratorDense::GeneratorDense() : bAlignedA_(true), bAlignedC_(true), bAdd_(true), tVec_("noarch"), bSP_(false) {
   }
@@ -148,15 +148,19 @@ namespace seissolgen {
           alignC = false;
       }
 
+      // enforce external overwrite 
+      alignA = alignA && this->bAlignedA_;
+      alignC = alignC && this->bAlignedC_;
+
       codestream << "#ifdef __SSE3__" << std::endl;
       codestream << "#ifdef __AVX__" << std::endl;
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)" << std::endl;
       codestream << "#endif" << std::endl;
 
       if (bSP_ == false) {
-        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       } else {
-        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -197,15 +201,19 @@ namespace seissolgen {
           alignC = false;
       }
 
+      // enforce external overwrite 
+      alignA = alignA && this->bAlignedA_;
+      alignC = alignC && this->bAlignedC_;
+
       codestream << "#ifdef __AVX__" << std::endl;
       codestream << "#ifdef __AVX2__" << std::endl;
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling AVX code on AVX2 or newer architecture: \" __FILE__)" << std::endl;
       codestream << "#endif" << std::endl;
 
       if (this->bSP_ == false) {
-        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       } else {
-        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -246,15 +254,19 @@ namespace seissolgen {
           alignC = false;
       }
 
+      // enforce external overwrite 
+      alignA = alignA && this->bAlignedA_;
+      alignC = alignC && this->bAlignedC_;
+
       codestream << "#ifdef __AVX2__" << std::endl;
       codestream << "#ifdef __AVX512F__" << std::endl;
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)" << std::endl;
       codestream << "#endif" << std::endl;
       
       if (this->bSP_ == false) {
-        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       } else {
-        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
       }
       
       codestream << "#else" << std::endl;
@@ -295,12 +307,16 @@ namespace seissolgen {
         else
           alignC = false;
       }
+
+      // enforce external overwrite 
+      alignA = alignA && this->bAlignedA_;
+      alignC = alignC && this->bAlignedC_;
       
         codestream << "#ifdef __MIC__" << std::endl;
         if (bSP_ == false) { 
-          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_);
+          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
         } else {
-          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA && this->bAlignedA_, alignC && this->bAlignedC_, this->bAdd_);
+          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
         }
      
       codestream << "#else" << std::endl;

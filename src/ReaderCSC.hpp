@@ -43,7 +43,7 @@
 
 #include "Reader.hpp"
 
-namespace seissolgen {
+namespace libxsmm {
 
   /**
    * FIXME add description

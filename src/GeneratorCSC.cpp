@@ -82,7 +82,7 @@
 #define C_UNROLLING_FACTOR_RIGHT 1
 //#define USE_THREE_ELEMENT_AVX_VECTORIZATION
 
-namespace seissolgen {
+namespace libxsmm {
 
   GeneratorCSC::GeneratorCSC() : bAdd_(true), bSP_(false), tVec_("noarch") {
   }
