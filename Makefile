@@ -378,21 +378,21 @@ samples/cp2k/smm-test.sh:
 
 .PHONY: clean
 clean:
-	rm -rf $(BLDDIR)
-	rm -f samples/cp2k/smm-test.txt
-	rm -f $(SCRDIR)/generator
-	rm -f $(SCRDIR)/generator.exe
-	rm -f $(SRCDIR)/mm_*_*_*.c
-	rm -f $(ROOTDIR)/*/*/*~
-	rm -f $(ROOTDIR)/*/*~
-	rm -f $(ROOTDIR)/*~
-	rm -f $(MAIN)
+	@rm -rf $(BLDDIR)
+	@rm -f samples/cp2k/smm-test.txt
+	@rm -f $(SCRDIR)/generator
+	@rm -f $(SCRDIR)/generator.exe
+	@rm -f $(SRCDIR)/mm_*_*_*.c
+	@rm -f $(ROOTDIR)/*/*/*~
+	@rm -f $(ROOTDIR)/*/*~
+	@rm -f $(ROOTDIR)/*~
+	@rm -f $(MAIN)
 
 .PHONY: realclean
 realclean: clean
-	rm -rf $(LIBDIR)
-	rm -f samples/cp2k/smm-test.sh
-	rm -f $(HEADER)
+	@rm -rf $(LIBDIR)
+	@rm -f samples/cp2k/smm-test.sh
+	@rm -f $(HEADER)
 
 .PHONY: install
 install: lib_all samples clean
