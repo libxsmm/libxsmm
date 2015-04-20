@@ -6,13 +6,12 @@ if ([ "" != "$1" ]) ; then
   VARIANT=$1
 fi
 
-PERF=$(grep -A1 -i "${VARIANT}" smm-test.txt | \
+HERE=$(cd $(dirname $0); pwd -P)
+PERF=$(grep -A1 -i "${VARIANT}" ${HERE}/smm-test.txt | \
   grep -e "performance" | \
   cut -d" " -f2 | \
   sort -n)
 
-#AVG=$((echo -n "scale=3;"; echo "${PERF}0" | tr "\n" "+") | bc)
-#echo ${AVG}
 NUM1=$(echo "${PERF}" | wc -l)
 NUM2=$((NUM1 / 2))
 MIN=$(echo ${PERF} | cut -d" " -f1)
