@@ -60,7 +60,7 @@
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
 /** >1: number of locks, =1: omp critical, =0: atomic */
-#define SMM_SYNCHRONIZATION 8
+#define SMM_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
 #define SMM_MIN_NPARALLEL 240
 // ensures amortized atomic overhead
@@ -126,6 +126,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
     LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
 #endif
     for (int i = 0; i < m; ++i) {
+      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
       for (int j = 0; j < n; ++j) {
 #if (0 != LIBXSMM_ROW_MAJOR)
         const T value = c[i*ldc+j];
