@@ -59,6 +59,8 @@
 
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
+/** >1: number of locks, =1: omp critical, =0: atomic */
+#define SMM_SYNCHRONIZATION 1
 // ensures sufficient parallel slack
 #define SMM_MIN_NPARALLEL 240
 // ensures amortized atomic overhead
@@ -79,29 +81,67 @@ LIBXSMM_TARGET(mic) void nrand(T& a)
 }
 
 
+#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (1 < (SMM_SYNCHRONIZATION))
+LIBXSMM_TARGET(mic) class LIBXSMM_TARGET(mic) lock_type {
+public:
+  lock_type() {
+    for (size_t i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
+  }
+  
+  ~lock_type() {
+    for (size_t i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
+  }
+
+public:
+  void acquire(const void* id) {
+    omp_set_lock(m_lock + reinterpret_cast<uintptr_t>(id) % SMM_SYNCHRONIZATION);
+  }
+
+  void release(const void* id) {
+    omp_unset_lock(m_lock + reinterpret_cast<uintptr_t>(id) % SMM_SYNCHRONIZATION);
+  }
+
+private:
+  omp_lock_t m_lock[SMM_SYNCHRONIZATION];
+} lock;
+#endif
+
+
 template<typename T>
 LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
 {
+#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (0 < (SMM_SYNCHRONIZATION))
+# if (1 == (SMM_SYNCHRONIZATION))
+#   pragma omp critical(smmadd)
+# else
+    lock.acquire(c);
+# endif
+#endif
+    {
 #if (0 < LIBXSMM_ALIGNED_STORES)
-  LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
+    LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
 #endif
-  for (int i = 0; i < m; ++i) {
-    for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
 #if (0 != LIBXSMM_ROW_MAJOR)
-      const T value = c[i*ldc+j];
+        const T value = c[i*ldc+j];
 #else
-      const T value = c[j*ldc+i];
+        const T value = c[j*ldc+i];
 #endif
-#if defined(_OPENMP)
-#     pragma omp atomic
+#if defined(_OPENMP) && (!defined(SMM_SYNCHRONIZATION) || (0 == (SMM_SYNCHRONIZATION)))
+#       pragma omp atomic
 #endif
 #if (0 != LIBXSMM_ROW_MAJOR)
-      dst[i*n+j] += value;
+        dst[i*n+j] += value;
 #else
-      dst[j*m+i] += value;
+        dst[j*m+i] += value;
 #endif
+      }
     }
   }
+#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (1 < (SMM_SYNCHRONIZATION))
+  lock.release(c);
+#endif
 }
 
 
