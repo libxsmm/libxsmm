@@ -135,13 +135,19 @@ int main(int argc, char* argv[])
 
       { // cached
         fprintf(stdout, "Cached...\n");
-        std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         const double start = omp_get_wtime();
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          xmm(a, b, c);
+          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
+#if (0 < (LIBXSMM_ALIGNED_STORES))
+          LIBXSMM_ALIGNED(T tmp[1*(LIBXSMM_MAX_MNK)/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
+#else
+          LIBXSMM_ALIGNED(T tmp[1*(LIBXSMM_MAX_MNK)/*max. problemsize*/], LIBXSMM_ALIGNMENT);
+#endif
+          // do nothing else with tmp; just a benchmark
+          xmm(a, b, tmp);
         }
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
