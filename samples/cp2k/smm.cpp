@@ -60,7 +60,7 @@
 // make sure that stacksize is covering the problem size
 #define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
 /** >1: number of locks, =1: omp critical, =0: atomic */
-#define SMM_SYNCHRONIZATION 1
+#define SMM_SYNCHRONIZATION 8
 // ensures sufficient parallel slack
 #define SMM_MIN_NPARALLEL 240
 // ensures amortized atomic overhead
@@ -85,20 +85,24 @@ LIBXSMM_TARGET(mic) void nrand(T& a)
 LIBXSMM_TARGET(mic) class LIBXSMM_TARGET(mic) lock_type {
 public:
   lock_type() {
-    for (size_t i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
+    for (int i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
   }
   
   ~lock_type() {
-    for (size_t i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
+    for (int i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
   }
 
 public:
-  void acquire(const void* id) {
-    omp_set_lock(m_lock + reinterpret_cast<uintptr_t>(id) % SMM_SYNCHRONIZATION);
+  void acquire(const void* address) {
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
+    // non-pot: omp_set_lock(m_lock + id % SMM_SYNCHRONIZATION);
+    omp_set_lock(m_lock + (id & (SMM_SYNCHRONIZATION - 1)));
   }
 
-  void release(const void* id) {
-    omp_unset_lock(m_lock + reinterpret_cast<uintptr_t>(id) % SMM_SYNCHRONIZATION);
+  void release(const void* address) {
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
+    // non-pot: omp_unset_lock(m_lock + id % SMM_SYNCHRONIZATION);
+    omp_unset_lock(m_lock + (id & (SMM_SYNCHRONIZATION - 1)));
   }
 
 private:
@@ -114,7 +118,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 # if (1 == (SMM_SYNCHRONIZATION))
 #   pragma omp critical(smmadd)
 # else
-    lock.acquire(c);
+    lock.acquire(dst);
 # endif
 #endif
     {
@@ -140,7 +144,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
     }
   }
 #if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (1 < (SMM_SYNCHRONIZATION))
-  lock.release(c);
+  lock.release(dst);
 #endif
 }
 
