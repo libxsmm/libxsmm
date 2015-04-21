@@ -29,89 +29,128 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx2_load_16x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, std::string tPrefetch) {
+void avx2_load_16xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_load_16xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovapd (%%r10), %%ymm4\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << ldc * 8 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << (ldc + 4) * 8 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << (ldc + 8) * 8 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << (ldc + 12) * 8 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << 2 * ldc * 8 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << ((2 * ldc) + 8) * 8 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovapd " << ((2 * ldc) + 12) * 8 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovapd " <<  (l_n * ldc)      * 8 << "(%%r10), %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovapd " << ((l_n * ldc) + 4) * 8 << "(%%r10), %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovapd " << ((l_n * ldc) + 8) * 8 << "(%%r10), %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovapd " << ((l_n * ldc) +12) * 8 << "(%%r10), %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+      }
+//      codestream << "                         \"vmovapd (%%r10), %%ymm4\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << ldc * 8 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << (ldc + 4) * 8 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << (ldc + 8) * 8 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << (ldc + 12) * 8 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << 2 * ldc * 8 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << ((2 * ldc) + 8) * 8 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovapd " << ((2 * ldc) + 12) * 8 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
     } else {
-      codestream << "                         \"vmovupd (%%r10), %%ymm4\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << ldc * 8 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << (ldc + 4) * 8 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << (ldc + 8) * 8 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << (ldc + 12) * 8 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << 2 * ldc * 8 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << ((2 * ldc) + 8) * 8 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovupd " << ((2 * ldc) + 12) * 8 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovupd " <<  (l_n * ldc)      * 8 << "(%%r10), %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovupd " << ((l_n * ldc) + 4) * 8 << "(%%r10), %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovupd " << ((l_n * ldc) + 8) * 8 << "(%%r10), %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovupd " << ((l_n * ldc) +12) * 8 << "(%%r10), %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+      }
+//      codestream << "                         \"vmovupd (%%r10), %%ymm4\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << ldc * 8 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << (ldc + 4) * 8 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << (ldc + 8) * 8 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << (ldc + 12) * 8 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << 2 * ldc * 8 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << ((2 * ldc) + 8) * 8 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
+//      codestream << "                         \"vmovupd " << ((2 * ldc) + 12) * 8 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
     }
   } else {
-    codestream << "                         \"vxorpd %%ymm4, %%ymm4, %%ymm4\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm5, %%ymm5, %%ymm5\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm6, %%ymm6, %%ymm6\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm7, %%ymm7, %%ymm7\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm8, %%ymm8, %%ymm8\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm9, %%ymm9, %%ymm9\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm10, %%ymm10, %%ymm10\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm11, %%ymm11, %%ymm11\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm12, %%ymm12, %%ymm12\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorpd %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorpd %%ymm" << 4 + (4*l_n) << ", %%ymm" << 4 + (4*l_n) << ", %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorpd %%ymm" << 5 + (4*l_n) << ", %%ymm" << 5 + (4*l_n) << ", %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorpd %%ymm" << 6 + (4*l_n) << ", %%ymm" << 6 + (4*l_n) << ", %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorpd %%ymm" << 7 + (4*l_n) << ", %%ymm" << 7 + (4*l_n) << ", %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+    }
+//    codestream << "                         \"vxorpd %%ymm4, %%ymm4, %%ymm4\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm5, %%ymm5, %%ymm5\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm6, %%ymm6, %%ymm6\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm7, %%ymm7, %%ymm7\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm8, %%ymm8, %%ymm8\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm9, %%ymm9, %%ymm9\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm10, %%ymm10, %%ymm10\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm11, %%ymm11, %%ymm11\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm12, %%ymm12, %%ymm12\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
+//    codestream << "                         \"vxorpd %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
   }
   if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 64(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)      * 8 << "(%%r12)\\n\\t\"" << std::endl;
+      codestream << "                         \"prefetcht1 " << ((l_n * ldc) + 8) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    }
+//    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
+//    codestream << "                         \"prefetcht1 64(%%r12)\\n\\t\"" << std::endl;
+//    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
   }
 }
 
-void avx2_store_16x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx2_store_16xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
   if (alignC == true) {
-    codestream << "                         \"vmovapd %%ymm4, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm8, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm9, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm10, " << (ldc + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm11, " << (ldc + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm12, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm13, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm14, " << ((2 * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovapd %%ymm15, " << ((2 * ldc) + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovapd %%ymm" << 4 + (4*l_n) << ", " <<   (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovapd %%ymm" << 5 + (4*l_n) << ", " <<  ((l_n * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovapd %%ymm" << 6 + (4*l_n) << ", " <<  ((l_n * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovapd %%ymm" << 7 + (4*l_n) << ", " <<  ((l_n * ldc) +12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
+//    codestream << "                         \"vmovapd %%ymm4, (%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm8, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm9, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm10, " << (ldc + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm11, " << (ldc + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm12, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm13, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm14, " << ((2 * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovapd %%ymm15, " << ((2 * ldc) + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
   } else {
-    codestream << "                         \"vmovupd %%ymm4, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm8, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm9, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm10, " << (ldc + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm11, " << (ldc + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm12, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm13, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm14, " << ((2 * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovupd %%ymm15, " << ((2 * ldc) + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovupd %%ymm" << 4 + (4*l_n) << ", " <<   (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovupd %%ymm" << 5 + (4*l_n) << ", " <<  ((l_n * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovupd %%ymm" << 6 + (4*l_n) << ", " <<  ((l_n * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovupd %%ymm" << 7 + (4*l_n) << ", " <<  ((l_n * ldc) +12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
+//    codestream << "                         \"vmovupd %%ymm4, (%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm8, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm9, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm10, " << (ldc + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm11, " << (ldc + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm12, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm13, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm14, " << ((2 * ldc) + 8) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+//    codestream << "                         \"vmovupd %%ymm15, " << ((2 * ldc) + 12) * 8 << "(%%r10)\\n\\t\"" << std::endl;
   }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 " << (ldc + 8) * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ((2 * ldc) + 8) * 8 << "(%%r12)\\n\\t\"" << std::endl;
-  }
+//  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+//    codestream << "                         \"prefetcht1 " << (ldc + 8) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+//    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+//    codestream << "                         \"prefetcht1 " << ((2 * ldc) + 8) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+//  }
 }
 
 void avx2_kernel_16x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
@@ -357,7 +396,8 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
   int k_threshold = 30;
   int mDone, mDone_old;
   init_registers_asm(codestream, tPrefetch);
-  header_nloop_dp_asm(codestream, 3);
+  int n_blocking = 3;
+  header_nloop_dp_asm(codestream, n_blocking);
 
   mDone_old = 0;
   // 16x3
@@ -369,7 +409,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone > 0) {
     header_mloop_dp_asm(codestream, 16);
-    avx2_load_16x3_dp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
+    avx2_load_16xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if (K % k_blocking == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 16, k_blocking);
@@ -404,7 +444,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx2_store_16x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx2_store_16xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 16, K, mDone, lda, tPrefetch);
   }
 
@@ -414,7 +454,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone != mDone_old && mDone > 0) {
     header_mloop_dp_asm(codestream, 12);
-    avx_load_12x3_dp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
+    avx_load_12xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if ((K % k_blocking) == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 12, k_blocking);
@@ -449,7 +489,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx_store_12x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx_store_12xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 12, K, mDone, lda, tPrefetch);
   }
 
@@ -459,7 +499,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone != mDone_old && mDone > 0) {
     header_mloop_dp_asm(codestream, 8);
-    avx_load_8x3_dp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
+    avx_load_8xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if ((K % k_blocking) == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 8, k_blocking);
@@ -494,7 +534,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx_store_8x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx_store_8xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 8, K, mDone, lda, tPrefetch);
   }
 
@@ -504,7 +544,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone != mDone_old && mDone > 0) {
     header_mloop_dp_asm(codestream, 4);
-    avx_load_4x3_dp_asm(codestream, ldc, alignC, bAdd);
+    avx_load_4xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if ((K % k_blocking) == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 4, k_blocking);
@@ -539,7 +579,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx_store_4x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx_store_4xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 4, K, mDone, lda, tPrefetch);
   }
 
@@ -549,7 +589,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone != mDone_old && mDone > 0) {
     header_mloop_dp_asm(codestream, 2);
-    avx_load_2x3_dp_asm(codestream, ldc, alignC, bAdd);
+    avx_load_2xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if ((K % k_blocking) == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 2, k_blocking);
@@ -584,7 +624,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx_store_2x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx_store_2xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 2, K, mDone, lda, tPrefetch);
   }
 
@@ -594,7 +634,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
 
   if (mDone != mDone_old && mDone > 0) {
     header_mloop_dp_asm(codestream, 1);
-    avx_load_1x3_dp_asm(codestream, ldc, alignC, bAdd);
+    avx_load_1xN_dp_asm(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
 
     if ((K % k_blocking) == 0 && K > k_threshold) {
       header_kloop_dp_asm(codestream, 1, k_blocking);
@@ -629,7 +669,7 @@ void avx2_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
       }
     }
 
-    avx_store_1x3_dp_asm(codestream, ldc, alignC, tPrefetch);
+    avx_store_1xN_dp_asm(codestream, ldc, alignC, n_blocking);
     footer_mloop_dp_asm(codestream, 1, K, mDone, lda, tPrefetch);
   }
 
