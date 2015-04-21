@@ -6,7 +6,8 @@ if ([ "" != "$1" ]) ; then
   VARIANT=$1
 fi
 
-PERF=$(grep -A1 -i "${VARIANT}" smm-test.txt | \
+HERE=$(cd $(dirname $0); pwd -P)
+PERF=$(grep -A1 -i "${VARIANT}" ${HERE}/smm-test.txt | \
   grep -e "performance" | \
   cut -d" " -f2 | \
   sort -n)
