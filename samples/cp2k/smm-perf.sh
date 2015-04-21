@@ -7,28 +7,58 @@ if ([ "" != "$1" ]) ; then
 fi
 
 HERE=$(cd $(dirname $0); pwd -P)
-PERF=$(grep -A1 -i "${VARIANT}" ${HERE}/smm-test.txt | \
-  grep -e "performance" | \
+FILE=${HERE}/smm-test.txt
+
+GREP=$(which grep)
+PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
+  ${GREP} -e "performance" | \
   cut -d" " -f2 | \
   sort -n)
 
-NUM1=$(echo "${PERF}" | wc -l)
-NUM2=$((NUM1 / 2))
+NUM=$(echo "${PERF}" | wc -l)
 MIN=$(echo ${PERF} | cut -d" " -f1)
-MAX=$(echo ${PERF} | cut -d" " -f${NUM1})
-AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM1}" | tr "\n" "+")" | bc)
+MAX=$(echo ${PERF} | cut -d" " -f${NUM})
 
-if ([ "0" == "$((NUM1 % 2))" ]) ; then
-  A=$(echo ${PERF} | cut -d" " -f$((NUM2 - 1)))
-  B=$(echo ${PERF} | cut -d" " -f${NUM2})
-  MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | bc)
-else
-  MED=$(echo ${PERF} | cut -d" " -f${NUM2})
-fi
-
-echo "num=${NUM1}"
+echo "num=${NUM}"
 echo "min=${MIN}"
 echo "max=${MAX}"
-echo "avg=${AVG}"
-echo "med=${MED}"
+
+BC=$(which bc 2> /dev/null)
+if ([ "" != "${BC}" ]) ; then
+  AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
+  NUM2=$((NUM / 2))
+
+  if ([ "0" == "$((NUM % 2))" ]) ; then
+    A=$(echo ${PERF} | cut -d" " -f$((NUM2 - 1)))
+    B=$(echo ${PERF} | cut -d" " -f${NUM2})
+    MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
+  else
+    MED=$(echo ${PERF} | cut -d" " -f${NUM2})
+  fi
+
+  echo "avg=${AVG}"
+  echo "med=${MED}"
+fi
+
+if ([ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]) ; then
+  GNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot
+elif ([ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]) ; then
+  GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
+else
+  GNUPLOT=$(which gnuplot 2> /dev/null)
+fi
+
+SED=$(which sed)
+if ([ "" != "${GNUPLOT}" ]) ; then
+  export GDFONTPATH=/cygdrive/c/Windows/Fonts
+  ${GREP} -i -A1 -e "^m=" -e "${VARIANT}" ${FILE} | \
+  ${SED} \
+    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
+    -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GFLOPS\/s//" \
+    -e "/${VARIANT}.../Id" -e "/^$/d" -e "/--/d" | \
+  ${SED} \
+    -e "N;s/ MB\n\tperformance://g" \
+  > smm-test.dat
+  "${GNUPLOT}" smm-test.plt
+fi
 
