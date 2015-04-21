@@ -67,7 +67,9 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
     FILENAME=$1
     shift
   fi
-  ${GREP} -i -A1 -e "^m=" -e "${VARIANT}" ${FILE} | \
+  ${GREP} -i -A1 \
+    -e "^m=" -e "${VARIANT}" \
+    ${FILE} | \
   ${SED} \
     -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
     -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GFLOPS\/s//" \

@@ -52,7 +52,7 @@ set encoding utf8
 
 
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
+if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance" }
 set pm3d interpolate 0, 0
 #set colorbox horizontal user origin 0, 0.1 size 1, 0.1
@@ -72,23 +72,27 @@ set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
 splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
+if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance (K-Average)" }
 set dgrid3d #9, 9
 set pm3d interpolate 0, 0 map
 set autoscale fix
 set xlabel "M"
 set ylabel "N" offset -1.0
-set cblabel "GFLOP/s" offset 1.0
+set cblabel "GFLOP/s" offset 0.5
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
 #set offsets 1, 1, 1, 1
 splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
-if (GEN>-1) { set title "Performance (CDF)" }
-set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
+if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (GEN>-1) {
+  set title "Performance (CDF)"
+  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
+} else {
+  set xlabel "Probability"
+}
 set ylabel "GFLOP/s"
 set format x "%g%%"
 set format y "%g"
@@ -110,7 +114,7 @@ plot BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0))
 
 if (0 < PEAK) {
   reset
-  if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
+  if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
   if (GEN>-1) { set title "Performance and Efficiency" }
   set xlabel "(M N K)^{-1/3}"
   set ylabel "Efficiency"
