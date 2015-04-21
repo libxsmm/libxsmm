@@ -27,30 +27,32 @@ IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
 
-set table "smm-test-avg.dat"
+set table BASENAME."-avg.dat"
 plot BASENAME.".dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
-set table "smm-test-cdf.dat"
+set table BASENAME."-cdf.dat"
 plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
 unset table
-stats "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
+stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
 
-TERMINAL = "pdf"
-EXT = TERMINAL[1:3]
+FILENAME = system("sh -c \"echo ${FILENAME}\"")
+if (FILENAME eq "") {
+  FILENAME = BASENAME.".pdf"
+}
+if (GEN==1) {
+  set output FILENAME
+}
 
-
-set terminal TERMINAL
+FILEEXT = system("sh -c \"echo ".FILENAME." | sed 's/.\\+\\.\\(.\\+\\)/\\1/'\"")
+set terminal FILEEXT
 set termoption enhanced
 #set termoption font "Times-Roman,7"
 save_encoding = GPVAL_ENCODING
 set encoding utf8
 
 
-if (GEN==1) set output BASENAME.".".EXT
-
-
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
+if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance" }
 set pm3d interpolate 0, 0
 #set colorbox horizontal user origin 0, 0.1 size 1, 0.1
@@ -70,7 +72,7 @@ set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
 splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
+if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance (K-Average)" }
 set dgrid3d #9, 9
 set pm3d interpolate 0, 0 map
@@ -81,10 +83,10 @@ set cblabel "GFLOP/s" offset 1.0
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
 #set offsets 1, 1, 1, 1
-splot "smm-test-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
+splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
-if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
+if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance (CDF)" }
 set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
 set ylabel "GFLOP/s"
@@ -92,11 +94,11 @@ set format x "%g%%"
 set format y "%g"
 set fit quiet
 f(x) = b * x + a
-fit f(x) "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
+fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
 g(x) = (x - a) / b
 x = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-fit [x-2:x+2] h(x) "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x-10.0:x+10.0] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x, h(x) to x, 0
 set label 1 sprintf("%.1f%%", x) at x, 0.5 * h(x) left offset 1
 set arrow 2 from x, h(x) to 0, h(x)
@@ -104,11 +106,11 @@ set label 2 sprintf("%.1f GFLOP/s", h(x)) at 0.5 * x, h(x) centre offset 0, 1
 set autoscale fix
 set xrange [0:100]
 set yrange [0:*]
-plot "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
+plot BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
 
 if (0 < PEAK) {
   reset
-  if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
+  if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
   if (GEN>-1) { set title "Performance and Efficiency" }
   set xlabel "(M N K)^{-1/3}"
   set ylabel "Efficiency"

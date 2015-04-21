@@ -4,6 +4,7 @@ VARIANT=Specialized
 
 if ([ "" != "$1" ]) ; then
   VARIANT=$1
+  shift
 fi
 
 HERE=$(cd $(dirname $0); pwd -P)
@@ -40,24 +41,32 @@ if ([ "" != "${BC}" ]) ; then
   echo "med=${MED}"
 fi
 
-if ([ -f /cygdrive/c/Program\ Files/gnuplot/bin/gnuplot ]) ; then
+if ([ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]) ; then
+  WGNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/gnuplot
-elif ([ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot ]) ; then
+elif ([ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]) ; then
+  WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
   GNUPLOT=$(which gnuplot 2> /dev/null)
+  WGNUPLOT=${GNUPLOT}
 fi
 
 GNUPLOT_MAJOR=0
 GNUPLOT_MINOR=0
-if ([ "" != "${GNUPLOT}" ]) ; then
+if ([ -f "${GNUPLOT}" ]) ; then
   GNUPLOT_MAJOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
   GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
 fi
 
 SED=$(which sed)
 if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]] ; then
-  export GDFONTPATH=/cygdrive/c/Windows/Fonts
+  if ([ "" == "$1" ]) ; then
+    FILENAME=perf-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
+  else
+    FILENAME=$1
+    shift
+  fi
   ${GREP} -i -A1 -e "^m=" -e "${VARIANT}" ${FILE} | \
   ${SED} \
     -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
@@ -66,6 +75,9 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
   ${SED} \
     -e "N;s/ MB\n\tperformance://g" \
   > smm-test.dat
-  "${GNUPLOT}" smm-test.plt
+  env \
+    GDFONTPATH=/cygdrive/c/Windows/Fonts \
+    FILENAME=${FILENAME} \
+  "${WGNUPLOT}" smm-test.plt
 fi
 
