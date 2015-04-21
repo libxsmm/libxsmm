@@ -1,3 +1,5 @@
+# export all variables to sub-make processes
+export
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 1
@@ -36,7 +38,7 @@ SPARSITY ?= 2
 
 ROOTDIR ?= .
 SCRDIR = $(ROOTDIR)/scripts
-OBJDIR = $(ROOTDIR)/build
+BLDDIR = $(ROOTDIR)/build
 INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
 LIBDIR = $(ROOTDIR)/lib
@@ -156,13 +158,14 @@ NINDICES := $(words $(INDICES))
 
 SRCFILES = $(addprefix $(SRCDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
-OBJFILES_GEN = $(patsubst %,$(OBJDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
-OBJFILES_HST = $(patsubst %,$(OBJDIR)/intel64/mm_%.o,$(INDICES))
-OBJFILES_MIC = $(patsubst %,$(OBJDIR)/mic/mm_%.o,$(INDICES))
+OBJFILES_GEN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
-
+.PHONY: lib_all
 lib_all: lib_hst lib_mic
 
+.PHONY: header
 header: $(HEADER)
 $(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@cat $(SRCDIR)/libxsmm.0.h > $@
@@ -174,17 +177,19 @@ $(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@cat $(SRCDIR)/libxsmm.2.h >> $@
 
 ifneq ($(GENASM),0)
+.PHONY: compile_gen
 compile_gen: $(SRCFILES_GEN)
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp
+	@mkdir -p $(BLDDIR)/intel64
 	$(CXX) -c $< -o $@
-
+.PHONY: generator
 generator: $(OBJFILES_GEN)
 $(SCRDIR)/generator: $(OBJFILES_GEN)
 	$(CXX) $(OBJFILES_GEN) -o $@
 endif
 
-source: $(SRCFILES)
+.PHONY: sources
+sources: $(SRCFILES)
 ifeq ($(GENASM),0)
 $(SRCDIR)/%.c: $(HEADER)
 else
@@ -212,6 +217,7 @@ endif
 ifeq ($(GENASM),0)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
+	@echo "#include <libxsmm.h>" > $@
 	@if [[ 0 == $$(($(NVALUE) % 3)) ]]; then echo "#define LIBXSMM_GENTARGET_$(GENTARGET)" >> $@; fi
 	@if [[ 30 -ge $(NVALUE) ]]; then echo "#define LIBXSMM_GENTARGET_knc" >> $@; fi
 	@echo >> $@
@@ -238,8 +244,7 @@ endif
 		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knc nopf DP; \
 		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP; \
 	fi
-	@sed -i \
-		-e '1i#include <libxsmm.h>' \
+	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' \
@@ -249,97 +254,145 @@ endif
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) 0 $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 endif
 
+.PHONY: main
 main: $(MAIN)
 $(MAIN): $(HEADER)
 	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
 
+.PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
-$(OBJDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/mic
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/mic
 	$(CC) $(CFLMIC) -I$(INCDIR) -c $< -o $@
-$(OBJDIR)/mic/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/mic
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/mic
 	$(CXX) $(CXXFLMIC) -I$(INCDIR) -c $< -o $@
 
+.PHONY: compile_hst
 compile_hst: $(OBJFILES_HST)
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/intel64
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
-$(OBJDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
-	@mkdir -p $(OBJDIR)/intel64
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
+	@mkdir -p $(BLDDIR)/intel64
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
+.PHONY: lib_mic
 lib_mic: $(LIB_MIC)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/mic/%.o,$(MAIN))
+$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/mic/%.o,$(MAIN))
 else
 $(LIB_MIC): $(OBJFILES_MIC)
 endif
 	@mkdir -p $(LIBDIR)/mic
 	$(AR) -rs $@ $^
 
+.PHONY: lib_hst
 lib_hst: $(LIB_HST)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(OBJDIR)/intel64/%.o,$(basename $(MAIN)))
+$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(BLDDIR)/intel64/%.o,$(basename $(MAIN)))
 else
 $(LIB_HST): $(OBJFILES_HST)
 endif
 	@mkdir -p $(LIBDIR)/intel64
 	$(AR) -rs $@ $^
 
+.PHONY: samples
 samples: blas smm dispatched inlined specialized
 
+.PHONY: blas
 blas: lib_hst
-	@cd samples/blas && $(MAKE) clean && $(MAKE)
+	@cd samples/blas && $(MAKE)
+.PHONY: blas_hst
 blas_hst: lib_hst
-	@cd samples/blas && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/blas && $(MAKE) OFFLOAD=0
+.PHONY: blas_mic
 blas_mic: lib_mic
-	@cd samples/blas && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/blas && $(MAKE) MIC=1
 
+.PHONY: smm
 smm: lib_hst
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE)
+	@cd samples/cp2k && $(MAKE)
+.PHONY: smm_hst
 smm_hst: lib_hst
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/cp2k && $(MAKE) OFFLOAD=0
+.PHONY: smm_mic
 smm_mic: lib_mic
-	@cd samples/cp2k && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/cp2k && $(MAKE) MIC=1
 
+.PHONY: dispatched
 dispatched: lib_hst
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE)
+	@cd samples/dispatched && $(MAKE)
+.PHONY: dispatched_hst
 dispatched_hst: lib_hst
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/dispatched && $(MAKE) OFFLOAD=0
+.PHONY: dispatched_mic
 dispatched_mic: lib_mic
-	@cd samples/dispatched && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/dispatched && $(MAKE) MIC=1
 
+.PHONY: inlined
 inlined: lib_hst
-	@cd samples/inlined && $(MAKE) clean && $(MAKE)
+	@cd samples/inlined && $(MAKE)
+.PHONY: inlined_hst
 inlined_hst: lib_hst
-	@cd samples/inlined && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/inlined && $(MAKE) OFFLOAD=0
+.PHONY: inlined_mic
 inlined_mic: lib_mic
-	@cd samples/inlined && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/inlined && $(MAKE) MIC=1
 
+.PHONY: specialized
 specialized: lib_hst
-	@cd samples/specialized && $(MAKE) clean && $(MAKE)
+	@cd samples/specialized && $(MAKE)
+.PHONY: specialized_hst
 specialized_hst: lib_hst
-	@cd samples/specialized && $(MAKE) clean && $(MAKE) OFFLOAD=0
+	@cd samples/specialized && $(MAKE) OFFLOAD=0
+.PHONY: specialized_mic
 specialized_mic: lib_mic
-	@cd samples/specialized && $(MAKE) clean && $(MAKE) MIC=1
+	@cd samples/specialized && $(MAKE) MIC=1
 
-test: smm
-	@cat /dev/null > samples/cp2k/smm-test.txt
-	@for RUN in $(INDICES) ; do \
-		MVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f1); \
-		NVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f2); \
-		KVALUE=$$(echo $${RUN} | cut --output-delimiter=' ' -d_ -f3); \
-		if [[ -z "$${NRUN}" ]]; then NRUN=1; else NRUN=$$((NRUN + 1)); fi; \
-		echo "Test $${NRUN} of $(NINDICES) (M=$${MVALUE} N=$${NVALUE} K=$${KVALUE})"; \
-		samples/cp2k/smm.sh $${MVALUE} 0 0 $${NVALUE} $${KVALUE} >> samples/cp2k/smm-test.txt; \
-		echo >> samples/cp2k/smm-test.txt; \
-	done
+.PHONY: test
+test: samples/cp2k/smm-test.txt
+samples/cp2k/smm-test.txt: samples/cp2k/smm-test.sh smm
+	@samples/cp2k/smm-test.sh > $@
 
+.PHONY: drytest
+drytest: samples/cp2k/smm-test.sh
+samples/cp2k/smm-test.sh:
+	@echo "#!/bin/bash" > $@
+	@echo >> $@
+	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo >> $@
+	@echo >> $@
+	@echo "NRUN=1" >> $@
+	@echo "for RUN in $(INDICES) ; do" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  echo \"Test \$${NRUN} of $(NINDICES) (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  \$${HERE}/smm.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE}" >> $@
+	@echo "  echo" >> $@
+	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "done" >> $@
+	@echo >> $@
+	@chmod +x $@
+
+.PHONY: clean
 clean:
-	rm -rf $(ROOTDIR)/*~ $(ROOTDIR)/*/*~ $(OBJDIR) $(SCRDIR)/generator $(SCRDIR)/generator.exe $(SRCDIR)/mm_*_*_*.c $(MAIN)
+	@rm -rf $(BLDDIR)
+	@rm -f samples/cp2k/smm-test.txt
+	@rm -f $(SCRDIR)/generator
+	@rm -f $(SCRDIR)/generator.exe
+	@rm -f $(SRCDIR)/mm_*_*_*.c
+	@rm -f $(ROOTDIR)/*/*/*~
+	@rm -f $(ROOTDIR)/*/*~
+	@rm -f $(ROOTDIR)/*~
+	@rm -f $(MAIN)
 
+.PHONY: realclean
 realclean: clean
-	rm -rf $(LIBDIR) $(HEADER)
+	@rm -rf $(LIBDIR)
+	@rm -f samples/cp2k/smm-test.sh
+	@rm -f $(HEADER)
 
-install: lib_all clean
+.PHONY: install
+install: lib_all samples clean

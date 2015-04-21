@@ -1,3 +1,4 @@
+NAME := dispatched
 DBG := 0
 MIC := 0
 
@@ -8,10 +9,11 @@ DFLAGS :=
 IFLAGS := -I$(LIBXSMMROOT)/include
 
 ifeq ($(MIC),0)
-	LFLAGS := $(LIBXSMMROOT)/lib/intel64/libxsmm.a
+	LIBXSMM := $(LIBXSMMROOT)/lib/intel64/libxsmm.a
 else
-	LFLAGS := $(LIBXSMMROOT)/lib/mic/libxsmm.a
+	LIBXSMM := $(LIBXSMMROOT)/lib/mic/libxsmm.a
 endif
+LFLAGS := $(LIBXSMM)
 
 ICPC := $(notdir $(shell which icpc 2> /dev/null))
 ICC := $(notdir $(shell which icc 2> /dev/null))
@@ -120,14 +122,14 @@ ifneq ($(MKL_DIRECT),0)
 endif
 
 
-all: dispatched
+all: $(NAME)
 
-dispatched: dispatched-cpp.o
+$(NAME): $(NAME)-cpp.o
 
-%: %-c.o
+%: %-c.o $(LIBXSMM)
 	$(LD) -o $@ $< $(LFLAGS)
 
-%: %-cpp.o
+%: %-cpp.o $(LIBXSMM)
 	$(LD) -o $@ $< $(LFLAGS)
 
 
@@ -148,6 +150,6 @@ clean:
 	rm -f *.o *.i *.ii *.s
 
 realclean: clean
-	rm -f dispatched dispatched.exe dispatched.exe.stackdump
+	rm -f $(NAME) $(NAME).exe $(NAME).exe.stackdump
 
 install: all clean
