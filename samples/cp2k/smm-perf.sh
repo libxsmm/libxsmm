@@ -40,16 +40,23 @@ if ([ "" != "${BC}" ]) ; then
   echo "med=${MED}"
 fi
 
-if ([ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]) ; then
-  GNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot
-elif ([ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]) ; then
-  GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
+if ([ -f /cygdrive/c/Program\ Files/gnuplot/bin/gnuplot ]) ; then
+  GNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/gnuplot
+elif ([ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot ]) ; then
+  GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
   GNUPLOT=$(which gnuplot 2> /dev/null)
 fi
 
-SED=$(which sed)
+GNUPLOT_MAJOR=0
+GNUPLOT_MINOR=0
 if ([ "" != "${GNUPLOT}" ]) ; then
+  GNUPLOT_MAJOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
+  GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
+fi
+
+SED=$(which sed)
+if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]] ; then
   export GDFONTPATH=/cygdrive/c/Windows/Fonts
   ${GREP} -i -A1 -e "^m=" -e "${VARIANT}" ${FILE} | \
   ${SED} \
