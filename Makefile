@@ -379,7 +379,9 @@ samples/cp2k/smm-test.sh:
 .PHONY: clean
 clean:
 	@rm -rf $(BLDDIR)
-	@rm -f samples/cp2k/smm-test.txt
+	@rm -f samples/cp2k/smm-test-avg.dat
+	@rm -f samples/cp2k/smm-test-cdf.dat
+	@rm -f samples/cp2k/smm-test.dat
 	@rm -f $(SCRDIR)/generator
 	@rm -f $(SCRDIR)/generator.exe
 	@rm -f $(SRCDIR)/mm_*_*_*.c
@@ -391,6 +393,7 @@ clean:
 .PHONY: realclean
 realclean: clean
 	@rm -rf $(LIBDIR)
+	@rm -f samples/cp2k/smm-test.txt
 	@rm -f samples/cp2k/smm-test.sh
 	@rm -f $(HEADER)
 

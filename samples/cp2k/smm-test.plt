@@ -27,13 +27,13 @@ IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
 
-set table "smm-test-avg.txt"
+set table "smm-test-avg.dat"
 plot BASENAME.".dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
-set table "smm-test-cdf.txt"
+set table "smm-test-cdf.dat"
 plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
 unset table
-stats "smm-test-cdf.txt" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
+stats "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
 
 TERMINAL = "pdf"
 EXT = TERMINAL[1:3]
@@ -81,7 +81,7 @@ set cblabel "GFLOP/s" offset 1.0
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
 #set offsets 1, 1, 1, 1
-splot "smm-test-avg.txt" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
+splot "smm-test-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
 if (GEN<=0) { set output BASENAME."-".FILECOUNT.".".EXT; FILECOUNT = FILECOUNT + 1 }
@@ -92,11 +92,11 @@ set format x "%g%%"
 set format y "%g"
 set fit quiet
 f(x) = b * x + a
-fit f(x) "smm-test-cdf.txt" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
+fit f(x) "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
 g(x) = (x - a) / b
 x = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-fit [x-2:x+2] h(x) "smm-test-cdf.txt" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x-2:x+2] h(x) "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x, h(x) to x, 0
 set label 1 sprintf("%.1f%%", x) at x, 0.5 * h(x) left offset 1
 set arrow 2 from x, h(x) to 0, h(x)
@@ -104,7 +104,7 @@ set label 2 sprintf("%.1f GFLOP/s", h(x)) at 0.5 * x, h(x) centre offset 0, 1
 set autoscale fix
 set xrange [0:100]
 set yrange [0:*]
-plot "smm-test-cdf.txt" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
+plot "smm-test-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
 
 if (0 < PEAK) {
   reset
