@@ -29,7 +29,7 @@ ALIGNED_STORES ?= 0
 ALIGNED_LOADS ?= 0
 
 # THRESHOLD problem size (M x N x K); determines when to use BLAS 
-THRESHOLD ?= $(shell echo $$((24 * 24 * 24)))
+THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 
 # SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
 # Use binary search in auto-dispatch when SPARSITY exceeds the given value.
