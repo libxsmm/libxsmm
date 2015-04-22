@@ -220,27 +220,44 @@ def create_implementation(Real, M, N, K, RowMajor, AlignedStores, AlignedLoads, 
     print "}"
 
 
-def create_gentarget(type, m, n, k, row_major):
+def create_gentarget(m, n, k, row_major):
     mnk = str(m) + "_" + str(n) + "_" + str(k)
-    typeflag = libxsmm_utilities.make_typeflag(type)
     if (0 != row_major):
         a, b = "b", "a"
     else: # ColMajor
         a, b = "a", "b"
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_" + typeflag + "mm_" + mnk + "(const " + type + "* a, const " + type + "* b, " + type + "* c)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnk + "(const double* a, const double* b, double* c)"
     print "{"
-    print "#if defined(__AVX512F__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_knl))"
-    print "  libxsmm_" + typeflag + "mm_" + mnk + "_knl(" + a + ", " + b + ", c);"
-    print "#elif defined(__AVX2__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_hsw))"
-    print "  libxsmm_" + typeflag + "mm_" + mnk + "_hsw(" + a + ", " + b + ", c);"
-    print "#elif defined(__AVX__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_snb))"
-    print "  libxsmm_" + typeflag + "mm_" + mnk + "_snb(" + a + ", " + b + ", c);"
-    print "#elif defined(__SSE3__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_wsm))"
-    print "  libxsmm_" + typeflag + "mm_" + mnk + "_wsm(" + a + ", " + b + ", c);"
-    print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc)"
-    print "  libxsmm_" + typeflag + "mm_" + mnk + "_knc(" + a + ", " + b + ", c);"
+    print "#if defined(__AVX512F__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_knl_dp))"
+    print "  libxsmm_dmm_" + mnk + "_knl(" + a + ", " + b + ", c);"
+    print "#elif defined(__AVX2__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_hsw_dp))"
+    print "  libxsmm_dmm_" + mnk + "_hsw(" + a + ", " + b + ", c);"
+    print "#elif defined(__AVX__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_snb_dp))"
+    print "  libxsmm_dmm_" + mnk + "_snb(" + a + ", " + b + ", c);"
+    print "#elif defined(__SSE3__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_wsm_dp))"
+    print "  libxsmm_dmm_" + mnk + "_wsm(" + a + ", " + b + ", c);"
+    print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
+    print "  libxsmm_dmm_" + mnk + "_knc(" + a + ", " + b + ", c);"
     print "#else"
-    print "  LIBXSMM_IMM(" + type + ", int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c);"
+    print "  LIBXSMM_IMM(double, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c);"
+    print "#endif"
+    print "}"
+    print
+    print
+    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnk + "(const float* a, const float* b, float* c)"
+    print "{"
+    print "#if defined(__AVX512F__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_knl_sp))"
+    print "  libxsmm_smm_" + mnk + "_knl(" + a + ", " + b + ", c);"
+    print "#elif defined(__AVX2__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_hsw_sp))"
+    print "  libxsmm_smm_" + mnk + "_hsw(" + a + ", " + b + ", c);"
+    print "#elif defined(__AVX__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_snb_sp))"
+    print "  libxsmm_smm_" + mnk + "_snb(" + a + ", " + b + ", c);"
+    print "#elif defined(__SSE3__) && (defined(LIBXSMM_GENTARGET_noarch) || defined(LIBXSMM_GENTARGET_wsm_sp))"
+    print "  libxsmm_smm_" + mnk + "_wsm(" + a + ", " + b + ", c);"
+    print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
+    print "  libxsmm_smm_" + mnk + "_knc(" + a + ", " + b + ", c);"
+    print "#else"
+    print "  LIBXSMM_IMM(float, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c);"
     print "#endif"
     print "}"
 
@@ -281,10 +298,7 @@ if __name__ == '__main__':
         elif (0 == Threshold):
             print
             m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
-            create_gentarget("float", m, n, k, RowMajor)
-            print
-            print
-            create_gentarget("double", m, n, k, RowMajor)
+            create_gentarget(m, n, k, RowMajor)
         else:
             mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0)
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
