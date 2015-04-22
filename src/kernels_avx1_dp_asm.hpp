@@ -186,106 +186,125 @@ void avx1_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, in
   void (*l_generatorStore)(std::stringstream&, int, bool, int);
   void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, bool, int, bool, int);
 
-  int k_blocking = 4;
-  int k_threshold = 30;
-  int mDone, mDone_old;
-  int n_blocking = 3;
-  int m_blocking = 12;
-
   init_registers_asm(codestream, tPrefetch);
-  header_nloop_dp_asm(codestream, n_blocking);
+
+  int nDone = 0;
+  int nDone_old = 0;
+  int n_blocking = 3;
+
+  // apply n_blocking
+  while (nDone != N) {
+    nDone_old = nDone;
+    nDone = nDone + (((N - nDone_old) / n_blocking) * n_blocking);
+
+    if (nDone != nDone_old && nDone > 0) {
+      header_nloop_dp_asm(codestream, n_blocking);
   
-  m_blocking = 12;
-  mDone_old = 0;
-  mDone = 0;
+      int k_blocking = 4;
+      int k_threshold = 30;
+      int mDone = 0;
+      int mDone_old = 0;
+      int m_blocking = 12;
 
-  // apply m_blocking
-  while (mDone != M) {
-    mDone_old = mDone;
-    mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
+      // apply m_blocking
+      while (mDone != M) {
+        mDone_old = mDone;
+        mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
 
-    // switch to a different m_blocking
-    if (m_blocking == 12) {
-      l_generatorLoad = &avx_load_12xN_dp_asm;
-      l_generatorStore = &avx_store_12xN_dp_asm;
-      l_generatorCompute = &avx1_kernel_12xN_dp_asm;
-    } else if (m_blocking == 8) {
-      l_generatorLoad = &avx_load_8xN_dp_asm;
-      l_generatorStore = &avx_store_8xN_dp_asm;
-      l_generatorCompute = &avx1_kernel_8xN_dp_asm;
-    } else if (m_blocking == 4) {
-      l_generatorLoad = &avx_load_4xN_dp_asm;
-      l_generatorStore = &avx_store_4xN_dp_asm;
-      l_generatorCompute = &avx1_kernel_4xN_dp_asm;
-    } else if (m_blocking == 2) {
-      l_generatorLoad = &avx_load_2xN_dp_asm;
-      l_generatorStore = &avx_store_2xN_dp_asm;
-      l_generatorCompute = &avx1_kernel_2xN_dp_asm;
-    } else if (m_blocking == 1) {
-      l_generatorLoad = &avx_load_1xN_dp_asm;
-      l_generatorStore = &avx_store_1xN_dp_asm;
-      l_generatorCompute = &avx1_kernel_1xN_dp_asm;      
-    } else {
-      std::cout << " !!! ERROR, avx1_generate_kernel_dp, m_blocking is out of range!!! " << std::endl;
-      exit(-1);
-    }
-
-    if (mDone != mDone_old && mDone > 0) {
-      header_mloop_dp_asm(codestream, m_blocking);
-      (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
-
-      if ((K % k_blocking) == 0 && K > k_threshold) {
-        header_kloop_dp_asm(codestream, m_blocking, k_blocking);
-
-        for (int k = 0; k < k_blocking; k++) {
-	  (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
+        // switch to a different m_blocking
+        if (m_blocking == 12) {
+          l_generatorLoad = &avx_load_12xN_dp_asm;
+          l_generatorStore = &avx_store_12xN_dp_asm;
+          l_generatorCompute = &avx1_kernel_12xN_dp_asm;
+        } else if (m_blocking == 8) {
+          l_generatorLoad = &avx_load_8xN_dp_asm;
+          l_generatorStore = &avx_store_8xN_dp_asm;
+          l_generatorCompute = &avx1_kernel_8xN_dp_asm;
+        } else if (m_blocking == 4) {
+          l_generatorLoad = &avx_load_4xN_dp_asm;
+          l_generatorStore = &avx_store_4xN_dp_asm;
+          l_generatorCompute = &avx1_kernel_4xN_dp_asm;
+        } else if (m_blocking == 2) {
+          l_generatorLoad = &avx_load_2xN_dp_asm;
+          l_generatorStore = &avx_store_2xN_dp_asm;
+          l_generatorCompute = &avx1_kernel_2xN_dp_asm;
+        } else if (m_blocking == 1) {
+          l_generatorLoad = &avx_load_1xN_dp_asm;
+          l_generatorStore = &avx_store_1xN_dp_asm;
+          l_generatorCompute = &avx1_kernel_1xN_dp_asm;      
+        } else {
+          std::cout << " !!! ERROR, avx1_generate_kernel_dp, m_blocking is out of range!!! " << std::endl;
+          exit(-1);
         }
 
-        footer_kloop_dp_asm(codestream, m_blocking, K);
-      } else {
-        // we want to fully unroll
-        if (K <= k_threshold) {
-	  for (int k = 0; k < K; k++) {
-	    (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
-	  }
+        if (mDone != mDone_old && mDone > 0) {
+          header_mloop_dp_asm(codestream, m_blocking);
+          (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
+
+          if ((K % k_blocking) == 0 && K > k_threshold) {
+            header_kloop_dp_asm(codestream, m_blocking, k_blocking);
+
+            for (int k = 0; k < k_blocking; k++) {
+              (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
+            }
+
+            footer_kloop_dp_asm(codestream, m_blocking, K);
+          } else {
+            // we want to fully unroll
+            if (K <= k_threshold) {
+              for (int k = 0; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
+              }
+            } else {
+              // we want to block, but K % k_blocking != 0
+              int max_blocked_K = (K/k_blocking)*k_blocking;
+              if (max_blocked_K > 0 ) {
+                header_kloop_dp_asm(codestream, m_blocking, k_blocking);
+                for (int k = 0; k < k_blocking; k++) {
+                  (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
+                }
+                footer_kloop_notdone_dp_asm(codestream, m_blocking, max_blocked_K );
+              }
+              if (max_blocked_K > 0 ) {
+	        codestream << "                         \"subq $" << max_blocked_K * 8 << ", %%r8\\n\\t\"" << std::endl;
+              }
+	      for (int k = max_blocked_K; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
+	      }
+            }
+          }
+
+          (*l_generatorStore)(codestream, ldc, alignC, n_blocking);
+          footer_mloop_dp_asm(codestream, m_blocking, K, mDone, lda, tPrefetch);
+        }
+
+        // switch to a different blocking
+        if (m_blocking == 2) {
+          m_blocking = 1;
+        } else if (m_blocking == 4) {
+          m_blocking = 2;
+        } else if (m_blocking == 8) {
+          m_blocking = 4;
+        } else if (m_blocking == 12) {
+          m_blocking = 8;
         } else {
-	  // we want to block, but K % k_blocking != 0
-	  int max_blocked_K = (K/k_blocking)*k_blocking;
-	  if (max_blocked_K > 0 ) {
-	    header_kloop_dp_asm(codestream, m_blocking, k_blocking);
-	    for (int k = 0; k < k_blocking; k++) {
-	      (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
-	    }
-	    footer_kloop_notdone_dp_asm(codestream, m_blocking, max_blocked_K );
-	  }
-	  if (max_blocked_K > 0 ) {
-	    codestream << "                         \"subq $" << max_blocked_K * 8 << ", %%r8\\n\\t\"" << std::endl;
-	  }
-	  for (int k = max_blocked_K; k < K; k++) {
-	    (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
-	  }
+          // we are done with m_blocking
         }
       }
 
-      (*l_generatorStore)(codestream, ldc, alignC, n_blocking);
-      footer_mloop_dp_asm(codestream, m_blocking, K, mDone, lda, tPrefetch);
+      footer_nloop_dp_asm(codestream, n_blocking, nDone, M, lda, ldb, ldc, tPrefetch);
     }
 
-    // switch to a different blocking
-    if (m_blocking == 2) {
-      m_blocking = 1;
-    } else if (m_blocking == 4) {
-      m_blocking = 2;
-    } else if (m_blocking == 8) {
-      m_blocking = 4;
-    } else if (m_blocking == 12) {
-      m_blocking = 8;
+    // switch to a different n_blocking
+    if (n_blocking == 2) {
+      n_blocking = 1;
+    } else if (n_blocking == 3) {
+      n_blocking = 2;
     } else {
-      // we are done with m_blocking
+      // we are done with n_blocking
     }
   }
 
-  footer_nloop_dp_asm(codestream, n_blocking, N, M, lda, ldb, ldc, tPrefetch);
   close_asm(codestream, tPrefetch);
 }
 

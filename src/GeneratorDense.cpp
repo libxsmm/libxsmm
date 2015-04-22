@@ -174,7 +174,7 @@ namespace libxsmm {
     /////////////////////////
 
     if ( this->tVec_.compare("snb") == 0 ) {
-      if (N%3 != 0) {
+      if ((N%3 != 0) && (bSP_ == true)) {
         std::cout << " !!! ERROR, AVX N%3 is not 0!!! " << std::endl;
         exit(-1);    
       }
@@ -227,7 +227,7 @@ namespace libxsmm {
     //////////////////////////
 
     if ( this->tVec_.compare("hsw") == 0 ) {
-      if (N%3 != 0) {
+      if ((N%3 != 0) && (bSP_ == true)) {
         std::cout << " !!! ERROR, AVX2 N%3 is not 0!!! " << std::endl;
         exit(-1);    
       }
