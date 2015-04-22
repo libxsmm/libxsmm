@@ -370,7 +370,7 @@ samples/cp2k/smm-test.sh:
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  echo \"Test \$${NRUN} of $(NINDICES) (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  >&2 echo \"Test \$${NRUN} of $(NINDICES) (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  \$${HERE}/smm.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE}" >> $@
 	@echo "  echo" >> $@
 	@echo "  NRUN=\$$((NRUN + 1))" >> $@
