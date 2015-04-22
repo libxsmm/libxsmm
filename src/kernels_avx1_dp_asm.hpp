@@ -30,6 +30,11 @@
 ******************************************************************************/
 
 void avx1_kernel_12xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_kernel_12xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (call != -1) {
     for (int l_n = 0; l_n < max_local_N; l_n++) {
       codestream << "                         \"vbroadcastsd " << (8 * call) + (ldb * l_n * 8) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
@@ -59,6 +64,11 @@ void avx1_kernel_12xN_dp_asm(std::stringstream& codestream, int lda, int ldb, in
 }
 
 void avx1_kernel_8xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_kernel_8xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (call != -1) {
     for (int l_n = 0; l_n < max_local_N; l_n++) {
       codestream << "                         \"vbroadcastsd " << (8 * call) + (ldb * l_n * 8) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
@@ -70,33 +80,29 @@ void avx1_kernel_8xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int
     codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
   }
 
-  if (alignA == true) {
-    codestream << "                         \"vmovapd (%%r9), %%ymm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovupd (%%r9), %%ymm3\\n\\t\"" << std::endl;
-  }
-
-  for (int l_n = 0; l_n < max_local_N; l_n++) {
-    codestream << "                         \"vmulpd %%ymm3, %%ymm" << l_n << ", %%ymm" << 5 + l_n << "\\n\\t\"" << std::endl;
-    codestream << "                         \"vaddpd %%ymm" << 5 + l_n << ", %%ymm" << 10 + (2*l_n) << ", %%ymm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
-  }
-
-  if (alignA == true) {
-    codestream << "                         \"vmovapd 32(%%r9), %%ymm4\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovupd 32(%%r9), %%ymm4\\n\\t\"" << std::endl;
-  }
-
-  for (int l_n = 0; l_n < max_local_N; l_n++) {
-    if (l_n == 0) {
-      codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+  for (int l_m = 0; l_m < 2; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"vmovapd " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vmovupd " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
     }
-    codestream << "                         \"vmulpd %%ymm4, %%ymm" << l_n << ", %%ymm" << 5 + l_n << "\\n\\t\"" << std::endl;
-    codestream << "                         \"vaddpd %%ymm" << 5 + l_n << ", %%ymm" << 11 + (2*l_n) << ", %%ymm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ((l_m == 1) && (l_n == 0)) {
+        codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"vmulpd %%ymm" << 3 + l_m << ", %%ymm" << l_n << ", %%ymm" << 5 + l_n << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vaddpd %%ymm" << 5 + l_n << ", %%ymm" << 10 + l_m + (2*l_n) << ", %%ymm" << 10 + l_m +(2*l_n) << "\\n\\t\"" << std::endl;
+    }
   }
 }
 
 void avx1_kernel_4xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_kernel_4xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignA == true) {
     codestream << "                         \"vmovapd (%%r9), %%ymm3\\n\\t\"" << std::endl;
   } else {
@@ -121,6 +127,11 @@ void avx1_kernel_4xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int
 }
 
 void avx1_kernel_2xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_kernel_2xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignA == true) {
     codestream << "                         \"vmovapd (%%r9), %%xmm3\\n\\t\"" << std::endl;
   } else {
@@ -145,6 +156,11 @@ void avx1_kernel_2xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int
 }
 
 void avx1_kernel_1xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_kernel_1xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   codestream << "                         \"vmovsd (%%r9), %%xmm3\\n\\t\"" << std::endl;
  
   for (int l_n = 0; l_n < max_local_N; l_n++) {
