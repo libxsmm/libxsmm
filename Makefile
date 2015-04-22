@@ -235,19 +235,19 @@ else
 	@echo >> $@
 	@echo >> $@
 ifeq ($(GENTARGET),noarch)
-	#$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP
-	#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 snb nopf DP
-	#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 hsw nopf DP
-	#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP
-	#$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP
-	#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP
 else
-	@if [[ ( "knl" != $(GENTARGET) ) || ( 30 -ge $(NVALUE) ) ]]; then \
+	@if [[ ( "kn?" != $(GENTARGET) ) || ( 30 -ge $(NVALUE) ) ]]; then \
 		PS4=''; set -x; \
 		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf SP; \
+		#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf SP; \
 	fi
 endif
 	@if [[ 30 -ge $(NVALUE) ]]; then \
