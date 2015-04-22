@@ -165,9 +165,15 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 .PHONY: lib_all
 lib_all: lib_hst lib_mic
 
+.PHONY: all
+all: lib_all samples
+
+.PHONY: install
+install: all clean
+
 .PHONY: header
 header: $(HEADER)
-$(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
+$(HEADER): Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@cat $(SRCDIR)/libxsmm.0.h > $@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(THRESHOLD) $(INDICES) >> $@
 	@echo >> $@
@@ -179,12 +185,12 @@ $(HEADER): $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 ifneq ($(GENASM),0)
 .PHONY: compile_gen
 compile_gen: $(SRCFILES_GEN)
-$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp Makefile
 	@mkdir -p $(BLDDIR)/intel64
 	$(CXX) -c $< -o $@
 .PHONY: generator
 generator: $(OBJFILES_GEN)
-$(SCRDIR)/generator: $(OBJFILES_GEN)
+$(SCRDIR)/generator: $(OBJFILES_GEN) Makefile
 	$(CXX) $(OBJFILES_GEN) -o $@
 endif
 
@@ -231,8 +237,8 @@ ifeq ($(GENTARGET),noarch)
 		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP; \
 		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 hsw nopf DP; \
 		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP; \
-		false && $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP; \
-		false && $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP; \
+		#$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP; \
+		#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP; \
 	fi
 else
 	@if [[ ( 0 == $$(($(NVALUE) % 3)) && "knl" != $(GENTARGET) ) || ( 30 -ge $(NVALUE) && "knl" == $(GENTARGET) ) ]]; then \
@@ -304,62 +310,62 @@ samples: blas smm dispatched inlined specialized
 
 .PHONY: blas
 blas: lib_hst
-	@cd samples/blas && $(MAKE)
+	@cd $(ROOTDIR)/samples/blas && $(MAKE)
 .PHONY: blas_hst
 blas_hst: lib_hst
-	@cd samples/blas && $(MAKE) OFFLOAD=0
+	@cd $(ROOTDIR)/samples/blas && $(MAKE) OFFLOAD=0
 .PHONY: blas_mic
 blas_mic: lib_mic
-	@cd samples/blas && $(MAKE) MIC=1
+	@cd $(ROOTDIR)/samples/blas && $(MAKE) MIC=1
 
 .PHONY: smm
 smm: lib_hst
-	@cd samples/cp2k && $(MAKE)
+	@cd $(ROOTDIR)/samples/cp2k && $(MAKE)
 .PHONY: smm_hst
 smm_hst: lib_hst
-	@cd samples/cp2k && $(MAKE) OFFLOAD=0
+	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) OFFLOAD=0
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd samples/cp2k && $(MAKE) MIC=1
+	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) MIC=1
 
 .PHONY: dispatched
 dispatched: lib_hst
-	@cd samples/dispatched && $(MAKE)
+	@cd $(ROOTDIR)/samples/dispatched && $(MAKE)
 .PHONY: dispatched_hst
 dispatched_hst: lib_hst
-	@cd samples/dispatched && $(MAKE) OFFLOAD=0
+	@cd $(ROOTDIR)/samples/dispatched && $(MAKE) OFFLOAD=0
 .PHONY: dispatched_mic
 dispatched_mic: lib_mic
-	@cd samples/dispatched && $(MAKE) MIC=1
+	@cd $(ROOTDIR)/samples/dispatched && $(MAKE) MIC=1
 
 .PHONY: inlined
 inlined: lib_hst
-	@cd samples/inlined && $(MAKE)
+	@cd $(ROOTDIR)/samples/inlined && $(MAKE)
 .PHONY: inlined_hst
 inlined_hst: lib_hst
-	@cd samples/inlined && $(MAKE) OFFLOAD=0
+	@cd $(ROOTDIR)/samples/inlined && $(MAKE) OFFLOAD=0
 .PHONY: inlined_mic
 inlined_mic: lib_mic
-	@cd samples/inlined && $(MAKE) MIC=1
+	@cd $(ROOTDIR)/samples/inlined && $(MAKE) MIC=1
 
 .PHONY: specialized
 specialized: lib_hst
-	@cd samples/specialized && $(MAKE)
+	@cd $(ROOTDIR)/samples/specialized && $(MAKE)
 .PHONY: specialized_hst
 specialized_hst: lib_hst
-	@cd samples/specialized && $(MAKE) OFFLOAD=0
+	@cd $(ROOTDIR)/samples/specialized && $(MAKE) OFFLOAD=0
 .PHONY: specialized_mic
 specialized_mic: lib_mic
-	@cd samples/specialized && $(MAKE) MIC=1
+	@cd $(ROOTDIR)/samples/specialized && $(MAKE) MIC=1
 
 .PHONY: test
-test: samples/cp2k/smm-test.txt
-samples/cp2k/smm-test.txt: samples/cp2k/smm-test.sh smm
-	@samples/cp2k/smm-test.sh > $@
+test: $(ROOTDIR)/samples/cp2k/smm-test.txt
+$(ROOTDIR)/samples/cp2k/smm-test.txt: $(ROOTDIR)/samples/cp2k/smm-test.sh smm
+	@$(ROOTDIR)/samples/cp2k/smm-test.sh > $@
 
 .PHONY: drytest
-drytest: samples/cp2k/smm-test.sh
-samples/cp2k/smm-test.sh:
+drytest: $(ROOTDIR)/samples/cp2k/smm-test.sh
+$(ROOTDIR)/samples/cp2k/smm-test.sh: Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -381,9 +387,9 @@ samples/cp2k/smm-test.sh:
 .PHONY: clean
 clean:
 	@rm -rf $(BLDDIR)
-	@rm -f samples/cp2k/smm-test-avg.dat
-	@rm -f samples/cp2k/smm-test-cdf.dat
-	@rm -f samples/cp2k/smm-test.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-avg.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-cdf.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.dat
 	@rm -f $(SCRDIR)/generator
 	@rm -f $(SCRDIR)/generator.exe
 	@rm -f $(SRCDIR)/mm_*_*_*.c
@@ -395,9 +401,6 @@ clean:
 .PHONY: realclean
 realclean: clean
 	@rm -rf $(LIBDIR)
-	@rm -f samples/cp2k/smm-test.txt
-	@rm -f samples/cp2k/smm-test.sh
+	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.txt
+	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.sh
 	@rm -f $(HEADER)
-
-.PHONY: install
-install: lib_all samples clean
