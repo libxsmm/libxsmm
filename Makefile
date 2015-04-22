@@ -308,7 +308,7 @@ endif
 samples: blas smm dispatched inlined specialized
 
 .PHONY: blas
-blas: lib_hst
+blas: lib_all
 	@cd $(ROOTDIR)/samples/blas && $(MAKE)
 .PHONY: blas_hst
 blas_hst: lib_hst
@@ -318,7 +318,7 @@ blas_mic: lib_mic
 	@cd $(ROOTDIR)/samples/blas && $(MAKE) MIC=1
 
 .PHONY: smm
-smm: lib_hst
+smm: lib_all
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE)
 .PHONY: smm_hst
 smm_hst: lib_hst
@@ -328,7 +328,7 @@ smm_mic: lib_mic
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) MIC=1
 
 .PHONY: dispatched
-dispatched: lib_hst
+dispatched: lib_all
 	@cd $(ROOTDIR)/samples/dispatched && $(MAKE)
 .PHONY: dispatched_hst
 dispatched_hst: lib_hst
@@ -338,7 +338,7 @@ dispatched_mic: lib_mic
 	@cd $(ROOTDIR)/samples/dispatched && $(MAKE) MIC=1
 
 .PHONY: inlined
-inlined: lib_hst
+inlined: lib_all
 	@cd $(ROOTDIR)/samples/inlined && $(MAKE)
 .PHONY: inlined_hst
 inlined_hst: lib_hst
@@ -348,7 +348,7 @@ inlined_mic: lib_mic
 	@cd $(ROOTDIR)/samples/inlined && $(MAKE) MIC=1
 
 .PHONY: specialized
-specialized: lib_hst
+specialized: lib_all
 	@cd $(ROOTDIR)/samples/specialized && $(MAKE)
 .PHONY: specialized_hst
 specialized_hst: lib_hst
@@ -359,7 +359,8 @@ specialized_mic: lib_mic
 
 .PHONY: test
 test: $(ROOTDIR)/samples/cp2k/smm-test.txt
-$(ROOTDIR)/samples/cp2k/smm-test.txt: $(ROOTDIR)/samples/cp2k/smm-test.sh smm
+$(ROOTDIR)/samples/cp2k/smm-test.txt: $(ROOTDIR)/samples/cp2k/smm-test.sh lib_all
+	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) realclean && $(MAKE)
 	@$(ROOTDIR)/samples/cp2k/smm-test.sh > $@
 
 .PHONY: drytest
