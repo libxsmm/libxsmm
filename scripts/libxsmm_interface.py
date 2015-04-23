@@ -41,5 +41,3 @@ if __name__ == '__main__':
             print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnk + "(const float* a, const float* b, float* c);"
             print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnk + "(const double* a, const double* b, double* c);"
             print
-    else:
-        raise ValueError(sys.argv[0] + ": wrong number of arguments!")

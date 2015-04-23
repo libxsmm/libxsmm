@@ -264,7 +264,7 @@ def create_gentarget(m, n, k, row_major):
 
 if __name__ == '__main__':
     argc = len(sys.argv)
-    if (6 < argc):
+    if (5 < argc):
         RowMajor = int(sys.argv[1])
         AlignedStores = int(sys.argv[2])
         AlignedLoads = int(sys.argv[3])
@@ -300,7 +300,7 @@ if __name__ == '__main__':
             m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
             create_gentarget(m, n, k, RowMajor)
         else:
-            mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0)
+            mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0, Threshold)
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

@@ -112,7 +112,7 @@ def load_klist(argv):
     return map(int, argv[begin:])
 
 
-def load_mnklist(argv, format):
+def load_mnklist(argv, format, threshold):
     resultset = set()
     if (0 == format): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
@@ -136,17 +136,17 @@ def load_mnklist(argv, format):
                     resultset.add((m, n, k))
     else:
         raise ValueError("load_mnklist: unexpected format!")
-    return sorted(resultset)
+    return sorted(filter(lambda mnk: threshold >= (mnk[0] * mnk[1] * mnk[2]) and 0 < mnk[0] and 0 < mnk[1] and 0 < mnk[2], resultset))
 
 
 if __name__ == '__main__':
     argc = len(sys.argv)
     format = int(sys.argv[1])
-    if (2 < argc and -1 == format): # new input format
-        dims = load_mnklist(str(*sys.argv[2:]), format)
+    if (3 < argc and -1 == format): # new input format
+        dims = load_mnklist(str(*sys.argv[3:]), format, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (4 < argc and -2 == format): # legacy format
-        dims = load_mnklist(sys.argv[1:], format)
+    elif (5 < argc and -2 == format): # legacy format
+        dims = load_mnklist(sys.argv[2:], format, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
     elif (5 == argc and 0 < format):
         elem_size, unaligned = format, int(sys.argv[2])

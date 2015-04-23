@@ -152,7 +152,7 @@ if __name__ == '__main__':
     argc = len(sys.argv)
     if (3 < argc):
         threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0, threshold)
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxm = libxsmm_utilities.max_mnk(mnklist, 0, 0)
         maxn = libxsmm_utilities.max_mnk(mnklist, 0, 1)
@@ -162,5 +162,19 @@ if __name__ == '__main__':
             create_dispatch_direct(mnklist)
         else:
             create_dispatch_bsearch(mnklist)
+    elif (2 < argc):
+        print "#include <libxsmm.h>"
+        print
+        print
+        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)"
+        print "{"
+        print "  return 0;"
+        print "}"
+        print
+        print
+        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)"
+        print "{"
+        print "  return 0;"
+        print "}"
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

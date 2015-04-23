@@ -150,9 +150,9 @@ else
 endif
 
 ifneq ("$(M)$(N)$(K)","")
-	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -2 $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -2 $(THRESHOLD) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 else
-	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -1 '$(MNK)')
+	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) '$(MNK)')
 endif
 NINDICES := $(words $(INDICES))
 
