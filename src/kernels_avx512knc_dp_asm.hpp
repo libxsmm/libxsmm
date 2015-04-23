@@ -542,7 +542,7 @@ void avx512knc_generate_kernel_dp(std::stringstream& codestream, int lda, int ld
     }
   }
   
-  std::cout << "N splitting of MIC Kernel: " << l_N1 << " " << l_N2 << " " << l_n1 << " " << l_n2 << std::endl;
+  std::cout << "N splitting of DP MIC Kernel: " << l_N1 << " " << l_N2 << " " << l_n1 << " " << l_n2 << std::endl;
   avx512knc_init_registers_dp_asm(codestream);
 
   if (l_numberOfChunks == 1) {

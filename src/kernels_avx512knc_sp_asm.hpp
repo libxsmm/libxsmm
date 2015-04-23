@@ -35,15 +35,29 @@ void avx512knc_init_registers_sp_asm(std::stringstream& codestream) {
   codestream << "                         \"movq %2, %%r10\\n\\t\"" << std::endl;
   codestream << "                         \"movq $0, %%r14\\n\\t\"" << std::endl;
   codestream << "                         \"movq $0, %%r13\\n\\t\"" << std::endl;
+  codestream << "                         \"movq $0, %%r15\\n\\t\"" << std::endl;
 }
 
 void avx512knc_close_sp_asm(std::stringstream& codestream, int max_local_N) {
-  codestream << "                        : : \"m\"(B), \"m\"(A), \"m\"(C) : \"k1\",\"r8\",\"r9\",\"r10\",\"r13\",\"r14\",\"zmm0\"";
+  codestream << "                        : : \"m\"(B), \"m\"(A), \"m\"(C) : \"k1\",\"r8\",\"r9\",\"r10\",\"r13\",\"r14\",\"r15\",\"zmm0\"";
   // generate the clobber-list
   for (int n_local = 0; n_local < max_local_N; n_local++) {
     codestream << ",\"zmm" << 31-n_local << "\"";
   }
   codestream << ");" << std::endl;
+}
+
+void avx512knc_header_nloop_sp_asm(std::stringstream& codestream, int n_blocking) {
+  codestream << "                         \"1" << n_blocking << ":\\n\\t\"" << std::endl;
+  codestream << "                         \"addq $" << n_blocking << ", %%r15\\n\\t\"" << std::endl;
+}
+
+void avx512knc_footer_nloop_sp_asm(std::stringstream& codestream, int n_blocking, int N, int M, int lda, int ldb, int ldc) {
+  codestream << "                         \"addq $" << ((n_blocking)*ldc * 4) - (M * 4) << ", %%r10\\n\\t\"" << std::endl;
+  codestream << "                         \"addq $" << n_blocking * ldb * 4 << ", %%r8\\n\\t\"" << std::endl;
+  codestream << "                         \"subq $" << M * 4 << ", %%r9\\n\\t\"" << std::endl;
+  codestream << "                         \"cmpq $" << N << ", %%r15\\n\\t\"" << std::endl;
+  codestream << "                         \"jl 1" << n_blocking << "b\\n\\t\"" << std::endl;
 }
 
 void avx512knc_header_kloop_sp_asm(std::stringstream& codestream, int m_blocking, int k_blocking) {
@@ -64,6 +78,7 @@ void avx512knc_footer_kloop_notdone_sp_asm(std::stringstream& codestream, int m_
 }
 
 void avx512knc_header_mloop_sp_asm(std::stringstream& codestream, int m_blocking) {
+  codestream << "                         \"movq $0, %%r14\\n\\t\"" << std::endl;
   codestream << "                         \"100" << m_blocking << ":\\n\\t\"" << std::endl;
   codestream << "                         \"addq $" << m_blocking << ", %%r14\\n\\t\"" << std::endl;
 }
@@ -463,10 +478,9 @@ void avx512knc_generate_inner_k_loop_sp(std::stringstream& codestream, int lda, 
   }  
 }
 
-void avx512knc_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd) {
+void avx512knc_generate_inner_m_loop_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd) {
   int mDone = (M / 16) * 16;
 
-  avx512knc_init_registers_sp_asm(codestream);
   // multiples of 16 in M
   if (mDone > 0) {
     avx512knc_header_mloop_sp_asm(codestream, 16);
@@ -532,8 +546,52 @@ void avx512knc_generate_kernel_sp(std::stringstream& codestream, int lda, int ld
     // innner loop over K
     avx512knc_generate_inner_k_loop_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, true);
     avx512knc_store_16xN_sp_asm(codestream, N, ldc, alignC, true);
+    codestream << "                         \"addq $" << (M - mDone) * 4 << ", %%r10\\n\\t\"" << std::endl;
+    codestream << "                         \"subq $" << (K * 4 * lda) - ( (M - mDone) * 4) << ", %%r9\\n\\t\"" << std::endl;
+  }
+}
+
+void avx512knc_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd) {
+  int l_numberOfChunks = 1+((N-1)/30);
+  int l_modulo = N%l_numberOfChunks;
+  int l_n2 = N/l_numberOfChunks;
+  int l_n1 = l_n2 + 1;
+  int l_N2 = 0;
+  int l_N1 = 0;
+  if (l_n1 > 30) l_n1 = 30; // this just the case if N/l_numberOfChunks has no remainder
+
+  for (int l_chunk = 0; l_chunk < l_numberOfChunks; l_chunk++) {
+    if (l_chunk < l_modulo) {
+      l_N1 += l_n1;
+    } else {
+      l_N2 += l_n2;
+    }
+  }
+  
+  std::cout << "N splitting of SP MIC Kernel: " << l_N1 << " " << l_N2 << " " << l_n1 << " " << l_n2 << std::endl;
+  avx512knc_init_registers_sp_asm(codestream);
+
+  if (l_numberOfChunks == 1) {
+    avx512knc_generate_inner_m_loop_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd);
+  } else {
+    if ((l_N2 > 0) && (l_N1 > 0)) {
+      avx512knc_header_nloop_sp_asm(codestream, l_n1);
+      avx512knc_generate_inner_m_loop_sp(codestream, lda, ldb, ldc, M, l_n1, K, alignA, alignC, bAdd);
+      avx512knc_footer_nloop_sp_asm(codestream, l_n1, l_N1, M, lda, ldb, ldc);
+
+      avx512knc_header_nloop_sp_asm(codestream, l_n2);
+      avx512knc_generate_inner_m_loop_sp(codestream, lda, ldb, ldc, M, l_n2, K, alignA, alignC, bAdd);
+      avx512knc_footer_nloop_sp_asm(codestream, l_n2, N, M, lda, ldb, ldc);
+    } else if ((l_N2 > 0) && (l_N1 == 0)) {
+      avx512knc_header_nloop_sp_asm(codestream, l_n2);
+      avx512knc_generate_inner_m_loop_sp(codestream, lda, ldb, ldc, M, l_n2, K, alignA, alignC, bAdd);
+      avx512knc_footer_nloop_sp_asm(codestream, l_n2, N, M, lda, ldb, ldc);
+    } else {
+      std::cout << " !!! ERROR, MIC n-blocking !!! " << std::endl;
+      exit(-1);
+    }
   }
 
-  avx512knc_close_sp_asm(codestream, N);
+  avx512knc_close_sp_asm(codestream, std::max<int>(l_n1, l_n2));
 }
 
