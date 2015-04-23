@@ -29,607 +29,380 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx2_load_32x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, std::string tPrefetch) {
+void avx2_load_32xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_load_32xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovaps (%%r10), %%ymm4\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ldc * 4 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 8) * 4 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 16) * 4 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 24) * 4 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << 2 * ldc * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 16) * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 24) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) +16) * 4 << "(%%r10), %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) +24) * 4 << "(%%r10), %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"vmovups (%%r10), %%ymm4\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 32(%%r10), %%ymm5\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 64(%%r10), %%ymm6\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 96(%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ldc * 4 << "(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 8) * 4 << "(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 16) * 4 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 24) * 4 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << 2 * ldc * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 16) * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 24) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovups " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) +16) * 4 << "(%%r10), %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) +24) * 4 << "(%%r10), %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"vxorps %%ymm4, %%ymm4, %%ymm4\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm5, %%ymm5, %%ymm5\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm6, %%ymm6, %%ymm6\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm7, %%ymm7, %%ymm7\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm8, %%ymm8, %%ymm8\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm9, %%ymm9, %%ymm9\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm10, %%ymm10, %%ymm10\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm11, %%ymm11, %%ymm11\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm12, %%ymm12, %%ymm12\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%ymm" << 4 + (4*l_n) << ", %%ymm" << 4 + (4*l_n) << ", %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 5 + (4*l_n) << ", %%ymm" << 5 + (4*l_n) << ", %%ymm" << 5 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 6 + (4*l_n) << ", %%ymm" << 6 + (4*l_n) << ", %%ymm" << 6 + (4*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 7 + (4*l_n) << ", %%ymm" << 7 + (4*l_n) << ", %%ymm" << 7 + (4*l_n) << "\\n\\t\"" << std::endl;
+    }
   }
   if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 64(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)       * 4 << "(%%r12)\\n\\t\"" << std::endl;
+      codestream << "                         \"prefetcht1 " << ((l_n * ldc) + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx2_store_32x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx2_store_32xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_load_32xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"vmovaps %%ymm4, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm8, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm9, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm10, " << (ldc + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm11, " << (ldc + 24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm12, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm13, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm14, " << ((2 * ldc) + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm15, " << ((2 * ldc) + 24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovaps %%ymm" << 4 + (4*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 5 + (4*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 6 + (4*l_n) << ", " <<  ((l_n * ldc) +16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 7 + (4*l_n) << ", " <<  ((l_n * ldc) +24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vmovups %%ymm4, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm5, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm6, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm7, 96(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm8, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm9, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm10, " << (ldc + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm11, " << (ldc + 24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm12, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm13, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm14, " << ((2 * ldc) + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm15, " << ((2 * ldc) + 24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 " << (ldc + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ((2 * ldc) + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovups %%ymm" << 4 + (4*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 5 + (4*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 6 + (4*l_n) << ", " <<  ((l_n * ldc) +16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 7 + (4*l_n) << ", " <<  ((l_n * ldc) +24) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx2_kernel_32x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
+void avx2_kernel_32xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_32xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (call != (-1)) {
-    codestream << "                         \"vbroadcastss " << 4 * call << "(%%r8), %%ymm0\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vbroadcastss (%%r8), %%ymm0\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
     codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
   }
 
-  // first row
+  for (int l_m = 0; l_m < 4; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"vmovaps " << 32 * l_m << "(%%r9), %%ymm3\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vmovups " << 32 * l_m << "(%%r9), %%ymm3\\n\\t\"" << std::endl;
+    }
+
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ((l_m == 3) && (l_n == 0)) {
+        codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"vfmadd231ps %%ymm3, %%ymm" << l_n << ", %%ymm" <<  4 + l_m + (4*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void avx2_kernel_24xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_24xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  if (call != -1) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
+  } else {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+  }
+
+  for (int l_m = 0; l_m < 3; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"vmovaps " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vmovups " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
+    }
+  }
+
+  for (int l_m = 0; l_m < 3; l_m++) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ((l_m == 2) && (l_n == 0)) {
+        codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"vfmadd231ps %%ymm" << 3 + l_m << ", %%ymm" << l_n << ", %%ymm" << 7 + l_m + (3*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void avx2_kernel_16xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_16xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  if (call != -1) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
+  } else {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vbroadcastss " << (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+  }
+
+  for (int l_m = 0; l_m < 2; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"vmovaps " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vmovups " << 32 * l_m << "(%%r9), %%ymm" << 3 + l_m << "\\n\\t\"" << std::endl;
+    }
+  }
+
+  for (int l_m = 0; l_m < 2; l_m++) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ((l_m == 1) && (l_n == 0)) {
+        codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"vfmadd231ps %%ymm" << 3 + l_m << ", %%ymm" << l_n << ", %%ymm" << 10 + l_m +(2*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void avx2_kernel_8xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_8xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignA == true) {
     codestream << "                         \"vmovaps (%%r9), %%ymm3\\n\\t\"" << std::endl;
   } else {
     codestream << "                         \"vmovups (%%r9), %%ymm3\\n\\t\"" << std::endl;
   }
 
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm0, %%ymm4\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm1, %%ymm8\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm2, %%ymm12\\n\\t\"" << std::endl;
-
-  // second row
-  if (alignA == true) {
-    codestream << "                         \"vmovaps 32(%%r9), %%ymm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups 32(%%r9), %%ymm3\\n\\t\"" << std::endl;
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    if (l_n == 0) {
+      codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+    }
+    if (call != -1) {
+      codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vbroadcastss " << (ldb * l_n * 4) << "(%%r8), %%ymm" << l_n << "\\n\\t\"" << std::endl;
+      if (l_n == (max_local_N - 1)) {
+        codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+      }
+    }
+    codestream << "                         \"vfmadd231ps %%ymm3, %%ymm" << l_n << ", %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
   }
-
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm0, %%ymm5\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm1, %%ymm9\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm2, %%ymm13\\n\\t\"" << std::endl;
-
-  //third row
-  if (alignA == true) {
-    codestream << "                         \"vmovaps 64(%%r9), %%ymm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups 64(%%r9), %%ymm3\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm0, %%ymm6\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm1, %%ymm10\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm2, %%ymm14\\n\\t\"" << std::endl;
-
-  //fourth row
-  if (alignA == true) {
-    codestream << "                         \"vmovaps 96(%%r9), %%ymm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups 96(%%r9), %%ymm3\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"addq $" << lda * 4 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm0, %%ymm7\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm1, %%ymm11\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm2, %%ymm15\\n\\t\"" << std::endl;
 }
 
-void avx2_kernel_24x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << 4 * call << "(%%r8), %%ymm0\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss (%%r8), %%ymm0\\n\\t\"" << std::endl;
+void avx2_kernel_4xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_4xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
   }
 
   if (alignA == true) {
-    codestream << "                         \"vmovaps (%%r9), %%ymm3\\n\\t\"" << std::endl;
+    codestream << "                         \"vmovaps (%%r9), %%xmm3\\n\\t\"" << std::endl;
   } else {
-    codestream << "                         \"vmovups (%%r9), %%ymm3\\n\\t\"" << std::endl;
+    codestream << "                         \"vmovups (%%r9), %%xmm3\\n\\t\"" << std::endl;
   }
 
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-    codestream << "                         \"vbroadcastss " << (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    if (l_n == 0) {
+      codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+    }
+    if (call != -1) {
+      codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vbroadcastss " << (ldb * l_n * 4) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+      if (l_n == (max_local_N - 1)) {
+        codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+      }
+    }
+    codestream << "                         \"vfmadd231ps %%xmm3, %%xmm" << l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
   }
-
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm0, %%ymm7\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm1, %%ymm10\\n\\t\"" << std::endl;
-
-  if (alignA == true) {
-    codestream << "                         \"vmovaps 32(%%r9), %%ymm4\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups 32(%%r9), %%ymm4\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm3, %%ymm2, %%ymm13\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm4, %%ymm0, %%ymm8\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm4, %%ymm1, %%ymm11\\n\\t\"" << std::endl;
-
-  if (alignA == true) {
-    codestream << "                         \"vmovaps 64(%%r9), %%ymm5\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups 64(%%r9), %%ymm5\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm4, %%ymm2, %%ymm14\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm5, %%ymm0, %%ymm9\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm5, %%ymm1, %%ymm12\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm5, %%ymm2, %%ymm15\\n\\t\"" << std::endl;
 }
 
-void avx2_kernel_16x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (alignA == true) {
-    codestream << "                         \"vmovaps (%%r9), %%ymm4\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps 32(%%r9), %%ymm5\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups (%%r9), %%ymm4\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups 32(%%r9), %%ymm5\\n\\t\"" << std::endl;
+void avx2_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx2_kernel_1xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
   }
 
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << 4 * call << "(%%r8), %%ymm0\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss (%%r8), %%ymm0\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm0, %%ymm4, %%ymm10\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm0, %%ymm5, %%ymm11\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm1, %%ymm4, %%ymm12\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm1, %%ymm5, %%ymm13\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm2, %%ymm4, %%ymm14\\n\\t\"" << std::endl;
-  codestream << "                         \"vfmadd231ps %%ymm2, %%ymm5, %%ymm15\\n\\t\"" << std::endl;
-}
-
-void avx2_kernel_8x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (alignA == true) {
-    codestream << "                         \"vmovaps (%%r9), %%ymm4\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups (%%r9), %%ymm4\\n\\t\"" << std::endl;
-  }
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << 4 * call << "(%%r8), %%ymm0\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss (%%r8), %%ymm0\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm0, %%ymm4, %%ymm13\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 4) << "(%%r8), %%ymm1\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm1, %%ymm4, %%ymm14\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 8) << "(%%r8), %%ymm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%ymm2, %%ymm4, %%ymm15\\n\\t\"" << std::endl;
-}
-
-void avx2_kernel_4x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (alignA == true) {
-    codestream << "                         \"vmovaps (%%r9), %%xmm4\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vmovups (%%r9), %%xmm4\\n\\t\"" << std::endl;
-  }
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << 4 * call << "(%%r8), %%xmm0\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss (%%r8), %%xmm0\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%xmm0, %%xmm4, %%xmm13\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 4) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 4) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%xmm1, %%xmm4, %%xmm14\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vbroadcastss " << (4 * call) + (ldb * 8) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vbroadcastss " << (ldb * 8) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"vfmadd231ps %%xmm2, %%xmm4, %%xmm15\\n\\t\"" << std::endl;
-}
-
-void avx2_kernel_1x3_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  codestream << "                         \"vmovss (%%r9), %%xmm4\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vfmadd231ss " << 4 * call << "(%%r8), %%xmm4, %%xmm13\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vfmadd231ss (%%r8), %%xmm4, %%xmm13\\n\\t\"" << std::endl;
-  }
-
-  if (call != -1) {
-    codestream << "                         \"vfmadd231ss " << (4 * call) + (ldb * 4) << "(%%r8), %%xmm4, %%xmm14\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vfmadd231ss " << (ldb * 4) << "(%%r8), %%xmm4, %%xmm14\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
-
-  if (call != -1) {
-    codestream << "                         \"vfmadd231ss " << (4 * call) + (ldb * 8) << "(%%r8), %%xmm4, %%xmm15\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"vfmadd231ss " << (ldb * 8) << "(%%r8), %%xmm4, %%xmm15\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+  codestream << "                         \"vmovss (%%r9), %%xmm3\\n\\t\"" << std::endl;
+ 
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    if (l_n == 0) {
+      codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
+    }
+    if (call != -1) {
+      codestream << "                         \"vfmadd231ss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%xmm3, %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"vfmadd231ss " << (ldb * l_n * 4) << "(%%r8), %%xmm3, %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      if (l_n == (max_local_N - 1)) {
+        codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
+      }
+    }
   }
 }
 
 void avx2_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd, std::string tPrefetch) {
-  int k_blocking = 4;
-  int k_threshold = 30;
-  int mDone, mDone_old;
+  // functions pointers to different m_blockings
+  void (*l_generatorLoad)(std::stringstream&, int, bool, bool, int, std::string);
+  void (*l_generatorStore)(std::stringstream&, int, bool, int);
+  void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, bool, int, bool, int);
+
   init_registers_asm(codestream, tPrefetch);
-  header_nloop_sp_asm(codestream, 3);
 
-  // 32x3
-  mDone_old = 0;
-  mDone = (M / 32) * 32;
+  int nDone = 0;
+  int nDone_old = 0;
+  int n_blocking = 3;
 
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 32);
-    avx2_load_32x3_sp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
+  // apply n_blocking
+  while (nDone != N) {
+    nDone_old = nDone;
+    nDone = nDone + (((N - nDone_old) / n_blocking) * n_blocking);
 
-    if (K % k_blocking == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 32, k_blocking);
+    if (nDone != nDone_old && nDone > 0) {
+      header_nloop_sp_asm(codestream, n_blocking);
+  
+      int k_blocking = 4;
+      int k_threshold = 30;
+      int mDone = 0;
+      int mDone_old = 0;
+      int m_blocking = 32;
 
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_32x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
+      // apply m_blocking
+      while (mDone != M) {
+        mDone_old = mDone;
+        mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
 
-      footer_kloop_sp_asm(codestream, 32, K);
-    } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_32x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
+        // switch to a different m_blocking
+        if (m_blocking == 32) {
+          l_generatorLoad = &avx2_load_32xN_sp_asm;
+          l_generatorStore = &avx2_store_32xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_32xN_sp_asm;
+        } else if (m_blocking == 24) {
+          l_generatorLoad = &avx_load_24xN_sp_asm;
+          l_generatorStore = &avx_store_24xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_24xN_sp_asm;
+        } else if (m_blocking == 16) {
+          l_generatorLoad = &avx_load_16xN_sp_asm;
+          l_generatorStore = &avx_store_16xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_16xN_sp_asm;
+        } else if (m_blocking == 8) {
+          l_generatorLoad = &avx_load_8xN_sp_asm;
+          l_generatorStore = &avx_store_8xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_8xN_sp_asm;
+        } else if (m_blocking == 4) {
+          l_generatorLoad = &avx_load_4xN_sp_asm;
+          l_generatorStore = &avx_store_4xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_4xN_sp_asm;
+        } else if (m_blocking == 1) {
+          l_generatorLoad = &avx_load_1xN_sp_asm;
+          l_generatorStore = &avx_store_1xN_sp_asm;
+          l_generatorCompute = &avx2_kernel_1xN_sp_asm;      
+        } else {
+          std::cout << " !!! ERROR, avx1_generate_kernel_dp, m_blocking is out of range!!! " << std::endl;
+          exit(-1);
         }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 32, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_32x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
+
+        if (mDone != mDone_old && mDone > 0) {
+          header_mloop_sp_asm(codestream, m_blocking);
+          (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking, tPrefetch);
+
+          if ((K % k_blocking) == 0 && K > k_threshold) {
+            header_kloop_sp_asm(codestream, m_blocking, k_blocking);
+
+            for (int k = 0; k < k_blocking; k++) {
+	      (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
+            }
+
+            footer_kloop_sp_asm(codestream, m_blocking, K);
+          } else {
+            // we want to fully unroll
+            if (K <= k_threshold) {
+              for (int k = 0; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
+	      }
+            } else {
+	      // we want to block, but K % k_blocking != 0
+	      int max_blocked_K = (K/k_blocking)*k_blocking;
+	      if (max_blocked_K > 0 ) {
+	        header_kloop_sp_asm(codestream, m_blocking, k_blocking);
+	        for (int k = 0; k < k_blocking; k++) {
+	          (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false, n_blocking);
+	        }
+	        footer_kloop_notdone_sp_asm(codestream, m_blocking, max_blocked_K );
+	      }
+	      if (max_blocked_K > 0 ) {
+	        codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
+	      }
+	      for (int k = max_blocked_K; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, false, k, false, n_blocking);
+	      }
+            }
           }
-          footer_kloop_notdone_sp_asm(codestream, 32, max_blocked_K );
+
+          (*l_generatorStore)(codestream, ldc, alignC, n_blocking);
+          footer_mloop_sp_asm(codestream, m_blocking, K, mDone, lda, tPrefetch);
         }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_32x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
+
+        // switch to a different m_blocking
+        if (m_blocking == 4) {
+          m_blocking = 1;
+        } else if (m_blocking == 8) {
+          m_blocking = 4;
+        } else if (m_blocking == 16) {
+          m_blocking = 8;
+        } else if (m_blocking == 24) {
+          m_blocking = 16;
+        } else if (m_blocking == 32) {
+          m_blocking = 24;
+        } else {
+          // we are done with m_blocking
         }
       }
+
+      footer_nloop_sp_asm(codestream, n_blocking, nDone, M, lda, ldb, ldc, tPrefetch);
     }
 
-    avx2_store_32x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 32, K, mDone, lda, tPrefetch);
-  }
-
-  // 24x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 24) * 24);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 24);
-    avx_load_24x3_sp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 24, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_24x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_sp_asm(codestream, 24, K);
+    // switch to a different n_blocking
+    if (n_blocking == 2) {
+      n_blocking = 1;
+    } else if (n_blocking == 3) {
+      n_blocking = 2;
     } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_24x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 24, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_24x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-          }
-          footer_kloop_notdone_sp_asm(codestream, 24, max_blocked_K );
-        }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_24x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      }
+      // we are done with n_blocking
     }
-
-    avx_store_24x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 24, K, mDone, lda, tPrefetch);
   }
 
-  // 16x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 16) * 16);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 16);
-    avx_load_16x3_sp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 16, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_16x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_sp_asm(codestream, 16, K);
-    } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_16x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 16, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_16x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-          }
-          footer_kloop_notdone_sp_asm(codestream, 16, max_blocked_K );
-        }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_16x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      }
-    }
-
-    avx_store_16x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 16, K, mDone, lda, tPrefetch);
-  }
-
-  // 8x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 8) * 8);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 8);
-    avx_load_8x3_sp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 8, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_8x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_sp_asm(codestream, 8, K);
-    } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_8x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 8, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_8x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-          }
-          footer_kloop_notdone_sp_asm(codestream, 8, max_blocked_K );
-        }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_8x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      }
-    }
-
-    avx_store_8x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 8, K, mDone, lda, tPrefetch);
-  }
-
-  // 4x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 4) * 4);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 4);
-    avx_load_4x3_sp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 4, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_4x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_sp_asm(codestream, 4, K);
-    } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_4x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 4, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_4x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-          }
-          footer_kloop_notdone_sp_asm(codestream, 4, max_blocked_K );
-        }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_4x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      }
-    }
-
-    avx_store_4x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 4, K, mDone, lda, tPrefetch);
-  }
-
-  // 1x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 1) * 1);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_sp_asm(codestream, 1);
-    avx_load_1x3_sp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_sp_asm(codestream, 1, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        avx2_kernel_1x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_sp_asm(codestream, 1, K);
-    } else {
-      // we want to fully unroll
-      if (K <= k_threshold) {
-        for (int k = 0; k < K; k++) {
-          avx2_kernel_1x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      } else {
-        // we want to block, but K % k_blocking != 0
-        int max_blocked_K = (K/k_blocking)*k_blocking;
-        if (max_blocked_K > 0 ) {
-          header_kloop_sp_asm(codestream, 1, k_blocking);
-          for (int k = 0; k < k_blocking; k++) {
-            avx2_kernel_1x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-          }
-          footer_kloop_notdone_sp_asm(codestream, 1, max_blocked_K );
-        }
-        if (max_blocked_K > 0 ) {
-          codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
-        }
-        for (int k = max_blocked_K; k < K; k++) {
-          avx2_kernel_1x3_sp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-        }
-      }
-    }
-
-    avx_store_1x3_sp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_sp_asm(codestream, 1, K, mDone, lda, tPrefetch);
-  }
-
-  footer_nloop_sp_asm(codestream, 3, N, M, lda, ldb, ldc, tPrefetch);
   close_asm(codestream, tPrefetch);
 }
 

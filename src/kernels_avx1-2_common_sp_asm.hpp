@@ -29,214 +29,232 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx_load_24x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, std::string tPrefetch) {
+void avx_load_24xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_load_24xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovaps (%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 32(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 64(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ldc * 4 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 8) * 4 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 16) * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << 2 * ldc * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 16) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) +16) * 4 << "(%%r10), %%ymm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"vmovups (%%r10), %%ymm7\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 32(%%r10), %%ymm8\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 64(%%r10), %%ymm9\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ldc * 4 << "(%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 8) * 4 << "(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 16) * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << 2 * ldc * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 16) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovups " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) +16) * 4 << "(%%r10), %%ymm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"vxorps %%ymm7, %%ymm7, %%ymm7\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm8, %%ymm8, %%ymm8\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm9, %%ymm9, %%ymm9\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm10, %%ymm10, %%ymm10\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm11, %%ymm11, %%ymm11\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm12, %%ymm12, %%ymm12\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%ymm" << 7 + (3*l_n) << ", %%ymm" << 7 + (3*l_n) << ", %%ymm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 8 + (3*l_n) << ", %%ymm" << 8 + (3*l_n) << ", %%ymm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 9 + (3*l_n) << ", %%ymm" << 9 + (3*l_n) << ", %%ymm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)       * 4 << "(%%r12)\\n\\t\"" << std::endl;
+      codestream << "                         \"prefetcht1 " << ((l_n * ldc) + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_load_16x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void avx_load_16xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_load_16xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovaps (%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps 32(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ldc * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << (ldc + 8) * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << 2 * ldc * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovaps " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"vmovups (%%r10), %%ymm10\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups 32(%%r10), %%ymm11\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ldc * 4 << "(%%r10), %%ymm12\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << (ldc + 8) * 4 << "(%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << 2 * ldc * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ((2 * ldc) + 8) * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovups " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"vmovups " << ((l_n * ldc) + 8) * 4 << "(%%r10), %%ymm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"vxorps %%ymm10, %%ymm10, %%ymm10\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm11, %%ymm11, %%ymm11\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm12, %%ymm12, %%ymm12\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%ymm" << 10 + (2*l_n) << ", %%ymm" << 10 + (2*l_n) << ", %%ymm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vxorps %%ymm" << 11 + (2*l_n) << ", %%ymm" << 11 + (2*l_n) << ", %%ymm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)      * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_load_8x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void avx_load_8xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_load_8xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovaps (%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ldc * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << 2 * ldc * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"vmovups (%%r10), %%ymm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ldc * 4 << "(%%r10), %%ymm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << 2 * ldc * 4 << "(%%r10), %%ymm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovups " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"vxorps %%ymm13, %%ymm13, %%ymm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm14, %%ymm14, %%ymm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%ymm15, %%ymm15, %%ymm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%ymm" << 13 + l_n << ", %%ymm" << 13 + l_n << ", %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
+  }
+  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)      * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_load_4x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void avx_load_4xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_load_4xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"vmovaps (%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << ldc * 4 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovaps " << 2 * ldc * 4 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"vmovups (%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << ldc * 4 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"vmovups " << 2 * ldc * 4 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"vmovups " <<  (l_n * ldc)      * 4 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"vxorps %%xmm13, %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%xmm14, %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%xmm15, %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
+  }
+  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)      * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_load_1x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void avx_load_1xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_load_1xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
-    codestream << "                         \"vmovss (%%r10), %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovss " << ldc * 4 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovss " << 2 * ldc * 4 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovss " <<  (l_n * ldc)      * 4 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vxorps %%xmm13, %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%xmm14, %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"vxorps %%xmm15, %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vxorps %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
+  }
+  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " <<  (l_n * ldc)      * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_store_24x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx_store_24xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_store_24xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"vmovaps %%ymm7, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm8, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm9, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm10, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm11, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm12, " << (ldc + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm13, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm14, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm15, " << ((2 * ldc) + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovaps %%ymm" << 7 + (3*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 8 + (3*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 9 + (3*l_n) << ", " <<  ((l_n * ldc) +16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vmovups %%ymm7, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm8, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm9, 64(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm10, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm11, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm12, " << (ldc + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm13, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm14, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm15, " << ((2 * ldc) + 16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 64(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (ldc + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ((2 * ldc) + 16) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovups %%ymm" << 7 + (3*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 8 + (3*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 9 + (3*l_n) << ", " <<  ((l_n * ldc) +16) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_store_16x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx_store_16xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_store_16xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"vmovaps %%ymm10, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm11, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm12, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm13, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm14, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm15, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovaps %%ymm" << 10 + (2*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovaps %%ymm" << 11 + (2*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vmovups %%ymm10, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm11, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm12, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm13, " << (ldc + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm14, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm15, " << ((2 * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovups %%ymm" << 10 + (2*l_n) << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovups %%ymm" << 11 + (2*l_n) << ", " <<  ((l_n * ldc) + 8) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_store_8x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx_store_8xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_store_8xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"vmovaps %%ymm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm14, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%ymm15, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovaps %%ymm" << 13 + l_n << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vmovups %%ymm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm14, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%ymm15, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovups %%ymm" << 13 + l_n << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_store_4x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void avx_store_4xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_store_4xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"vmovaps %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%xmm14, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovaps %%xmm15, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovaps %%xmm" << 13 + l_n << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"vmovups %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%xmm14, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"vmovups %%xmm15, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"vmovups %%xmm" << 13 + l_n << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void avx_store_1x3_sp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
-  codestream << "                         \"vmovss %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-  codestream << "                         \"vmovss %%xmm14, " << ldc * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  codestream << "                         \"vmovss %%xmm15, " << (2 * ldc) * 4 << "(%%r10)\\n\\t\"" << std::endl;
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 4 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 4 << "(%%r12)\\n\\t\"" << std::endl;
+void avx_store_1xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, avx_store_1xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    codestream << "                         \"vmovss %%xmm" << 13 + l_n << ", " <<   (l_n * ldc)      * 4 << "(%%r10)\\n\\t\"" << std::endl;
   }
 }
 
