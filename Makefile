@@ -224,34 +224,48 @@ ifeq ($(GENASM),0)
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -3 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
 	@echo "#include <libxsmm.h>" > $@
-	@if [[ ( "kn?" != $(GENTARGET) ) || ( 30 -ge $(NVALUE) ) ]]; then \
-		echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@; \
-		#echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@; \
-		echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@; \
+	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
+	@if [[ 30 -ge $(NVALUE) ]]; then \
 		echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@; \
 	fi
-	@echo >> $@
-	@echo >> $@
 ifeq ($(GENTARGET),noarch)
-	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP
-	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP
-	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 snb nopf DP
-	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP
-	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 hsw nopf DP
-	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP
-	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP
-	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP
-else
-	@if [[ ( "kn?" != $(GENTARGET) ) || ( 30 -ge $(NVALUE) ) ]]; then \
-		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf DP; \
-		#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf SP; \
+	@true || echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
+	@if [[ 30 -ge $(NVALUE) ]]; then \
+		true || echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@; \
 	fi
-endif
+	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >> $@
+	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >> $@
+	@echo "#define LIBXSMM_GENTARGET_snb_dp" >> $@
+	@echo "#define LIBXSMM_GENTARGET_snb_sp" >> $@
+	@true || echo "#define LIBXSMM_GENTARGET_wsm_dp" >> $@
+	@true || echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
+	@echo >> $@
+	@echo >> $@
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 snb nopf DP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 hsw nopf DP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP > /dev/null
 	@if [[ 30 -ge $(NVALUE) ]]; then \
 		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knc nopf DP; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP; \
+		#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP > /dev/null; \
+	fi
+else
+	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
+	@if [[ "kn?" != "$(GENTARGET)" || 30 -ge $(NVALUE) ]]; then \
+		echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@; \
+	fi
+	@echo >> $@
+	@echo >> $@
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf DP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf SP > /dev/null
+endif
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knc nopf DP > /dev/null
+	@if [[ 30 -ge $(NVALUE) ]]; then \
+		PS4=''; set -x; \
+		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP > /dev/null; \
 	fi
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
@@ -392,8 +406,6 @@ clean:
 	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-avg.dat
 	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-cdf.dat
 	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.dat
-	@rm -f $(SCRDIR)/generator
-	@rm -f $(SCRDIR)/generator.exe
 	@rm -f $(SRCDIR)/mm_*_*_*.c
 	@rm -f $(ROOTDIR)/*/*/*~
 	@rm -f $(ROOTDIR)/*/*~
@@ -405,4 +417,6 @@ realclean: clean
 	@rm -rf $(LIBDIR)
 	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.txt
 	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.sh
+	@rm -f $(SCRDIR)/generator.exe
+	@rm -f $(SCRDIR)/generator
 	@rm -f $(HEADER)
