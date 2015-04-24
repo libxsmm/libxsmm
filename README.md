@@ -56,7 +56,7 @@ The library can be configured to accept row-major (default) or column-major orde
 make ROW_MAJOR=0
 ```
 
-To specialize LIBXSMM for certain matrix sizes (M, N, and K values), the build process needs to be adjusted. For example:
+By default, LIBXSMM is not optimized for particular matrix sizes (M, N, and K values). Specializing the library for certain matrix sizes (and therefore optimizing the performance) can be achieved in the following way:
 
 ```
 make M="2 4" N="1" K="$(echo $(seq 2 5))"
@@ -69,10 +69,10 @@ The above example is generating the following set of (M,N,K) values:
 (4,1,2), (4,1,3), (4,1,4), (4,1,5)
 ```
 
-The index sets are in a loop-nest relationship when generating the indices. Moreover, an empty index set resolves to the next non-empty "upper" index set while not participating anymore in the loop-nest relationship. Here is an example of generating multiplication routines for small square matrices:
+The index sets are in a loop-nest relationship (M(N(K))) when generating the indices. Moreover, an empty index set resolves to the next non-empty outer index set of the loop nest (including to wrap around from the M to K set). An empty index set is not participating anymore in the loop-nest relationship. Here is an example of generating multiplication routines which are "squares" with respect to M and N (since N inherits the current value of the "M loop"):
 
 ```
-make M="$(echo $(seq 2 5))"
+make M="$(echo $(seq 2 5))" K="$(echo $(seq 2 5))"
 ```
 
 An even more flexible specialization is possible by using the MNK variable when building the library. It takes a list of indices which are eventually grouped (using commas):
@@ -137,7 +137,7 @@ The maximum of the given threshold and the largest requested specialization refi
 make SPARSITY=2
 ```
 
-A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
+A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. Furthermore, the size of the direct lookup table is limited to 512 KB (currently hardcoded). The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
 ### Results
 The generated code does not claim to be "optimal" or "best-performing" - it is just generating source code using Intrinsics or assembly code. Therefore a well-optimizing compiler may arrange better code based on the inlinable C code path when compared to what is laid out by the library's low level code generator.
@@ -145,8 +145,6 @@ The generated code does not claim to be "optimal" or "best-performing" - it is j
 ## Implementation
 ### Limitations
 Beside of the inlinable code path, the library is currently limited to a single code path which is selected at build time of the library. Without a specific flag (SSE=1, AVX=1|2|3), the assembly code generator emits code for all supported instruction set extensions whereas the Intrinsic code generator (GENASM=0) is actually covering only IMCI (KNCni) and Intel AVX-512F. However, the compiler is picking only one of the generated code paths according to its code generation flags (or according to what is native with respect to the compiler-host). A future version of the library may be including all code paths at build time and allow for runtime-dynamic dispatch of the most suitable code path.
-
-The assembly code generator is currently limited to an M, N, and K combination where N is a multiple of three (Intel SSE3, AVX, and AVX2). For the assembly code targeting Intel Xeon Phi coprocessors however N needs to be less or equal than 30. These limitations will be relaxed in the future, and meanwhile the code generator is backed up in the fore mentioned cases by precompiling the inlinable C code path into the library.
 
 A future version of the library may support an auto-tuning stage when generating the code (to find M,N,K-combinations for specialized routines which are beneficial compared to the code generated from the inlinable C code path). Auto-tuning the compiler code generation using a profile-guided optimization may be another option to be incorporated into the build system (Makefile).
 

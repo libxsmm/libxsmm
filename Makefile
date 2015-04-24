@@ -5,12 +5,13 @@
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 1
 
-# Separate M, N, and K lists allow generating M,N,K-combinations according to the loop nest M(N(K)))
-# However, using the MNK variable is even more powerful: generate M,N,K-combinations for each comma
-# separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2), and (3,3,3). This way a heterogeneous
-# set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2), (1,2,1), (1,2,2), (2,1,1), (2,1,2)
-# (2,2,1) out of the first group, and a (3,3,3) for the second group (which contains just 3).
-MNK ?= $(shell seq -s, 1 5)
+# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
+# and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
+# (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
+# To generate a series of square matrices one can specify e.g., make MNK=$(echo $(seq -s, 1 5))
+# Alternative to MNK, index sets can be specified spearately according to a loop nest relationship
+# (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
+MNK ?= 0
 
 # limit to certain code path(s)
 SSE ?= 0
@@ -226,14 +227,10 @@ ifeq ($(GENASM),0)
 else
 	@echo "#include <libxsmm.h>" > $@
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
-	@if [[ 30 -ge $(NVALUE) ]]; then \
-		echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@; \
-	fi
+	@echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@
 ifeq ($(GENTARGET),noarch)
 	@true || echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
-	@if [[ 30 -ge $(NVALUE) ]]; then \
-		true || echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@; \
-	fi
+	@true || echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_snb_dp" >> $@
@@ -242,32 +239,24 @@ ifeq ($(GENTARGET),noarch)
 	@true || echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP > /dev/null
-	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP > /dev/null
-	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 snb nopf DP > /dev/null
-	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP > /dev/null
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 hsw nopf DP > /dev/null
 	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 hsw nopf SP > /dev/null
-	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knl nopf DP > /dev/null
-	@if [[ 30 -ge $(NVALUE) ]]; then \
-		PS4=''; set -x; \
-		#$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knl nopf SP > /dev/null; \
-	fi
+	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 snb nopf DP > /dev/null
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 snb nopf SP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 wsm nopf DP > /dev/null
+	@true || $(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 wsm nopf SP > /dev/null
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
-	@if [[ "kn?" != "$(GENTARGET)" || 30 -ge $(NVALUE) ]]; then \
-		echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@; \
-	fi
+	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo >> $@
 	@echo >> $@
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf DP > /dev/null
 	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 $(GENTARGET) nopf SP > /dev/null
 endif
 	$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 0 $(ALIGNED_STORES) 1 knc nopf DP > /dev/null
-	@if [[ 30 -ge $(NVALUE) ]]; then \
-		PS4=''; set -x; \
-		$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP > /dev/null; \
-	fi
+	$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 0 $(ALIGNED_STORES) 1 knc nopf SP > /dev/null
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
