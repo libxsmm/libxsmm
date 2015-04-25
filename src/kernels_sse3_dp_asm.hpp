@@ -29,188 +29,278 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void sse3_load_6x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, std::string tPrefetch) {
+void sse3_load_6xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_load_6xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"movapd (%%r10), %%xmm7\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd 16(%%r10), %%xmm8\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd 32(%%r10), %%xmm9\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ldc * 8 << "(%%r10), %%xmm10\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << (ldc + 2) * 8 << "(%%r10), %%xmm11\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << (ldc + 4) * 8 << "(%%r10), %%xmm12\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << 2 * ldc * 8 << "(%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ((2 * ldc) + 2) * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movapd " <<  (l_n * ldc) *      8 << "(%%r10), %%xmm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movapd " << ((l_n * ldc) + 2) * 8 << "(%%r10), %%xmm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movapd " << ((l_n * ldc) + 4) * 8 << "(%%r10), %%xmm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"movupd (%%r10), %%xmm7\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd 16(%%r10), %%xmm8\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd 32(%%r10), %%xmm9\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ldc * 8 << "(%%r10), %%xmm10\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << (ldc + 2) * 8 << "(%%r10), %%xmm11\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << (ldc + 4) * 8 << "(%%r10), %%xmm12\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << 2 * ldc * 8 << "(%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ((2 * ldc) + 2) * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ((2 * ldc) + 4) * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movupd " <<  (l_n * ldc) *      8 << "(%%r10), %%xmm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movupd " << ((l_n * ldc) + 2) * 8 << "(%%r10), %%xmm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movupd " << ((l_n * ldc) + 4) * 8 << "(%%r10), %%xmm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"xorpd %%xmm7, %%xmm7\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm8, %%xmm8\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm9, %%xmm9\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm10, %%xmm10\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm11, %%xmm11\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm12, %%xmm12\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"xorpd %%xmm" << 7 + (3*l_n) << ", %%xmm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"xorpd %%xmm" << 8 + (3*l_n) << ", %%xmm" << 8 + (3*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"xorpd %%xmm" << 9 + (3*l_n) << ", %%xmm" << 9 + (3*l_n) << "\\n\\t\"" << std::endl;
+
+    }
   }
 }
 
-void sse3_load_4x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void sse3_load_4xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_load_4xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"movapd (%%r10), %%xmm10\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd 16(%%r10), %%xmm11\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ldc * 8 << "(%%r10), %%xmm12\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << (ldc + 2) * 8 << "(%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << 2 * ldc * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ((2 * ldc) + 2) * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movapd " <<  (l_n * ldc)      * 8 << "(%%r10), %%xmm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movapd " << ((l_n * ldc) + 2) * 8 << "(%%r10), %%xmm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"movupd (%%r10), %%xmm10\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd 16(%%r10), %%xmm11\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ldc * 8 << "(%%r10), %%xmm12\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << (ldc + 2) * 8 << "(%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << 2 * ldc * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ((2 * ldc) + 2) * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movupd " <<  (l_n * ldc)      * 8 << "(%%r10), %%xmm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+        codestream << "                         \"movupd " << ((l_n * ldc) + 2) * 8 << "(%%r10), %%xmm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"xorpd %%xmm10, %%xmm10\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm11, %%xmm11\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm12, %%xmm12\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"xorpd %%xmm" << 10 + (2*l_n) << ", %%xmm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
+      codestream << "                         \"xorpd %%xmm" << 11 + (2*l_n) << ", %%xmm" << 11 + (2*l_n) << "\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_load_2x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void sse3_load_2xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_load_2xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
     if (alignC == true) {
-      codestream << "                         \"movapd (%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << ldc * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movapd " << 2 * ldc * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movapd " <<  (l_n * ldc)      * 8 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     } else {
-      codestream << "                         \"movupd (%%r10), %%xmm13\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << ldc * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-      codestream << "                         \"movupd " << 2 * ldc * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+      for (int l_n = 0; l_n < max_local_N; l_n++) {
+        codestream << "                         \"movupd " <<  (l_n * ldc)      * 8 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      }
     }
   } else {
-    codestream << "                         \"xorpd %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"xorpd %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"xorpd %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_load_1x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd) {
+void sse3_load_1xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_load_1xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (bAdd) {
-    codestream << "                         \"movsd (%%r10), %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << ldc * 8 << "(%%r10), %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << 2 * ldc * 8 << "(%%r10), %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movsd " <<  (l_n * ldc)      * 8 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"xorsd %%xmm13, %%xmm13\\n\\t\"" << std::endl;
-    codestream << "                         \"xorsd %%xmm14, %%xmm14\\n\\t\"" << std::endl;
-    codestream << "                         \"xorsd %%xmm15, %%xmm15\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"xorsd %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_store_6x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void sse3_store_6xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_store_6xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"movapd %%xmm7, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm8, 16(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm9, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm10, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm11, " << (ldc + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm12, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm13, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm14, " << ((2 * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm15, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movapd %%xmm" << 7 + (3*l_n) << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movapd %%xmm" << 8 + (3*l_n) << ", " << ((l_n * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movapd %%xmm" << 9 + (3*l_n) << ", " << ((l_n * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"movupd %%xmm7, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm8, 16(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm9, 32(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm10, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm11, " << (ldc + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm12, " << (ldc + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm13, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm14, " << ((2 * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm15, " << ((2 * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movupd %%xmm" << 7 + (3*l_n) << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movupd %%xmm" << 8 + (3*l_n) << ", " << ((l_n * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movupd %%xmm" << 9 + (3*l_n) << ", " << ((l_n * ldc) + 4) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+  if ( (tPrefetch.compare("BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " << (l_n * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_store_4x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void sse3_store_4xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_store_4xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"movapd %%xmm10, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm11, 16(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm12, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm13, " << (ldc + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm14, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm15, " << ((2 * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movapd %%xmm" << 10 + (2*l_n) << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movapd %%xmm" << 11 + (2*l_n) << ", " << ((l_n * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"movupd %%xmm10, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm11, 16(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm12, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm13, " << (ldc + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm14, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm15, " << ((2 * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movupd %%xmm" << 10 + (2*l_n) << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+      codestream << "                         \"movupd %%xmm" << 11 + (2*l_n) << ", " << ((l_n * ldc) + 2) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+  if ( (tPrefetch.compare("BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " << (l_n * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_store_2x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
+void sse3_store_2xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_store_2xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (alignC == true) {
-    codestream << "                         \"movapd %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm14, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movapd %%xmm15, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movapd %%xmm" << 13 + l_n << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"movupd %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm14, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-    codestream << "                         \"movupd %%xmm15, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movupd %%xmm" << 13 + l_n << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+    }
   }
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
-  }
-}
-
-void sse3_store_1x3_dp_asm(std::stringstream& codestream, int ldc, bool alignC, std::string tPrefetch) {
-  codestream << "                         \"movsd %%xmm13, (%%r10)\\n\\t\"" << std::endl;
-  codestream << "                         \"movsd %%xmm14, " << ldc * 8 << "(%%r10)\\n\\t\"" << std::endl;
-  codestream << "                         \"movsd %%xmm15, " << (2 * ldc) * 8 << "(%%r10)\\n\\t\"" << std::endl;
-  if ( (tPrefetch.compare("BL2viaC") == 0) || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-    codestream << "                         \"prefetcht1 (%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << ldc * 8 << "(%%r12)\\n\\t\"" << std::endl;
-    codestream << "                         \"prefetcht1 " << (2 * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+  if ( (tPrefetch.compare("BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " << (l_n * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    }
   }
 }
 
-void sse3_kernel_6x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
+void sse3_store_1xN_dp_asm(std::stringstream& codestream, int ldc, bool alignC, int max_local_N, std::string tPrefetch) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_store_1xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    codestream << "                         \"movsd %%xmm" << 13 + l_n << ", " <<  (l_n * ldc)      * 8 << "(%%r10)\\n\\t\"" << std::endl;
+  }
+
+  if ( (tPrefetch.compare("BL2viaC") == 0) ) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"prefetcht1 " << (l_n * ldc) * 8 << "(%%r12)\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void sse3_kernel_6xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_kernel_6xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (call != -1) {
-    codestream << "                         \"movddup " << 8 * call << "(%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << (8 * call) + (ldb * 8 * l_n) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"movddup (%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << ldb * 8 * l_n << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
+  }
+
+  for (int l_m = 0; l_m < 3; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"movapd " << 16 * l_m << "(%%r9), %%xmm3\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"movupd " << 16 * l_m << "(%%r9), %%xmm3\\n\\t\"" << std::endl;
+    }
+
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ( l_n < max_local_N-1 ) {
+        codestream << "                         \"movapd %%xmm" << 3 + l_n << ", %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
+      }
+      if ( (l_n == max_local_N-1) && (l_m == 2) ) {
+        codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"mulpd %%xmm" << l_n << ", %%xmm" << 3 + l_n << "\\n\\t\"" << std::endl;
+      codestream << "                         \"addpd %%xmm" << 3 + l_n << ", %%xmm" << 7 + l_m + (3*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void sse3_kernel_4xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_kernel_4xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  if (call != -1) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << (8 * call) + (ldb * 8 * l_n) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
+  } else {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << ldb * 8 * l_n << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
+  }
+
+  for (int l_m = 0; l_m < 2; l_m++) {
+    if (alignA == true) {
+      codestream << "                         \"movapd " << 16 * l_m << "(%%r9), %%xmm" << 3 + (l_m*3) << "\\n\\t\"" << std::endl;
+    } else {
+      codestream << "                         \"movupd " << 16 * l_m << "(%%r9), %%xmm" << 3 + (l_m*3) << "\\n\\t\"" << std::endl;
+    }
+
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      if ( l_n < max_local_N-1 ) {
+        codestream << "                         \"movapd %%xmm" << 3 + (l_m*3) + l_n << ", %%xmm" << 4 + (l_m*3) + l_n << "\\n\\t\"" << std::endl;      }
+      if ( (l_n == max_local_N-1) && (l_m == 1) ) {
+        codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+      }
+      codestream << "                         \"mulpd %%xmm" << l_n << ", %%xmm" << 3 + (l_m*3) + l_n << "\\n\\t\"" << std::endl;
+      codestream << "                         \"addpd %%xmm" << 3 + (l_m*3) + l_n << ", %%xmm" << 10 + l_m + (2*l_n) << "\\n\\t\"" << std::endl;
+    }
+  }
+}
+
+void sse3_kernel_2xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_kernel_2xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
+  if (call != -1) {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << (8 * call) + (ldb * 8 * l_n) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
+  } else {
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movddup " << ldb * 8 * l_n << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
     codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
   }
 
@@ -220,255 +310,167 @@ void sse3_kernel_6x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int
     codestream << "                         \"movupd (%%r9), %%xmm3\\n\\t\"" << std::endl;
   }
 
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm3, %%xmm7\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm4, %%xmm10\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm5, %%xmm13\\n\\t\"" << std::endl;
-
-  if (alignA == true) {
-    codestream << "                         \"movapd 16(%%r9), %%xmm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movupd 16(%%r9), %%xmm3\\n\\t\"" << std::endl;
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    if ( l_n < max_local_N-1 ) {
+      codestream << "                         \"movapd %%xmm" << 3 + l_n << ", %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"mulpd %%xmm" << l_n << ", %%xmm" << 3 + l_n << "\\n\\t\"" << std::endl;
+    codestream << "                         \"addpd %%xmm" << 3 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    if (l_n == 0) {
+      codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+    }
   }
-
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm3, %%xmm8\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm4, %%xmm11\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm5, %%xmm14\\n\\t\"" << std::endl;
-
-  if (alignA == true) {
-    codestream << "                         \"movapd 32(%%r9), %%xmm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movupd 32(%%r9), %%xmm3\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm3, %%xmm9\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm4, %%xmm12\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm5, %%xmm15\\n\\t\"" << std::endl;
 }
 
-void sse3_kernel_4x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
+void sse3_kernel_1xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+  if ( (max_local_N > 3) || (max_local_N < 1) ) {
+    std::cout << " !!! ERROR, sse3_kernel_1xN_dp_asm, N smaller 1 or larger 3!!! " << std::endl;
+    exit(-1);
+  }
+
   if (call != -1) {
-    codestream << "                         \"movddup " << 8 * call << "(%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movsd " << (8 * call) + (ldb * 8 * l_n) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
   } else {
-    codestream << "                         \"movddup (%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
-  }
-
-  if (alignA == true) {
-    codestream << "                         \"movapd (%%r9), %%xmm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movupd (%%r9), %%xmm3\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm3, %%xmm10\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm4, %%xmm12\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm5, %%xmm14\\n\\t\"" << std::endl;
-
-  if (alignA == true) {
-    codestream << "                         \"movapd 16(%%r9), %%xmm6\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movupd 16(%%r9), %%xmm6\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"movapd %%xmm6, %%xmm7\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm6\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm6, %%xmm11\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm7, %%xmm8\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm7\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm7, %%xmm13\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm8\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm8, %%xmm15\\n\\t\"" << std::endl;
-}
-
-void sse3_kernel_2x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (call != -1) {
-    codestream << "                         \"movddup " << 8 * call << "(%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (8 * call) + (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movddup (%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movddup " << (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-    codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
-  }
-
-  if (alignA == true) {
-    codestream << "                         \"movapd (%%r9), %%xmm3\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movupd (%%r9), %%xmm3\\n\\t\"" << std::endl;
-  }
-
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm3, %%xmm13\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm4, %%xmm14\\n\\t\"" << std::endl;
-  codestream << "                         \"mulpd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addpd %%xmm5, %%xmm15\\n\\t\"" << std::endl;
-}
-
-void sse3_kernel_1x3_dp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, bool preC, int call, bool blast) {
-  if (call != -1) {
-    codestream << "                         \"movsd " << 8 * call << "(%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << (8 * call) + (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << (8 * call) + (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
-  } else {
-    codestream << "                         \"movsd (%%r8), %%xmm0\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << (ldb * 8) << "(%%r8), %%xmm1\\n\\t\"" << std::endl;
-    codestream << "                         \"movsd " << (ldb * 16) << "(%%r8), %%xmm2\\n\\t\"" << std::endl;
+    for (int l_n = 0; l_n < max_local_N; l_n++) {
+      codestream << "                         \"movsd " << ldb * 8 * l_n << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+    }
     codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
   }
 
   codestream << "                         \"movsd (%%r9), %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm3, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"mulsd %%xmm0, %%xmm3\\n\\t\"" << std::endl;
-  codestream << "                         \"addsd %%xmm3, %%xmm13\\n\\t\"" << std::endl;
-  codestream << "                         \"movapd %%xmm4, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"mulsd %%xmm1, %%xmm4\\n\\t\"" << std::endl;
-  codestream << "                         \"addsd %%xmm4, %%xmm14\\n\\t\"" << std::endl;
-  codestream << "                         \"mulsd %%xmm2, %%xmm5\\n\\t\"" << std::endl;
-  codestream << "                         \"addsd %%xmm5, %%xmm15\\n\\t\"" << std::endl;
+  for (int l_n = 0; l_n < max_local_N; l_n++) {
+    if ( l_n < max_local_N-1 ) {
+      codestream << "                         \"movapd %%xmm" << 3 + l_n << ", %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
+    }
+    codestream << "                         \"mulsd %%xmm" << l_n << ", %%xmm" << 3 + l_n << "\\n\\t\"" << std::endl;
+    codestream << "                         \"addsd %%xmm" << 3 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    if (l_n == 0) {
+      codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
+    }
+  }
 }
 
 void sse3_generate_kernel_dp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd, std::string tPrefetch) {
-  int k_blocking = 100;
-  int k_threshold = 30;
-  int mDone, mDone_old;
+  // functions pointers to different m_blockings
+  void (*l_generatorLoad)(std::stringstream&, int, bool, bool, int);
+  void (*l_generatorStore)(std::stringstream&, int, bool, int, std::string);
+  void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, int, int);
+
   init_registers_asm(codestream, tPrefetch);
-  header_nloop_dp_asm(codestream, 3);
-  // 6x3
-  mDone_old = 0;
-  mDone = (M / 6) * 6;
 
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_dp_asm(codestream, 6);
-    sse3_load_6x3_dp_asm(codestream, ldc, alignC, bAdd, tPrefetch);
+  int nDone = 0;
+  int nDone_old = 0;
+  int n_blocking = 3;
 
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_dp_asm(codestream, 6, k_blocking);
+  // apply n_blocking
+  while (nDone != N) {
+    nDone_old = nDone;
+    nDone = nDone + (((N - nDone_old) / n_blocking) * n_blocking);
 
-      for (int k = 0; k < k_blocking; k++) {
-        sse3_kernel_6x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
+    if (nDone != nDone_old && nDone > 0) {
+      header_nloop_dp_asm(codestream, n_blocking);
+  
+      int k_blocking = 200;
+      int k_threshold = 200;
+      int mDone = 0;
+      int mDone_old = 0;
+      int m_blocking = 6;
+
+      // apply m_blocking
+      while (mDone != M) {
+        mDone_old = mDone;
+        mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
+
+        // switch to a different m_blocking
+        if (m_blocking == 6) {
+          l_generatorLoad = &sse3_load_6xN_dp_asm;
+          l_generatorStore = &sse3_store_6xN_dp_asm;
+          l_generatorCompute = &sse3_kernel_6xN_dp_asm;
+        } else if (m_blocking == 4) {
+          l_generatorLoad = &sse3_load_4xN_dp_asm;
+          l_generatorStore = &sse3_store_4xN_dp_asm;
+          l_generatorCompute = &sse3_kernel_4xN_dp_asm;
+        } else if (m_blocking == 2) {
+          l_generatorLoad = &sse3_load_2xN_dp_asm;
+          l_generatorStore = &sse3_store_2xN_dp_asm;
+          l_generatorCompute = &sse3_kernel_2xN_dp_asm;
+        } else if (m_blocking == 1) {
+          l_generatorLoad = &sse3_load_1xN_dp_asm;
+          l_generatorStore = &sse3_store_1xN_dp_asm;
+          l_generatorCompute = &sse3_kernel_1xN_dp_asm;      
+        } else {
+          std::cout << " !!! ERROR, sse3_generate_kernel_dp, m_blocking is out of range!!! " << std::endl;
+          exit(-1);
+        }
+
+        if (mDone != mDone_old && mDone > 0) {
+          header_mloop_dp_asm(codestream, m_blocking);
+          (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking);
+
+          if ((K % k_blocking) == 0 && K > k_threshold) {
+            header_kloop_dp_asm(codestream, m_blocking, k_blocking);
+
+            for (int k = 0; k < k_blocking; k++) {
+	      (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking);
+            }
+
+            footer_kloop_dp_asm(codestream, m_blocking, K);
+          } else {
+            // we want to fully unroll
+            if (K <= k_threshold) {
+              for (int k = 0; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
+	      }
+            } else {
+	      // we want to block, but K % k_blocking != 0
+	      int max_blocked_K = (K/k_blocking)*k_blocking;
+	      if (max_blocked_K > 0 ) {
+	        header_kloop_dp_asm(codestream, m_blocking, k_blocking);
+	        for (int k = 0; k < k_blocking; k++) {
+	          (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking);
+	        }
+	        footer_kloop_notdone_dp_asm(codestream, m_blocking, max_blocked_K );
+	      }
+	      if (max_blocked_K > 0 ) {
+	        codestream << "                         \"subq $" << max_blocked_K * 8 << ", %%r8\\n\\t\"" << std::endl;
+	      }
+	      for (int k = max_blocked_K; k < K; k++) {
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
+	      }
+            }
+          }
+
+          (*l_generatorStore)(codestream, ldc, alignC, n_blocking, tPrefetch);
+          footer_mloop_dp_asm(codestream, m_blocking, K, mDone, lda, tPrefetch);
+        }
+
+        // switch to a different m_blocking
+        if (m_blocking == 2) {
+          m_blocking = 1;
+        } else if (m_blocking == 4) {
+          m_blocking = 2;
+        } else if (m_blocking == 6) {
+          m_blocking = 4;
+        } else {
+          // we are done with m_blocking
+        }
       }
 
-      footer_kloop_dp_asm(codestream, 6, K);
-    } else {
-      for (int k = 0; k < K; k++) {
-        sse3_kernel_6x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-      }
+      footer_nloop_dp_asm(codestream, n_blocking, nDone, M, lda, ldb, ldc, tPrefetch);
     }
 
-    sse3_store_6x3_dp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_dp_asm(codestream, 6, K, mDone, lda, tPrefetch);
-  }
-
-  // 4x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 4) * 4);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_dp_asm(codestream, 4);
-    sse3_load_4x3_dp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_dp_asm(codestream, 4, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        sse3_kernel_4x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_dp_asm(codestream, 4, K);
+    // switch to a different n_blocking
+    if (n_blocking == 2) {
+      n_blocking = 1;
+    } else if (n_blocking == 3) {
+      n_blocking = 2;
     } else {
-      for (int k = 0; k < K; k++) {
-        sse3_kernel_4x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-      }
+      // we are done with n_blocking
     }
-
-    sse3_store_4x3_dp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_dp_asm(codestream, 4, K, mDone, lda, tPrefetch);
   }
 
-  // 2x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 2) * 2);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_dp_asm(codestream, 2);
-    sse3_load_2x3_dp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_dp_asm(codestream, 2, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        sse3_kernel_2x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_dp_asm(codestream, 2, K);
-    } else {
-      for (int k = 0; k < K; k++) {
-        sse3_kernel_2x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-      }
-    }
-
-    sse3_store_2x3_dp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_dp_asm(codestream, 2, K, mDone, lda, tPrefetch);
-  }
-
-  // 1x3
-  mDone_old = mDone;
-  mDone = mDone + (((M - mDone_old) / 1) * 1);
-
-  if (mDone != mDone_old && mDone > 0) {
-    header_mloop_dp_asm(codestream, 1);
-    sse3_load_1x3_dp_asm(codestream, ldc, alignC, bAdd);
-
-    if ((K % k_blocking) == 0 && K > k_threshold) {
-      header_kloop_dp_asm(codestream, 1, k_blocking);
-
-      for (int k = 0; k < k_blocking; k++) {
-        sse3_kernel_1x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, -1, false);
-      }
-
-      footer_kloop_dp_asm(codestream, 1, K);
-    } else {
-      for (int k = 0; k < K; k++) {
-        sse3_kernel_1x3_dp_asm(codestream, lda, ldb, ldc, alignA, alignC, false, k, false);
-      }
-    }
-
-    sse3_store_1x3_dp_asm(codestream, ldc, alignC, tPrefetch);
-    footer_mloop_dp_asm(codestream, 1, K, mDone, lda, tPrefetch);
-  }
-
-  footer_nloop_dp_asm(codestream, 3, N, M, lda, ldb, ldc, tPrefetch);
   close_asm(codestream, tPrefetch);
 }
 
