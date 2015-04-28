@@ -46,7 +46,7 @@ if (GEN==1) {
 FILEEXT = system("sh -c \"echo ".FILENAME." | sed 's/.\\+\\.\\(.\\+\\)/\\1/'\"")
 set terminal FILEEXT
 set termoption enhanced
-#set termoption font "Times-Roman,7"
+#set termoption font ",12"
 save_encoding = GPVAL_ENCODING
 set encoding utf8
 
@@ -54,6 +54,7 @@ set encoding utf8
 reset
 if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance" }
+set origin -0.03, 0
 set pm3d interpolate 0, 0
 #set colorbox horizontal user origin 0, 0.1 size 1, 0.1
 set autoscale fix
@@ -64,25 +65,25 @@ if (0>HIM) { set xrange [*:MNK] }
 if (0>HIN) { set xrange [*:MNK] }
 if (0>HIK) { set xrange [*:MNK] }
 set xlabel "M"
-set ylabel "N"
-set zlabel "K"
+set ylabel "N" offset -3.0
+set zlabel "K" offset 1.0
 set ticslevel 0
-set cblabel "GFLOP/s" offset 1.0
+set cblabel "GFLOP/s" offset 1.5
 set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
 splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
 if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (GEN>-1) { set title "Performance (K-Average)" }
+set origin -0.02, 0
 set dgrid3d #9, 9
 set pm3d interpolate 0, 0 map
 set autoscale fix
 set xlabel "M"
-set ylabel "N" offset -1.0
+set ylabel "N" offset -1.5
 set cblabel "GFLOP/s" offset 0.5
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
-#set offsets 1, 1, 1, 1
 splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
