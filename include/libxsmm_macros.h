@@ -97,6 +97,7 @@
 
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
+#define LIBXSMM_MOD(A, B) ((A) & ((B) - 1)) /*B: pot!*/
 
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)

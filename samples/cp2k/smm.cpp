@@ -96,13 +96,13 @@ public:
   void acquire(const void* address) {
     const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
     // non-pot: omp_set_lock(m_lock + id % SMM_SYNCHRONIZATION);
-    omp_set_lock(m_lock + (id & (SMM_SYNCHRONIZATION - 1)));
+    omp_set_lock(m_lock + LIBXSMM_MOD(id, SMM_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
     const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
     // non-pot: omp_unset_lock(m_lock + id % SMM_SYNCHRONIZATION);
-    omp_unset_lock(m_lock + (id & (SMM_SYNCHRONIZATION - 1)));
+    omp_unset_lock(m_lock + LIBXSMM_MOD(id, SMM_SYNCHRONIZATION));
   }
 
 private:
