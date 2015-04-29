@@ -52,7 +52,7 @@ ifneq (,$(filter $(CXX),icpc))
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
-		CXXFLAGS += -Wall -O0 -g
+		CXXFLAGS += -Wall -O0 -g -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
@@ -79,7 +79,7 @@ else ifneq (,$(filter $(CC),icc))
 	else ifneq (1,$(DBG))
 		CFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
-		CFLAGS += -Wall -O0 -g
+		CFLAGS += -Wall -O0 -g -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
@@ -103,7 +103,7 @@ else # GCC assumed
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2
 	else
-		CXXFLAGS += -Wall -O0 -g
+		CXXFLAGS += -Wall -O0 -g -fopenmp
 	endif
 	LFLAGS += -fopenmp -llapack -lblas
 endif
