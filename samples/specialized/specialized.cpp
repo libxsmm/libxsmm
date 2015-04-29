@@ -116,9 +116,8 @@ int main(int argc, char* argv[])
         std::fill_n(c, s * csize, 0);
 
 #if defined(_OPENMP)
-        omp_set_dynamic(0);
         const double start = omp_get_wtime();
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (int i = 0; i < s; ++i) {
           xmm(a + i * asize, b + i * bsize, c + i * csize);
@@ -137,9 +136,8 @@ int main(int argc, char* argv[])
       { // cached
         fprintf(stdout, "Cached...\n");
 #if defined(_OPENMP)
-        omp_set_dynamic(0);
         const double start = omp_get_wtime();
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(dynamic)
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules

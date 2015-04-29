@@ -209,7 +209,6 @@ int main(int argc, char* argv[])
     const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
 #if defined(_OPENMP)
     const double gflops = 2.0 * s * m * n * k * 1E-9;
-    omp_set_dynamic(0);
 #endif
 
     std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(csize);
