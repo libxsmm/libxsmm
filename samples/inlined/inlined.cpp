@@ -135,9 +135,9 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
 #if (0 < (LIBXSMM_ALIGNED_STORES))
-          LIBXSMM_ALIGNED(T tmp[1*(LIBXSMM_MAX_MNK)/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
+          LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
 #else
-          LIBXSMM_ALIGNED(T tmp[1*(LIBXSMM_MAX_MNK)/*max. problemsize*/], LIBXSMM_ALIGNMENT);
+          LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNMENT);
 #endif
           // do nothing else with tmp; just a benchmark
           libxsmm_imm(m, n, k, a, b, tmp);

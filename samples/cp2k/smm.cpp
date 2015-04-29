@@ -58,7 +58,7 @@
 #endif
 
 // make sure that stacksize is covering the problem size
-#define SMM_MAX_PROBLEM_SIZE (1 * LIBXSMM_MAX_MNK)
+#define SMM_MAX_PROBLEM_SIZE (LIBXSMM_MAX_M * LIBXSMM_MAX_N)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define SMM_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -183,8 +183,8 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((SMM_MAX_PROBLEM_SIZE) < (m * n * k)) {
-      throw std::runtime_error("The size M x N x K is exceeding SMM_MAX_PROBLEM_SIZE!");
+    if ((SMM_MAX_PROBLEM_SIZE) < (m * n)) {
+      throw std::runtime_error("The size M x N is exceeding SMM_MAX_PROBLEM_SIZE!");
     }
 
 #if (0 != LIBXSMM_ROW_MAJOR)
