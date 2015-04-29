@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 #endif
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
-    const int s = (1ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 1 GByte
+    const int s = (3ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 3 GByte
     const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
 #if defined(_OPENMP)
     const double gflops = 2.0 * s * m * n * k * 1E-9;
