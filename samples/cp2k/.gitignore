@@ -1,5 +1,4 @@
-smm-test.txt
+./smm-test.txt
 smm-test.sh
 smm
 *.dat
-*.pdf

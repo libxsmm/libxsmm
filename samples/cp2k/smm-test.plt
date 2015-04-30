@@ -4,19 +4,27 @@ KPARM = 3
 MSIZE = 7
 FLOPS = 8
 
-# GEN =-1: multiple files; no titles
-# GEN = 0: multiple files with titles
-# GEN = 1: single file with titles
-GEN = 1
-
 HIM = -1
 HIN = HIM
 HIK = HIM
 MN = 23
 PEAK = 0 #985.6
 
-FILECOUNT = 0
 BASENAME = "smm-test"
+FILENAME = system("sh -c \"echo ${FILENAME}\"")
+if (FILENAME eq "") {
+  FILENAME = BASENAME.".pdf"
+}
+
+FILECOUNT = 1 # initial file number
+# MULTI =-1: multiple files; no titles
+# MULTI = 0: multiple files with titles
+# MULTI = 1: single file with titles
+MULTI = system("sh -c \"echo ${MULTI}\"")
+if (MULTI eq "") {
+  MULTI = 1
+}
+
 stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0)
 stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.1f", exp(STATS_sum/STATS_records))
 stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.1f", STATS_median)
@@ -35,11 +43,7 @@ plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
 unset table
 stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
 
-FILENAME = system("sh -c \"echo ${FILENAME}\"")
-if (FILENAME eq "") {
-  FILENAME = BASENAME.".pdf"
-}
-if (GEN==1) {
+if (MULTI==1) {
   set output FILENAME
 }
 
@@ -52,8 +56,8 @@ set encoding utf8
 
 
 reset
-if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (GEN>-1) { set title "Performance" }
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Performance" }
 set origin -0.03, 0
 set pm3d interpolate 0, 0
 #set colorbox horizontal user origin 0, 0.1 size 1, 0.1
@@ -73,8 +77,8 @@ set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
 splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
-if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (GEN>-1) { set title "Performance (K-Average)" }
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Performance (K-Average)" }
 set origin -0.02, 0
 set dgrid3d #9, 9
 set pm3d interpolate 0, 0 map
@@ -87,8 +91,8 @@ set mxtics 2
 splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
-if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (GEN>-1) {
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) {
   set title "Performance (CDF)"
   set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
 } else {
@@ -115,8 +119,8 @@ plot BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0))
 
 if (0 < PEAK) {
   reset
-  if (GEN<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-  if (GEN>-1) { set title "Performance and Efficiency" }
+  if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+  if (MULTI>-1) { set title "Performance and Efficiency" }
   set xlabel "(M N K)^{-1/3}"
   set ylabel "Efficiency"
   set y2label "GFLOP/s"

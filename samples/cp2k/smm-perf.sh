@@ -67,6 +67,12 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
     FILENAME=$1
     shift
   fi
+  if [[ "" == "$1" ]] ; then
+    MULTI=1
+  else
+    MULTI=$1
+    shift
+  fi
   ${GREP} -i -A1 \
     -e "^m=" -e "${VARIANT}" \
     ${FILE} | \
@@ -76,10 +82,11 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
     -e "/${VARIANT}.../Id" -e "/^$/d" -e "/--/d" | \
   ${SED} \
     -e "N;s/ MB\n\tperformance://g" \
-  > smm-test.dat
+  > ${HERE}/smm-test.dat
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \
+    MULTI=${MULTI} \
   "${WGNUPLOT}" smm-test.plt
 fi
 
