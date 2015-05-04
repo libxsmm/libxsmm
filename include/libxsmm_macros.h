@@ -132,11 +132,6 @@
 # define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
 #elif defined(__GNUC__)
 # define LIBXSMM_TLS __thread
-#elif defined(LIBXSMM_STDFEATURES)
-# define LIBXSMM_TLS thread_local
-#endif
-#if !defined(LIBXSMM_TLS)
-# define LIBXSMM_TLS
 #endif
 
 #if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
