@@ -197,7 +197,7 @@ void print_help() {
   std::cout << "    0: unaligned A, otherwise aligned (ignored for sparse)" << std::endl;
   std::cout << "    0: unaligned C, otherwise aligned (ignored for sparse)" << std::endl;
   std::cout << "    0: no add, otherwise: add" << std::endl;
-  std::cout << "    ARCH: noarch, wsm, snb, hsw, knc" << std::endl;
+  std::cout << "    ARCH: noarch, wsm, snb, hsw, knc, skx, knl" << std::endl;
   std::cout << "    PREFETCH: nopf (none), pfsigonly, other dense options fall-back to pfsigonly" << std::endl;
   std::cout << "    PRECISION: SP, DP" << std::endl;
   std::cout << std::endl << std::endl;
@@ -214,7 +214,7 @@ void print_help() {
   std::cout << "    0: unaligned A, otherwise aligned" << std::endl;
   std::cout << "    0: unaligned C, otherwise aligned" << std::endl;
   std::cout << "    0: no add, otherwise: add" << std::endl;
-  std::cout << "    ARCH: noarch, wsm, snb, hsw, knc" << std::endl;
+  std::cout << "    ARCH: noarch, wsm, snb, hsw, knc, skx, knl" << std::endl;
   std::cout << "    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC" << std::endl;
   std::cout << "    PRECISION: SP, DP" << std::endl;
   std::cout << std::endl << std::endl;
@@ -283,6 +283,8 @@ int main(int argc, char* argv []) {
          (tVec.compare("snb") != 0)        && 
          (tVec.compare("hsw") != 0)        &&
          (tVec.compare("knc") != 0)        && 
+         (tVec.compare("knl") != 0)        &&
+         (tVec.compare("skx") != 0)        &&
          (tVec.compare("noarch") != 0) ) {
       print_help();
       return -1;
@@ -370,6 +372,8 @@ int main(int argc, char* argv []) {
          (tVec.compare("snb") != 0)        && 
          (tVec.compare("hsw") != 0)        &&
          (tVec.compare("knc") != 0)        && 
+         (tVec.compare("knl") != 0)        &&
+         (tVec.compare("skx") != 0)        &&
          (tVec.compare("noarch") != 0) ) {
       print_help();
       return -1;

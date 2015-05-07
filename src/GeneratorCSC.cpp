@@ -207,6 +207,8 @@ namespace libxsmm {
     }
 
     if (   (tVec_.compare("knc") == 0)
+        || (tVec_.compare("knl") == 0)
+        || (tVec_.compare("skx") == 0)
        ) {
       if (nM > 1) {
         codestream << "#pragma simd vectorlength(32)" << std::endl;
