@@ -29,13 +29,13 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx2_load_32xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx2_load_32xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx2_load_32xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     if (alignC == true) {
       for (int l_n = 0; l_n < max_local_N; l_n++) {
         codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 4 + (4*l_n) << "\\n\\t\"" << std::endl;
@@ -275,9 +275,14 @@ void avx2_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int
 
 void avx2_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd, std::string tPrefetch) {
   // functions pointers to different m_blockings
-  void (*l_generatorLoad)(std::stringstream&, int, bool, bool, int);
+  void (*l_generatorLoad)(std::stringstream&, int, bool, int, int);
   void (*l_generatorStore)(std::stringstream&, int, bool, int, std::string);
   void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, int, int);
+
+  // @TODO fix
+  int i_beta = 1;
+  if (bAdd == false)
+    i_beta = 0;
 
   init_registers_asm(codestream, tPrefetch);
 
@@ -336,7 +341,7 @@ void avx2_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, in
 
         if (mDone != mDone_old && mDone > 0) {
           header_mloop_sp_asm(codestream, m_blocking);
-          (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking);
+          (*l_generatorLoad)(codestream, ldc, alignC, i_beta, n_blocking);
 
           if ((K % k_blocking) == 0 && K > k_threshold) {
             header_kloop_sp_asm(codestream, m_blocking, k_blocking);

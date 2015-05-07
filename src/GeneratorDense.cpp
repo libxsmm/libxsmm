@@ -80,10 +80,10 @@
 
 namespace libxsmm {
 
-  GeneratorDense::GeneratorDense() : bAlignedA_(true), bAlignedC_(true), bAdd_(true), tVec_("noarch"), bSP_(false) {
+  GeneratorDense::GeneratorDense() : bAlignedA_(true), bAlignedC_(true), tVec_("noarch"), bSP_(false) {
   }
 
-  GeneratorDense::GeneratorDense(bool bAlignedA, bool bAlignedC, bool bAdd, std::string tVec, std::string tPrefetch, bool bSP) : bAlignedA_(bAlignedA), bAlignedC_(bAlignedC), bAdd_(bAdd), tVec_(tVec), tPrefetch_(tPrefetch), bSP_(bSP) {
+  GeneratorDense::GeneratorDense(bool bAlignedA, bool bAlignedC, std::string tVec, std::string tPrefetch, bool bSP) : bAlignedA_(bAlignedA), bAlignedC_(bAlignedC), tVec_(tVec), tPrefetch_(tPrefetch), bSP_(bSP) {
   }
 
   GeneratorDense::~GeneratorDense() {
@@ -103,7 +103,7 @@ namespace libxsmm {
 #include "kernels_avx512knc_dp_asm.hpp"
 #include "kernels_avx512knc_sp_asm.hpp"
 
-  std::string GeneratorDense::generate_dense(bool bIsColMajor, int M, int N, int K, int lda, int ldb, int ldc) {
+  std::string GeneratorDense::generate_dense(bool bIsColMajor, int M, int N, int K, int lda, int ldb, int ldc, int i_alpha, int i_beta) {
     std::stringstream codestream;
     bool alignA = false;
     bool alignC = false;
@@ -154,10 +154,20 @@ namespace libxsmm {
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)" << std::endl;
       codestream << "#endif" << std::endl;
 
+      //@TODO add support for alpha and beta
+      if (i_alpha == -1) {
+        std::cout << " !!! ERROR, SSE3, alpha not 1 !!! " << std::endl;
+        exit(-1);
+      }
+      bool bAdd = true;
+      if (i_beta == 0) {
+        bAdd = false;
+      }
+
       if (bSP_ == false) {
-        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
       } else {
-        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        sse3_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -203,9 +213,9 @@ namespace libxsmm {
       codestream << "#endif" << std::endl;
 
       if (this->bSP_ == false) {
-        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, i_alpha, i_beta, alignA, alignC, this->tPrefetch_);
       } else {
-        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx1_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, i_alpha, i_beta, alignA, alignC, this->tPrefetch_);
       }
 
       codestream << "#else" << std::endl;
@@ -245,15 +255,25 @@ namespace libxsmm {
       alignA = alignA && this->bAlignedA_;
       alignC = alignC && this->bAlignedC_;
 
+      //@TODO add support for alpha and beta
+      if (i_alpha == -1) {
+        std::cout << " !!! ERROR, AVX2, alpha not 1 !!! " << std::endl;
+        exit(-1);
+      }
+      bool bAdd = true;
+      if (i_beta == 0) {
+        bAdd = false;
+      }
+
       codestream << "#ifdef __AVX2__" << std::endl;
       codestream << "#ifdef __AVX512F__" << std::endl;
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)" << std::endl;
       codestream << "#endif" << std::endl;
       
       if (this->bSP_ == false) {
-        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
       } else {
-        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+        avx2_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
       }
       
       codestream << "#else" << std::endl;
@@ -295,20 +315,30 @@ namespace libxsmm {
       // enforce external overwrite 
       alignA = alignA && this->bAlignedA_;
       alignC = alignC && this->bAlignedC_;
+
+      //@TODO add support for alpha and beta
+      if (i_alpha == -1) {
+        std::cout << " !!! ERROR, AVX512, alpha not 1 !!! " << std::endl;
+        exit(-1);
+      }
+      bool bAdd = true;
+      if (i_beta == 0) {
+        bAdd = false;
+      }
       
       if (this->tVec_.compare("knc") == 0) {
         codestream << "#ifdef __MIC__" << std::endl;
         if (bSP_ == false) { 
-          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
+          avx512knc_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd);
         } else {
-          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_);
+          avx512knc_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd);
         }
       } else if ( (this->tVec_.compare("knl") == 0) || (this->tVec_.compare("skx") == 0) ) {
         codestream << "#ifdef __AVX512F__" << std::endl;
         if (bSP_ == false) {
-          avx512_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+          avx512_generate_kernel_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
         } else {
-          avx512_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, this->bAdd_, this->tPrefetch_);
+          avx512_generate_kernel_sp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, this->tPrefetch_);
         }
       } else {
         std::cout << " !!! ERROR, AVX-512 !!! " << std::endl;
@@ -328,7 +358,7 @@ namespace libxsmm {
     if (this->tVec_.compare("noarch") == 0) {
       codestream << "#pragma message (\"KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)" << std::endl << std::endl;
       codestream << "for (unsigned int n = 0; n < " << N << "; n++) {" << std::endl; 
-      if (this->bAdd_ == false) {
+      if (i_beta == 0) {
         codestream << "  for(unsigned int m = 0; m < " << M << "; m++) { C[(n*" << ldc << ")+m] = 0.0; }" << std::endl << std::endl;
       }
       codestream << "  for (unsigned int k = 0; k < " << K << "; k++) {" << std::endl;

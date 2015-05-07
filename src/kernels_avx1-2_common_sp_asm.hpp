@@ -29,13 +29,13 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx_load_24xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx_load_24xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_load_24xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     if (alignC == true) {
       for (int l_n = 0; l_n < max_local_N; l_n++) {
         codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 7 + (3*l_n) << "\\n\\t\"" << std::endl;
@@ -58,13 +58,13 @@ void avx_load_24xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, b
   }
 }
 
-void avx_load_16xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx_load_16xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_load_16xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     if (alignC == true) {
       for (int l_n = 0; l_n < max_local_N; l_n++) {
         codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 10 + (2*l_n) << "\\n\\t\"" << std::endl;
@@ -84,13 +84,13 @@ void avx_load_16xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, b
   }
 }
 
-void avx_load_8xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx_load_8xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_load_8xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     if (alignC == true) {
       for (int l_n = 0; l_n < max_local_N; l_n++) {
         codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
@@ -107,13 +107,13 @@ void avx_load_8xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bo
   }
 }
 
-void avx_load_4xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx_load_4xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_load_4xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     if (alignC == true) {
       for (int l_n = 0; l_n < max_local_N; l_n++) {
         codestream << "                         \"vmovaps " <<  (l_n * ldc)      * 4 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
@@ -130,13 +130,13 @@ void avx_load_4xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bo
   }
 }
 
-void avx_load_1xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, bool bAdd, int max_local_N) {
+void avx_load_1xN_sp_asm(std::stringstream& codestream, int ldc, bool alignC, int i_beta, int max_local_N) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_load_1xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
   }
 
-  if (bAdd) {
+  if (i_beta == 1) {
     for (int l_n = 0; l_n < max_local_N; l_n++) {
       codestream << "                         \"vmovss " <<  (l_n * ldc)      * 4 << "(%%r10), %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
     }

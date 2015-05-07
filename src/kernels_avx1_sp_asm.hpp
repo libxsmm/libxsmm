@@ -29,7 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-void avx1_kernel_24xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+void avx1_kernel_24xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N, int i_alpha) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_kernel_24xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
@@ -55,7 +55,15 @@ void avx1_kernel_24xN_sp_asm(std::stringstream& codestream, int lda, int ldb, in
 
     for (int l_n = 0; l_n < max_local_N; l_n++) {
       codestream << "                         \"vmulps %%ymm3, %%ymm" << l_n << ", %%ymm" << 4 + l_n << "\\n\\t\"" << std::endl;
-      codestream << "                         \"vaddps %%ymm" << 4 + l_n << ", %%ymm" << 7 + l_m + (3*l_n) << ", %%ymm" << 7 + l_m + (3*l_n) << "\\n\\t\"" << std::endl;
+      if (i_alpha == 1) {
+        codestream << "                         \"vaddps %%ymm" << 4 + l_n << ", %%ymm" << 7 + l_m + (3*l_n) << ", %%ymm" << 7 + l_m + (3*l_n) << "\\n\\t\"" << std::endl;
+      } else if (i_alpha == -1) {
+        codestream << "                         \"vsubps %%ymm" << 4 + l_n << ", %%ymm" << 7 + l_m + (3*l_n) << ", %%ymm" << 7 + l_m + (3*l_n) << "\\n\\t\"" << std::endl;
+      } else {
+        std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+        exit(-1);
+      }
+
       if ((l_m == 2) && (l_n == 0)) {
         codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
       }
@@ -63,7 +71,7 @@ void avx1_kernel_24xN_sp_asm(std::stringstream& codestream, int lda, int ldb, in
   }
 }
 
-void avx1_kernel_16xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+void avx1_kernel_16xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N, int i_alpha) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_kernel_16xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
@@ -92,12 +100,19 @@ void avx1_kernel_16xN_sp_asm(std::stringstream& codestream, int lda, int ldb, in
         codestream << "                         \"addq $" << (lda) * 4 << ", %%r9\\n\\t\"" << std::endl;
       }
       codestream << "                         \"vmulps %%ymm" << 3 + l_m << ", %%ymm" << l_n << ", %%ymm" << 5 + l_n << "\\n\\t\"" << std::endl;
-      codestream << "                         \"vaddps %%ymm" << 5 + l_n << ", %%ymm" << 10 + l_m + (2*l_n) << ", %%ymm" << 10 + l_m +(2*l_n) << "\\n\\t\"" << std::endl;
+      if (i_alpha == 1) {
+        codestream << "                         \"vaddps %%ymm" << 5 + l_n << ", %%ymm" << 10 + l_m + (2*l_n) << ", %%ymm" << 10 + l_m +(2*l_n) << "\\n\\t\"" << std::endl;
+      } else if (i_alpha == -1) {
+        codestream << "                         \"vsubps %%ymm" << 5 + l_n << ", %%ymm" << 10 + l_m + (2*l_n) << ", %%ymm" << 10 + l_m +(2*l_n) << "\\n\\t\"" << std::endl;
+      } else {
+        std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+        exit(-1);
+      }
     }
   }
 }
 
-void avx1_kernel_8xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+void avx1_kernel_8xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N, int i_alpha) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_kernel_8xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
@@ -122,11 +137,18 @@ void avx1_kernel_8xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int
       }
     }
     codestream << "                         \"vmulps %%ymm3, %%ymm" << l_n << ", %%ymm" << 4 + l_n << "\\n\\t\"" << std::endl;
-    codestream << "                         \"vaddps %%ymm" << 4 + l_n << ", %%ymm" << 13 + l_n << ", %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    if (i_alpha == 1) {
+      codestream << "                         \"vaddps %%ymm" << 4 + l_n << ", %%ymm" << 13 + l_n << ", %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    } else if (i_alpha == -1) {
+      codestream << "                         \"vsubps %%ymm" << 4 + l_n << ", %%ymm" << 13 + l_n << ", %%ymm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    } else {
+      std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+      exit(-1);
+    }
   }
 }
 
-void avx1_kernel_4xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+void avx1_kernel_4xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N, int i_alpha) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_kernel_4xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
@@ -151,11 +173,18 @@ void avx1_kernel_4xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int
       }
     }
     codestream << "                         \"vmulps %%xmm3, %%xmm" << l_n << ", %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
-    codestream << "                         \"vaddps %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    if (i_alpha == 1) {
+      codestream << "                         \"vaddps %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    } else if (i_alpha == -1) {
+      codestream << "                         \"vsubps %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+    } else {
+      std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+      exit(-1);
+    }
   }
 }
 
-void avx1_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N) {
+void avx1_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int ldc, bool alignA, bool alignC, int call, int max_local_N, int i_alpha) {
   if ( (max_local_N > 3) || (max_local_N < 1) ) {
     std::cout << " !!! ERROR, avx_kernel_1xN_sp_asm, N smaller 1 or larger 3!!! " << std::endl;
     exit(-1);
@@ -169,10 +198,24 @@ void avx1_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int
     }
     if (call != -1) {
       codestream << "                         \"vmulss " << (4 * call) + (ldb * l_n * 4) << "(%%r8), %%xmm3, %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
-      codestream << "                         \"vaddss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      if (i_alpha == 1) {
+        codestream << "                         \"vaddss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      } else if (i_alpha == -1) {
+        codestream << "                         \"vsubss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      } else {
+        std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+        exit(-1);
+      }
     } else {
       codestream << "                         \"vmulss " << (ldb * l_n * 4) << "(%%r8), %%xmm3, %%xmm" << 4 + l_n << "\\n\\t\"" << std::endl;
-      codestream << "                         \"vaddss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      if (i_alpha == 1) {
+        codestream << "                         \"vaddss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      } else if (i_alpha == -1) {
+        codestream << "                         \"vsubss %%xmm" << 4 + l_n << ", %%xmm" << 13 + l_n << ", %%xmm" << 13 + l_n << "\\n\\t\"" << std::endl;
+      } else {
+        std::cout << " !!! ERROR, AVX SP COMPUTE, alpha not -1 or 1 !!! " << std::endl;
+        exit(-1);
+      }
       if (l_n == (max_local_N - 1)) {
         codestream << "                         \"addq $4, %%r8\\n\\t\"" << std::endl;
       }
@@ -180,11 +223,11 @@ void avx1_kernel_1xN_sp_asm(std::stringstream& codestream, int lda, int ldb, int
   }
 }
 
-void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, bool alignA, bool alignC, bool bAdd, std::string tPrefetch) {
+void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, int ldc, int M, int N, int K, int i_alpha, int i_beta, bool alignA, bool alignC, std::string tPrefetch) {
   // functions pointers to different m_blockings
-  void (*l_generatorLoad)(std::stringstream&, int, bool, bool, int);
+  void (*l_generatorLoad)(std::stringstream&, int, bool, int, int);
   void (*l_generatorStore)(std::stringstream&, int, bool, int, std::string);
-  void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, int, int);
+  void (*l_generatorCompute)(std::stringstream&, int, int, int, bool, bool, int, int, int);
 
   init_registers_asm(codestream, tPrefetch);
 
@@ -239,13 +282,13 @@ void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, in
 
         if (mDone != mDone_old && mDone > 0) {
           header_mloop_sp_asm(codestream, m_blocking);
-          (*l_generatorLoad)(codestream, ldc, alignC, bAdd, n_blocking);
+          (*l_generatorLoad)(codestream, ldc, alignC, i_beta, n_blocking);
 
           if ((K % k_blocking) == 0 && K > k_threshold) {
             header_kloop_sp_asm(codestream, m_blocking, k_blocking);
 
             for (int k = 0; k < k_blocking; k++) {
-              (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking);
+              (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking, i_alpha);
             }
 
             footer_kloop_sp_asm(codestream, m_blocking, K);
@@ -253,7 +296,7 @@ void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, in
             // we want to fully unroll
             if (K <= k_threshold) {
               for (int k = 0; k < K; k++) {
-	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking, i_alpha);
               }
             } else {
               // we want to block, but K % k_blocking != 0
@@ -261,7 +304,7 @@ void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, in
               if (max_blocked_K > 0 ) {
                 header_kloop_sp_asm(codestream, m_blocking, k_blocking);
                 for (int k = 0; k < k_blocking; k++) {
-                  (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking);
+                  (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking, i_alpha);
                 }
                 footer_kloop_notdone_sp_asm(codestream, m_blocking, max_blocked_K );
               }
@@ -269,7 +312,7 @@ void avx1_generate_kernel_sp(std::stringstream& codestream, int lda, int ldb, in
 	        codestream << "                         \"subq $" << max_blocked_K * 4 << ", %%r8\\n\\t\"" << std::endl;
               }
 	      for (int k = max_blocked_K; k < K; k++) {
-	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
+	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking, i_alpha);
 	      }
             }
           }
