@@ -45,8 +45,8 @@ INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
 LIBDIR = $(ROOTDIR)/lib
 
-LIB_HST ?= $(LIBDIR)/intel64/libxsmm.a
-LIB_MIC ?= $(LIBDIR)/mic/libxsmm.a
+LIB_HST ?= $(LIBDIR)/intel64/libxsmm
+LIB_MIC ?= $(LIBDIR)/mic/libxsmm
 HEADER = $(INCDIR)/libxsmm.h
 MAIN = $(SRCDIR)/libxsmm.c
 
@@ -54,7 +54,7 @@ MAIN = $(SRCDIR)/libxsmm.c
 ifneq ($(shell which icc 2> /dev/null),)
 	CC := icc
 	AR := xiar
-	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -mkl=sequential -DNDEBUG
+	FLAGS := -Wall -fPIC -fno-alias -ansi-alias -DNDEBUG
 	ifneq ($(IPO),0)
 		FLAGS += -ipo
 	endif
@@ -84,6 +84,9 @@ ifneq ($(shell which icc 2> /dev/null),)
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
 	FLAGS := -Wall -O2 -DNDEBUG
+	ifneq ($(OS),Windows_NT)
+		FLAGS += -fPIC
+	endif
 	ifneq ($(IPO),0)
 		FLAGS += -flto
 	endif
@@ -129,14 +132,23 @@ ifeq ($(CXXFLMIC),)
 	CXXFLMIC := $(CXXFLAGS)
 endif
 
-MKL_DIRECT := 0
-ifneq ($(MKL_DIRECT),0)
-	CFLAGS := -DMKL_DIRECT_CALL_SEQ
-	CXXFLAGS := -DMKL_DIRECT_CALL_SEQ
-	ifneq ($(MKL_DIRECT),1)
-		CFLMIC := -DMKL_DIRECT_CALL_SEQ
-		CXXFLMIC := -DMKL_DIRECT_CALL_SEQ
-	endif
+ifneq ($(CC),)
+	LD := $(CC)
+endif
+ifeq ($(LDFLAGS),)
+	LDFLAGS := $(CFLAGS)
+endif
+ifeq ($(LDFLMIC),)
+	LDFLMIC := $(CFLMIC)
+endif
+
+ifeq ($(STATIC),)
+	STATIC := 1
+endif
+ifneq ($(STATIC),0)
+	LIBEXT := a
+else
+	LIBEXT := so
 endif
 
 ifeq ($(AVX),1)
@@ -291,24 +303,32 @@ $(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp $(HEADER) $(SRCDIR)/libxsmm_isa.h
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
 .PHONY: lib_mic
-lib_mic: $(LIB_MIC)
+lib_mic: $(LIB_MIC).$(LIBEXT)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_MIC): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/mic/%.o,$(MAIN))
+$(LIB_MIC).$(LIBEXT): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/mic/%.o,$(MAIN))
 else
-$(LIB_MIC): $(OBJFILES_MIC)
+$(LIB_MIC).$(LIBEXT): $(OBJFILES_MIC)
 endif
 	@mkdir -p $(LIBDIR)/mic
+ifeq ($(STATIC),0)
+	$(LD) -shared -o $@ $(LDFLAGS) $^
+else
 	$(AR) -rs $@ $^
+endif
 
 .PHONY: lib_hst
-lib_hst: $(LIB_HST)
+lib_hst: $(LIB_HST).$(LIBEXT)
 ifeq ($(origin NO_MAIN), undefined)
-$(LIB_HST): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(BLDDIR)/intel64/%.o,$(basename $(MAIN)))
+$(LIB_HST).$(LIBEXT): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(BLDDIR)/intel64/%.o,$(basename $(MAIN)))
 else
-$(LIB_HST): $(OBJFILES_HST)
+$(LIB_HST).$(LIBEXT): $(OBJFILES_HST)
 endif
 	@mkdir -p $(LIBDIR)/intel64
+ifeq ($(STATIC),0)
+	$(LD) -shared -o $@ $(LDFLAGS) $^
+else
 	$(AR) -rs $@ $^
+endif
 
 .PHONY: samples
 samples: blas smm dispatched inlined specialized
