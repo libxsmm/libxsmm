@@ -45,8 +45,9 @@ LD := $(CXX)
 
 ifneq (,$(filter $(CXX),icpc))
 	CXXFLAGS += -fPIC -Wall
+	DFLAGS += -DUSE_MKL
 	ifeq (0,$(DBG))
-		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
+		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -78,8 +79,9 @@ ifneq (,$(filter $(CXX),icpc))
 	endif
 else ifneq (,$(filter $(CC),icc))
 	CFLAGS += -fPIC -Wall
+	DFLAGS += -DUSE_MKL
 	ifeq (0,$(DBG))
-		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
+		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
@@ -101,7 +103,7 @@ else ifneq (,$(filter $(CC),icc))
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CFLAGS += -offload-option,mic,compiler,"-fPIC -O2 -opt-assume-safe-padding"
+		CFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	endif
 	LDFLAGS += -fPIC -mkl=sequential -openmp
 	ifneq ($(STATIC),0)
@@ -150,8 +152,7 @@ endif
 
 MKL_DIRECT := 0
 ifneq ($(MKL_DIRECT),0)
-	CXXFLAGS := -DMKL_DIRECT_CALL_SEQ
-	CFLAGS   := -DMKL_DIRECT_CALL_SEQ
+	DFLAGS += -DMKL_DIRECT_CALL_SEQ
 endif
 
 

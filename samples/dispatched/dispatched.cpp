@@ -43,6 +43,10 @@
 #include <vector>
 #include <cmath>
 
+#if defined(USE_MKL)
+# include <mkl_service.h>
+#endif
+
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -67,6 +71,10 @@ int main(int argc, char* argv[])
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
+
+#if defined(USE_MKL)
+    mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#endif
 
 #if (0 != LIBXSMM_ROW_MAJOR)
 # if (0 < LIBXSMM_ALIGNED_STORES)

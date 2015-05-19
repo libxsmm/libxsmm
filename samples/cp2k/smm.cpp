@@ -43,6 +43,10 @@
 #include <vector>
 #include <cmath>
 
+#if defined(USE_MKL)
+# include <mkl_service.h>
+#endif
+
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -186,6 +190,10 @@ int main(int argc, char* argv[])
     if ((SMM_MAX_PROBLEM_SIZE) < (m * n)) {
       throw std::runtime_error("The size M x N is exceeding SMM_MAX_PROBLEM_SIZE!");
     }
+
+#if defined(USE_MKL)
+    mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#endif
 
 #if (0 != LIBXSMM_ROW_MAJOR)
 # if (0 < LIBXSMM_ALIGNED_STORES)
