@@ -22,9 +22,6 @@ else
 	else
 		LIBXSMM := $(LIBXSMMROOT)/lib/mic/libxsmm.a
 	endif
-	ifneq ($(STATIC),)
-		LDFLAGS := -static
-	endif
 	LDFLAGS += $(LIBXSMM)
 endif
 
@@ -34,21 +31,22 @@ ICC := $(notdir $(shell which icc 2> /dev/null))
 ifneq (,$(ICPC))
 	CXX := $(ICPC)
 	ifeq (,$(ICC))
-		CC := $(ICPC)
+		CC := $(CXX)
 	endif
 endif
 ifneq (,$(ICC))
 	CC := $(ICC)
 	ifeq (,$(ICPC))
-		CXX := $(ICC)
+		CXX := $(CC)
 	endif
 endif
 
 LD := $(CXX)
 
 ifneq (,$(filter $(CXX),icpc))
+	CXXFLAGS += -fPIC -Wall
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
+		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -63,19 +61,25 @@ ifneq (,$(filter $(CXX),icpc))
 			CXXFLAGS += -xHost
 		endif
 	else ifneq (1,$(DBG))
-		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
+		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
-		CXXFLAGS += -Wall -O0 -g -openmp
+		CXXFLAGS += -O0 -g -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 	else ifeq ($(MIC),0)
 		CXXFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	endif
-	LDFLAGS += -openmp -mkl=sequential
+	LDFLAGS += -fPIC -mkl=sequential -openmp
+	ifneq ($(STATIC),0)
+		ifneq ($(STATIC),)
+			LDFLAGS += -no-intel-extensions -static-intel
+		endif
+	endif
 else ifneq (,$(filter $(CC),icc))
+	CFLAGS += -fPIC -Wall
 	ifeq (0,$(DBG))
-		CFLAGS += -Wall -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
+		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -DNDEBUG -O3 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
@@ -90,19 +94,25 @@ else ifneq (,$(filter $(CC),icc))
 			CFLAGS += -xHost
 		endif
 	else ifneq (1,$(DBG))
-		CFLAGS += -Wall -O0 -g3 -gdwarf-2 -debug inline-debug-info
+		CFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
-		CFLAGS += -Wall -O0 -g -openmp
+		CFLAGS += -O0 -g -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
 	else ifeq ($(MIC),0)
-		CFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
+		CFLAGS += -offload-option,mic,compiler,"-fPIC -O2 -opt-assume-safe-padding"
 	endif
-	LDFLAGS += -openmp -mkl=sequential
+	LDFLAGS += -fPIC -mkl=sequential -openmp
+	ifneq ($(STATIC),0)
+		ifneq ($(STATIC),)
+			LDFLAGS += -no-intel-extensions -static-intel
+		endif
+	endif
 else # GCC assumed
+	CXXFLAGS += -fPIC -Wall
 	ifeq (0,$(DBG))
-		CXXFLAGS += -Wall -O3 -fopenmp
+		CXXFLAGS += -O3 -fopenmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -mavx
@@ -114,16 +124,21 @@ else # GCC assumed
 			CXXFLAGS += -march=native
 		endif
 	else ifneq (1,$(DBG))
-		CXXFLAGS += -Wall -O0 -g3 -gdwarf-2
+		CXXFLAGS += -O0 -g3 -gdwarf-2
 	else
-		CXXFLAGS += -Wall -O0 -g -fopenmp
+		CXXFLAGS += -O0 -g -fopenmp
 	endif
 	ifneq ($(OS),Windows_NT)
-		LDFLAGS += -llapack -lblas
+		LDFLAGS += -fPIC -llapack -lblas
 	else
 		LDFLAGS += -llapack.dll -lblas.dll
 	endif
-	LDFLAGS += -lgfortran -fopenmp
+	LDFLAGS += -lgfortran -lquadmath -fopenmp
+	ifneq ($(STATIC),0)
+		ifneq ($(STATIC),)
+			LDFLAGS += -static
+		endif
+	endif
 endif
 
 ifeq (,$(CXXFLAGS))
