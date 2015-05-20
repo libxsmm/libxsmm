@@ -1,7 +1,6 @@
 MPARM = 1
 NPARM = 2
 KPARM = 3
-MSIZE = 7
 FLOPS = 8
 
 HIM = -1
