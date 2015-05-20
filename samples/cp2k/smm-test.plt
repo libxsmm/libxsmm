@@ -65,8 +65,8 @@ if (0<HIM) { set xrange [*:HIM] }
 if (0<HIN) { set yrange [*:HIN] }
 if (0<HIK) { set zrange [*:HIK] }
 if (0>HIM) { set xrange [*:MNK] }
-if (0>HIN) { set xrange [*:MNK] }
-if (0>HIK) { set xrange [*:MNK] }
+if (0>HIN) { set yrange [*:MNK] }
+if (0>HIK) { set zrange [*:MNK] }
 set xlabel "M"
 set ylabel "N" offset -3.0
 set zlabel "K" offset 1.0
