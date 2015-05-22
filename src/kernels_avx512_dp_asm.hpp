@@ -345,13 +345,15 @@ void avx512_kernel_8x9xKfullyunrolled_indexed_dp_asm(std::stringstream& codestre
   codestream << "                         \"addq $" << ldb*8*6 << ", %%rcx\\n\\t\"" << std::endl;
   
   int bdK = 0;
+  int l_Kupdates = 0;
 
   for (int k = 0; k < max_local_K; k++) {
     if ( (k > 0) && (k%16 == 0) ) {
       codestream << "                         \"addq $128, %%r8\\n\\t\"" << std::endl;
       codestream << "                         \"addq $128, %%rbx\\n\\t\"" << std::endl;
       codestream << "                         \"addq $128, %%rcx\\n\\t\"" << std::endl;
-      bdK = 0;       
+      bdK = 0;
+      l_Kupdates++;
     }
     if ( k == 0 ) {
       if (alignA == true) {
@@ -494,7 +496,9 @@ void avx512_kernel_8x9xKfullyunrolled_indexed_dp_asm(std::stringstream& codestre
     codestream << "                         \"vaddpd %%zmm" << 31-n_local << ", %%zmm" << 31-9-n_local << ", %%zmm" << 31-n_local << "\\n\\t\"" << std::endl;
   }
   // reset r8
-  codestream << "                         \"subq $" << (max_local_K/16)*128 << ", %%r8\\n\\t\"" << std::endl;
+  if (l_Kupdates > 0) {
+    codestream << "                         \"subq $" << l_Kupdates*128 << ", %%r8\\n\\t\"" << std::endl;
+  }
 
   if (    (tPrefetch.compare("AL2jpst") == 0)
        || (tPrefetch.compare("AL2jpst_BL2viaC") == 0) ) {
