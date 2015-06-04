@@ -24,7 +24,7 @@ if (MULTI eq "") {
   MULTI = 1
 }
 
-stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0)
+stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
 stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
 stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median)
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
@@ -88,6 +88,26 @@ set cblabel "GFLOP/s" offset 0.5
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
 splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
+
+reset
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Performance (Binned by Problem Size)" }
+set style fill solid 1.0 noborder
+set style data histograms
+set style histogram columnstacked
+set boxwidth 0.5 relative
+set noborder
+unset key
+unset xtics
+unset ytics
+set xrange [-0.5:2.5]
+set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
+plot  newhistogram at 0 linetype 1, \
+                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*1.0/3.0)?column(FLOPS):1/0) notitle, \
+      newhistogram at 1 linetype 1, \
+                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*2.0/3.0)?column(FLOPS):1/0) notitle, \
+      newhistogram at 2 linetype 1, \
+                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*3.0/3.0)?column(FLOPS):1/0) notitle
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
