@@ -25,8 +25,8 @@ if (MULTI eq "") {
 }
 
 stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0)
-stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.1f", exp(STATS_sum/STATS_records))
-stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.1f", STATS_median)
+stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
+stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median)
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
@@ -97,7 +97,9 @@ if (MULTI>-1) {
 } else {
   set xlabel "Probability"
 }
-set ylabel "GFLOP/s"
+set y2label "GFLOP/s"
+set y2tics nomirror
+unset ytics
 set format x "%g%%"
 set format y "%g"
 set fit quiet
@@ -106,11 +108,11 @@ fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1
 g(x) = (x - a) / b
 x = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-fit [x-10.0:x+10.0] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x*0.99:x*1.01] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x, h(x) to x, 0
-set label 1 sprintf("%.1f%%", x) at x, 0.5 * h(x) left offset 1
-set arrow 2 from x, h(x) to 0, h(x)
-set label 2 sprintf("%.1f GFLOP/s", h(x)) at 0.5 * x, h(x) centre offset 0, 1
+set label 1 sprintf("%.0f%%", x) at x, 0.5 * h(x) left offset 1
+set arrow 2 from x, h(x) to 2 * x, h(x)
+set label 2 sprintf("%.0f GFLOP/s", h(x)) at 1.5 * x, h(x) centre offset 0, -1
 set autoscale fix
 set xrange [0:100]
 set yrange [0:*]
