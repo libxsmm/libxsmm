@@ -9,7 +9,7 @@ HIK = HIM
 MN = 23
 PEAK = 0 #985.6
 
-BASENAME = "smm-test"
+BASENAME = "cp2k-perf"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
 if (FILENAME eq "") {
   FILENAME = BASENAME.".pdf"
