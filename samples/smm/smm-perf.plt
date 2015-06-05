@@ -68,10 +68,10 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set yrange [0:*]
-plot  BASENAME."-blas.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "BLAS", \
-      BASENAME."-inlined.dat" using FLOPS title "Inlined", \
+plot  BASENAME."-inlined.dat" using FLOPS title "Inlined", \
+      BASENAME."-blas.dat" using FLOPS title "BLAS", \
       BASENAME."-dispatched.dat" using FLOPS title "Dispatched", \
-      BASENAME."-specialized.dat" using FLOPS title "Specialized"
+      BASENAME."-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
