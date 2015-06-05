@@ -334,23 +334,23 @@ endif
 samples: smm cp2k
 
 .PHONY: smm
-blas: lib_all
+smm: lib_all
 	@cd $(ROOTDIR)/samples/smm && $(MAKE)
-.PHONY: blas_hst
-blas_hst: lib_hst
+.PHONY: smm_hst
+smm_hst: lib_hst
 	@cd $(ROOTDIR)/samples/smm && $(MAKE) OFFLOAD=0
-.PHONY: blas_mic
-blas_mic: lib_mic
+.PHONY: smm_mic
+smm_mic: lib_mic
 	@cd $(ROOTDIR)/samples/smm && $(MAKE) MIC=1
 
 .PHONY: cp2k
-smm: lib_all
+cp2k: lib_all
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE)
-.PHONY: smm_hst
-smm_hst: lib_hst
+.PHONY: cp2k_hst
+cp2k_hst: lib_hst
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) OFFLOAD=0
-.PHONY: smm_mic
-smm_mic: lib_mic
+.PHONY: cp2k_mic
+cp2k_mic: lib_mic
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) MIC=1
 
 .PHONY: test
