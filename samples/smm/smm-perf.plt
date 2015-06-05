@@ -9,10 +9,10 @@ HIK = HIM
 MN = 23
 PEAK = 0 #985.6
 
-BASENAME = "smm-perf"
+BASENAME = "smm"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
 if (FILENAME eq "") {
-  FILENAME = BASENAME.".pdf"
+  FILENAME = BASENAME."-perf.pdf"
 }
 
 FILECOUNT = 1 # initial file number
@@ -24,10 +24,10 @@ if (MULTI eq "") {
   MULTI = 1
 }
 
-stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
-stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
-stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median)
-stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
+stats BASENAME."-specialized.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
+stats BASENAME."-specialized.dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
+stats BASENAME."-specialized.dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median); MAXFLOPS = sprintf("%.0f", STATS_max)
+stats BASENAME."-specialized.dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
 IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
@@ -35,10 +35,10 @@ I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
 
 set table BASENAME."-avg.dat"
-plot BASENAME.".dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
+plot BASENAME."-specialized.dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
 set table BASENAME."-cdf.dat"
-plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
+plot BASENAME."-specialized.dat" using FLOPS:(1.0) smooth cumulative
 unset table
 stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
 
@@ -58,18 +58,20 @@ reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance" }
 set style fill solid 0.4 border -1
-set boxwidth 0.5 relative
+set style data histograms
+set style histogram cluster #gap 2
+#set boxwidth 0.5 relative
 set grid y2tics lc "grey"
-#unset key
+set key left #spacing 0.5
 set xtics rotate by -45 scale 0; set bmargin 6
-#unset ytics
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
-#set autoscale fix
-#set xrange [0:*]
 set yrange [0:*]
-plot  BASENAME.".dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") notitle with boxes
+plot  BASENAME."-blas.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "BLAS", \
+      BASENAME."-inlined.dat" using FLOPS title "Inlined", \
+      BASENAME."-dispatched.dat" using FLOPS title "Dispatched", \
+      BASENAME."-specialized.dat" using FLOPS title "Specialized"
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -98,15 +100,16 @@ set xrange [-0.5:2.5]
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
-plot  BASENAME.".dat" using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-                   "" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-                   "" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+plot  BASENAME."-specialized.dat" \
+      using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) {
   set title "Performance (CDF)"
-  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
+  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s  Maximum: ".MAXFLOPS." GFLOP/s"
 } else {
   set xlabel "Probability"
 }
@@ -124,8 +127,8 @@ h(x) = d * x + c
 fit [x*0.85:x*1.15] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x, h(x) to x, 0
 set label 1 sprintf("%.0f%%", x) at x, 0.5 * h(x) left offset 1
-set arrow 2 from x, h(x) to 2 * x, h(x)
-set label 2 sprintf("%.0f GFLOP/s", h(x)) at 1.5 * x, h(x) centre offset 0, -1
+set arrow 2 from x, h(x) to 100, h(x)
+set label 2 sprintf("%.0f GFLOP/s", h(x)) at 0.5 * (x + 100.0), h(x) centre offset 0, -1
 set autoscale fix
 set xrange [0:100]
 set yrange [0:*]
@@ -147,5 +150,5 @@ if (0 < PEAK) {
   set autoscale fix
   set yrange [0:100]
   set y2range [0:PEAK]
-  plot BASENAME.".dat" using (floor((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
+  plot BASENAME."-specialized.dat" using (floor((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
 }
