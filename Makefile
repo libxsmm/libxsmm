@@ -331,19 +331,19 @@ else
 endif
 
 .PHONY: samples
-samples: blas smm dispatched inlined specialized
-
-.PHONY: blas
-blas: lib_all
-	@cd $(ROOTDIR)/samples/blas && $(MAKE)
-.PHONY: blas_hst
-blas_hst: lib_hst
-	@cd $(ROOTDIR)/samples/blas && $(MAKE) OFFLOAD=0
-.PHONY: blas_mic
-blas_mic: lib_mic
-	@cd $(ROOTDIR)/samples/blas && $(MAKE) MIC=1
+samples: smm cp2k
 
 .PHONY: smm
+blas: lib_all
+	@cd $(ROOTDIR)/samples/smm && $(MAKE)
+.PHONY: blas_hst
+blas_hst: lib_hst
+	@cd $(ROOTDIR)/samples/smm && $(MAKE) OFFLOAD=0
+.PHONY: blas_mic
+blas_mic: lib_mic
+	@cd $(ROOTDIR)/samples/smm && $(MAKE) MIC=1
+
+.PHONY: cp2k
 smm: lib_all
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE)
 .PHONY: smm_hst
@@ -352,36 +352,6 @@ smm_hst: lib_hst
 .PHONY: smm_mic
 smm_mic: lib_mic
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) MIC=1
-
-.PHONY: dispatched
-dispatched: lib_all
-	@cd $(ROOTDIR)/samples/dispatched && $(MAKE)
-.PHONY: dispatched_hst
-dispatched_hst: lib_hst
-	@cd $(ROOTDIR)/samples/dispatched && $(MAKE) OFFLOAD=0
-.PHONY: dispatched_mic
-dispatched_mic: lib_mic
-	@cd $(ROOTDIR)/samples/dispatched && $(MAKE) MIC=1
-
-.PHONY: inlined
-inlined: lib_all
-	@cd $(ROOTDIR)/samples/inlined && $(MAKE)
-.PHONY: inlined_hst
-inlined_hst: lib_hst
-	@cd $(ROOTDIR)/samples/inlined && $(MAKE) OFFLOAD=0
-.PHONY: inlined_mic
-inlined_mic: lib_mic
-	@cd $(ROOTDIR)/samples/inlined && $(MAKE) MIC=1
-
-.PHONY: specialized
-specialized: lib_all
-	@cd $(ROOTDIR)/samples/specialized && $(MAKE)
-.PHONY: specialized_hst
-specialized_hst: lib_hst
-	@cd $(ROOTDIR)/samples/specialized && $(MAKE) OFFLOAD=0
-.PHONY: specialized_mic
-specialized_mic: lib_mic
-	@cd $(ROOTDIR)/samples/specialized && $(MAKE) MIC=1
 
 .PHONY: test
 test: $(ROOTDIR)/samples/cp2k/cp2k-perf.txt
