@@ -387,7 +387,7 @@ specialized_mic: lib_mic
 test: $(ROOTDIR)/samples/cp2k/cp2k-perf.txt
 $(ROOTDIR)/samples/cp2k/cp2k-perf.txt: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh lib_all
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) realclean && $(MAKE)
-	@$(ROOTDIR)/samples/cp2k/cp2k-perf.sh > $@
+	@$(ROOTDIR)/samples/cp2k/cp2k-perf.sh
 
 .PHONY: drytest
 drytest: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh
@@ -398,6 +398,8 @@ $(ROOTDIR)/samples/cp2k/cp2k-perf.sh: Makefile
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo >> $@
+	@echo "cat /dev/null > cp2k-perf.txt" >> $@
+	@echo >> $@
 	@echo "NMAX=1" >> $@
 	@echo "NRUN=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
@@ -405,8 +407,8 @@ $(ROOTDIR)/samples/cp2k/cp2k-perf.sh: Makefile
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE}" >> $@
-	@echo "  echo" >> $@
+	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> cp2k-perf.txt" >> $@
+	@echo "  echo >> cp2k-perf.txt" >> $@
 	@echo "  NRUN=\$$((NRUN + 1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@

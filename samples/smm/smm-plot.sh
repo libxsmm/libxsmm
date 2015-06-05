@@ -1,44 +1,11 @@
 #!/bin/bash
 
+HERE=$(cd $(dirname $0); pwd -P)
 VARIANT=Cached
 
 if [[ "" != "$1" ]] ; then
   VARIANT=$1
   shift
-fi
-
-HERE=$(cd $(dirname $0); pwd -P)
-FILE=${HERE}/smm-perf.txt
-
-GREP=$(which grep)
-PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
-  ${GREP} -e "performance" | \
-  cut -d" " -f2 | \
-  sort -n)
-
-NUM=$(echo "${PERF}" | wc -l)
-MIN=$(echo ${PERF} | cut -d" " -f1)
-MAX=$(echo ${PERF} | cut -d" " -f${NUM})
-
-echo "num=${NUM}"
-echo "min=${MIN}"
-echo "max=${MAX}"
-
-BC=$(which bc 2> /dev/null)
-if [[ "" != "${BC}" ]] ; then
-  AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
-  NUM2=$((NUM / 2))
-
-  if [[ "0" == "$((NUM % 2))" ]] ; then
-    A=$(echo ${PERF} | cut -d" " -f${NUM2})
-    B=$(echo ${PERF} | cut -d" " -f$((NUM2 + 1)))
-    MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
-  else
-    MED=$(echo ${PERF} | cut -d" " -f$((NUM2 + 1)))
-  fi
-
-  echo "avg=${AVG}"
-  echo "med=${MED}"
 fi
 
 if [[ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]] ; then
@@ -59,7 +26,22 @@ if [[ -f "${GNUPLOT}" ]] ; then
   GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
 fi
 
+GREP=$(which grep)
 SED=$(which sed)
+
+function capturedTxtToDataFile {
+  ${GREP} -i -A1 \
+    -e "^m=" -e "${VARIANT}" \
+    ${HERE}/$1.txt | \
+  ${SED} \
+    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
+    -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GFLOPS\/s//" \
+    -e "/${VARIANT}.../Id" -e "/^$/d" -e "/--/d" | \
+  ${SED} \
+    -e "N;s/ MB\n\tperformance://g" \
+  > ${HERE}/$1.dat
+}
+
 if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]] ; then
   if [[ "" == "$1" ]] ; then
     FILENAME=smm-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
@@ -73,16 +55,12 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
     MULTI=$1
     shift
   fi
-  ${GREP} -i -A1 \
-    -e "^m=" -e "${VARIANT}" \
-    ${FILE} | \
-  ${SED} \
-    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
-    -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GFLOPS\/s//" \
-    -e "/${VARIANT}.../Id" -e "/^$/d" -e "/--/d" | \
-  ${SED} \
-    -e "N;s/ MB\n\tperformance://g" \
-  > ${HERE}/smm-perf.dat
+
+  capturedTxtToDataFile smm-blas
+  capturedTxtToDataFile smm-dispatched
+  capturedTxtToDataFile smm-inlined
+  capturedTxtToDataFile smm-specialized
+
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \

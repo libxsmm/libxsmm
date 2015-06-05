@@ -1,12 +1,13 @@
 #!/bin/bash
 
 HERE=$(cd $(dirname $0); pwd -P)
-NAME=$(basename ${HERE})
+NAME=$(basename -s.sh $0)
 
 MICINFO=$(which micinfo)
 if [[ "" != "${MICINFO}" ]] ; then
-  MICCORES=$(${MICINFO} | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
-else
+  MICCORES=$("${MICINFO}" | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
+fi
+if [[ "" == "${MICCORES}" ]] ; then
   MICCORES=61
 fi
 
