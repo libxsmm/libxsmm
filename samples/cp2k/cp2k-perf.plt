@@ -26,7 +26,7 @@ if (MULTI eq "") {
 
 stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
 stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
-stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median)
+stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median); MAXFLOPS = sprintf("%.0f", STATS_max)
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
@@ -111,7 +111,7 @@ reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) {
   set title "Performance (CDF)"
-  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s"
+  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s  Maximum: ".MAXFLOPS." GFLOP/s"
 } else {
   set xlabel "Probability"
 }
