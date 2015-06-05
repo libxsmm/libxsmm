@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HERE=$(cd $(dirname $0); pwd -P)
-NAME=$(basename -s.sh $0)
+NAME=$(basename $0 .sh)
 
 MICINFO=$(which micinfo)
 if [[ "" != "${MICINFO}" ]] ; then
