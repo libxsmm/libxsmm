@@ -102,9 +102,10 @@ set xrange [-0.5:2.5]
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
-plot  BASENAME.".dat" using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-                   "" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-                   "" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+plot  BASENAME.".dat" \
+      using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
