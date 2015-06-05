@@ -177,7 +177,7 @@ OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
 .PHONY: lib_all
-lib_all: lib_hst lib_mic
+lib_all: lib_hst lib_mic drytest
 
 .PHONY: all
 all: lib_all samples

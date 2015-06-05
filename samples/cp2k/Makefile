@@ -1,4 +1,4 @@
-NAME := smm
+NAME := cp2k
 DBG := 0
 MIC := 0
 
@@ -112,7 +112,7 @@ else ifneq (,$(filter $(CC),icc))
 		endif
 	endif
 else # GCC assumed
-	CXXFLAGS += -fPIC -Wall
+	CXXFLAGS += -Wall
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O3 -fopenmp
 		DFLAGS += -DNDEBUG
@@ -132,6 +132,7 @@ else # GCC assumed
 	endif
 	ifneq ($(OS),Windows_NT)
 		LDFLAGS += -fPIC -llapack -lblas
+		CXXFLAGS += -fPIC
 	else
 		LDFLAGS += -llapack.dll -lblas.dll
 	endif
