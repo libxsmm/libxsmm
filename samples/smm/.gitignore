@@ -1,2 +1,5 @@
+blas
+dispatched
+inlined
 specialized
 specialized-perf.txt

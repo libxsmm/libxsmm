@@ -8,7 +8,7 @@ if [[ "" != "$1" ]] ; then
 fi
 
 HERE=$(cd $(dirname $0); pwd -P)
-FILE=${HERE}/specialized-perf.txt
+FILE=${HERE}/smm-perf.txt
 
 GREP=$(which grep)
 PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
@@ -62,7 +62,7 @@ fi
 SED=$(which sed)
 if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]] ; then
   if [[ "" == "$1" ]] ; then
-    FILENAME=specialized-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
+    FILENAME=smm-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
@@ -82,11 +82,11 @@ if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le 
     -e "/${VARIANT}.../Id" -e "/^$/d" -e "/--/d" | \
   ${SED} \
     -e "N;s/ MB\n\tperformance://g" \
-  > ${HERE}/specialized-perf.dat
+  > ${HERE}/smm-perf.dat
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \
     MULTI=${MULTI} \
-  "${WGNUPLOT}" specialized-perf.plt
+  "${WGNUPLOT}" smm-perf.plt
 fi
 

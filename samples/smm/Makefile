@@ -1,4 +1,3 @@
-NAME := blas
 DBG := 0
 MIC := 0
 
@@ -112,7 +111,7 @@ else ifneq (,$(filter $(CC),icc))
 		endif
 	endif
 else # GCC assumed
-	CXXFLAGS += -fPIC -Wall
+	CXXFLAGS += -Wall
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O3 -fopenmp
 		DFLAGS += -DNDEBUG
@@ -132,6 +131,7 @@ else # GCC assumed
 	endif
 	ifneq ($(OS),Windows_NT)
 		LDFLAGS += -fPIC -llapack -lblas
+		CXXFLAGS += -fPIC
 	else
 		LDFLAGS += -llapack.dll -lblas.dll
 	endif
@@ -156,9 +156,12 @@ ifneq ($(MKL_DIRECT),0)
 endif
 
 
-all: $(NAME)
+all: blas dispatched inlined specialized
 
-$(NAME): $(NAME)-cpp.o
+blas: blas-cpp.o
+dispatched: dispatched-cpp.o
+inlined: inlined-cpp.o
+specialized: specialized-cpp.o
 
 %: %-c.o $(LIBXSMM)
 	$(LD) -o $@ $< $(LDFLAGS)
@@ -184,6 +187,9 @@ clean:
 	rm -f *.o *.i *.ii *.s
 
 realclean: clean
-	rm -f $(NAME) $(NAME).exe $(NAME).exe.stackdump
+	rm -f blas blas.exe blas.exe.stackdump
+	rm -f dispatched dispatched.exe dispatched.exe.stackdump
+	rm -f inlined inlined.exe inlined.exe.stackdump
+	rm -f specialized specialized.exe specialized.exe.stackdump
 
 install: all clean

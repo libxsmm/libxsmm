@@ -384,26 +384,28 @@ specialized_mic: lib_mic
 	@cd $(ROOTDIR)/samples/specialized && $(MAKE) MIC=1
 
 .PHONY: test
-test: $(ROOTDIR)/samples/cp2k/smm-test.txt
-$(ROOTDIR)/samples/cp2k/smm-test.txt: $(ROOTDIR)/samples/cp2k/smm-test.sh lib_all
+test: $(ROOTDIR)/samples/cp2k/cp2k-perf.txt
+$(ROOTDIR)/samples/cp2k/cp2k-perf.txt: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh lib_all
 	@cd $(ROOTDIR)/samples/cp2k && $(MAKE) realclean && $(MAKE)
-	@$(ROOTDIR)/samples/cp2k/smm-test.sh > $@
+	@$(ROOTDIR)/samples/cp2k/cp2k-perf.sh > $@
 
 .PHONY: drytest
-drytest: $(ROOTDIR)/samples/cp2k/smm-test.sh
-$(ROOTDIR)/samples/cp2k/smm-test.sh: Makefile
+drytest: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh
+$(ROOTDIR)/samples/cp2k/cp2k-perf.sh: Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo >> $@
-	@echo "NRUN=1" >> $@
-	@echo "for RUN in $(INDICES) ; do" >> $@
+	@echo "NMAX=1" >> $@
+	@echo "NRUN=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of $(NINDICES) (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  \$${HERE}/smm.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE}" >> $@
+	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE}" >> $@
 	@echo "  echo" >> $@
 	@echo "  NRUN=\$$((NRUN + 1))" >> $@
 	@echo "done" >> $@
@@ -413,9 +415,9 @@ $(ROOTDIR)/samples/cp2k/smm-test.sh: Makefile
 .PHONY: clean
 clean:
 	@rm -rf $(BLDDIR)
-	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-avg.dat
-	@rm -f $(ROOTDIR)/samples/cp2k/smm-test-cdf.dat
-	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf-avg.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf-cdf.dat
+	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf.dat
 	@rm -f $(SRCDIR)/mm_*_*_*.c
 	@rm -f $(ROOTDIR)/*/*/*~
 	@rm -f $(ROOTDIR)/*/*~
@@ -425,8 +427,8 @@ clean:
 .PHONY: realclean
 realclean: clean
 	@rm -rf $(LIBDIR)
-	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.txt
-	@rm -f $(ROOTDIR)/samples/cp2k/smm-test.sh
+	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf.txt
+	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf.sh
 	@rm -f $(SCRDIR)/generator.exe
 	@rm -f $(SCRDIR)/generator
 	@rm -f $(HEADER)
