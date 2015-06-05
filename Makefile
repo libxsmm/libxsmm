@@ -370,8 +370,8 @@ $(ROOTDIR)/samples/cp2k/cp2k-perf.sh: Makefile
 	@echo >> $@
 	@echo "cat /dev/null > cp2k-perf.txt" >> $@
 	@echo >> $@
-	@echo "NMAX=1" >> $@
-	@echo "NRUN=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "NRUN=1" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
