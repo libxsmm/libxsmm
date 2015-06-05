@@ -92,22 +92,19 @@ splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):((
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Binned by Problem Size)" }
-set style fill solid 1.0 noborder
-set style data histograms
-set style histogram columnstacked
-set boxwidth 0.5 relative
-set noborder
+set style fill solid 0.05 border -1
+set boxwidth 0.5
+set grid y2tics lc "grey"
 unset key
 unset xtics
-unset ytics
-set xrange [-0.5:2.5]
 set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
-plot  newhistogram at 0 linetype 1, \
-                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*1.0/3.0)?column(FLOPS):1/0) notitle, \
-      newhistogram at 1 linetype 1, \
-                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*2.0/3.0)?column(FLOPS):1/0) notitle, \
-      newhistogram at 2 linetype 1, \
-                    BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)<=(MAXMNK*3.0/3.0)?column(FLOPS):1/0) notitle
+set xrange [-0.5:2.5]
+unset ytics
+set y2tics nomirror
+set y2label "GFLOP/s"
+plot  BASENAME.".dat" using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+      BASENAME.".dat" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+      BASENAME.".dat" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -128,7 +125,7 @@ fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1
 g(x) = (x - a) / b
 x = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-fit [x*0.99:x*1.01] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x*0.95:x*1.05] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x, h(x) to x, 0
 set label 1 sprintf("%.0f%%", x) at x, 0.5 * h(x) left offset 1
 set arrow 2 from x, h(x) to 2 * x, h(x)
