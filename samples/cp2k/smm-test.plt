@@ -92,19 +92,19 @@ splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):((
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Binned by Problem Size)" }
-set style fill solid 0.05 border -1
+set style fill solid 0.4 border -1
 set boxwidth 0.5
 set grid y2tics lc "grey"
 unset key
 unset xtics
 set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
 set xrange [-0.5:2.5]
-unset ytics
+set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 plot  BASENAME.".dat" using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-      BASENAME.".dat" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-      BASENAME.".dat" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+                   "" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+                   "" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }

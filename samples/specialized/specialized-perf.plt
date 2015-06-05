@@ -57,23 +57,19 @@ set encoding utf8
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance" }
-set origin -0.03, 0
-set pm3d interpolate 0, 0
-#set colorbox horizontal user origin 0, 0.1 size 1, 0.1
-set autoscale fix
-if (0<HIM) { set xrange [*:HIM] }
-if (0<HIN) { set yrange [*:HIN] }
-if (0<HIK) { set zrange [*:HIK] }
-if (0>HIM) { set xrange [*:MNK] }
-if (0>HIN) { set yrange [*:MNK] }
-if (0>HIK) { set zrange [*:MNK] }
-set xlabel "M"
-set ylabel "N" offset -3.0
-set zlabel "K" offset 1.0
-set ticslevel 0
-set cblabel "GFLOP/s" offset 1.5
-set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
-splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
+set style fill solid 0.4 border -1
+set boxwidth 0.5 relative
+set grid y2tics lc "grey"
+#unset key
+set xtics rotate by -45 scale 0; set bmargin 6
+#unset ytics
+set ytics format ""
+set y2tics nomirror
+set y2label "GFLOP/s"
+#set autoscale fix
+#set xrange [0:*]
+set yrange [0:*]
+plot  BASENAME.".dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") notitle with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -92,19 +88,19 @@ splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):((
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Binned by Problem Size)" }
-set style fill solid 0.05 border -1
+set style fill solid 0.4 border -1
 set boxwidth 0.5
 set grid y2tics lc "grey"
 unset key
 unset xtics
 set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
 set xrange [-0.5:2.5]
-unset ytics
+set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 plot  BASENAME.".dat" using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*1.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-      BASENAME.".dat" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-      BASENAME.".dat" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+                   "" using (1.0):((((MAXMNK*1.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK*2.0/3.0)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+                   "" using (2.0):((((MAXMNK*2.0/3.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
