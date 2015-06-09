@@ -25,11 +25,13 @@ if (MULTI eq "") {
 }
 
 stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
-stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = sprintf("%.0f", exp(STATS_sum/STATS_records))
-stats BASENAME.".dat" using FLOPS nooutput; MED = sprintf("%.0f", STATS_median); MAXFLOPS = sprintf("%.0f", STATS_max)
+stats BASENAME."-specialized.dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
+stats BASENAME."-specialized.dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
+ACC = sprintf("%%.%if", ceil(MAX(1.0 / log10(MED) - 1.0, 0)))
+
 IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
@@ -40,7 +42,7 @@ unset table
 set table BASENAME."-cdf.dat"
 plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
 unset table
-stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max
+stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max; FREQN = STATS_records
 
 if (MULTI==1) {
   set output FILENAME
@@ -91,7 +93,7 @@ splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):((
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Performance (Binned by Problem Size)" }
+if (MULTI>-1) { set title "Performance (Average per Bin of Problem Size)" }
 set style fill solid 0.4 border -1
 set boxwidth 0.5
 set grid y2tics lc "grey"
@@ -111,7 +113,7 @@ reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) {
   set title "Performance (CDF)"
-  set xlabel "Probability\n\nGeo. Mean: ".GEO." GFLOP/s  Median: ".MED." GFLOP/s  Maximum: ".MAXFLOPS." GFLOP/s"
+  set xlabel "Probability\n\nMin.: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Max.: ".sprintf(ACC, MAXFLOPS)." GFLOP/s"
 } else {
   set xlabel "Probability"
 }
@@ -124,13 +126,14 @@ set fit quiet
 f(x) = b * x + a
 fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
 g(x) = (x - a) / b
-x = 0.5 * (100 + MAX(0, g(0)))
+x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-fit [x*0.95:x*1.05] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
-set arrow 1 from x, h(x) to x, 0
-set label 1 sprintf("%.0f%%", x) at x, 0.5 * h(x) left offset 1
-set arrow 2 from x, h(x) to 2 * x, h(x)
-set label 2 sprintf("%.0f GFLOP/s", h(x)) at 1.5 * x, h(x) centre offset 0, -1
+dx = 100 / FREQN
+fit [x50-1.2*dx:x50+1.2*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+set arrow 1 from x50, h(x50) to x50, 0
+set label 1 sprintf("%.0f%%", x50) at x50, 0.5 * h(x50) left offset 1
+set arrow 2 from x50, h(x50) to 100, h(x50)
+set label 2 sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), h(x50) centre offset 0, -1
 set autoscale fix
 set xrange [0:100]
 set yrange [0:*]
