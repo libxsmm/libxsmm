@@ -25,8 +25,8 @@ if (MULTI eq "") {
 }
 
 stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
-stats BASENAME."-specialized.dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
-stats BASENAME."-specialized.dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
+stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
+stats BASENAME.".dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
@@ -129,7 +129,7 @@ g(x) = (x - a) / b
 x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
 dx = 100 / FREQN
-fit [x50-1.2*dx:x50+1.2*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x50-1.5*dx:x50+1.5*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow 1 from x50, h(x50) to x50, 0
 set label 1 sprintf("%.0f%%", x50) at x50, 0.5 * h(x50) left offset 1
 set arrow 2 from x50, h(x50) to 100, h(x50)
