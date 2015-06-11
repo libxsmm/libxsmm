@@ -24,7 +24,11 @@ if (MULTI eq "") {
   MULTI = 1
 }
 
-stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = STATS_max
+NFLOPS(M, N, K) = 2 * column(M) * column(N) * column(K)
+NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * column(N) + column(M) * column(N))
+AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
+
+stats BASENAME.".dat" using (NFLOPS(MPARM,NPARM,KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
 stats BASENAME.".dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
@@ -105,9 +109,9 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 plot  BASENAME.".dat" \
-      using (0.0):((((0.0)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(13*13*13)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-  ""  using (1.0):((((13*13*13)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(23*23*23)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-  ""  using (2.0):((((23*23*23)<(column(MPARM)*column(NPARM)*column(KPARM)))&&((column(MPARM)*column(NPARM)*column(KPARM))<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+      using (0.0):((((0.0)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(13*13*13)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (1.0):((((13*13*13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(23*23*23)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
+  ""  using (2.0):((((23*23*23)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -139,6 +143,18 @@ set xrange [0:100]
 set yrange [0:*]
 plot BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
 
+reset
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Performance and Arithmetic Intensity" }
+set grid y2tics lc "grey"
+set key left #spacing 0.5
+set ytics format ""
+set y2tics nomirror
+set y2label "GFLOP/s"
+set xlabel "FLOPS/Byte"
+plot  BASENAME.".dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
+                   "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
+
 if (0 < PEAK) {
   reset
   if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -155,5 +171,5 @@ if (0 < PEAK) {
   set autoscale fix
   set yrange [0:100]
   set y2range [0:PEAK]
-  plot BASENAME.".dat" using (floor((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
+  plot BASENAME.".dat" using (floor(NFLOPS(MPARM,NPARM,KPARM)**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
 }
