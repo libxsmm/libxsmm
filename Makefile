@@ -362,6 +362,7 @@ $(ROOTDIR)/samples/cp2k/cp2k-perf.txt: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh lib_
 .PHONY: drytest
 drytest: $(ROOTDIR)/samples/cp2k/cp2k-perf.sh
 $(ROOTDIR)/samples/cp2k/cp2k-perf.sh: Makefile
+	@mkdir -p $(ROOTDIR)/samples/cp2k
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
