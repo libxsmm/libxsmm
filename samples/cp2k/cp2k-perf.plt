@@ -2,6 +2,7 @@ MPARM = 1
 NPARM = 2
 KPARM = 3
 FLOPS = 8
+MEMBW = 9
 
 HIM = -1
 HIN = HIM
@@ -24,7 +25,8 @@ if (MULTI eq "") {
   MULTI = 1
 }
 
-NFLOPS(M, N, K) = 2 * column(M) * column(N) * column(K)
+XFLOPS(M, N, K) = 2 * M * N * K
+NFLOPS(M, N, K) = XFLOPS(column(M), column(N), column(K))
 NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * column(N) + column(M) * column(N))
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
@@ -42,6 +44,9 @@ J1(IX, NJ) = int(IX) % NJ + 1
 
 set table BASENAME."-avg.dat"
 plot BASENAME.".dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
+unset table
+set table BASENAME."-mbw.dat"
+plot BASENAME.".dat" using MEMBW:(1.0) smooth cumulative
 unset table
 set table BASENAME."-cdf.dat"
 plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
@@ -66,7 +71,7 @@ if (MULTI>-1) { set title "Performance" }
 set origin -0.03, 0
 set pm3d interpolate 0, 0
 #set colorbox horizontal user origin 0, 0.1 size 1, 0.1
-set autoscale fix
+#set autoscale fix
 if (0<HIM) { set xrange [*:HIM] }
 if (0<HIN) { set yrange [*:HIN] }
 if (0<HIK) { set zrange [*:HIK] }
@@ -97,35 +102,39 @@ splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):((
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Performance (Average per Bin of Problem Size)" }
-set style fill solid 0.4 border -1
+if (MULTI>-1) { set title "Performance (Average per Bin)" }
+set style fill solid 0.4 noborder
 set boxwidth 0.5
-set grid y2tics lc "grey"
+set grid y2tics linecolor "grey"
 unset key
 unset xtics
+set xtics ("MNK <= 13^3" 0, "13^3 < MNK <= 23^3" 1, "23^3 < MNK" 2) scale 0 offset 0, 0.2
 set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
-set xrange [-0.5:2.5]
+set xlabel "Problem Size (MNK)"
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
+set xrange [-0.5:2.5]
 plot  BASENAME.".dat" \
-      using (0.0):((((0.0)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(13*13*13)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-  ""  using (1.0):((((13*13*13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(23*23*23)))?column(FLOPS):1/0) notitle smooth unique with boxes, \
-  ""  using (2.0):((((23*23*23)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=(MAXMNK)))?column(FLOPS):1/0) notitle smooth unique with boxes
+      using (0.0):((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
+  ""  using (1.0):(((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
+  ""  using (2.0):((XFLOPS(23,23,23)<NFLOPS(MPARM,NPARM,KPARM))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey"
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) {
-  set title "Performance (CDF)"
-  set xlabel "Probability\n\nMin.: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Max.: ".sprintf(ACC, MAXFLOPS)." GFLOP/s"
-} else {
-  set xlabel "Probability"
-}
+if (MULTI>-1) { set title "Performance and Memory Bandwidth (CDF)" }
+set xlabel "Probability\n\nMin.: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Max.: ".sprintf(ACC, MAXFLOPS)." GFLOP/s"
+set ylabel "GB/s"
 set y2label "GFLOP/s"
-set y2tics nomirror
-unset ytics
 set format x "%g%%"
 set format y "%g"
+set format y2 "%g"
+set ytics nomirror
+set y2tics nomirror
+set grid x y2 linecolor "grey"
+set xrange [0:100]
+set yrange [0:*]
+set y2range [0:*]
 set fit quiet
 f(x) = b * x + a
 fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
@@ -134,19 +143,17 @@ x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
 dx = 100 / FREQN
 fit [x50-1.5*dx:x50+1.5*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
-set arrow 1 from x50, h(x50) to x50, 0
-set label 1 sprintf("%.0f%%", x50) at x50, 0.5 * h(x50) left offset 1
-set arrow 2 from x50, h(x50) to 100, h(x50)
-set label 2 sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), h(x50) centre offset 0, -1
-set autoscale fix
-set xrange [0:100]
-set yrange [0:*]
-plot BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 notitle with lines
+set arrow from x50, second h(x50) to x50, second 0 front
+set arrow from x50, second h(x50) to 100, second h(x50) front
+set label sprintf("%.0f%%", x50) at x50, second 0.5 * h(x50) left offset 1 front
+set label sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) centre offset 0, -1 front
+plot  BASENAME."-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 notitle with lines linecolor "grey", \
+      BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 notitle with lines linewidth 2
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance and Arithmetic Intensity" }
-set grid y2tics lc "grey"
+set grid x y2 linecolor "grey"
 set key left #spacing 0.5
 set ytics format ""
 set y2tics nomirror
@@ -168,7 +175,7 @@ if (0 < PEAK) {
   set mxtics 2
   set mytics 2
   set my2tics 2
-  set autoscale fix
+  #set autoscale fix
   set yrange [0:100]
   set y2range [0:PEAK]
   plot BASENAME.".dat" using (floor(NFLOPS(MPARM,NPARM,KPARM)**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
