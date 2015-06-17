@@ -10,10 +10,10 @@ HIK = HIM
 MN = 23
 PEAK = 0 #985.6
 
-BASENAME = "cp2k-perf"
+BASENAME = "cp2k"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
 if (FILENAME eq "") {
-  FILENAME = BASENAME.".pdf"
+  FILENAME = BASENAME."-perf.pdf"
 }
 
 FILECOUNT = 1 # initial file number
@@ -30,10 +30,10 @@ NFLOPS(M, N, K) = XFLOPS(column(M), column(N), column(K))
 NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * column(N) + column(M) * column(N))
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
-stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
-stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
-stats BASENAME.".dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
-stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
+stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
+stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
+stats BASENAME."-perf.dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
+stats BASENAME."-perf.dat" using NPARM nooutput; XN = int(STATS_max)
 
 MAX(A, B) = A < B ? B : A
 ACC = sprintf("%%.%if", ceil(MAX(1.0 / log10(MED) - 1.0, 0)))
@@ -42,16 +42,16 @@ IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
 
-set table BASENAME."-avg.dat"
-plot BASENAME.".dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
+set table BASENAME."-perf-avg.dat"
+plot BASENAME."-perf.dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
-set table BASENAME."-mbw.dat"
-plot BASENAME.".dat" using MEMBW:(1.0) smooth cumulative
+set table BASENAME."-perf-mbw.dat"
+plot BASENAME."-perf.dat" using MEMBW:(1.0) smooth cumulative
 unset table
-set table BASENAME."-cdf.dat"
-plot BASENAME.".dat" using FLOPS:(1.0) smooth cumulative
+set table BASENAME."-perf-cdf.dat"
+plot BASENAME."-perf.dat" using FLOPS:(1.0) smooth cumulative
 unset table
-stats BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max; FREQN = STATS_records
+stats BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max; FREQN = STATS_records
 
 if (MULTI==1) {
   set output FILENAME
@@ -84,7 +84,7 @@ set zlabel "K" offset 1.0
 set ticslevel 0
 set cblabel "GFLOP/s" offset 1.5
 set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
-splot BASENAME.".dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
+splot BASENAME."-perf.dat" using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -98,7 +98,7 @@ set ylabel "N" offset -1.5
 set cblabel "GFLOP/s" offset 0.5
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
-splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
+splot BASENAME."-perf-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -115,7 +115,7 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xrange [-0.5:2.5]
-plot  BASENAME.".dat" \
+plot  BASENAME."-perf.dat" \
       using (0.0):((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
   ""  using (1.0):(((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
   ""  using (2.0):((XFLOPS(23,23,23)<NFLOPS(MPARM,NPARM,KPARM))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey"
@@ -137,18 +137,18 @@ set yrange [0:*]
 set y2range [0:*]
 set fit quiet
 f(x) = b * x + a
-fit f(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
+fit f(x) BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
 g(x) = (x - a) / b
 x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
 dx = 100 / FREQN
-fit [x50-1.5*dx:x50+1.5*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x50-1.5*dx:x50+1.5*dx] h(x) BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow from x50, second h(x50) to x50, second 0 front
 set arrow from x50, second h(x50) to 100, second h(x50) front
 set label sprintf("%.0f%%", x50) at x50, second 0.5 * h(x50) left offset 1 front
 set label sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) centre offset 0, -1 front
-plot  BASENAME."-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 notitle with lines linecolor "grey", \
-      BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 notitle with lines linewidth 2
+plot  BASENAME."-perf-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 notitle with lines linecolor "grey", \
+      BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 notitle with lines linewidth 2
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -159,5 +159,5 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xlabel "FLOPS/Byte"
-plot  BASENAME.".dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
-                   "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
+plot  BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
+                        "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
