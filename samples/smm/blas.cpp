@@ -94,8 +94,8 @@ int main(int argc, char* argv[])
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
     const int s = (3ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 3 GByte
-    const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
 #if defined(_OPENMP)
+    const size_t bwsize = (asize/*load*/ + bsize/*load*/ + csize * 2/*load and store*/) * sizeof(T); // cached
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
@@ -112,23 +112,29 @@ int main(int argc, char* argv[])
 #endif
     {
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, 1024 * gbytes);
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s,
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
 
       { // streaming
         fprintf(stdout, "Streaming...\n");
         std::fill_n(c, s * csize, 0);
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(static)
+        double start = 0;
+#       pragma omp parallel
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize);
-        }
+          for (int i = 0; i < s; ++i) {
+            libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize);
+          }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -137,24 +143,32 @@ int main(int argc, char* argv[])
       { // cached
         fprintf(stdout, "Cached...\n");
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(dynamic)
+        double start = 0;
+# if defined(__MIC__)
+#       pragma omp parallel schedule(dynamic)
+# else
+#       pragma omp parallel
+# endif
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; ++i) {
-          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
+          for (int i = 0; i < s; ++i) {
+            // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
 #if (0 < (LIBXSMM_ALIGNED_STORES))
-          LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
 #else
-          LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNMENT);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNMENT);
 #endif
-          // do nothing else with tmp; just a benchmark
-          libxsmm_blasmm(m, n, k, a, b, tmp);
-        }
+            // do nothing else with tmp; just a benchmark
+            libxsmm_blasmm(m, n, k, a, b, tmp);
+          }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
