@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * SMM_MIN_NLOCAL / SMM_MIN_NPARALLEL) + 0.5);
-    const double gbytes = 1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 30);
+    const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
 #if defined(_OPENMP)
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
@@ -245,7 +245,8 @@ int main(int argc, char* argv[])
       std::vector<T> expect(csize);
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u, 1024 * gbytes);
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
+        1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 20));
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
@@ -267,8 +268,9 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
+          const double iduration = 1.0 / duration;
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -297,8 +299,9 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
+          const double iduration = 1.0 / duration;
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -327,8 +330,9 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
+          const double iduration = 1.0 / duration;
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -358,8 +362,9 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", gbytes / duration);
+          const double iduration = 1.0 / duration;
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
