@@ -149,15 +149,15 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Cached...\n");
 #if defined(_OPENMP)
         double start = 0;
-# if defined(__MIC__)
-#       pragma omp parallel schedule(dynamic)
-# else
 #       pragma omp parallel
-# endif
         {
 #         pragma omp master
           start = omp_get_wtime();
+# if defined(__MIC__)
+#         pragma omp for schedule(dynamic)
+# else
 #         pragma omp for
+# endif
 #endif
           for (int i = 0; i < s; ++i) {
             // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules

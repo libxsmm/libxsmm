@@ -257,11 +257,11 @@ int main(int argc, char* argv[])
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         double start = 0;
-#       pragma omp parallel CP2K_SCHEDULE
+#       pragma omp parallel
         {
 #         pragma omp master
           start = omp_get_wtime();
-#         pragma omp for
+#         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
@@ -292,11 +292,11 @@ int main(int argc, char* argv[])
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         double start = 0;
-#       pragma omp parallel CP2K_SCHEDULE
+#       pragma omp parallel
         {
 #         pragma omp master
           start = omp_get_wtime();
-#         pragma omp for
+#         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
@@ -327,11 +327,11 @@ int main(int argc, char* argv[])
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         double start = 0;
-#       pragma omp parallel CP2K_SCHEDULE
+#       pragma omp parallel
         {
 #         pragma omp master
           start = omp_get_wtime();
-#         pragma omp for
+#         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
@@ -363,11 +363,11 @@ int main(int argc, char* argv[])
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
         double start = 0;
-#       pragma omp parallel CP2K_SCHEDULE
+#       pragma omp parallel
         {
 #         pragma omp master
           start = omp_get_wtime();
-#         pragma omp for
+#         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
