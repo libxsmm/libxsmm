@@ -150,7 +150,7 @@
 #define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
 #define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
-#if defined(LIBXMM_OFFLOAD)
+#if defined(LIBXSMM_OFFLOAD)
 # pragma offload_attribute(push,target(mic))
 # include <stdint.h>
 # pragma offload_attribute(pop)
