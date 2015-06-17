@@ -25,12 +25,12 @@ if (MULTI eq "") {
   MULTI = 1
 }
 
-XFLOPS(M, N, K) = 2 * M * N * K
+XFLOPS(M, N, K) = 2.0 * M * N * K
 NFLOPS(M, N, K) = XFLOPS(column(M), column(N), column(K))
 NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * column(N) + column(M) * column(N))
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
-stats BASENAME.".dat" using (NFLOPS(MPARM,NPARM,KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
+stats BASENAME.".dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME.".dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
 stats BASENAME.".dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
 stats BASENAME.".dat" using NPARM nooutput; XN = int(STATS_max)
@@ -161,22 +161,3 @@ set y2label "GFLOP/s"
 set xlabel "FLOPS/Byte"
 plot  BASENAME.".dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
                    "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
-
-if (0 < PEAK) {
-  reset
-  if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-  if (MULTI>-1) { set title "Performance and Efficiency" }
-  set xlabel "(M N K)^{-1/3}"
-  set ylabel "Efficiency"
-  set y2label "GFLOP/s"
-  set y2tics
-  set ytics nomirror
-  set format x "%g"; set format y "%g%%"
-  set mxtics 2
-  set mytics 2
-  set my2tics 2
-  #set autoscale fix
-  set yrange [0:100]
-  set y2range [0:PEAK]
-  plot BASENAME.".dat" using (floor(NFLOPS(MPARM,NPARM,KPARM)**(1.0/3.0)+0.5)):(100.0*column(FLOPS)/PEAK) notitle smooth sbezier with points pointtype 7 pointsize 0.5
-}
