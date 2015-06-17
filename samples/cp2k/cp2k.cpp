@@ -56,25 +56,29 @@
 #endif
 
 #if (0 < (LIBXSMM_ALIGNED_STORES))
-# define SMM_ALIGNMENT LIBXSMM_ALIGNED_STORES
+# define CP2K_ALIGNMENT LIBXSMM_ALIGNED_STORES
 #else
-# define SMM_ALIGNMENT LIBXSMM_ALIGNMENT
+# define CP2K_ALIGNMENT LIBXSMM_ALIGNMENT
 #endif
 
 // make sure that stacksize is covering the problem size
-#define SMM_MAX_PROBLEM_SIZE (LIBXSMM_MAX_M * LIBXSMM_MAX_N)
+#define CP2K_MAX_PROBLEM_SIZE (LIBXSMM_MAX_M * LIBXSMM_MAX_N)
 /** >1: number of locks, =1: omp critical, =0: atomic */
-#define SMM_SYNCHRONIZATION 0
+#define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
-#define SMM_MIN_NPARALLEL 240
+#define CP2K_MIN_NPARALLEL 240
 // ensures amortized atomic overhead
-#define SMM_MIN_NLOCAL 160
+#define CP2K_MIN_NLOCAL 160
 // OpenMP schedule policy (and chunk size)
-#define SMM_SCHEDULE static,1
+#if defined(__MIC__)
+# define CP2K_SCHEDULE schedule(static,1)
+#else
+# define CP2K_SCHEDULE
+#endif
 // Kind of thread-private data
-#define SMM_THREADPRIVATE 1
+#define CP2K_THREADPRIVATE 1
 // enable result validation
-#define SMM_CHECK
+#define CP2K_CHECK
 
 
 template<typename T>
@@ -85,32 +89,32 @@ LIBXSMM_TARGET(mic) void nrand(T& a)
 }
 
 
-#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (1 < (SMM_SYNCHRONIZATION))
+#if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
 LIBXSMM_TARGET(mic) class LIBXSMM_TARGET(mic) lock_type {
 public:
   lock_type() {
-    for (int i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
+    for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
   }
   
   ~lock_type() {
-    for (int i = 0; i < (SMM_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
+    for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
   }
 
 public:
   void acquire(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
-    // non-pot: omp_set_lock(m_lock + id % SMM_SYNCHRONIZATION);
-    omp_set_lock(m_lock + LIBXSMM_MOD(id, SMM_SYNCHRONIZATION));
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (CP2K_ALIGNMENT);
+    // non-pot: omp_set_lock(m_lock + id % CP2K_SYNCHRONIZATION);
+    omp_set_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (SMM_ALIGNMENT);
-    // non-pot: omp_unset_lock(m_lock + id % SMM_SYNCHRONIZATION);
-    omp_unset_lock(m_lock + LIBXSMM_MOD(id, SMM_SYNCHRONIZATION));
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (CP2K_ALIGNMENT);
+    // non-pot: omp_unset_lock(m_lock + id % CP2K_SYNCHRONIZATION);
+    omp_unset_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
 
 private:
-  omp_lock_t m_lock[SMM_SYNCHRONIZATION];
+  omp_lock_t m_lock[CP2K_SYNCHRONIZATION];
 } lock;
 #endif
 
@@ -118,8 +122,8 @@ private:
 template<typename T>
 LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
 {
-#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (0 < (SMM_SYNCHRONIZATION))
-# if (1 == (SMM_SYNCHRONIZATION))
+#if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
+# if (1 == (CP2K_SYNCHRONIZATION))
 #   pragma omp critical(smmadd)
 # else
     lock.acquire(dst);
@@ -127,7 +131,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 #endif
     {
 #if (0 < LIBXSMM_ALIGNED_STORES)
-    LIBXSMM_ASSUME_ALIGNED(c, SMM_ALIGNMENT);
+    LIBXSMM_ASSUME_ALIGNED(c, CP2K_ALIGNMENT);
 #endif
     for (int i = 0; i < m; ++i) {
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
@@ -137,7 +141,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 #else
         const T value = c[j*ldc+i];
 #endif
-#if defined(_OPENMP) && (!defined(SMM_SYNCHRONIZATION) || (0 == (SMM_SYNCHRONIZATION)))
+#if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
 #endif
 #if (0 != LIBXSMM_ROW_MAJOR)
@@ -148,7 +152,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
       }
     }
   }
-#if defined(_OPENMP) && defined(SMM_SYNCHRONIZATION) && (1 < (SMM_SYNCHRONIZATION))
+#if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
   lock.release(dst);
 #endif
 }
@@ -182,13 +186,13 @@ int main(int argc, char* argv[])
       ? (q << std::strlen(argv[2])) : ('-' == *argv[2]
       ? (q >> std::strlen(argv[2])) : 0))) : 0;
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
-      ? ((SMM_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
-      ? ((SMM_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
+      ? ((CP2K_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
+      ? ((CP2K_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((SMM_MAX_PROBLEM_SIZE) < (m * n)) {
-      throw std::runtime_error("The size M x N is exceeding SMM_MAX_PROBLEM_SIZE!");
+    if ((CP2K_MAX_PROBLEM_SIZE) < (m * n)) {
+      throw std::runtime_error("The size M x N is exceeding CP2K_MAX_PROBLEM_SIZE!");
     }
 
 #if defined(USE_MKL)
@@ -213,9 +217,9 @@ int main(int argc, char* argv[])
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
-    const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * SMM_MIN_NLOCAL / SMM_MIN_NPARALLEL) + 0.5);
-    const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
+    const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
 #if defined(_OPENMP)
+    const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
@@ -231,50 +235,54 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
-#if defined(SMM_THREADPRIVATE) && defined(_OPENMP)
-# if 1 == (SMM_THREADPRIVATE) // native OpenMP TLS
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+#if defined(CP2K_THREADPRIVATE) && defined(_OPENMP)
+# if 1 == (CP2K_THREADPRIVATE) // native OpenMP TLS
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #     pragma omp threadprivate(tmp)
 #else
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 # endif
 #else // without OpenMP nothing needs to be thread-local due to a single-threaded program
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #endif
-#if defined(SMM_CHECK)
+#if defined(CP2K_CHECK)
       std::vector<T> expect(csize);
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
-        1.0 * s * (asize + bsize + csize) * sizeof(T) / (1 << 20));
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
 
       { // LAPACK/BLAS3 (fallback)
         fprintf(stdout, "LAPACK/BLAS...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(SMM_SCHEDULE)
+        double start = 0;
+#       pragma omp parallel CP2K_SCHEDULE
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; i += u) {
-#if !defined(SMM_THREADPRIVATE)
-          LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+          for (int i = 0; i < s; i += u) {
+#if !defined(CP2K_THREADPRIVATE)
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #endif
-          for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+              libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            }
+            add(c, tmp, m, n, ldc); // atomic
           }
-          add(c, tmp, m, n, ldc); // atomic
-        }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double iduration = 1.0 / duration;
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
-#if defined(SMM_CHECK)
+#if defined(CP2K_CHECK)
         std::copy(c, c + csize, expect.begin());
 #endif
       }
@@ -283,29 +291,33 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Inlined...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(SMM_SCHEDULE)
+        double start = 0;
+#       pragma omp parallel CP2K_SCHEDULE
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; i += u) {
-#if !defined(SMM_THREADPRIVATE)
-          LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+          for (int i = 0; i < s; i += u) {
+#if !defined(CP2K_THREADPRIVATE)
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #endif
-          for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+              libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            }
+            add(c, tmp, m, n, ldc); // atomic
           }
-          add(c, tmp, m, n, ldc); // atomic
-        }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double iduration = 1.0 / duration;
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
-#if defined(SMM_CHECK)
+#if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
 #endif
       }
@@ -314,29 +326,33 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Dispatched...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(SMM_SCHEDULE)
+        double start = 0;
+#       pragma omp parallel CP2K_SCHEDULE
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; i += u) {
-#if !defined(SMM_THREADPRIVATE)
-          LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+          for (int i = 0; i < s; i += u) {
+#if !defined(CP2K_THREADPRIVATE)
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #endif
-          for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+              libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            }
+            add(c, tmp, m, n, ldc); // atomic
           }
-          add(c, tmp, m, n, ldc); // atomic
-        }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double iduration = 1.0 / duration;
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
-#if defined(SMM_CHECK)
+#if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
 #endif
       }
@@ -346,29 +362,33 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        const double start = omp_get_wtime();
-#       pragma omp parallel for schedule(SMM_SCHEDULE)
+        double start = 0;
+#       pragma omp parallel CP2K_SCHEDULE
+        {
+#         pragma omp master
+          start = omp_get_wtime();
+#         pragma omp for
 #endif
-        for (int i = 0; i < s; i += u) {
-#if !defined(SMM_THREADPRIVATE)
-          LIBXSMM_ALIGNED(T tmp[SMM_MAX_PROBLEM_SIZE], SMM_ALIGNMENT);
+          for (int i = 0; i < s; i += u) {
+#if !defined(CP2K_THREADPRIVATE)
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
 #endif
-          for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
+            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+              xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            }
+            add(c, tmp, m, n, ldc); // atomic
           }
-          add(c, tmp, m, n, ldc); // atomic
-        }
 #if defined(_OPENMP)
+        }
         const double duration = omp_get_wtime() - start;
         if (0 < duration) {
-          const double iduration = 1.0 / duration;
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", iduration * gflops);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", duration * bwsize / (1 << 30));
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
-#if defined(SMM_CHECK)
+#if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
 #endif
       }
