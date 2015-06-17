@@ -1,4 +1,6 @@
 DBG := 0
+SSE := 0
+AVX := 0
 MIC := 0
 
 LIBXSMMROOT := ../..
@@ -54,6 +56,8 @@ ifneq (,$(filter $(CXX),icpc))
 			CXXFLAGS += -xCORE-AVX2
 		else ifeq ($(AVX),3)
 			CXXFLAGS += -xCOMMON-AVX512
+		else ifneq ($(SSE),0)
+			CXXFLAGS += -xSSE3
 		else ifneq ($(MIC),0)
 			CXXFLAGS += -mmic
 			LDFLAGS += -mmic
@@ -88,6 +92,8 @@ else ifneq (,$(filter $(CC),icc))
 			CFLAGS += -xCORE-AVX2
 		else ifeq ($(AVX),3)
 			CFLAGS += -xCOMMON-AVX512
+		else ifneq ($(SSE),0)
+			CFLAGS += -xSSE3
 		else ifneq ($(MIC),0)
 			CFLAGS += -mmic
 			LDFLAGS += -mmic
@@ -121,6 +127,8 @@ else # GCC assumed
 			CXXFLAGS += -mavx2
 		else ifeq ($(AVX),3)
 			CXXFLAGS += -mavx512f
+		else ifneq ($(SSE),0)
+			CXXFLAGS += -msse3
 		else
 			CXXFLAGS += -march=native
 		endif
