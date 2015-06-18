@@ -115,6 +115,7 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xrange [-0.5:2.5]
+set autoscale fix
 plot  BASENAME."-perf.dat" \
       using (0.0):((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
   ""  using (1.0):(((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
@@ -160,5 +161,6 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xlabel "FLOPS/Byte"
+set autoscale fix
 plot  BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
                         "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
