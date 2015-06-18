@@ -123,7 +123,7 @@ plot  BASENAME."-perf.dat" \
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance and Memory Bandwidth (CDF)" }
-set xlabel "Probability\n\nMin.: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Max.: ".sprintf(ACC, MAXFLOPS)." GFLOP/s"
+set xlabel "Probability\n\n{/=8 Minimum: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Maximum: ".sprintf(ACC, MAXFLOPS)." GFLOP/s}"
 set ylabel "GB/s"
 set y2label "GFLOP/s"
 set format x "%g%%"
