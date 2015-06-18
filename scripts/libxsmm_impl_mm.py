@@ -280,7 +280,7 @@ if __name__ == '__main__':
         elif (False == libxsmm_utilities.is_pot(Alignment)):
             raise ValueError("Memory alignment must be a Power of Two (POT) number!")
 
-        if (0 > Threshold):
+        if (-1 > Threshold): # implementation (translation unit)
             print "#include \"libxsmm_isa.h\""
             print "#include <libxsmm.h>"
             print
@@ -295,11 +295,11 @@ if __name__ == '__main__':
             print
             print
             create_implementation("double", m, n, k, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
-        elif (0 == Threshold):
+        elif (-1 == Threshold): # static ISA dispatch (translation unit)
             print
             m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
             create_gentarget(m, n, k, RowMajor)
-        else:
+        else: # macros (header based implementation)
             mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0, Threshold)
             create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
     else:
