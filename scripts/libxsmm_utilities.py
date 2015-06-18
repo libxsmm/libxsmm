@@ -136,7 +136,7 @@ def load_mnklist(argv, format, threshold):
                     resultset.add((m, n, k))
     else:
         raise ValueError("load_mnklist: unexpected format!")
-    return sorted(filter(lambda mnk: threshold >= (mnk[0] * mnk[1] * mnk[2]) and 0 < mnk[0] and 0 < mnk[1] and 0 < mnk[2], resultset))
+    return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
 if __name__ == '__main__':
