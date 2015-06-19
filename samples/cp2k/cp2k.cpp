@@ -55,14 +55,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (0 < (LIBXSMM_ALIGNED_STORES))
-# define CP2K_ALIGNMENT LIBXSMM_ALIGNED_STORES
-#else
-# define CP2K_ALIGNMENT LIBXSMM_ALIGNMENT
-#endif
-
-// make sure that stacksize is covering the problem size
-#define CP2K_MAX_PROBLEM_SIZE (LIBXSMM_MAX_M * LIBXSMM_MAX_N)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -102,13 +94,13 @@ public:
 
 public:
   void acquire(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (CP2K_ALIGNMENT);
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
     // non-pot: omp_set_lock(m_lock + id % CP2K_SYNCHRONIZATION);
     omp_set_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (CP2K_ALIGNMENT);
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
     // non-pot: omp_unset_lock(m_lock + id % CP2K_SYNCHRONIZATION);
     omp_unset_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
@@ -130,8 +122,8 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 # endif
 #endif
     {
-#if (0 < LIBXSMM_ALIGNED_STORES)
-    LIBXSMM_ASSUME_ALIGNED(c, CP2K_ALIGNMENT);
+#if (1 < LIBXSMM_ALIGNED_STORES)
+    LIBXSMM_ASSUME_ALIGNED(c, LIBXSMM_ALIGNED_STORES);
 #endif
     for (int i = 0; i < m; ++i) {
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
@@ -191,30 +183,17 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((CP2K_MAX_PROBLEM_SIZE) < (m * n)) {
-      throw std::runtime_error("The size M x N is exceeding CP2K_MAX_PROBLEM_SIZE!");
+    if ((LIBXSMM_MAX_SIZE) < (m * n)) {
+      throw std::runtime_error("The size M x N is exceeding LIBXSMM_MAX_SIZE!");
     }
 
-#if defined(USE_MKL)
-    mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
-#endif
-
 #if (0 != LIBXSMM_ROW_MAJOR)
-# if (0 < LIBXSMM_ALIGNED_STORES)
     const int ldc = LIBXSMM_ALIGN_VALUE(int, T, n, LIBXSMM_ALIGNED_STORES);
-# else
-    const int ldc = n;
-# endif
     const int csize = m * ldc;
 #else
-# if (0 < LIBXSMM_ALIGNED_STORES)
     const int ldc = LIBXSMM_ALIGN_VALUE(int, T, m, LIBXSMM_ALIGNED_STORES);
-# else
-    const int ldc = m;
-# endif
     const int csize = n * ldc;
 #endif
-
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
@@ -237,16 +216,19 @@ int main(int argc, char* argv[])
     {
 #if defined(CP2K_THREADPRIVATE) && defined(_OPENMP)
 # if 1 == (CP2K_THREADPRIVATE) // native OpenMP TLS
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #     pragma omp threadprivate(tmp)
-#else
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+# else
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 # endif
 #else // without OpenMP nothing needs to be thread-local due to a single-threaded program
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #endif
 #if defined(CP2K_CHECK)
       std::vector<T> expect(csize);
+#endif
+#if defined(USE_MKL)
+      mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
@@ -265,7 +247,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
-            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -300,7 +282,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
-            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -335,7 +317,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
-            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -371,7 +353,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; i += u) {
 #if !defined(CP2K_THREADPRIVATE)
-            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_PROBLEM_SIZE], CP2K_ALIGNMENT);
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
 #endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {

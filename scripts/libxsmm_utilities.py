@@ -86,9 +86,12 @@ def max_mnk(mnklist, init = 0, index = None):
       else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
 
 
-def calc_alignment(alignment, default = None):
-    inherit = [alignment, default][None != default]
-    return [0, [inherit, alignment][1 < alignment]][0 != alignment]
+def sanitize_alignment(alignment):
+    if (0 >= alignment):
+        alignment = [1, 64][0 != alignment]
+    elif (False == is_pot(alignment)):
+        raise ValueError("Memory alignment must be a Power of Two (POT) number!")
+    return alignment
 
 
 def load_mlist(argv):
@@ -148,9 +151,9 @@ if __name__ == '__main__':
     elif (5 < argc and -2 == format): # legacy format
         dims = load_mnklist(sys.argv[2:], format, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (5 == argc and 0 < format):
-        elem_size, unaligned = format, int(sys.argv[2])
-        elements = calc_alignment(int(sys.argv[3]), int(sys.argv[4])) / elem_size
-        print (unaligned + elements - 1) / elements * elements
+    elif (4 == argc and 0 < format):
+        elem_size, unaligned, alignment = format, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3]))
+        elements = max(alignment / elem_size, 1)
+        print ((unaligned + elements - 1) / elements) * elements
     else:
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

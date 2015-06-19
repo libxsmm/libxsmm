@@ -72,27 +72,14 @@ int main(int argc, char* argv[])
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 
-#if defined(USE_MKL)
-    mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
-#endif
-
 #if (0 != LIBXSMM_ROW_MAJOR)
-# if (0 < LIBXSMM_ALIGNED_STORES)
     const int ldc = LIBXSMM_ALIGN_VALUE(int, T, n, LIBXSMM_ALIGNED_STORES);
-# else
-    const int ldc = n;
-# endif
     const int csize = m * ldc;
 #else
-# if (0 < LIBXSMM_ALIGNED_STORES)
     const int ldc = LIBXSMM_ALIGN_VALUE(int, T, m, LIBXSMM_ALIGNED_STORES);
-# else
-    const int ldc = m;
-# endif
     const int csize = n * ldc;
 #endif
-
-    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
+    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
     const int s = (3ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 3 GByte
 #if defined(_OPENMP)
     const size_t bwsize = (asize/*load*/ + bsize/*load*/ + csize * 2/*load and store*/) * sizeof(T); // cached
@@ -103,14 +90,17 @@ int main(int argc, char* argv[])
     std::for_each(va.begin(), va.end(), nrand<T>);
     std::for_each(vb.begin(), vb.end(), nrand<T>);
 
-    const T *const a = LIBXSMM_ALIGN(const T*, &va[0], LIBXSMM_ALIGNMENT);
-    const T *const b = LIBXSMM_ALIGN(const T*, &vb[0], LIBXSMM_ALIGNMENT);
-    T * /*const*/ c = LIBXSMM_ALIGN(T*, &vc[0], LIBXSMM_ALIGNMENT);
+    const T *const a = LIBXSMM_ALIGN(const T*, &va[0], LIBXSMM_ALIGNED_MAX);
+    const T *const b = LIBXSMM_ALIGN(const T*, &vb[0], LIBXSMM_ALIGNED_MAX);
+    T * /*const*/ c = LIBXSMM_ALIGN(T*, &vc[0], LIBXSMM_ALIGNED_MAX);
 
 #if defined(LIBXSMM_OFFLOAD)
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(s * csize))
 #endif
     {
+#if defined(USE_MKL)
+      mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s,
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
@@ -156,11 +146,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; ++i) {
             // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-#if (0 < (LIBXSMM_ALIGNED_STORES))
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNED_STORES);
-#else
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_M*LIBXSMM_MAX_N/*max. problemsize*/], LIBXSMM_ALIGNMENT);
-#endif
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE/*max. problemsize*/], LIBXSMM_ALIGNED_MAX);
             // do nothing else with tmp; just a benchmark
             libxsmm_blasmm(m, n, k, a, b, tmp);
           }

@@ -189,7 +189,10 @@ install: all clean
 header: $(HEADER)
 $(HEADER): Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@cat $(SRCDIR)/libxsmm.0.h > $@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) >> $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
+		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
+		$(ALIGNMENT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) >> $@
 	@echo >> $@
 	@cat $(SRCDIR)/libxsmm.1.h >> $@
 	@echo >> $@
@@ -226,8 +229,8 @@ else # column-major
 	$(eval NVALUE2 := $(NVALUE))
 endif
 ifneq ($(ALIGNED_STORES),0) # aligned stores
-	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE2) $(ALIGNMENT) $(ALIGNED_STORES)))
-	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE2) $(ALIGNMENT) $(ALIGNED_STORES)))
+	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE2) $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))))
+	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE2) $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))))
 else # unaligned stores
 	$(eval LDCDP := $(MVALUE2))
 	$(eval LDCSP := $(MVALUE2))
@@ -235,7 +238,10 @@ endif
 	$(eval LDA := $(MVALUE2))
 	$(eval LDB := $(KVALUE))
 ifeq ($(GENASM),0)
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -4 $(MVALUE) $(NVALUE) $(KVALUE) > $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
+		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
+		$(ALIGNMENT) -4 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
 	@echo "#include <libxsmm.h>" > $@
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
@@ -251,24 +257,36 @@ ifeq ($(GENTARGET),noarch)
 	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) knl nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) knl nopf SP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) hsw nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) hsw nopf SP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) snb nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) snb nopf SP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) wsm nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) wsm nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knl nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knl nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) hsw nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) hsw nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) snb nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) snb nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) wsm nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) wsm nopf SP > /dev/null
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) $(GENTARGET) nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) $(GENTARGET) nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) $(GENTARGET) nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) $(GENTARGET) nopf SP > /dev/null
 endif
-	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_STORES) knc nopf DP > /dev/null
-	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_STORES) knc nopf SP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knc nopf DP > /dev/null
+	@$(SCRDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knc nopf SP > /dev/null
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
@@ -276,7 +294,8 @@ endif
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message ("KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNED_STORES) $(ALIGNED_LOADS) $(ALIGNMENT) -1 $(MVALUE) $(NVALUE) $(KVALUE) >> $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
+		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) $(ALIGNMENT) -1 $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 endif
 
 .PHONY: main
