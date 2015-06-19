@@ -55,9 +55,9 @@ def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Thr
     listM = libxsmm_utilities.make_mlist(listMNK); listM.append(avgDim)
     listN = libxsmm_utilities.make_nlist(listMNK); listN.append(avgDim)
     listK = libxsmm_utilities.make_klist(listMNK); listK.append(avgDim)
-    print "#define LIBXSMM_AVG_M " + str(min(libxsmm_utilities.median(listM), max(maxM - 1, 1)))
-    print "#define LIBXSMM_AVG_N " + str(min(libxsmm_utilities.median(listN), max(maxN - 1, 1)))
-    print "#define LIBXSMM_AVG_K " + str(min(libxsmm_utilities.median(listK), max(maxK - 1, 1)))
+    print "#define LIBXSMM_AVG_M " + str(libxsmm_utilities.median(listM))
+    print "#define LIBXSMM_AVG_N " + str(libxsmm_utilities.median(listN))
+    print "#define LIBXSMM_AVG_K " + str(libxsmm_utilities.median(listK))
     print
     print "#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \\"
     print "  UINT libxsmm_m_ = (M), libxsmm_n_ = (N), libxsmm_k_ = (K); \\"
