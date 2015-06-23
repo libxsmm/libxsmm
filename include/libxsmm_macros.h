@@ -46,7 +46,7 @@
 # if (199901L <= __STDC_VERSION__)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
-#   define LIBXSMM_INLINE inline
+#   define LIBXSMM_INLINE static inline
 # else
 #   define LIBXSMM_INLINE static
 # endif /*C99*/
