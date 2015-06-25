@@ -30,7 +30,7 @@ ALIGNMENT ?= 64
 ALIGNED_STORES ?= 0
 ALIGNED_LOADS ?= 0
 
-# THRESHOLD problem size (M x N x K); determines when to use BLAS 
+# THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 
 # SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
@@ -38,15 +38,15 @@ THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 # With SPARSITY < 1, the binary search is enabled by default (no threshold).
 SPARSITY ?= 2
 
-ROOTDIR ?= .
+ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SCRDIR = $(ROOTDIR)/scripts
-BLDDIR = $(ROOTDIR)/build
 INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
-LIBDIR = $(ROOTDIR)/lib
+BLDDIR = $(ROOTDIR)/build
+OUTDIR = $(ROOTDIR)/lib
 
-LIB_HST ?= $(LIBDIR)/intel64/libxsmm
-LIB_MIC ?= $(LIBDIR)/mic/libxsmm
+LIB_HST ?= $(OUTDIR)/intel64/libxsmm
+LIB_MIC ?= $(OUTDIR)/mic/libxsmm
 HEADER = $(INCDIR)/libxsmm.h
 MAIN = $(SRCDIR)/libxsmm.c
 
@@ -328,7 +328,7 @@ $(LIB_MIC).$(LIBEXT): $(OBJFILES_MIC) $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/mic/%.o
 else
 $(LIB_MIC).$(LIBEXT): $(OBJFILES_MIC)
 endif
-	@mkdir -p $(LIBDIR)/mic
+	@mkdir -p $(OUTDIR)/mic
 ifeq ($(STATIC),0)
 	$(LD) -shared -o $@ $(LDFLAGS) $^
 else
@@ -342,7 +342,7 @@ $(LIB_HST).$(LIBEXT): $(OBJFILES_HST) $(patsubst $(SRCDIR)/%,$(BLDDIR)/intel64/%
 else
 $(LIB_HST).$(LIBEXT): $(OBJFILES_HST)
 endif
-	@mkdir -p $(LIBDIR)/intel64
+	@mkdir -p $(OUTDIR)/intel64
 ifeq ($(STATIC),0)
 	$(LD) -shared -o $@ $(LDFLAGS) $^
 else
@@ -418,7 +418,7 @@ clean:
 
 .PHONY: realclean
 realclean: clean
-	@rm -rf $(LIBDIR)
+	@rm -rf $(OUTDIR)
 	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf.txt
 	@rm -f $(ROOTDIR)/samples/cp2k/cp2k-perf.sh
 	@rm -f $(SCRDIR)/generator.exe
