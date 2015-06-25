@@ -1,6 +1,9 @@
 MPARM = 1
 NPARM = 2
 KPARM = 3
+CPARM = 4
+SSIZE = 5
+USIZE = 6
 FLOPS = 8
 MEMBW = 9
 
@@ -30,6 +33,10 @@ NFLOPS(M, N, K) = XFLOPS(column(M), column(N), column(K))
 NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * column(N) + column(M) * column(N))
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
+TIME(M, N, K, F, S) = column(S) * NFLOPS(M, N, K) * 1E-9 / column(F)
+#BW(M, N, K, F, S, BWC, ELEMSIZE) = column(S) * (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F, S) * 1024 * 1024 * 1024)
+BW(M, N, K, F, S, BWC, ELEMSIZE) = column(BWC)
+
 stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
 stats BASENAME."-perf.dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
@@ -46,7 +53,7 @@ set table BASENAME."-perf-avg.dat"
 plot BASENAME."-perf.dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
 set table BASENAME."-perf-mbw.dat"
-plot BASENAME."-perf.dat" using MEMBW:(1.0) smooth cumulative
+plot BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8)):(1.0) smooth cumulative
 unset table
 set table BASENAME."-perf-cdf.dat"
 plot BASENAME."-perf.dat" using FLOPS:(1.0) smooth cumulative
