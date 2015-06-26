@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((LIBXSMM_MAX_SIZE) < (m * n)) {
+    if ((LIBXSMM_MAX_SIZE) < size_t(m * n)) {
       throw std::runtime_error("The size M x N is exceeding LIBXSMM_MAX_SIZE!");
     }
 
