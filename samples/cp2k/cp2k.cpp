@@ -73,14 +73,6 @@
 #define CP2K_CHECK
 
 
-template<typename T>
-LIBXSMM_TARGET(mic) void nrand(T& a)
-{
-  static const double scale = 1.0 / RAND_MAX;
-  a = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
-}
-
-
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
 LIBXSMM_TARGET(mic) class LIBXSMM_TARGET(mic) lock_type {
 public:
@@ -111,36 +103,65 @@ private:
 #endif
 
 
+template<int Seed>
+struct LIBXSMM_TARGET(mic) init {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
+#if (0 == LIBXSMM_ROW_MAJOR)
+    std::swap(m, n);
+#endif
+    const int ldx = 0 == ld ? n : ld;
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        // initialize similar to CP2K's (libsmm_acc) benchmark driver
+        dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
+      }
+    }
+  }
+};
+
+
+template<>
+struct LIBXSMM_TARGET(mic) init<0> {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
+    static const double scale = 1.0 / RAND_MAX;
+#if (0 == LIBXSMM_ROW_MAJOR)
+    std::swap(m, n);
+#endif
+    const int ldx = 0 == ld ? n : ld;
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        // initialize every value using a normalized random number [-1, +1]
+        dst[i*ldx+j] = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
+      }
+    }
+  }
+};
+
+
 template<typename T>
-LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT c, int m, int n, int ldc)
+LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int m, int n, int ld_src = 0)
 {
+#if (0 == LIBXSMM_ROW_MAJOR)
+  std::swap(m, n);
+#endif
+  const int ld = 0 == ld_src ? n : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
-#   pragma omp critical(smmadd)
+# pragma omp critical(smmadd)
 # else
-    lock.acquire(dst);
+  lock.acquire(dst);
 # endif
 #endif
-    {
-#if (1 < LIBXSMM_ALIGNED_STORES)
-    LIBXSMM_ASSUME_ALIGNED(c, LIBXSMM_ALIGNED_STORES);
-#endif
+  {
+    LIBXSMM_ASSUME_ALIGNED_STORES(src);
     for (int i = 0; i < m; ++i) {
-      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
+      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M))
       for (int j = 0; j < n; ++j) {
-#if (0 != LIBXSMM_ROW_MAJOR)
-        const T value = c[i*ldc+j];
-#else
-        const T value = c[j*ldc+i];
-#endif
+        const T value = src[i*ld+j];
 #if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
 #endif
-#if (0 != LIBXSMM_ROW_MAJOR)
         dst[i*n+j] += value;
-#else
-        dst[j*m+i] += value;
-#endif
       }
     }
   }
@@ -151,16 +172,16 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 
 
 template<typename T>
-LIBXSMM_TARGET(mic) double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ldc)
+LIBXSMM_TARGET(mic) double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ld = 0)
 {
+#if (0 == LIBXSMM_ROW_MAJOR)
+  std::swap(m, n);
+#endif
+  const int ldx = 0 == ld ? n : ld;
   double diff = 0;
   for (int i = 0; i < m; ++i) {
     for (int j = 0; j < n; ++j) {
-#if (0 != LIBXSMM_ROW_MAJOR)
-      const int k = i * ldc + j;
-#else
-      const int k = j * ldc + i;
-#endif
+      const int k = i * ldx + j;
       diff = std::max(diff, std::abs(static_cast<double>(result[k]) - static_cast<double>(expect[k])));
     }
   }
@@ -203,12 +224,13 @@ int main(int argc, char* argv[])
 #endif
 
     std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(csize);
-    std::for_each(va.begin(), va.end(), nrand<T>);
-    std::for_each(vb.begin(), vb.end(), nrand<T>);
-
-    const T *const a = LIBXSMM_ALIGN(const T*, &va[0], LIBXSMM_ALIGNMENT);
-    const T *const b = LIBXSMM_ALIGN(const T*, &vb[0], LIBXSMM_ALIGNMENT);
+    T *const a = LIBXSMM_ALIGN(T*, &va[0], LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(T*, &vb[0], LIBXSMM_ALIGNMENT);
     T * /*const*/ c = &vc[0]; // no alignment, but thread-local array will be aligned
+
+    // initialize similar to CP2K's (libsmm_acc) benchmark driver
+    init<42>(a, m, k);
+    init<24>(b, k, n);
 
 #if defined(LIBXSMM_OFFLOAD)
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
