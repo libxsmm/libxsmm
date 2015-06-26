@@ -32,14 +32,14 @@ SED=$(which sed)
 function capturedTxtToDataFile {
   ${GREP} -i -A2 \
     -e "^m=" -e "${VARIANT}" \
-    ${HERE}/$1.txt | \
-  ${SED} \
+    ${HERE}/$1.txt \
+  | ${SED} \
     -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
     -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GB\/s//" \
-    -e "/^.\+\.\.\./Id" -e "/^$/d" -e "/--/d" | \
-  ${SED} \
+    -e "/^.\+\.\.\./Id" -e "/^$/d" -e "/--/d" \
+  | ${SED} \
     -e "N;s/ MB\n\tperformance://g" \
-    -e "N;s/ GFLOPS\/s\n\tbandwidth://g" \
+    -e "N;s/ GFLOPS\/s\n\t.\+$//g" \
   > ${HERE}/$1.dat
 }
 
