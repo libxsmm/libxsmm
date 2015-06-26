@@ -1,3 +1,65 @@
+#if (0 != LIBXSMM_ROW_MAJOR)
+# define LIBXSMM_LD(M, N) N
+#else
+# define LIBXSMM_LD(M, N) M
+#endif
+#if (1 < LIBXSMM_ALIGNED_STORES)
+# define LIBXSMM_ASSUME_ALIGNED_STORES(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNED_STORES)
+# define LIBXSMM_LDC(REAL, UINT, M, N) LIBXSMM_ALIGN_VALUE(UINT, REAL, LIBXSMM_LD(N, M), LIBXSMM_ALIGNED_STORES)
+#else
+# define LIBXSMM_ASSUME_ALIGNED_STORES(A)
+# define LIBXSMM_LDC(REAL, UINT, M, N) LIBXSMM_LD(N, M)
+#endif
+#if (1 < LIBXSMM_ALIGNED_LOADS)
+# define LIBXSMM_ASSUME_ALIGNED_LOADS(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNED_LOADS)
+#else
+# define LIBXSMM_ASSUME_ALIGNED_LOADS(A)
+#endif
+
+#define LIBXSMM_MAX_SIMD LIBXSMM_MAX(LIBXSMM_ALIGNED_MAX / sizeof(float), 1)
+#define LIBXSMM_MAX_SIZE LIBXSMM_MAX(LIBXSMM_MAX( \
+  LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_K) * LIBXSMM_UP(LIBXSMM_LD(LIBXSMM_MAX_K, LIBXSMM_MAX_M), LIBXSMM_MAX_SIMD),  \
+  LIBXSMM_LD(LIBXSMM_MAX_K, LIBXSMM_MAX_N) * LIBXSMM_UP(LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_K), LIBXSMM_MAX_SIMD)), \
+  LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_N) * LIBXSMM_UP(LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_MAX_SIMD))
+
+#define LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C) { \
+  UINT libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M), libxsmm_k_ = (K); \
+  UINT libxsmm_ldc_ = LIBXSMM_LDC(REAL, UINT, M, N); \
+  REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \
+  char libxsmm_trans_ = 'N'; \
+  LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \
+    &libxsmm_n_, &libxsmm_m_, &libxsmm_k_, \
+    &libxsmm_alpha_, (REAL*)LIBXSMM_LD(B, A), &libxsmm_n_, (REAL*)LIBXSMM_LD(A, B), &libxsmm_k_, \
+    &libxsmm_beta_, (C), &libxsmm_ldc_); \
+}
+
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, UINT, M, N, K, A, B, C)
+#else
+# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) { \
+    UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
+    const REAL *const libxsmm_a_ = LIBXSMM_LD(A, B), *const libxsmm_b_ = LIBXSMM_LD(B, A); \
+    REAL *const libxsmm_c_ = (C); \
+    LIBXSMM_ASSUME_ALIGNED_STORES(libxsmm_c_); \
+    /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_a_);*/ \
+    /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_b_);*/ \
+    LIBXSMM_PRAGMA_SIMD_COLLAPSE(2) \
+    for (libxsmm_j_ = 0; libxsmm_j_ < LIBXSMM_LD(N, M); ++libxsmm_j_) { \
+      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_N), LIBXSMM_LD(LIBXSMM_AVG_M, LIBXSMM_AVG_N)) \
+      for (libxsmm_i_ = 0; libxsmm_i_ < LIBXSMM_LD(M, N); ++libxsmm_i_) { \
+        const UINT libxsmm_index_ = libxsmm_i_ * LIBXSMM_LDC(REAL, UINT, M, N) + libxsmm_j_; \
+        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_]; \
+        LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \
+        LIBXSMM_PRAGMA_UNROLL \
+        for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \
+          libxsmm_r_ += libxsmm_a_[libxsmm_i_*(K)+libxsmm_k_] * libxsmm_b_[libxsmm_k_*LIBXSMM_LD(N,M)+libxsmm_j_]; \
+        } \
+        libxsmm_c_[libxsmm_index_] = libxsmm_r_; \
+      } \
+    } \
+  }
+#endif
+
 /**
  * Execute a generated function, inlined code, or fall back to the linked LAPACK implementation.
  * If M, N, and K does not change for multiple calls, it is more efficient to query and reuse
