@@ -65,5 +65,8 @@
     <ClCompile Include="..\src\libxsmm.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\mm_23_23_23.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
