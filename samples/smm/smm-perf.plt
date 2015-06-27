@@ -6,8 +6,6 @@ FLOPS = 7
 HIM = -1
 HIN = HIM
 HIK = HIM
-MN = 23
-PEAK = 0 #985.6
 
 BASENAME = "smm"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
