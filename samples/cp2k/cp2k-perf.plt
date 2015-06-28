@@ -10,8 +10,6 @@ MEMBW = 9
 HIM = -1
 HIN = HIM
 HIK = HIM
-MN = 23
-PEAK = 0 #985.6
 
 BASENAME = "cp2k"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
@@ -158,6 +156,19 @@ set label sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) 
 set key left invert
 plot  BASENAME."-perf-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 title "Memory Bandwidth" with lines linecolor "grey", \
       BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 title "Compute Performance" with lines linewidth 2
+
+reset
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Memory Bandwidth" }
+set grid x y2 linecolor "grey"
+set key left #spacing 0.5
+set ytics format ""
+set y2tics nomirror
+set y2label "GB/s"
+set xlabel "Problem Size (MNK**1/3)"
+set autoscale fix
+plot  BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8)) notitle smooth sbezier with lines linecolor "grey", \
+                        "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8)) notitle smooth unique with points pointtype 7 pointsize 0.1
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
