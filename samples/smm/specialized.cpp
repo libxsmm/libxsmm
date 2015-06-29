@@ -58,12 +58,9 @@
 template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
-#if (0 == LIBXSMM_ROW_MAJOR)
-    std::swap(m, n);
-#endif
-    const int ldx = 0 == ld ? n : ld;
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < n; ++j) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
+    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
         // initialize similar to CP2K's (libsmm_acc) benchmark driver
         dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
       }
@@ -96,15 +93,14 @@ int main(int argc, char* argv[])
 #endif
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      T *a, *b, *c;
+      T *a, *b;
       raii(int s, int asize, int bsize, int csize, int aspace)
-        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[s*csize+aspace-1])
+        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1])
       {}
-      ~raii() { delete[] a; delete[] b; delete[] c; }
+      ~raii() { delete[] a; delete[] b; }
     } buffer(s, asize, bsize, csize, aspace);
     T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
-    T * /*const*/ c = LIBXSMM_ALIGN(T*, buffer.c, LIBXSMM_ALIGNED_MAX);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -115,7 +111,7 @@ int main(int argc, char* argv[])
     }
 
 #if defined(LIBXSMM_OFFLOAD)
-#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(s * csize))
+#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize))
 #endif
     {
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -130,8 +126,7 @@ int main(int argc, char* argv[])
       }
 
       { // streaming
-        fprintf(stdout, "Streaming...\n");
-        std::fill_n(c, s * csize, 0);
+        fprintf(stdout, "Streamed...\n");
 #if defined(_OPENMP)
         double start = 0;
 #       pragma omp parallel
@@ -141,7 +136,9 @@ int main(int argc, char* argv[])
 #         pragma omp for
 #endif
           for (int i = 0; i < s; ++i) {
-            xmm(a + i * asize, b + i * bsize, c + i * csize);
+            // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
+            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE/*max. problemsize*/], LIBXSMM_ALIGNED_MAX);
+            xmm(a + i * asize, b + i * bsize, tmp);
           }
 #if defined(_OPENMP)
         }

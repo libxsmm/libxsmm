@@ -105,12 +105,9 @@ private:
 template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
-#if (0 == LIBXSMM_ROW_MAJOR)
-    std::swap(m, n);
-#endif
-    const int ldx = 0 == ld ? n : ld;
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < n; ++j) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
+    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
         // initialize similar to CP2K's (libsmm_acc) benchmark driver
         dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
       }
@@ -123,12 +120,9 @@ template<>
 struct LIBXSMM_TARGET(mic) init<0> {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
     static const double scale = 1.0 / RAND_MAX;
-#if (0 == LIBXSMM_ROW_MAJOR)
-    std::swap(m, n);
-#endif
-    const int ldx = 0 == ld ? n : ld;
-    for (int i = 0; i < m; ++i) {
-      for (int j = 0; j < n; ++j) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
+    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
         // initialize every value using a normalized random number [-1, +1]
         dst[i*ldx+j] = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
       }
@@ -140,10 +134,7 @@ struct LIBXSMM_TARGET(mic) init<0> {
 template<typename T>
 LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int m, int n, int ld_src = 0)
 {
-#if (0 == LIBXSMM_ROW_MAJOR)
-  std::swap(m, n);
-#endif
-  const int ld = 0 == ld_src ? n : ld_src;
+  const int ld = 0 == ld_src ? LIBXSMM_LD(m, n) : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
 # pragma omp critical(smmadd)
@@ -153,14 +144,14 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 #endif
   {
     LIBXSMM_ASSUME_ALIGNED_STORES(src);
-    for (int i = 0; i < m; ++i) {
-      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M))
-      for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
+      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_N), LIBXSMM_LD(LIBXSMM_AVG_M, LIBXSMM_AVG_N))
+      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
         const T value = src[i*ld+j];
 #if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
 #endif
-        dst[i*n+j] += value;
+        dst[i*LIBXSMM_LD(m,n)+j] += value;
       }
     }
   }
@@ -173,13 +164,10 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 template<typename T>
 LIBXSMM_TARGET(mic) double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int m, int n, int ld = 0)
 {
-#if (0 == LIBXSMM_ROW_MAJOR)
-  std::swap(m, n);
-#endif
-  const int ldx = 0 == ld ? n : ld;
+  const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
   double diff = 0;
-  for (int i = 0; i < m; ++i) {
-    for (int j = 0; j < n; ++j) {
+  for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
+    for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
       const int k = i * ldx + j;
       diff = std::max(diff, std::abs(static_cast<double>(result[k]) - static_cast<double>(expect[k])));
     }
@@ -207,14 +195,8 @@ int main(int argc, char* argv[])
       throw std::runtime_error("The size M x N is exceeding LIBXSMM_MAX_SIZE!");
     }
 
-#if (0 != LIBXSMM_ROW_MAJOR)
-    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, n, LIBXSMM_ALIGNED_STORES);
-    const int csize = m * ldc;
-#else
-    const int ldc = LIBXSMM_ALIGN_VALUE(int, T, m, LIBXSMM_ALIGNED_STORES);
-    const int csize = n * ldc;
-#endif
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
+    const int ldc = LIBXSMM_LDC(T, int, m, n), csize = LIBXSMM_LD(n, m) * ldc;
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
 #if defined(_OPENMP)
