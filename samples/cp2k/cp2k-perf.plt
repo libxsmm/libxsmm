@@ -120,6 +120,7 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xrange [-0.5:2.5]
+set yrange [0:*]
 set autoscale fix
 plot  BASENAME."-perf.dat" \
       using (0.0):((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
@@ -129,7 +130,7 @@ plot  BASENAME."-perf.dat" \
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance and Memory Bandwidth (CDF)" }
-set xlabel "Probability\n\n{/=8 Minimum: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Maximum: ".sprintf(ACC, MAXFLOPS)." GFLOP/s}"
+set xlabel "Probability\n\n{/=9 Minimum: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Maximum: ".sprintf(ACC, MAXFLOPS)." GFLOP/s}"
 set ylabel "GB/s"
 set y2label "GFLOP/s"
 set format x "%g%%"
@@ -159,26 +160,28 @@ plot  BASENAME."-perf-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Performance and Arithmetic Intensity" }
+if (MULTI>-1) { set title "Arithmetic Intensity" }
 set grid x y2 linecolor "grey"
 set key left #spacing 0.5
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set xlabel "FLOPS/Byte"
+set yrange [0:*]
 set autoscale fix
 plot  BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
                         "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Memory Bandwidth" }
+if (MULTI>-1) { set title "Memory Bandwidth Consumption" }
 set grid x y2 linecolor "grey"
 set key left #spacing 0.5
 set ytics format ""
 set y2tics nomirror
 set y2label "GB/s"
-set xlabel "Problem Size (MNK**1/3)"
+set xlabel "Problem Size (MNK^{1/3})"
+set yrange [0:*]
 set autoscale fix
 plot  BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8)) notitle smooth sbezier with lines linecolor "grey", \
                         "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8)) notitle smooth unique with points pointtype 7 pointsize 0.1
