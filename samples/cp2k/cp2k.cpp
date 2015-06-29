@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
 #if defined(_OPENMP)
-#   pragma omp parallel for
+#   pragma omp parallel for CP2K_SCHEDULE
 #endif
     for (int i = 0; i < s; ++i) {
       init<42>(a + i * asize, m, k);
