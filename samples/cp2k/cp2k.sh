@@ -5,7 +5,7 @@ NAME=cp2k
 
 if [[ "-mic" != "$1" ]] ; then
   env \
-    KMP_AFFINITY=scatter,granularity=fine \
+    KMP_AFFINITY=scatter,granularity=fine,1 \
     OFFLOAD_INIT=on_start \
     MIC_ENV_PREFIX=MIC \
     MIC_KMP_AFFINITY=scatter,granularity=fine \
