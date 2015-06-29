@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
+    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b;
       raii(int s, int asize, int bsize, int aspace)
         : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1])
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     }
 
 #if defined(LIBXSMM_OFFLOAD)
-#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(s * csize))
+#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize))
 #endif
     {
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)

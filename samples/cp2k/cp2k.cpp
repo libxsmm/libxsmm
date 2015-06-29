@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
 
 #if defined(CP2K_CHECK)
-      struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+      LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
         raii(int csize): expect(new T[csize]) {}
         ~raii() { delete[] expect; }
