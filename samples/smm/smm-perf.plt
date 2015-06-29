@@ -36,7 +36,7 @@ set encoding utf8
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Performance" }
+if (MULTI>-1) { set title "Selected Problem Instances" }
 set style fill solid 0.4 border -1
 set style data histograms
 set style histogram cluster #gap 2
