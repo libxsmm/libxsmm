@@ -40,7 +40,6 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
-#include <vector>
 #include <cmath>
 
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -223,14 +222,27 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(csize);
-    T *const a = LIBXSMM_ALIGN(T*, &va[0], LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN(T*, &vb[0], LIBXSMM_ALIGNMENT);
-    T * /*const*/ c = &vc[0]; // no alignment, but thread-local array will be aligned
+    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+      T *a, *b, *c, *expect;
+      raii(int s, int asize, int bsize, int csize, int aspace)
+        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[s*csize]), expect(new T[s*csize])
+      {}
+      ~raii() { delete[] a; delete[] b; delete[] c; delete[] expect; }
+    } buffer(s, asize, bsize, csize, aspace);
+    T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
+    T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
+    T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
+#if defined(CP2K_CHECK)
+    T * /*const*/ expect = buffer.expect;
+#endif
 
-    // initialize similar to CP2K's (libsmm_acc) benchmark driver
-    init<42>(a, m, k);
-    init<24>(b, k, n);
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
+    for (int i = 0; i < s; ++i) {
+      init<42>(a + i * asize, m, k);
+      init<24>(b + i * bsize, k, n);
+    }
 
 #if defined(LIBXSMM_OFFLOAD)
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
@@ -245,9 +257,6 @@ int main(int argc, char* argv[])
 # endif
 #else // without OpenMP nothing needs to be thread-local due to a single-threaded program
       LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
-#if defined(CP2K_CHECK)
-      std::vector<T> expect(csize);
 #endif
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
@@ -287,7 +296,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        std::copy(c, c + csize, expect.begin());
+        std::copy(c, c + csize, expect);
 #endif
       }
 
@@ -322,7 +331,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
 #endif
       }
 
@@ -357,7 +366,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
 #endif
       }
 
@@ -393,7 +402,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, &expect[0], m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
 #endif
       }
 

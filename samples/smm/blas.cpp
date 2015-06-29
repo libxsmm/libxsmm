@@ -40,7 +40,6 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
-#include <vector>
 #include <cmath>
 
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -56,12 +55,21 @@
 #endif
 
 
-template<typename T>
-LIBXSMM_TARGET(mic) void nrand(T& a)
-{
-  static const double scale = 1.0 / RAND_MAX;
-  a = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
-}
+template<int Seed>
+struct LIBXSMM_TARGET(mic) init {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
+#if (0 == LIBXSMM_ROW_MAJOR)
+    std::swap(m, n);
+#endif
+    const int ldx = 0 == ld ? n : ld;
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        // initialize similar to CP2K's (libsmm_acc) benchmark driver
+        dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
+      }
+    }
+  }
+};
 
 
 int main(int argc, char* argv[])
@@ -86,13 +94,24 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    std::vector<T> va(s * asize + aspace - 1), vb(s * bsize + aspace - 1), vc(s * csize + aspace - 1);
-    std::for_each(va.begin(), va.end(), nrand<T>);
-    std::for_each(vb.begin(), vb.end(), nrand<T>);
+    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+      T *a, *b, *c;
+      raii(int s, int asize, int bsize, int csize, int aspace)
+        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[s*csize+aspace-1])
+      {}
+      ~raii() { delete[] a; delete[] b; delete[] c; }
+    } buffer(s, asize, bsize, csize, aspace);
+    T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
+    T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
+    T * /*const*/ c = LIBXSMM_ALIGN(T*, buffer.c, LIBXSMM_ALIGNED_MAX);
 
-    const T *const a = LIBXSMM_ALIGN(const T*, &va[0], LIBXSMM_ALIGNED_MAX);
-    const T *const b = LIBXSMM_ALIGN(const T*, &vb[0], LIBXSMM_ALIGNED_MAX);
-    T * /*const*/ c = LIBXSMM_ALIGN(T*, &vc[0], LIBXSMM_ALIGNED_MAX);
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
+    for (int i = 0; i < s; ++i) {
+      init<42>(a + i * asize, m, k);
+      init<24>(b + i * bsize, k, n);
+    }
 
 #if defined(LIBXSMM_OFFLOAD)
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(s * csize))
