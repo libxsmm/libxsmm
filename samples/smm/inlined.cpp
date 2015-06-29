@@ -92,13 +92,13 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+    LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b;
-      raii(int s, int asize, int bsize, int csize, int aspace)
+      raii(int s, int asize, int bsize, int aspace)
         : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1])
       {}
       ~raii() { delete[] a; delete[] b; }
-    } buffer(s, asize, bsize, csize, aspace);
+    } buffer(s, asize, bsize, aspace);
     T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
 

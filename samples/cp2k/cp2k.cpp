@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+    LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
       raii(int s, int asize, int bsize, int csize, int aspace)
         : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[csize])
