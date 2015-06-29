@@ -49,7 +49,7 @@ ifneq (,$(filter $(CXX),icpc))
 	CXXFLAGS += -fPIC -Wall
 	DFLAGS += -DUSE_MKL
 	ifeq (0,$(DBG))
-		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -O3 -ipo -openmp
+		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -O2 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -xAVX
@@ -85,7 +85,7 @@ else ifneq (,$(filter $(CC),icc))
 	CFLAGS += -fPIC -Wall
 	DFLAGS += -DUSE_MKL
 	ifeq (0,$(DBG))
-		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -O3 -ipo -openmp
+		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -O2 -ipo -openmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CFLAGS += -xAVX
@@ -120,7 +120,7 @@ else ifneq (,$(filter $(CC),icc))
 else # GCC assumed
 	CXXFLAGS += -Wall
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O3 -fopenmp
+		CXXFLAGS += -O2 -fopenmp
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			CXXFLAGS += -mavx
