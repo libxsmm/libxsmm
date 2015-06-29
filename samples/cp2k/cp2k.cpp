@@ -223,18 +223,15 @@ int main(int argc, char* argv[])
 #endif
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      T *a, *b, *c, *expect;
+      T *a, *b, *c;
       raii(int s, int asize, int bsize, int csize, int aspace)
-        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[s*csize]), expect(new T[s*csize])
+        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[csize])
       {}
-      ~raii() { delete[] a; delete[] b; delete[] c; delete[] expect; }
+      ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s, asize, bsize, csize, aspace);
     T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
-#if defined(CP2K_CHECK)
-    T * /*const*/ expect = buffer.expect;
-#endif
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -265,7 +262,16 @@ int main(int argc, char* argv[])
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
 
-      { // LAPACK/BLAS3 (fallback)
+#if defined(CP2K_CHECK)
+      struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+        T *expect;
+        raii(int csize): expect(new T[csize]) {}
+        ~raii() { delete[] expect; }
+      } buffer(csize);
+      T *const expect = buffer.expect;
+#endif
+
+      { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
