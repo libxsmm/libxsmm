@@ -66,8 +66,6 @@
 #else
 # define CP2K_SCHEDULE
 #endif
-// Kind of thread-private data
-#define CP2K_THREADPRIVATE 1
 // enable result validation
 #define CP2K_CHECK
 
@@ -227,16 +225,6 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
-#if defined(CP2K_THREADPRIVATE) && defined(_OPENMP)
-# if 1 == (CP2K_THREADPRIVATE) // native OpenMP TLS
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#     pragma omp threadprivate(tmp)
-# else
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static LIBXSMM_TLS T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-# endif
-#else // without OpenMP nothing needs to be thread-local due to a single-threaded program
-      LIBXSMM_TARGET(mic) LIBXSMM_ALIGNED(static T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
@@ -265,9 +253,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-#if !defined(CP2K_THREADPRIVATE)
             LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -300,9 +286,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-#if !defined(CP2K_THREADPRIVATE)
             LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -335,9 +319,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-#if !defined(CP2K_THREADPRIVATE)
             LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -371,9 +353,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-#if !defined(CP2K_THREADPRIVATE)
             LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-#endif
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
