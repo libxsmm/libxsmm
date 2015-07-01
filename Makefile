@@ -83,7 +83,7 @@ ifneq ($(shell which icc 2> /dev/null),)
 	endif
 else ifneq ($(shell which gcc 2> /dev/null),)
 	CC := gcc
-	FLAGS := -Wall -O2 -DNDEBUG
+	FLAGS := -Wall -O2 -ftree-vectorize -ffast-math -funroll-loops -DNDEBUG
 	ifneq ($(OS),Windows_NT)
 		FLAGS += -fPIC
 	endif
