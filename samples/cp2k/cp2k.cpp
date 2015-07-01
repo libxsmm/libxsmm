@@ -76,21 +76,29 @@ public:
   lock_type() {
     for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
   }
-  
+
   ~lock_type() {
     for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_destroy_lock(m_lock + i);
   }
 
 public:
-  void acquire(const void* address) {
+  void acquire_nonpot(const void* address) {
     const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
-    // non-pot: omp_set_lock(m_lock + id % CP2K_SYNCHRONIZATION);
+    omp_set_lock(m_lock + (id % CP2K_SYNCHRONIZATION));
+  }
+
+  void release_nonpot(const void* address) {
+    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
+    omp_unset_lock(m_lock + (id % CP2K_SYNCHRONIZATION));
+  }
+
+  void acquire(const void* address) {
+    const uintptr_t id = LIBXSMM_DIV(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
     omp_set_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
-    // non-pot: omp_unset_lock(m_lock + id % CP2K_SYNCHRONIZATION);
+    const uintptr_t id = LIBXSMM_DIV(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
     omp_unset_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
   }
 

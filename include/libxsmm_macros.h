@@ -97,9 +97,19 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
+/*Based on Stackoverflow's NBITSx macro.*/
+#define LIBXSMM_NBITS02(N) (0 != ((N) & 2/*0b10*/) ? 1 : 0)
+#define LIBXSMM_NBITS04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 + LIBXSMM_NBITS02((N) >> 2)) : LIBXSMM_NBITS02(N))
+#define LIBXSMM_NBITS08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4 + LIBXSMM_NBITS04((N) >> 4)) : LIBXSMM_NBITS04(N))
+#define LIBXSMM_NBITS16(N) (0 != ((N) & 0xFF00) ? (8 + LIBXSMM_NBITS08((N) >> 8)) : LIBXSMM_NBITS08(N))
+#define LIBXSMM_NBITS32(N) (0 != ((N) & 0xFFFF0000) ? (16 + LIBXSMM_NBITS16((N) >> 16)) : LIBXSMM_NBITS16(N))
+#define LIBXSMM_NBITS64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 + LIBXSMM_NBITS32((uint64_t)(N) >> 32)) : LIBXSMM_NBITS32(N))
+#define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64(N) + 1) : 1)
+
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_MOD(A, B) ((A) & ((B) - 1)) /*B: pot!*/
+#define LIBXSMM_DIV(A, B) ((A) >> (LIBXSMM_NBITS(B) - 1)) /*B: pot!*/
 #define LIBXSMM_UP(A, B) ((((A) + (B) - 1) / (B)) * (B))
 
 #if defined(_WIN32) && !defined(__GNUC__)
