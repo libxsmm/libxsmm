@@ -101,17 +101,13 @@ ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 			CFLAGS += -ipo
 		endif
 		ifeq ($(AVX),1)
-			CXXFLAGS += -xAVX
-			CFLAGS += -xAVX
+			TARGET = -xAVX
 		else ifeq ($(AVX),2)
-			CXXFLAGS += -xCORE-AVX2
-			CFLAGS += -xCORE-AVX2
+			TARGET = -xCORE-AVX2
 		else ifeq ($(AVX),3)
-			CXXFLAGS += -xCOMMON-AVX512
-			CFLAGS += -xCOMMON-AVX512
+			TARGET = -xCOMMON-AVX512
 		else
-			CXXFLAGS += -xHost
-			CFLAGS += -xHost
+			TARGET = -xHost
 		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
@@ -144,17 +140,13 @@ else # GCC assumed
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
-			CXXFLAGS += -mavx
-			CFLAGS += -mavx
+			TARGET = -mavx
 		else ifeq ($(AVX),2)
-			CXXFLAGS += -mavx2
-			CFLAGS += -mavx2
+			TARGET = -mavx2
 		else ifeq ($(AVX),3)
-			CXXFLAGS += -mavx512f
-			CFLAGS += -mavx512f
+			TARGET = -mavx512f
 		else
-			CXXFLAGS += -march=native
-			CFLAGS += -march=native
+			TARGET = -march=native
 		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
@@ -373,10 +365,10 @@ endif
 compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h $(SRCDIR)/libxsmm_isa.h
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h $(SRCDIR)/libxsmm_isa.h
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq ($(MIC),0)
 .PHONY: lib_mic
