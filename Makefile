@@ -237,6 +237,7 @@ install: all clean
 header: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@mkdir -p $(dir $@)
+	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cat $(SRCDIR)/libxsmm.0.h > $@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
@@ -496,5 +497,4 @@ endif
 	@rm -f $(INCDIR)/libxsmm.h
 
 install: all clean
-	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 
