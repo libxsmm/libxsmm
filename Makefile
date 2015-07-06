@@ -52,12 +52,12 @@ CFLAGS = $(NULL)
 DFLAGS = -DLIBXSTREAM_EXPORTED
 IFLAGS = -I$(INCDIR)
 
-OFFLOAD ?= 0
 STATIC ?= 1
 OMP ?= 0
 DBG ?= 0
 IPO ?= 0
 
+OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
 	MIC ?= 1
 else
@@ -473,7 +473,6 @@ else
 endif
 
 .PHONY: realclean
-realclean: clean
 realclean: clean
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
