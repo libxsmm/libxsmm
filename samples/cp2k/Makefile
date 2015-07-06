@@ -190,9 +190,13 @@ $(NAME): $(NAME)-cpp.o
 
 
 clean:
-	rm -f *.o *.i *.ii *.s
+	@rm -f *.o *.i *.ii *.s
+	@rm -f cp2k-perf-avg.dat
+	@rm -f cp2k-perf-cdf.dat
+	@rm -f cp2k-perf.dat
 
 realclean: clean
-	rm -f $(NAME) $(NAME).exe $(NAME).exe.stackdump
+	@rm -f $(NAME) $(NAME).exe $(NAME).exe.stackdump
+	@rm -f cp2k-perf.txt
 
 install: all clean
