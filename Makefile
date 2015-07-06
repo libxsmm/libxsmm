@@ -41,8 +41,8 @@ SPARSITY ?= 2
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
-INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
+INCDIR = include
 BLDDIR = build
 OUTDIR = lib
 BINDIR = bin
@@ -50,7 +50,7 @@ BINDIR = bin
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -DLIBXSTREAM_EXPORTED
-IFLAGS = -I$(INCDIR)
+IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
 
 STATIC ?= 1
 OMP ?= 0
@@ -494,3 +494,7 @@ else
 endif
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(INCDIR)/libxsmm.h
+
+install: all clean
+	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
+
