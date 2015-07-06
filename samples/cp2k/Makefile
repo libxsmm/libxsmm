@@ -1,202 +1,303 @@
-NAME := cp2k
-DBG := 0
-SSE := 0
-AVX := 0
-MIC := 0
+ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+DEPDIR = $(ROOTDIR)/../..
+INCDIR = $(ROOTDIR)
+SRCDIR = $(ROOTDIR)
+BLDDIR = build
+OUTDIR = .
 
-LIBXSMMROOT := ../..
-CXXFLAGS :=
-CFLAGS :=
-DFLAGS :=
-IFLAGS := -I$(LIBXSMMROOT)/include
+CXXFLAGS = $(NULL)
+CFLAGS = $(NULL)
+DFLAGS = $(NULL)
+IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-ifeq ($(STATIC),0)
-	ifeq ($(MIC),0)
-		LIBXSMM := $(LIBXSMMROOT)/lib/intel64/libxsmm.so
-		LDFLAGS := -L$(LIBXSMMROOT)/lib/intel64 -lxsmm
+OMP ?= 1
+DBG ?= 0
+IPO ?= 0
+
+OFFLOAD ?= 0
+ifneq ($(OFFLOAD),0)
+	MIC ?= 1
+else
+	MIC ?= 0
+endif
+
+ifeq ($(MIC),0)
+	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
+else
+	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
+endif
+
+ifneq ("","$(wildcard $(LIBNAME).a)")
+	STATIC ?= 1
+	LIBEXT = a
+else
+	STATIC ?= 0
+	LIBEXT = so
+endif
+
+BLAS ?= 1
+ifneq ($(MKLROOT),)
+	MKL ?= 1
+	MKL_DIRECT ?= 0
+	ifneq ($(MKL_DIRECT),0)
+		MKL_STATIC ?= 1
+	else ifneq ($(STATIC),0)
+		MKL_STATIC ?= 1
 	else
-		LIBXSMM := $(LIBXSMMROOT)/lib/mic/libxsmm.so
-		LDFLAGS := -L$(LIBXSMMROOT)/lib/mic -lxsmm
+		MKL_STATIC ?= 0
 	endif
 else
-	ifeq ($(MIC),0)
-		LIBXSMM := $(LIBXSMMROOT)/lib/intel64/libxsmm.a
-	else
-		LIBXSMM := $(LIBXSMMROOT)/lib/mic/libxsmm.a
-	endif
-	LDFLAGS += $(LIBXSMM)
+	MKL ?= 0
 endif
 
-ICPC := $(notdir $(shell which icpc 2> /dev/null))
-ICC := $(notdir $(shell which icc 2> /dev/null))
+OUTNAME = $(shell basename $(ROOTDIR))
+HEADERS = $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/*.hh 2>  /dev/null | tr "\n" " ")
+CPPSRCS = $(shell ls -1 $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
+CXXSRCS = $(shell ls -1 $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
+CCXSRCS = $(shell ls -1 $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
+CSOURCS = $(shell ls -1 $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
+SOURCES = $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
+CPPOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
+CXXOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
+CCXOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
+COBJCTS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+OBJECTS = $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
+
+ICPC = $(notdir $(shell which icpc 2> /dev/null))
+ICC = $(notdir $(shell which icc 2> /dev/null))
+GPP = $(notdir $(shell which g++ 2> /dev/null))
+GCC = $(notdir $(shell which gcc 2> /dev/null))
 
 ifneq (,$(ICPC))
-	CXX := $(ICPC)
+	CXX = $(ICPC)
 	ifeq (,$(ICC))
-		CC := $(CXX)
+		CC = $(CXX)
 	endif
+else
+	CXX = $(GPP)
 endif
 ifneq (,$(ICC))
-	CC := $(ICC)
+	CC = $(ICC)
 	ifeq (,$(ICPC))
-		CXX := $(CC)
+		CXX = $(CC)
 	endif
+else
+	CC = $(GCC)
+endif
+ifneq ($(CXX),)
+	LD = $(CXX)
+endif
+ifeq ($(LD),)
+	LD = $(CC)
 endif
 
-LD := $(CXX)
-
-ifneq (,$(filter $(CXX),icpc))
-	CXXFLAGS += -fPIC -Wall
-	DFLAGS += -DUSE_MKL
+ifneq (,$(filter icpc icc,$(CXX) $(CC)))
+	CXXFLAGS += -fPIC -Wall -std=c++0x
+	CFLAGS += -fPIC -Wall -std=c99
 	ifeq (0,$(DBG))
-		CXXFLAGS += -fno-alias -ansi-alias -mkl=sequential -O2 -ipo -openmp
+		CXXFLAGS += -fno-alias -ansi-alias -O2
+		CFLAGS += -fno-alias -ansi-alias -O2
 		DFLAGS += -DNDEBUG
+		ifneq ($(IPO),0)
+			CXXFLAGS += -ipo
+			CFLAGS += -ipo
+		endif
 		ifeq ($(AVX),1)
-			CXXFLAGS += -xAVX
+			TARGET = -xAVX
 		else ifeq ($(AVX),2)
-			CXXFLAGS += -xCORE-AVX2
+			TARGET = -xCORE-AVX2
 		else ifeq ($(AVX),3)
-			CXXFLAGS += -xCOMMON-AVX512
-		else ifneq ($(SSE),0)
-			CXXFLAGS += -xSSE3
-		else ifneq ($(MIC),0)
-			CXXFLAGS += -mmic
-			LDFLAGS += -mmic
+			TARGET = -xCOMMON-AVX512
 		else
-			CXXFLAGS += -xHost
+			TARGET = -xHost
 		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
+		CFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 	else
-		CXXFLAGS += -O0 -g -openmp
+		CXXFLAGS += -O0 -g
+		CFLAGS += -O0 -g
+	endif
+	ifneq ($(OMP),0)
+		CXXFLAGS += -openmp
+		CFLAGS += -openmp
+		LDFLAGS += -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
-	else ifeq ($(MIC),0)
-		CXXFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
-	endif
-	LDFLAGS += -fPIC -mkl=sequential -openmp
-	ifneq ($(STATIC),0)
-		ifneq ($(STATIC),)
-			LDFLAGS += -no-intel-extensions -static-intel
-		endif
-	endif
-else ifneq (,$(filter $(CC),icc))
-	CFLAGS += -fPIC -Wall
-	DFLAGS += -DUSE_MKL
-	ifeq (0,$(DBG))
-		CFLAGS += -fno-alias -ansi-alias -mkl=sequential -O2 -ipo -openmp
-		DFLAGS += -DNDEBUG
-		ifeq ($(AVX),1)
-			CFLAGS += -xAVX
-		else ifeq ($(AVX),2)
-			CFLAGS += -xCORE-AVX2
-		else ifeq ($(AVX),3)
-			CFLAGS += -xCOMMON-AVX512
-		else ifneq ($(SSE),0)
-			CFLAGS += -xSSE3
-		else ifneq ($(MIC),0)
-			CFLAGS += -mmic
-			LDFLAGS += -mmic
-		else
-			CFLAGS += -xHost
-		endif
-	else ifneq (1,$(DBG))
-		CFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
-	else
-		CFLAGS += -O0 -g -openmp
-	endif
-	ifeq (0,$(OFFLOAD))
 		CFLAGS += -no-offload
-	else ifeq ($(MIC),0)
-		CFLAGS += -offload-option,mic,compiler,"-O2 -opt-assume-safe-padding"
 	endif
-	LDFLAGS += -fPIC -mkl=sequential -openmp
+	LDFLAGS += -fPIC
 	ifneq ($(STATIC),0)
-		ifneq ($(STATIC),)
-			LDFLAGS += -no-intel-extensions -static-intel
-		endif
+		LDFLAGS += -no-intel-extensions -static-intel
 	endif
 else # GCC assumed
-	CXXFLAGS += -Wall
+	MIC = 0
+	CXXFLAGS += -Wall -std=c++0x
+	CFLAGS += -Wall
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -fopenmp
+		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
+		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
-			CXXFLAGS += -mavx
+			TARGET = -mavx
 		else ifeq ($(AVX),2)
-			CXXFLAGS += -mavx2
+			TARGET = -mavx2
 		else ifeq ($(AVX),3)
-			CXXFLAGS += -mavx512f
-		else ifneq ($(SSE),0)
-			CXXFLAGS += -msse3
+			TARGET = -mavx512f
 		else
-			CXXFLAGS += -march=native
+			TARGET = -march=native
 		endif
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
+		CFLAGS += -O0 -g3 -gdwarf-2
 	else
-		CXXFLAGS += -O0 -g -fopenmp
+		CXXFLAGS += -O0 -g
+		CFLAGS += -O0 -g
+	endif
+	ifneq ($(OMP),0)
+		CXXFLAGS += -fopenmp
+		CFLAGS += -fopenmp
+		LDFLAGS += -fopenmp
 	endif
 	ifneq ($(OS),Windows_NT)
-		LDFLAGS += -fPIC -llapack -lblas
 		CXXFLAGS += -fPIC
-	else
-		LDFLAGS += -llapack.dll -lblas.dll
+		CFLAGS += -fPIC
+		LDFLAGS += -fPIC
 	endif
-	LDFLAGS += -lgfortran -lquadmath -fopenmp
 	ifneq ($(STATIC),0)
-		ifneq ($(STATIC),)
-			LDFLAGS += -static
-		endif
+		LDFLAGS += -static
 	endif
 endif
 
 ifeq (,$(CXXFLAGS))
-	CXXFLAGS := $(CFLAGS)
+	CXXFLAGS = $(CFLAGS)
 endif
 ifeq (,$(CFLAGS))
-	CFLAGS := $(CXXFLAGS)
+	CFLAGS = $(CXXFLAGS)
 endif
 
-MKL_DIRECT := 0
-ifneq ($(MKL_DIRECT),0)
+ifeq (1,$(MKL_DIRECT))
+	MKL_STATIC = 1
 	DFLAGS += -DMKL_DIRECT_CALL_SEQ
 endif
 
+ifeq (1,$(MKL)) # sequential
+	DFLAGS += -D__MKL
+	IFLAGS +=-I$(MKLROOT)/include
+	ifeq (0,$(MKL_STATIC)) # shared
+		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+		endif
+	else # static
+		LDFLAGS = \
+			-Wl,--start-group \
+				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/intel64/libmkl_core.a \
+				$(MKLROOT)/lib/intel64/libmkl_sequential.a \
+			-Wl,--end-group
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld," \
+				--start-group \
+					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+					$(MKLROOT)/lib/mic/libmkl_core.a \
+					$(MKLROOT)/lib/mic/libmkl_sequential.a \
+				--end-group"
+		endif
+	endif
+	LDFLAGS += -lm
+	ifneq (0,$(OFFLOAD))
+		LDFLAGS += -offload-option,mic,ld,"-lm"
+	endif
+else ifneq (0,$(MKL)) # multi-threaded
+	DFLAGS += -D__MKL
+	IFLAGS +=-I$(MKLROOT)/include
+	ifeq (0,$(MKL_STATIC)) # shared
+		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
+		endif
+	else # static
+		LDFLAGS += \
+			-Wl,--start-group \
+				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/intel64/libmkl_core.a \
+				$(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
+			-Wl,--end-group
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld," \
+				--start-group \
+					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+					$(MKLROOT)/lib/mic/libmkl_core.a \
+					$(MKLROOT)/lib/mic/libmkl_intel_thread.a \
+				--end-group"
+		endif
+	endif
+	ifeq (0,$(OMP))
+		LDFLAGS += -liomp5
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld,"-liomp5"
+		endif
+	endif
+	LDFLAGS += -lpthread -lm
+	ifneq (0,$(OFFLOAD))
+		LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
+	endif
+else ifneq (0,$(BLAS)) # generic
+	ifneq ($(OS),Windows_NT)
+		LDFLAGS += -fPIC -llapack -lblas
+		CXXFLAGS += -fPIC
+		CFLAGS += -fPIC
+	else
+		LDFLAGS += -llapack.dll -lblas.dll
+	endif
+	LDFLAGS += -lgfortran -lquadmath
+endif
 
-all: $(NAME)
+.PHONY: all
+all: $(OUTDIR)/$(OUTNAME)
 
-$(NAME): $(NAME)-cpp.o
+$(OUTDIR)/$(OUTNAME): $(OBJECTS) $(LIBNAME).$(LIBEXT)
+	@mkdir -p $(OUTDIR)
+	$(LD) -o $@ $^ $(LDFLAGS)
 
-%: %-c.o $(LIBXSMM)
-	$(LD) -o $@ $< $(LDFLAGS)
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile
+	@mkdir -p $(BLDDIR)
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-%: %-cpp.o $(LIBXSMM)
-	$(LD) -o $@ $< $(LDFLAGS)
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile
+	@mkdir -p $(BLDDIR)
+	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-
-%-c.o: %.c
-	$(CC) -o $@ -$(CFLAGS) $(DFLAGS) $(IFLAGS) -c $<
-
-%-cpp.o: %.cpp
-	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
-
-%-cpp.o: %.cxx
-	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
-
-%-cpp.o: %.cc
-	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -c $<
-
-
+.PHONY: clean
 clean:
-	@rm -f *.o *.i *.ii *.s
-	@rm -f cp2k-perf-avg.dat
-	@rm -f cp2k-perf-cdf.dat
-	@rm -f cp2k-perf.dat
+ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
+ifneq ($(abspath $(BLDDIR)),$(abspath .))
+	@rm -rf $(BLDDIR)
+else
+	@rm -f $(OBJECTS)
+endif
+else
+	@rm -f $(OBJECTS)
+endif
 
+.PHONY: realclean
 realclean: clean
-	@rm -f $(NAME) $(NAME).exe $(NAME).exe.stackdump
-	@rm -f cp2k-perf.txt
+ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
+ifneq ($(abspath $(OUTDIR)),$(abspath .))
+	@rm -rf $(OUTDIR)
+else
+	@rm -f $(OUTDIR)/$(OUTNAME)
+endif
+else
+	@rm -f $(OUTDIR)/$(OUTNAME)
+endif
+	@rm -f $(OUTDIR)/libxsmm.so
 
 install: all clean
+	@cp $(LIBNAME).so $(OUTDIR) 2> /dev/null || true
+
