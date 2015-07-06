@@ -39,13 +39,13 @@ THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 SPARSITY ?= 2
 
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 INCDIR = $(ROOTDIR)/include
 SRCDIR = $(ROOTDIR)/src
-BLDDIR = $(ROOTDIR)/build
-OUTDIR = $(ROOTDIR)/lib
-BINDIR = $(ROOTDIR)/bin
-SPLDIR = $(ROOTDIR)/samples
+BLDDIR = build
+OUTDIR = lib
+BINDIR = bin
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
@@ -216,7 +216,7 @@ NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
-OBJFILES_GEN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN))))
+OBJFILES_GEN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
@@ -235,7 +235,7 @@ install: all clean
 
 .PHONY: header
 header: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
+$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
 	@mkdir -p $(dir $@)
 	@cat $(SRCDIR)/libxsmm.0.h > $@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
@@ -251,12 +251,12 @@ $(INCDIR)/libxsmm.h: Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCD
 ifneq ($(GENASM),0)
 .PHONY: compile_gen
 compile_gen: $(SRCFILES_GEN)
-$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.cpp Makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.cpp $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) -c $< -o $@
 .PHONY: generator
 generator: $(OBJFILES_GEN)
-$(BINDIR)/intel64/generator: $(OBJFILES_GEN) Makefile
+$(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(OBJFILES_GEN) -o $@
 endif
@@ -266,7 +266,7 @@ sources: $(SRCFILES)
 ifeq ($(GENASM),0)
 $(BLDDIR)/%.c: $(INCDIR)/libxsmm.h
 else
-$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/intel64/generator
+$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator
 endif
 	$(eval MVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f2))
 	$(eval NVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f3))
@@ -308,35 +308,35 @@ ifeq ($(GENTARGET),noarch)
 	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knl nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knl nopf SP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) hsw nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) hsw nopf SP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) snb nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) snb nopf SP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) wsm nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) wsm nopf SP > /dev/null
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) $(GENTARGET) nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) $(GENTARGET) nopf SP > /dev/null
 endif
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knc nopf DP > /dev/null
-	@$(BINDIR)/intel64/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
+	@$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) knc nopf SP > /dev/null
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
@@ -379,7 +379,7 @@ ifneq ($(MIC),0)
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 ifeq ($(origin NO_MAIN), undefined)
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/intel64/libxsmm.o
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm.o
 else
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC)
 endif
@@ -436,7 +436,7 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh
-$(SPLDIR)/cp2k/cp2k-perf.sh: Makefile
+$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -478,19 +478,19 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm $(OUTDIR)/mic/libxsmm
+	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 endif
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm $(OUTDIR)/mic/libxsmm
+	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 endif
 ifneq ($(abspath $(BINDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BINDIR)),$(abspath .))
 	@rm -rf $(BINDIR)
 else
-	@rm -f $(BINDIR)/intel64/generator
+	@rm -f $(BINDIR)/generator
 endif
 else
-	@rm -f $(BINDIR)/intel64/generator
+	@rm -f $(BINDIR)/generator
 endif
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(INCDIR)/libxsmm.h
