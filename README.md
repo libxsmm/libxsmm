@@ -28,27 +28,23 @@ void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, doub
 With C++ function overloading, the library allows to omit the 's' and 'd' denoting the numeric type in the above C interface. Further, a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mm_dispatch'.
 
 ## Build Instructions
-To compile the library run:
+To generate the interface inside of the 'include' directory and to build the library, run *one* of the following commands (by default OFFLOAD=1 implies MIC=1):
 
 ```
 make
+make MIC=1
+make OFFLOAD=1
 ```
 
-The interface is produced inside of the 'include' directory. The library archives are produced inside of the 'lib' directory with the 'mic' subdirectory containing the native library and the 'intel64' folder storing the hybrid archive containing host and MIC code.
+By default, only the non-coprocessor target is built. In general, the subfolders of the 'lib' directory are separating the build targets where the 'mic' folder is containing the native library targeting the Intel Xeon Phi coprocessor ("KNC"), and the 'intel64' folder is storing either the hybrid archive (CPU and coprocessor code) or the archive which is only containing the CPU code (OFFLOAD=0). All libraries are built statically by default (STATIC=1).
 
-To remove intermediate files use:
+To remove intermediate files (`make install` is a shortcut for `make; make clean`) or to remove all generated files and folder (including the interface and the library archives), run *one* of the following commands:
 
 ```
 make clean
-```
-
-or to remove all generated files including the interface and library archive files:
-
-```
+make install
 make realclean
 ```
-
-The usual `make install` is simply a shortcut for `make; make clean`.
 
 The library can be configured to accept row-major (default) or column-major order matrices. This is accomplished using the variable ROW_MAJOR (0 for column-major, and row-major order otherwise). The following configures the column-major format:
 

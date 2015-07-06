@@ -52,12 +52,17 @@ CFLAGS = $(NULL)
 DFLAGS = -DLIBXSTREAM_EXPORTED
 IFLAGS = -I$(INCDIR)
 
-MIC ?= 1
-OFFLOAD ?= 1
+OFFLOAD ?= 0
 STATIC ?= 1
 OMP ?= 0
 DBG ?= 0
 IPO ?= 0
+
+ifneq ($(OFFLOAD),0)
+	MIC ?= 1
+else
+	MIC ?= 0
+endif
 
 ICPC = $(notdir $(shell which icpc 2> /dev/null))
 ICC = $(notdir $(shell which icc 2> /dev/null))
