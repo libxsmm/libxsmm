@@ -193,7 +193,7 @@ ifeq (1,$(MKL)) # sequential
 			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
 		endif
 	else # static
-		LDFLAGS = \
+		LDFLAGS += \
 			-Wl,--start-group \
 				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
