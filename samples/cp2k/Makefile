@@ -262,15 +262,15 @@ endif
 all: $(OUTDIR)/$(OUTNAME)
 
 $(OUTDIR)/$(OUTNAME): $(OBJECTS) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(OUTDIR)
+	@mkdir -p $(dir $@)
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile
-	@mkdir -p $(BLDDIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile
-	@mkdir -p $(BLDDIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: clean
