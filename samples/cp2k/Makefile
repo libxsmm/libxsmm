@@ -299,5 +299,10 @@ endif
 	@rm -f $(OUTDIR)/libxsmm.so
 
 install: all clean
-	@cp $(LIBNAME).so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/cp2k-perf.plt $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/cp2k-plot.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/cp2k-perf.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/cp2k.sh $(OUTDIR) 2> /dev/null || true
 
