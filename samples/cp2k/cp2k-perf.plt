@@ -113,7 +113,7 @@ set boxwidth 0.5
 set grid y2tics linecolor "grey"
 unset key
 unset xtics
-set xtics ("MNK <= 13^3" 0, "13^3 < MNK <= 23^3" 1, "23^3 <= MNK" 2) scale 0 offset 0, 0.2
+set xtics ("MNK <= 13^3" 0, "13^3 < MNK <= 23^3" 1, "23^3 < MNK" 2) scale 0 offset 0, 0.2
 set x2tics ("Small" 0, "Medium" 1, "Larger" 2) scale 0
 set xlabel "Problem Size (MNK)"
 set ytics format ""
