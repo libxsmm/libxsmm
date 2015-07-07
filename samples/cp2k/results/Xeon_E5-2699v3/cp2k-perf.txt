@@ -1,0 +1,7544 @@
+m=5 n=5 k=5 ldc=8 (column-major) size=1491308 batch=997 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 45.1 GFLOPS/s
+	bandwidth: 67.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 74.3 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 74.1 GFLOPS/s
+	bandwidth: 110.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 75.7 GFLOPS/s
+	bandwidth: 113.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=5 k=13 ldc=8 (column-major) size=789516 batch=725 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 60.1 GFLOPS/s
+	bandwidth: 89.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 75.2 GFLOPS/s
+	bandwidth: 112.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 76.1 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 77.7 GFLOPS/s
+	bandwidth: 115.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=5 k=24 ldc=8 (column-major) size=479349 batch=565 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 62.1 GFLOPS/s
+	bandwidth: 92.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 76.3 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 75.7 GFLOPS/s
+	bandwidth: 112.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 78.2 GFLOPS/s
+	bandwidth: 116.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=5 k=26 ldc=8 (column-major) size=447392 batch=546 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 58.1 GFLOPS/s
+	bandwidth: 86.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 74.5 GFLOPS/s
+	bandwidth: 111.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 76.1 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 76.5 GFLOPS/s
+	bandwidth: 114.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=5 k=32 ldc=8 (column-major) size=372827 batch=499 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 58.6 GFLOPS/s
+	bandwidth: 87.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 75.3 GFLOPS/s
+	bandwidth: 112.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 76.1 GFLOPS/s
+	bandwidth: 113.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 77.5 GFLOPS/s
+	bandwidth: 115.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=13 k=5 ldc=8 (column-major) size=691843 batch=679 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 74.7 GFLOPS/s
+	bandwidth: 77.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 92.6 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 106.9 GFLOPS/s
+	bandwidth: 110.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 108.6 GFLOPS/s
+	bandwidth: 112.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=13 k=13 ldc=8 (column-major) size=397093 batch=515 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 83.6 GFLOPS/s
+	bandwidth: 86.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 106.2 GFLOPS/s
+	bandwidth: 109.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 110.4 GFLOPS/s
+	bandwidth: 114.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.9 GFLOPS/s
+	bandwidth: 115.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=13 k=24 ldc=8 (column-major) size=250406 batch=409 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 82.9 GFLOPS/s
+	bandwidth: 85.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 101.0 GFLOPS/s
+	bandwidth: 104.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 109.2 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 110.6 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=13 k=26 ldc=8 (column-major) size=234646 batch=396 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 85.1 GFLOPS/s
+	bandwidth: 87.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 97.4 GFLOPS/s
+	bandwidth: 100.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 109.2 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.4 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=13 k=32 ldc=8 (column-major) size=197379 batch=363 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 82.6 GFLOPS/s
+	bandwidth: 85.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 98.5 GFLOPS/s
+	bandwidth: 101.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 110.3 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.6 GFLOPS/s
+	bandwidth: 115.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=24 k=5 ldc=8 (column-major) size=398272 batch=515 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 85.5 GFLOPS/s
+	bandwidth: 77.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 92.1 GFLOPS/s
+	bandwidth: 83.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 123.6 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 127.7 GFLOPS/s
+	bandwidth: 115.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=24 k=13 ldc=8 (column-major) size=235883 batch=397 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 87.2 GFLOPS/s
+	bandwidth: 78.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 105.9 GFLOPS/s
+	bandwidth: 95.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 123.8 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 125.9 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=24 k=24 ldc=8 (column-major) size=151146 batch=317 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 92.6 GFLOPS/s
+	bandwidth: 83.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 111.2 GFLOPS/s
+	bandwidth: 100.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 125.8 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 127.6 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=24 k=26 ldc=8 (column-major) size=141879 batch=308 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 91.3 GFLOPS/s
+	bandwidth: 82.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 104.4 GFLOPS/s
+	bandwidth: 94.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 122.5 GFLOPS/s
+	bandwidth: 110.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 126.1 GFLOPS/s
+	bandwidth: 113.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=24 k=32 ldc=8 (column-major) size=119837 batch=283 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 99.3 GFLOPS/s
+	bandwidth: 89.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 110.8 GFLOPS/s
+	bandwidth: 99.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 126.6 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.6 GFLOPS/s
+	bandwidth: 116.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=26 k=5 ldc=8 (column-major) size=369745 batch=496 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 82.4 GFLOPS/s
+	bandwidth: 73.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 90.4 GFLOPS/s
+	bandwidth: 80.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 123.3 GFLOPS/s
+	bandwidth: 110.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 127.3 GFLOPS/s
+	bandwidth: 113.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=26 k=13 ldc=8 (column-major) size=219668 batch=383 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 101.0 GFLOPS/s
+	bandwidth: 89.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 115.3 GFLOPS/s
+	bandwidth: 102.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 127.3 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.0 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=26 k=24 ldc=8 (column-major) size=140985 batch=307 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 90.5 GFLOPS/s
+	bandwidth: 80.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 108.9 GFLOPS/s
+	bandwidth: 96.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 124.6 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 127.7 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=26 k=26 ldc=8 (column-major) size=132364 batch=297 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 94.3 GFLOPS/s
+	bandwidth: 83.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 104.4 GFLOPS/s
+	bandwidth: 92.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 126.8 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.0 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=26 k=32 ldc=8 (column-major) size=111848 batch=273 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 94.2 GFLOPS/s
+	bandwidth: 83.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 106.2 GFLOPS/s
+	bandwidth: 94.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 124.7 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 126.7 GFLOPS/s
+	bandwidth: 112.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=32 k=5 ldc=8 (column-major) size=304348 batch=450 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 86.7 GFLOPS/s
+	bandwidth: 75.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 91.2 GFLOPS/s
+	bandwidth: 79.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 124.3 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 131.8 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=32 k=13 ldc=8 (column-major) size=182113 batch=348 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 93.9 GFLOPS/s
+	bandwidth: 81.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 107.5 GFLOPS/s
+	bandwidth: 92.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 131.3 GFLOPS/s
+	bandwidth: 113.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 133.8 GFLOPS/s
+	bandwidth: 115.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=32 k=24 ldc=8 (column-major) size=117323 batch=280 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 101.2 GFLOPS/s
+	bandwidth: 87.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 116.8 GFLOPS/s
+	bandwidth: 100.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 131.2 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 131.4 GFLOPS/s
+	bandwidth: 113.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=32 k=26 ldc=8 (column-major) size=110195 batch=271 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 92.2 GFLOPS/s
+	bandwidth: 79.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 107.8 GFLOPS/s
+	bandwidth: 93.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 129.9 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 131.7 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=5 n=32 k=32 ldc=8 (column-major) size=93206 batch=249 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 97.6 GFLOPS/s
+	bandwidth: 84.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 103.9 GFLOPS/s
+	bandwidth: 89.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 132.7 GFLOPS/s
+	bandwidth: 114.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 134.5 GFLOPS/s
+	bandwidth: 116.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=6 n=6 k=6 ldc=8 (column-major) size=1118481 batch=864 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 70.7 GFLOPS/s
+	bandwidth: 87.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 90.7 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 90.8 GFLOPS/s
+	bandwidth: 112.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 92.1 GFLOPS/s
+	bandwidth: 114.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=9 k=9 ldc=16 (column-major) size=438620 batch=541 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 95.4 GFLOPS/s
+	bandwidth: 79.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 133.8 GFLOPS/s
+	bandwidth: 111.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 137.6 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 138.6 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=9 k=22 ldc=16 (column-major) size=248551 batch=407 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 100.9 GFLOPS/s
+	bandwidth: 83.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 136.0 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 138.0 GFLOPS/s
+	bandwidth: 114.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 139.5 GFLOPS/s
+	bandwidth: 115.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=9 k=32 ldc=16 (column-major) size=186413 batch=353 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 101.0 GFLOPS/s
+	bandwidth: 83.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 135.7 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 138.5 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 139.1 GFLOPS/s
+	bandwidth: 115.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=22 k=9 ldc=16 (column-major) size=212706 batch=377 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 131.5 GFLOPS/s
+	bandwidth: 77.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 186.7 GFLOPS/s
+	bandwidth: 109.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 192.4 GFLOPS/s
+	bandwidth: 113.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 194.2 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=22 k=22 ldc=16 (column-major) size=129804 batch=294 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.1 GFLOPS/s
+	bandwidth: 83.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 183.8 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 194.1 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 196.9 GFLOPS/s
+	bandwidth: 115.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=22 k=32 ldc=16 (column-major) size=99864 batch=258 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 132.7 GFLOPS/s
+	bandwidth: 77.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 175.6 GFLOPS/s
+	bandwidth: 102.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 188.5 GFLOPS/s
+	bandwidth: 110.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 191.1 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=32 k=9 ldc=16 (column-major) size=152347 batch=319 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 134.9 GFLOPS/s
+	bandwidth: 72.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 193.7 GFLOPS/s
+	bandwidth: 103.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 208.6 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 207.4 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=32 k=22 ldc=16 (column-major) size=94920 batch=252 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 152.4 GFLOPS/s
+	bandwidth: 81.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 187.9 GFLOPS/s
+	bandwidth: 100.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 205.5 GFLOPS/s
+	bandwidth: 109.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 208.4 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=9 n=32 k=32 ldc=16 (column-major) size=73584 batch=221 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.7 GFLOPS/s
+	bandwidth: 76.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 187.6 GFLOPS/s
+	bandwidth: 99.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 204.2 GFLOPS/s
+	bandwidth: 108.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 204.9 GFLOPS/s
+	bandwidth: 109.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=12 n=12 k=12 ldc=16 (column-major) size=279620 batch=432 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.7 GFLOPS/s
+	bandwidth: 89.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 182.4 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 182.6 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 184.0 GFLOPS/s
+	bandwidth: 114.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=5 k=5 ldc=16 (column-major) size=789516 batch=725 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 79.4 GFLOPS/s
+	bandwidth: 82.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 109.5 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 110.8 GFLOPS/s
+	bandwidth: 114.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.3 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=5 k=13 ldc=16 (column-major) size=427444 batch=534 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 85.7 GFLOPS/s
+	bandwidth: 88.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 110.7 GFLOPS/s
+	bandwidth: 114.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 110.6 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.5 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=5 k=24 ldc=16 (column-major) size=262144 batch=418 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 83.5 GFLOPS/s
+	bandwidth: 86.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 108.1 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 111.3 GFLOPS/s
+	bandwidth: 114.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 112.1 GFLOPS/s
+	bandwidth: 115.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=5 k=26 ldc=16 (column-major) size=244922 batch=404 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 85.1 GFLOPS/s
+	bandwidth: 87.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 106.2 GFLOPS/s
+	bandwidth: 109.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 111.0 GFLOPS/s
+	bandwidth: 114.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.0 GFLOPS/s
+	bandwidth: 114.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=5 k=32 ldc=16 (column-major) size=204600 batch=369 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 82.4 GFLOPS/s
+	bandwidth: 85.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 108.7 GFLOPS/s
+	bandwidth: 112.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 111.3 GFLOPS/s
+	bandwidth: 114.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 111.9 GFLOPS/s
+	bandwidth: 115.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=5 ldc=16 (column-major) size=397093 batch=515 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 126.4 GFLOPS/s
+	bandwidth: 72.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 152.7 GFLOPS/s
+	bandwidth: 88.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 191.1 GFLOPS/s
+	bandwidth: 110.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 192.8 GFLOPS/s
+	bandwidth: 111.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=13 ldc=16 (column-major) size=245820 batch=405 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.1 GFLOPS/s
+	bandwidth: 81.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 166.7 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 198.2 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 200.1 GFLOPS/s
+	bandwidth: 115.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=24 ldc=16 (column-major) size=161319 batch=328 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 154.6 GFLOPS/s
+	bandwidth: 88.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 174.5 GFLOPS/s
+	bandwidth: 100.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 199.9 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 201.1 GFLOPS/s
+	bandwidth: 115.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=26 ldc=16 (column-major) size=151830 batch=318 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 144.1 GFLOPS/s
+	bandwidth: 82.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 163.9 GFLOPS/s
+	bandwidth: 94.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 200.8 GFLOPS/s
+	bandwidth: 115.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 202.9 GFLOPS/s
+	bandwidth: 116.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=28 ldc=16 (column-major) size=143395 batch=309 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 144.0 GFLOPS/s
+	bandwidth: 82.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 166.4 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 194.1 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 194.8 GFLOPS/s
+	bandwidth: 111.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=32 ldc=16 (column-major) size=129055 batch=293 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 155.9 GFLOPS/s
+	bandwidth: 89.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 158.2 GFLOPS/s
+	bandwidth: 90.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 196.0 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 200.1 GFLOPS/s
+	bandwidth: 114.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=13 k=45 ldc=16 (column-major) size=97400 batch=255 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.8 GFLOPS/s
+	bandwidth: 82.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 155.2 GFLOPS/s
+	bandwidth: 89.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 192.8 GFLOPS/s
+	bandwidth: 110.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 194.8 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=24 k=5 ldc=16 (column-major) size=235883 batch=397 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.5 GFLOPS/s
+	bandwidth: 64.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 144.8 GFLOPS/s
+	bandwidth: 64.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 233.2 GFLOPS/s
+	bandwidth: 104.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 234.9 GFLOPS/s
+	bandwidth: 104.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=24 k=13 ldc=16 (column-major) size=155165 batch=322 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 178.2 GFLOPS/s
+	bandwidth: 79.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 183.9 GFLOPS/s
+	bandwidth: 81.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 256.4 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 257.8 GFLOPS/s
+	bandwidth: 114.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=24 k=24 ldc=16 (column-major) size=105517 batch=265 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 180.9 GFLOPS/s
+	bandwidth: 80.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 185.1 GFLOPS/s
+	bandwidth: 82.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 253.1 GFLOPS/s
+	bandwidth: 112.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 253.7 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=24 k=26 ldc=16 (column-major) size=99715 batch=258 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 180.3 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 171.5 GFLOPS/s
+	bandwidth: 76.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 248.9 GFLOPS/s
+	bandwidth: 110.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 251.7 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=24 k=32 ldc=16 (column-major) size=85598 batch=239 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 200.6 GFLOPS/s
+	bandwidth: 88.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 194.6 GFLOPS/s
+	bandwidth: 86.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 254.5 GFLOPS/s
+	bandwidth: 112.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 257.3 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=5 ldc=16 (column-major) size=219668 batch=383 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 163.4 GFLOPS/s
+	bandwidth: 71.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 156.1 GFLOPS/s
+	bandwidth: 67.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 240.7 GFLOPS/s
+	bandwidth: 104.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 248.7 GFLOPS/s
+	bandwidth: 108.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=13 ldc=16 (column-major) size=145414 batch=311 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 175.5 GFLOPS/s
+	bandwidth: 75.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 180.7 GFLOPS/s
+	bandwidth: 78.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 258.0 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 257.9 GFLOPS/s
+	bandwidth: 111.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=24 ldc=16 (column-major) size=99273 batch=257 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 180.7 GFLOPS/s
+	bandwidth: 77.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 181.6 GFLOPS/s
+	bandwidth: 78.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 259.0 GFLOPS/s
+	bandwidth: 111.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 262.1 GFLOPS/s
+	bandwidth: 113.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=26 ldc=16 (column-major) size=93858 batch=250 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 191.1 GFLOPS/s
+	bandwidth: 82.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 172.0 GFLOPS/s
+	bandwidth: 74.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 250.9 GFLOPS/s
+	bandwidth: 108.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 256.3 GFLOPS/s
+	bandwidth: 110.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=28 ldc=16 (column-major) size=89003 batch=244 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 205.0 GFLOPS/s
+	bandwidth: 88.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 177.0 GFLOPS/s
+	bandwidth: 76.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 264.4 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 268.7 GFLOPS/s
+	bandwidth: 115.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=32 ldc=16 (column-major) size=80659 batch=232 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 195.0 GFLOPS/s
+	bandwidth: 84.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 185.4 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 264.9 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 264.8 GFLOPS/s
+	bandwidth: 114.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=26 k=45 ldc=16 (column-major) size=61822 batch=203 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 181.0 GFLOPS/s
+	bandwidth: 78.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 168.5 GFLOPS/s
+	bandwidth: 72.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 242.2 GFLOPS/s
+	bandwidth: 104.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 244.7 GFLOPS/s
+	bandwidth: 105.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=28 k=13 ldc=16 (column-major) size=136817 batch=302 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 178.4 GFLOPS/s
+	bandwidth: 75.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 176.2 GFLOPS/s
+	bandwidth: 74.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 257.3 GFLOPS/s
+	bandwidth: 108.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 259.2 GFLOPS/s
+	bandwidth: 109.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=28 k=26 ldc=16 (column-major) size=88651 batch=243 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 208.2 GFLOPS/s
+	bandwidth: 87.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 173.9 GFLOPS/s
+	bandwidth: 73.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 268.8 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 270.7 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=28 k=28 ldc=16 (column-major) size=84096 batch=237 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 211.9 GFLOPS/s
+	bandwidth: 89.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 197.6 GFLOPS/s
+	bandwidth: 83.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 273.7 GFLOPS/s
+	bandwidth: 115.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 274.1 GFLOPS/s
+	bandwidth: 115.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=28 k=32 ldc=16 (column-major) size=76260 batch=225 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 191.3 GFLOPS/s
+	bandwidth: 80.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 184.0 GFLOPS/s
+	bandwidth: 77.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 259.9 GFLOPS/s
+	bandwidth: 109.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 261.6 GFLOPS/s
+	bandwidth: 110.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=28 k=45 ldc=16 (column-major) size=58533 batch=198 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 202.1 GFLOPS/s
+	bandwidth: 85.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 169.7 GFLOPS/s
+	bandwidth: 71.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 263.6 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 269.2 GFLOPS/s
+	bandwidth: 113.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=5 ldc=16 (column-major) size=182113 batch=348 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 160.1 GFLOPS/s
+	bandwidth: 65.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 144.8 GFLOPS/s
+	bandwidth: 59.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 248.0 GFLOPS/s
+	bandwidth: 101.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 253.5 GFLOPS/s
+	bandwidth: 103.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=13 ldc=16 (column-major) size=122349 batch=286 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 202.5 GFLOPS/s
+	bandwidth: 82.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 193.9 GFLOPS/s
+	bandwidth: 78.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 268.5 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 270.1 GFLOPS/s
+	bandwidth: 109.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=24 ldc=16 (column-major) size=84307 batch=237 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 221.4 GFLOPS/s
+	bandwidth: 89.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 203.2 GFLOPS/s
+	bandwidth: 82.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 280.2 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 281.8 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=26 ldc=16 (column-major) size=79796 batch=231 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 202.3 GFLOPS/s
+	bandwidth: 81.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 185.3 GFLOPS/s
+	bandwidth: 75.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 274.2 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 276.0 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=28 ldc=16 (column-major) size=75743 batch=225 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 192.0 GFLOPS/s
+	bandwidth: 77.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 191.4 GFLOPS/s
+	bandwidth: 77.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 260.1 GFLOPS/s
+	bandwidth: 105.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 263.8 GFLOPS/s
+	bandwidth: 106.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=32 ldc=16 (column-major) size=68759 batch=214 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 188.8 GFLOPS/s
+	bandwidth: 76.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 177.1 GFLOPS/s
+	bandwidth: 71.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 264.7 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 266.2 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=32 k=45 ldc=16 (column-major) size=52904 batch=188 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 215.5 GFLOPS/s
+	bandwidth: 87.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 194.1 GFLOPS/s
+	bandwidth: 78.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 279.7 GFLOPS/s
+	bandwidth: 113.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 282.9 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=45 k=13 ldc=16 (column-major) size=91056 batch=246 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 199.6 GFLOPS/s
+	bandwidth: 74.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 171.2 GFLOPS/s
+	bandwidth: 63.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 284.0 GFLOPS/s
+	bandwidth: 105.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 289.1 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=45 k=26 ldc=16 (column-major) size=60241 batch=200 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 202.0 GFLOPS/s
+	bandwidth: 75.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 169.8 GFLOPS/s
+	bandwidth: 63.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 297.8 GFLOPS/s
+	bandwidth: 110.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 300.6 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=45 k=28 ldc=16 (column-major) size=57260 batch=195 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 235.3 GFLOPS/s
+	bandwidth: 87.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 174.6 GFLOPS/s
+	bandwidth: 64.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 293.8 GFLOPS/s
+	bandwidth: 109.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 299.8 GFLOPS/s
+	bandwidth: 111.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=45 k=32 ldc=16 (column-major) size=52103 batch=186 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 226.1 GFLOPS/s
+	bandwidth: 83.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 194.0 GFLOPS/s
+	bandwidth: 71.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 307.2 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 310.1 GFLOPS/s
+	bandwidth: 115.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=13 n=45 k=45 ldc=16 (column-major) size=40305 batch=164 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 198.0 GFLOPS/s
+	bandwidth: 73.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 176.3 GFLOPS/s
+	bandwidth: 65.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 272.5 GFLOPS/s
+	bandwidth: 101.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 276.0 GFLOPS/s
+	bandwidth: 102.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=14 k=14 ldc=16 (column-major) size=217885 batch=381 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 167.8 GFLOPS/s
+	bandwidth: 89.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 190.0 GFLOPS/s
+	bandwidth: 101.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 212.9 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 214.5 GFLOPS/s
+	bandwidth: 114.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=14 k=16 ldc=16 (column-major) size=199728 batch=365 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.8 GFLOPS/s
+	bandwidth: 76.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 178.8 GFLOPS/s
+	bandwidth: 95.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 209.3 GFLOPS/s
+	bandwidth: 111.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 210.3 GFLOPS/s
+	bandwidth: 112.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=14 k=29 ldc=16 (column-major) size=129553 batch=294 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 167.4 GFLOPS/s
+	bandwidth: 89.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 178.5 GFLOPS/s
+	bandwidth: 95.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 213.4 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 215.3 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=14 k=32 ldc=16 (column-major) size=119837 batch=283 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 167.1 GFLOPS/s
+	bandwidth: 89.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 182.4 GFLOPS/s
+	bandwidth: 97.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 217.1 GFLOPS/s
+	bandwidth: 115.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 217.4 GFLOPS/s
+	bandwidth: 115.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=16 k=14 ldc=16 (column-major) size=198546 batch=364 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 154.9 GFLOPS/s
+	bandwidth: 77.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 182.1 GFLOPS/s
+	bandwidth: 91.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 224.9 GFLOPS/s
+	bandwidth: 112.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 227.5 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=16 k=16 ldc=16 (column-major) size=182361 batch=349 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 160.6 GFLOPS/s
+	bandwidth: 80.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 179.6 GFLOPS/s
+	bandwidth: 89.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 227.7 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 229.4 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=16 k=29 ldc=16 (column-major) size=119198 batch=282 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 173.9 GFLOPS/s
+	bandwidth: 86.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 192.7 GFLOPS/s
+	bandwidth: 96.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 230.3 GFLOPS/s
+	bandwidth: 115.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 232.7 GFLOPS/s
+	bandwidth: 116.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=29 k=14 ldc=16 (column-major) size=125907 batch=290 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 213.8 GFLOPS/s
+	bandwidth: 84.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 185.0 GFLOPS/s
+	bandwidth: 73.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 280.6 GFLOPS/s
+	bandwidth: 111.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 288.3 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=29 k=16 ldc=16 (column-major) size=116508 batch=279 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 205.5 GFLOPS/s
+	bandwidth: 81.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 203.3 GFLOPS/s
+	bandwidth: 80.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 286.7 GFLOPS/s
+	bandwidth: 113.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 285.5 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=29 k=29 ldc=16 (column-major) size=78444 batch=229 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 207.2 GFLOPS/s
+	bandwidth: 82.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 201.9 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 274.8 GFLOPS/s
+	bandwidth: 108.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 277.4 GFLOPS/s
+	bandwidth: 109.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=29 k=32 ldc=16 (column-major) size=72944 batch=221 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 189.0 GFLOPS/s
+	bandwidth: 74.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 191.9 GFLOPS/s
+	bandwidth: 75.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 274.0 GFLOPS/s
+	bandwidth: 108.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 275.6 GFLOPS/s
+	bandwidth: 109.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=32 k=14 ldc=16 (column-major) size=116105 batch=278 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 209.4 GFLOPS/s
+	bandwidth: 80.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 203.3 GFLOPS/s
+	bandwidth: 78.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 291.1 GFLOPS/s
+	bandwidth: 112.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 296.9 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=32 k=29 ldc=16 (column-major) size=72707 batch=220 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 200.0 GFLOPS/s
+	bandwidth: 76.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 193.8 GFLOPS/s
+	bandwidth: 74.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 275.8 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 280.4 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=14 n=32 k=32 ldc=16 (column-major) size=67650 batch=212 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 198.7 GFLOPS/s
+	bandwidth: 76.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 190.2 GFLOPS/s
+	bandwidth: 73.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 278.0 GFLOPS/s
+	bandwidth: 106.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 279.6 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=14 k=14 ldc=16 (column-major) size=208412 batch=373 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 172.1 GFLOPS/s
+	bandwidth: 86.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 224.4 GFLOPS/s
+	bandwidth: 112.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 228.4 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 229.3 GFLOPS/s
+	bandwidth: 114.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=14 k=16 ldc=16 (column-major) size=190650 batch=357 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 163.3 GFLOPS/s
+	bandwidth: 81.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 211.2 GFLOPS/s
+	bandwidth: 105.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 221.6 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 226.1 GFLOPS/s
+	bandwidth: 113.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=14 k=29 ldc=16 (column-major) size=122685 batch=286 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 184.1 GFLOPS/s
+	bandwidth: 92.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 227.4 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 228.6 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 227.7 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=16 k=14 ldc=16 (column-major) size=190650 batch=357 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 170.3 GFLOPS/s
+	bandwidth: 79.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 226.4 GFLOPS/s
+	bandwidth: 105.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 237.1 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 238.7 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=16 k=16 ldc=16 (column-major) size=174762 batch=341 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 189.0 GFLOPS/s
+	bandwidth: 88.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 227.4 GFLOPS/s
+	bandwidth: 106.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 243.7 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 246.2 GFLOPS/s
+	bandwidth: 115.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=16 k=29 ldc=16 (column-major) size=113359 batch=275 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 175.6 GFLOPS/s
+	bandwidth: 81.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 227.1 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 238.1 GFLOPS/s
+	bandwidth: 111.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 241.2 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=16 k=55 ldc=16 (column-major) size=66576 batch=211 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 169.3 GFLOPS/s
+	bandwidth: 79.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 213.5 GFLOPS/s
+	bandwidth: 99.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 230.0 GFLOPS/s
+	bandwidth: 107.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 232.0 GFLOPS/s
+	bandwidth: 108.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=29 k=14 ldc=16 (column-major) size=122685 batch=286 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 237.8 GFLOPS/s
+	bandwidth: 86.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 294.1 GFLOPS/s
+	bandwidth: 106.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 308.3 GFLOPS/s
+	bandwidth: 111.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 308.6 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=29 k=16 ldc=16 (column-major) size=113359 batch=275 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 220.1 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 281.0 GFLOPS/s
+	bandwidth: 102.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 307.1 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 308.4 GFLOPS/s
+	bandwidth: 112.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=29 k=29 ldc=16 (column-major) size=75872 batch=225 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 216.1 GFLOPS/s
+	bandwidth: 78.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 270.7 GFLOPS/s
+	bandwidth: 98.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 291.3 GFLOPS/s
+	bandwidth: 105.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 297.2 GFLOPS/s
+	bandwidth: 107.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=29 k=55 ldc=16 (column-major) size=45667 batch=174 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 210.9 GFLOPS/s
+	bandwidth: 76.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 262.8 GFLOPS/s
+	bandwidth: 95.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 279.2 GFLOPS/s
+	bandwidth: 101.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 284.9 GFLOPS/s
+	bandwidth: 103.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=55 k=16 ldc=16 (column-major) size=66576 batch=211 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 109.5 GFLOPS/s
+	bandwidth: 33.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 298.1 GFLOPS/s
+	bandwidth: 90.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 341.0 GFLOPS/s
+	bandwidth: 103.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 352.9 GFLOPS/s
+	bandwidth: 106.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=55 k=29 ldc=16 (column-major) size=45667 batch=174 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 134.4 GFLOPS/s
+	bandwidth: 40.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 303.4 GFLOPS/s
+	bandwidth: 91.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 328.0 GFLOPS/s
+	bandwidth: 99.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 332.9 GFLOPS/s
+	bandwidth: 100.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=16 n=55 k=55 ldc=16 (column-major) size=28049 batch=137 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 119.6 GFLOPS/s
+	bandwidth: 36.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 328.9 GFLOPS/s
+	bandwidth: 99.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 356.2 GFLOPS/s
+	bandwidth: 107.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 360.2 GFLOPS/s
+	bandwidth: 108.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=9 k=9 ldc=24 (column-major) size=271146 batch=425 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 144.3 GFLOPS/s
+	bandwidth: 84.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 179.2 GFLOPS/s
+	bandwidth: 104.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 194.5 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 194.6 GFLOPS/s
+	bandwidth: 113.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=9 k=22 ldc=24 (column-major) size=149462 batch=316 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 139.5 GFLOPS/s
+	bandwidth: 81.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 163.9 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 192.7 GFLOPS/s
+	bandwidth: 112.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 194.4 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=9 k=32 ldc=24 (column-major) size=111107 batch=272 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 137.6 GFLOPS/s
+	bandwidth: 80.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 166.1 GFLOPS/s
+	bandwidth: 97.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 191.3 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 195.1 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=22 k=9 ldc=24 (column-major) size=145257 batch=311 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 75.1 GFLOPS/s
+	bandwidth: 25.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 202.3 GFLOPS/s
+	bandwidth: 69.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 301.8 GFLOPS/s
+	bandwidth: 103.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 309.4 GFLOPS/s
+	bandwidth: 105.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=22 k=22 ldc=24 (column-major) size=89717 batch=245 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 100.9 GFLOPS/s
+	bandwidth: 34.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 199.9 GFLOPS/s
+	bandwidth: 68.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 320.0 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 329.5 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=22 k=32 ldc=24 (column-major) size=69327 batch=215 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 120.8 GFLOPS/s
+	bandwidth: 41.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 211.6 GFLOPS/s
+	bandwidth: 71.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 309.8 GFLOPS/s
+	bandwidth: 105.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 311.7 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=32 k=9 ldc=24 (column-major) size=107031 batch=267 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 83.4 GFLOPS/s
+	bandwidth: 24.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 208.8 GFLOPS/s
+	bandwidth: 60.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 351.7 GFLOPS/s
+	bandwidth: 101.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 355.4 GFLOPS/s
+	bandwidth: 102.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=32 k=22 ldc=24 (column-major) size=68618 batch=214 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 116.0 GFLOPS/s
+	bandwidth: 33.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 211.9 GFLOPS/s
+	bandwidth: 60.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 358.7 GFLOPS/s
+	bandwidth: 103.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 366.1 GFLOPS/s
+	bandwidth: 105.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=22 n=32 k=32 ldc=24 (column-major) size=53773 batch=189 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 137.1 GFLOPS/s
+	bandwidth: 39.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 245.9 GFLOPS/s
+	bandwidth: 70.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 391.0 GFLOPS/s
+	bandwidth: 112.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 389.0 GFLOPS/s
+	bandwidth: 111.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=23 n=23 k=23 ldc=24 (column-major) size=83365 batch=236 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 110.2 GFLOPS/s
+	bandwidth: 35.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 217.6 GFLOPS/s
+	bandwidth: 70.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 340.5 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 345.5 GFLOPS/s
+	bandwidth: 112.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=5 k=5 ldc=24 (column-major) size=506481 batch=581 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 92.1 GFLOPS/s
+	bandwidth: 83.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 127.7 GFLOPS/s
+	bandwidth: 115.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 127.0 GFLOPS/s
+	bandwidth: 114.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.4 GFLOPS/s
+	bandwidth: 115.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=5 k=13 ldc=24 (column-major) size=270055 batch=424 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 99.4 GFLOPS/s
+	bandwidth: 89.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 126.0 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 126.9 GFLOPS/s
+	bandwidth: 114.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 127.3 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=5 k=24 ldc=24 (column-major) size=164482 batch=331 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 101.7 GFLOPS/s
+	bandwidth: 91.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 127.4 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 128.7 GFLOPS/s
+	bandwidth: 116.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.1 GFLOPS/s
+	bandwidth: 116.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=5 k=26 ldc=24 (column-major) size=153567 batch=320 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 93.0 GFLOPS/s
+	bandwidth: 83.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 121.0 GFLOPS/s
+	bandwidth: 109.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 127.0 GFLOPS/s
+	bandwidth: 114.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.4 GFLOPS/s
+	bandwidth: 115.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=5 k=32 ldc=24 (column-major) size=128070 batch=292 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 103.1 GFLOPS/s
+	bandwidth: 92.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 125.7 GFLOPS/s
+	bandwidth: 113.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 126.8 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.0 GFLOPS/s
+	bandwidth: 115.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=13 k=5 ldc=24 (column-major) size=270055 batch=424 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 166.6 GFLOPS/s
+	bandwidth: 74.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 228.8 GFLOPS/s
+	bandwidth: 101.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 242.1 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 240.2 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=13 k=13 ldc=24 (column-major) size=169253 batch=336 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 200.4 GFLOPS/s
+	bandwidth: 88.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 247.3 GFLOPS/s
+	bandwidth: 109.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 250.9 GFLOPS/s
+	bandwidth: 111.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 251.2 GFLOPS/s
+	bandwidth: 111.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=13 k=24 ldc=24 (column-major) size=111848 batch=273 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 183.4 GFLOPS/s
+	bandwidth: 81.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 229.3 GFLOPS/s
+	bandwidth: 101.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 249.9 GFLOPS/s
+	bandwidth: 110.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 255.4 GFLOPS/s
+	bandwidth: 113.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=13 k=26 ldc=24 (column-major) size=105351 batch=265 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 181.8 GFLOPS/s
+	bandwidth: 80.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 227.4 GFLOPS/s
+	bandwidth: 100.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 248.2 GFLOPS/s
+	bandwidth: 109.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 250.2 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=13 k=32 ldc=24 (column-major) size=89717 batch=245 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 197.9 GFLOPS/s
+	bandwidth: 87.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 244.7 GFLOPS/s
+	bandwidth: 108.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 259.7 GFLOPS/s
+	bandwidth: 115.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 262.1 GFLOPS/s
+	bandwidth: 116.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=24 k=5 ldc=24 (column-major) size=164482 batch=331 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 217.4 GFLOPS/s
+	bandwidth: 68.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 274.7 GFLOPS/s
+	bandwidth: 86.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 307.7 GFLOPS/s
+	bandwidth: 96.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 303.2 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=24 k=13 ldc=24 (column-major) size=111848 batch=273 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 103.9 GFLOPS/s
+	bandwidth: 32.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 301.2 GFLOPS/s
+	bandwidth: 94.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 344.9 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 346.4 GFLOPS/s
+	bandwidth: 108.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=24 k=24 ldc=24 (column-major) size=77672 batch=228 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 122.4 GFLOPS/s
+	bandwidth: 38.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 306.4 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 343.0 GFLOPS/s
+	bandwidth: 106.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 345.1 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=24 k=26 ldc=24 (column-major) size=73584 batch=221 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 114.2 GFLOPS/s
+	bandwidth: 35.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 294.3 GFLOPS/s
+	bandwidth: 91.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 342.3 GFLOPS/s
+	bandwidth: 106.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 343.2 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=24 k=32 ldc=24 (column-major) size=63550 batch=206 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 132.1 GFLOPS/s
+	bandwidth: 41.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 284.0 GFLOPS/s
+	bandwidth: 88.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 329.4 GFLOPS/s
+	bandwidth: 102.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 337.8 GFLOPS/s
+	bandwidth: 105.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=26 k=5 ldc=24 (column-major) size=153567 batch=320 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 187.8 GFLOPS/s
+	bandwidth: 56.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 255.9 GFLOPS/s
+	bandwidth: 77.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 305.6 GFLOPS/s
+	bandwidth: 92.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 318.2 GFLOPS/s
+	bandwidth: 96.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=26 k=13 ldc=24 (column-major) size=105351 batch=265 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 98.6 GFLOPS/s
+	bandwidth: 29.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 302.0 GFLOPS/s
+	bandwidth: 90.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 351.6 GFLOPS/s
+	bandwidth: 105.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 355.9 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=26 k=24 ldc=24 (column-major) size=73584 batch=221 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 116.6 GFLOPS/s
+	bandwidth: 35.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 309.0 GFLOPS/s
+	bandwidth: 92.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 358.2 GFLOPS/s
+	bandwidth: 107.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 362.3 GFLOPS/s
+	bandwidth: 108.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=26 k=26 ldc=24 (column-major) size=69759 batch=216 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 112.2 GFLOPS/s
+	bandwidth: 33.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 303.0 GFLOPS/s
+	bandwidth: 90.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 353.2 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 357.7 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=26 k=32 ldc=24 (column-major) size=60349 batch=201 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 133.9 GFLOPS/s
+	bandwidth: 40.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 295.9 GFLOPS/s
+	bandwidth: 88.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 363.8 GFLOPS/s
+	bandwidth: 109.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 373.0 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=32 k=5 ldc=24 (column-major) size=128070 batch=292 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 238.2 GFLOPS/s
+	bandwidth: 65.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 252.6 GFLOPS/s
+	bandwidth: 69.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 348.3 GFLOPS/s
+	bandwidth: 96.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 351.5 GFLOPS/s
+	bandwidth: 97.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=32 k=13 ldc=24 (column-major) size=89717 batch=245 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 107.7 GFLOPS/s
+	bandwidth: 29.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 301.1 GFLOPS/s
+	bandwidth: 82.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 380.9 GFLOPS/s
+	bandwidth: 104.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 384.9 GFLOPS/s
+	bandwidth: 105.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=32 k=24 ldc=24 (column-major) size=63550 batch=206 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 140.5 GFLOPS/s
+	bandwidth: 38.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 303.1 GFLOPS/s
+	bandwidth: 82.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 376.2 GFLOPS/s
+	bandwidth: 102.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 379.3 GFLOPS/s
+	bandwidth: 103.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=32 k=26 ldc=24 (column-major) size=60349 batch=201 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 127.8 GFLOPS/s
+	bandwidth: 34.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 303.4 GFLOPS/s
+	bandwidth: 82.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 393.7 GFLOPS/s
+	bandwidth: 107.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 400.9 GFLOPS/s
+	bandwidth: 109.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=24 n=32 k=32 ldc=24 (column-major) size=52428 batch=187 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 147.2 GFLOPS/s
+	bandwidth: 40.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 344.0 GFLOPS/s
+	bandwidth: 93.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 404.9 GFLOPS/s
+	bandwidth: 110.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 408.8 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=5 k=5 ldc=32 (column-major) size=426088 batch=533 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 92.6 GFLOPS/s
+	bandwidth: 82.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 125.5 GFLOPS/s
+	bandwidth: 111.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 129.2 GFLOPS/s
+	bandwidth: 115.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.7 GFLOPS/s
+	bandwidth: 115.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=5 k=13 ldc=32 (column-major) size=238397 batch=399 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 94.0 GFLOPS/s
+	bandwidth: 83.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 121.8 GFLOPS/s
+	bandwidth: 108.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 128.2 GFLOPS/s
+	bandwidth: 114.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 128.9 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=5 k=24 ldc=32 (column-major) size=148470 batch=315 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 93.8 GFLOPS/s
+	bandwidth: 83.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 120.1 GFLOPS/s
+	bandwidth: 106.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 125.5 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 126.5 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=5 k=26 ldc=32 (column-major) size=138941 batch=304 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 92.3 GFLOPS/s
+	bandwidth: 82.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 118.3 GFLOPS/s
+	bandwidth: 105.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 126.4 GFLOPS/s
+	bandwidth: 112.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.0 GFLOPS/s
+	bandwidth: 114.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=5 k=32 ldc=32 (column-major) size=116508 batch=279 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 97.8 GFLOPS/s
+	bandwidth: 86.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 119.4 GFLOPS/s
+	bandwidth: 106.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 127.8 GFLOPS/s
+	bandwidth: 113.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.1 GFLOPS/s
+	bandwidth: 114.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=5 ldc=32 (column-major) size=219668 batch=383 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 161.7 GFLOPS/s
+	bandwidth: 70.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 224.3 GFLOPS/s
+	bandwidth: 97.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 238.9 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 237.6 GFLOPS/s
+	bandwidth: 103.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=13 ldc=32 (column-major) size=145414 batch=311 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 179.2 GFLOPS/s
+	bandwidth: 77.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 220.1 GFLOPS/s
+	bandwidth: 95.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 250.0 GFLOPS/s
+	bandwidth: 108.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 254.0 GFLOPS/s
+	bandwidth: 109.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=24 ldc=32 (column-major) size=99273 batch=257 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 182.3 GFLOPS/s
+	bandwidth: 78.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 216.2 GFLOPS/s
+	bandwidth: 93.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 249.3 GFLOPS/s
+	bandwidth: 107.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 255.2 GFLOPS/s
+	bandwidth: 110.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=26 ldc=32 (column-major) size=93858 batch=250 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 186.1 GFLOPS/s
+	bandwidth: 80.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 219.6 GFLOPS/s
+	bandwidth: 94.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 252.9 GFLOPS/s
+	bandwidth: 109.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 258.1 GFLOPS/s
+	bandwidth: 111.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=28 ldc=32 (column-major) size=89003 batch=244 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 201.3 GFLOPS/s
+	bandwidth: 86.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 235.2 GFLOPS/s
+	bandwidth: 101.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 262.3 GFLOPS/s
+	bandwidth: 113.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 265.4 GFLOPS/s
+	bandwidth: 114.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=32 ldc=32 (column-major) size=80659 batch=232 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 201.4 GFLOPS/s
+	bandwidth: 86.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 230.5 GFLOPS/s
+	bandwidth: 99.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 260.7 GFLOPS/s
+	bandwidth: 112.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 262.9 GFLOPS/s
+	bandwidth: 113.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=13 k=45 ldc=32 (column-major) size=61822 batch=203 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 179.5 GFLOPS/s
+	bandwidth: 77.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 206.0 GFLOPS/s
+	bandwidth: 88.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 234.5 GFLOPS/s
+	bandwidth: 101.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 238.2 GFLOPS/s
+	bandwidth: 102.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=24 k=5 ldc=32 (column-major) size=131844 batch=296 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 209.1 GFLOPS/s
+	bandwidth: 63.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 216.1 GFLOPS/s
+	bandwidth: 65.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 302.3 GFLOPS/s
+	bandwidth: 92.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 307.5 GFLOPS/s
+	bandwidth: 93.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=24 k=13 ldc=32 (column-major) size=94652 batch=251 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 93.6 GFLOPS/s
+	bandwidth: 28.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 246.6 GFLOPS/s
+	bandwidth: 74.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 332.6 GFLOPS/s
+	bandwidth: 100.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 338.9 GFLOPS/s
+	bandwidth: 102.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=24 k=24 ldc=32 (column-major) size=68200 batch=213 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 116.1 GFLOPS/s
+	bandwidth: 34.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 264.1 GFLOPS/s
+	bandwidth: 79.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 343.2 GFLOPS/s
+	bandwidth: 103.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 347.6 GFLOPS/s
+	bandwidth: 104.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=24 k=26 ldc=32 (column-major) size=64902 batch=208 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 124.4 GFLOPS/s
+	bandwidth: 37.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 255.1 GFLOPS/s
+	bandwidth: 76.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 345.0 GFLOPS/s
+	bandwidth: 103.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 347.9 GFLOPS/s
+	bandwidth: 104.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=24 k=32 ldc=32 (column-major) size=56679 batch=194 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 139.9 GFLOPS/s
+	bandwidth: 42.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 267.2 GFLOPS/s
+	bandwidth: 80.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 371.0 GFLOPS/s
+	bandwidth: 111.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 378.1 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=5 ldc=32 (column-major) size=122910 batch=286 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 198.3 GFLOPS/s
+	bandwidth: 58.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 234.9 GFLOPS/s
+	bandwidth: 68.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 334.3 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 329.2 GFLOPS/s
+	bandwidth: 96.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=13 ldc=32 (column-major) size=89003 batch=244 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 106.3 GFLOPS/s
+	bandwidth: 30.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 256.4 GFLOPS/s
+	bandwidth: 74.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 366.4 GFLOPS/s
+	bandwidth: 106.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 375.4 GFLOPS/s
+	bandwidth: 108.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=24 ldc=32 (column-major) size=64527 batch=207 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 122.0 GFLOPS/s
+	bandwidth: 35.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 261.2 GFLOPS/s
+	bandwidth: 75.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 359.7 GFLOPS/s
+	bandwidth: 103.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 361.7 GFLOPS/s
+	bandwidth: 104.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=26 ldc=32 (column-major) size=61455 batch=202 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 114.1 GFLOPS/s
+	bandwidth: 32.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 253.3 GFLOPS/s
+	bandwidth: 73.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 344.9 GFLOPS/s
+	bandwidth: 99.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 350.0 GFLOPS/s
+	bandwidth: 100.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=28 ldc=32 (column-major) size=58661 batch=198 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 118.8 GFLOPS/s
+	bandwidth: 34.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 261.3 GFLOPS/s
+	bandwidth: 75.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 369.4 GFLOPS/s
+	bandwidth: 106.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 378.9 GFLOPS/s
+	bandwidth: 109.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=32 ldc=32 (column-major) size=53773 batch=189 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 141.8 GFLOPS/s
+	bandwidth: 40.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 298.5 GFLOPS/s
+	bandwidth: 86.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 389.0 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 384.0 GFLOPS/s
+	bandwidth: 110.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=26 k=45 ldc=32 (column-major) size=42313 batch=168 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 145.0 GFLOPS/s
+	bandwidth: 41.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 263.4 GFLOPS/s
+	bandwidth: 75.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 346.8 GFLOPS/s
+	bandwidth: 99.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 347.1 GFLOPS/s
+	bandwidth: 99.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=28 k=13 ldc=32 (column-major) size=83991 batch=237 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 107.2 GFLOPS/s
+	bandwidth: 29.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 286.1 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 385.4 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 384.2 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=28 k=26 ldc=32 (column-major) size=58355 batch=197 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 125.2 GFLOPS/s
+	bandwidth: 34.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 257.6 GFLOPS/s
+	bandwidth: 71.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 383.1 GFLOPS/s
+	bandwidth: 106.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 389.3 GFLOPS/s
+	bandwidth: 108.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=28 k=28 ldc=32 (column-major) size=55738 batch=193 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 136.0 GFLOPS/s
+	bandwidth: 37.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 277.6 GFLOPS/s
+	bandwidth: 77.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 386.7 GFLOPS/s
+	bandwidth: 107.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 399.4 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=28 k=32 ldc=32 (column-major) size=51150 batch=185 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 148.2 GFLOPS/s
+	bandwidth: 41.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 291.5 GFLOPS/s
+	bandwidth: 81.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 380.6 GFLOPS/s
+	bandwidth: 105.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 389.5 GFLOPS/s
+	bandwidth: 108.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=28 k=45 ldc=32 (column-major) size=40354 batch=164 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 137.5 GFLOPS/s
+	bandwidth: 38.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 261.0 GFLOPS/s
+	bandwidth: 72.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 348.6 GFLOPS/s
+	bandwidth: 96.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 349.1 GFLOPS/s
+	bandwidth: 96.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=5 ldc=32 (column-major) size=102144 batch=261 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 210.6 GFLOPS/s
+	bandwidth: 56.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 227.1 GFLOPS/s
+	bandwidth: 60.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 326.5 GFLOPS/s
+	bandwidth: 87.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 336.2 GFLOPS/s
+	bandwidth: 89.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=13 ldc=32 (column-major) size=75488 batch=224 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 127.7 GFLOPS/s
+	bandwidth: 33.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 277.4 GFLOPS/s
+	bandwidth: 72.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 389.6 GFLOPS/s
+	bandwidth: 102.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 395.8 GFLOPS/s
+	bandwidth: 104.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=24 ldc=32 (column-major) size=55553 batch=192 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 148.7 GFLOPS/s
+	bandwidth: 38.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 269.3 GFLOPS/s
+	bandwidth: 70.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 383.6 GFLOPS/s
+	bandwidth: 100.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 390.5 GFLOPS/s
+	bandwidth: 102.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=26 ldc=32 (column-major) size=53008 batch=188 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 146.2 GFLOPS/s
+	bandwidth: 38.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 301.4 GFLOPS/s
+	bandwidth: 78.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 418.0 GFLOPS/s
+	bandwidth: 109.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 425.2 GFLOPS/s
+	bandwidth: 111.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=28 ldc=32 (column-major) size=50686 batch=184 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 126.0 GFLOPS/s
+	bandwidth: 32.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 296.6 GFLOPS/s
+	bandwidth: 77.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 414.4 GFLOPS/s
+	bandwidth: 108.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 417.0 GFLOPS/s
+	bandwidth: 109.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=32 ldc=32 (column-major) size=46603 batch=176 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 131.4 GFLOPS/s
+	bandwidth: 34.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 286.9 GFLOPS/s
+	bandwidth: 75.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 369.7 GFLOPS/s
+	bandwidth: 96.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 373.1 GFLOPS/s
+	bandwidth: 97.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=32 k=45 ldc=32 (column-major) size=36933 batch=157 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 161.0 GFLOPS/s
+	bandwidth: 42.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 255.7 GFLOPS/s
+	bandwidth: 66.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 360.6 GFLOPS/s
+	bandwidth: 94.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 364.6 GFLOPS/s
+	bandwidth: 95.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=45 k=13 ldc=32 (column-major) size=56799 batch=195 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 119.8 GFLOPS/s
+	bandwidth: 27.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 254.1 GFLOPS/s
+	bandwidth: 58.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 424.4 GFLOPS/s
+	bandwidth: 97.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 431.1 GFLOPS/s
+	bandwidth: 99.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=45 k=26 ldc=32 (column-major) size=40845 batch=165 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 129.2 GFLOPS/s
+	bandwidth: 29.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 276.5 GFLOPS/s
+	bandwidth: 63.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 431.8 GFLOPS/s
+	bandwidth: 98.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 436.3 GFLOPS/s
+	bandwidth: 99.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=45 k=28 ldc=32 (column-major) size=39153 batch=162 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 149.6 GFLOPS/s
+	bandwidth: 34.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 276.8 GFLOPS/s
+	bandwidth: 63.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 421.9 GFLOPS/s
+	bandwidth: 96.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 427.8 GFLOPS/s
+	bandwidth: 97.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=45 k=32 ldc=32 (column-major) size=36157 batch=155 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 162.0 GFLOPS/s
+	bandwidth: 36.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 268.9 GFLOPS/s
+	bandwidth: 61.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 405.9 GFLOPS/s
+	bandwidth: 92.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 412.6 GFLOPS/s
+	bandwidth: 94.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=26 n=45 k=45 ldc=32 (column-major) size=28957 batch=139 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 162.4 GFLOPS/s
+	bandwidth: 37.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 308.9 GFLOPS/s
+	bandwidth: 70.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 479.6 GFLOPS/s
+	bandwidth: 109.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 478.5 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=13 k=13 ldc=32 (column-major) size=141430 batch=307 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 181.5 GFLOPS/s
+	bandwidth: 76.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 214.3 GFLOPS/s
+	bandwidth: 90.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 262.5 GFLOPS/s
+	bandwidth: 110.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 263.1 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=13 k=26 ldc=32 (column-major) size=90565 batch=246 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 204.8 GFLOPS/s
+	bandwidth: 86.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 212.9 GFLOPS/s
+	bandwidth: 89.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 266.7 GFLOPS/s
+	bandwidth: 112.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 271.1 GFLOPS/s
+	bandwidth: 114.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=13 k=28 ldc=32 (column-major) size=85816 batch=239 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 212.7 GFLOPS/s
+	bandwidth: 89.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 247.2 GFLOPS/s
+	bandwidth: 104.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 270.0 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 269.2 GFLOPS/s
+	bandwidth: 113.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=13 k=32 ldc=32 (column-major) size=77672 batch=228 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 188.7 GFLOPS/s
+	bandwidth: 79.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 220.2 GFLOPS/s
+	bandwidth: 92.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 254.1 GFLOPS/s
+	bandwidth: 106.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 256.7 GFLOPS/s
+	bandwidth: 108.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=13 k=45 ldc=32 (column-major) size=59362 batch=199 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 198.2 GFLOPS/s
+	bandwidth: 83.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 209.8 GFLOPS/s
+	bandwidth: 88.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 263.7 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 266.5 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=26 k=13 ldc=32 (column-major) size=87495 batch=242 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 104.1 GFLOPS/s
+	bandwidth: 29.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 245.7 GFLOPS/s
+	bandwidth: 68.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 378.3 GFLOPS/s
+	bandwidth: 105.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 382.8 GFLOPS/s
+	bandwidth: 106.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=26 k=26 ldc=32 (column-major) size=60025 batch=200 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 117.6 GFLOPS/s
+	bandwidth: 32.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 243.7 GFLOPS/s
+	bandwidth: 67.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 386.3 GFLOPS/s
+	bandwidth: 107.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 395.0 GFLOPS/s
+	bandwidth: 109.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=26 k=28 ldc=32 (column-major) size=57260 batch=195 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 141.7 GFLOPS/s
+	bandwidth: 39.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 254.1 GFLOPS/s
+	bandwidth: 70.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 401.0 GFLOPS/s
+	bandwidth: 111.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 410.3 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=26 k=32 ldc=32 (column-major) size=52428 batch=187 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.6 GFLOPS/s
+	bandwidth: 39.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 276.5 GFLOPS/s
+	bandwidth: 76.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 402.5 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 408.8 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=26 k=45 ldc=32 (column-major) size=41145 batch=166 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 136.2 GFLOPS/s
+	bandwidth: 37.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 248.3 GFLOPS/s
+	bandwidth: 68.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 356.4 GFLOPS/s
+	bandwidth: 98.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 358.1 GFLOPS/s
+	bandwidth: 99.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=28 k=13 ldc=32 (column-major) size=82646 batch=235 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 108.9 GFLOPS/s
+	bandwidth: 29.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 268.6 GFLOPS/s
+	bandwidth: 72.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 403.7 GFLOPS/s
+	bandwidth: 108.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 403.3 GFLOPS/s
+	bandwidth: 108.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=28 k=26 ldc=32 (column-major) size=57065 batch=195 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 126.9 GFLOPS/s
+	bandwidth: 34.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 246.2 GFLOPS/s
+	bandwidth: 65.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 400.9 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 407.7 GFLOPS/s
+	bandwidth: 109.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=28 k=28 ldc=32 (column-major) size=54471 batch=191 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 150.9 GFLOPS/s
+	bandwidth: 40.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 295.5 GFLOPS/s
+	bandwidth: 79.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 418.3 GFLOPS/s
+	bandwidth: 112.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 421.4 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=28 k=32 ldc=32 (column-major) size=49932 batch=182 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 145.6 GFLOPS/s
+	bandwidth: 38.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 272.8 GFLOPS/s
+	bandwidth: 73.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 398.2 GFLOPS/s
+	bandwidth: 106.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 406.5 GFLOPS/s
+	bandwidth: 108.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=28 k=45 ldc=32 (column-major) size=39290 batch=162 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 154.9 GFLOPS/s
+	bandwidth: 41.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 248.1 GFLOPS/s
+	bandwidth: 66.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 366.9 GFLOPS/s
+	bandwidth: 98.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 370.1 GFLOPS/s
+	bandwidth: 98.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=32 k=13 ldc=32 (column-major) size=74400 batch=223 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 104.9 GFLOPS/s
+	bandwidth: 26.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 261.3 GFLOPS/s
+	bandwidth: 66.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 400.3 GFLOPS/s
+	bandwidth: 101.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 405.9 GFLOPS/s
+	bandwidth: 102.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=32 k=26 ldc=32 (column-major) size=51941 batch=186 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.5 GFLOPS/s
+	bandwidth: 36.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 280.0 GFLOPS/s
+	bandwidth: 70.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 439.0 GFLOPS/s
+	bandwidth: 110.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 447.9 GFLOPS/s
+	bandwidth: 112.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=32 k=28 ldc=32 (column-major) size=49636 batch=182 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 162.0 GFLOPS/s
+	bandwidth: 40.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 282.3 GFLOPS/s
+	bandwidth: 70.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 418.6 GFLOPS/s
+	bandwidth: 105.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 420.5 GFLOPS/s
+	bandwidth: 105.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=32 k=32 ldc=32 (column-major) size=45590 batch=174 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.2 GFLOPS/s
+	bandwidth: 35.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 272.8 GFLOPS/s
+	bandwidth: 68.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 384.2 GFLOPS/s
+	bandwidth: 96.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 386.6 GFLOPS/s
+	bandwidth: 97.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=32 k=45 ldc=32 (column-major) size=36041 batch=155 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 172.9 GFLOPS/s
+	bandwidth: 43.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 243.0 GFLOPS/s
+	bandwidth: 60.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 376.7 GFLOPS/s
+	bandwidth: 94.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 380.6 GFLOPS/s
+	bandwidth: 95.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=45 k=13 ldc=32 (column-major) size=56181 batch=194 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 119.9 GFLOPS/s
+	bandwidth: 26.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 245.6 GFLOPS/s
+	bandwidth: 53.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 483.0 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 459.3 GFLOPS/s
+	bandwidth: 100.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=45 k=26 ldc=32 (column-major) size=40209 batch=164 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 149.0 GFLOPS/s
+	bandwidth: 32.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 256.7 GFLOPS/s
+	bandwidth: 55.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 443.4 GFLOPS/s
+	bandwidth: 96.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 453.0 GFLOPS/s
+	bandwidth: 98.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=45 k=28 ldc=32 (column-major) size=38524 batch=160 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 159.5 GFLOPS/s
+	bandwidth: 34.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 267.2 GFLOPS/s
+	bandwidth: 58.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 444.4 GFLOPS/s
+	bandwidth: 96.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 448.3 GFLOPS/s
+	bandwidth: 97.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=45 k=32 ldc=32 (column-major) size=35544 batch=154 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 158.9 GFLOPS/s
+	bandwidth: 34.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 253.5 GFLOPS/s
+	bandwidth: 55.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 441.5 GFLOPS/s
+	bandwidth: 96.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 449.3 GFLOPS/s
+	bandwidth: 97.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=28 n=45 k=45 ldc=32 (column-major) size=28405 batch=138 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 194.7 GFLOPS/s
+	bandwidth: 42.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 289.0 GFLOPS/s
+	bandwidth: 62.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 485.3 GFLOPS/s
+	bandwidth: 105.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 487.6 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=14 k=14 ldc=32 (column-major) size=127826 batch=292 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 209.9 GFLOPS/s
+	bandwidth: 83.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 206.6 GFLOPS/s
+	bandwidth: 81.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 281.2 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 285.9 GFLOPS/s
+	bandwidth: 113.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=14 k=16 ldc=32 (column-major) size=118149 batch=281 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 204.9 GFLOPS/s
+	bandwidth: 81.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 213.0 GFLOPS/s
+	bandwidth: 84.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 278.6 GFLOPS/s
+	bandwidth: 110.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 280.9 GFLOPS/s
+	bandwidth: 111.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=14 k=29 ldc=32 (column-major) size=79184 batch=230 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 206.1 GFLOPS/s
+	bandwidth: 81.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 212.6 GFLOPS/s
+	bandwidth: 84.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 271.2 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 276.9 GFLOPS/s
+	bandwidth: 109.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=14 k=32 ldc=32 (column-major) size=73584 batch=221 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 197.1 GFLOPS/s
+	bandwidth: 78.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 201.6 GFLOPS/s
+	bandwidth: 79.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 261.9 GFLOPS/s
+	bandwidth: 103.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 265.4 GFLOPS/s
+	bandwidth: 105.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=16 k=14 ldc=32 (column-major) size=117528 batch=280 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 214.2 GFLOPS/s
+	bandwidth: 77.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 219.9 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 295.8 GFLOPS/s
+	bandwidth: 107.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 300.6 GFLOPS/s
+	bandwidth: 109.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=16 k=16 ldc=32 (column-major) size=108942 batch=269 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 213.4 GFLOPS/s
+	bandwidth: 77.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 214.8 GFLOPS/s
+	bandwidth: 78.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 295.0 GFLOPS/s
+	bandwidth: 107.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 300.5 GFLOPS/s
+	bandwidth: 109.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=16 k=29 ldc=32 (column-major) size=73867 batch=222 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 209.0 GFLOPS/s
+	bandwidth: 75.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 219.0 GFLOPS/s
+	bandwidth: 79.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 292.7 GFLOPS/s
+	bandwidth: 106.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 295.4 GFLOPS/s
+	bandwidth: 107.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=16 k=55 ldc=32 (column-major) size=44933 batch=173 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 201.5 GFLOPS/s
+	bandwidth: 73.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 208.8 GFLOPS/s
+	bandwidth: 75.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 270.1 GFLOPS/s
+	bandwidth: 97.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 271.3 GFLOPS/s
+	bandwidth: 98.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=29 k=14 ldc=32 (column-major) size=77136 batch=227 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 101.0 GFLOPS/s
+	bandwidth: 26.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 235.2 GFLOPS/s
+	bandwidth: 61.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 399.8 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 402.6 GFLOPS/s
+	bandwidth: 104.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=29 k=16 ldc=32 (column-major) size=72315 batch=220 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 115.2 GFLOPS/s
+	bandwidth: 29.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 230.6 GFLOPS/s
+	bandwidth: 59.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 396.1 GFLOPS/s
+	bandwidth: 102.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 403.3 GFLOPS/s
+	bandwidth: 104.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=29 k=29 ldc=32 (column-major) size=51424 batch=185 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.6 GFLOPS/s
+	bandwidth: 36.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 249.0 GFLOPS/s
+	bandwidth: 64.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 421.4 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 425.1 GFLOPS/s
+	bandwidth: 109.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=29 k=32 ldc=32 (column-major) size=48210 batch=179 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 117.9 GFLOPS/s
+	bandwidth: 30.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 237.2 GFLOPS/s
+	bandwidth: 61.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 391.5 GFLOPS/s
+	bandwidth: 101.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 395.9 GFLOPS/s
+	bandwidth: 102.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=29 k=55 ldc=32 (column-major) size=32592 batch=147 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 163.3 GFLOPS/s
+	bandwidth: 42.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 218.3 GFLOPS/s
+	bandwidth: 56.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 422.9 GFLOPS/s
+	bandwidth: 109.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 429.0 GFLOPS/s
+	bandwidth: 110.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=32 k=14 ldc=32 (column-major) size=71468 batch=218 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 107.0 GFLOPS/s
+	bandwidth: 26.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 232.2 GFLOPS/s
+	bandwidth: 57.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 404.1 GFLOPS/s
+	bandwidth: 100.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 413.2 GFLOPS/s
+	bandwidth: 102.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=32 k=29 ldc=32 (column-major) size=48055 batch=179 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 121.7 GFLOPS/s
+	bandwidth: 30.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 245.4 GFLOPS/s
+	bandwidth: 60.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 412.7 GFLOPS/s
+	bandwidth: 101.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 421.2 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=32 k=32 ldc=32 (column-major) size=45100 batch=173 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 157.1 GFLOPS/s
+	bandwidth: 38.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 236.6 GFLOPS/s
+	bandwidth: 58.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 397.6 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 403.0 GFLOPS/s
+	bandwidth: 99.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=32 k=55 ldc=32 (column-major) size=30650 batch=143 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 155.9 GFLOPS/s
+	bandwidth: 38.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 264.8 GFLOPS/s
+	bandwidth: 65.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 445.6 GFLOPS/s
+	bandwidth: 109.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 449.0 GFLOPS/s
+	bandwidth: 110.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=55 k=16 ldc=32 (column-major) size=43240 batch=170 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 115.9 GFLOPS/s
+	bandwidth: 23.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 236.1 GFLOPS/s
+	bandwidth: 47.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 469.4 GFLOPS/s
+	bandwidth: 93.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 481.0 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=55 k=29 ldc=32 (column-major) size=31987 batch=146 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 176.2 GFLOPS/s
+	bandwidth: 34.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 220.8 GFLOPS/s
+	bandwidth: 43.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 506.6 GFLOPS/s
+	bandwidth: 100.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 526.9 GFLOPS/s
+	bandwidth: 104.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=55 k=32 ldc=32 (column-major) size=30174 batch=142 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 197.5 GFLOPS/s
+	bandwidth: 39.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 268.6 GFLOPS/s
+	bandwidth: 53.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 544.6 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 540.3 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=29 n=55 k=55 ldc=32 (column-major) size=21037 batch=118 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 182.7 GFLOPS/s
+	bandwidth: 36.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 236.5 GFLOPS/s
+	bandwidth: 46.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 432.6 GFLOPS/s
+	bandwidth: 85.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 434.6 GFLOPS/s
+	bandwidth: 85.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=5 k=5 ldc=32 (column-major) size=389036 batch=509 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 94.4 GFLOPS/s
+	bandwidth: 81.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 128.3 GFLOPS/s
+	bandwidth: 110.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 128.7 GFLOPS/s
+	bandwidth: 111.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 129.3 GFLOPS/s
+	bandwidth: 111.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=5 k=13 ldc=32 (column-major) size=209388 batch=374 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 98.1 GFLOPS/s
+	bandwidth: 84.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 125.4 GFLOPS/s
+	bandwidth: 108.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 129.9 GFLOPS/s
+	bandwidth: 112.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 131.3 GFLOPS/s
+	bandwidth: 113.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=5 k=24 ldc=32 (column-major) size=128070 batch=292 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 105.8 GFLOPS/s
+	bandwidth: 91.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 131.1 GFLOPS/s
+	bandwidth: 113.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 134.3 GFLOPS/s
+	bandwidth: 115.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 135.0 GFLOPS/s
+	bandwidth: 116.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=5 k=26 ldc=32 (column-major) size=119623 batch=282 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 104.5 GFLOPS/s
+	bandwidth: 90.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 130.8 GFLOPS/s
+	bandwidth: 112.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 134.0 GFLOPS/s
+	bandwidth: 115.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 135.1 GFLOPS/s
+	bandwidth: 116.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=5 k=32 ldc=32 (column-major) size=99864 batch=258 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 94.9 GFLOPS/s
+	bandwidth: 81.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 121.1 GFLOPS/s
+	bandwidth: 104.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 125.0 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 126.1 GFLOPS/s
+	bandwidth: 108.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=9 k=9 ldc=32 (column-major) size=204288 batch=369 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 153.4 GFLOPS/s
+	bandwidth: 81.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 200.0 GFLOPS/s
+	bandwidth: 106.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 211.4 GFLOPS/s
+	bandwidth: 112.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 214.1 GFLOPS/s
+	bandwidth: 114.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=9 k=22 ldc=32 (column-major) size=112788 batch=274 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 158.2 GFLOPS/s
+	bandwidth: 84.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 196.1 GFLOPS/s
+	bandwidth: 104.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 209.2 GFLOPS/s
+	bandwidth: 111.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 211.9 GFLOPS/s
+	bandwidth: 112.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=9 k=32 ldc=32 (column-major) size=83886 batch=236 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 169.5 GFLOPS/s
+	bandwidth: 90.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 209.2 GFLOPS/s
+	bandwidth: 111.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 214.3 GFLOPS/s
+	bandwidth: 113.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 215.2 GFLOPS/s
+	bandwidth: 114.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=5 ldc=32 (column-major) size=209388 batch=374 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 170.2 GFLOPS/s
+	bandwidth: 69.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 238.8 GFLOPS/s
+	bandwidth: 97.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 252.5 GFLOPS/s
+	bandwidth: 102.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 255.9 GFLOPS/s
+	bandwidth: 104.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=13 ldc=32 (column-major) size=134083 batch=299 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 195.4 GFLOPS/s
+	bandwidth: 79.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 229.6 GFLOPS/s
+	bandwidth: 93.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 261.4 GFLOPS/s
+	bandwidth: 105.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 265.7 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=24 ldc=32 (column-major) size=89717 batch=245 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 217.2 GFLOPS/s
+	bandwidth: 87.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 253.7 GFLOPS/s
+	bandwidth: 102.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 277.0 GFLOPS/s
+	bandwidth: 112.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 280.8 GFLOPS/s
+	bandwidth: 113.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=26 ldc=32 (column-major) size=84626 batch=238 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 220.3 GFLOPS/s
+	bandwidth: 89.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 261.6 GFLOPS/s
+	bandwidth: 105.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 280.0 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 281.2 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=28 ldc=32 (column-major) size=80082 batch=231 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 202.3 GFLOPS/s
+	bandwidth: 81.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 249.7 GFLOPS/s
+	bandwidth: 100.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 272.9 GFLOPS/s
+	bandwidth: 110.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 274.5 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=32 ldc=32 (column-major) size=72315 batch=220 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 193.4 GFLOPS/s
+	bandwidth: 78.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 237.1 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 260.0 GFLOPS/s
+	bandwidth: 105.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 263.1 GFLOPS/s
+	bandwidth: 106.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=13 k=45 ldc=32 (column-major) size=54984 batch=191 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 236.5 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 273.5 GFLOPS/s
+	bandwidth: 110.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 281.3 GFLOPS/s
+	bandwidth: 113.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 282.7 GFLOPS/s
+	bandwidth: 114.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=14 k=14 ldc=32 (column-major) size=122910 batch=286 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 220.7 GFLOPS/s
+	bandwidth: 84.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 271.5 GFLOPS/s
+	bandwidth: 104.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 288.7 GFLOPS/s
+	bandwidth: 111.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 290.0 GFLOPS/s
+	bandwidth: 111.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=14 k=29 ldc=32 (column-major) size=75318 batch=224 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 203.0 GFLOPS/s
+	bandwidth: 77.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 249.2 GFLOPS/s
+	bandwidth: 95.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 273.1 GFLOPS/s
+	bandwidth: 104.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 279.0 GFLOPS/s
+	bandwidth: 107.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=14 k=32 ldc=32 (column-major) size=69905 batch=216 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 201.0 GFLOPS/s
+	bandwidth: 77.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 246.5 GFLOPS/s
+	bandwidth: 94.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 269.5 GFLOPS/s
+	bandwidth: 103.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 273.1 GFLOPS/s
+	bandwidth: 104.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=22 k=9 ldc=32 (column-major) size=112788 batch=274 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 91.1 GFLOPS/s
+	bandwidth: 26.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 289.8 GFLOPS/s
+	bandwidth: 83.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 371.1 GFLOPS/s
+	bandwidth: 107.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 363.9 GFLOPS/s
+	bandwidth: 105.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=22 k=22 ldc=32 (column-major) size=70939 batch=217 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 119.4 GFLOPS/s
+	bandwidth: 34.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 299.2 GFLOPS/s
+	bandwidth: 86.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 361.0 GFLOPS/s
+	bandwidth: 103.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 361.8 GFLOPS/s
+	bandwidth: 103.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=22 k=32 ldc=32 (column-major) size=55188 batch=192 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 138.9 GFLOPS/s
+	bandwidth: 39.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 352.0 GFLOPS/s
+	bandwidth: 101.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 382.3 GFLOPS/s
+	bandwidth: 109.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 387.9 GFLOPS/s
+	bandwidth: 111.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=24 k=5 ldc=32 (column-major) size=128070 batch=292 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 237.6 GFLOPS/s
+	bandwidth: 65.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 251.7 GFLOPS/s
+	bandwidth: 69.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 351.9 GFLOPS/s
+	bandwidth: 97.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 353.9 GFLOPS/s
+	bandwidth: 97.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=24 k=13 ldc=32 (column-major) size=89717 batch=245 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 100.4 GFLOPS/s
+	bandwidth: 27.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 287.6 GFLOPS/s
+	bandwidth: 78.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 396.0 GFLOPS/s
+	bandwidth: 108.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 402.3 GFLOPS/s
+	bandwidth: 110.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=24 k=24 ldc=32 (column-major) size=63550 batch=206 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 143.2 GFLOPS/s
+	bandwidth: 39.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 292.5 GFLOPS/s
+	bandwidth: 79.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 373.9 GFLOPS/s
+	bandwidth: 102.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 377.4 GFLOPS/s
+	bandwidth: 103.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=24 k=26 ldc=32 (column-major) size=60349 batch=201 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 126.9 GFLOPS/s
+	bandwidth: 34.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 298.6 GFLOPS/s
+	bandwidth: 81.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 384.1 GFLOPS/s
+	bandwidth: 104.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 403.6 GFLOPS/s
+	bandwidth: 110.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=24 k=32 ldc=32 (column-major) size=52428 batch=187 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 147.5 GFLOPS/s
+	bandwidth: 40.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 335.4 GFLOPS/s
+	bandwidth: 91.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 408.4 GFLOPS/s
+	bandwidth: 111.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 409.9 GFLOPS/s
+	bandwidth: 111.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=5 ldc=32 (column-major) size=119623 batch=282 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 247.5 GFLOPS/s
+	bandwidth: 65.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 272.7 GFLOPS/s
+	bandwidth: 72.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 360.2 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 373.2 GFLOPS/s
+	bandwidth: 98.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=13 ldc=32 (column-major) size=84626 batch=238 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 110.7 GFLOPS/s
+	bandwidth: 29.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 324.5 GFLOPS/s
+	bandwidth: 85.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 414.5 GFLOPS/s
+	bandwidth: 108.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 415.1 GFLOPS/s
+	bandwidth: 108.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=24 ldc=32 (column-major) size=60349 batch=201 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 144.3 GFLOPS/s
+	bandwidth: 37.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 298.5 GFLOPS/s
+	bandwidth: 78.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 412.8 GFLOPS/s
+	bandwidth: 107.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 418.6 GFLOPS/s
+	bandwidth: 109.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=26 ldc=32 (column-major) size=57358 batch=196 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 138.3 GFLOPS/s
+	bandwidth: 36.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 310.1 GFLOPS/s
+	bandwidth: 81.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 427.3 GFLOPS/s
+	bandwidth: 111.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 433.4 GFLOPS/s
+	bandwidth: 113.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=28 ldc=32 (column-major) size=54648 batch=191 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 147.0 GFLOPS/s
+	bandwidth: 38.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 355.9 GFLOPS/s
+	bandwidth: 92.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 417.0 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 424.5 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=32 ldc=32 (column-major) size=49932 batch=182 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 161.4 GFLOPS/s
+	bandwidth: 42.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 333.9 GFLOPS/s
+	bandwidth: 87.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 408.7 GFLOPS/s
+	bandwidth: 106.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 408.8 GFLOPS/s
+	bandwidth: 106.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=26 k=45 ldc=32 (column-major) size=38994 batch=161 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 148.3 GFLOPS/s
+	bandwidth: 38.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 294.6 GFLOPS/s
+	bandwidth: 76.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 367.1 GFLOPS/s
+	bandwidth: 95.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 370.4 GFLOPS/s
+	bandwidth: 96.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=28 k=13 ldc=32 (column-major) size=80082 batch=231 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 119.5 GFLOPS/s
+	bandwidth: 30.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 321.3 GFLOPS/s
+	bandwidth: 80.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 411.9 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 411.7 GFLOPS/s
+	bandwidth: 103.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=28 k=26 ldc=32 (column-major) size=54648 batch=191 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 140.0 GFLOPS/s
+	bandwidth: 35.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 359.3 GFLOPS/s
+	bandwidth: 90.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 440.9 GFLOPS/s
+	bandwidth: 110.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 439.8 GFLOPS/s
+	bandwidth: 110.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=28 k=28 ldc=32 (column-major) size=52103 batch=186 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 156.0 GFLOPS/s
+	bandwidth: 39.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 343.9 GFLOPS/s
+	bandwidth: 86.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 435.9 GFLOPS/s
+	bandwidth: 109.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 439.9 GFLOPS/s
+	bandwidth: 110.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=28 k=32 ldc=32 (column-major) size=47662 batch=178 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 146.1 GFLOPS/s
+	bandwidth: 36.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 334.2 GFLOPS/s
+	bandwidth: 83.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 412.0 GFLOPS/s
+	bandwidth: 103.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 415.2 GFLOPS/s
+	bandwidth: 104.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=28 k=45 ldc=32 (column-major) size=37324 batch=158 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 138.1 GFLOPS/s
+	bandwidth: 34.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 293.9 GFLOPS/s
+	bandwidth: 73.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 384.9 GFLOPS/s
+	bandwidth: 96.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 388.6 GFLOPS/s
+	bandwidth: 97.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=29 k=14 ldc=32 (column-major) size=75318 batch=224 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 122.0 GFLOPS/s
+	bandwidth: 30.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 312.4 GFLOPS/s
+	bandwidth: 77.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 401.6 GFLOPS/s
+	bandwidth: 99.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 410.2 GFLOPS/s
+	bandwidth: 101.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=29 k=29 ldc=32 (column-major) size=49765 batch=182 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 168.7 GFLOPS/s
+	bandwidth: 41.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 342.7 GFLOPS/s
+	bandwidth: 84.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 428.2 GFLOPS/s
+	bandwidth: 105.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 432.9 GFLOPS/s
+	bandwidth: 106.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=29 k=32 ldc=32 (column-major) size=46603 batch=176 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 145.2 GFLOPS/s
+	bandwidth: 35.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 331.4 GFLOPS/s
+	bandwidth: 81.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 402.8 GFLOPS/s
+	bandwidth: 99.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 403.7 GFLOPS/s
+	bandwidth: 99.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=29 k=55 ldc=32 (column-major) size=31337 batch=145 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 190.6 GFLOPS/s
+	bandwidth: 46.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 307.7 GFLOPS/s
+	bandwidth: 75.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 409.1 GFLOPS/s
+	bandwidth: 100.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 414.6 GFLOPS/s
+	bandwidth: 101.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=5 ldc=32 (column-major) size=99864 batch=258 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 234.6 GFLOPS/s
+	bandwidth: 56.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 254.2 GFLOPS/s
+	bandwidth: 60.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 381.0 GFLOPS/s
+	bandwidth: 90.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 379.3 GFLOPS/s
+	bandwidth: 90.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=9 ldc=32 (column-major) size=83886 batch=236 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 87.8 GFLOPS/s
+	bandwidth: 20.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 314.2 GFLOPS/s
+	bandwidth: 74.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 421.8 GFLOPS/s
+	bandwidth: 99.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 432.3 GFLOPS/s
+	bandwidth: 102.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=13 ldc=32 (column-major) size=72315 batch=220 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 124.0 GFLOPS/s
+	bandwidth: 29.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 310.4 GFLOPS/s
+	bandwidth: 73.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 420.7 GFLOPS/s
+	bandwidth: 99.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 426.2 GFLOPS/s
+	bandwidth: 100.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=14 ldc=32 (column-major) size=69905 batch=216 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 114.2 GFLOPS/s
+	bandwidth: 26.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 304.8 GFLOPS/s
+	bandwidth: 71.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 425.9 GFLOPS/s
+	bandwidth: 100.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 432.4 GFLOPS/s
+	bandwidth: 101.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=22 ldc=32 (column-major) size=55188 batch=192 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 141.7 GFLOPS/s
+	bandwidth: 33.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 348.9 GFLOPS/s
+	bandwidth: 81.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 458.1 GFLOPS/s
+	bandwidth: 107.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 456.9 GFLOPS/s
+	bandwidth: 107.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=24 ldc=32 (column-major) size=52428 batch=187 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 134.1 GFLOPS/s
+	bandwidth: 31.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 351.6 GFLOPS/s
+	bandwidth: 82.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 468.3 GFLOPS/s
+	bandwidth: 109.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 467.0 GFLOPS/s
+	bandwidth: 109.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=26 ldc=32 (column-major) size=49932 batch=182 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 159.4 GFLOPS/s
+	bandwidth: 37.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 345.5 GFLOPS/s
+	bandwidth: 81.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 447.1 GFLOPS/s
+	bandwidth: 104.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 453.1 GFLOPS/s
+	bandwidth: 106.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=28 ldc=32 (column-major) size=47662 batch=178 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 175.9 GFLOPS/s
+	bandwidth: 41.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 340.3 GFLOPS/s
+	bandwidth: 79.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 426.9 GFLOPS/s
+	bandwidth: 100.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 434.5 GFLOPS/s
+	bandwidth: 101.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=29 ldc=32 (column-major) size=46603 batch=176 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 152.7 GFLOPS/s
+	bandwidth: 35.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 336.5 GFLOPS/s
+	bandwidth: 78.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 422.6 GFLOPS/s
+	bandwidth: 99.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 425.7 GFLOPS/s
+	bandwidth: 99.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=32 ldc=32 (column-major) size=43690 batch=171 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 159.4 GFLOPS/s
+	bandwidth: 37.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 328.1 GFLOPS/s
+	bandwidth: 76.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 412.5 GFLOPS/s
+	bandwidth: 96.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 418.3 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=45 ldc=32 (column-major) size=34379 batch=151 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 174.2 GFLOPS/s
+	bandwidth: 40.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 300.7 GFLOPS/s
+	bandwidth: 70.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 446.9 GFLOPS/s
+	bandwidth: 104.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 447.4 GFLOPS/s
+	bandwidth: 104.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=32 k=55 ldc=32 (column-major) size=29537 batch=140 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 199.8 GFLOPS/s
+	bandwidth: 46.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 359.6 GFLOPS/s
+	bandwidth: 84.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 465.9 GFLOPS/s
+	bandwidth: 108.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 474.0 GFLOPS/s
+	bandwidth: 110.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=45 k=13 ldc=32 (column-major) size=54984 batch=191 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.5 GFLOPS/s
+	bandwidth: 28.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 355.5 GFLOPS/s
+	bandwidth: 71.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 522.2 GFLOPS/s
+	bandwidth: 105.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 508.1 GFLOPS/s
+	bandwidth: 102.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=45 k=26 ldc=32 (column-major) size=38994 batch=161 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 145.7 GFLOPS/s
+	bandwidth: 29.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 324.3 GFLOPS/s
+	bandwidth: 65.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 486.3 GFLOPS/s
+	bandwidth: 97.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 487.7 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=45 k=28 ldc=32 (column-major) size=37324 batch=158 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 168.1 GFLOPS/s
+	bandwidth: 33.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 319.0 GFLOPS/s
+	bandwidth: 64.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 466.3 GFLOPS/s
+	bandwidth: 93.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 472.0 GFLOPS/s
+	bandwidth: 94.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=45 k=32 ldc=32 (column-major) size=34379 batch=151 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 172.4 GFLOPS/s
+	bandwidth: 34.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 317.6 GFLOPS/s
+	bandwidth: 63.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 483.4 GFLOPS/s
+	bandwidth: 97.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 493.7 GFLOPS/s
+	bandwidth: 99.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=45 k=45 ldc=32 (column-major) size=27363 batch=135 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 179.1 GFLOPS/s
+	bandwidth: 35.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 350.2 GFLOPS/s
+	bandwidth: 70.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 515.2 GFLOPS/s
+	bandwidth: 103.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 517.7 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=55 k=29 ldc=32 (column-major) size=31337 batch=145 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 205.9 GFLOPS/s
+	bandwidth: 38.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 317.5 GFLOPS/s
+	bandwidth: 59.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 540.9 GFLOPS/s
+	bandwidth: 100.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 531.6 GFLOPS/s
+	bandwidth: 98.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=55 k=32 ldc=32 (column-major) size=29537 batch=140 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 185.6 GFLOPS/s
+	bandwidth: 34.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 382.9 GFLOPS/s
+	bandwidth: 71.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 576.5 GFLOPS/s
+	bandwidth: 107.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 580.6 GFLOPS/s
+	bandwidth: 107.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=32 n=55 k=55 ldc=32 (column-major) size=20506 batch=117 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 189.5 GFLOPS/s
+	bandwidth: 35.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 326.2 GFLOPS/s
+	bandwidth: 60.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 461.7 GFLOPS/s
+	bandwidth: 85.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 463.9 GFLOPS/s
+	bandwidth: 86.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=13 k=13 ldc=48 (column-major) size=97400 batch=255 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 200.0 GFLOPS/s
+	bandwidth: 74.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 196.6 GFLOPS/s
+	bandwidth: 73.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 274.9 GFLOPS/s
+	bandwidth: 102.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 280.6 GFLOPS/s
+	bandwidth: 104.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=13 k=26 ldc=48 (column-major) size=62953 batch=205 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 201.1 GFLOPS/s
+	bandwidth: 74.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 193.3 GFLOPS/s
+	bandwidth: 71.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 266.5 GFLOPS/s
+	bandwidth: 98.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 273.2 GFLOPS/s
+	bandwidth: 101.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=13 k=28 ldc=48 (column-major) size=59705 batch=200 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 214.0 GFLOPS/s
+	bandwidth: 79.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 201.6 GFLOPS/s
+	bandwidth: 74.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 289.5 GFLOPS/s
+	bandwidth: 107.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 294.9 GFLOPS/s
+	bandwidth: 109.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=13 k=32 ldc=48 (column-major) size=54120 batch=190 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 238.5 GFLOPS/s
+	bandwidth: 88.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 231.4 GFLOPS/s
+	bandwidth: 85.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 290.3 GFLOPS/s
+	bandwidth: 107.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 294.8 GFLOPS/s
+	bandwidth: 109.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=13 k=45 ldc=48 (column-major) size=41502 batch=166 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 192.1 GFLOPS/s
+	bandwidth: 71.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 195.5 GFLOPS/s
+	bandwidth: 72.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 253.2 GFLOPS/s
+	bandwidth: 93.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 256.4 GFLOPS/s
+	bandwidth: 95.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=26 k=13 ldc=48 (column-major) size=61822 batch=203 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 123.2 GFLOPS/s
+	bandwidth: 28.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 223.9 GFLOPS/s
+	bandwidth: 51.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 401.9 GFLOPS/s
+	bandwidth: 92.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 418.2 GFLOPS/s
+	bandwidth: 95.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=26 k=26 ldc=48 (column-major) size=43380 batch=170 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 144.0 GFLOPS/s
+	bandwidth: 32.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 244.0 GFLOPS/s
+	bandwidth: 55.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 412.8 GFLOPS/s
+	bandwidth: 94.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 426.7 GFLOPS/s
+	bandwidth: 97.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=26 k=28 ldc=48 (column-major) size=41476 batch=166 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 152.5 GFLOPS/s
+	bandwidth: 34.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 242.1 GFLOPS/s
+	bandwidth: 55.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 424.1 GFLOPS/s
+	bandwidth: 96.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 426.8 GFLOPS/s
+	bandwidth: 97.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=26 k=32 ldc=48 (column-major) size=38130 batch=159 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 153.9 GFLOPS/s
+	bandwidth: 35.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 232.0 GFLOPS/s
+	bandwidth: 52.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 404.6 GFLOPS/s
+	bandwidth: 92.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 405.9 GFLOPS/s
+	bandwidth: 92.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=26 k=45 ldc=48 (column-major) size=30208 batch=142 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 188.6 GFLOPS/s
+	bandwidth: 42.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 271.6 GFLOPS/s
+	bandwidth: 61.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 454.5 GFLOPS/s
+	bandwidth: 103.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 456.6 GFLOPS/s
+	bandwidth: 103.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=28 k=13 ldc=48 (column-major) size=58533 batch=198 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 122.9 GFLOPS/s
+	bandwidth: 26.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 230.2 GFLOPS/s
+	bandwidth: 50.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 410.0 GFLOPS/s
+	bandwidth: 89.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 464.8 GFLOPS/s
+	bandwidth: 101.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=28 k=26 ldc=48 (column-major) size=41399 batch=166 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 161.3 GFLOPS/s
+	bandwidth: 35.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 242.3 GFLOPS/s
+	bandwidth: 52.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 431.9 GFLOPS/s
+	bandwidth: 94.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 445.4 GFLOPS/s
+	bandwidth: 97.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=28 k=28 ldc=48 (column-major) size=39615 batch=163 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 155.5 GFLOPS/s
+	bandwidth: 33.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 239.8 GFLOPS/s
+	bandwidth: 52.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 429.8 GFLOPS/s
+	bandwidth: 93.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 436.6 GFLOPS/s
+	bandwidth: 95.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=28 k=32 ldc=48 (column-major) size=36472 batch=156 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 168.9 GFLOPS/s
+	bandwidth: 36.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 229.8 GFLOPS/s
+	bandwidth: 50.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 406.9 GFLOPS/s
+	bandwidth: 88.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 407.7 GFLOPS/s
+	bandwidth: 88.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=28 k=45 ldc=48 (column-major) size=28994 batch=139 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 182.3 GFLOPS/s
+	bandwidth: 39.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 268.4 GFLOPS/s
+	bandwidth: 58.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 448.5 GFLOPS/s
+	bandwidth: 97.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 453.8 GFLOPS/s
+	bandwidth: 98.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=32 k=13 ldc=48 (column-major) size=52904 batch=188 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 136.0 GFLOPS/s
+	bandwidth: 27.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 263.3 GFLOPS/s
+	bandwidth: 53.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 471.1 GFLOPS/s
+	bandwidth: 95.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 495.9 GFLOPS/s
+	bandwidth: 100.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=32 k=26 ldc=48 (column-major) size=37936 batch=159 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 165.8 GFLOPS/s
+	bandwidth: 33.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 237.5 GFLOPS/s
+	bandwidth: 47.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 461.6 GFLOPS/s
+	bandwidth: 92.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 469.8 GFLOPS/s
+	bandwidth: 94.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=32 k=28 ldc=48 (column-major) size=36353 batch=156 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 159.3 GFLOPS/s
+	bandwidth: 32.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 237.9 GFLOPS/s
+	bandwidth: 47.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 440.1 GFLOPS/s
+	bandwidth: 88.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 446.8 GFLOPS/s
+	bandwidth: 89.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=32 k=32 ldc=48 (column-major) size=33554 batch=150 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 192.4 GFLOPS/s
+	bandwidth: 38.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 232.3 GFLOPS/s
+	bandwidth: 46.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 452.0 GFLOPS/s
+	bandwidth: 90.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 457.2 GFLOPS/s
+	bandwidth: 91.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=32 k=45 ldc=48 (column-major) size=26838 batch=134 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 172.4 GFLOPS/s
+	bandwidth: 34.6 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 258.4 GFLOPS/s
+	bandwidth: 51.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 448.2 GFLOPS/s
+	bandwidth: 89.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 455.1 GFLOPS/s
+	bandwidth: 91.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=45 k=13 ldc=48 (column-major) size=40305 batch=164 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 146.1 GFLOPS/s
+	bandwidth: 24.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 239.9 GFLOPS/s
+	bandwidth: 40.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 515.9 GFLOPS/s
+	bandwidth: 87.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 524.2 GFLOPS/s
+	bandwidth: 88.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=45 k=26 ldc=48 (column-major) size=29826 batch=141 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 214.5 GFLOPS/s
+	bandwidth: 36.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 286.0 GFLOPS/s
+	bandwidth: 48.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 584.3 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 591.9 GFLOPS/s
+	bandwidth: 99.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=45 k=28 ldc=48 (column-major) size=28679 batch=138 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 209.0 GFLOPS/s
+	bandwidth: 35.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 288.7 GFLOPS/s
+	bandwidth: 48.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 587.3 GFLOPS/s
+	bandwidth: 98.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 587.5 GFLOPS/s
+	bandwidth: 98.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=45 k=32 ldc=48 (column-major) size=26630 batch=133 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 216.0 GFLOPS/s
+	bandwidth: 36.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 274.6 GFLOPS/s
+	bandwidth: 46.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 551.8 GFLOPS/s
+	bandwidth: 92.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 560.3 GFLOPS/s
+	bandwidth: 93.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=45 n=45 k=45 ldc=48 (column-major) size=21613 batch=120 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 193.1 GFLOPS/s
+	bandwidth: 32.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 251.9 GFLOPS/s
+	bandwidth: 42.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 471.7 GFLOPS/s
+	bandwidth: 78.8 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 475.6 GFLOPS/s
+	bandwidth: 79.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=16 k=16 ldc=56 (column-major) size=66052 batch=210 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 108.0 GFLOPS/s
+	bandwidth: 32.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 211.7 GFLOPS/s
+	bandwidth: 64.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 323.8 GFLOPS/s
+	bandwidth: 98.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 330.9 GFLOPS/s
+	bandwidth: 100.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=16 k=29 ldc=56 (column-major) size=45420 batch=174 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 110.7 GFLOPS/s
+	bandwidth: 33.4 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 223.4 GFLOPS/s
+	bandwidth: 67.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 309.9 GFLOPS/s
+	bandwidth: 93.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 315.4 GFLOPS/s
+	bandwidth: 95.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=16 k=55 ldc=56 (column-major) size=27956 batch=137 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 142.5 GFLOPS/s
+	bandwidth: 43.0 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 230.2 GFLOPS/s
+	bandwidth: 69.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 322.2 GFLOPS/s
+	bandwidth: 97.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 327.9 GFLOPS/s
+	bandwidth: 98.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=29 k=16 ldc=56 (column-major) size=45221 batch=174 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 151.2 GFLOPS/s
+	bandwidth: 30.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 246.1 GFLOPS/s
+	bandwidth: 48.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 452.0 GFLOPS/s
+	bandwidth: 89.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 457.8 GFLOPS/s
+	bandwidth: 91.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=29 k=29 ldc=56 (column-major) size=33058 batch=148 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 170.3 GFLOPS/s
+	bandwidth: 33.7 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 229.1 GFLOPS/s
+	bandwidth: 45.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 449.4 GFLOPS/s
+	bandwidth: 89.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 456.4 GFLOPS/s
+	bandwidth: 90.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=29 k=32 ldc=56 (column-major) size=31126 batch=144 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 184.5 GFLOPS/s
+	bandwidth: 36.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 228.1 GFLOPS/s
+	bandwidth: 45.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 464.9 GFLOPS/s
+	bandwidth: 92.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 457.1 GFLOPS/s
+	bandwidth: 90.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=29 k=55 ldc=56 (column-major) size=21495 batch=120 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 168.7 GFLOPS/s
+	bandwidth: 33.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 238.8 GFLOPS/s
+	bandwidth: 47.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 398.8 GFLOPS/s
+	bandwidth: 78.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 401.1 GFLOPS/s
+	bandwidth: 79.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=32 k=29 ldc=56 (column-major) size=31104 batch=144 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 167.5 GFLOPS/s
+	bandwidth: 31.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 299.1 GFLOPS/s
+	bandwidth: 55.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 530.7 GFLOPS/s
+	bandwidth: 98.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 541.1 GFLOPS/s
+	bandwidth: 100.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=32 k=32 ldc=56 (column-major) size=29330 batch=140 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 221.9 GFLOPS/s
+	bandwidth: 41.2 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 277.8 GFLOPS/s
+	bandwidth: 51.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 515.9 GFLOPS/s
+	bandwidth: 95.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 513.9 GFLOPS/s
+	bandwidth: 95.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=32 k=55 ldc=56 (column-major) size=20407 batch=117 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 207.7 GFLOPS/s
+	bandwidth: 38.5 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 237.0 GFLOPS/s
+	bandwidth: 43.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 413.0 GFLOPS/s
+	bandwidth: 76.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 421.3 GFLOPS/s
+	bandwidth: 78.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=55 k=16 ldc=56 (column-major) size=27730 batch=136 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 192.6 GFLOPS/s
+	bandwidth: 26.8 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 271.6 GFLOPS/s
+	bandwidth: 37.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 569.0 GFLOPS/s
+	bandwidth: 79.1 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 578.9 GFLOPS/s
+	bandwidth: 80.4 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=55 k=29 ldc=56 (column-major) size=21406 batch=119 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 198.3 GFLOPS/s
+	bandwidth: 27.3 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 260.9 GFLOPS/s
+	bandwidth: 35.9 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 555.4 GFLOPS/s
+	bandwidth: 76.5 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 564.7 GFLOPS/s
+	bandwidth: 77.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=55 k=32 ldc=56 (column-major) size=20336 batch=116 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 203.0 GFLOPS/s
+	bandwidth: 27.9 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 248.6 GFLOPS/s
+	bandwidth: 34.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 510.2 GFLOPS/s
+	bandwidth: 70.2 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 518.2 GFLOPS/s
+	bandwidth: 71.3 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
+m=55 n=55 k=55 ldc=56 (column-major) size=14700 batch=99 memory=1024 MB
+
+LAPACK/BLAS...
+	performance: 270.9 GFLOPS/s
+	bandwidth: 37.1 GB/s
+	duration: 0.0 s
+Inlined...
+	performance: 223.6 GFLOPS/s
+	bandwidth: 30.6 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Dispatched...
+	performance: 504.3 GFLOPS/s
+	bandwidth: 69.0 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Specialized...
+	performance: 494.7 GFLOPS/s
+	bandwidth: 67.7 GB/s
+	duration: 0.0 s
+	diff=0.000000
+Finished
+
