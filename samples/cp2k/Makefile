@@ -209,7 +209,7 @@ ifeq (1,$(MKL)) # sequential
 				--end-group"
 		endif
 	endif
-	LDFLAGS += -lm
+	LDFLAGS += -lpthread -lm
 	ifneq (0,$(OFFLOAD))
 		LDFLAGS += -offload-option,mic,ld,"-lm"
 	endif
