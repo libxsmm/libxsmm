@@ -167,9 +167,9 @@ if __name__ == "__main__":
     argc = len(sys.argv)
     if (5 < argc):
         RowMajor = int(sys.argv[1])
-        AlignedStores = libxsmm_utilities.sanitize_alignment(int(sys.argv[2]))
-        AlignedLoads = libxsmm_utilities.sanitize_alignment(int(sys.argv[3]))
-        Alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
+        Alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[2]))
+        AlignedStores = libxsmm_utilities.sanitize_alignment(int(sys.argv[3]))
+        AlignedLoads = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
         Threshold = int(sys.argv[5])
 
         if (-1 > Threshold):

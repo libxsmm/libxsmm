@@ -285,10 +285,10 @@ endif
 	$(eval LDB := $(KVALUE))
 	@mkdir -p $(dir $@)
 ifeq ($(GENASM),0)
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNMENT) \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
 		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
-		$(ALIGNMENT) -4 $(MVALUE) $(NVALUE) $(KVALUE) > $@
+		-4 $(MVALUE) $(NVALUE) $(KVALUE) > $@
 else
 	@echo "#include <libxsmm.h>" > $@
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
@@ -341,8 +341,10 @@ endif
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message ("KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
-		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) $(ALIGNMENT) -1 $(MVALUE) $(NVALUE) $(KVALUE) >> $@
+	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(ALIGNMENT) \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
+		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
+		-1 $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 endif
 
 .PHONY: main
