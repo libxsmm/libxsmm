@@ -197,7 +197,7 @@ if __name__ == '__main__':
         Threshold = int(sys.argv[5])
 
         if (-1 > Threshold): # implementation (translation unit)
-            print "#include \"libxsmm_isa.h\""
+            print "#include <libxsmm_isa.h>"
             print "#include <libxsmm.h>"
             print
             print
