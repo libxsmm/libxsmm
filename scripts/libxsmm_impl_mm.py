@@ -163,7 +163,7 @@ def create_gentarget(m, n, k, row_major):
     print "}"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     argc = len(sys.argv)
     if (5 < argc):
         RowMajor = int(sys.argv[1])

@@ -148,7 +148,7 @@ def create_dispatch_bsearch(mnklist):
     create_dispatch_bsearch_function("d", mnklist)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     argc = len(sys.argv)
     if (3 < argc):
         threshold, sparsity = int(sys.argv[1]), int(sys.argv[2])

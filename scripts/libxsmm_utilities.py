@@ -147,7 +147,7 @@ def load_mnklist(argv, format, threshold):
     return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     argc = len(sys.argv)
     format = int(sys.argv[1])
     if (3 < argc and -1 == format): # new input format
