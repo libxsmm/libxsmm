@@ -235,19 +235,14 @@ install: all clean
 
 .PHONY: header
 header: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SRCDIR)/libxsmm.0.h $(SRCDIR)/libxsmm.1.h $(SRCDIR)/libxsmm.2.h
+$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SRCDIR)/libxsmm.template.h
 	@mkdir -p $(dir $@)
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
-	@cat $(SRCDIR)/libxsmm.0.h > $@
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
 		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
-		$(ALIGNMENT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) >> $@
-	@echo >> $@
-	@cat $(SRCDIR)/libxsmm.1.h >> $@
-	@echo >> $@
-	@python $(SCRDIR)/libxsmm_interface.py $(INDICES) >> $@
-	@cat $(SRCDIR)/libxsmm.2.h >> $@
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
+		$(INDICES) >> $@
 
 ifneq ($(GENASM),0)
 .PHONY: compile_gen

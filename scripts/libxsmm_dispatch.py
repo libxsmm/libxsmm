@@ -177,4 +177,5 @@ if __name__ == '__main__':
         print "  return 0;"
         print "}"
     else:
+        sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

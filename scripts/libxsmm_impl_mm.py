@@ -35,30 +35,6 @@ import math
 import sys
 
 
-def create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, listMNK, Threshold):
-    print "#define LIBXSMM_ALIGNMENT " + str(Alignment)
-    print "#define LIBXSMM_ALIGNED_STORES " + str(AlignedStores)
-    print "#define LIBXSMM_ALIGNED_LOADS " + str(AlignedLoads)
-    print "#define LIBXSMM_ALIGNED_MAX " + str(max(Alignment, AlignedStores, AlignedLoads))
-    print "#define LIBXSMM_ROW_MAJOR " + ["0", "1"][0 != RowMajor]
-    print "#define LIBXSMM_COL_MAJOR " + ["1", "0"][0 != RowMajor]
-    maxMNK = libxsmm_utilities.max_mnk(listMNK, Threshold)
-    avgDim = int(maxMNK ** (1.0 / 3.0) + 0.5)
-    maxM = libxsmm_utilities.max_mnk(listMNK, avgDim, 0)
-    maxN = libxsmm_utilities.max_mnk(listMNK, avgDim, 1)
-    maxK = libxsmm_utilities.max_mnk(listMNK, avgDim, 2)
-    print "#define LIBXSMM_MAX_MNK " + str(maxMNK)
-    print "#define LIBXSMM_MAX_M " + str(maxM)
-    print "#define LIBXSMM_MAX_N " + str(maxN)
-    print "#define LIBXSMM_MAX_K " + str(maxK)
-    listM = libxsmm_utilities.make_mlist(listMNK); listM.append(avgDim)
-    listN = libxsmm_utilities.make_nlist(listMNK); listN.append(avgDim)
-    listK = libxsmm_utilities.make_klist(listMNK); listK.append(avgDim)
-    print "#define LIBXSMM_AVG_M " + str(libxsmm_utilities.median(listM))
-    print "#define LIBXSMM_AVG_N " + str(libxsmm_utilities.median(listN))
-    print "#define LIBXSMM_AVG_K " + str(libxsmm_utilities.median(listK))
-
-
 def declare_variables(name, n, unroll):
     result = ""
     for i in range(0, min(unroll, n)): result += [name, ", " + name][0<i] + str(i)
@@ -196,7 +172,7 @@ if __name__ == '__main__':
         Alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
         Threshold = int(sys.argv[5])
 
-        if (-1 > Threshold): # implementation (translation unit)
+        if (-1 > Threshold):
             print "#include <libxsmm_isa.h>"
             print "#include <libxsmm.h>"
             print
@@ -211,12 +187,10 @@ if __name__ == '__main__':
             print
             print
             create_implementation("double", m, n, k, RowMajor, AlignedStores, AlignedLoads, -1 * (Threshold + 1))
-        elif (-1 == Threshold): # static ISA dispatch (translation unit)
+        else: #static ISA dispatch
             print
             m, n, k = int(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8])
             create_gentarget(m, n, k, RowMajor)
-        else: # macros (header based implementation)
-            mnklist = libxsmm_utilities.load_mnklist(sys.argv[6:], 0, Threshold)
-            create_macros(RowMajor, AlignedStores, AlignedLoads, Alignment, mnklist, Threshold)
     else:
+        sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

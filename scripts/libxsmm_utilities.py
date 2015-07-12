@@ -90,6 +90,7 @@ def sanitize_alignment(alignment):
     if (0 >= alignment):
         alignment = [1, 64][0 != alignment]
     elif (False == is_pot(alignment)):
+        sys.tracebacklimit = 0
         raise ValueError("Memory alignment must be a Power of Two (POT) number!")
     return alignment
 
@@ -97,6 +98,7 @@ def sanitize_alignment(alignment):
 def load_mlist(argv):
     begin = 3; end = begin + int(argv[1])
     if (begin > end or end > len(argv)):
+        sys.tracebacklimit = 0
         raise ValueError("load_mlist: wrong number of elements!")
     return map(int, argv[begin:end])
 
@@ -104,6 +106,7 @@ def load_mlist(argv):
 def load_nlist(argv):
     begin = 3 + int(argv[1]); end = begin + int(argv[2])
     if (begin > end or end > len(argv)):
+        sys.tracebacklimit = 0
         raise ValueError("load_nlist: wrong number of elements!")
     return map(int, argv[begin:end])
 
@@ -111,6 +114,7 @@ def load_nlist(argv):
 def load_klist(argv):
     begin = 3 + int(argv[1]) + int(argv[2])
     if (begin > len(argv)):
+        sys.tracebacklimit = 0
         raise ValueError("load_klist: wrong number of elements!")
     return map(int, argv[begin:])
 
@@ -138,6 +142,7 @@ def load_mnklist(argv, format, threshold):
                     if not mlist: m = k
                     resultset.add((m, n, k))
     else:
+        sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
     return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
@@ -156,4 +161,5 @@ if __name__ == '__main__':
         elements = max(alignment / elem_size, 1)
         print ((unaligned + elements - 1) / elements) * elements
     else:
+        sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
