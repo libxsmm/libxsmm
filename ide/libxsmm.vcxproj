@@ -29,26 +29,16 @@
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
-    <ClInclude Include="..\src\libxsmm.0.h" />
-    <ClInclude Include="..\src\libxsmm.1.h" />
-    <ClInclude Include="..\src\libxsmm.2.h" />
-    <ClInclude Include="..\src\libxsmm_isa.h" />
+    <ClInclude Include="..\src\libxsmm.template.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Makefile" />
-    <None Include="..\scripts\libxsmm_dispatch.py" />
-    <None Include="..\scripts\libxsmm_impl_mm.py" />
-    <None Include="..\scripts\libxsmm_interface.py" />
-    <None Include="..\scripts\libxsmm_utilities.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\libxsmm.c" />
-    <ClCompile Include="..\src\mm_1_1_1.c" />
-    <ClCompile Include="..\src\mm_23_23_23.c" />
-    <ClCompile Include="..\src\mm_2_2_2.c" />
-    <ClCompile Include="..\src\mm_3_3_3.c" />
-    <ClCompile Include="..\src\mm_4_4_4.c" />
-    <ClCompile Include="..\src\mm_5_5_5.c" />
+    <ClCompile Include="..\build\libxsmm.c" />
+    <ClCompile Include="..\build\mm_1_1_1.c" />
+    <ClCompile Include="..\build\mm_23_23_23.c" />
+    <ClCompile Include="..\build\mm_2_2_2.c" />
+    <ClCompile Include="..\build\mm_3_3_3.c" />
+    <ClCompile Include="..\build\mm_4_4_4.c" />
+    <ClCompile Include="..\build\mm_5_5_5.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmm</ProjectName>

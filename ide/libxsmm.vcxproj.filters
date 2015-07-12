@@ -7,9 +7,6 @@
     <Filter Include="src">
       <UniqueIdentifier>{df2aad30-e992-4052-8f3a-f1343f4e3f33}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scripts">
-      <UniqueIdentifier>{345eb68d-f854-475a-9e02-198c6fe1db35}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h">
@@ -18,54 +15,30 @@
     <ClInclude Include="..\include\libxsmm_macros.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_isa.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm.1.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm.2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm.0.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\src\libxsmm.template.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\scripts\libxsmm_impl_mm.py">
-      <Filter>scripts</Filter>
-    </None>
-    <None Include="..\scripts\libxsmm_interface.py">
-      <Filter>scripts</Filter>
-    </None>
-    <None Include="..\scripts\libxsmm_utilities.py">
-      <Filter>scripts</Filter>
-    </None>
-    <None Include="..\scripts\libxsmm_dispatch.py">
-      <Filter>scripts</Filter>
-    </None>
-    <None Include="..\Makefile" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\src\mm_4_4_4.c">
+    <ClCompile Include="..\build\mm_2_2_2.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_5_5_5.c">
+    <ClCompile Include="..\build\mm_3_3_3.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_1_1_1.c">
+    <ClCompile Include="..\build\mm_4_4_4.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_2_2_2.c">
+    <ClCompile Include="..\build\mm_5_5_5.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_3_3_3.c">
+    <ClCompile Include="..\build\mm_23_23_23.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm.c">
+    <ClCompile Include="..\build\libxsmm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mm_23_23_23.c">
+    <ClCompile Include="..\build\mm_1_1_1.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
