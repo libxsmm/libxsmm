@@ -82,7 +82,7 @@ if __name__ == "__main__":
             print template.substitute(substitute)
         else:
             if (mnklist):
-                substitute["MNK_INTERFACE_LIST"] += "\n"
+                substitute["MNK_INTERFACE_LIST"] += "\n\n  INTERFACE"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
@@ -99,6 +99,7 @@ if __name__ == "__main__":
                           "    REAL(C_DOUBLE), INTENT(IN) :: a, b\n" \
                           "    REAL(C_DOUBLE), INTENT(INOUT) :: c\n" \
                         "    END SUBROUTINE LIBXSMM_DMM_" + mnkstr
+                substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0
