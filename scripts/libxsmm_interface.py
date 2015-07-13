@@ -69,6 +69,9 @@ if __name__ == "__main__":
             "AVG_M":          libxsmm_utilities.median(mlist), \
             "AVG_N":          libxsmm_utilities.median(nlist), \
             "AVG_K":          libxsmm_utilities.median(klist), \
+            "SHAPE_A":        "m,k", \
+            "SHAPE_B":        "k,n", \
+            "SHAPE_C":        "m,n", \
             "MNK_INTERFACE_LIST": "" \
         }
 
