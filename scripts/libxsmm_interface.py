@@ -75,11 +75,30 @@ if __name__ == "__main__":
         if (fnmatch.fnmatch(filename, "*.h*")):
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
-                substitute["MNK_INTERFACE_LIST"] += "\n"
-                substitute["MNK_INTERFACE_LIST"] += "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c);\n"
-                substitute["MNK_INTERFACE_LIST"] += "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c);\n"
+                substitute["MNK_INTERFACE_LIST"] += \
+                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c);\n" \
+                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c);\n" \
+                    "\n"
             print template.substitute(substitute)
         else:
+            if (mnklist):
+                substitute["MNK_INTERFACE_LIST"] += "\n"
+                for mnk in mnklist:
+                    mnkstr = "_".join(map(str, mnk))
+                    substitute["MNK_INTERFACE_LIST"] += "\n" \
+                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SMM_" + mnkstr + "\n" \
+                        "    PURE SUBROUTINE LIBXSMM_SMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
+                          "    USE, INTRINSIC :: ISO_C_BINDING\n" \
+                          "    REAL(C_FLOAT), INTENT(IN) :: a, b\n" \
+                          "    REAL(C_FLOAT), INTENT(INOUT) :: c\n" \
+                        "    END SUBROUTINE LIBXSMM_SMM_" + mnkstr + "\n" \
+                        "\n" \
+                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DMM_" + mnkstr + "\n" \
+                        "    PURE SUBROUTINE LIBXSMM_DMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
+                          "    USE, INTRINSIC :: ISO_C_BINDING\n" \
+                          "    REAL(C_DOUBLE), INTENT(IN) :: a, b\n" \
+                          "    REAL(C_DOUBLE), INTENT(INOUT) :: c\n" \
+                        "    END SUBROUTINE LIBXSMM_DMM_" + mnkstr
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0

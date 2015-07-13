@@ -218,10 +218,18 @@ OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
 .PHONY: lib_all
-ifneq ($(MIC),0)
-lib_all: lib_hst lib_mic drytest
+ifeq ($(OFFLOAD),0)
+ifeq ($(MIC),0)
+lib_all: fheader drytest lib_hst
 else
-lib_all: lib_hst drytest
+lib_all: fheader drytest lib_hst lib_mic
+endif
+else
+ifeq ($(MIC),0)
+lib_all: fheader drytest lib_hst
+else
+lib_all: fheader drytest lib_hst lib_mic
+endif
 endif
 
 .PHONY: all
@@ -231,15 +239,28 @@ all: lib_all samples
 install: all clean
 
 .PHONY: header
-header: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SRCDIR)/libxsmm.template.h
+header: cheader fheader
+
+.PHONY: cheader
+cheader: $(INCDIR)/libxsmm.h
+$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/include/libxsmm_macros.h
 	@mkdir -p $(dir $@)
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
 		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
 		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
-		$(INDICES) >> $@
+		$(INDICES) > $@
+
+.PHONY: fheader
+fheader: $(INCDIR)/libxsmm.f90
+$(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90
+	@mkdir -p $(dir $@)
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
+		$(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT)))) \
+		$(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT)))) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
+		$(INDICES) > $@
 
 .PHONY: compile_gen
 compile_gen: $(SRCFILES_GEN)
@@ -254,7 +275,7 @@ $(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 
 .PHONY: sources
 sources: $(SRCFILES)
-$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator
+$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_impl_mm.py
 	$(eval MVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f2))
 	$(eval NVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f3))
 	$(eval KVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f4))
@@ -331,7 +352,7 @@ endif
 
 .PHONY: main
 main: $(BLDDIR)/libxsmm.c
-$(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h
+$(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
 	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
 
@@ -473,6 +494,7 @@ else
 	@rm -f $(BINDIR)/generator
 endif
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
+	@rm -f $(INCDIR)/libxsmm.f90
 	@rm -f $(INCDIR)/libxsmm.h
 
 install: all clean
