@@ -50,10 +50,16 @@ if __name__ == "__main__":
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
-        avgdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
-        mlist = libxsmm_utilities.make_mlist(mnklist); mlist.append(avgdim)
-        nlist = libxsmm_utilities.make_nlist(mnklist); nlist.append(avgdim)
-        klist = libxsmm_utilities.make_klist(mnklist); klist.append(avgdim)
+        maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
+        avgdim = int(0.5 * maxdim + 0.5)
+
+        avgm = libxsmm_utilities.median(libxsmm_utilities.make_mlist(mnklist), avgdim, False)
+        avgn = libxsmm_utilities.median(libxsmm_utilities.make_nlist(mnklist), avgdim, False)
+        avgk = libxsmm_utilities.median(libxsmm_utilities.make_klist(mnklist), avgdim, False)
+
+        maxm = libxsmm_utilities.max_mnk(mnklist, avgdim, 0)
+        maxn = libxsmm_utilities.max_mnk(mnklist, avgdim, 1)
+        maxk = libxsmm_utilities.max_mnk(mnklist, avgdim, 2)
 
         substitute = { \
             "ALIGNMENT":      alignment, \
@@ -63,15 +69,12 @@ if __name__ == "__main__":
             "ROW_MAJOR":      1 if (0 != row_major) else 0, \
             "COL_MAJOR":      0 if (0 != row_major) else 1, \
             "MAX_MNK":        maxmnk, \
-            "MAX_M":          libxsmm_utilities.max_mnk(mnklist, avgdim, 0), \
-            "MAX_N":          libxsmm_utilities.max_mnk(mnklist, avgdim, 1), \
-            "MAX_K":          libxsmm_utilities.max_mnk(mnklist, avgdim, 2), \
-            "AVG_M":          libxsmm_utilities.median(mlist), \
-            "AVG_N":          libxsmm_utilities.median(nlist), \
-            "AVG_K":          libxsmm_utilities.median(klist), \
-            "SHAPE_A":        "m,k", \
-            "SHAPE_B":        "k,n", \
-            "SHAPE_C":        "m,n", \
+            "MAX_M":          maxm if (avgm < maxm) else maxdim, \
+            "MAX_N":          maxn if (avgn < maxn) else maxdim, \
+            "MAX_K":          maxk if (avgk < maxk) else maxdim, \
+            "AVG_M":          avgm, \
+            "AVG_N":          avgn, \
+            "AVG_K":          avgk, \
             "MNK_INTERFACE_LIST": "" \
         }
 
@@ -103,6 +106,9 @@ if __name__ == "__main__":
                           "    REAL(C_DOUBLE), INTENT(INOUT) :: c\n" \
                         "    END SUBROUTINE LIBXSMM_DMM_" + mnkstr
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
+            substitute["SHAPE_A"] = "m,k"
+            substitute["SHAPE_B"] = "k,n"
+            substitute["SHAPE_C"] = "m,n"
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0
