@@ -295,6 +295,7 @@ endif
 else
 	@rm -f $(OBJECTS)
 endif
+	@rm -f fit.log *.dat
 
 .PHONY: realclean
 realclean: clean
