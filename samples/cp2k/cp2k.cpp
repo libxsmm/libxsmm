@@ -93,13 +93,13 @@ public:
   }
 
   void acquire(const void* address) {
-    const uintptr_t id = LIBXSMM_DIV(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
-    omp_set_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
+    const uintptr_t id = LIBXSMM_DIV2(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
+    omp_set_lock(m_lock + LIBXSMM_MOD2(id, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    const uintptr_t id = LIBXSMM_DIV(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
-    omp_unset_lock(m_lock + LIBXSMM_MOD(id, CP2K_SYNCHRONIZATION));
+    const uintptr_t id = LIBXSMM_DIV2(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
+    omp_unset_lock(m_lock + LIBXSMM_MOD2(id, CP2K_SYNCHRONIZATION));
   }
 
 private:
