@@ -44,24 +44,28 @@ PROGRAM smm
   ldc = libxsmm_ldc(m, n, typekind)
 
   ALLOCATE(a(lda,k))
-  a(:,:) = 1
-
   ALLOCATE(b(ldb,n))
+  ALLOCATE(c(ldc,n))
+  ALLOCATE(d(ldc,n))
+
+  ! Some test data
+  a(:,:) = 1
   b(:,:) = 2
 
-  ALLOCATE(c(ldc,n))
-  c(:,:) = 0
-
-  ALLOCATE(d(ldc,n))
+  ! Calculate reference based on BLAS
   d(:,:) = 0
+  CALL libxsmm_blasmm(m, n, k, a, b, d)
 
-  CALL LIBXSMM_BLASMM(m, n, k, a, b, d)
-  CALL LIBXSMM_IMM(m, n, k, a, b, c)
+  c(:,:) = 0
+  CALL libxsmm_imm(m, n, k, a, b, c)
+  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
 
-  diff = MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
-  WRITE(*,*) "diff = ", diff
+  c(:,:) = 0
+  CALL libxsmm_mm(m, n, k, a, b, c)
+  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
 
   DEALLOCATE(a)
   DEALLOCATE(b)
   DEALLOCATE(c)
+  DEALLOCATE(d)
 END PROGRAM
