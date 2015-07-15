@@ -94,6 +94,7 @@ endif
 ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
+	LDFLAGS += -fPIC
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -127,7 +128,6 @@ ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
 	endif
-	LDFLAGS += -fPIC
 	ifneq ($(STATIC),0)
 		ifneq ($(STATIC),)
 			LDFLAGS += -no-intel-extensions -static-intel
@@ -137,6 +137,11 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function -std=c++0x
 	CFLAGS += -Wall -Wno-unused-function
+	ifneq ($(OS),Windows_NT)
+		CXXFLAGS += -fPIC
+		CFLAGS += -fPIC
+		LDFLAGS += -fPIC
+	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
@@ -161,11 +166,6 @@ else # GCC assumed
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
-	endif
-	ifneq ($(OS),Windows_NT)
-		CXXFLAGS += -fPIC
-		CFLAGS += -fPIC
-		LDFLAGS += -fPIC
 	endif
 	ifneq ($(STATIC),0)
 		ifneq ($(STATIC),)
