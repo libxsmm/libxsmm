@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     }
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
-    const int ldc = LIBXSMM_LDC(T, int, m, n), csize = LIBXSMM_LD(n, m) * ldc;
+    const int ldc = LIBXSMM_LDC(T, m, n), csize = LIBXSMM_LD(n, m) * ldc;
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
 #if defined(_OPENMP)
@@ -217,8 +217,8 @@ int main(int argc, char* argv[])
       {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s, asize, bsize, csize, aspace);
-    T *const a = LIBXSMM_ALIGN(T*, buffer.a, LIBXSMM_ALIGNED_MAX);
-    T *const b = LIBXSMM_ALIGN(T*, buffer.b, LIBXSMM_ALIGNED_MAX);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
 #if defined(_OPENMP)
