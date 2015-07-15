@@ -97,8 +97,9 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
   REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \
   char libxsmm_trans_ = 'N'; \
   LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \
-    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, \
-    &libxsmm_alpha_, (REAL*)LIBXSMM_LD(A, B), &libxsmm_m_, (REAL*)LIBXSMM_LD(B, A), &libxsmm_k_, \
+    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, &libxsmm_alpha_, \
+    (REAL*)LIBXSMM_LD(A, B), &libxsmm_m_, \
+    (REAL*)LIBXSMM_LD(B, A), &libxsmm_k_, \
     &libxsmm_beta_, (C), &libxsmm_ldc_); \
 }
 

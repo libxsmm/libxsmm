@@ -39,41 +39,44 @@ MODULE LIBXSMM
   INTEGER, PARAMETER :: LIBXSMM_INTEGER_TYPE      = KIND(1)
 
   ! Parameters the library was built for.
-  INTEGER, PARAMETER :: LIBXSMM_ALIGNMENT       = $ALIGNMENT
-  INTEGER, PARAMETER :: LIBXSMM_ALIGNED_STORES  = $ALIGNED_STORES
-  INTEGER, PARAMETER :: LIBXSMM_ALIGNED_LOADS   = $ALIGNED_LOADS
-  INTEGER, PARAMETER :: LIBXSMM_ALIGNED_MAX     = $ALIGNED_MAX
-  INTEGER, PARAMETER :: LIBXSMM_ROW_MAJOR       = $ROW_MAJOR
-  INTEGER, PARAMETER :: LIBXSMM_COL_MAJOR       = $COL_MAJOR
-  INTEGER, PARAMETER :: LIBXSMM_MAX_MNK         = $MAX_MNK
-  INTEGER, PARAMETER :: LIBXSMM_MAX_M           = $MAX_M
-  INTEGER, PARAMETER :: LIBXSMM_MAX_N           = $MAX_N
-  INTEGER, PARAMETER :: LIBXSMM_MAX_K           = $MAX_K
-  INTEGER, PARAMETER :: LIBXSMM_AVG_M           = $AVG_M
-  INTEGER, PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
-  INTEGER, PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNMENT       = $ALIGNMENT
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_STORES  = $ALIGNED_STORES
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_LOADS   = $ALIGNED_LOADS
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_MAX     = $ALIGNED_MAX
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ROW_MAJOR       = $ROW_MAJOR
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_COL_MAJOR       = $COL_MAJOR
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_MAX_MNK         = $MAX_MNK
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_MAX_M           = $MAX_M
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_MAX_N           = $MAX_N
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_MAX_K           = $MAX_K
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_M           = $AVG_M
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
 
+  ! Overloaded BLAS routines (single/double precision)
   INTERFACE libxsmm_blasmm
     MODULE PROCEDURE libxsmm_sblasmm, libxsmm_dblasmm
   END INTERFACE
 
+  ! Overloaded inlinable routines (single/double precision)
   INTERFACE libxsmm_imm
     MODULE PROCEDURE libxsmm_simm, libxsmm_dimm
   END INTERFACE
 
+  ! Overloaded auto-dispatch routines (single/double precision)
   INTERFACE libxsmm_mm
     MODULE PROCEDURE libxsmm_smm, libxsmm_dmm
   END INTERFACE
 
   ABSTRACT INTERFACE
-    ! Type of a function generated for a specific M, N, and K.
+    ! Type of a function generated for a specific M, N, and K; single-precision.
     PURE SUBROUTINE LIBXSMM_SMM_FUNCTION(a, b, c)
       USE, INTRINSIC :: ISO_C_BINDING
       REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
       REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
     END SUBROUTINE
 
-    ! Type of a function generated for a specific M, N, and K.
+    ! Type of a function generated for a specific M, N, and K; double-precision.
     PURE SUBROUTINE LIBXSMM_DMM_FUNCTION(a, b, c)
       USE, INTRINSIC :: ISO_C_BINDING
       REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
@@ -82,31 +85,67 @@ MODULE LIBXSMM
   END INTERFACE$MNK_INTERFACE_LIST
 
 CONTAINS
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_up
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_up
+  PURE FUNCTION libxsmm_up(n, up) RESULT(nup)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: n, up
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: nup
+    nup = ((n + up - 1) / up) * up
+  END FUNCTION
+
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_align_value
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_align_value
+  PURE FUNCTION libxsmm_align_value(n, typesize, alignment) RESULT(na)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: n, typesize, alignment
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: na
+    na = libxsmm_up(n * typesize, alignment) / typesize
+  END FUNCTION
+
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ldc
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_ldc
+  PURE FUNCTION libxsmm_ldc(m, n, typesize) RESULT(ldc)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, typesize
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: ldc
+    ldc = libxsmm_align_value(MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), typesize, LIBXSMM_ALIGNED_STORES)
+  END FUNCTION
+
   ! Non-dispatched matrix-matrix multiplication using BLAS; single-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_sblasmm
-  PURE SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+  SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
-    !LIBXSMM_BLASMM(LIBXSMM_SINGLE_PRECISION, m, n, k, a, b, c)
+    REAL(LIBXSMM_SINGLE_PRECISION), PARAMETER :: alpha = 1, beta = 1
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: ldc
+    ldc = libxsmm_ldc(m, n, LIBXSMM_SINGLE_PRECISION)
+    CALL sgemm(m, n, k, alpha, &
+      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), &
+      MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
+      beta, c, ldc)
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using BLAS; double-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dblasmm
-  PURE SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+  SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
-    !LIBXSMM_BLASMM(LIBXSMM_DOUBLE_PRECISION, m, n, k, a, b, c)
+    REAL(LIBXSMM_DOUBLE_PRECISION), PARAMETER :: alpha = 1, beta = 1
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: ldc
+    ldc = libxsmm_ldc(m, n, LIBXSMM_DOUBLE_PRECISION)
+    CALL dgemm(m, n, k, alpha, &
+      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), &
+      MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
+      beta, c, ldc)
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using inline code; single-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_simm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_simm
   PURE SUBROUTINE libxsmm_simm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     !LIBXSMM_IMM(LIBXSMM_SINGLE_PRECISION, LIBXSMM_INTEGER_TYPE, m, n, k, a, b, c)
@@ -116,7 +155,7 @@ CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dimm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dimm
   PURE SUBROUTINE libxsmm_dimm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     !LIBXSMM_IMM(LIBXSMM_DOUBLE_PRECISION, LIBXSMM_INTEGER_TYPE, m, n, k, a, b, c)
@@ -127,7 +166,7 @@ CONTAINS
   !DIR$ ATTRIBUTES INLINE :: libxsmm_smm_dispatch
   FUNCTION libxsmm_smm_dispatch(m, n, k) RESULT(f)
     PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: f
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     INTERFACE
       !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch_aux
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_smm_dispatch")
@@ -143,7 +182,7 @@ CONTAINS
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm_dispatch
   FUNCTION libxsmm_dmm_dispatch(m, n, k) RESULT(f)
     PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: f
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     INTERFACE
       !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_dmm_dispatch")
@@ -158,7 +197,7 @@ CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_smm
   SUBROUTINE libxsmm_smm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: f
@@ -178,7 +217,7 @@ CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm
   SUBROUTINE libxsmm_dmm(m, n, k, a, b, c)
-    INTEGER, INTENT(IN) :: m, n, k
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: f
