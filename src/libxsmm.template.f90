@@ -30,6 +30,7 @@
 !*****************************************************************************!
 
 MODULE LIBXSMM
+  USE, INTRINSIC :: ISO_C_BINDING
   IMPLICIT NONE
 
   ! Kind of types used to parameterize the implementation.
@@ -52,16 +53,16 @@ MODULE LIBXSMM
   INTEGER, PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
   INTEGER, PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
 
-  INTERFACE LIBXSMM_BLASMM
-    MODULE PROCEDURE LIBXSMM_SBLASMM, LIBXSMM_DBLASMM
+  INTERFACE libxsmm_blasmm
+    MODULE PROCEDURE libxsmm_sblasmm, libxsmm_dblasmm
   END INTERFACE
 
-  INTERFACE LIBXSMM_IMM
-    MODULE PROCEDURE LIBXSMM_SIMM, LIBXSMM_DIMM
+  INTERFACE libxsmm_imm
+    MODULE PROCEDURE libxsmm_simm, libxsmm_dimm
   END INTERFACE
 
-  INTERFACE LIBXSMM_MM
-    MODULE PROCEDURE LIBXSMM_SMM, LIBXSMM_DMM
+  INTERFACE libxsmm_mm
+    MODULE PROCEDURE libxsmm_smm, libxsmm_dmm
   END INTERFACE
 
   ABSTRACT INTERFACE
@@ -82,9 +83,9 @@ MODULE LIBXSMM
 
 CONTAINS
   ! Non-dispatched matrix-matrix multiplication using BLAS; single-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SBLASMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_SBLASMM
-  PURE SUBROUTINE LIBXSMM_SBLASMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_sblasmm
+  PURE SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
@@ -92,9 +93,9 @@ CONTAINS
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using BLAS; double-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DBLASMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_DBLASMM
-  PURE SUBROUTINE LIBXSMM_DBLASMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_dblasmm
+  PURE SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
@@ -102,9 +103,9 @@ CONTAINS
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using inline code; single-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SIMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_SIMM
-  PURE SUBROUTINE LIBXSMM_SIMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_simm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_simm
+  PURE SUBROUTINE libxsmm_simm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
@@ -112,9 +113,9 @@ CONTAINS
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using inline code; double-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DIMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_DIMM
-  PURE SUBROUTINE LIBXSMM_DIMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dimm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_dimm
+  PURE SUBROUTINE libxsmm_dimm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
@@ -122,74 +123,74 @@ CONTAINS
   END SUBROUTINE
 
   ! Query the pointer of a generated function; zero if it does not exist.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SMM_DISPATCH
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_SMM_DISPATCH
-  FUNCTION LIBXSMM_SMM_DISPATCH(m, n, k) RESULT(f)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_smm_dispatch
+  FUNCTION libxsmm_smm_dispatch(m, n, k) RESULT(f)
     PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: f
     INTEGER, INTENT(IN) :: m, n, k
     INTERFACE
-      !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SMM_DISPATCH_AUX
-      TYPE(C_FUNPTR) PURE FUNCTION LIBXSMM_SMM_DISPATCH_AUX(m, n, k) BIND(C, NAME="libxsmm_smm_dispatch")
+      !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch_aux
+      TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_smm_dispatch")
         USE, INTRINSIC :: ISO_C_BINDING
         INTEGER(C_INT), INTENT(IN) :: m, n, k
       END FUNCTION
     END INTERFACE
-    CALL C_F_PROCPOINTER(LIBXSMM_SMM_DISPATCH_AUX(m, n, k), f)
+    CALL C_F_PROCPOINTER(libxsmm_smm_dispatch_aux(m, n, k), f)
   END FUNCTION
 
   ! Query the pointer of a generated function; zero if it does not exist.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DMM_DISPATCH
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_DMM_DISPATCH
-  FUNCTION LIBXSMM_DMM_DISPATCH(m, n, k) RESULT(f)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm_dispatch
+  FUNCTION libxsmm_dmm_dispatch(m, n, k) RESULT(f)
     PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: f
     INTEGER, INTENT(IN) :: m, n, k
     INTERFACE
-      !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DMM_DISPATCH_AUX
-      TYPE(C_FUNPTR) PURE FUNCTION LIBXSMM_DMM_DISPATCH_AUX(m, n, k) BIND(C, NAME="libxsmm_dmm_dispatch")
+      !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
+      TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_dmm_dispatch")
         USE, INTRINSIC :: ISO_C_BINDING
         INTEGER(C_INT), INTENT(IN) :: m, n, k
       END FUNCTION
     END INTERFACE
-    CALL C_F_PROCPOINTER(LIBXSMM_DMM_DISPATCH_AUX(m, n, k), f)
+    CALL C_F_PROCPOINTER(libxsmm_dmm_dispatch_aux(m, n, k), f)
   END FUNCTION
 
   ! Dispatched matrix-matrix multiplication; single-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_SMM
-  SUBROUTINE LIBXSMM_SMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_smm
+  SUBROUTINE libxsmm_smm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      f => LIBXSMM_SMM_DISPATCH(m, n, k)
+      f => libxsmm_smm_dispatch(m, n, k)
       IF (ASSOCIATED(f)) THEN
         CALL f(a, b, c)
       ELSE
-        CALL LIBXSMM_SIMM(m, n, k, a, b, c)
+        CALL libxsmm_simm(m, n, k, a, b, c)
       ENDIF
     ELSE
-      CALL LIBXSMM_SBLASMM(m, n, k, a, b, c)
+      CALL libxsmm_sblasmm(m, n, k, a, b, c)
     ENDIF
   END SUBROUTINE
 
   ! Dispatched matrix-matrix multiplication; double-precision.
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DMM
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_DMM
-  SUBROUTINE LIBXSMM_DMM(m, n, k, a, b, c)
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm
+  SUBROUTINE libxsmm_dmm(m, n, k, a, b, c)
     INTEGER, INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      f => LIBXSMM_DMM_DISPATCH(m, n, k)
+      f => libxsmm_dmm_dispatch(m, n, k)
       IF (ASSOCIATED(f)) THEN
         CALL f(a, b, c)
       ELSE
-        CALL LIBXSMM_DIMM(m, n, k, a, b, c)
+        CALL libxsmm_dimm(m, n, k, a, b, c)
       ENDIF
     ELSE
-      CALL LIBXSMM_DBLASMM(m, n, k, a, b, c)
+      CALL libxsmm_dblasmm(m, n, k, a, b, c)
     ENDIF
   END SUBROUTINE
 END MODULE
