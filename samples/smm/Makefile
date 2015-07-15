@@ -248,13 +248,13 @@ else ifneq (0,$(MKL)) # multi-threaded
 	endif
 else ifneq (0,$(BLAS)) # generic
 	ifneq ($(OS),Windows_NT)
-		LDFLAGS += -fPIC -llapack -lblas
+		LDFLAGS += -fPIC -lblas
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 	else
-		LDFLAGS += -llapack.dll -lblas.dll
+		LDFLAGS += -lblas.dll
 	endif
-	LDFLAGS += -lgfortran -lquadmath
+	LDFLAGS += -lgfortran
 endif
 
 .PHONY: all
