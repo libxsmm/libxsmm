@@ -97,6 +97,7 @@ endif
 ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
+	LDFLAGS += -fPIC
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -130,7 +131,6 @@ ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
 	endif
-	LDFLAGS += -fPIC
 	ifneq ($(STATIC),0)
 		LDFLAGS += -no-intel-extensions -static-intel
 	endif
@@ -138,6 +138,11 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -std=c++0x
 	CFLAGS += -Wall
+	ifneq ($(OS),Windows_NT)
+		CXXFLAGS += -fPIC
+		CFLAGS += -fPIC
+		LDFLAGS += -fPIC
+	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
@@ -162,11 +167,6 @@ else # GCC assumed
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
-	endif
-	ifneq ($(OS),Windows_NT)
-		CXXFLAGS += -fPIC
-		CFLAGS += -fPIC
-		LDFLAGS += -fPIC
 	endif
 	ifneq ($(STATIC),0)
 		LDFLAGS += -static
@@ -249,9 +249,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 	endif
 else ifneq (0,$(BLAS)) # generic
 	ifneq ($(OS),Windows_NT)
-		LDFLAGS += -fPIC -lblas
-		CXXFLAGS += -fPIC
-		CFLAGS += -fPIC
+		LDFLAGS += -lblas
 	else
 		LDFLAGS += -lblas.dll
 	endif
