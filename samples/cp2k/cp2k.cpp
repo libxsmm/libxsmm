@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     }
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
-    const int ldc = LIBXSMM_LDC(T, m, n), csize = LIBXSMM_LD(n, m) * ldc;
+    const int ldc = LIBXSMM_LDC(m, n, sizeof(T)), csize = LIBXSMM_LD(n, m) * ldc;
     const int s = 0 < r ? r : ((1ULL << 30) / ((asize + bsize + csize) * sizeof(T)));
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
 #if defined(_OPENMP)
