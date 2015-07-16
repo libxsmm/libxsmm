@@ -93,12 +93,20 @@ CONTAINS
     na = libxsmm_up(n * typesize, alignment) / typesize
   END FUNCTION
 
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ld
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_ld
+  PURE FUNCTION libxsmm_ld(m, n) RESULT(ld)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: ld
+    ld = MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR)
+  END FUNCTION
+
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ldc
   !DIR$ ATTRIBUTES INLINE :: libxsmm_ldc
   PURE FUNCTION libxsmm_ldc(m, n, typesize) RESULT(ldc)
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, typesize
     INTEGER(LIBXSMM_INTEGER_TYPE) :: ldc
-    ldc = libxsmm_align_value(MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), typesize, LIBXSMM_ALIGNED_STORES)
+    ldc = libxsmm_align_value(libxsmm_ld(m, n), typesize, LIBXSMM_ALIGNED_STORES)
   END FUNCTION
 
   ! Non-dispatched matrix-matrix multiplication using BLAS; single-precision.
@@ -109,8 +117,18 @@ CONTAINS
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     REAL(LIBXSMM_SINGLE_PRECISION), PARAMETER :: alpha = 1, beta = 1
-    CALL sgemm('N', 'N', MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), MERGE(n, m, 0.NE.LIBXSMM_COL_MAJOR), k, alpha, &
-      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), &
+    INTERFACE
+      SUBROUTINE sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+        IMPORT LIBXSMM_INTEGER_TYPE, LIBXSMM_SINGLE_PRECISION
+        CHARACTER(1), INTENT(IN) :: transa, transb
+        INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k, lda, ldb, ldc
+        REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a(lda,*), b(ldb,*), alpha, beta
+        REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c(ldc,*)
+      END SUBROUTINE
+    END INTERFACE
+    !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm
+    CALL sgemm('N', 'N', libxsmm_ld(m, n), libxsmm_ld(n, m), k, alpha, &
+      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), libxsmm_ld(m, n), &
       MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
       beta, c, libxsmm_ldc(m, n, LIBXSMM_SINGLE_PRECISION))
   END SUBROUTINE
@@ -123,8 +141,18 @@ CONTAINS
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
     REAL(LIBXSMM_DOUBLE_PRECISION), PARAMETER :: alpha = 1, beta = 1
-    CALL dgemm('N', 'N', MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), MERGE(n, m, 0.NE.LIBXSMM_COL_MAJOR), k, alpha, &
-      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), MERGE(m, n, 0.NE.LIBXSMM_COL_MAJOR), &
+    INTERFACE
+      SUBROUTINE dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+        IMPORT LIBXSMM_INTEGER_TYPE, LIBXSMM_DOUBLE_PRECISION
+        CHARACTER(1), INTENT(IN) :: transa, transb
+        INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k, lda, ldb, ldc
+        REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a(lda,*), b(ldb,*), alpha, beta
+        REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c(ldc,*)
+      END SUBROUTINE
+    END INTERFACE
+    !DIR$ ATTRIBUTES OFFLOAD:MIC :: dgemm
+    CALL dgemm('N', 'N', libxsmm_ld(m, n), libxsmm_ld(n, m), k, alpha, &
+      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), libxsmm_ld(m, n), &
       MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
       beta, c, libxsmm_ldc(m, n, LIBXSMM_DOUBLE_PRECISION))
   END SUBROUTINE
@@ -136,7 +164,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_SINGLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
-    !LIBXSMM_IMM(LIBXSMM_SINGLE_PRECISION, LIBXSMM_INTEGER_TYPE, m, n, k, a, b, c)
+    c = c + MERGE(MATMUL(a, b), RESHAPE(MATMUL(RESHAPE(b, (/n,k/)), RESHAPE(a, (/k,m/))), (/m,n/)), 0.NE.LIBXSMM_COL_MAJOR)
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using inline code; double-precision.
@@ -146,7 +174,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c($SHAPE_C)
-    !LIBXSMM_IMM(LIBXSMM_DOUBLE_PRECISION, LIBXSMM_INTEGER_TYPE, m, n, k, a, b, c)
+    c = c + MERGE(MATMUL(a, b), RESHAPE(MATMUL(RESHAPE(b, (/n,k/)), RESHAPE(a, (/k,m/))), (/m,n/)), 0.NE.LIBXSMM_COL_MAJOR)
   END SUBROUTINE
 
   ! Query the pointer of a generated function; zero if it does not exist.
@@ -156,12 +184,12 @@ CONTAINS
     PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     INTERFACE
-      !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch_aux
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_smm_dispatch")
         IMPORT :: C_FUNPTR, C_INT
         INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k
       END FUNCTION
     END INTERFACE
+    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch_aux
     CALL C_F_PROCPOINTER(libxsmm_smm_dispatch_aux(m, n, k), f)
   END FUNCTION
 
@@ -172,12 +200,12 @@ CONTAINS
     PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     INTERFACE
-      !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_dmm_dispatch")
         IMPORT :: C_FUNPTR, C_INT
         INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k
       END FUNCTION
     END INTERFACE
+    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
     CALL C_F_PROCPOINTER(libxsmm_dmm_dispatch_aux(m, n, k), f)
   END FUNCTION
 
