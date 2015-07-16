@@ -119,7 +119,7 @@ endif
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
-	FCFLAGS += -fPIC -Wall
+	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
@@ -152,6 +152,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	ifneq ($(OMP),0)
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
+		FCFLAGS += -openmp
 		LDFLAGS += -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
