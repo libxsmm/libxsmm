@@ -53,9 +53,9 @@ if __name__ == "__main__":
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         avgdim = int(0.5 * maxdim + 0.5)
 
-        avgm = libxsmm_utilities.median(libxsmm_utilities.make_mlist(mnklist), avgdim, False)
-        avgn = libxsmm_utilities.median(libxsmm_utilities.make_nlist(mnklist), avgdim, False)
-        avgk = libxsmm_utilities.median(libxsmm_utilities.make_klist(mnklist), avgdim, False)
+        avgm = libxsmm_utilities.median(map(lambda mnk: mnk[0], mnklist), avgdim, False)
+        avgn = libxsmm_utilities.median(map(lambda mnk: mnk[1], mnklist), avgdim, False)
+        avgk = libxsmm_utilities.median(map(lambda mnk: mnk[2], mnklist), avgdim, False)
 
         maxm = libxsmm_utilities.max_mnk(mnklist, avgdim, 0)
         maxn = libxsmm_utilities.max_mnk(mnklist, avgdim, 1)
@@ -106,9 +106,9 @@ if __name__ == "__main__":
                         "      REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)\n" \
                         "    END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
-            substitute["SHAPE_A"] = "m,k"
-            substitute["SHAPE_B"] = "k,n"
-            substitute["SHAPE_C"] = "m,n"
+            substitute["SHAPE_A"] = "m,k" if (1 == aligned_loads) else "*,k"
+            substitute["SHAPE_B"] = "k,n" if (1 == aligned_loads) else "*,n"
+            substitute["SHAPE_C"] = "m,n" if (1 == aligned_stores) else "*,n"
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0
