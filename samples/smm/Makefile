@@ -252,7 +252,7 @@ else ifneq (0,$(BLAS)) # generic
 	else
 		LDFLAGS += -lblas.dll
 	endif
-	LDFLAGS += -lgfortran
+	LDFLAGS += -lgfortran -lquadmath
 endif
 
 .PHONY: all
