@@ -33,24 +33,24 @@ PROGRAM smm
   USE :: LIBXSMM
   IMPLICIT NONE
 
-  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: typekind  = LIBXSMM_DOUBLE_PRECISION
-  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: m = 7, n = 11, k = 23
-  REAL(typekind), ALLOCATABLE :: a(:,:), b(:,:), c(:,:), d(:,:)
-  INTEGER(LIBXSMM_INTEGER_TYPE) :: lda, ldb, ldc
-  REAL(typekind) :: diff
+  INTEGER, PARAMETER :: realtype  = LIBXSMM_DOUBLE_PRECISION
+  INTEGER, PARAMETER :: m = 7, n = 11, k = 23
+  REAL(realtype), ALLOCATABLE :: a(:,:), b(:,:), c(:,:), d(:,:)
+  INTEGER :: lda, ldb, ldc
+  REAL(realtype) :: diff
 
   lda = m
   ldb = k
-  ldc = libxsmm_ldc(m, n, typekind)
+  ldc = libxsmm_ldc(m, n, realtype)
 
   ALLOCATE(a(lda,k))
   ALLOCATE(b(ldb,n))
   ALLOCATE(c(ldc,n))
   ALLOCATE(d(ldc,n))
 
-  ! Some test data
-  a(:,:) = 1
-  b(:,:) = 2
+  ! Initialize matrices
+  CALL init(a, 42)
+  CALL init(b, 24)
 
   ! Calculate reference based on BLAS
   d(:,:) = 0
@@ -58,14 +58,26 @@ PROGRAM smm
 
   c(:,:) = 0
   CALL libxsmm_imm(m, n, k, a, b, c)
-  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
+  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))), "(optimized)"
 
   c(:,:) = 0
   CALL libxsmm_mm(m, n, k, a, b, c)
-  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
+  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))), "(dispatched)"
 
   DEALLOCATE(a)
   DEALLOCATE(b)
   DEALLOCATE(c)
   DEALLOCATE(d)
+
+CONTAINS
+  SUBROUTINE init(matrix, seed)
+    REAL(realtype), INTENT(OUT) :: matrix(:,:)
+    INTEGER, INTENT(IN) :: seed
+    INTEGER :: i, j
+    DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
+      DO i = LBOUND(matrix, 1), UBOUND(matrix, 1)
+        matrix(i,j) = i * SIZE(matrix, 1) + j + SIZE(matrix, 2) + seed
+      END DO
+    END DO
+  END SUBROUTINE
 END PROGRAM
