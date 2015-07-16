@@ -33,20 +33,36 @@ PROGRAM smm
   USE :: LIBXSMM
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: realtype  = LIBXSMM_DOUBLE_PRECISION
-  INTEGER, PARAMETER :: m = 7, n = 11, k = 23
-  REAL(realtype), ALLOCATABLE :: a(:,:), b(:,:), c(:,:), d(:,:)
-  INTEGER :: lda, ldb, ldc
-  REAL(realtype) :: diff
+  INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
+  REAL(T), ALLOCATABLE :: a(:,:), b(:,:), c(:,:), d(:,:)
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, d
+  INTEGER :: argc, m, n, k
+  CHARACTER(32) :: argv
 
-  lda = m
-  ldb = k
-  ldc = libxsmm_ldc(m, n, realtype)
+  argc = IARGC()
+  IF (1 <= argc) THEN
+    CALL GETARG(1, argv)
+    READ(argv, "(I32)") m
+  ELSE
+    m = 23
+  END IF
+  IF (2 <= argc) THEN
+    CALL GETARG(2, argv)
+    READ(argv, "(I32)") n
+  ELSE
+    n = m
+  END IF
+  IF (3 <= argc) THEN
+    CALL GETARG(3, argv)
+    READ(argv, "(I32)") k
+  ELSE
+    k = m
+  END IF
 
-  ALLOCATE(a(lda,k))
-  ALLOCATE(b(ldb,n))
-  ALLOCATE(c(ldc,n))
-  ALLOCATE(d(ldc,n))
+  ALLOCATE(a(libxsmm_ld(m, k),libxsmm_ld(k, m)))
+  ALLOCATE(b(libxsmm_ld(k, n),libxsmm_ld(n, k)))
+  ALLOCATE(c(libxsmm_ldc(m, n, T),libxsmm_ld(n, m)))
+  ALLOCATE(d(libxsmm_ldc(m, n, T),libxsmm_ld(n, m)))
 
   ! Initialize matrices
   CALL init(a, 42)
@@ -70,14 +86,29 @@ PROGRAM smm
   DEALLOCATE(d)
 
 CONTAINS
-  SUBROUTINE init(matrix, seed)
-    REAL(realtype), INTENT(OUT) :: matrix(:,:)
+  PURE SUBROUTINE init(matrix, seed)
+    REAL(T), INTENT(OUT) :: matrix(:,:)
     INTEGER, INTENT(IN) :: seed
     INTEGER :: i, j
     DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
       DO i = LBOUND(matrix, 1), UBOUND(matrix, 1)
-        matrix(i,j) = i * SIZE(matrix, 1) + j + SIZE(matrix, 2) + seed
+        matrix(i,j) = SIZE(matrix, 2) * i + j + seed - 1
       END DO
+    END DO
+  END SUBROUTINE
+
+  SUBROUTINE disp(matrix, format)
+    REAL(T), INTENT(IN) :: matrix(:,:)
+    CHARACTER(*), OPTIONAL, INTENT(IN) :: format
+    CHARACTER(32) :: fmt
+    INTEGER :: i
+    IF (.NOT.PRESENT(format)) THEN
+      fmt = "(16F8.0)"
+    ELSE
+      WRITE(fmt, "('(16',A,')')") format
+    ENDIF
+    DO i = LBOUND(matrix, 1), UBOUND(matrix, 1)
+      WRITE(*, fmt) matrix(i,:)
     END DO
   END SUBROUTINE
 END PROGRAM
