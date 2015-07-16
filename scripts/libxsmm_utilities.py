@@ -35,18 +35,6 @@ import operator
 import sys
 
 
-def is_pot(num):
-    return 0 <= num or 0 == (num & (num - 1))
-
-
-def make_typeflag(Real):
-    return ["s", "d"]["float" != Real]
-
-
-def make_typepfix(Real):
-    return ["", "d"]["float" != Real]
-
-
 def upper_list(lists, level):
     upper = [level, level + len(lists)][1>level] - 1
     above = lists[upper]
@@ -54,51 +42,6 @@ def upper_list(lists, level):
         return above
     else:
         return upper_list(lists, level - 1)
-
-
-def make_mlist(mnklist):
-    return map(lambda mnk: mnk[0], mnklist)
-
-
-def make_nlist(mnklist):
-    return map(lambda mnk: mnk[1], mnklist)
-
-
-def make_klist(mnklist):
-    return map(lambda mnk: mnk[2], mnklist)
-
-
-def median(list_of_numbers, fallback = None, average = True):
-    size = len(list_of_numbers)
-    if (0 < size):
-        # TODO: use nth element
-        list_of_numbers.sort()
-        size2 = size / 2
-        if (average and 0 == (size - size2 * 2)):
-            result = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
-        else:
-            result = list_of_numbers[size2]
-        return result
-    elif (None != fallback):
-        return fallback
-    else:
-        sys.tracebacklimit = 0
-        raise ValueError("Empty list!")
-
-
-def max_mnk(mnklist, init = 0, index = None):
-    return reduce(max, map(lambda mnk: \
-      mnk[index] if (None != index and 0 <= index and index < 3) \
-      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
-
-
-def sanitize_alignment(alignment):
-    if (0 >= alignment):
-        alignment = [1, 64][0 != alignment]
-    elif (False == is_pot(alignment)):
-        sys.tracebacklimit = 0
-        raise ValueError("Memory alignment must be a Power of Two (POT) number!")
-    return alignment
 
 
 def load_mlist(argv):
@@ -153,6 +96,51 @@ def load_mnklist(argv, format, threshold):
     return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
+def max_mnk(mnklist, init = 0, index = None):
+    return reduce(max, map(lambda mnk: \
+      mnk[index] if (None != index and 0 <= index and index < 3) \
+      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
+
+
+def median(list_of_numbers, fallback = None, average = True):
+    size = len(list_of_numbers)
+    if (0 < size):
+        # TODO: use nth element
+        list_of_numbers.sort()
+        size2 = size / 2
+        if (average and 0 == (size - size2 * 2)):
+            result = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
+        else:
+            result = list_of_numbers[size2]
+        return result
+    elif (None != fallback):
+        return fallback
+    else:
+        sys.tracebacklimit = 0
+        raise ValueError("median: empty list!")
+
+
+def is_pot(num):
+    return 0 <= num or 0 == (num & (num - 1))
+
+
+def sanitize_alignment(alignment):
+    if (0 >= alignment):
+        alignment = [1, 64][0 != alignment]
+    elif (False == is_pot(alignment)):
+        sys.tracebacklimit = 0
+        raise ValueError("sanitize_alignment: alignment must be a Power of Two (POT)!")
+    return alignment
+
+
+def align_value(n, typesize, alignment):
+    if (0 < typesize and 0 < alignment):
+        return (((n * typesize + alignment - 1) / alignment) * alignment) / typesize
+    else:
+        sys.tracebacklimit = 0
+        raise ValueError("align_value: invalid input!")
+
+
 if __name__ == "__main__":
     argc = len(sys.argv)
     format = int(sys.argv[1])
@@ -163,9 +151,7 @@ if __name__ == "__main__":
         dims = load_mnklist(sys.argv[2:], format, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
     elif (4 == argc and 0 < format):
-        elem_size, unaligned, alignment = format, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3]))
-        elements = max(alignment / elem_size, 1)
-        print ((unaligned + elements - 1) / elements) * elements
+        print align_value(int(sys.argv[2]), format, sanitize_alignment(int(sys.argv[3])))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
