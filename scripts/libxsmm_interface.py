@@ -92,18 +92,14 @@ if __name__ == "__main__":
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SMM_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE LIBXSMM_SMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
-                        "      USE, INTRINSIC :: ISO_C_BINDING\n" \
-                        "      REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)\n" \
-                        "      REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)\n" \
+                        "      IMPORT :: C_PTR\n" \
+                        "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE" \
                         "\n" \
-                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DMM_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE LIBXSMM_DMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
-                        "      USE, INTRINSIC :: ISO_C_BINDING\n" \
-                        "      REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)\n" \
-                        "      REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)\n" \
+                        "      IMPORT :: C_PTR\n" \
+                        "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_A"] = "m,k" if (1 == aligned_loads) else "*,k"
