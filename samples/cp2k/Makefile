@@ -184,6 +184,12 @@ else # GCC assumed
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
+		ifneq ($(IPO),0)
+			CXXFLAGS += -flto -ffat-lto-objects
+			CFLAGS += -flto -ffat-lto-objects
+			FCFLAGS += -flto -ffat-lto-objects
+			LDFLAGS += -flto
+		endif
 		ifeq ($(AVX),1)
 			TARGET = -mavx
 		else ifeq ($(AVX),2)
