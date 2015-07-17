@@ -165,6 +165,10 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		SLDFLAGS += -no-intel-extensions -static-intel
 	endif
 else # GCC assumed
+	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
+	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
+	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
 	MIC = 0
 	CXXFLAGS += -Wall -std=c++0x
 	CFLAGS += -Wall
@@ -291,7 +295,12 @@ else ifneq (0,$(BLAS)) # generic
 	else
 		LDFLAGS += -lblas.dll
 	endif
-	LDFLAGS += -lgfortran -lquadmath
+	LDFLAGS += -lgfortran
+	ifeq (,$(VERSION))
+		LDFLAGS += -lquadmath
+	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
+		LDFLAGS += -lquadmath
+	endif
 endif
 
 .PHONY: all
