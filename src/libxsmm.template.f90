@@ -181,8 +181,9 @@ CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch
   !DIR$ ATTRIBUTES INLINE :: libxsmm_smm_dispatch
   FUNCTION libxsmm_smm_dispatch(m, n, k) RESULT(f)
-    PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
+    !PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
+    TYPE(C_FUNPTR) :: f
     INTERFACE
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_smm_dispatch")
         IMPORT :: C_FUNPTR, C_INT
@@ -190,15 +191,17 @@ CONTAINS
       END FUNCTION
     END INTERFACE
     !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch_aux
-    CALL C_F_PROCPOINTER(libxsmm_smm_dispatch_aux(m, n, k), f)
+    !CALL C_F_PROCPOINTER(libxsmm_smm_dispatch_aux(m, n, k), f)
+    f = libxsmm_smm_dispatch_aux(m, n, k)
   END FUNCTION
 
   ! Query the pointer of a generated function; zero if it does not exist.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm_dispatch
   FUNCTION libxsmm_dmm_dispatch(m, n, k) RESULT(f)
-    PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
+    !PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
+    TYPE(C_FUNPTR) :: f
     INTERFACE
       TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch_aux(m, n, k) BIND(C, NAME="libxsmm_dmm_dispatch")
         IMPORT :: C_FUNPTR, C_INT
@@ -206,7 +209,8 @@ CONTAINS
       END FUNCTION
     END INTERFACE
     !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
-    CALL C_F_PROCPOINTER(libxsmm_dmm_dispatch_aux(m, n, k), f)
+    !CALL C_F_PROCPOINTER(libxsmm_dmm_dispatch_aux(m, n, k), f)
+    f = libxsmm_dmm_dispatch_aux(m, n, k)
   END FUNCTION
 
   ! Dispatched matrix-matrix multiplication; single-precision.
@@ -218,9 +222,13 @@ CONTAINS
     REAL(LIBXSMM_SINGLE_PRECISION), TARGET, INTENT(INOUT) :: c($SHAPE_C)
     !DIR$ ATTRIBUTES OFFLOAD:MIC :: xmm
     PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
+    TYPE(C_FUNPTR) :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      xmm => libxsmm_smm_dispatch(m, n, k)
-      IF (ASSOCIATED(xmm)) THEN
+      !xmm => libxsmm_smm_dispatch(m, n, k)
+      f = libxsmm_smm_dispatch(m, n, k)
+      !IF (ASSOCIATED(xmm)) THEN
+      IF (C_ASSOCIATED(f)) THEN
+        CALL C_F_PROCPOINTER(f, xmm)
         CALL xmm(C_LOC(a), C_LOC(b), C_LOC(c))
       ELSE
         CALL libxsmm_simm(m, n, k, a, b, c)
@@ -239,9 +247,13 @@ CONTAINS
     REAL(LIBXSMM_DOUBLE_PRECISION), TARGET, INTENT(INOUT) :: c($SHAPE_C)
     !DIR$ ATTRIBUTES OFFLOAD:MIC :: xmm
     PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
+    TYPE(C_FUNPTR) :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      xmm => libxsmm_dmm_dispatch(m, n, k)
-      IF (ASSOCIATED(xmm)) THEN
+      !xmm => libxsmm_dmm_dispatch(m, n, k)
+      f = libxsmm_dmm_dispatch(m, n, k)
+      !IF (ASSOCIATED(xmm)) THEN
+      IF (C_ASSOCIATED(f)) THEN
+        CALL C_F_PROCPOINTER(f, xmm)
         CALL xmm(C_LOC(a), C_LOC(b), C_LOC(c))
       ELSE
         CALL libxsmm_dimm(m, n, k, a, b, c)
