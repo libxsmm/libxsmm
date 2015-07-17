@@ -6,7 +6,7 @@ Library for small matrix-matrix multiplications targeting Intel Architecture (x8
 **How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against Intel MKL 11.2 (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (env MKL_VERBOSE=1 ./workload > verbose.txt). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (grep -a "MKL_VERBOSE DGEMM" verbose.txt | cut -d, -f3-5).
 
 ## Interface
-The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and are therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and FORTRAN. To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
+The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and are therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f90). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
 
 ```C
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
@@ -159,7 +159,7 @@ A future version of the library may support an auto-tuning stage when generating
 ### Roadmap
 Although the library is under development, the published interface is rather stable and may only be extended in future revisions. The following issues are being addressed in upcoming revisions:
 
-* Full xGEMM interface, and native FORTRAN interface
+* Full xGEMM interface, and extended code dispatcher
 * Just-in-Time (JIT) runtime dynamic code generation
 * API supporting sparse matrices and other cases
 
