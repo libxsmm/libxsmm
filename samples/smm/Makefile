@@ -218,7 +218,10 @@ ifeq (,$(CFLAGS))
 	CFLAGS = $(CXXFLAGS)
 endif
 ifeq (,$(FCFLAGS))
-	CFLAGS = $(CFLAGS)
+	FCFLAGS = $(CFLAGS)
+endif
+ifeq (,$(LDFLAGS))
+	LDFLAGS = $(CFLAGS)
 endif
 
 ifeq (1,$(MKL_DIRECT))

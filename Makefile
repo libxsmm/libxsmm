@@ -61,10 +61,12 @@ else
 	MIC ?= 0
 endif
 
-ICPC = $(notdir $(shell which icpc 2> /dev/null))
-ICC = $(notdir $(shell which icc 2> /dev/null))
-GPP = $(notdir $(shell which g++ 2> /dev/null))
-GCC = $(notdir $(shell which gcc 2> /dev/null))
+ICPC    = $(notdir $(shell which icpc     2> /dev/null))
+ICC     = $(notdir $(shell which icc      2> /dev/null))
+IFORT   = $(notdir $(shell which ifort    2> /dev/null))
+GPP     = $(notdir $(shell which g++      2> /dev/null))
+GCC     = $(notdir $(shell which gcc      2> /dev/null))
+GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
 ifneq (,$(ICPC))
 	CXX = $(ICPC)
@@ -84,24 +86,35 @@ ifneq (,$(ICC))
 else
 	CC = $(GCC)
 endif
+ifneq (,$(IFORT))
+	FC = $(IFORT)
+else
+	FC = $(GFC)
+endif
 ifneq ($(CXX),)
 	LD = $(CXX)
 endif
 ifeq ($(LD),)
 	LD = $(CC)
 endif
+ifeq ($(LD),)
+	LD = $(FC)
+endif
 
-ifneq (,$(filter icpc icc,$(CXX) $(CC)))
+ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
+	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
+		FCFLAGS += -O2
 		DFLAGS += -DNDEBUG
 		ifneq ($(IPO),0)
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
+			FCFLAGS += -ipo
 		endif
 		ifeq ($(AVX),1)
 			TARGET = -xAVX
@@ -115,36 +128,44 @@ ifneq (,$(filter icpc icc,$(CXX) $(CC)))
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
 		CFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
+		FCFLAGS += -O0 -g
 	else
 		CXXFLAGS += -O0 -g
 		CFLAGS += -O0 -g
+		FCFLAGS += -O0 -g
 	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
+		FCFLAGS += -openmp
 		LDFLAGS += -openmp
 	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
+		FCFLAGS += -no-offload
 	endif
 	ifneq ($(STATIC),0)
-		ifneq ($(STATIC),)
-			LDFLAGS += -no-intel-extensions -static-intel
-		endif
+		SLDFLAGS += -no-intel-extensions -static-intel
 	endif
 else # GCC assumed
+	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
+	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
+	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -Wno-unused-function -std=c++0x
+	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
 	ifneq ($(OS),Windows_NT)
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
+		FCFLAGS += -fPIC
 		LDFLAGS += -fPIC
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
+		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
 		ifeq ($(AVX),1)
 			TARGET = -mavx
@@ -158,29 +179,33 @@ else # GCC assumed
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
 		CFLAGS += -O0 -g3 -gdwarf-2
+		FCFLAGS += -O0 -g3 -gdwarf-2
 	else
 		CXXFLAGS += -O0 -g
 		CFLAGS += -O0 -g
+		FCFLAGS += -O0 -g
 	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
+		FCFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
 	endif
 	ifneq ($(STATIC),0)
-		ifneq ($(STATIC),)
-			LDFLAGS += -static
-		endif
+		SLDFLAGS += -static
 	endif
 endif
 
-ifeq ($(CXXFLAGS),)
+ifeq (,$(CXXFLAGS))
 	CXXFLAGS = $(CFLAGS)
 endif
-ifeq ($(CFLAGS),)
+ifeq (,$(CFLAGS))
 	CFLAGS = $(CXXFLAGS)
 endif
-ifeq ($(LDFLAGS),)
+ifeq (,$(FCFLAGS))
+	FCFLAGS = $(CFLAGS)
+endif
+ifeq (,$(LDFLAGS))
 	LDFLAGS = $(CFLAGS)
 endif
 
@@ -401,7 +426,7 @@ $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
 endif
 	@mkdir -p $(dir $@)
 ifeq ($(STATIC),0)
-	$(LD) -shared -o $@ $(LDFLAGS) $^
+	$(LD) -o $@ $^ -shared $(LDFLAGS)
 else
 	$(AR) -rs $@ $^
 endif
@@ -467,10 +492,10 @@ ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm.c
+	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm.c $(BLDDIR)/*.mod
 endif
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm.c
+	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm.c $(BLDDIR)/*.mod
 endif
 
 .PHONY: realclean

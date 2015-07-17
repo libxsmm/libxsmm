@@ -219,7 +219,10 @@ ifeq (,$(CFLAGS))
 	CFLAGS = $(CXXFLAGS)
 endif
 ifeq (,$(FCFLAGS))
-	CFLAGS = $(CFLAGS)
+	FCFLAGS = $(CFLAGS)
+endif
+ifeq (,$(LDFLAGS))
+	LDFLAGS = $(CFLAGS)
 endif
 
 ifeq (1,$(MKL_DIRECT))
@@ -308,7 +311,7 @@ all: $(OUTDIR)/$(OUTNAME)
 
 $(OUTDIR)/$(OUTNAME): $(OBJECTS) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
