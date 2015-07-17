@@ -58,7 +58,7 @@ MODULE LIBXSMM
     MODULE PROCEDURE libxsmm_sblasmm, libxsmm_dblasmm
   END INTERFACE
 
-  ! Overloaded inlinable routines (single/double precision)
+  ! Overloaded optimized routines (single/double precision)
   INTERFACE libxsmm_imm
     MODULE PROCEDURE libxsmm_simm, libxsmm_dimm
   END INTERFACE
@@ -157,7 +157,7 @@ CONTAINS
       beta, c, libxsmm_ldc(m, n, LIBXSMM_DOUBLE_PRECISION))
   END SUBROUTINE
 
-  ! Non-dispatched matrix-matrix multiplication using inline code; single-precision.
+  ! Non-dispatched matrix-matrix multiplication using optimized code; single-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_simm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_simm
   PURE SUBROUTINE libxsmm_simm(m, n, k, a, b, c)
@@ -167,7 +167,7 @@ CONTAINS
     c = c + MERGE(MATMUL(a, b), RESHAPE(MATMUL(RESHAPE(b, (/n,k/)), RESHAPE(a, (/k,m/))), (/m,n/)), 0.NE.LIBXSMM_COL_MAJOR)
   END SUBROUTINE
 
-  ! Non-dispatched matrix-matrix multiplication using inline code; double-precision.
+  ! Non-dispatched matrix-matrix multiplication using optimized code; double-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dimm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dimm
   PURE SUBROUTINE libxsmm_dimm(m, n, k, a, b, c)
