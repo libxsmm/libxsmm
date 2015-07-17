@@ -194,7 +194,7 @@ else # GCC assumed
 	else ifneq (1,$(DBG))
 		CXXFLAGS += -O0 -g3 -gdwarf-2
 		CFLAGS += -O0 -g3 -gdwarf-2
-		FCFLAGS += -O0 -g
+		FCFLAGS += -O0 -g3 -gdwarf-2
 	else
 		CXXFLAGS += -O0 -g
 		CFLAGS += -O0 -g
