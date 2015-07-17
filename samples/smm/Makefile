@@ -163,6 +163,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	ifneq ($(STATIC),0)
 		SLDFLAGS += -no-intel-extensions -static-intel
 	endif
+	FCMODDIRFLAG = -module
 else # GCC assumed
 	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
 	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
@@ -209,6 +210,7 @@ else # GCC assumed
 	ifneq ($(STATIC),0)
 		SLDFLAGS += -static
 	endif
+	FCMODDIRFLAG = -J
 endif
 
 ifeq (,$(CXXFLAGS))
@@ -326,19 +328,19 @@ $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 
 $(OUTDIR)/smm: $(BLDDIR)/smm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(LDFLAGS)
+	$(FC) -o $@ $^ $(LDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ -J $(dir $@)
+	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)
 
 $(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ -J $(dir $@)
+	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)
 
 $(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ -J $(dir $@)
+	$(FC) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)

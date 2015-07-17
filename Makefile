@@ -148,6 +148,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	ifneq ($(STATIC),0)
 		SLDFLAGS += -no-intel-extensions -static-intel
 	endif
+	FCMODDIRFLAG = -module
 else # GCC assumed
 	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
 	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
@@ -194,6 +195,7 @@ else # GCC assumed
 	ifneq ($(STATIC),0)
 		SLDFLAGS += -static
 	endif
+	FCMODDIRFLAG = -J
 endif
 
 ifeq (,$(CXXFLAGS))
