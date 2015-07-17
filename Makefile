@@ -419,7 +419,7 @@ $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC)
 endif
 	@mkdir -p $(dir $@)
 ifeq ($(STATIC),0)
-	$(LD) -shared -o $@ $(LDFLAGS) $^
+	$(LD) -o $@ $^ -shared $(CLDFLAGS) $(LDFLAGS)
 else
 	$(AR) -rs $@ $^
 endif
@@ -434,7 +434,7 @@ $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
 endif
 	@mkdir -p $(dir $@)
 ifeq ($(STATIC),0)
-	$(LD) -o $@ $^ -shared $(LDFLAGS)
+	$(LD) -o $@ $^ -shared $(CLDFLAGS) $(LDFLAGS)
 else
 	$(AR) -rs $@ $^
 endif

@@ -308,11 +308,11 @@ else ifneq (0,$(BLAS)) # generic
 	else
 		LDFLAGS += -lblas.dll
 	endif
-	LDFLAGS += -lgfortran
+	CLDFLAGS += -lgfortran
 	ifeq (,$(VERSION))
 		LDFLAGS += -lquadmath
 	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
-		LDFLAGS += -lquadmath
+		CLDFLAGS += -lquadmath
 	endif
 endif
 
@@ -321,7 +321,7 @@ all: $(OUTDIR)/$(OUTNAME)
 
 $(OUTDIR)/$(OUTNAME): $(OBJECTS) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(CLDFLAGS) $(LDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)

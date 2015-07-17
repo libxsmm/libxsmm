@@ -307,11 +307,11 @@ else ifneq (0,$(BLAS)) # generic
 	else
 		LDFLAGS += -lblas.dll
 	endif
-	LDFLAGS += -lgfortran
+	CLDFLAGS += -lgfortran
 	ifeq (,$(VERSION))
 		LDFLAGS += -lquadmath
 	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
-		LDFLAGS += -lquadmath
+		CLDFLAGS += -lquadmath
 	endif
 endif
 
@@ -320,19 +320,19 @@ all: $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(CLDFLAGS) $(LDFLAGS)
 
 $(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(CLDFLAGS) $(LDFLAGS)
 
 $(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(CLDFLAGS) $(LDFLAGS)
 
 $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(CLDFLAGS) $(LDFLAGS)
 
 $(OUTDIR)/smm: $(BLDDIR)/smm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
