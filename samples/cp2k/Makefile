@@ -23,8 +23,10 @@ endif
 
 ifeq ($(MIC),0)
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
-else
+else ifeq ($(OFFLOAD),0)
 	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
+else
+	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
 endif
 
 ifneq ("","$(wildcard $(LIBNAME).a)")
