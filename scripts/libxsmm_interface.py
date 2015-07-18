@@ -104,7 +104,7 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_A"] = "m,k" if (1 == aligned_loads) else "*,k"
             substitute["SHAPE_B"] = "k,n" if (1 == aligned_loads) else "*,n"
-            substitute["SHAPE_C"] = "m,n" if (1 == aligned_stores) else "*,n"
+            substitute["SHAPE_C"] = "m,n" if (1 == aligned_stores) else "libxsmm_ldc(m,n,T),n"
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0
