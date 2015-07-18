@@ -68,8 +68,8 @@ MODULE LIBXSMM
     MODULE PROCEDURE libxsmm_smm, libxsmm_dmm
   END INTERFACE
 
+  ! Type of a function generated for a specific M, N, and K
   ABSTRACT INTERFACE
-    ! Type of a function generated for a specific M, N, and K
     PURE SUBROUTINE LIBXSMM_XMM_FUNCTION(a, b, c)
       IMPORT :: C_PTR
       TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c
