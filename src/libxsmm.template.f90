@@ -167,7 +167,10 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C)
-    c = c + MERGE(MATMUL(a, b), RESHAPE(MATMUL(RESHAPE(b, (/n,k/)), RESHAPE(a, (/k,m/))), (/m,n/)), 0.NE.LIBXSMM_COL_MAJOR)
+    c = c + MERGE(MATMUL(a, b), MATMUL(   &
+        RESHAPE(b, CSHIFT(SHAPE(b), 1)),  &
+        RESHAPE(a, CSHIFT(SHAPE(a), 1))), &
+      0.NE.LIBXSMM_COL_MAJOR)
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using optimized code; double-precision.
@@ -178,7 +181,10 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C)
-    c = c + MERGE(MATMUL(a, b), RESHAPE(MATMUL(RESHAPE(b, (/n,k/)), RESHAPE(a, (/k,m/))), (/m,n/)), 0.NE.LIBXSMM_COL_MAJOR)
+    c = c + MERGE(MATMUL(a, b), MATMUL(   &
+        RESHAPE(b, CSHIFT(SHAPE(b), 1)),  &
+        RESHAPE(a, CSHIFT(SHAPE(a), 1))), &
+      0.NE.LIBXSMM_COL_MAJOR)
   END SUBROUTINE
 
   ! Query the pointer of a generated function; zero if it does not exist.
