@@ -162,29 +162,49 @@ CONTAINS
   ! Non-dispatched matrix-matrix multiplication using optimized code; single-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_simm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_simm
-  PURE SUBROUTINE libxsmm_simm(m, n, k, a, b, c)
+  SUBROUTINE libxsmm_simm(m, n, k, a, b, c)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
-    REAL(T), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: sa(2), sb(2)
+    REAL(T), INTENT(IN), TARGET :: a($SHAPE_A), b($SHAPE_B)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C)
-    c = c + MERGE(MATMUL(a, b), MATMUL(   &
-        RESHAPE(b, CSHIFT(SHAPE(b), 1)),  &
-        RESHAPE(a, CSHIFT(SHAPE(a), 1))), &
-      0.NE.LIBXSMM_COL_MAJOR)
+    REAL(T), POINTER :: pa(:,:), pb(:,:)
+    sa = SHAPE(a)
+    sb = SHAPE(b)
+    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      pa => a
+      pb => b
+    ELSE
+      pa => b
+      pb => a
+      sa = sb((/2,1/))
+      sb = sa((/2,1/))
+    ENDIF
+    c(1:sa(1),:) = c(1:sa(1),:) + MATMUL(RESHAPE(pa, sa), RESHAPE(pb, sb))
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using optimized code; double-precision.
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dimm
   !DIR$ ATTRIBUTES INLINE :: libxsmm_dimm
-  PURE SUBROUTINE libxsmm_dimm(m, n, k, a, b, c)
+  SUBROUTINE libxsmm_dimm(m, n, k, a, b, c)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
-    REAL(T), INTENT(IN) :: a($SHAPE_A), b($SHAPE_B)
+    INTEGER(LIBXSMM_INTEGER_TYPE) :: sa(2), sb(2)
+    REAL(T), INTENT(IN), TARGET :: a($SHAPE_A), b($SHAPE_B)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C)
-    c = c + MERGE(MATMUL(a, b), MATMUL(   &
-        RESHAPE(b, CSHIFT(SHAPE(b), 1)),  &
-        RESHAPE(a, CSHIFT(SHAPE(a), 1))), &
-      0.NE.LIBXSMM_COL_MAJOR)
+    REAL(T), POINTER :: pa(:,:), pb(:,:)
+    sa = SHAPE(a)
+    sb = SHAPE(b)
+    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      pa => a
+      pb => b
+    ELSE
+      pa => b
+      pb => a
+      sa = sb((/2,1/))
+      sb = sa((/2,1/))
+    ENDIF
+    c(1:sa(1),:) = c(1:sa(1),:) + MATMUL(RESHAPE(pa, sa), RESHAPE(pb, sb))
   END SUBROUTINE
 
   ! Query the pointer of a generated function; zero if it does not exist.
@@ -221,6 +241,19 @@ CONTAINS
     !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_dispatch_aux
     !CALL C_F_PROCPOINTER(libxsmm_dmm_dispatch_aux(m, n, k), f)
     f = libxsmm_dmm_dispatch_aux(m, n, k)
+  END FUNCTION
+
+  ! Query the pointer of a generated function; zero if it does not exist.
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mm_dispatch
+  !DIR$ ATTRIBUTES INLINE :: libxsmm_mm_dispatch
+  FUNCTION libxsmm_mm_dispatch(m, n, k, type) RESULT(f)
+    INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k, type
+    !PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: f
+    TYPE(C_FUNPTR) :: f
+    f = MERGE( &
+      libxsmm_dmm_dispatch(m, n, k), &
+      libxsmm_smm_dispatch(m, n, k), &
+      LIBXSMM_DOUBLE_PRECISION.EQ.type)
   END FUNCTION
 
   ! Dispatched matrix-matrix multiplication; single-precision.

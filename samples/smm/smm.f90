@@ -34,10 +34,12 @@ PROGRAM smm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), ALLOCATABLE :: a(:,:), b(:,:), c(:,:), d(:,:)
+  REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:), c(:,:), d(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, d
-  INTEGER :: argc, m, n, k
+  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
+  INTEGER :: argc, m, n, k, routine
   CHARACTER(32) :: argv
+  TYPE(C_FUNPTR) :: f
 
   argc = IARGC()
   IF (1 <= argc) THEN
@@ -58,6 +60,12 @@ PROGRAM smm
   ELSE
     k = m
   END IF
+  IF (4 <= argc) THEN
+    CALL GETARG(4, argv)
+    READ(argv, "(I32)") routine
+  ELSE
+    routine = -1
+  END IF
 
   ALLOCATE(a(libxsmm_ld(m, k),libxsmm_ld(k, m)))
   ALLOCATE(b(libxsmm_ld(k, n),libxsmm_ld(n, k)))
@@ -73,12 +81,19 @@ PROGRAM smm
   CALL libxsmm_blasmm(m, n, k, a, b, d)
 
   c(:,:) = 0
-  CALL libxsmm_imm(m, n, k, a, b, c)
-  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))), "(optimized)"
+  IF (0.LT.routine) THEN
+    CALL libxsmm_mm(m, n, k, a, b, c)
+  ELSE
+    f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
+    IF (C_ASSOCIATED(f)) THEN
+      CALL C_F_PROCPOINTER(f, xmm)
+      CALL xmm(C_LOC(a), C_LOC(b), C_LOC(c))
+    ELSE
+      CALL libxsmm_imm(m, n, k, a, b, c)
+    ENDIF
+  END IF
 
-  c(:,:) = 0
-  CALL libxsmm_mm(m, n, k, a, b, c)
-  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))), "(dispatched)"
+  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
 
   DEALLOCATE(a)
   DEALLOCATE(b)
