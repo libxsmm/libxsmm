@@ -88,20 +88,19 @@ if __name__ == "__main__":
             print template.substitute(substitute)
         else:
             if (mnklist):
-                substitute["MNK_INTERFACE_LIST"] += "\n\n  INTERFACE"
+                substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    PURE SUBROUTINE LIBXSMM_SMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
+                        "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_PTR\n" \
                         "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE" \
                         "\n" \
-                        "    PURE SUBROUTINE LIBXSMM_DMM_" + mnkstr + "(a, b, c) BIND(C)\n" \
+                        "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_PTR\n" \
                         "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE"
-                substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_A"] = "m,k" if (1 == aligned_loads) else "*,k"
             substitute["SHAPE_B"] = "k,n" if (1 == aligned_loads) else "*,n"
             substitute["SHAPE_C"] = "m,n" if (1 == aligned_stores) else "libxsmm_ldc(m,n,T),n"
