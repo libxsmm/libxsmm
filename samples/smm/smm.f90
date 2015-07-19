@@ -101,20 +101,28 @@ PROGRAM smm
   DEALLOCATE(d)
 
 CONTAINS
-  PURE SUBROUTINE init(matrix, seed)
+  PURE SUBROUTINE init(matrix, seed, n)
     REAL(T), INTENT(OUT) :: matrix(:,:)
-    INTEGER, INTENT(IN) :: seed
-    INTEGER :: i, j
-    DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-      DO i = LBOUND(matrix, 1), UBOUND(matrix, 1)
-        matrix(i,j) = SIZE(matrix, 2) * i + j + seed - 1
+    INTEGER, INTENT(IN), OPTIONAL :: seed, n
+    INTEGER :: shift, rows, cols, i, i0, i1, j, j0, j1
+    rows = libxsmm_ld(1, 2)
+    cols = libxsmm_ld(2, 1)
+    i0 = LBOUND(matrix, cols)
+    i1 = UBOUND(matrix, cols)
+    j0 = LBOUND(matrix, rows)
+    j1 = UBOUND(matrix, rows)
+    shift = MERGE(seed, 0, PRESENT(seed)) - j0
+    shift = shift + MERGE(n, 0, PRESENT(n))
+    DO j = j0, j1
+      DO i = i0, i1
+        matrix(i,j) = (i - i0) * SIZE(matrix, 2) + j + shift
       END DO
     END DO
   END SUBROUTINE
 
   SUBROUTINE disp(matrix, format)
     REAL(T), INTENT(IN) :: matrix(:,:)
-    CHARACTER(*), OPTIONAL, INTENT(IN) :: format
+    CHARACTER(*), INTENT(IN), OPTIONAL :: format
     CHARACTER(32) :: fmt
     INTEGER :: i
     IF (.NOT.PRESENT(format)) THEN

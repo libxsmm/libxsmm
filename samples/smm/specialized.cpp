@@ -57,10 +57,10 @@
 
 template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
-    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
-    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
-      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(nrows, ncols) : ld;
+    for (int i = 0; i < LIBXSMM_LD(ncols, nrows); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(nrows, ncols); ++j) {
         // initialize similar to CP2K's (libsmm_acc) benchmark driver
         dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
       }
@@ -100,8 +100,8 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (int i = 0; i < s; ++i) {
-      init<42>(a + i * asize, m, k);
-      init<24>(b + i * bsize, k, n);
+      init<42>(a + i * asize, m, k, i);
+      init<24>(b + i * bsize, k, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD)

@@ -110,10 +110,10 @@ private:
 
 template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
-    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
-    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
-      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(nrows, ncols) : ld;
+    for (int i = 0; i < LIBXSMM_LD(ncols, nrows); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(nrows, ncols); ++j) {
         // initialize similar to CP2K's (libsmm_acc) benchmark driver
         dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
       }
@@ -124,11 +124,11 @@ struct LIBXSMM_TARGET(mic) init {
 
 template<>
 struct LIBXSMM_TARGET(mic) init<0> {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int m, int n, int ld = 0) {
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int ld = 0) {
     static const double scale = 1.0 / RAND_MAX;
-    const int ldx = 0 == ld ? LIBXSMM_LD(m, n) : ld;
-    for (int i = 0; i < LIBXSMM_LD(n, m); ++i) {
-      for (int j = 0; j < LIBXSMM_LD(m, n); ++j) {
+    const int ldx = 0 == ld ? LIBXSMM_LD(nrows, ncols) : ld;
+    for (int i = 0; i < LIBXSMM_LD(ncols, nrows); ++i) {
+      for (int j = 0; j < LIBXSMM_LD(nrows, ncols); ++j) {
         // initialize every value using a normalized random number [-1, +1]
         dst[i*ldx+j] = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
       }
