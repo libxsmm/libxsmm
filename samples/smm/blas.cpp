@@ -111,8 +111,8 @@ int main(int argc, char* argv[])
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s,
-        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
+        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
+        s, 1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
       { // streaming
         fprintf(stdout, "Streamed...\n");
