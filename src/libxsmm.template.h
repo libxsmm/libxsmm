@@ -68,21 +68,23 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
 #define LIBXSMM_AVG_K $AVG_K
 
 #if (0 != LIBXSMM_ROW_MAJOR)
-# define LIBXSMM_LD(M, N) N
+# define LIBXSMM_LD(M, N) (N)
 #else
-# define LIBXSMM_LD(M, N) M
+# define LIBXSMM_LD(M, N) (M)
 #endif
 #if (1 < LIBXSMM_ALIGNED_STORES)
 # define LIBXSMM_ASSUME_ALIGNED_STORES(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNED_STORES)
-# define LIBXSMM_LDC(M, N, TYPESIZE) LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(M, N), TYPESIZE, LIBXSMM_ALIGNED_STORES)
+# define LIBXSMM_ALIGN_STORES(N, TYPESIZE) LIBXSMM_ALIGN_VALUE(N, TYPESIZE, LIBXSMM_ALIGNED_STORES)
 #else
 # define LIBXSMM_ASSUME_ALIGNED_STORES(A)
-# define LIBXSMM_LDC(M, N, TYPESIZE) LIBXSMM_LD(M, N)
+# define LIBXSMM_ALIGN_STORES(N, TYPESIZE) (N)
 #endif
 #if (1 < LIBXSMM_ALIGNED_LOADS)
 # define LIBXSMM_ASSUME_ALIGNED_LOADS(A) LIBXSMM_ASSUME_ALIGNED(A, LIBXSMM_ALIGNED_LOADS)
+# define LIBXSMM_ALIGN_LOADS(N, TYPESIZE) LIBXSMM_ALIGN_VALUE(N, TYPESIZE, LIBXSMM_ALIGNED_LOADS)
 #else
 # define LIBXSMM_ASSUME_ALIGNED_LOADS(A)
+# define LIBXSMM_ALIGN_LOADS(N, TYPESIZE) (N)
 #endif
 
 #define LIBXSMM_MAX_SIMD LIBXSMM_MAX(LIBXSMM_DIV2(LIBXSMM_ALIGNED_MAX, sizeof(float)), 1)
@@ -93,7 +95,7 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
 
 #define LIBXSMM_BLASMM(REAL, M, N, K, A, B, C) { \
   int libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M), libxsmm_k_ = (K); \
-  int libxsmm_ldc_ = LIBXSMM_LDC(M, N, sizeof(REAL)); \
+  int libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(N, sizeof(REAL)); \
   REAL libxsmm_alpha_ = 1, libxsmm_beta_ = 1; \
   char libxsmm_trans_ = 'N'; \
   LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(, REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \
@@ -108,7 +110,7 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
 #else
 # define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C) { \
     const REAL *const libxsmm_a_ = LIBXSMM_LD(B, A), *const libxsmm_b_ = LIBXSMM_LD(A, B); \
-    const UINT libxsmm_ldc_ = LIBXSMM_LDC(M, N, sizeof(REAL)); \
+    const UINT libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(N, sizeof(REAL)); \
     UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
     REAL *const libxsmm_c_ = (C); \
     LIBXSMM_ASSUME_ALIGNED_STORES(libxsmm_c_); \

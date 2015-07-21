@@ -37,7 +37,7 @@ PROGRAM smm
   REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:), c(:,:), d(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, d
   PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
-  INTEGER :: argc, m, n, k, routine
+  INTEGER :: argc, m, n, k, ld, routine
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f
 
@@ -67,33 +67,41 @@ PROGRAM smm
     routine = -1
   END IF
 
-  ALLOCATE(a(libxsmm_ld(m, k),libxsmm_ld(k, m)))
-  ALLOCATE(b(libxsmm_ld(k, n),libxsmm_ld(n, k)))
-  ALLOCATE(c(libxsmm_ldc(m, n, T),libxsmm_ld(n, m)))
-  ALLOCATE(d(libxsmm_ldc(m, n, T),libxsmm_ld(n, m)))
+  ALLOCATE(a(m,k))
+  ALLOCATE(b(k,n))
+  ALLOCATE(c(libxsmm_align_value(m,T,LIBXSMM_ALIGNED_STORES),n))
+  ALLOCATE(d(libxsmm_align_value(m,T,LIBXSMM_ALIGNED_STORES),n))
 
   ! Initialize matrices
-  CALL init(a, 42)
-  CALL init(b, 24)
+  CALL init(42, a)
+  CALL init(24, b)
 
   ! Calculate reference based on BLAS
   d(:,:) = 0
   CALL libxsmm_blasmm(m, n, k, a, b, d)
 
   c(:,:) = 0
-  IF (0.LT.routine) THEN
+  IF (0.GT.routine) THEN
+    WRITE(*,*) "auto-dispatched"
     CALL libxsmm_mm(m, n, k, a, b, c)
   ELSE
     f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
     IF (C_ASSOCIATED(f)) THEN
+      WRITE(*,*) "specialized"
       CALL C_F_PROCPOINTER(f, xmm)
       CALL xmm(C_LOC(a), C_LOC(b), C_LOC(c))
     ELSE
+      IF (0.EQ.routine) THEN
+        WRITE(*,*) "optimized (no specialized routine found)"
+      ELSE
+        WRITE(*,*) "optimized"
+      ENDIF
       CALL libxsmm_imm(m, n, k, a, b, c)
     ENDIF
   END IF
 
-  WRITE(*,*) "diff = ", MAXVAL(((c(:,:) - d(:,:)) * (c(:,:) - d(:,:))))
+  ld = LBOUND(c, 1) + m - 1
+  WRITE(*,*) "diff = ", MAXVAL(((c(:ld,:) - d(:ld,:)) * (c(:ld,:) - d(:ld,:))))
 
   DEALLOCATE(a)
   DEALLOCATE(b)
@@ -101,37 +109,39 @@ PROGRAM smm
   DEALLOCATE(d)
 
 CONTAINS
-  PURE SUBROUTINE init(matrix, seed, n)
+  PURE SUBROUTINE init(seed, matrix, ld, n)
+    INTEGER, INTENT(IN) :: seed
     REAL(T), INTENT(OUT) :: matrix(:,:)
-    INTEGER, INTENT(IN), OPTIONAL :: seed, n
-    INTEGER :: shift, rows, cols, i, i0, i1, j, j0, j1
-    rows = libxsmm_ld(1, 2)
-    cols = libxsmm_ld(2, 1)
-    i0 = LBOUND(matrix, cols)
-    i1 = UBOUND(matrix, cols)
-    j0 = LBOUND(matrix, rows)
-    j1 = UBOUND(matrix, rows)
-    shift = MERGE(seed, 0, PRESENT(seed)) - j0
-    shift = shift + MERGE(n, 0, PRESENT(n))
-    DO j = j0, j1
+    INTEGER, INTENT(IN), OPTIONAL :: ld, n
+    INTEGER :: shift, i0, i1, i, j
+    i0 = LBOUND(matrix, 1)
+    i1 = MIN(MERGE(i0 + ld - 1, UBOUND(matrix, 1), PRESENT(ld)), UBOUND(matrix, 1))
+    shift = seed + MERGE(n, 0, PRESENT(n)) - LBOUND(matrix, 1)
+    DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
       DO i = i0, i1
-        matrix(i,j) = (i - i0) * SIZE(matrix, 2) + j + shift
+        matrix(i,j) = (j - LBOUND(matrix, 2)) * SIZE(matrix, 1) + i + shift
       END DO
     END DO
   END SUBROUTINE
 
-  SUBROUTINE disp(matrix, format)
+  SUBROUTINE disp(matrix, ld, format)
     REAL(T), INTENT(IN) :: matrix(:,:)
+    INTEGER, INTENT(IN), OPTIONAL :: ld
     CHARACTER(*), INTENT(IN), OPTIONAL :: format
     CHARACTER(32) :: fmt
-    INTEGER :: i
+    INTEGER :: i0, i1, i, j
     IF (.NOT.PRESENT(format)) THEN
       fmt = "(16F8.0)"
     ELSE
       WRITE(fmt, "('(16',A,')')") format
     ENDIF
-    DO i = LBOUND(matrix, 1), UBOUND(matrix, 1)
-      WRITE(*, fmt) matrix(i,:)
+    i0 = LBOUND(matrix, 1)
+    i1 = MIN(MERGE(i0 + ld - 1, UBOUND(matrix, 1), PRESENT(ld)), UBOUND(matrix, 1))
+    DO i = i0, i1
+      DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
+        WRITE(*, fmt, advance='NO') matrix(i,j)
+      END DO
+      WRITE(*, *)
     END DO
   END SUBROUTINE
 END PROGRAM
