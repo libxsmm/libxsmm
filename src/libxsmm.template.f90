@@ -139,12 +139,11 @@ CONTAINS
     REAL(T), INTENT(IN) :: a($SHAPE_AS1,$SHAPE_AS2), b($SHAPE_BS1,$SHAPE_BS2)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C1,$SHAPE_C2)
     REAL(T), PARAMETER :: alpha = 1, beta = 1
-    INTEGER(LIBXSMM_INTEGER_TYPE) :: mn
-    mn = libxsmm_ld(m, n)
-    CALL sgemm('N', 'N', mn, libxsmm_ld(n, m), k, alpha, &
-      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), mn, &
-      MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
-      beta, c, SIZE(c, 1))
+    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      CALL sgemm('N', 'N', m, n, k, alpha, a, m, b, k, beta, c, SIZE(c, 1))
+    ELSE
+      CALL sgemm('N', 'N', n, m, k, alpha, b, n, a, k, beta, c, SIZE(c, 1))
+    ENDIF
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using BLAS; double-precision.
@@ -156,12 +155,11 @@ CONTAINS
     REAL(T), INTENT(IN) :: a($SHAPE_AS1,$SHAPE_AS2), b($SHAPE_BS1,$SHAPE_BS2)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C1,$SHAPE_C2)
     REAL(T), PARAMETER :: alpha = 1, beta = 1
-    INTEGER(LIBXSMM_INTEGER_TYPE) :: mn
-    mn = libxsmm_ld(m, n)
-    CALL dgemm('N', 'N', mn, libxsmm_ld(n, m), k, alpha, &
-      MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR), mn, &
-      MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR), k, &
-      beta, c, SIZE(c, 1))
+    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      CALL dgemm('N', 'N', m, n, k, alpha, a, m, b, k, beta, c, SIZE(c, 1))
+    ELSE
+      CALL dgemm('N', 'N', n, m, k, alpha, b, n, a, k, beta, c, SIZE(c, 1))
+    ENDIF
   END SUBROUTINE
 
   ! Non-dispatched matrix-matrix multiplication using optimized code; single-precision.
