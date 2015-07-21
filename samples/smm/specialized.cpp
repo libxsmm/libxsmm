@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
 #endif
       }
 
