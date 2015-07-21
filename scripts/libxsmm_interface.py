@@ -101,11 +101,20 @@ if __name__ == "__main__":
                         "      IMPORT :: C_PTR\n" \
                         "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE"
-            substitute["SHAPE_A"] = "m,k" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS),k"
-            substitute["SHAPE_B"] = "k,n" if (1 == aligned_loads) else "libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS),n"
-            substitute["SHAPE_C"] = "m,n" if (1 == aligned_stores) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_STORES),n"
-            substitute["SHAPE_AT"] = "n,k" if (1 == aligned_loads) else "n,libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS)"
-            substitute["SHAPE_BT"] = "k,m" if (1 == aligned_loads) else "k,libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
+            substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
+            substitute["SHAPE_AS2"] = "k"
+            substitute["SHAPE_BS1"] = "k" if (1 == aligned_loads) else "libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS)"
+            substitute["SHAPE_BS2"] = "n"
+            substitute["SHAPE_AT1"] = substitute["SHAPE_BS2"]
+            substitute["SHAPE_AT2"] = substitute["SHAPE_BS1"]
+            substitute["SHAPE_BT1"] = substitute["SHAPE_AS2"]
+            substitute["SHAPE_BT2"] = substitute["SHAPE_AS1"]
+            if (0 == row_major):
+                substitute["SHAPE_C1"] = "m" if (1 == aligned_stores) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_STORES)"
+                substitute["SHAPE_C2"] = "n"
+            else:
+                substitute["SHAPE_C1"] = "n" if (1 == aligned_stores) else "libxsmm_align_value(n,T,LIBXSMM_ALIGNED_STORES)"
+                substitute["SHAPE_C2"] = "m"
             print template.safe_substitute(substitute)
     else:
         sys.tracebacklimit = 0
