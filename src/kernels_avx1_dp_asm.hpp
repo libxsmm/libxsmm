@@ -164,9 +164,9 @@ void avx1_kernel_2xN_dp_asm(std::stringstream& codestream, int lda, int ldb, int
       codestream << "                         \"addq $" << (lda) * 8 << ", %%r9\\n\\t\"" << std::endl;
     }
     if (call != -1) {
-      codestream << "                         \"movddup " << (8 * call) + (ldb * l_n * 8) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovddup " << (8 * call) + (ldb * l_n * 8) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
     } else {
-      codestream << "                         \"movddup " << (ldb * l_n * 8) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
+      codestream << "                         \"vmovddup " << (ldb * l_n * 8) << "(%%r8), %%xmm" << l_n << "\\n\\t\"" << std::endl;
       if (l_n == (max_local_N - 1)) {
         codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
       }
