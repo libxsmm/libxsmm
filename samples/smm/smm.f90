@@ -80,7 +80,7 @@ PROGRAM smm
   ALLOCATE(a(s,m,k))
   ALLOCATE(b(s,k,n))
 
-  !$OMP PARALLEL DEFAULT(NONE) SHARED(m, n, k, a, b, s, ld, duration, routine, xmm, f)
+  !$OMP PARALLEL !DEFAULT(NONE) SHARED(m, n, k, a, b, s, ld, duration, routine, xmm, f)
   ! Initialize matrices
   !$OMP DO PRIVATE(i)
   DO i = LBOUND(a, 1), UBOUND(a, 1)
