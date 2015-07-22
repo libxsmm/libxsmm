@@ -44,7 +44,7 @@ if __name__ == "__main__":
         else: # ColMajor
             a, b = "a", "b"
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c)"
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)"
         print "  libxsmm_dmm_" + mnkstr + "_knl(" + a + ", " + b + ", c);"
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         print "}"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c)"
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)"
         print "  libxsmm_smm_" + mnkstr + "_knl(" + a + ", " + b + ", c);"
