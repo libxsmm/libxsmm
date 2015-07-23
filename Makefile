@@ -52,7 +52,7 @@ IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
 STATIC ?= 1
 OMP ?= 0
 SYM ?= 0
-DBG ?= 0
+DBG ?= 1
 IPO ?= 0
 
 OFFLOAD ?= 0
@@ -103,8 +103,8 @@ ifeq ($(LD),)
 endif
 
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
-	CXXFLAGS += -fPIC -Wall -std=c++0x
-	CFLAGS += -fPIC -Wall -std=c99
+	CXXFLAGS += -fPIC -Wall -Werror -std=c++0x
+	CFLAGS += -fPIC -Wall -Werror
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
@@ -165,8 +165,8 @@ else # GCC assumed
 	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
-	CFLAGS += -Wall -Wno-unused-function
+	CXXFLAGS += -Wall -Werror -std=c++0x -Wno-unused-function
+	CFLAGS += -Wall -Werror -Wno-unused-function
 	ifneq ($(OS),Windows_NT)
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -263,7 +263,7 @@ endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,GeneratorDriver.cpp GeneratorCSC.cpp GeneratorDense.cpp ReaderCSC.cpp)
+SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,generator_driver.c generator_common.c generator_dense.c generator_dense_common.c generator_dense_avx.c generator_dense_instructions.c)
 OBJFILES_GEN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
@@ -315,14 +315,14 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 
 .PHONY: compile_gen
 compile_gen: $(SRCFILES_GEN)
-$(BLDDIR)/%.o: $(SRCDIR)/%.cpp $(ROOTDIR)/Makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CXX) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(OBJFILES_GEN)
 $(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CXX) $(OBJFILES_GEN) -o $@
+	$(CC) $(OBJFILES_GEN) -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)
