@@ -11,6 +11,7 @@ DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
 OMP ?= 1
+SYM ?= 0
 DBG ?= 0
 IPO ?= 0
 
@@ -144,14 +145,22 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		else
 			TARGET = -xHost
 		endif
-	else ifneq (1,$(DBG))
-		CXXFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
-		CFLAGS += -O0 -g3 -gdwarf-2 -debug inline-debug-info
-		FCFLAGS += -O0 -g
 	else
-		CXXFLAGS += -O0 -g
-		CFLAGS += -O0 -g
-		FCFLAGS += -O0 -g
+		CXXFLAGS += -O0
+		CFLAGS += -O0
+		FCFLAGS += -O0
+		SYM = $(DBG)
+	endif
+	ifneq (0,$(SYM))
+		ifneq (1,$(SYM))
+			CXXFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+			FCFLAGS = -g $(FCFLAGS)
+		else
+			CXXFLAGS = -g $(CXXFLAGS)
+			CFLAGS = -g $(CFLAGS)
+			FCFLAGS = -g $(FCFLAGS)
+		endif
 	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -openmp
@@ -202,14 +211,22 @@ else # GCC assumed
 		else
 			TARGET = -march=native
 		endif
-	else ifneq (1,$(DBG))
-		CXXFLAGS += -O0 -g3 -gdwarf-2
-		CFLAGS += -O0 -g3 -gdwarf-2
-		FCFLAGS += -O0 -g3 -gdwarf-2
 	else
-		CXXFLAGS += -O0 -g
-		CFLAGS += -O0 -g
-		FCFLAGS += -O0 -g
+		CXXFLAGS += -O0
+		CFLAGS += -O0
+		FCFLAGS += -O0
+		SYM = $(DBG)
+	endif
+	ifneq (0,$(SYM))
+		ifneq (1,$(SYM))
+			CXXFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+			FCFLAGS = -g $(FCFLAGS)
+		else
+			CXXFLAGS = -g $(CXXFLAGS)
+			CFLAGS = -g $(CFLAGS)
+			FCFLAGS = -g $(FCFLAGS)
+		endif
 	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -fopenmp
