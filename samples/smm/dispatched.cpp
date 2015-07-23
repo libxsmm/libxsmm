@@ -78,9 +78,10 @@ int main(int argc, char* argv[])
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
-    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T)), csize = LIBXSMM_LD(n, m) * ldc;
+    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
     const int s = (2ULL << 30) / ((asize + bsize) * sizeof(T)); // 2 GByte
 #if defined(_OPENMP)
+    const int csize = LIBXSMM_LD(n, m) * ldc;
     const size_t bwsize = (asize/*load*/ + bsize/*load*/ + csize * 2/*load and store*/) * sizeof(T); // cached
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
