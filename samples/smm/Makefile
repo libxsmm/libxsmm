@@ -152,13 +152,13 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
-			CXXFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS = -g $(FCFLAGS)
+			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+			FCFLAGS := -g $(FCFLAGS)
 		else
-			CXXFLAGS = -g $(CXXFLAGS)
-			CFLAGS = -g $(CFLAGS)
-			FCFLAGS = -g $(FCFLAGS)
+			CXXFLAGS := -g $(CXXFLAGS)
+			CFLAGS := -g $(CFLAGS)
+			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
 	ifneq ($(OMP),0)
@@ -218,13 +218,13 @@ else # GCC assumed
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
-			CXXFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS = -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS = -g $(FCFLAGS)
+			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+			FCFLAGS := -g $(FCFLAGS)
 		else
-			CXXFLAGS = -g $(CXXFLAGS)
-			CFLAGS = -g $(CFLAGS)
-			FCFLAGS = -g $(FCFLAGS)
+			CXXFLAGS := -g $(CXXFLAGS)
+			CFLAGS := -g $(CFLAGS)
+			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
 	ifneq ($(OMP),0)
