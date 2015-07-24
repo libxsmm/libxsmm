@@ -34,6 +34,8 @@
 #include <string.h>
 #include <malloc.h>
 
+#include "generator_common.h"
+
 char* libxsmm_empty_string() {
   char* l_string = (char*) malloc( sizeof(char) );
   l_string[0] = '\0';
@@ -90,52 +92,52 @@ void libxsmm_close_function(char** io_generated_code) {
 void libxsmm_get_x86_64_gp_reg_name( const unsigned int i_gp_reg_number,
                                      char*              i_gp_reg_name ) {
   switch (i_gp_reg_number) {
-    case 0: 
+    case LIBXSMM_X86_GP_REG_RAX: 
       strcpy(i_gp_reg_name, "rax");
       break;
-    case 1:
+    case LIBXSMM_X86_GP_REG_RCX:
       strcpy(i_gp_reg_name, "rcx");
       break;
-    case 2:
+    case LIBXSMM_X86_GP_REG_RDX:
       strcpy(i_gp_reg_name, "rdx");
       break;
-    case 3:
+    case LIBXSMM_X86_GP_REG_RBX:
       strcpy(i_gp_reg_name, "rbx");
       break;
-    case 4: 
+    case LIBXSMM_X86_GP_REG_RSP: 
       strcpy(i_gp_reg_name, "rsp");
       break;
-    case 5:
+    case LIBXSMM_X86_GP_REG_RBP:
       strcpy(i_gp_reg_name, "rbp");
       break;
-    case 6:
+    case LIBXSMM_X86_GP_REG_RSI:
       strcpy(i_gp_reg_name, "rsi");
       break;
-    case 7:
+    case LIBXSMM_X86_GP_REG_RDI:
       strcpy(i_gp_reg_name, "rdi");
       break;
-    case 8: 
+    case LIBXSMM_X86_GP_REG_R8: 
       strcpy(i_gp_reg_name, "r8");
       break;
-    case 9:
+    case LIBXSMM_X86_GP_REG_R9:
       strcpy(i_gp_reg_name, "r9");
       break;
-    case 10:
+    case LIBXSMM_X86_GP_REG_R10:
       strcpy(i_gp_reg_name, "r10");
       break;
-    case 11:
+    case LIBXSMM_X86_GP_REG_R11:
       strcpy(i_gp_reg_name, "r11");
       break;
-    case 12: 
+    case LIBXSMM_X86_GP_REG_R12: 
       strcpy(i_gp_reg_name, "r12");
       break;
-    case 13:
+    case LIBXSMM_X86_GP_REG_R13:
       strcpy(i_gp_reg_name, "r13");
       break;
-    case 14:
+    case LIBXSMM_X86_GP_REG_R14:
       strcpy(i_gp_reg_name, "r14");
       break;
-    case 15:
+    case LIBXSMM_X86_GP_REG_R15:
       strcpy(i_gp_reg_name, "r15");
       break;
     default:

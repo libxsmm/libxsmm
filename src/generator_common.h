@@ -32,11 +32,52 @@
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
 
+/* defining register mappings */
+#define LIBXSMM_X86_GP_REG_RAX     0
+#define LIBXSMM_X86_GP_REG_RCX     1
+#define LIBXSMM_X86_GP_REG_RDX     2
+#define LIBXSMM_X86_GP_REG_RBX     3
+#define LIBXSMM_X86_GP_REG_RSP     4
+#define LIBXSMM_X86_GP_REG_RBP     5
+#define LIBXSMM_X86_GP_REG_RSI     6
+#define LIBXSMM_X86_GP_REG_RDI     7
+#define LIBXSMM_X86_GP_REG_R8      8
+#define LIBXSMM_X86_GP_REG_R9      9
+#define LIBXSMM_X86_GP_REG_R10    10
+#define LIBXSMM_X86_GP_REG_R11    11
+#define LIBXSMM_X86_GP_REG_R12    12
+#define LIBXSMM_X86_GP_REG_R13    13
+#define LIBXSMM_X86_GP_REG_R14    14
+#define LIBXSMM_X86_GP_REG_R15    15
+#define LIBXSMM_X86_GP_REG_UNDEF 127
+
+/* micro kernel config */
+/*struct libxsmm_micro_kernel_config {
+  char* 
+*/
+
+struct libxsmm_gp_reg_mapping {
+  unsigned int gp_reg_a;
+  unsigned int gp_reg_b;
+  unsigned int gp_reg_c;
+  unsigned int gp_reg_pre_a;
+  unsigned int gp_reg_pre_b;
+  unsigned int gp_reg_mloop;
+  unsigned int gp_reg_nloop;
+  unsigned int gp_reg_kloop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+};
+
 char* libxsmm_empty_string();
 
-void  libxsmm_append_string( char** io_string_1, const char* i_string_2 );
+int libxsmm_append_string( char** io_string_1, const char* i_string_2 );
 
-void  libxsmm_close_function( char** io_generated_code );
+void libxsmm_close_function( char** io_generated_code );
 
 void libxsmm_get_x86_64_gp_reg_name( const unsigned int i_gp_reg_number,
                                      char*              i_gp_reg_name ); 

@@ -66,7 +66,7 @@ void libxsmm_generator_dense_avx_load_C_MxN(char**             io_generated_code
   /* start register of accumulator */
   unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * i_m_blocking);
 
-  /* C accumulator has registers xmm/ymm7-15 */
+  /* load C accumulator */
   if (i_beta == 1) {
     /* adding to C, so let's load C */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -113,7 +113,7 @@ void libxsmm_generator_dense_avx_store_C_MxN(char** io_generated_code,
   /* start register of accumulator */
   unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * i_m_blocking);
 
-  /* C accumulator has registers xmm/ymm7-15 */
+  /* storing C accumulator */
   /* adding to C, so let's load C */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < i_m_blocking; l_m++ ) {
@@ -219,6 +219,9 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
 
+  
+
+
   char* l_c_vmove_instr = "vmovapd";
   char* l_a_vmove_instr = "vmovapd";
   char* l_vxor_instr = "vxorpd";
@@ -229,14 +232,14 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   char* l_vadd_instr = NULL;
   unsigned int l_datatype_size = 8;
 
-  unsigned int l_gp_reg_a = 9;
-  unsigned int l_gp_reg_b = 8;
-  unsigned int l_gp_reg_c = 10;
-  unsigned int l_gp_reg_pre_a = 11;
-  unsigned int l_gp_reg_pre_b = 12;
-  unsigned int l_gp_reg_mloop = 14;
-  unsigned int l_gp_reg_nloop = 15;
-  unsigned int l_gp_reg_kloop = 13;
+  unsigned int l_gp_reg_a = LIBXSMM_X86_GP_REG_R9;
+  unsigned int l_gp_reg_b = LIBXSMM_X86_GP_REG_R8;
+  unsigned int l_gp_reg_c = LIBXSMM_X86_GP_REG_R10;
+  unsigned int l_gp_reg_pre_a = LIBXSMM_X86_GP_REG_R11;
+  unsigned int l_gp_reg_pre_b = LIBXSMM_X86_GP_REG_R12;
+  unsigned int l_gp_reg_mloop = LIBXSMM_X86_GP_REG_R14;
+  unsigned int l_gp_reg_nloop = LIBXSMM_X86_GP_REG_R15;
+  unsigned int l_gp_reg_kloop = LIBXSMM_X86_GP_REG_R13;
   
   /* open asm */
   libxsmm_generator_dense_sse_avx_open_kernel( io_generated_code, l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_pre_b,
