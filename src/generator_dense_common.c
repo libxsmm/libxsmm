@@ -209,11 +209,6 @@ void libxsmm_generator_dense_header_kloop(char**             io_generated_code,
   sprintf( l_new_code, "2%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_kloop, i_k_blocking);
-#if 0 
-  codestream << "                         \"movq $0, %%r13\\n\\t\"" << std::endl;
-  codestream << "                         \"2" << m_blocking << ":\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << k_blocking << ", %%r13\\n\\t\"" << std::endl;
-#endif
 }
 
 void libxsmm_generator_dense_footer_kloop(char**             io_generated_code,
@@ -232,11 +227,6 @@ void libxsmm_generator_dense_footer_kloop(char**             io_generated_code,
   if ( i_kloop_complete != 0 ) {
     libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_b, i_k*i_datatype_size );
   }
-#if 0
-  codestream << "                         \"cmpq $" << K << ", %%r13\\n\\t\"" << std::endl;
-  codestream << "                         \"jl 2" << m_blocking << "b\\n\\t\"" << std::endl;
-  codestream << "                         \"subq $" << K * 8 << ", %%r8\\n\\t\"" << std::endl;
-#endif
 }
 
 void libxsmm_generator_dense_header_nloop(char**             io_generated_code,
@@ -250,11 +240,6 @@ void libxsmm_generator_dense_header_nloop(char**             io_generated_code,
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_nloop, i_n_blocking );
   libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mloop, 0 );
-#if 0
-  codestream << "                         \"1" << n_blocking << ":\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << n_blocking << ", %%r15\\n\\t\"" << std::endl;
-  codestream << "                         \"movq $0, %%r14\\n\\t\"" << std::endl;
-#endif
 }
 
 
@@ -283,16 +268,6 @@ void libxsmm_generator_dense_footer_nloop(char**             io_generated_code,
   libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_nloop, i_n );
   sprintf( l_new_code, "1%ib", i_n_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
-#if 0
-  codestream << "                         \"addq $" << ((n_blocking)*ldc * 8) - (M * 8) << ", %%r10\\n\\t\"" << std::endl;
-  if (tPrefetch.compare("BL2viaC") == 0) {
-    codestream << "                         \"addq $" << ((n_blocking)*ldc * 8) - (M * 8) << ", %%r12\\n\\t\"" << std::endl;
-  }
-  codestream << "                         \"addq $" << n_blocking* ldb * 8 << ", %%r8\\n\\t\"" << std::endl;
-  codestream << "                         \"subq $" << M * 8 << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"cmpq $" << N << ", %%r15\\n\\t\"" << std::endl;
-  codestream << "                         \"jl 1" << n_blocking << "b\\n\\t\"" << std::endl;
-#endif
 }
 
 
@@ -305,10 +280,6 @@ void libxsmm_generator_dense_header_mloop(char**             io_generated_code,
   sprintf( l_new_code, "100%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mloop, i_m_blocking );
-#if 0
-  codestream << "                         \"100" << m_blocking << ":\\n\\t\"" << std::endl;
-  codestream << "                         \"addq $" << m_blocking << ", %%r14\\n\\t\"" << std::endl;
-#endif
 }
 
 void libxsmm_generator_dense_footer_mloop(char**             io_generated_code,
@@ -333,14 +304,5 @@ void libxsmm_generator_dense_footer_mloop(char**             io_generated_code,
   libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mloop, i_m );
   sprintf( l_new_code, "100%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
-#if 0
-  codestream << "                         \"addq $" << m_blocking * 8 << ", %%r10\\n\\t\"" << std::endl;
-  if (tPrefetch.compare("BL2viaC") == 0) {
-    codestream << "                         \"addq $" << m_blocking * 8 << ", %%r12\\n\\t\"" << std::endl;
-  }
-  codestream << "                         \"subq $" << (K * 8 * lda) - (m_blocking * 8) << ", %%r9\\n\\t\"" << std::endl;
-  codestream << "                         \"cmpq $" << M_done << ", %%r14\\n\\t\"" << std::endl;
-  codestream << "                         \"jl 100" << m_blocking << "b\\n\\t\"" << std::endl;
-#endif
 }
 
