@@ -45,14 +45,6 @@ void libxsmm_generator_dense_add_flop_counter( char**             io_generated_c
                                                const unsigned int i_n,
                                                const unsigned int i_k );
 
-void libxsmm_generator_dense_sse_avx_open_kernel( char**                        io_generated_code,
-                                                  const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                  const char*                   i_prefetch);
-
-void libxsmm_generator_dense_sse_avx_close_kernel( char**                        io_generated_code,
-                                                   const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                   const char*                   i_prefetch);
-
 void libxsmm_generator_dense_header_kloop(char**                        io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           const unsigned int            i_m_blocking,

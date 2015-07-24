@@ -229,18 +229,19 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
 
-  char* l_c_vmove_instr = "vmovapd";
   char* l_a_vmove_instr = "vmovapd";
-  char* l_vxor_instr = "vxorpd";
-  char* l_prefetch_instr = "prefetch1";
   char* l_b_vmove_instr = "vbroadcastsd";
-  char* l_alu_add_instr = "addq";
+  char* l_c_vmove_instr = "vmovapd";
+  char* l_prefetch_instr = "prefetch1";
+  char* l_vxor_instr = "vxorpd";
   char* l_vmul_instr = "vfmadd231pd";
   char* l_vadd_instr = NULL;
+  char* l_alu_add_instr = "addq";
+
   unsigned int l_datatype_size = 8;
   
   /* open asm */
-  libxsmm_generator_dense_sse_avx_open_kernel( io_generated_code, &l_gp_reg_mapping, i_prefetch );
+  libxsmm_generator_dense_sse_avx_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_prefetch );
   
   /* apply n_blocking */
   while (l_n_done != i_n) {
@@ -255,7 +256,7 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
       unsigned int l_k_threshold = 30;
       unsigned int l_m_done = 0;
       unsigned int l_m_done_old = 0;
-      unsigned int l_m_blocking = 12;
+      unsigned int l_m_blocking = 16;
 
       /* apply m_blocking */
       while (l_m_done != i_m) {
@@ -365,7 +366,7 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   }
 
   /* close asm */
-  libxsmm_generator_dense_sse_avx_close_kernel( io_generated_code, &l_gp_reg_mapping, i_prefetch );
+  libxsmm_generator_dense_sse_avx_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_prefetch );
 }
 
 void libxsmm_generator_dense_avx(char**             io_generated_code,

@@ -32,6 +32,30 @@
 #ifndef GENERATOR_DENSE_INSTRUCTIONS_H
 #define GENERATOR_DENSE_INSTRUCTIONS_H
 
+#include "generator_common.h"
+
+/**
+ * Opens the inline assembly section / jit stream
+ *
+ * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param i_gp_reg_mapping gp register mapping for initialization
+ * @param i_prefetch prefetch mode which may result in addtional gp reg inits
+ */
+void libxsmm_generator_dense_sse_avx_open_instrucion_stream( char**                        io_generated_code,
+                                                             const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                             const char*                   i_prefetch);
+
+/**
+ * Closes the inline assembly section / jit stream
+ *
+ * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param i_gp_reg_mapping gp register mapping for clobbering
+ * @param i_prefetch prefetch mode which may result in addtional gp reg clobbers
+ */
+void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**                        io_generated_code,
+                                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                               const char*                   i_prefetch);
+
 /**
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not
  * supported by this function
