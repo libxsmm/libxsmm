@@ -161,7 +161,7 @@ void libxsmm_generator_dense_footer_kloop(char**             io_generated_code,
   libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_kloop, i_k );
   sprintf( l_new_code, "2%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );
-  if ( i_kloop_complete !=0 ) {
+  if ( i_kloop_complete != 0 ) {
     libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_b, i_k*i_datatype_size );
   }
 #if 0

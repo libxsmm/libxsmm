@@ -195,10 +195,6 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
                                         const unsigned int i_single_precision,
                                         const unsigned int i_vector_length,
                                         const char*        i_vector_name) {
-  /* functions pointers such that we can handle different m_blockings dynamically */
-  void (*l_generatorLoad)   (char** io_generated_code, int, int, int, int);
-  void (*l_generatorStore)  (char** io_generated_code, int, int, int, char*);
-  void (*l_generatorCompute)(char** io_generated_code, int, int, int, int, int, int, int);
   unsigned int l_n_done = 0;
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
@@ -212,52 +208,19 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   char* l_vmul_instr = "vfmadd231pd";
   char* l_vadd_instr = NULL;
   unsigned int l_datatype_size = 8;
+
+  unsigned int l_gp_reg_a = 9;
+  unsigned int l_gp_reg_b = 8;
+  unsigned int l_gp_reg_c = 10;
+  unsigned int l_gp_reg_pre_a = 11;
+  unsigned int l_gp_reg_pre_b = 12;
+  unsigned int l_gp_reg_mloop = 14;
+  unsigned int l_gp_reg_nloop = 15;
+  unsigned int l_gp_reg_kloop = 13;
   
   /* open asm */
   libxsmm_generator_dense_sse_avx_open_kernel( io_generated_code,
                                                i_prefetch);
-
-  libxsmm_generator_dense_avx_load_C_MxN( io_generated_code,
-                                          l_c_vmove_instr,
-                                        10,
-                                        l_vxor_instr,
-                                        i_vector_name,
-                                        3,
-                                        l_n_blocking,
-                                        i_ldc,
-                                        i_beta,
-                                        i_vector_length,
-                                        l_datatype_size);
-
-  libxsmm_generator_dense_avx_store_C_MxN( io_generated_code,
-                                        l_c_vmove_instr,
-                                        10,
-                                        l_prefetch_instr,
-                                        12,
-                                        i_vector_name,
-                                        i_prefetch,
-                                        3,
-                                        l_n_blocking,
-                                        i_ldc,
-                                        i_vector_length,
-                                        l_datatype_size);
-
-  libxsmm_generator_dense_avx_compute_MxN(io_generated_code,
-                                          l_a_vmove_instr,
-                                          l_b_vmove_instr,
-                                          l_alu_add_instr,
-                                          9,
-                                          8,
-                                          l_vmul_instr,
-                                          l_vadd_instr,                                          
-                                          i_vector_name,
-                                          3,
-                                          l_n_blocking,
-                                          i_lda,
-                                          i_ldb,
-                                          i_vector_length,
-                                          l_datatype_size,
-                                          -1);
   
   /* apply n_blocking */
   while (l_n_done != i_n) {
@@ -265,18 +228,19 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
     l_n_done = l_n_done + (((i_n - l_n_done_old) / l_n_blocking) * l_n_blocking);
 
     if (l_n_done != l_n_done_old && l_n_done > 0) {
-#if 0
-      header_nloop_dp_asm(codestream, n_blocking);
-  
-      int k_blocking = 4;
-      int k_threshold = 30;
-      int mDone = 0;
-      int mDone_old = 0;
-      int m_blocking = 16;
 
-      // apply m_blocking
-      while (mDone != M) {
-        if (mDone == 0) {
+      libxsmm_generator_dense_header_nloop( io_generated_code, l_gp_reg_mloop, l_gp_reg_nloop, l_n_blocking );
+  
+      unsigned int l_k_blocking = 4;
+      unsigned int l_k_threshold = 30;
+      unsigned int l_m_done = 0;
+      unsigned int l_m_done_old = 0;
+      unsigned int l_m_blocking = 12;
+
+      /* apply m_blocking */
+      while (l_m_done != i_m) {
+#if 0
+        if (mDone == 0) { 
           mDone_old = mDone;
           if (M == 56) {
             mDone = 32;
@@ -284,59 +248,41 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
             mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
           }  
         } else {
-          mDone_old = mDone;
-          mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
-        }
+#endif
+        /* @TODO enable upper part again later */
+        l_m_done_old = l_m_done;
+        l_m_done = l_m_done + (((i_m - l_m_done_old) / l_m_blocking) * l_m_blocking);
+  
+        if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
+          libxsmm_generator_dense_header_mloop( io_generated_code, l_gp_reg_mloop, l_m_blocking );
+          libxsmm_generator_dense_avx_load_C_MxN( io_generated_code, l_c_vmove_instr, l_gp_reg_c, l_vxor_instr, i_vector_name,
+                                                  l_m_blocking/i_vector_length, l_n_blocking, i_ldc, i_beta, i_vector_length, l_datatype_size);
 
-        // switch to a different m_blocking
-        if (m_blocking == 16) {
-          l_generatorLoad = &avx2_load_16xN_dp_asm;
-          l_generatorStore = &avx2_store_16xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_16xN_dp_asm;
-        } else if (m_blocking == 12) {
-          l_generatorLoad = &avx_load_12xN_dp_asm;
-          l_generatorStore = &avx_store_12xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_12xN_dp_asm;
-        } else if (m_blocking == 8) {
-          l_generatorLoad = &avx_load_8xN_dp_asm;
-          l_generatorStore = &avx_store_8xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_8xN_dp_asm;
-        } else if (m_blocking == 4) {
-          l_generatorLoad = &avx_load_4xN_dp_asm;
-          l_generatorStore = &avx_store_4xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_4xN_dp_asm;
-        } else if (m_blocking == 2) {
-          l_generatorLoad = &avx_load_2xN_dp_asm;
-          l_generatorStore = &avx_store_2xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_2xN_dp_asm;
-        } else if (m_blocking == 1) {
-          l_generatorLoad = &avx_load_1xN_dp_asm;
-          l_generatorStore = &avx_store_1xN_dp_asm;
-          l_generatorCompute = &avx2_kernel_1xN_dp_asm;      
-        } else {
-          std::cout << " !!! ERROR, avx2_generate_kernel_dp, m_blocking is out of range!!! " << std::endl;
-          exit(-1);
-        }
-
-        if (mDone != mDone_old && mDone > 0) {
-          header_mloop_dp_asm(codestream, m_blocking);
-          (*l_generatorLoad)(codestream, ldc, alignC, i_beta, n_blocking);
-
-          if ((K % k_blocking) == 0 && K > k_threshold) {
-            header_kloop_dp_asm(codestream, m_blocking, k_blocking);
-
-            for (int k = 0; k < k_blocking; k++) {
-	      (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, -1, n_blocking);
+          /* apply multiple k_blocking strategies */
+          /* 1. we are larger the k_threshold and a multple of a predefined blocking parameter */
+          if ((i_k % l_k_blocking) == 0 && i_k > l_k_threshold) {
+            libxsmm_generator_dense_header_kloop( io_generated_code, l_gp_reg_kloop, l_m_blocking, l_k_blocking);
+            
+            unsigned int l_k;
+            for ( l_k = 0; l_k < l_k_blocking; l_k++) {
+	      libxsmm_generator_dense_avx_compute_MxN(io_generated_code, l_a_vmove_instr, l_b_vmove_instr, l_alu_add_instr, l_gp_reg_a, l_gp_reg_b, 
+                                                      l_vmul_instr, l_vadd_instr, i_vector_name, l_m_blocking/i_vector_length, l_n_blocking,
+                                                      i_lda, i_ldb, i_vector_length, l_datatype_size, -1);
             }
 
-            footer_kloop_dp_asm(codestream, m_blocking, K);
+            libxsmm_generator_dense_footer_kloop( io_generated_code, l_gp_reg_kloop, l_gp_reg_b, l_m_blocking, i_k, l_datatype_size, 1 );
           } else {
-            // we want to fully unroll
-            if (K <= k_threshold) {
-              for (int k = 0; k < K; k++) {
-	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
+            /* 2. we want to fully unroll below the threshold */
+            if (i_k <= l_k_threshold) {
+              unsigned int l_k;
+              for ( l_k = 0; l_k < i_k; l_k++) {
+	        libxsmm_generator_dense_avx_compute_MxN(io_generated_code, l_a_vmove_instr, l_b_vmove_instr, l_alu_add_instr, l_gp_reg_a, l_gp_reg_b, 
+                                                        l_vmul_instr, l_vadd_instr, i_vector_name, l_m_blocking/i_vector_length, l_n_blocking,
+                                                        i_lda, i_ldb, i_vector_length, l_datatype_size, l_k);
 	      }
+            /* 3. we are large than the threshold but not a multiple of the blocking factor -> largest possible blocking + remainder handling */
             } else {
+#if 0
 	      // we want to block, but K % k_blocking != 0
 	      int max_blocked_K = (K/k_blocking)*k_blocking;
 	      if (max_blocked_K > 0 ) {
@@ -352,31 +298,34 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
 	      for (int k = max_blocked_K; k < K; k++) {
 	        (*l_generatorCompute)(codestream, lda, ldb, ldc, alignA, alignC, k, n_blocking);
 	      }
+#endif
             }
           }
 
-          (*l_generatorStore)(codestream, ldc, alignC, n_blocking, tPrefetch);
-          footer_mloop_dp_asm(codestream, m_blocking, K, mDone, lda, tPrefetch);
+          libxsmm_generator_dense_avx_store_C_MxN( io_generated_code, l_c_vmove_instr, l_gp_reg_c, l_prefetch_instr, l_gp_reg_pre_b, i_vector_name,
+                                                   i_prefetch, l_m_blocking/i_vector_length, l_n_blocking, i_ldc, i_vector_length, l_datatype_size);
+          libxsmm_generator_dense_footer_mloop( io_generated_code, l_gp_reg_a, l_gp_reg_c, l_gp_reg_mloop, l_m_blocking,
+                                                i_m, i_k, i_lda, i_prefetch, l_gp_reg_pre_b, l_datatype_size);
         }
 
-        // switch to a different m_blocking
-        if (m_blocking == 2) {
-          m_blocking = 1;
-        } else if (m_blocking == 4) {
-          m_blocking = 2;
-        } else if (m_blocking == 8) {
-          m_blocking = 4;
-        } else if (m_blocking == 12) {
-          m_blocking = 8;
-        } else if (m_blocking == 16) {
-          m_blocking = 12;
+        /* switch to next smaller m_blocking */
+        if (l_m_blocking == 2) {
+          l_m_blocking = 1;
+        } else if (l_m_blocking == 4) {
+          l_m_blocking = 2;
+        } else if (l_m_blocking == 8) {
+          l_m_blocking = 4;
+        } else if (l_m_blocking == 12) {
+          l_m_blocking = 8;
+        } else if (l_m_blocking == 16) {
+          l_m_blocking = 12;
         } else {
-          // we are done with m_blocking
+          /* we are done with m_blocking */
         }
       }
 
-      footer_nloop_dp_asm(codestream, n_blocking, nDone, M, lda, ldb, ldc, tPrefetch);
-#endif
+      libxsmm_generator_dense_footer_nloop( io_generated_code, l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_nloop, l_n_blocking,
+                                            i_m, i_n, i_ldb, i_ldc, i_prefetch, l_gp_reg_pre_b, l_datatype_size);
     }
 
     /* switch to a different, smaller n_blocking */
