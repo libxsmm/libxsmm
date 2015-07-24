@@ -216,14 +216,14 @@ void libxsmm_generator_dense_avx_kernel(char**             io_generated_code,
   /* define gp register mapping */
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_R9;
-  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R8;
+  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_R8;
+  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R9;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_R10;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R11;
-  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R12;
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R14;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R15;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R13; 
+  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R15;
+  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
+  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
+  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14; 
   
   unsigned int l_n_done = 0;
   unsigned int l_n_done_old = 0;
