@@ -117,3 +117,32 @@ void libxsmm_instruction_alu_imm( char**             io_generated_code,
   } 
 }
 
+void libxsmm_instruction_register_jump_label( char**      io_generated_code,
+                                              const char* i_jmp_label ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code != NULL ) {
+    char l_new_code[512];
+    l_new_code[0] = '\0';
+
+    sprintf(l_new_code, "                       \"%s:\\n\\t\"\n", i_jmp_label );
+    libxsmm_append_string( io_generated_code, l_new_code );
+  } else {
+    /* @TODO GREG call encoding here */
+  }   
+}
+
+void libxsmm_instruction_jump_to_label( char**      io_generated_code,
+                                        const char* i_jmp_instr,
+                                        const char* i_jmp_label ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code != NULL ) {
+    char l_new_code[512];
+    l_new_code[0] = '\0';
+
+    sprintf(l_new_code, "                       \"%s %s\\n\\t\"\n", i_jmp_instr, i_jmp_label );
+    libxsmm_append_string( io_generated_code, l_new_code );
+  } else {
+    /* @TODO GREG call encoding here */
+  }
+}
+

@@ -189,8 +189,33 @@ void libxsmm_generator_dense_header_nloop(char**             io_generated_code,
 #endif
 }
 
+
+void libxsmm_generator_dense_footer_nloop(char**             io_generated_code,
+                                          const unsigned int i_gp_reg_a,
+                                          const unsigned int i_gp_reg_b,
+                                          const unsigned int i_gp_reg_c,
+                                          const unsigned int i_gp_reg_nloop,
+                                          const unsigned int i_n_blocking,
+                                          const unsigned int i_m,
+                                          const unsigned int i_n,
+                                          const unsigned int i_ldb,
+                                          const unsigned int i_ldc,
+                                          const char*        i_prefetch,
+                                          const unsigned int i_gp_reg_pre_b,
+                                          const unsigned int i_datatype_size) {
+  char l_new_code[32];
+  l_new_code[0] = '\0';
+
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_c, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
+  if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
+    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_pre_b, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
+  }
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_b, (i_n_blocking*i_ldb*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_a, (i_m*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_nloop, i_n );
+  sprintf( l_new_code, "1%ib", i_n_blocking );
+  libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
 #if 0
-void libxsmm_generator_dense_footer_nloop(std::stringstream& codestream, int n_blocking, int N, int M, int lda, int ldb, int ldc, std::string tPrefetch) {
   codestream << "                         \"addq $" << ((n_blocking)*ldc * 8) - (M * 8) << ", %%r10\\n\\t\"" << std::endl;
   if (tPrefetch.compare("BL2viaC") == 0) {
     codestream << "                         \"addq $" << ((n_blocking)*ldc * 8) - (M * 8) << ", %%r12\\n\\t\"" << std::endl;
@@ -199,14 +224,48 @@ void libxsmm_generator_dense_footer_nloop(std::stringstream& codestream, int n_b
   codestream << "                         \"subq $" << M * 8 << ", %%r9\\n\\t\"" << std::endl;
   codestream << "                         \"cmpq $" << N << ", %%r15\\n\\t\"" << std::endl;
   codestream << "                         \"jl 1" << n_blocking << "b\\n\\t\"" << std::endl;
+#endif
 }
 
-void libxsmm_generator_dense_header_mloop(std::stringstream& codestream, int m_blocking) {
+
+void libxsmm_generator_dense_header_mloop(char**             io_generated_code,
+                                          const unsigned int i_gp_reg_mloop,
+                                          const unsigned int i_m_blocking ) {
+  char l_new_code[32];
+  l_new_code[0] = '\0';
+
+  sprintf( l_new_code, "100%i", i_m_blocking );
+  libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mloop, i_m_blocking );
+#if 0
   codestream << "                         \"100" << m_blocking << ":\\n\\t\"" << std::endl;
   codestream << "                         \"addq $" << m_blocking << ", %%r14\\n\\t\"" << std::endl;
+#endif
 }
 
-void footer_mloop_dp_asm(std::stringstream& codestream, int m_blocking, int K, int M_done, int lda, std::string tPrefetch) {
+void libxsmm_generator_dense_footer_mloop(char**             io_generated_code,
+                                          const unsigned int i_gp_reg_a,
+                                          const unsigned int i_gp_reg_c,
+                                          const unsigned int i_gp_reg_mloop,
+                                          const unsigned int i_m_blocking,
+                                          const unsigned int i_m,
+                                          const unsigned int i_k,
+                                          const unsigned int i_lda,
+                                          const char*        i_prefetch,
+                                          const unsigned int i_gp_reg_pre_b,
+                                          const unsigned int i_datatype_size) {
+  char l_new_code[32];
+  l_new_code[0] = '\0';
+
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_c, i_m_blocking*i_datatype_size );
+  if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
+    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_pre_b, i_m_blocking*i_datatype_size );
+  }
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_a, (i_k * i_datatype_size * i_lda) - (i_m_blocking * i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mloop, i_m );
+  sprintf( l_new_code, "100%ib", i_m_blocking );
+  libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
+#if 0
   codestream << "                         \"addq $" << m_blocking * 8 << ", %%r10\\n\\t\"" << std::endl;
   if (tPrefetch.compare("BL2viaC") == 0) {
     codestream << "                         \"addq $" << m_blocking * 8 << ", %%r12\\n\\t\"" << std::endl;
@@ -214,6 +273,6 @@ void footer_mloop_dp_asm(std::stringstream& codestream, int m_blocking, int K, i
   codestream << "                         \"subq $" << (K * 8 * lda) - (m_blocking * 8) << ", %%r9\\n\\t\"" << std::endl;
   codestream << "                         \"cmpq $" << M_done << ", %%r14\\n\\t\"" << std::endl;
   codestream << "                         \"jl 100" << m_blocking << "b\\n\\t\"" << std::endl;
-}
 #endif
+}
 

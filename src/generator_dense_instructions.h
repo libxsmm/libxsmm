@@ -98,5 +98,25 @@ void libxsmm_instruction_alu_imm( char**             io_generated_code,
                                   const unsigned int i_gp_reg_number,
                                   const unsigned int i_immediate);
 
+/**
+ * Generates regular all instructions with immediates
+ *
+ * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param i_jmp_label jump label that is insert into the code
+*/
+void libxsmm_instruction_register_jump_label( char**      io_generated_code,
+                                              const char* i_jmp_label );
+
+/**
+ * Generates regular all instructions with immediates
+ *
+ * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param i_jmp_instr the particular jump instruction used
+ * @param i_jmp_label jump label that is the target of the jump, THIS IS NOT CHECKED, YOU TO ENSURE THAT IT EXISTS IN ORDER TO AVOID ASSEMBLER ERRORS
+*/
+void libxsmm_instruction_jump_to_label( char**      io_generated_code,
+                                        const char* i_jmp_instr,
+                                        const char* i_jmp_label );
+
 #endif /* GENERATOR_DENSE_INSTRUCTIONS_H */
 
