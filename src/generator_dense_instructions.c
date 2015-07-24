@@ -58,7 +58,7 @@ void libxsmm_instruction_vec_move( char**             io_generated_code,
     }
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   } 
 }
 
@@ -77,7 +77,7 @@ void libxsmm_instruction_vec_compute_reg( char**             io_generated_code,
     sprintf(l_new_code, "                       \"%s %%%%%s%i, %%%%%s%i, %%%%%s%i\\n\\t\"\n", i_vec_instr, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   } 
 }
 
@@ -95,7 +95,7 @@ void libxsmm_instruction_prefetch( char**             io_generated_code,
     sprintf(l_new_code, "                       \"%s %i(%%%%%s)\\n\\t\"\n", i_prefetch_instr, i_displacement, l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   } 
 }
 
@@ -113,7 +113,7 @@ void libxsmm_instruction_alu_imm( char**             io_generated_code,
     sprintf(l_new_code, "                       \"%s $%i, %%%%%s\\n\\t\"\n", i_alu_instr, i_immediate, l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   } 
 }
 
@@ -127,7 +127,7 @@ void libxsmm_instruction_register_jump_label( char**      io_generated_code,
     sprintf(l_new_code, "                       \"%s:\\n\\t\"\n", i_jmp_label );
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   }   
 }
 
@@ -142,7 +142,7 @@ void libxsmm_instruction_jump_to_label( char**      io_generated_code,
     sprintf(l_new_code, "                       \"%s %s\\n\\t\"\n", i_jmp_instr, i_jmp_label );
     libxsmm_append_string( io_generated_code, l_new_code );
   } else {
-    /* @TODO GREG call encoding here */
+    /* @TODO-GREG call encoding here */
   }
 }
 
