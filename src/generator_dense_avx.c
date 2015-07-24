@@ -49,14 +49,22 @@ void libxsmm_generator_dense_avx_load_C_MxN(char**             io_generated_code
                                             const int          i_beta,
                                             const unsigned int i_vector_length,
                                             const unsigned int i_datatype_size) {
-  /* @TODO fix this test */ 
-  if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, i_n_blocking smaller 1 or larger 3!!!\n");
+#ifndef NDEGUG
+  /* Do some test if it's possible to generated the requested code. 
+     This is not done in release mode and therefore bad
+     things might happen.... HUAAH */ 
+  if ( (i_n_blocking * i_m_blocking > 12) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
     exit(-1);
   }
+#endif
 
+  /* register blocking counter in n */
   unsigned int l_n = 0;
+  /* register blocking counter in m */
   unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * i_m_blocking);
 
   /* C accumulator has registers xmm/ymm7-15 */
   if (i_beta == 1) {
@@ -64,7 +72,7 @@ void libxsmm_generator_dense_avx_load_C_MxN(char**             io_generated_code
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < i_m_blocking; l_m++ ) {
         libxsmm_instruction_vec_move( io_generated_code, 
-                                      i_vload_instr, i_gp_reg_load, ((l_n * i_ldc) + (l_m * i_vector_length)) * i_datatype_size, i_vector_name, 7 + l_m + (i_m_blocking * l_n), 0 );
+                                      i_vload_instr, i_gp_reg_load, ((l_n * i_ldc) + (l_m * i_vector_length)) * i_datatype_size, i_vector_name, l_vec_reg_acc_start + l_m + (i_m_blocking * l_n), 0 );
       }
     }
   } else {
@@ -72,7 +80,7 @@ void libxsmm_generator_dense_avx_load_C_MxN(char**             io_generated_code
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < i_m_blocking; l_m++ ) { 
         libxsmm_instruction_vec_compute_reg( io_generated_code, 
-                                             i_vxor_instr, i_vector_name, 7 + l_m + (i_m_blocking * l_n), 7 + l_m + (i_m_blocking * l_n), 7 + l_m + (i_m_blocking * l_n) );
+                                             i_vxor_instr, i_vector_name, l_vec_reg_acc_start + l_m + (i_m_blocking * l_n), l_vec_reg_acc_start + l_m + (i_m_blocking * l_n), l_vec_reg_acc_start + l_m + (i_m_blocking * l_n) );
       }
     }
   }
@@ -91,20 +99,26 @@ void libxsmm_generator_dense_avx_store_C_MxN(char** io_generated_code,
                                              const unsigned int i_vector_length,
                                              const unsigned int i_datatype_size) {
   /* @TODO fix this test */ 
+#ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_store_MxN, i_n_blocking smaller 1 or larger 3!!!\n");
     exit(-1);
   }
+#endif
 
+  /* register blocking counter in n */
   unsigned int l_n = 0;
+  /* register blocking counter in m */
   unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * i_m_blocking);
 
   /* C accumulator has registers xmm/ymm7-15 */
   /* adding to C, so let's load C */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < i_m_blocking; l_m++ ) {
       libxsmm_instruction_vec_move( io_generated_code, 
-                                    i_vstore_instr, i_gp_reg_store, ((l_n * i_ldc) + (l_m * i_vector_length)) * i_datatype_size, i_vector_name, 7 + l_m + (i_m_blocking * l_n), 1 );
+                                    i_vstore_instr, i_gp_reg_store, ((l_n * i_ldc) + (l_m * i_vector_length)) * i_datatype_size, i_vector_name, l_vec_reg_acc_start + l_m + (i_m_blocking * l_n), 1 );
     }
   }
 
@@ -138,13 +152,19 @@ void libxsmm_generator_dense_avx_compute_MxN(char** io_generated_code,
                                              const unsigned int i_datatype_size,
                                              const int          i_offset) {
   /* @TODO fix this test */
+#ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_compute_MxN, i_n_blocking smaller 1 or larger 3!!!\n");
     exit(-1);
   }
+#endif
 
-  unsigned int l_n;
-  unsigned int l_m;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * i_m_blocking);
 
   /* broadcast from B -> into vec registers 0 to i_n_blocking */
   if ( i_offset != (-1) ) { 
@@ -174,7 +194,7 @@ void libxsmm_generator_dense_avx_compute_MxN(char** io_generated_code,
       /* issue fma / mul-add */
       /* @TODO add support for mul/add */
       libxsmm_instruction_vec_compute_reg( io_generated_code, 
-                                           i_vmul_instr, i_vector_name, i_n_blocking, l_n, 7 + l_m + (i_m_blocking * l_n) );
+                                           i_vmul_instr, i_vector_name, i_n_blocking, l_n, l_vec_reg_acc_start + l_m + (i_m_blocking * l_n) );
     }
   }
 }

@@ -164,7 +164,7 @@ void libxsmm_generator_dense(const char*        i_file_out,
 
 #ifndef NDEBUG
   printf("code was generated and exported to %s \n", i_file_out);
-  printf("generated code:\n%s", l_generated_code);
+  /*printf("generated code:\n%s", l_generated_code);*/
 #endif
  
   free(l_generated_code);
