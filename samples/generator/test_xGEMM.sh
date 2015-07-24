@@ -36,7 +36,7 @@ cd ./../../
 make clean
 make generator_backend
 
-cd ./sample/generator/
+cd ./samples/generator/
 
 # select architecture for validation
 ARCH=hsw
@@ -64,7 +64,7 @@ do
     for k in ${K}
     do 
       rm -rf gen_matmul_dense.hpp
-      ./../generator.exe dense gen_matmul_dense.hpp dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} pfsigonly ${PREC}
+      ./../../bin/generator dense gen_matmul_dense.hpp dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} pfsigonly ${PREC}
       if [ "${ARCH}" == 'wsm' ]; then
         icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
         ./xgemm_${m}_${n}_${k}
