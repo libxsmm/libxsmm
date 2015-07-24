@@ -89,8 +89,8 @@ void libxsmm_close_function(char** io_generated_code) {
   libxsmm_append_string(io_generated_code, "}\n\n");
 }
 
-void libxsmm_get_x86_64_gp_reg_name( const unsigned int i_gp_reg_number,
-                                     char*              i_gp_reg_name ) {
+void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
+                                  char*              i_gp_reg_name ) {
   switch (i_gp_reg_number) {
     case LIBXSMM_X86_GP_REG_RAX: 
       strcpy(i_gp_reg_name, "rax");
@@ -144,5 +144,22 @@ void libxsmm_get_x86_64_gp_reg_name( const unsigned int i_gp_reg_number,
       fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
       exit(-1);
   }
+}
+
+void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
+  i_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
+  i_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
 }
 

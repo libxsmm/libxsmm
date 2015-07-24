@@ -56,12 +56,12 @@
   char* 
 */
 
-struct libxsmm_gp_reg_mapping {
+typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_b;
   unsigned int gp_reg_c;
-  unsigned int gp_reg_pre_a;
-  unsigned int gp_reg_pre_b;
+  unsigned int gp_reg_a_prefetch;
+  unsigned int gp_reg_b_prefetch;
   unsigned int gp_reg_mloop;
   unsigned int gp_reg_nloop;
   unsigned int gp_reg_kloop;
@@ -71,7 +71,7 @@ struct libxsmm_gp_reg_mapping {
   unsigned int gp_reg_help_3;
   unsigned int gp_reg_help_4;
   unsigned int gp_reg_help_5;
-};
+} libxsmm_gp_reg_mapping;
 
 char* libxsmm_empty_string();
 
@@ -79,7 +79,9 @@ int libxsmm_append_string( char** io_string_1, const char* i_string_2 );
 
 void libxsmm_close_function( char** io_generated_code );
 
-void libxsmm_get_x86_64_gp_reg_name( const unsigned int i_gp_reg_number,
-                                     char*              i_gp_reg_name ); 
+void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
+                                  char*              i_gp_reg_name ); 
+
+void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping );
 
 #endif /* GENERATOR_COMMON_H */

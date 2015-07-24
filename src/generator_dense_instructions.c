@@ -48,7 +48,7 @@ void libxsmm_instruction_vec_move( char**             io_generated_code,
     char l_new_code[512];
     l_new_code[0] = '\0';
     char l_gp_reg_name[4];
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
 
     /* build vmovpd/ps/sd/ss instruction, load use */
     if ( i_is_store == 0 ) {
@@ -90,7 +90,7 @@ void libxsmm_instruction_prefetch( char**             io_generated_code,
     char l_new_code[512];
     l_new_code[0] = '\0';
     char l_gp_reg_name[4];
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
 
     sprintf(l_new_code, "                       \"%s %i(%%%%%s)\\n\\t\"\n", i_prefetch_instr, i_displacement, l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
@@ -108,7 +108,7 @@ void libxsmm_instruction_alu_imm( char**             io_generated_code,
     char l_new_code[512];
     l_new_code[0] = '\0';
     char l_gp_reg_name[4];
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
 
     sprintf(l_new_code, "                       \"%s $%i, %%%%%s\\n\\t\"\n", i_alu_instr, i_immediate, l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );

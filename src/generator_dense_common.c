@@ -98,46 +98,39 @@ void libxsmm_generator_dense_add_flop_counter( char**             io_generated_c
   libxsmm_append_string( io_generated_code, "#endif\n\n");
 }
 
-void libxsmm_generator_dense_sse_avx_open_kernel( char**      io_generated_code,
-                                                  const unsigned int i_gp_reg_a,
-                                                  const unsigned int i_gp_reg_b,
-                                                  const unsigned int i_gp_reg_c,
-                                                  const unsigned int i_gp_reg_pre_a,
-                                                  const unsigned int i_gp_reg_pre_b,
-                                                  const unsigned int i_gp_reg_mloop,
-                                                  const unsigned int i_gp_reg_nloop,
-                                                  const unsigned int i_gp_reg_kloop,
-                                                  const char* i_prefetch) { 
+void libxsmm_generator_dense_sse_avx_open_kernel( char**                        io_generated_code,
+                                                  const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                  const char*                   i_prefetch) { 
   if ( io_generated_code != NULL ) {
     char l_new_code[512];
     char l_gp_reg_name[4];
     
     /* loading b pointer in assembley */
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_b, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name );
     sprintf( l_new_code, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
 
     /* loading a pointer in assembley */
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_a, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name );
     sprintf( l_new_code, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
 
     /* loading c pointer in assembley */
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_c, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name );
     sprintf( l_new_code, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_string( io_generated_code, l_new_code );
 
     /* loading b prefetch pointer in assembly */
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
-      libxsmm_get_x86_64_gp_reg_name( i_gp_reg_pre_b, l_gp_reg_name );
-      sprintf( l_new_code, "  __asm__ __volatile__(\"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
+      sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_string( io_generated_code, l_new_code );
     /* loading a prefetch pointer in assembly */
     } else if ( ( strcmp(i_prefetch, "AL1viaC") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
-      libxsmm_get_x86_64_gp_reg_name( i_gp_reg_pre_a, l_gp_reg_name );
-      sprintf( l_new_code, "  __asm__ __volatile__(\"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
+      sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_string( io_generated_code, l_new_code );
     } else {}
   } else {
@@ -146,21 +139,14 @@ void libxsmm_generator_dense_sse_avx_open_kernel( char**      io_generated_code,
   }
 
   /* reset loop counters */
-  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mloop, 0);
-  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_nloop, 0);
-  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_kloop, 0);
+  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_mloop, 0);
+  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_nloop, 0);
+  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_kloop, 0);
 }
 
-void libxsmm_generator_dense_sse_avx_close_kernel( char**      io_generated_code,
-                                                   const unsigned int i_gp_reg_a,
-                                                   const unsigned int i_gp_reg_b,
-                                                   const unsigned int i_gp_reg_c,
-                                                   const unsigned int i_gp_reg_pre_a,
-                                                   const unsigned int i_gp_reg_pre_b,
-                                                   const unsigned int i_gp_reg_mloop,
-                                                   const unsigned int i_gp_reg_nloop,
-                                                   const unsigned int i_gp_reg_kloop,
-                                                   const char* i_prefetch) {
+void libxsmm_generator_dense_sse_avx_close_kernel( char**                        io_generated_code,
+                                                   const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                   const char*                   i_prefetch) {
   if ( io_generated_code != NULL) {
     char l_new_code[512];
     char l_gp_reg_a[4];
@@ -172,14 +158,14 @@ void libxsmm_generator_dense_sse_avx_close_kernel( char**      io_generated_code
     char l_gp_reg_nloop[4];
     char l_gp_reg_kloop[4];
 
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_a, l_gp_reg_a );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_b, l_gp_reg_b );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_c, l_gp_reg_c );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_pre_a, l_gp_reg_pre_a );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_pre_b, l_gp_reg_pre_b );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_mloop, l_gp_reg_mloop );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_nloop, l_gp_reg_nloop );
-    libxsmm_get_x86_64_gp_reg_name( i_gp_reg_kloop, l_gp_reg_kloop );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_a );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_b );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_c );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_pre_a );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_pre_b );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_mloop );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_nloop );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop );
 
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
@@ -198,110 +184,101 @@ void libxsmm_generator_dense_sse_avx_close_kernel( char**      io_generated_code
   }
 }
 
-void libxsmm_generator_dense_header_kloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_kloop,
-                                          const unsigned int i_m_blocking,
-                                          const unsigned int i_k_blocking) {
+void libxsmm_generator_dense_header_kloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_m_blocking,
+                                          const unsigned int            i_k_blocking) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_kloop, 0);
+  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_kloop, 0);
   sprintf( l_new_code, "2%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_kloop, i_k_blocking);
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
 
-void libxsmm_generator_dense_footer_kloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_kloop,
-                                          const unsigned int i_gp_reg_b,
-                                          const unsigned int i_m_blocking,
-                                          const unsigned int i_k,
-                                          const unsigned int i_datatype_size,
-                                          const unsigned int i_kloop_complete ) {
+void libxsmm_generator_dense_footer_kloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_m_blocking,
+                                          const unsigned int            i_k,
+                                          const unsigned int            i_datatype_size,
+                                          const unsigned int            i_kloop_complete ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_kloop, i_k );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_kloop, i_k );
   sprintf( l_new_code, "2%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );
   if ( i_kloop_complete != 0 ) {
-    libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_b, i_k*i_datatype_size );
+    libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_b, i_k*i_datatype_size );
   }
 }
 
-void libxsmm_generator_dense_header_nloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_mloop,
-                                          const unsigned int i_gp_reg_nloop,
-                                          const unsigned int i_n_blocking) {
+void libxsmm_generator_dense_header_nloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_n_blocking) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
   sprintf( l_new_code, "1%i", i_n_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_nloop, i_n_blocking );
-  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mloop, 0 );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_nloop, i_n_blocking );
+  libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_mloop, 0 );
 }
 
 
-void libxsmm_generator_dense_footer_nloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_a,
-                                          const unsigned int i_gp_reg_b,
-                                          const unsigned int i_gp_reg_c,
-                                          const unsigned int i_gp_reg_nloop,
-                                          const unsigned int i_n_blocking,
-                                          const unsigned int i_m,
-                                          const unsigned int i_n,
-                                          const unsigned int i_ldb,
-                                          const unsigned int i_ldc,
-                                          const char*        i_prefetch,
-                                          const unsigned int i_gp_reg_pre_b,
-                                          const unsigned int i_datatype_size) {
+void libxsmm_generator_dense_footer_nloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_n_blocking,
+                                          const unsigned int            i_m,
+                                          const unsigned int            i_n,
+                                          const unsigned int            i_ldb,
+                                          const unsigned int            i_ldc,
+                                          const char*                   i_prefetch,
+                                          const unsigned int            i_datatype_size) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_c, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_c, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
   if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
-    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_pre_b, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
+    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b_prefetch, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
   }
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_b, (i_n_blocking*i_ldb*i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_a, (i_m*i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_nloop, i_n );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b, (i_n_blocking*i_ldb*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, (i_m*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_nloop, i_n );
   sprintf( l_new_code, "1%ib", i_n_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
 }
 
 
-void libxsmm_generator_dense_header_mloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_mloop,
-                                          const unsigned int i_m_blocking ) {
+void libxsmm_generator_dense_header_mloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_m_blocking ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
   sprintf( l_new_code, "100%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mloop, i_m_blocking );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_mloop, i_m_blocking );
 }
 
-void libxsmm_generator_dense_footer_mloop(char**             io_generated_code,
-                                          const unsigned int i_gp_reg_a,
-                                          const unsigned int i_gp_reg_c,
-                                          const unsigned int i_gp_reg_mloop,
-                                          const unsigned int i_m_blocking,
-                                          const unsigned int i_m,
-                                          const unsigned int i_k,
-                                          const unsigned int i_lda,
-                                          const char*        i_prefetch,
-                                          const unsigned int i_gp_reg_pre_b,
-                                          const unsigned int i_datatype_size) {
+void libxsmm_generator_dense_footer_mloop(char**                        io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const unsigned int            i_m_blocking,
+                                          const unsigned int            i_m,
+                                          const unsigned int            i_k,
+                                          const unsigned int            i_lda,
+                                          const char*                   i_prefetch,
+                                          const unsigned int            i_datatype_size) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_c, i_m_blocking*i_datatype_size );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_c, i_m_blocking*i_datatype_size );
   if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
-    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_pre_b, i_m_blocking*i_datatype_size );
+    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b_prefetch, i_m_blocking*i_datatype_size );
   }
-  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_a, (i_k * i_datatype_size * i_lda) - (i_m_blocking * i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mloop, i_m );
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, (i_k * i_datatype_size * i_lda) - (i_m_blocking * i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_mloop, i_m );
   sprintf( l_new_code, "100%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
 }
