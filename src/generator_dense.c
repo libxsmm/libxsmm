@@ -152,7 +152,7 @@ void libxsmm_generator_dense(const char*        i_file_out,
   /* close current function */
   libxsmm_close_function( &l_generated_code );
 
-#ifdef DEBUG
+#ifndef NDEBUG
   printf("code was generated and exported to %s \n", i_file_out);
   printf("generated code:\n%s", l_generated_code);
 #endif
