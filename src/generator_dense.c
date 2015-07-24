@@ -152,6 +152,16 @@ void libxsmm_generator_dense(const char*        i_file_out,
   /* close current function */
   libxsmm_close_function( &l_generated_code );
 
+  /* append code to source file */
+  FILE *l_file_handle = fopen( i_file_out, "a" );
+  if ( l_file_handle != NULL ) {
+    fputs( l_generated_code, l_file_handle );
+    fclose( l_file_handle );
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense could not write to into destination source file\n");
+    exit(-1);
+  }
+
 #ifndef NDEBUG
   printf("code was generated and exported to %s \n", i_file_out);
   printf("generated code:\n%s", l_generated_code);
