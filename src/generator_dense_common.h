@@ -40,48 +40,39 @@ void libxsmm_generator_dense_add_isa_check_header( char**       io_generated_cod
 void libxsmm_generator_dense_add_isa_check_footer( char**       io_generated_code, 
                                                    const char*  i_arch );
 
-void libxsmm_generator_dense_add_flop_counter( char**             io_generated_code, 
-                                               const unsigned int i_m,
-                                               const unsigned int i_n,
-                                               const unsigned int i_k );
+void libxsmm_generator_dense_add_flop_counter( char**                          io_generated_code, 
+                                               const libxsmm_xgemm_descriptor* i_xgemm_desc );
 
 void libxsmm_generator_dense_header_kloop(char**                        io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           const unsigned int            i_m_blocking,
-                                          const unsigned int            i_k_blocking);
+                                          const unsigned int            i_k_blocking );
 
-void libxsmm_generator_dense_footer_kloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_m_blocking,
-                                          const unsigned int            i_k,
-                                          const unsigned int            i_datatype_size,
-                                          const unsigned int            i_kloop_complete );
+void libxsmm_generator_dense_footer_kloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_m_blocking,
+                                          const unsigned int              i_datatype_size,
+                                          const unsigned int              i_kloop_complete );
 
 void libxsmm_generator_dense_header_nloop(char**                        io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_n_blocking);
+                                          const unsigned int            i_n_blocking );
 
-void libxsmm_generator_dense_footer_nloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_n_blocking,
-                                          const unsigned int            i_m,
-                                          const unsigned int            i_n,
-                                          const unsigned int            i_ldb,
-                                          const unsigned int            i_ldc,
-                                          const char*                   i_prefetch,
-                                          const unsigned int            i_datatype_size);
+void libxsmm_generator_dense_footer_nloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_n_blocking,
+                                          const unsigned int              i_datatype_size );
 
 void libxsmm_generator_dense_header_mloop(char**                        io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           const unsigned int            i_m_blocking );
 
-void libxsmm_generator_dense_footer_mloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_m_blocking,
-                                          const unsigned int            i_m,
-                                          const unsigned int            i_k,
-                                          const unsigned int            i_lda,
-                                          const char*                   i_prefetch,
-                                          const unsigned int            i_datatype_size);
+void libxsmm_generator_dense_footer_mloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_m_blocking,
+                                          const unsigned int              i_datatype_size );
 
 #endif /* GENERATOR_DENSE_COMMON_H */

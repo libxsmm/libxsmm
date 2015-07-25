@@ -257,6 +257,22 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
+  libxsmm_xgemm_descriptor l_xgemm_desc;
+  l_xgemm_desc.m = l_m;
+  l_xgemm_desc.n = l_n;
+  l_xgemm_desc.k = l_k;
+  l_xgemm_desc.lda = l_lda;
+  l_xgemm_desc.ldb = l_ldb;
+  l_xgemm_desc.ldc = l_ldc;
+  l_xgemm_desc.alpha = l_alpha;
+  l_xgemm_desc.beta = l_beta;
+  l_xgemm_desc.trans_a = 0;
+  l_xgemm_desc.trans_b = 0;
+  l_xgemm_desc.aligned_a = l_aligned_a;
+  l_xgemm_desc.aligned_c = l_aligned_c;
+  l_xgemm_desc.single_precision = l_single_precision;
+  strcpy ( l_xgemm_desc.prefetch, l_prefetch );
+
 #if 0
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */
@@ -288,15 +304,7 @@ int main(int argc, char* argv []) {
       return -1;
     }
 
-    libxsmm_generator_dense(l_file_out,
-                            l_routine_name,
-                            l_m, l_n, l_k,
-                            l_lda, l_ldb, l_ldc, 
-                            l_alpha, l_beta,
-                            l_aligned_a, l_aligned_c,
-                            l_arch,
-                            l_prefetch,
-                            l_single_precision);
+    libxsmm_generator_dense(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
   }
   
   return 0;

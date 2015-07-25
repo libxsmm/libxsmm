@@ -32,19 +32,10 @@
 #ifndef GENERATOR_AVX_H
 #define GENERATOR_AVX_H
 
-void libxsmm_generator_dense_avx(char**             io_generated_code,
-                                 const unsigned int i_m,
-                                 const unsigned int i_n,
-                                 const unsigned int i_k,
-                                 const unsigned int i_lda,
-                                 const unsigned int i_ldb,
-                                 const unsigned int i_ldc, 
-                                 const int          i_alpha,
-                                 const int          i_beta,
-                                 const unsigned int i_aligned_a,
-                                 const unsigned int i_aligned_c,
-                                 const char*        i_arch,
-                                 const char*        i_prefetch,
-                                 const unsigned int i_single_precision);
+#include "generator_common.h"
+
+void libxsmm_generator_dense_avx(char**                          io_generated_code,
+                                 const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                 const char*                     i_arch );
 
 #endif /* GENERATOR_AVX_H */

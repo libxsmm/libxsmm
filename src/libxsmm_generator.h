@@ -32,53 +32,39 @@
 #ifndef LIBXSMM_GENERATOR_H
 #define LIBXSMM_GENERATOR_H
 
-void libxsmm_generator_dense_kernel(char**             io_generated_code,
-                                    const unsigned int i_m,
-                                    const unsigned int i_n,
-                                    const unsigned int i_k,
-                                    const unsigned int i_lda,
-                                    const unsigned int i_ldb,
-                                    const unsigned int i_ldc, 
-                                    const int          i_alpha,
-                                    const int          i_beta,
-                                    const unsigned int i_aligned_a,
-                                    const unsigned int i_aligned_c,
-                                    const char*        i_arch,
-                                    const char*        i_prefetch,
-                                    const unsigned int i_single_precision);
+/* struct for storing the current xgemm description
+   which should be generated */
+typedef struct libxsmm_xgemm_descriptor_struct {
+  unsigned int m;
+  unsigned int n;
+  unsigned int k;
+  unsigned int lda;
+  unsigned int ldb;
+  unsigned int ldc;
+  unsigned int alpha;
+  unsigned int beta;
+  unsigned int trans_a;
+  unsigned int trans_b;
+  unsigned int aligned_a;
+  unsigned int aligned_c;
+  unsigned int single_precision;
+  char prefetch[32]; /* TODO do this with ints as well */
+} libxsmm_xgemm_descriptor;
 
-void libxsmm_generator_dense(const char*        i_file_out,
-                             const char*        i_routine_name,
-                             const unsigned int i_m,
-                             const unsigned int i_n,
-                             const unsigned int i_k,
-                             const unsigned int i_lda,
-                             const unsigned int i_ldb,
-                             const unsigned int i_ldc, 
-                             const int          i_alpha,
-                             const int          i_beta,
-                             const unsigned int i_aligned_a,
-                             const unsigned int i_aligned_c,
-                             const char*        i_arch,
-                             const char*        i_prefetch,
-                             const unsigned int i_single_precision);
+void libxsmm_generator_dense_kernel(char**                          io_generated_code,
+                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                    const char*                     i_arch );
 
-void libxsmm_generator_sparse(const char*        i_file_out,
-                              const char*        i_routine_name,
-                              const unsigned int i_m,
-                              const unsigned int i_n,
-                              const unsigned int i_k,
-                              const unsigned int i_lda,
-                              const unsigned int i_ldb,
-                              const unsigned int i_ldc, 
-                              const int          i_alpha,
-                              const int          i_beta,
-                              const unsigned int i_aligned_a,
-                              const unsigned int i_aligned_c,
-                              const char*        i_arch,
-                              const char*        i_prefetch,
-                              const unsigned int i_single_precision,
-                              const char*        i_file_in);
+void libxsmm_generator_dense(const char*                     i_file_out,
+                             const char*                     i_routine_name,
+                             const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                             const char*                     i_arch );
+
+void libxsmm_generator_sparse(const char*                     i_file_out,
+                              const char*                     i_routine_name,
+                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                              const char*                     i_arch, 
+                              const char*                     i_file_in );
 
 #endif /* LIBXSMM_GENERATOR_H */
 

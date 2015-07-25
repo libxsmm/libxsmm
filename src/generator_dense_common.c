@@ -82,10 +82,8 @@ void libxsmm_generator_dense_add_isa_check_footer( char**       io_generated_cod
   }
 }
 
-void libxsmm_generator_dense_add_flop_counter( char**             io_generated_code, 
-                                               const unsigned int i_m,
-                                               const unsigned int i_n,
-                                               const unsigned int i_k ) {
+void libxsmm_generator_dense_add_flop_counter( char**                          io_generated_code,
+                                               const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];
   l_new_code[0] = '\0';
   
@@ -93,7 +91,7 @@ void libxsmm_generator_dense_add_flop_counter( char**             io_generated_c
   libxsmm_append_string( io_generated_code, "#ifdef _OPENMP\n");
   libxsmm_append_string( io_generated_code, "#pragma omp atomic\n");
   libxsmm_append_string( io_generated_code, "#endif\n");
-  sprintf( l_new_code, "libxsmm_num_total_flops += %i;\n", 2 * i_m * i_n * i_k);
+  sprintf( l_new_code, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
   libxsmm_append_string( io_generated_code, l_new_code);
   libxsmm_append_string( io_generated_code, "#endif\n\n");
 }
@@ -106,25 +104,25 @@ void libxsmm_generator_dense_header_kloop(char**                        io_gener
   l_new_code[0] = '\0';
 
   libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_kloop, 0);
-  sprintf( l_new_code, "2%i", i_m_blocking );
+  sprintf( l_new_code, "30%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
 
-void libxsmm_generator_dense_footer_kloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_m_blocking,
-                                          const unsigned int            i_k,
-                                          const unsigned int            i_datatype_size,
-                                          const unsigned int            i_kloop_complete ) {
+void libxsmm_generator_dense_footer_kloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_m_blocking,
+                                          const unsigned int              i_datatype_size,
+                                          const unsigned int              i_kloop_complete ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_kloop, i_k );
-  sprintf( l_new_code, "2%ib", i_m_blocking );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_kloop, i_xgemm_desc->k );
+  sprintf( l_new_code, "30%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );
   if ( i_kloop_complete != 0 ) {
-    libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_b, i_k*i_datatype_size );
+    libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_b, (i_xgemm_desc->k)*i_datatype_size );
   }
 }
 
@@ -141,25 +139,21 @@ void libxsmm_generator_dense_header_nloop(char**                        io_gener
 }
 
 
-void libxsmm_generator_dense_footer_nloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_n_blocking,
-                                          const unsigned int            i_m,
-                                          const unsigned int            i_n,
-                                          const unsigned int            i_ldb,
-                                          const unsigned int            i_ldc,
-                                          const char*                   i_prefetch,
-                                          const unsigned int            i_datatype_size) {
+void libxsmm_generator_dense_footer_nloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_n_blocking,
+                                          const unsigned int              i_datatype_size ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_c, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
-  if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
-    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b_prefetch, (i_n_blocking*i_ldc*i_datatype_size) - (i_m*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_c, (i_n_blocking*(i_xgemm_desc->ldc)*i_datatype_size) - ((i_xgemm_desc->m)*i_datatype_size) );
+  if ( strcmp( i_xgemm_desc->prefetch, "BL2viaC") == 0 ) {
+    libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b_prefetch, (i_n_blocking*(i_xgemm_desc->ldc)*i_datatype_size) - ((i_xgemm_desc->m)*i_datatype_size) );
   }
-  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b, (i_n_blocking*i_ldb*i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, (i_m*i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_nloop, i_n );
+  libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b, (i_n_blocking*(i_xgemm_desc->ldb)*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->m)*i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_nloop, i_xgemm_desc->n );
   sprintf( l_new_code, "1%ib", i_n_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
 }
@@ -171,29 +165,26 @@ void libxsmm_generator_dense_header_mloop(char**                        io_gener
   char l_new_code[32];
   l_new_code[0] = '\0';
 
-  sprintf( l_new_code, "100%i", i_m_blocking );
+  sprintf( l_new_code, "20%i", i_m_blocking );
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_mloop, i_m_blocking );
 }
 
-void libxsmm_generator_dense_footer_mloop(char**                        io_generated_code,
-                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const unsigned int            i_m_blocking,
-                                          const unsigned int            i_m,
-                                          const unsigned int            i_k,
-                                          const unsigned int            i_lda,
-                                          const char*                   i_prefetch,
-                                          const unsigned int            i_datatype_size) {
+void libxsmm_generator_dense_footer_mloop(char**                          io_generated_code,
+                                          const libxsmm_gp_reg_mapping*   i_gp_reg_mapping,
+                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                          const unsigned int              i_m_blocking,
+                                          const unsigned int              i_datatype_size ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
   libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_c, i_m_blocking*i_datatype_size );
-  if ( strcmp( i_prefetch, "BL2viaC") == 0 ) {
+  if ( strcmp( i_xgemm_desc->prefetch, "BL2viaC") == 0 ) {
     libxsmm_instruction_alu_imm( io_generated_code, "addq", i_gp_reg_mapping->gp_reg_b_prefetch, i_m_blocking*i_datatype_size );
   }
-  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, (i_k * i_datatype_size * i_lda) - (i_m_blocking * i_datatype_size) );
-  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_mloop, i_m );
-  sprintf( l_new_code, "100%ib", i_m_blocking );
+  libxsmm_instruction_alu_imm( io_generated_code, "subq", i_gp_reg_mapping->gp_reg_a, ((i_xgemm_desc->k) * i_datatype_size * (i_xgemm_desc->lda) ) - (i_m_blocking * i_datatype_size) );
+  libxsmm_instruction_alu_imm( io_generated_code, "cmpq", i_gp_reg_mapping->gp_reg_mloop, i_xgemm_desc->m );
+  sprintf( l_new_code, "20%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, "jl", l_new_code );  
 }
 

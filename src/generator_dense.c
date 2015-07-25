@@ -38,22 +38,21 @@
 #include "generator_dense_common.h"
 #include "generator_dense_avx.h"
 
-void libxsmm_generator_dense_signature(char**             io_generated_code,
-                                       const char*        i_routine_name,
-                                       const unsigned int i_single_precision,
-                                       const char*        i_prefetch) {
+void libxsmm_generator_dense_signature(char**                          io_generated_code,
+                                       const char*                     i_routine_name,
+                                       const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
   char l_new_code_line[512];
   l_new_code_line[0] = '\0';
   
   /* selecting the correct signature */
-  if (i_single_precision == 1) {
-    if ( strcmp(i_prefetch, "nopf") == 0) {
+  if (i_xgemm_desc->single_precision == 1) {
+    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
       sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
     } else {
       sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL) {\n", i_routine_name);
     }
   } else {
-    if ( strcmp(i_prefetch, "nopf") == 0) {
+    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
       sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
     } else {
       sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL) {\n", i_routine_name);
@@ -63,44 +62,19 @@ void libxsmm_generator_dense_signature(char**             io_generated_code,
   libxsmm_append_string( io_generated_code, l_new_code_line );
 }
 
-void libxsmm_generator_dense_kernel(char**             io_generated_code,
-                                    const unsigned int i_m,
-                                    const unsigned int i_n,
-                                    const unsigned int i_k,
-                                    const unsigned int i_lda,
-                                    const unsigned int i_ldb,
-                                    const unsigned int i_ldc, 
-                                    const int          i_alpha,
-                                    const int          i_beta,
-                                    const unsigned int i_aligned_a,
-                                    const unsigned int i_aligned_c,
-                                    const char*        i_arch,
-                                    const char*        i_prefetch,
-                                    const unsigned int i_single_precision) {
+void libxsmm_generator_dense_kernel(char**                          io_generated_code,
+                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                    const char*        i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
 
   if ( (strcmp(i_arch, "wsm") == 0) ) {
-    /*libxsmm_generator_dense_sse(io_generated_code,
-                                i_m, i_n, i_k,
-                                i_lda, i_ldb, i_ldc, 
-                                i_alpha, i_beta,
-                                i_aligned_a, i_aligned_c,
-                                i_arch,
-                                i_prefetch,
-                                i_single_precision);*/
+    /*libxsmm_generator_dense_sse();*/
   }
 
   if ( (strcmp(i_arch, "snb") == 0) ||
        (strcmp(i_arch, "hsw") == 0)    ) {
-    libxsmm_generator_dense_avx(io_generated_code,
-                                i_m, i_n, i_k,
-                                i_lda, i_ldb, i_ldc, 
-                                i_alpha, i_beta,
-                                i_aligned_a, i_aligned_c,
-                                i_arch,
-                                i_prefetch,
-                                i_single_precision);
+    libxsmm_generator_dense_avx(io_generated_code, i_xgemm_desc, i_arch );
   }
 
   if ( strcmp(i_arch, "knc") == 0 ) {
@@ -116,38 +90,20 @@ void libxsmm_generator_dense_kernel(char**             io_generated_code,
   libxsmm_generator_dense_add_isa_check_footer( io_generated_code, i_arch );
 
   /* add flop counter for debug compilation */
-  libxsmm_generator_dense_add_flop_counter( io_generated_code, i_m, i_n, i_k );
+  libxsmm_generator_dense_add_flop_counter( io_generated_code, i_xgemm_desc );
 }
 
-void libxsmm_generator_dense(const char*        i_file_out,
-                             const char*        i_routine_name,
-                             const unsigned int i_m,
-                             const unsigned int i_n,
-                             const unsigned int i_k,
-                             const unsigned int i_lda,
-                             const unsigned int i_ldb,
-                             const unsigned int i_ldc, 
-                             const int          i_alpha,
-                             const int          i_beta,
-                             const unsigned int i_aligned_a,
-                             const unsigned int i_aligned_c,
-                             const char*        i_arch,
-                             const char*        i_prefetch,
-                             const unsigned int i_single_precision) {
+void libxsmm_generator_dense(const char*                     i_file_out,
+                             const char*                     i_routine_name,
+                             const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                             const char*                     i_arch ) {
   char* l_generated_code = NULL;
   
   /* add signature to code string */
-  libxsmm_generator_dense_signature( &l_generated_code, i_routine_name, i_single_precision, i_prefetch );
+  libxsmm_generator_dense_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
-  /* generate the actual kernel code depending on the architecture */
-  libxsmm_generator_dense_kernel( &l_generated_code,
-                                  i_m, i_n, i_k,
-                                  i_lda, i_ldb, i_ldc, 
-                                  i_alpha, i_beta,
-                                  i_aligned_a, i_aligned_c,
-                                  i_arch,
-                                  i_prefetch,
-                                  i_single_precision);
+  /* generate the actual kernel code for current description depending on the architecture */
+  libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );

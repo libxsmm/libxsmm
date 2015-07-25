@@ -32,6 +32,8 @@
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
 
+#include "libxsmm_generator.h"
+
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX     0
 #define LIBXSMM_X86_GP_REG_RCX     1
@@ -56,6 +58,7 @@
   char* 
 */
 
+/* struct for storing the current gp reg mapping */
 typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_b;
@@ -73,15 +76,15 @@ typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_5;
 } libxsmm_gp_reg_mapping;
 
-char* libxsmm_empty_string();
-
-int libxsmm_append_string( char** io_string_1, const char* i_string_2 );
-
-void libxsmm_close_function( char** io_generated_code );
-
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              i_gp_reg_name ); 
 
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping );
+
+/* some string manipulation helper needed to 
+   generated code */
+char* libxsmm_empty_string();
+int libxsmm_append_string( char** io_string_1, const char* i_string_2 );
+void libxsmm_close_function( char** io_generated_code );
 
 #endif /* GENERATOR_COMMON_H */
