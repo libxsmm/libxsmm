@@ -40,6 +40,9 @@
     <ClCompile Include="..\build\mm_4_4_4.c" />
     <ClCompile Include="..\build\mm_5_5_5.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\libxsmm.template.f90" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmm</ProjectName>
     <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and $(VisualStudioVersion) == ''">$(VCTargetsPath11)</VCTargetsPath>

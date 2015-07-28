@@ -42,4 +42,9 @@
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\libxsmm.template.f90">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
 </Project>

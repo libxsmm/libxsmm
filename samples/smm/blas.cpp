@@ -54,6 +54,8 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define MAX_SIZE (64 * 64)
+
 
 template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
@@ -76,6 +78,10 @@ int main(int argc, char* argv[])
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
+
+    if ((MAX_SIZE) < size_t(m * n)) {
+      throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
+    }
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
     const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
@@ -127,7 +133,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; ++i) {
             // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE/*max. problemsize*/], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, tmp);
           }
 #if defined(_OPENMP)
@@ -157,7 +163,7 @@ int main(int argc, char* argv[])
 #endif
           for (int i = 0; i < s; ++i) {
             // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE/*max. problemsize*/], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             // do nothing else with tmp; just a benchmark
             libxsmm_blasmm(m, n, k, a, b, tmp);
           }

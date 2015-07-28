@@ -54,6 +54,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define CP2K_MAX_SIZE (64 * 64)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -197,8 +198,8 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((LIBXSMM_MAX_SIZE) < size_t(m * n)) {
-      throw std::runtime_error("The size M x N is exceeding LIBXSMM_MAX_SIZE!");
+    if ((CP2K_MAX_SIZE) < size_t(m * n)) {
+      throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
     }
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
@@ -261,7 +262,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -294,7 +295,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -327,7 +328,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
@@ -361,7 +362,7 @@ int main(int argc, char* argv[])
 #         pragma omp for CP2K_SCHEDULE
 #endif
           for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+            LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
             for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
             for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
               xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
