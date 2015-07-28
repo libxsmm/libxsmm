@@ -81,10 +81,9 @@ if __name__ == "__main__":
         if (fnmatch.fnmatch(filename, "*.h*")):
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
-                substitute["MNK_INTERFACE_LIST"] += \
+                substitute["MNK_INTERFACE_LIST"] += "\n" \
                     "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c);\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c);\n" \
-                    "\n"
+                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c);\n"
             print template.substitute(substitute)
         else:
             if (mnklist):
