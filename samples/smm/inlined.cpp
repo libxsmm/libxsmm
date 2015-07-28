@@ -79,7 +79,8 @@ int main(int argc, char* argv[])
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 
-    if ((MAX_SIZE) < size_t(m * n)) {
+    const int csize = m * n;
+    if ((MAX_SIZE) < csize) {
       throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
     }
 
@@ -87,18 +88,15 @@ int main(int argc, char* argv[])
     const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
     const int s = (2ULL << 30) / ((asize + bsize) * sizeof(T)); // 2 GByte
 #if defined(_OPENMP)
-    const int csize = LIBXSMM_LD(n, m) * ldc;
     const size_t bwsize = (asize/*load*/ + bsize/*load*/ + csize * 2/*load and store*/) * sizeof(T); // cached
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b;
-      raii(int s, int asize, int bsize, int aspace)
-        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1])
-      {}
+      raii(int asize, int bsize): a(new T[asize]), b(new T[bsize]) {}
       ~raii() { delete[] a; delete[] b; }
-    } buffer(s, asize, bsize, aspace);
+    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
 
@@ -124,21 +122,16 @@ int main(int argc, char* argv[])
       { // streaming
         fprintf(stdout, "Streamed...\n");
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-#         pragma omp for
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-            LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            libxsmm_imm(m, n, k, a + i * asize, b + i * bsize, tmp);
-          }
-#if defined(_OPENMP)
+        for (int i = 0; i < s; ++i) {
+          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          libxsmm_imm(m, n, k, a + i * asize, b + i * bsize, tmp);
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
@@ -150,26 +143,17 @@ int main(int argc, char* argv[])
       { // cached
         fprintf(stdout, "Cached...\n");
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-# if defined(__MIC__)
-#         pragma omp for schedule(dynamic)
-# else
-#         pragma omp for
-# endif
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-            LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            // do nothing else with tmp; just a benchmark
-            libxsmm_imm(m, n, k, a, b, tmp);
-          }
-#if defined(_OPENMP)
+        for (int i = 0; i < s; ++i) {
+          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          // do nothing else with tmp; just a benchmark
+          libxsmm_imm(m, n, k, a, b, tmp);
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
