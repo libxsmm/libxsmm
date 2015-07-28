@@ -101,25 +101,12 @@ template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
     const int ldx = 0 == ld ? ncols : ld;
+    const double minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
+    const double shift = 0.5 * addval + minval, norm = 0 != addval ? (1.0 / addval) : 1.0;
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < ncols; ++j) {
-        // initialize similar to CP2K's (libsmm_acc) benchmark driver
-        dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
-      }
-    }
-  }
-};
-
-
-template<>
-struct LIBXSMM_TARGET(mic) init<0> {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int ld = 0) {
-    static const double scale = 1.0 / RAND_MAX;
-    const int ldx = 0 == ld ? ncols : ld;
-    for (int i = 0; i < nrows; ++i) {
-      for (int j = 0; j < ncols; ++j) {
-        // initialize every value using a normalized random number [-1, +1]
-        dst[i*ldx+j] = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
+        const double value = static_cast<double>(i * ldx + j + minval);
+        dst[i*ldx+j] = static_cast<T>(norm * (value - shift));
       }
     }
   }
