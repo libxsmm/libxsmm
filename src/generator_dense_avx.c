@@ -224,9 +224,7 @@ void libxsmm_generator_dense_avx_compute_MxN(char**                             
 
 void libxsmm_generator_dense_avx_kernel(char**                          io_generated_code,
                                         const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                        const char*                     i_arch,
-                                        const unsigned int              i_vector_length,
-                                        const char*                     i_vector_name) {
+                                        const char*                     i_arch ) {
   /* define gp register mapping */
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
@@ -380,31 +378,25 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
 void libxsmm_generator_dense_avx(char**                          io_generated_code,
                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                  const char*                     i_arch ) {
-  unsigned int l_vector_length = 0;
-  char* l_vector_name = NULL;
   libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  unsigned int l_vector_length;
 
   /* determining vector length depending on architecture and precision */
+  /* @TODO fix me */
   if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
     l_vector_length = 2;
-    l_vector_name = "xmm";
   } else if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
     l_vector_length = 4;
-    l_vector_name = "xmm";
   } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
     l_vector_length = 4;
-    l_vector_name = "ymm";
   } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
     l_vector_length = 8;
-    l_vector_name = "ymm";
   } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
     l_vector_length = 4;
-    l_vector_name = "ymm";
   } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
     l_vector_length = 8;
-    l_vector_name = "ymm";
   } else {
-    fprintf(stderr, "received non-valid arch and precsoin in libxsmm_generator_dense_sse_avx\n");
+    fprintf(stderr, "received non-valid arch and precision in libxsmm_generator_dense_avx\n");
     exit(-1);
   }
  
@@ -421,5 +413,5 @@ void libxsmm_generator_dense_avx(char**                          io_generated_co
   l_xgemm_desc_mod.aligned_c = l_xgemm_desc_mod.aligned_c && i_xgemm_desc->aligned_c;
 
   /* call actual kernel generation with revided parameters */
-  libxsmm_generator_dense_avx_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch, l_vector_length, l_vector_name);
+  libxsmm_generator_dense_avx_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
 }
