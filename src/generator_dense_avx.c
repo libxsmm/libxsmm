@@ -270,19 +270,23 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
 
       /* apply m_blocking */
       while (l_m_done != i_xgemm_desc->m) {
-#if 0
-        if (mDone == 0) { 
-          mDone_old = mDone;
-          if (M == 56) {
-            mDone = 32;
+        if (l_m_done == 0) {
+          /* This is a SeisSol Order 6, HSW, DP performance fix */
+          if ( (strcmp( i_arch, "hsw" ) == 0) && (i_xgemm_desc->single_precision == 0) ) { 
+            l_m_done_old = l_m_done;
+            if (i_xgemm_desc->m == 56) {
+              l_m_done = 32;
+            } else {
+              l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
+            }
           } else {
-            mDone = mDone + (((M - mDone_old) / m_blocking) * m_blocking);
+            l_m_done_old = l_m_done;
+            l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
           }  
         } else {
-#endif
-        /* @TODO enable upper part again later */
-        l_m_done_old = l_m_done;
-        l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
+          l_m_done_old = l_m_done;
+          l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
+        }
   
         if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
           libxsmm_generator_dense_header_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
@@ -299,7 +303,7 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
                                                       i_xgemm_desc, l_m_blocking, l_n_blocking, -1);
             }
 
-            libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, 1 );
+            libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, i_xgemm_desc->k, 1 );
           } else {
             /* 2. we want to fully unroll below the threshold */
             if (i_xgemm_desc->k <= l_k_threshold) {
@@ -320,7 +324,7 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
                                                           i_xgemm_desc, l_m_blocking, l_n_blocking, -1);
                 }
 
-	        libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, 0 );
+	        libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_max_blocked_k, 0 );
 	      }
 	      if (l_max_blocked_k > 0 ) {
                 libxsmm_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction, 
@@ -335,14 +339,16 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
           }
 
           libxsmm_generator_dense_avx_store_C_MxN( io_generated_code, &l_gp_reg_mapping,  &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
-          libxsmm_generator_dense_footer_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking);
+          libxsmm_generator_dense_footer_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_m_done);
         }
 
         /* switch to next smaller m_blocking */
         if (l_m_blocking == 2) {
           l_m_blocking = 1;
+          libxsmm_generator_dense_init_micro_kernel_config_scalar( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
         } else if (l_m_blocking == 4) {
           l_m_blocking = 2;
+          libxsmm_generator_dense_init_micro_kernel_config_halfvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
         } else if (l_m_blocking == 8) {
           l_m_blocking = 4;
         } else if (l_m_blocking == 12) {

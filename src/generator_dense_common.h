@@ -39,6 +39,16 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
                                                                   const char*                     i_arch,
                                                                   const unsigned int              i_use_masking_a_c );
 
+void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                                  const char*                     i_arch,
+                                                                  const unsigned int              i_use_masking_a_c );
+
+void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                              const char*                     i_arch,
+                                                              const unsigned int              i_use_masking_a_c );
+
 void libxsmm_generator_dense_add_isa_check_header( char**       io_generated_code, 
                                                    const char*  i_arch );
 
@@ -59,6 +69,7 @@ void libxsmm_generator_dense_footer_kloop(char**                              io
                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                           const unsigned int                  i_m_blocking,
+                                          const unsigned int                  i_max_blocked_k,
                                           const unsigned int                  i_kloop_complete );
 
 void libxsmm_generator_dense_header_nloop(char**                              io_generated_code,
@@ -81,6 +92,7 @@ void libxsmm_generator_dense_footer_mloop(char**                              io
                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                          const unsigned int                  i_m_blocking );
+                                          const unsigned int                  i_m_blocking,
+                                          const unsigned int                  i_m_done );
 
 #endif /* GENERATOR_DENSE_COMMON_H */
