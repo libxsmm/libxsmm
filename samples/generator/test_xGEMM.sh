@@ -33,8 +33,11 @@ M="32"
 
 cd ./../../
 
-make clean
+make realclean
 make generator_backend
+
+#exit if compiler fails
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 
 cd ./samples/generator/
 
