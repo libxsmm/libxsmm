@@ -51,7 +51,16 @@ typedef struct libxsmm_xgemm_descriptor_struct {
   char prefetch[32]; /* TODO do this with ints as well */
 } libxsmm_xgemm_descriptor;
 
-void libxsmm_generator_dense_kernel(char**                          io_generated_code,
+/* struct for storing the generated code
+   and some information attached to it */
+typedef struct libxsmm_generated_code_struct {
+  char* generated_code;
+  unsigned int buffer_size;
+  unsigned int code_size;
+  unsigned int generate_binary_code;
+} libxsmm_generated_code;
+
+void libxsmm_generator_dense_kernel(libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                     const char*                     i_arch );
 

@@ -38,11 +38,14 @@
 #include "generator_dense_common.h"
 #include "generator_dense_avx.h"
 
-void libxsmm_generator_dense_signature(char**                          io_generated_code,
-                                       const char*                     i_routine_name,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
+void libxsmm_generator_dense_signature( libxsmm_generated_code*         io_generated_code,
+                                        const char*                     i_routine_name,
+                                        const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
   char l_new_code_line[512];
   l_new_code_line[0] = '\0';
+
+  if ( io_generated_code->generate_binary_code != 0 )
+    return;
   
   /* selecting the correct signature */
   if (i_xgemm_desc->single_precision == 1) {
@@ -59,12 +62,12 @@ void libxsmm_generator_dense_signature(char**                          io_genera
     }
   }
 
-  libxsmm_append_string( io_generated_code, l_new_code_line );
+  libxsmm_append_code_as_string( io_generated_code, l_new_code_line );
 }
 
-void libxsmm_generator_dense_kernel(char**                          io_generated_code,
-                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                    const char*        i_arch ) {
+void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
+                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                     const char*                     i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
 
@@ -74,7 +77,7 @@ void libxsmm_generator_dense_kernel(char**                          io_generated
 
   if ( (strcmp(i_arch, "snb") == 0) ||
        (strcmp(i_arch, "hsw") == 0)    ) {
-    libxsmm_generator_dense_avx(io_generated_code, i_xgemm_desc, i_arch );
+    libxsmm_generator_dense_avx( io_generated_code, i_xgemm_desc, i_arch );
   }
 
   if ( strcmp(i_arch, "knc") == 0 ) {
@@ -97,7 +100,12 @@ void libxsmm_generator_dense(const char*                     i_file_out,
                              const char*                     i_routine_name,
                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
                              const char*                     i_arch ) {
-  char* l_generated_code = NULL;
+  /* init generated code object */
+  libxsmm_generated_code l_generated_code;
+  l_generated_code.generated_code = NULL;
+  l_generated_code.buffer_size = 0;
+  l_generated_code.code_size = 0;
+  l_generated_code.generate_binary_code = 0;
   
   /* add signature to code string */
   libxsmm_generator_dense_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
@@ -111,18 +119,18 @@ void libxsmm_generator_dense(const char*                     i_file_out,
   /* append code to source file */
   FILE *l_file_handle = fopen( i_file_out, "a" );
   if ( l_file_handle != NULL ) {
-    fputs( l_generated_code, l_file_handle );
+    fputs( l_generated_code.generated_code, l_file_handle );
     fclose( l_file_handle );
   } else {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense could not write to into destination source file\n");
     exit(-1);
   }
 
+  /* free code memory */
+  free( l_generated_code.generated_code );
 #ifndef NDEBUG
   printf("code was generated and exported to %s \n", i_file_out);
-  /*printf("generated code:\n%s", l_generated_code);*/
+  /*printf("generated code:\n%s", l_generated_code.generated_code);*/
 #endif
- 
-  free(l_generated_code);
 }
 

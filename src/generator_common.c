@@ -42,51 +42,64 @@ char* libxsmm_empty_string() {
   return l_string;
 }
 
-int libxsmm_append_string(char** io_string_1, const char* i_string_2) {
+void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
+                                    const char*             i_code_to_append ) {
   size_t l_length_1 = 0;
   size_t l_length_2 = 0;
   char* l_new_string = NULL;
 
+  /* check if end up here accidentally */
+  if ( io_generated_code->generate_binary_code != 0 ) {
+    fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string was called although jiting code was requested!" );
+    exit(-3);
+  }
+
   /* some safety checks */
-  if (*io_string_1 != NULL) {
-    l_length_1 = strlen(*io_string_1);
+  if (io_generated_code->generated_code != NULL) {
+    l_length_1 = strlen(io_generated_code->generated_code);
   } else {
     /* nothing to do */
     l_length_1 = 0;
   }
-  if (i_string_2 != NULL) {
-    l_length_2 = strlen(i_string_2);
+  if (i_code_to_append != NULL) {
+    l_length_2 = strlen(i_code_to_append);
   } else {
-    /* nothing to do */
-    return -2;
+    fprintf(stderr, "LIBXSMM WARNING libxsmm_append_code_as_string was called with an empty string for appending code" );
   }
 
   /* allocate new string */
   l_new_string = (char*) malloc( (l_length_1+l_length_2+1)*sizeof(char) );
-  if (l_new_string == NULL)
-    return -1;
+  if (l_new_string == NULL) {
+    fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string failed to allocate new code string buffer!" );
+    exit(-1);
+  }
 
   /* copy old content */
   if (l_length_1 > 0) {
-    strcpy(l_new_string, *io_string_1);
+    strcpy(l_new_string, io_generated_code->generated_code);
   } else {
     l_new_string[0] = '\0';
   }
 
   /* append new string */
-  strcat(l_new_string, i_string_2);
+  strcat(l_new_string, i_code_to_append);
 
   /* free old memory and overwrite pointer */
   if (l_length_1 > 0)
-    free(*io_string_1);
+    free(io_generated_code->generated_code);
   
-  *io_string_1 = l_new_string;
+  io_generated_code->generated_code = l_new_string;
 
-  return (int)(l_length_1+l_length_2); /* no error */
+  /* update counters */
+  io_generated_code->code_size = (unsigned int)(l_length_1+l_length_2);
+  io_generated_code->buffer_size = (io_generated_code->code_size) + 1;
 }
 
-void libxsmm_close_function(char** io_generated_code) {
-  libxsmm_append_string(io_generated_code, "}\n\n");
+void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
+  if ( io_generated_code->generate_binary_code != 0 )
+    return;
+
+  libxsmm_append_code_as_string(io_generated_code, "}\n\n");
 }
 
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,

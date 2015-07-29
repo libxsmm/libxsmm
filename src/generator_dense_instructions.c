@@ -39,15 +39,15 @@
 /* TODO change this */
 int libxsmm_jit_code = 0;
 
-void libxsmm_instruction_vec_move( char**             io_generated_code, 
-                                   const char*        i_vmove_instr, 
-                                   const unsigned int i_gp_reg_number,
-                                   const int          i_displacement,
-                                   const char*        i_vector_name,
-                                   const unsigned int i_vec_reg_number_0,
-                                   const unsigned int i_is_store ) {
+void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
+                                   const char*             i_vmove_instr, 
+                                   const unsigned int      i_gp_reg_number,
+                                   const int               i_displacement,
+                                   const char*             i_vector_name,
+                                   const unsigned int      i_vec_reg_number_0,
+                                   const unsigned int      i_is_store ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
@@ -61,18 +61,18 @@ void libxsmm_instruction_vec_move( char**             io_generated_code,
     } else {
       sprintf(l_new_code, "                       \"%s %%%%%s%i, %i(%%%%%s)\\n\\t\"\n", i_vmove_instr, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
     }
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }
 
-void libxsmm_instruction_vec_compute_reg( char**             io_generated_code, 
-                                          const char*        i_vec_instr,
-                                          const char*        i_vector_name,                                
-                                          const unsigned int i_vec_reg_number_0,
-                                          const unsigned int i_vec_reg_number_1,
-                                          const unsigned int i_vec_reg_number_2 ) {
+void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
+                                          const char*             i_vec_instr,
+                                          const char*             i_vector_name,                                
+                                          const unsigned int      i_vec_reg_number_0,
+                                          const unsigned int      i_vec_reg_number_1,
+                                          const unsigned int      i_vec_reg_number_2 ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
@@ -80,16 +80,16 @@ void libxsmm_instruction_vec_compute_reg( char**             io_generated_code,
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     sprintf(l_new_code, "                       \"%s %%%%%s%i, %%%%%s%i, %%%%%s%i\\n\\t\"\n", i_vec_instr, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }
 
-void libxsmm_instruction_prefetch( char**             io_generated_code,
-                                   const char*        i_prefetch_instr, 
-                                   const unsigned int i_gp_reg_number,
-                                   const int          i_displacement) {
+void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
+                                   const char*             i_prefetch_instr, 
+                                   const unsigned int      i_gp_reg_number,
+                                   const int               i_displacement ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
@@ -98,16 +98,16 @@ void libxsmm_instruction_prefetch( char**             io_generated_code,
     libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
 
     sprintf(l_new_code, "                       \"%s %i(%%%%%s)\\n\\t\"\n", i_prefetch_instr, i_displacement, l_gp_reg_name );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }
 
-void libxsmm_instruction_alu_imm( char**             io_generated_code,
-                                  const char*        i_alu_instr,
-                                  const unsigned int i_gp_reg_number,
-                                  const unsigned int i_immediate) {
+void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
+                                  const char*             i_alu_instr,
+                                  const unsigned int      i_gp_reg_number,
+                                  const unsigned int      i_immediate ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
@@ -116,45 +116,46 @@ void libxsmm_instruction_alu_imm( char**             io_generated_code,
     libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
 
     sprintf(l_new_code, "                       \"%s $%i, %%%%%s\\n\\t\"\n", i_alu_instr, i_immediate, l_gp_reg_name );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }
 
-void libxsmm_instruction_register_jump_label( char**      io_generated_code,
-                                              const char* i_jmp_label ) {
+void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generated_code,
+                                              const char*             i_jmp_label ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
     l_new_code[0] = '\0';
 
     sprintf(l_new_code, "                       \"%s:\\n\\t\"\n", i_jmp_label );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }  
 }
 
-void libxsmm_instruction_jump_to_label( char**      io_generated_code,
-                                        const char* i_jmp_instr,
-                                        const char* i_jmp_label ) {
+void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_code,
+                                        const char*             i_jmp_instr,
+                                        const char*             i_jmp_label ) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
+  if ( io_generated_code->generate_binary_code != 0 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
     l_new_code[0] = '\0';
 
     sprintf(l_new_code, "                       \"%s %s\\n\\t\"\n", i_jmp_instr, i_jmp_label );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }
 
-void libxsmm_generator_dense_sse_avx_open_instruction_stream( char**                        io_generated_code,
+void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                               const char*                   i_prefetch) { 
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
-    /* TODO-Greg: how do we interface here? */
+  if ( io_generated_code->generate_binary_code != 0 ) {
+    /* @TODO-GREG call encoding here */
+    /* @TODO-GREG: how do we interface here? */
     /* this is start of the xGEMM kernel, the registers are in the variables */
   } else {
     char l_new_code[512];
@@ -163,30 +164,30 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( char**            
     /* loading b pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name );
     sprintf( l_new_code, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
 
     /* loading a pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name );
     sprintf( l_new_code, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
 
     /* loading c pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name );
     sprintf( l_new_code, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-    libxsmm_append_string( io_generated_code, l_new_code );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
 
     /* loading b prefetch pointer in assembly */
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
       sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-      libxsmm_append_string( io_generated_code, l_new_code );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
     /* loading a prefetch pointer in assembly */
     } else if ( ( strcmp(i_prefetch, "AL1viaC") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
       sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
-      libxsmm_append_string( io_generated_code, l_new_code );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
     } else {}
   }
 
@@ -196,12 +197,14 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( char**            
   libxsmm_instruction_alu_imm( io_generated_code, "movq", i_gp_reg_mapping->gp_reg_kloop, 0);
 }
 
-void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**                        io_generated_code,
+void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                                const char*                   i_prefetch) {
   /* @TODO add checks in debug mode */
-  if ( libxsmm_jit_code == 1 ) {
-    /* TODO-Greg: how do we interface here? */
+  if ( io_generated_code->generate_binary_code != 0 ) {
+    /* @TODO-GREG call encoding here */
+    /* @TODO-GREG: how do we interface here? */
+    /* this is start of the xGEMM kernel, the registers are in the variables */
   } else {
     char l_new_code[512];
     char l_gp_reg_a[4];
@@ -225,14 +228,14 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**           
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
       sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_string( io_generated_code, l_new_code );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
     } else if ( ( strcmp(i_prefetch, "AL1viaC") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
       sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_string( io_generated_code, l_new_code );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
     } else {
       sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_string( io_generated_code, l_new_code );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
     }
   }
 }

@@ -38,12 +38,12 @@
 #include "generator_dense_common.h"
 #include "generator_dense_instructions.h"
 
-void libxsmm_generator_dense_avx_load_C_MxN(char**                              io_generated_code,
-                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                            const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                            const unsigned int                  i_m_blocking,
-                                            const unsigned int                  i_n_blocking ) {
+void libxsmm_generator_dense_avx_load_C_MxN( libxsmm_generated_code*             io_generated_code,
+                                             const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                             const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                             const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                             const unsigned int                  i_m_blocking,
+                                             const unsigned int                  i_n_blocking ) {
 #ifndef NDEGUG
   /* Do some test if it's possible to generated the requested code. 
      This is not done in release mode and therefore bad
@@ -92,12 +92,12 @@ void libxsmm_generator_dense_avx_load_C_MxN(char**                              
   }
 }
 
-void libxsmm_generator_dense_avx_store_C_MxN(char**                              io_generated_code,
-                                             const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                             const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                             const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                             const unsigned int                  i_m_blocking,
-                                             const unsigned int                  i_n_blocking ) {
+void libxsmm_generator_dense_avx_store_C_MxN( libxsmm_generated_code*             io_generated_code,
+                                              const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                              const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                              const unsigned int                  i_m_blocking,
+                                              const unsigned int                  i_n_blocking ) {
   /* @TODO fix this test */ 
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
@@ -144,13 +144,13 @@ void libxsmm_generator_dense_avx_store_C_MxN(char**                             
   }
 }
 
-void libxsmm_generator_dense_avx_compute_MxN(char**                              io_generated_code,
-                                             const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                             const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                             const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                             const unsigned int                  i_m_blocking,
-                                             const unsigned int                  i_n_blocking,
-                                             const int                           i_offset ) {
+void libxsmm_generator_dense_avx_compute_MxN( libxsmm_generated_code*             io_generated_code,
+                                              const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                              const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                              const unsigned int                  i_m_blocking,
+                                              const unsigned int                  i_n_blocking,
+                                              const int                           i_offset ) {
   /* @TODO fix this test */
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
@@ -222,9 +222,9 @@ void libxsmm_generator_dense_avx_compute_MxN(char**                             
   }
 }
 
-void libxsmm_generator_dense_avx_kernel(char**                          io_generated_code,
-                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                        const char*                     i_arch ) {
+void libxsmm_generator_dense_avx_kernel( libxsmm_generated_code*        io_generated_code,
+                                         const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                         const char*                     i_arch ) {
   /* define gp register mapping */
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
@@ -375,9 +375,9 @@ void libxsmm_generator_dense_avx_kernel(char**                          io_gener
   libxsmm_generator_dense_sse_avx_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
-void libxsmm_generator_dense_avx(char**                          io_generated_code,
-                                 const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                 const char*                     i_arch ) {
+void libxsmm_generator_dense_avx( libxsmm_generated_code*         io_generated_code,
+                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                  const char*                     i_arch ) {
   libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length;
 

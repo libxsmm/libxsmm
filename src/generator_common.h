@@ -115,7 +115,10 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping 
 /* some string manipulation helper needed to 
    generated code */
 char* libxsmm_empty_string();
-int libxsmm_append_string( char** io_string_1, const char* i_string_2 );
-void libxsmm_close_function( char** io_generated_code );
+
+void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
+                                    const char*             i_code_to_append );
+
+void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
 #endif /* GENERATOR_COMMON_H */

@@ -37,22 +37,22 @@
 /**
  * Opens the inline assembly section / jit stream
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
  * @param i_prefetch prefetch mode which may result in addtional gp reg inits
  */
-void libxsmm_generator_dense_sse_avx_open_instrucion_stream( char**                        io_generated_code,
+void libxsmm_generator_dense_sse_avx_open_instrucion_stream( libxsmm_generated_code*       io_generated_code,
                                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                              const char*                   i_prefetch);
 
 /**
  * Closes the inline assembly section / jit stream
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
  * @param i_prefetch prefetch mode which may result in addtional gp reg clobbers
  */
-void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**                        io_generated_code,
+void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                                const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                                const char*                   i_prefetch);
 
@@ -60,7 +60,7 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**           
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not
  * supported by this function
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vmove_instr actual vmov variant
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address 
@@ -68,79 +68,79 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( char**           
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_is_store 0: load semantik, other: store semantik  
  */
-void libxsmm_instruction_vec_move( char**             io_generated_code, 
-                                   const char*        i_vmove_instr, 
-                                   const unsigned int i_gp_reg_number,
-                                   const int          i_displacement,
-                                   const char*        i_vector_name,
-                                   const unsigned int i_vec_reg_number_0,
-                                   const unsigned int i_is_store );
+void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
+                                   const char*             i_vmove_instr, 
+                                   const unsigned int      i_gp_reg_number,
+                                   const int               i_displacement,
+                                   const char*             i_vector_name,
+                                   const unsigned int      i_vec_reg_number_0,
+                                   const unsigned int      i_is_store );
 
 /* @TODO this doesn't work right now for SSE */
 /**
  * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 or 3 vector registers, memory operands are not supported as first operand
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (xmm,ymm or zmm)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_1 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  */
-void libxsmm_instruction_vec_compute_reg( char**             io_generated_code, 
-                                          const char*        i_vec_instr,
-                                          const char*        i_vector_name,                                
-                                          const unsigned int i_vec_reg_number_0,
-                                          const unsigned int i_vec_reg_number_1,
-                                          const unsigned int i_vec_reg_number_2 );
+void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
+                                          const char*             i_vec_instr,
+                                          const char*             i_vector_name,                                
+                                          const unsigned int      i_vec_reg_number_0,
+                                          const unsigned int      i_vec_reg_number_1,
+                                          const unsigned int      i_vec_reg_number_2 );
 
 /* @TODO check if we can merge this alu_imm */
 /**
  * Generates prefetch instructions with displacements, SIB addressing is not
  * supported by this function
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_prefetch_instr actual prefetch variant
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address 
  */
-void libxsmm_instruction_prefetch( char**             io_generated_code,
-                                   const char*        i_prefetch_instr, 
-                                   const unsigned int i_gp_reg_number,
-                                   const int          i_displacement);
+void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
+                                   const char*             i_prefetch_instr, 
+                                   const unsigned int      i_gp_reg_number,
+                                   const int               i_displacement );
 
 /**
  * Generates regular all instructions with immediates
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_alu_instr actual alu gpr instruction
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_immediate the immediate operand 
  */
-void libxsmm_instruction_alu_imm( char**             io_generated_code,
-                                  const char*        i_alu_instr,
-                                  const unsigned int i_gp_reg_number,
-                                  const unsigned int i_immediate);
+void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
+                                  const char*             i_alu_instr,
+                                  const unsigned int      i_gp_reg_number,
+                                  const unsigned int      i_immediate );
 
 /**
  * Generates regular all instructions with immediates
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_label jump label that is insert into the code
 */
-void libxsmm_instruction_register_jump_label( char**      io_generated_code,
-                                              const char* i_jmp_label );
+void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generated_code,
+                                              const char*             i_jmp_label );
 
 /**
  * Generates regular all instructions with immediates
  *
- * @param io_generated_code pointer to the pointer of the generated code buffer
+ * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_instr the particular jump instruction used
  * @param i_jmp_label jump label that is the target of the jump, THIS IS NOT CHECKED, YOU TO ENSURE THAT IT EXISTS IN ORDER TO AVOID ASSEMBLER ERRORS
 */
-void libxsmm_instruction_jump_to_label( char**      io_generated_code,
-                                        const char* i_jmp_instr,
-                                        const char* i_jmp_label );
+void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_code,
+                                        const char*             i_jmp_instr,
+                                        const char*             i_jmp_label );
 
 #endif /* GENERATOR_DENSE_INSTRUCTIONS_H */
 

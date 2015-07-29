@@ -205,46 +205,46 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   strcpy( io_micro_kernel_config->alu_mov_instruction, "movq" ); 
 }
 
-void libxsmm_generator_dense_add_isa_check_header( char**       io_generated_code, 
-                                                   const char*  i_arch ) {
+void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_generated_code, 
+                                                   const char*             i_arch ) {
   if ( (strcmp( i_arch, "wsm" ) == 0) ) {
-    libxsmm_append_string( io_generated_code, "#ifdef __SSE3__\n");
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX__\n");
-    libxsmm_append_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)\n");
-    libxsmm_append_string( io_generated_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __SSE3__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)\n");
+    libxsmm_append_code_as_string( io_generated_code, "#endif\n");
   } else if ( (strcmp( i_arch, "snb" ) == 0) ) {
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX__\n");
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX2__\n");
-    libxsmm_append_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX code on AVX2 or newer architecture: \" __FILE__)\n");
-    libxsmm_append_string( io_generated_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX2__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX code on AVX2 or newer architecture: \" __FILE__)\n");
+    libxsmm_append_code_as_string( io_generated_code, "#endif\n");
   } else if ( (strcmp( i_arch, "hsw" ) == 0) ) {
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX2__\n");
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX512F__\n");
-    libxsmm_append_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)\n");
-    libxsmm_append_string( io_generated_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX2__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX512F__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)\n");
+    libxsmm_append_code_as_string( io_generated_code, "#endif\n");
   } else if ( (strcmp( i_arch, "knl" ) == 0) ||
               (strcmp( i_arch, "skx" ) == 0) ) {
-    libxsmm_append_string( io_generated_code, "#ifdef __AVX512F__\n");
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX512F__\n");
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
-    libxsmm_append_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n");
+    libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n");
   } else {
     fprintf(stderr, "unsupported architecture in libxsmm_generator_dense_add_isa_check_header\n");
     exit(-1);   
   }
 }
 
-void libxsmm_generator_dense_add_isa_check_footer( char**       io_generated_code, 
-                                                   const char*  i_arch ) {
+void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_generated_code, 
+                                                   const char*             i_arch ) {
   if ( (strcmp( i_arch, "wsm" ) == 0) || 
        (strcmp( i_arch, "snb" ) == 0) || 
        (strcmp( i_arch, "hsw" ) == 0) || 
        (strcmp( i_arch, "knc" ) == 0) || 
        (strcmp( i_arch, "knl" ) == 0) || 
        (strcmp( i_arch, "skx" ) == 0)    ) {
-    libxsmm_append_string( io_generated_code, "#else\n");
-    libxsmm_append_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION ERROR in: \" __FILE__)\n");
-    libxsmm_append_string( io_generated_code, "#error No kernel was compiled, lacking support for current architecture?\n");
-    libxsmm_append_string( io_generated_code, "#endif\n\n");
+    libxsmm_append_code_as_string( io_generated_code, "#else\n");
+    libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION ERROR in: \" __FILE__)\n");
+    libxsmm_append_code_as_string( io_generated_code, "#error No kernel was compiled, lacking support for current architecture?\n");
+    libxsmm_append_code_as_string( io_generated_code, "#endif\n\n");
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
   } else {
     fprintf(stderr, "unsupported architecture in libxsmm_generator_dense_add_isa_check_footer\n");
@@ -252,25 +252,25 @@ void libxsmm_generator_dense_add_isa_check_footer( char**       io_generated_cod
   }
 }
 
-void libxsmm_generator_dense_add_flop_counter( char**                          io_generated_code,
+void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];
   l_new_code[0] = '\0';
   
-  libxsmm_append_string( io_generated_code, "#ifndef NDEBUG\n");
-  libxsmm_append_string( io_generated_code, "#ifdef _OPENMP\n");
-  libxsmm_append_string( io_generated_code, "#pragma omp atomic\n");
-  libxsmm_append_string( io_generated_code, "#endif\n");
+  libxsmm_append_code_as_string( io_generated_code, "#ifndef NDEBUG\n");
+  libxsmm_append_code_as_string( io_generated_code, "#ifdef _OPENMP\n");
+  libxsmm_append_code_as_string( io_generated_code, "#pragma omp atomic\n");
+  libxsmm_append_code_as_string( io_generated_code, "#endif\n");
   sprintf( l_new_code, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
-  libxsmm_append_string( io_generated_code, l_new_code);
-  libxsmm_append_string( io_generated_code, "#endif\n\n");
+  libxsmm_append_code_as_string( io_generated_code, l_new_code);
+  libxsmm_append_code_as_string( io_generated_code, "#endif\n\n");
 }
 
-void libxsmm_generator_dense_header_kloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const unsigned int                  i_m_blocking,
-                                          const unsigned int                  i_k_blocking ) {
+void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const unsigned int                  i_m_blocking,
+                                           const unsigned int                  i_k_blocking ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
@@ -280,13 +280,13 @@ void libxsmm_generator_dense_header_kloop(char**                              io
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
 
-void libxsmm_generator_dense_footer_kloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                          const unsigned int                  i_m_blocking,
-                                          const unsigned int                  i_max_blocked_k,
-                                          const unsigned int                  i_kloop_complete ) {
+void libxsmm_generator_dense_footer_kloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                           const unsigned int                  i_m_blocking,
+                                           const unsigned int                  i_max_blocked_k,
+                                           const unsigned int                  i_kloop_complete ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
@@ -299,10 +299,10 @@ void libxsmm_generator_dense_footer_kloop(char**                              io
   }
 }
 
-void libxsmm_generator_dense_header_nloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const unsigned int                  i_n_blocking) {
+void libxsmm_generator_dense_header_nloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const unsigned int                  i_n_blocking) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
@@ -313,11 +313,11 @@ void libxsmm_generator_dense_header_nloop(char**                              io
 }
 
 
-void libxsmm_generator_dense_footer_nloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                          const unsigned int                  i_n_blocking ) {
+void libxsmm_generator_dense_footer_nloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                           const unsigned int                  i_n_blocking ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
@@ -337,10 +337,10 @@ void libxsmm_generator_dense_footer_nloop(char**                              io
 }
 
 
-void libxsmm_generator_dense_header_mloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const unsigned int                  i_m_blocking ) {
+void libxsmm_generator_dense_header_mloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const unsigned int                  i_m_blocking ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
@@ -349,12 +349,12 @@ void libxsmm_generator_dense_header_mloop(char**                              io
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_mloop, i_m_blocking );
 }
 
-void libxsmm_generator_dense_footer_mloop(char**                              io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                          const unsigned int                  i_m_blocking,
-                                          const unsigned int                  i_m_done ) {
+void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                           const unsigned int                  i_m_blocking,
+                                           const unsigned int                  i_m_done ) {
   char l_new_code[32];
   l_new_code[0] = '\0';
 
