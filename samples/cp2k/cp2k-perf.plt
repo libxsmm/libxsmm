@@ -32,8 +32,8 @@ NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * colu
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
 TIME(M, N, K, F, S) = column(S) * NFLOPS(M, N, K) * 1E-9 / column(F)
-#BW(M, N, K, F, S, BWC, ELEMSIZE) = column(S) * (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F, S) * 1024 * 1024 * 1024)
-BW(M, N, K, F, S, BWC, ELEMSIZE) = column(BWC)
+BW(M, N, K, F, S, BWC, ELEMSIZE) = column(S) * (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F, S) * 1024 * 1024 * 1024)
+#BW(M, N, K, F, S, BWC, ELEMSIZE) = column(BWC)
 
 stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; GEOFLOPS = exp(STATS_sum/STATS_records)
@@ -129,10 +129,10 @@ set xrange [-0.5:2.5]
 set yrange [0:*]
 set autoscale fix
 set label sprintf("{/=9 ".FORMAT(BIN1_FLOPS)." GFLOP/s}", BIN1_FLOPS) at 0.0, BIN1_FLOPS centre offset 0, -1 front
-set label sprintf("{/=9 (".FORMAT(BIN1_MEMBW)." GB/s)}", BIN1_MEMBW) at 0.0, BIN1_FLOPS centre offset 0, -2 front
 set label sprintf("{/=9 ".FORMAT(BIN2_FLOPS)." GFLOP/s}", BIN2_FLOPS) at 1.0, BIN2_FLOPS centre offset 0, -1 front
-set label sprintf("{/=9 (".FORMAT(BIN2_MEMBW)." GB/s)}", BIN2_MEMBW) at 1.0, BIN2_FLOPS centre offset 0, -2 front
 set label sprintf("{/=9 ".FORMAT(BIN3_FLOPS)." GFLOP/s}", BIN3_FLOPS) at 2.0, BIN3_FLOPS centre offset 0, -1 front
+set label sprintf("{/=9 (".FORMAT(BIN1_MEMBW)." GB/s)}", BIN1_MEMBW) at 0.0, BIN1_FLOPS centre offset 0, -2 front
+set label sprintf("{/=9 (".FORMAT(BIN2_MEMBW)." GB/s)}", BIN2_MEMBW) at 1.0, BIN2_FLOPS centre offset 0, -2 front
 set label sprintf("{/=9 (".FORMAT(BIN3_MEMBW)." GB/s)}", BIN3_MEMBW) at 2.0, BIN3_FLOPS centre offset 0, -2 front
 plot  BASENAME."-perf.dat" \
       using (0.0):(BIN1_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey", \
