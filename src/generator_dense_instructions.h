@@ -64,7 +64,7 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
  * @param i_vmove_instr actual vmov variant
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address 
- * @param i_vector_name the vector register name prefix (xmm,ymm or zmm)
+ * @param i_vector_name the vector register name prefix (x, y or z)
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_is_store 0: load semantik, other: store semantik  
  */
@@ -72,7 +72,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
                                    const char*             i_vmove_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement,
-                                   const char*             i_vector_name,
+                                   const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
                                    const unsigned int      i_is_store );
 
@@ -82,14 +82,14 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_vec_instr actual operation variant
- * @param i_vector_name the vector register name prefix (xmm,ymm or zmm)
+ * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_1 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  */
 void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
                                           const char*             i_vec_instr,
-                                          const char*             i_vector_name,                                
+                                          const char              i_vector_name,                              
                                           const unsigned int      i_vec_reg_number_0,
                                           const unsigned int      i_vec_reg_number_1,
                                           const unsigned int      i_vec_reg_number_2 );

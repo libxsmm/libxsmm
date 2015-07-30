@@ -43,7 +43,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
                                    const char*             i_vmove_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement,
-                                   const char*             i_vector_name,
+                                   const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
                                    const unsigned int      i_is_store ) {
   /* @TODO add checks in debug mode */
@@ -57,9 +57,9 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
 
     /* build vmovpd/ps/sd/ss instruction, load use */
     if ( i_is_store == 0 ) {
-      sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%s%i\\n\\t\"\n", i_vmove_instr, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
+      sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", i_vmove_instr, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
     } else {
-      sprintf(l_new_code, "                       \"%s %%%%%s%i, %i(%%%%%s)\\n\\t\"\n", i_vmove_instr, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+      sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", i_vmove_instr, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
@@ -67,7 +67,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
 
 void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
                                           const char*             i_vec_instr,
-                                          const char*             i_vector_name,                                
+                                          const char              i_vector_name,                                
                                           const unsigned int      i_vec_reg_number_0,
                                           const unsigned int      i_vec_reg_number_1,
                                           const unsigned int      i_vec_reg_number_2 ) {
@@ -79,7 +79,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     l_new_code[0] = '\0';
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    sprintf(l_new_code, "                       \"%s %%%%%s%i, %%%%%s%i, %%%%%s%i\\n\\t\"\n", i_vec_instr, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+    sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", i_vec_instr, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
 }

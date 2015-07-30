@@ -46,7 +46,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
-    strcpy( io_micro_kernel_config->vector_name, "ymm" );
+    io_micro_kernel_config->vector_name = 'y';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
@@ -108,7 +108,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
-    strcpy( io_micro_kernel_config->vector_name, "xmm" );
+    io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
@@ -170,7 +170,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
-    strcpy( io_micro_kernel_config->vector_name, "xmm" );
+    io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;

@@ -72,7 +72,7 @@ typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_length;
   unsigned int datatype_size;
-  char         vector_name[16];
+  char         vector_name;
   char         a_vmove_instruction[16];
   char         b_vmove_instruction[16];
   char         b_shuff_instruction[16];
