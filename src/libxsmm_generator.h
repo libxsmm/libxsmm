@@ -54,10 +54,15 @@ typedef struct libxsmm_xgemm_descriptor_struct {
 /* struct for storing the generated code
    and some information attached to it */
 typedef struct libxsmm_generated_code_struct {
-  char* generated_code;
-  unsigned int buffer_size;
-  unsigned int code_size;
-  unsigned int generate_binary_code;
+  void* generated_code;              /* pointer to memory which can contain strings or binary code */
+  unsigned int buffer_size;          /* total size if the buffer generated_code */
+  unsigned int code_size;            /* size of bytes used in generated_code */
+  unsigned int generate_binary_code; /*   0: generated code contains inline assembly in a C 
+                                             function which can be dumped into into a *.c/cc/cpp file
+                                          1: generated code contains assembly which can be 
+                                             dumped into a *.s file
+                                         >1: generated code contains a function in binary code which can be 
+                                             called, when the buffer is copied to executable memory */ 
 } libxsmm_generated_code;
 
 void libxsmm_generator_dense_kernel(libxsmm_generated_code*         io_generated_code,

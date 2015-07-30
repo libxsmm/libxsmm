@@ -47,16 +47,17 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   size_t l_length_1 = 0;
   size_t l_length_2 = 0;
   char* l_new_string = NULL;
+  char* current_code = (char*)io_generated_code->generated_code;
 
   /* check if end up here accidentally */
-  if ( io_generated_code->generate_binary_code != 0 ) {
+  if ( io_generated_code->generate_binary_code > 1 ) {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string was called although jiting code was requested!" );
     exit(-3);
   }
 
   /* some safety checks */
-  if (io_generated_code->generated_code != NULL) {
-    l_length_1 = strlen(io_generated_code->generated_code);
+  if (current_code != NULL) {
+    l_length_1 = strlen(current_code);
   } else {
     /* nothing to do */
     l_length_1 = 0;
@@ -76,7 +77,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* copy old content */
   if (l_length_1 > 0) {
-    strcpy(l_new_string, io_generated_code->generated_code);
+    strcpy(l_new_string, current_code);
   } else {
     l_new_string[0] = '\0';
   }
@@ -86,9 +87,9 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* free old memory and overwrite pointer */
   if (l_length_1 > 0)
-    free(io_generated_code->generated_code);
+    free(current_code);
   
-  io_generated_code->generated_code = l_new_string;
+  io_generated_code->generated_code = (void*)l_new_string;
 
   /* update counters */
   io_generated_code->code_size = (unsigned int)(l_length_1+l_length_2);
