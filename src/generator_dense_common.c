@@ -210,21 +210,24 @@ void libxsmm_generator_dense_signature( libxsmm_generated_code*         io_gener
                                         const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
   char l_new_code_line[512];
 
-  if ( io_generated_code->code_type != 0 )
+  if ( io_generated_code->code_type > 1 ) {
     return;
-  
-  /* selecting the correct signature */
-  if (i_xgemm_desc->single_precision == 1) {
-    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
-      sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
-    } else {
-      sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL) {\n", i_routine_name);
-    }
+  } else if ( io_generated_code->code_type == 1 ) {
+    sprintf(l_new_code_line, "_%s:\n", i_routine_name);
   } else {
-    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
-      sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
+    /* selecting the correct signature */
+    if (i_xgemm_desc->single_precision == 1) {
+      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+        sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
+      } else {
+        sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL) {\n", i_routine_name);
+      }
     } else {
-      sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL) {\n", i_routine_name);
+      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+        sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
+      } else {
+        sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL) {\n", i_routine_name);
+      }
     }
   }
 

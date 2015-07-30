@@ -114,6 +114,9 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 1;
 
+  /* add signature to code string */
+  libxsmm_generator_dense_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
 
