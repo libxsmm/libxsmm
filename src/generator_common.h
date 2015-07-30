@@ -120,6 +120,9 @@
 #define LIBXSMM_X86_INSTR_JL            30004
 #define LIBXSMM_X86_INSTR_PREFETCH1     30005
 
+/* some function macros */
+#define LIBXSMM_MIN(a,b) (((a)<(b))?(a):(b))
+
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int instruction_set;
