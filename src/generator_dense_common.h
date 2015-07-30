@@ -49,6 +49,10 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
                                                               const char*                     i_arch,
                                                               const unsigned int              i_use_masking_a_c );
 
+void libxsmm_generator_dense_signature( libxsmm_generated_code*         io_generated_code,
+                                        const char*                     i_routine_name,
+                                        const libxsmm_xgemm_descriptor* i_xgemm_desc );
+
 void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code*  io_generated_code, 
                                                    const char*              i_arch );
 

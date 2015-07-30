@@ -205,8 +205,38 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   strcpy( io_micro_kernel_config->alu_mov_instruction, "movq" ); 
 }
 
+void libxsmm_generator_dense_signature( libxsmm_generated_code*         io_generated_code,
+                                        const char*                     i_routine_name,
+                                        const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
+  char l_new_code_line[512];
+  l_new_code_line[0] = '\0';
+
+  if ( io_generated_code->code_type != 0 )
+    return;
+  
+  /* selecting the correct signature */
+  if (i_xgemm_desc->single_precision == 1) {
+    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+      sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
+    } else {
+      sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C, const float* A_prefetch = NULL, const float* B_prefetch = NULL, const float* C_prefetch = NULL) {\n", i_routine_name);
+    }
+  } else {
+    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+      sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
+    } else {
+      sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C, const double* A_prefetch = NULL, const double* B_prefetch = NULL, const double* C_prefetch = NULL) {\n", i_routine_name);
+    }
+  }
+
+  libxsmm_append_code_as_string( io_generated_code, l_new_code_line );
+}
+
 void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_generated_code, 
                                                    const char*             i_arch ) {
+  if ( io_generated_code->code_type != 0 )
+    return;
+
   if ( (strcmp( i_arch, "wsm" ) == 0) ) {
     libxsmm_append_code_as_string( io_generated_code, "#ifdef __SSE3__\n");
     libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX__\n");
@@ -235,6 +265,9 @@ void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_ge
 
 void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_generated_code, 
                                                    const char*             i_arch ) {
+  if ( io_generated_code->code_type != 0 )
+    return;
+
   if ( (strcmp( i_arch, "wsm" ) == 0) || 
        (strcmp( i_arch, "snb" ) == 0) || 
        (strcmp( i_arch, "hsw" ) == 0) || 
@@ -254,6 +287,9 @@ void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_ge
 
 void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
+  if ( io_generated_code->code_type != 0 )
+    return;
+
   char l_new_code[512];
   l_new_code[0] = '\0';
   

@@ -50,7 +50,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   char* current_code = (char*)io_generated_code->generated_code;
 
   /* check if end up here accidentally */
-  if ( io_generated_code->generate_binary_code > 1 ) {
+  if ( io_generated_code->code_type > 1 ) {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string was called although jiting code was requested!" );
     exit(-3);
   }
@@ -97,7 +97,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 }
 
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
-  if ( io_generated_code->generate_binary_code != 0 )
+  if ( io_generated_code->code_type != 0 )
     return;
 
   libxsmm_append_code_as_string(io_generated_code, "}\n\n");

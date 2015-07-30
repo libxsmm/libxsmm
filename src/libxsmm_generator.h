@@ -57,7 +57,7 @@ typedef struct libxsmm_generated_code_struct {
   void* generated_code;              /* pointer to memory which can contain strings or binary code */
   unsigned int buffer_size;          /* total size if the buffer generated_code */
   unsigned int code_size;            /* size of bytes used in generated_code */
-  unsigned int generate_binary_code; /*   0: generated code contains inline assembly in a C 
+  unsigned int code_type;            /*   0: generated code contains inline assembly in a C 
                                              function which can be dumped into into a *.c/cc/cpp file
                                           1: generated code contains assembly which can be 
                                              dumped into a *.s file
@@ -65,20 +65,25 @@ typedef struct libxsmm_generated_code_struct {
                                              called, when the buffer is copied to executable memory */ 
 } libxsmm_generated_code;
 
-void libxsmm_generator_dense_kernel(libxsmm_generated_code*         io_generated_code,
-                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                    const char*                     i_arch );
+void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
+                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                     const char*                     i_arch );
 
-void libxsmm_generator_dense(const char*                     i_file_out,
-                             const char*                     i_routine_name,
-                             const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                             const char*                     i_arch );
+void libxsmm_generator_dense_inlineasm( const char*                     i_file_out,
+                                        const char*                     i_routine_name,
+                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                        const char*                     i_arch );
 
-void libxsmm_generator_sparse(const char*                     i_file_out,
-                              const char*                     i_routine_name,
-                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                              const char*                     i_arch, 
-                              const char*                     i_file_in );
+void libxsmm_generator_dense_directasm( const char*                     i_file_out,
+                                        const char*                     i_routine_name,
+                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                        const char*                     i_arch );
+
+void libxsmm_generator_sparse( const char*                     i_file_out,
+                               const char*                     i_routine_name,
+                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                               const char*                     i_arch, 
+                               const char*                     i_file_in );
 
 #endif /* LIBXSMM_GENERATOR_H */
 

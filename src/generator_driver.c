@@ -196,8 +196,9 @@ int main(int argc, char* argv []) {
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
-  if ( (strcmp(l_type, "sparse") != 0) && 
-       (strcmp(l_type, "dense")  != 0)     ) {
+  if ( (strcmp(l_type, "sparse")     != 0) && 
+       (strcmp(l_type, "dense")      != 0) &&
+       (strcmp(l_type, "dense_asm")  != 0)    ) {
     print_help();
     return -1;
   }
@@ -298,13 +299,18 @@ int main(int argc, char* argv []) {
   }
 #endif
 
-  if ( strcmp(l_type, "dense") == 0 ) {
+  if ( (strcmp(l_type, "dense")     == 0) || 
+       (strcmp(l_type, "dense_asm") == 0)    ) {
     if (l_lda < 1 || l_ldb < 1 || l_ldc < 1) {
       print_help();
       return -1;
     }
 
-    libxsmm_generator_dense(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+    if ( strcmp(l_type, "dense")  == 0 ) {
+      libxsmm_generator_dense_inlineasm(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+    } else {
+      libxsmm_generator_dense_directasm(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+    }
   }
   
   return 0;
