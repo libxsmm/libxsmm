@@ -36,10 +36,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mkl.h>
 #endif
 
-#ifdef __USE_SNIPER                                                                                                            //TSNDA
-#include "sim_api.h"                                                                                                           //TSNDA
-#endif                                                                                                                         //TSNDA
-
 #include "gen_matmul_dense.hpp"
 
 #ifndef MY_M
@@ -54,12 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MY_K MY_N
 #endif
 
-#ifdef __USE_SNIPER                                                                                                            //TSNDA
-#define REPS 100                                                                                                               //TSNDA
-#else                                                                                                                          //TSNDA
 #define REPS 10000
 //#define REPS 1
-#endif                                                                                                                         //TSNDA
 
 inline double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
@@ -126,7 +118,6 @@ void run_test() {
 
   gettimeofday(&end, NULL);
   double total = sec(start, end);
-#ifndef __USE_SNIPER                                                                                                                //TSNDA
 #ifndef __USE_MKL
   std::cout << total << "s for C" << std::endl;
   std::cout << ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (total * 1.0e9) << " GFLOPS for C" << std::endl;
@@ -134,29 +125,16 @@ void run_test() {
   std::cout << total << "s for MKL" << std::endl;
   std::cout << ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (total * 1.0e9) << " GFLOPS for MKL" << std::endl;
 #endif
-#endif                                                                                                                              //TSNDA
 
   gettimeofday(&start, NULL);
-
-#ifdef __USE_SNIPER                                                                                                                 //TSNDA
-  for (int t = 0; t < REPS; t++) {                                                                                                  //TSNDA
-    dense_test_mul(a, b, c);                                                                                                        //TSNDA
-  }                                                                                                                                 //TSNDA
-  SimRoiStart();                                                                                                                    //TSNDA
-#endif                                                                                                                              //TSNDA
 
   for (int t = 0; t < REPS; t++) {
     dense_test_mul(a, b, c);
   }
     
-#ifdef __USE_SNIPER                                                                                                                 //TSNDA
-  SimRoiEnd();                                                                                                                      //TSNDA
-#endif                                                                                                                              //TSNDA
-
   gettimeofday(&end, NULL);
   total = sec(start, end);
 
-#ifndef __USE_SNIPER                                                                                                                //TSNDA
   std::cout << total << "s for assembly" << std::endl;
   std::cout << ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (total * 1.0e9) << " GFLOPS for assembly" << std::endl;
 
@@ -172,7 +150,6 @@ void run_test() {
   }
 
   std::cout << "max. error: " << max_error << std::endl;
-#endif                                                                                                                              //TSNDA
 
   // free
   _mm_free(a);
@@ -182,7 +159,6 @@ void run_test() {
 }
 
 int main(int argc, char* argv[]) {
-#ifndef __USE_SNIPER                                                                                                               //TSNDA
   std::cout << "------------------------------------------------" << std::endl;
   std::cout << "RUNNING (" << MY_M << "x" << MY_K << ") X (" << MY_K << "x" << MY_N << ") = (" << MY_M << "x" << MY_N << ")";
   if (sizeof(REALTYPE) == sizeof(double)) {
@@ -193,8 +169,5 @@ int main(int argc, char* argv[]) {
   std::cout << "------------------------------------------------" << std::endl;
   run_test();
   std::cout << "------------------------------------------------" << std::endl;
-#else                                                                                                                              //TSNDA
-  run_test();                                                                                                                      //TSNDA
-#endif                                                                                                                             //TSNDA
   return 0;
 }
