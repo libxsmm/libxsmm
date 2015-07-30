@@ -228,11 +228,19 @@ void libxsmm_generator_dense_avx_kernel( libxsmm_generated_code*        io_gener
   /* define gp register mapping */
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  /* machting calling convention on Linux */
+  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
+  l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
+  l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
+  l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
+  /*
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R9;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_R10;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R15;
+  */
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14; 

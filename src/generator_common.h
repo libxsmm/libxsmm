@@ -163,6 +163,8 @@ typedef struct libxsmm_gp_reg_mapping_struct {
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name ); 
 
+unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number );
+
 void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
                                  char*              o_instr_name ); 
 

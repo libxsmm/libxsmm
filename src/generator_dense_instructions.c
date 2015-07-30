@@ -190,9 +190,45 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_
     /* @TODO-GREG: how do we interface here? */
     /* this is start of the xGEMM kernel, the registers are in the variables */
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO-GREG call encoding here */
-    /* @TODO-GREG: how do we interface here? */
-    /* this is start of the xGEMM kernel, the registers are in the variables */
+    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    char l_new_code[512];
+    char l_gp_reg_name[4];
+
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_c cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
@@ -242,9 +278,47 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
     /* @TODO-GREG: how do we interface here? */
     /* this is start of the xGEMM kernel, the registers are in the variables */
   } else if ( io_generated_code->code_type == 1 ) {
-    /* @TODO-GREG call encoding here */
-    /* @TODO-GREG: how do we interface here? */
-    /* this is start of the xGEMM kernel, the registers are in the variables */
+    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
+    char l_new_code[512];
+    char l_gp_reg_name[4];
+
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_c cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
+      exit(-1);
+    }
+    /* @TODO: I don't know if this is the correct placement in the generation process */
+    libxsmm_append_code_as_string( io_generated_code, "                       retq\n" );
   } else {
     char l_new_code[512];
     char l_gp_reg_a[4];

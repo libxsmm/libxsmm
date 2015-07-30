@@ -49,6 +49,7 @@ then
   ARCH=$1
   PREC=$2
 fi
+ASM=1
 
 # select precision 
 if [ "${PREC}" == 'DP' ]; then
@@ -67,10 +68,13 @@ do
     for k in ${K}
     do 
       rm -rf gen_matmul_dense.hpp
-      rm -rf kernel_${PREC}_${m}_${n}_${k}.s
+      rm -rf kernel_${PREC}_${m}_${n}_${k}.*
       rm -rf xgemm_${m}_${n}_${k}
-      valgrind ./../../bin/generator dense gen_matmul_dense.hpp dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} pfsigonly ${PREC}
-      #valgrind ./../../bin/generator dense_asm kernel_${PREC}_${m}_${n}_${k}.s dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} pfsigonly ${PREC}
+      valgrind ./../../bin/generator dense gen_matmul_dense.hpp dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
+      if [ $ASM -eq 1 ]
+      then
+        valgrind ./../../bin/generator dense_asm kernel_${PREC}_${m}_${n}_${k}.s dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
+      fi
       if [ "${ARCH}" == 'wsm' ]; then
         icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
         ./xgemm_${m}_${n}_${k}
@@ -82,6 +86,12 @@ do
         #icpc -O2 -xCORE_AVX2 -fma -DNDEBUG -D__USE_MKL -mkl -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
         icpc -O2 -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
         ./xgemm_${m}_${n}_${k}
+        if [ $ASM -eq 1 ]
+        then
+          as kernel_${PREC}_${m}_${n}_${k}.s -o kernel_${PREC}_${m}_${n}_${k}.o
+          icpc -O2 -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${PREC}_${m}_${n}_${k}.o -o xgemm_${m}_${n}_${k}_asm
+          ./xgemm_${m}_${n}_${k}_asm
+        fi
       elif [ "${ARCH}" == 'knc' ]; then
         icpc -O3 -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
         scp xgemm_${m}_${n}_${k} mic0:

@@ -213,7 +213,7 @@ void libxsmm_generator_dense_signature( libxsmm_generated_code*         io_gener
   if ( io_generated_code->code_type > 1 ) {
     return;
   } else if ( io_generated_code->code_type == 1 ) {
-    sprintf(l_new_code_line, "_%s:\n", i_routine_name);
+    sprintf(l_new_code_line, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
     if (i_xgemm_desc->single_precision == 1) {

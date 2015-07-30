@@ -103,6 +103,19 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
   libxsmm_append_code_as_string(io_generated_code, "}\n\n");
 }
 
+unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number ) {
+  if ( (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBX) ||
+       (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBP) ||
+       (i_gp_reg_number == LIBXSMM_X86_GP_REG_R12) ||
+       (i_gp_reg_number == LIBXSMM_X86_GP_REG_R13) ||
+       (i_gp_reg_number == LIBXSMM_X86_GP_REG_R14) ||
+       (i_gp_reg_number == LIBXSMM_X86_GP_REG_R15)    ) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name ) {
   switch (i_gp_reg_number) {
