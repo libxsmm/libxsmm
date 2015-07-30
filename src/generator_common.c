@@ -104,58 +104,216 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
 }
 
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
-                                  char*              i_gp_reg_name ) {
+                                  char*              o_gp_reg_name ) {
   switch (i_gp_reg_number) {
     case LIBXSMM_X86_GP_REG_RAX: 
-      strcpy(i_gp_reg_name, "rax");
+      strcpy(o_gp_reg_name, "rax");
       break;
     case LIBXSMM_X86_GP_REG_RCX:
-      strcpy(i_gp_reg_name, "rcx");
+      strcpy(o_gp_reg_name, "rcx");
       break;
     case LIBXSMM_X86_GP_REG_RDX:
-      strcpy(i_gp_reg_name, "rdx");
+      strcpy(o_gp_reg_name, "rdx");
       break;
     case LIBXSMM_X86_GP_REG_RBX:
-      strcpy(i_gp_reg_name, "rbx");
+      strcpy(o_gp_reg_name, "rbx");
       break;
     case LIBXSMM_X86_GP_REG_RSP: 
-      strcpy(i_gp_reg_name, "rsp");
+      strcpy(o_gp_reg_name, "rsp");
       break;
     case LIBXSMM_X86_GP_REG_RBP:
-      strcpy(i_gp_reg_name, "rbp");
+      strcpy(o_gp_reg_name, "rbp");
       break;
     case LIBXSMM_X86_GP_REG_RSI:
-      strcpy(i_gp_reg_name, "rsi");
+      strcpy(o_gp_reg_name, "rsi");
       break;
     case LIBXSMM_X86_GP_REG_RDI:
-      strcpy(i_gp_reg_name, "rdi");
+      strcpy(o_gp_reg_name, "rdi");
       break;
     case LIBXSMM_X86_GP_REG_R8: 
-      strcpy(i_gp_reg_name, "r8");
+      strcpy(o_gp_reg_name, "r8");
       break;
     case LIBXSMM_X86_GP_REG_R9:
-      strcpy(i_gp_reg_name, "r9");
+      strcpy(o_gp_reg_name, "r9");
       break;
     case LIBXSMM_X86_GP_REG_R10:
-      strcpy(i_gp_reg_name, "r10");
+      strcpy(o_gp_reg_name, "r10");
       break;
     case LIBXSMM_X86_GP_REG_R11:
-      strcpy(i_gp_reg_name, "r11");
+      strcpy(o_gp_reg_name, "r11");
       break;
     case LIBXSMM_X86_GP_REG_R12: 
-      strcpy(i_gp_reg_name, "r12");
+      strcpy(o_gp_reg_name, "r12");
       break;
     case LIBXSMM_X86_GP_REG_R13:
-      strcpy(i_gp_reg_name, "r13");
+      strcpy(o_gp_reg_name, "r13");
       break;
     case LIBXSMM_X86_GP_REG_R14:
-      strcpy(i_gp_reg_name, "r14");
+      strcpy(o_gp_reg_name, "r14");
       break;
     case LIBXSMM_X86_GP_REG_R15:
-      strcpy(i_gp_reg_name, "r15");
+      strcpy(o_gp_reg_name, "r15");
       break;
     default:
       fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
+      exit(-1);
+  }
+}
+
+void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
+                                 char*              o_instr_name ) {
+  switch (i_instr_number) {
+    /* AVX vector moves */
+    case LIBXSMM_X86_INSTR_VMOVAPD:
+      strcpy(o_instr_name, "vmovapd");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVUPD:
+      strcpy(o_instr_name, "vmovupd");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVAPS:
+      strcpy(o_instr_name, "vmovaps");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVUPS:
+      strcpy(o_instr_name, "vmovups");
+      break;
+    case LIBXSMM_X86_INSTR_VBROADCASTSD:
+      strcpy(o_instr_name, "vbroadcastsd");
+      break;
+    case LIBXSMM_X86_INSTR_VBROADCASTSS:
+      strcpy(o_instr_name, "vbroadcastss");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVDDUP:
+      strcpy(o_instr_name, "vmovddup");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVSD:
+      strcpy(o_instr_name, "vmovsd");
+      break;
+    case LIBXSMM_X86_INSTR_VMOVSS:
+      strcpy(o_instr_name, "vmovss");
+      break;
+    /* SSE vector moves */
+    case LIBXSMM_X86_INSTR_MOVAPD:
+      strcpy(o_instr_name, "movapd");
+      break;
+    case LIBXSMM_X86_INSTR_MOVUPD:
+      strcpy(o_instr_name, "movupd");
+      break;
+    case LIBXSMM_X86_INSTR_MOVAPS:
+      strcpy(o_instr_name, "movaps");
+      break;
+    case LIBXSMM_X86_INSTR_MOVUPS:
+      strcpy(o_instr_name, "movups");
+      break;
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+      strcpy(o_instr_name, "movddup");
+      break;
+    case LIBXSMM_X86_INSTR_MOVSD:
+      strcpy(o_instr_name, "movsd");
+      break;
+    case LIBXSMM_X86_INSTR_MOVSS:
+      strcpy(o_instr_name, "movss");
+      break;
+    case LIBXSMM_X86_INSTR_SHUFFPS:
+      strcpy(o_instr_name, "SHUFFPS");
+      break;
+    /* AVX double precision */
+    case LIBXSMM_X86_INSTR_VXORPD:
+      strcpy(o_instr_name, "vxorpd");
+      break;
+    case LIBXSMM_X86_INSTR_VMULPD:
+      strcpy(o_instr_name, "vmulpd");
+      break;
+    case LIBXSMM_X86_INSTR_VADDPD:
+      strcpy(o_instr_name, "vaddpd");
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231PD:
+      strcpy(o_instr_name, "vfmadd231pd");
+      break;
+    case LIBXSMM_X86_INSTR_VMULSD:
+      strcpy(o_instr_name, "vmulsd");
+      break;
+    case LIBXSMM_X86_INSTR_VADDSD:
+      strcpy(o_instr_name, "vaddsd");
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231SD:
+      strcpy(o_instr_name, "vfmadd231sd");
+      break;
+    /* AVX single precision */
+    case LIBXSMM_X86_INSTR_VXORPS:
+      strcpy(o_instr_name, "vxorps");
+      break;
+    case LIBXSMM_X86_INSTR_VMULPS:
+      strcpy(o_instr_name, "vmulps");
+      break;
+    case LIBXSMM_X86_INSTR_VADDPS:
+      strcpy(o_instr_name, "vaddps");
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231PS:
+      strcpy(o_instr_name, "vfmadd231ps");
+      break;
+    case LIBXSMM_X86_INSTR_VMULSS:
+      strcpy(o_instr_name, "vmulss");
+      break;
+    case LIBXSMM_X86_INSTR_VADDSS:
+      strcpy(o_instr_name, "vaddss");
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231SS:
+      strcpy(o_instr_name, "vfmadd231ss");
+      break;
+    /* SSE double precision */
+    case LIBXSMM_X86_INSTR_XORPD:
+      strcpy(o_instr_name, "xorpd");
+      break;
+    case LIBXSMM_X86_INSTR_MULPD:
+      strcpy(o_instr_name, "mulpd");
+      break;
+    case LIBXSMM_X86_INSTR_ADDPD:
+      strcpy(o_instr_name, "addpd");
+      break;
+    case LIBXSMM_X86_INSTR_MULSD:
+      strcpy(o_instr_name, "mulsd");
+      break;
+    case LIBXSMM_X86_INSTR_ADDSD:
+      strcpy(o_instr_name, "addsd");
+      break;
+    /* SSE single precision */
+    case LIBXSMM_X86_INSTR_XORPS:
+      strcpy(o_instr_name, "xorps");
+      break;
+    case LIBXSMM_X86_INSTR_MULPS:
+      strcpy(o_instr_name, "mulps");
+      break;
+    case LIBXSMM_X86_INSTR_ADDPS:
+      strcpy(o_instr_name, "addps");
+      break;
+    case LIBXSMM_X86_INSTR_MULSS:
+      strcpy(o_instr_name, "mulss");
+      break;
+    case LIBXSMM_X86_INSTR_ADDSS:
+      strcpy(o_instr_name, "addss");
+      break;
+    /* GP instructions */
+    case LIBXSMM_X86_INSTR_ADDQ:
+      strcpy(o_instr_name, "addq");
+      break;
+    case LIBXSMM_X86_INSTR_SUBQ:
+      strcpy(o_instr_name, "subq");
+      break;
+    case LIBXSMM_X86_INSTR_MOVQ:
+      strcpy(o_instr_name, "movq");
+      break;
+    case LIBXSMM_X86_INSTR_CMPQ:
+      strcpy(o_instr_name, "cmpq");
+      break;
+    case LIBXSMM_X86_INSTR_JL:
+      strcpy(o_instr_name, "jl");
+      break;
+    case LIBXSMM_X86_INSTR_PREFETCH1: 
+      strcpy(o_instr_name, "prefetch1");
+      break;
+    /* default, we didn't had a match */
+    default:
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number is out of range!\n");
       exit(-1);
   }
 }

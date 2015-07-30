@@ -69,7 +69,7 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
  * @param i_is_store 0: load semantik, other: store semantik  
  */
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
-                                   const char*             i_vmove_instr, 
+                                   const unsigned int      i_vmove_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement,
                                    const char              i_vector_name,
@@ -88,7 +88,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
  * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  */
 void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
-                                          const char*             i_vec_instr,
+                                          const unsigned int      i_vec_instr,
                                           const char              i_vector_name,                              
                                           const unsigned int      i_vec_reg_number_0,
                                           const unsigned int      i_vec_reg_number_1,
@@ -105,7 +105,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
  * @param i_displacement the offset to the base address 
  */
 void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
-                                   const char*             i_prefetch_instr, 
+                                   const unsigned int      i_prefetch_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement );
 
@@ -118,7 +118,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
  * @param i_immediate the immediate operand 
  */
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
-                                  const char*             i_alu_instr,
+                                  const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
                                   const unsigned int      i_immediate );
 
@@ -139,7 +139,7 @@ void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generat
  * @param i_jmp_label jump label that is the target of the jump, THIS IS NOT CHECKED, YOU TO ENSURE THAT IT EXISTS IN ORDER TO AVOID ASSEMBLER ERRORS
 */
 void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_code,
-                                        const char*             i_jmp_instr,
+                                        const unsigned int      i_jmp_instr,
                                         const char*             i_jmp_label );
 
 #endif /* GENERATOR_DENSE_INSTRUCTIONS_H */
