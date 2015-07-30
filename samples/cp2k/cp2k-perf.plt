@@ -36,12 +36,18 @@ TIME(M, N, K, F, S) = column(S) * NFLOPS(M, N, K) * 1E-9 / column(F)
 BW(M, N, K, F, S, BWC, ELEMSIZE) = column(BWC)
 
 stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
-stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; GEO = exp(STATS_sum/STATS_records)
-stats BASENAME."-perf.dat" using FLOPS nooutput; MED = STATS_median; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
+stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; GEOFLOPS = exp(STATS_sum/STATS_records)
+stats BASENAME."-perf.dat" using FLOPS nooutput; MEDFLOPS = STATS_median; AVGFLOPS = STATS_mean; MINFLOPS = STATS_min; MAXFLOPS = STATS_max
 stats BASENAME."-perf.dat" using NPARM nooutput; XN = int(STATS_max)
+stats BASENAME."-perf.dat" using ((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) nooutput; BIN1_FLOPS = STATS_mean
+stats BASENAME."-perf.dat" using (((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?column(FLOPS):1/0) nooutput; BIN2_FLOPS = STATS_mean
+stats BASENAME."-perf.dat" using ((XFLOPS(23,23,23)<NFLOPS(MPARM,NPARM,KPARM))?column(FLOPS):1/0) nooutput; BIN3_FLOPS = STATS_mean
+stats BASENAME."-perf.dat" using ((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8):1/0) nooutput; BIN1_MEMBW = STATS_mean
+stats BASENAME."-perf.dat" using (((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8):1/0) nooutput; BIN2_MEMBW = STATS_mean
+stats BASENAME."-perf.dat" using ((XFLOPS(23,23,23)<NFLOPS(MPARM,NPARM,KPARM))?BW(MPARM,NPARM,KPARM,FLOPS,SSIZE,MEMBW,8):1/0) nooutput; BIN3_MEMBW = STATS_mean
 
+FORMAT(X) = sprintf("%%.%if", ceil(MAX(1.0 / log10(X) - 1.0, 0)))
 MAX(A, B) = A < B ? B : A
-ACC = sprintf("%%.%if", ceil(MAX(1.0 / log10(MED) - 1.0, 0)))
 
 IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
@@ -122,15 +128,21 @@ set y2label "GFLOP/s"
 set xrange [-0.5:2.5]
 set yrange [0:*]
 set autoscale fix
+set label sprintf("{/=9 ".FORMAT(BIN1_FLOPS)." GFLOP/s}", BIN1_FLOPS) at 0.0, BIN1_FLOPS centre offset 0, -1 front
+set label sprintf("{/=9 (".FORMAT(BIN1_MEMBW)." GB/s)}", BIN1_MEMBW) at 0.0, BIN1_FLOPS centre offset 0, -2 front
+set label sprintf("{/=9 ".FORMAT(BIN2_FLOPS)." GFLOP/s}", BIN2_FLOPS) at 1.0, BIN2_FLOPS centre offset 0, -1 front
+set label sprintf("{/=9 (".FORMAT(BIN2_MEMBW)." GB/s)}", BIN2_MEMBW) at 1.0, BIN2_FLOPS centre offset 0, -2 front
+set label sprintf("{/=9 ".FORMAT(BIN3_FLOPS)." GFLOP/s}", BIN3_FLOPS) at 2.0, BIN3_FLOPS centre offset 0, -1 front
+set label sprintf("{/=9 (".FORMAT(BIN3_MEMBW)." GB/s)}", BIN3_MEMBW) at 2.0, BIN3_FLOPS centre offset 0, -2 front
 plot  BASENAME."-perf.dat" \
-      using (0.0):((NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(13,13,13))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
-  ""  using (1.0):(((XFLOPS(13,13,13)<NFLOPS(MPARM,NPARM,KPARM))&&(NFLOPS(MPARM,NPARM,KPARM)<=XFLOPS(23,23,23)))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey", \
-  ""  using (2.0):((XFLOPS(23,23,23)<NFLOPS(MPARM,NPARM,KPARM))?column(FLOPS):1/0) notitle smooth unique with boxes linetype 1 linecolor "grey"
+      using (0.0):(BIN1_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey", \
+  ""  using (1.0):(BIN2_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey", \
+  ""  using (2.0):(BIN3_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey"
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance Distribution (CDF)" }
-set xlabel "Probability\n\n{/=9 Minimum: ".sprintf(ACC, MINFLOPS)." GFLOP/s  Geo. Mean: ".sprintf(ACC, GEO)." GFLOP/s  Median: ".sprintf(ACC, MED)." GFLOP/s  Maximum: ".sprintf(ACC, MAXFLOPS)." GFLOP/s}"
+set xlabel "Probability\n\n{/=9 Min.: ".sprintf(FORMAT(MINFLOPS), MINFLOPS)." GFLOP/s   Geo.: ".sprintf(FORMAT(GEOFLOPS), GEOFLOPS)." GFLOP/s   Med.: ".sprintf(FORMAT(MEDFLOPS), MEDFLOPS)." GFLOP/s   Avg.: ".sprintf(FORMAT(AVGFLOPS), AVGFLOPS)." GFLOP/s   Max.: ".sprintf(FORMAT(MAXFLOPS), MAXFLOPS)." GFLOP/s}"
 set ylabel "GB/s"
 set y2label "GFLOP/s"
 set format x "%g%%"
@@ -153,7 +165,7 @@ fit [x50-1.5*dx:x50+1.5*dx] h(x) BASENAME."-perf-cdf.dat" using (("".strcol(3)."
 set arrow from x50, second h(x50) to x50, second 0 front
 set arrow from x50, second h(x50) to 100, second h(x50) front
 set label sprintf("%.0f%%", x50) at x50, second 0.5 * h(x50) left offset 1 front
-set label sprintf(ACC." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) centre offset 0, -1 front
+set label sprintf(FORMAT(h(x50))." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) centre offset 0, -1 front
 set key left invert
 plot  BASENAME."-perf-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 title "Memory Bandwidth" with lines linecolor "grey", \
       BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 title "Compute Performance" with lines linewidth 2
