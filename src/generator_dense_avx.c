@@ -93,7 +93,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   
       unsigned int l_m_done = 0;
       unsigned int l_m_done_old = 0;
-      unsigned int l_m_blocking = 16;
+      unsigned int l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
       while (l_m_done != i_xgemm_desc->m) {
@@ -170,21 +170,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
         }
 
         /* switch to next smaller m_blocking */
-        if (l_m_blocking == 2) {
-          l_m_blocking = 1;
-          libxsmm_generator_dense_init_micro_kernel_config_scalar( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
-        } else if (l_m_blocking == 4) {
-          l_m_blocking = 2;
-          libxsmm_generator_dense_init_micro_kernel_config_halfvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
-        } else if (l_m_blocking == 8) {
-          l_m_blocking = 4;
-        } else if (l_m_blocking == 12) {
-          l_m_blocking = 8;
-        } else if (l_m_blocking == 16) {
-          l_m_blocking = 12;
-        } else {
-          /* we are done with m_blocking */
-        }
+        l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch, l_m_blocking );
       }
 
       libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n_blocking);

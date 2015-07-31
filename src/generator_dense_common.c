@@ -108,7 +108,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
-    io_micro_kernel_config->vector_name = 'y';
+    io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
@@ -170,7 +170,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
-    io_micro_kernel_config->vector_name = 'y';
+    io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
@@ -188,7 +188,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSS;
-      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231SS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
     }

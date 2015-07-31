@@ -50,5 +50,13 @@ void libxsmm_generator_dense_sse_avx_avx2_store_C( libxsmm_generated_code*      
                                               const unsigned int                  i_m_blocking,
                                               const unsigned int                  i_n_blocking );
 
+unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( const libxsmm_xgemm_descriptor* i_xgemm_desc, 
+                                                                         const char*                     i_arch );
+
+unsigned int libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                                     const libxsmm_xgemm_descriptor* i_xgemm_desc, 
+                                                                     const char*                     i_arch,
+                                                                     const unsigned int              i_current_m_blocking );
+
 #endif /* #define GENERATOR_DENSE_SSE_AVX_AVX2_COMMON_H */
 
