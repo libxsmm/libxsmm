@@ -141,7 +141,8 @@ void libxsmm_generator_dense_sse_avx_avx2_store_C( libxsmm_generated_code*      
   }
 }
 
-unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( const libxsmm_xgemm_descriptor* i_xgemm_desc,
+unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+                                                                         const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                                          const char* i_arch ) {
   unsigned int l_m_blocking = 0;
 
@@ -161,6 +162,8 @@ unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( const l
     fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking unknown architecture!\n");
     exit(-1);
   }
+
+  libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   return l_m_blocking;
 }

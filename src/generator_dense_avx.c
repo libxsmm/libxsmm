@@ -61,6 +61,8 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
                                   const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int, const int);
   if ( (strcmp(i_arch, "hsw") == 0) ) {
     l_generator_microkernel = libxsmm_generator_dense_avx2_microkernel;
+  } else if ( (strcmp(i_arch, "snb") == 0) ) {
+/*    l_generator_microkernel = libxsmm_generator_dense_avx_microkernel;*/
   } else {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_sse_avx_avx2_kernel, cannot select microkernel\n");
     exit(-1);
@@ -69,7 +71,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   /* define the micro kernel code gen properties */
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
-  
+ 
   /* some hard coded parameters for k-blocking */
   unsigned int l_k_blocking = 4;
   unsigned int l_k_threshold = 30;
@@ -91,9 +93,10 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
 
       libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
   
+      /* define the micro kernel code gen properties, espically m-blocking affects the vector instruction length */
       unsigned int l_m_done = 0;
       unsigned int l_m_done_old = 0;
-      unsigned int l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( i_xgemm_desc, i_arch );
+      unsigned int l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
       while (l_m_done != i_xgemm_desc->m) {
@@ -183,9 +186,6 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
     } else {
       /* we are done with n_blocking */ 
     }
-
-    /* reset to full vector instructions */
-    libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
   }
 
   /* close asm */
