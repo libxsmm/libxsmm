@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_ASM_DIRECT
 extern "C" { void dense_test_mul(const REALTYPE* a, const REALTYPE* b, REALTYPE* c); }
 #else
-#include "gen_matmul_dense.hpp"
+#include GEMM_HEADER
 #endif
 
 #ifndef MY_M

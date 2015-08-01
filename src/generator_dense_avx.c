@@ -39,6 +39,7 @@
 #include "generator_dense_instructions.h"
 #include "generator_dense_sse_avx_avx2_common.h"
 #include "generator_dense_avx2_microkernel.h"
+#include "generator_dense_avx_microkernel.h"
 
 void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
@@ -62,7 +63,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   if ( (strcmp(i_arch, "hsw") == 0) ) {
     l_generator_microkernel = libxsmm_generator_dense_avx2_microkernel;
   } else if ( (strcmp(i_arch, "snb") == 0) ) {
-/*    l_generator_microkernel = libxsmm_generator_dense_avx_microkernel;*/
+    l_generator_microkernel = libxsmm_generator_dense_avx_microkernel;
   } else {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_sse_avx_avx2_kernel, cannot select microkernel\n");
     exit(-1);

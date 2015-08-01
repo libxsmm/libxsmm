@@ -179,9 +179,33 @@ unsigned int libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( libxsmm_mic
   } else if ( (strcmp( i_arch, "wsm" ) == 0) && (i_xgemm_desc->single_precision == 0) ) {
     l_m_blocking = 6;
   } else if ( (strcmp( i_arch, "snb" ) == 0) && (i_xgemm_desc->single_precision == 1) ) {
-    l_m_blocking = 24;
+    if (i_current_m_blocking == 4) {
+      l_m_blocking = 1;
+      libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 8) {
+      l_m_blocking = 4;
+      libxsmm_generator_dense_init_micro_kernel_config_halfvector( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 16) {
+      l_m_blocking = 8;
+    } else if (i_current_m_blocking == 24) {
+      l_m_blocking = 16;
+    } else {
+      /* we are done with m_blocking */
+    }
   } else if ( (strcmp( i_arch, "snb" ) == 0) && (i_xgemm_desc->single_precision == 0) ) {
-    l_m_blocking = 12;
+    if (i_current_m_blocking == 2) {
+      l_m_blocking = 1;
+      libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 4) {
+      l_m_blocking = 2;
+      libxsmm_generator_dense_init_micro_kernel_config_halfvector( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 8) {
+      l_m_blocking = 4;
+    } else if (i_current_m_blocking == 12) {
+      l_m_blocking = 8;
+    } else {
+      /* we are done with m_blocking */
+    }
   } else if ( (strcmp( i_arch, "hsw" ) == 0) && (i_xgemm_desc->single_precision == 1) ) {
     if (i_current_m_blocking == 4) {
       l_m_blocking = 1;
