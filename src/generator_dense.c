@@ -36,21 +36,67 @@
 
 #include "generator_common.h"
 #include "generator_dense_common.h"
-#include "generator_dense_avx.h"
+#include "generator_dense_sse3_avx_avx2.h"
 
+/* @TODO change int based architecture value */
 void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
                                      const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                      const char*                     i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
+  
+  /* apply the alignement override */
+  libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  unsigned int l_vector_length;
 
-  if ( (strcmp(i_arch, "wsm") == 0) ) {
-    /*libxsmm_generator_dense_sse();*/
+  /* determining vector length depending on architecture and precision */
+  /* @TODO fix me */
+  if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 2;
+  } else if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 4;
+  } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 4;
+  } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 4;
+  } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "knc") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "knc") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 16;
+  } else if ( (strcmp(i_arch, "knl") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "knl") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 16;
+  } else if ( (strcmp(i_arch, "skx") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "skx") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
+    l_vector_length = 16;
+  } else {
+    fprintf(stderr, "received non-valid arch and precision in libxsmm_generator_dense_avx\n");
+    exit(-1);
+  }
+ 
+  /* derive if alignment is possible */
+  if ( (l_xgemm_desc_mod.lda % l_vector_length) == 0 ) {
+    l_xgemm_desc_mod.aligned_a = 1;
+  }
+  if ( (l_xgemm_desc_mod.ldc % l_vector_length) == 0 ) {
+    l_xgemm_desc_mod.aligned_c = 1;
   }
 
-  if ( (strcmp(i_arch, "snb") == 0) ||
+  /* enforce possible external overwrite */
+  l_xgemm_desc_mod.aligned_a = l_xgemm_desc_mod.aligned_a && i_xgemm_desc->aligned_a;
+  l_xgemm_desc_mod.aligned_c = l_xgemm_desc_mod.aligned_c && i_xgemm_desc->aligned_c;
+
+  if ( (strcmp(i_arch, "wsm") == 0) ||
+       (strcmp(i_arch, "snb") == 0) ||
        (strcmp(i_arch, "hsw") == 0)    ) {
-    libxsmm_generator_dense_avx( io_generated_code, i_xgemm_desc, i_arch );
+    /* call actual kernel generation with revided parameters */
+    libxsmm_generator_dense_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   }
 
   if ( strcmp(i_arch, "knc") == 0 ) {

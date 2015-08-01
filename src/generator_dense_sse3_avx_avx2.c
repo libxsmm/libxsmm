@@ -37,11 +37,12 @@
 #include "generator_common.h"
 #include "generator_dense_common.h"
 #include "generator_dense_instructions.h"
-#include "generator_dense_sse_avx_avx2_common.h"
-#include "generator_dense_avx2_microkernel.h"
+#include "generator_dense_sse3_avx_avx2_common.h"
+#include "generator_dense_sse3_microkernel.h"
 #include "generator_dense_avx_microkernel.h"
+#include "generator_dense_avx2_microkernel.h"
 
-void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                   const char*                     i_arch ) {
   /* define gp register mapping */
@@ -60,12 +61,14 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   /* set up architecture dependent compute micro kernel generator */
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
                                   const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int, const int);
-  if ( (strcmp(i_arch, "hsw") == 0) ) {
-    l_generator_microkernel = libxsmm_generator_dense_avx2_microkernel;
+  if ( (strcmp(i_arch, "wsm") == 0) ) {
+    l_generator_microkernel = libxsmm_generator_dense_sse3_microkernel;
   } else if ( (strcmp(i_arch, "snb") == 0) ) {
     l_generator_microkernel = libxsmm_generator_dense_avx_microkernel;
+  } else if ( (strcmp(i_arch, "hsw") == 0) ) {
+    l_generator_microkernel = libxsmm_generator_dense_avx2_microkernel;
   } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_sse_avx_avx2_kernel, cannot select microkernel\n");
+    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_sse3_avx_avx2_kernel, cannot select microkernel\n");
     exit(-1);
   }
 
@@ -97,7 +100,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
       /* define the micro kernel code gen properties, espically m-blocking affects the vector instruction length */
       unsigned int l_m_done = 0;
       unsigned int l_m_done_old = 0;
-      unsigned int l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
+      unsigned int l_m_blocking = libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
       while (l_m_done != i_xgemm_desc->m) {
@@ -121,7 +124,7 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   
         if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
           libxsmm_generator_dense_header_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
-          libxsmm_generator_dense_sse_avx_avx2_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
+          libxsmm_generator_dense_sse3_avx_avx2_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
           /* apply multiple k_blocking strategies */
           /* 1. we are larger the k_threshold and a multple of a predefined blocking parameter */
@@ -169,12 +172,12 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
             }
           }
 
-          libxsmm_generator_dense_sse_avx_avx2_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
+          libxsmm_generator_dense_sse3_avx_avx2_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
           libxsmm_generator_dense_footer_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_m_done );
         }
 
         /* switch to next smaller m_blocking */
-        l_m_blocking = libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch, l_m_blocking );
+        l_m_blocking = libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch, l_m_blocking );
       }
       libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n_blocking, l_n_done );
     }
@@ -193,43 +196,3 @@ void libxsmm_generator_dense_sse_avx_avx2_kernel( libxsmm_generated_code*       
   libxsmm_generator_dense_sse_avx_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
-void libxsmm_generator_dense_avx( libxsmm_generated_code*         io_generated_code,
-                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                  const char*                     i_arch ) {
-  libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
-  unsigned int l_vector_length;
-
-  /* determining vector length depending on architecture and precision */
-  /* @TODO fix me */
-  if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
-    l_vector_length = 2;
-  } else if ( (strcmp(i_arch, "wsm") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
-    l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
-    l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
-    l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 0) ) {
-    l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
-    l_vector_length = 8;
-  } else {
-    fprintf(stderr, "received non-valid arch and precision in libxsmm_generator_dense_avx\n");
-    exit(-1);
-  }
- 
-  /* derive if alignment is possible */
-  if ( (l_xgemm_desc_mod.lda % l_vector_length) == 0 ) {
-    l_xgemm_desc_mod.aligned_a = 1;
-  }
-  if ( (l_xgemm_desc_mod.ldc % l_vector_length) == 0 ) {
-    l_xgemm_desc_mod.aligned_c = 1;
-  }
-
-  /* enforce possible external overwrite */
-  l_xgemm_desc_mod.aligned_a = l_xgemm_desc_mod.aligned_a && i_xgemm_desc->aligned_a;
-  l_xgemm_desc_mod.aligned_c = l_xgemm_desc_mod.aligned_c && i_xgemm_desc->aligned_c;
-
-  /* call actual kernel generation with revided parameters */
-  libxsmm_generator_dense_sse_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
-}

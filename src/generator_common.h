@@ -54,6 +54,10 @@
 #define LIBXSMM_X86_GP_REG_R15             15
 #define LIBXSMM_X86_GP_REG_UNDEF          127
 
+/* define a place holder to handle AVX and SSE with a single encoder function
+   using this values as the third operand means SSE */
+#define LIBXSMM_X86_VEC_REG_UNDEF         255
+
 /* defining instruction sets */
 #define LIBXSMM_X86_SSE3                 1000
 #define LIBXSMM_X86_AVX                  1001
@@ -119,9 +123,6 @@
 #define LIBXSMM_X86_INSTR_CMPQ          30003
 #define LIBXSMM_X86_INSTR_JL            30004
 #define LIBXSMM_X86_INSTR_PREFETCH1     30005
-
-/* some function macros */
-#define LIBXSMM_MIN(a,b) (((a)<(b))?(a):(b))
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

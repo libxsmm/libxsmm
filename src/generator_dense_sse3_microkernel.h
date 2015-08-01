@@ -29,35 +29,20 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_SSE_AVX_AVX2_COMMON_H
-#define GENERATOR_DENSE_SSE_AVX_AVX2_COMMON_H
+#ifndef GENERATOR_DENSE_SSE3_MICROKERNEL_H
+#define GENERATOR_DENSE_SSE3_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_dense_common.h"
 #include "generator_dense_instructions.h"
 
-void libxsmm_generator_dense_sse_avx_avx2_load_C( libxsmm_generated_code*             io_generated_code,
-                                             const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                             const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                             const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                             const unsigned int                  i_m_blocking,
-                                             const unsigned int                  i_n_blocking );
+void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
+                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                               const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                               const unsigned int                  i_m_blocking,
+                                               const unsigned int                  i_n_blocking,
+                                               const int                           i_offset );
 
-void libxsmm_generator_dense_sse_avx_avx2_store_C( libxsmm_generated_code*             io_generated_code,
-                                              const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                              const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                              const unsigned int                  i_m_blocking,
-                                              const unsigned int                  i_n_blocking );
-
-unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                         const libxsmm_xgemm_descriptor* i_xgemm_desc, 
-                                                                         const char*                     i_arch );
-
-unsigned int libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                     const libxsmm_xgemm_descriptor* i_xgemm_desc, 
-                                                                     const char*                     i_arch,
-                                                                     const unsigned int              i_current_m_blocking );
-
-#endif /* #define GENERATOR_DENSE_SSE_AVX_AVX2_COMMON_H */
+#endif /* GENERATOR_DENSE_SSE3_MICROKERNEL_H */
 

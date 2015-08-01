@@ -34,9 +34,9 @@
 #include <string.h>
 #include <malloc.h>
 
-#include "generator_dense_avx_microkernel.h"
+#include "generator_dense_sse3_microkernel.h"
 
-void libxsmm_generator_dense_avx_microkernel( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                               const libxsmm_xgemm_descriptor*     i_xgemm_desc,
@@ -46,7 +46,7 @@ void libxsmm_generator_dense_avx_microkernel( libxsmm_generated_code*           
   /* @TODO fix this test */
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_microkernel, i_n_blocking smaller 1 or larger 3!!!\n");
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_sse3_microkernel, i_n_blocking smaller 1 or larger 3!!!\n");
     exit(-1);
   }
   /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */

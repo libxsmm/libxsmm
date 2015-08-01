@@ -33,9 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_dense_sse_avx_avx2_common.h"
+#include "generator_dense_sse3_avx_avx2_common.h"
 
-void libxsmm_generator_dense_sse_avx_avx2_load_C( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_dense_sse3_avx_avx2_load_C( libxsmm_generated_code*             io_generated_code,
                                                   const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                   const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                   const libxsmm_xgemm_descriptor*     i_xgemm_desc,
@@ -89,7 +89,7 @@ void libxsmm_generator_dense_sse_avx_avx2_load_C( libxsmm_generated_code*       
   }
 }
 
-void libxsmm_generator_dense_sse_avx_avx2_store_C( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_dense_sse3_avx_avx2_store_C( libxsmm_generated_code*             io_generated_code,
                                                    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                    const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                    const libxsmm_xgemm_descriptor*     i_xgemm_desc,
@@ -141,7 +141,7 @@ void libxsmm_generator_dense_sse_avx_avx2_store_C( libxsmm_generated_code*      
   }
 }
 
-unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                                          const char* i_arch ) {
   unsigned int l_m_blocking = 0;
@@ -168,7 +168,7 @@ unsigned int libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking( libxsmm
   return l_m_blocking;
 }
 
-unsigned int libxsmm_generator_dense_sse_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                      const libxsmm_xgemm_descriptor* i_xgemm_desc, 
                                                                      const char*                     i_arch,
                                                                      const unsigned int              i_current_m_blocking ) {
