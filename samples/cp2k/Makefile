@@ -51,7 +51,7 @@ ifneq ($(MKLROOT),)
 		MKL_STATIC ?= 0
 	endif
 else
-	MKL ?= 0
+	MKL = 0
 endif
 
 OUTNAME = $(shell basename $(ROOTDIR))

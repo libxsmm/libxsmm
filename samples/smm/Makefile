@@ -51,7 +51,7 @@ ifneq ($(MKLROOT),)
 		MKL_STATIC ?= 0
 	endif
 else
-	MKL ?= 0
+	MKL = 0
 endif
 
 HEADERS = $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
