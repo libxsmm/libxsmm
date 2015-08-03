@@ -10,7 +10,7 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
-MKL ?= 1 # explicitly sequential
+BLAS ?= 1 # sequential
 OMP ?= 1
 SYM ?= 0
 DBG ?= 0
@@ -39,7 +39,6 @@ else
 	LIBEXT = so
 endif
 
-BLAS ?= 2
 ifneq ($(MKLROOT),)
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
@@ -54,6 +53,7 @@ else
 	MKL = 0
 endif
 
+OUTNAME = $(shell basename $(ROOTDIR))
 HEADERS = $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
@@ -77,9 +77,9 @@ CPPOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
-FTNOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.f=-f.o)))
-F77OBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.F=-f77.o)))
-F90OBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.f90=-f90.o)))
+FTNOBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(FTNSRCS:.f=-f.o)))
+F77OBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
+F90OBJS = $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 OBJECTS = $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
 ICPC    = $(notdir $(shell which icpc     2> /dev/null))
@@ -335,7 +335,7 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 .PHONY: all
-all: $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/smm
+all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
@@ -408,22 +408,22 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/smm
+	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 endif
 else
-	@rm -f $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/smm
+	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
 	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/smm-perf.plt $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/smm-plot.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/smm-perf.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/$(OUTNAME)-perf.plt $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/$(OUTNAME)-plot.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/blas.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/dispatched.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/inlined.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/specialized.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/smm.sh $(OUTDIR) 2> /dev/null || true
 
