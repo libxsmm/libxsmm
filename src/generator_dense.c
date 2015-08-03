@@ -76,7 +76,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   } else if ( (strcmp(i_arch, "skx") == 0) && (l_xgemm_desc_mod.single_precision == 1) ) {
     l_vector_length = 16;
   } else {
-    fprintf(stderr, "received non-valid arch and precision in libxsmm_generator_dense_avx\n");
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_kernel: received non-valid arch and precision\n");
     exit(-1);
   }
  

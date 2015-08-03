@@ -86,7 +86,7 @@
 #define LIBXSMM_X86_INSTR_MOVSD         10013
 #define LIBXSMM_X86_INSTR_MOVSS         10014
 #define LIBXSMM_X86_INSTR_MOVDDUP       10015 
-#define LIBXSMM_X86_INSTR_SHUFFPS       10016
+#define LIBXSMM_X86_INSTR_SHUFPS        10016
 
 /* Vector compute instructions */
 /* AVX1,AVX2,AVX512 */

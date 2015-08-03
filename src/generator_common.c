@@ -226,8 +226,8 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_MOVSS:
       strcpy(o_instr_name, "movss");
       break;
-    case LIBXSMM_X86_INSTR_SHUFFPS:
-      strcpy(o_instr_name, "SHUFFPS");
+    case LIBXSMM_X86_INSTR_SHUFPS:
+      strcpy(o_instr_name, "shufps");
       break;
     /* AVX double precision */
     case LIBXSMM_X86_INSTR_VXORPD:

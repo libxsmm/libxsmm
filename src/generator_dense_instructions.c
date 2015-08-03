@@ -89,10 +89,50 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( io_generated_code->code_type == 0 ) {
-      sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+    if (i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF) {
+      if ( io_generated_code->code_type == 0 ) {
+        sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+      } else {
+        sprintf(l_new_code, "                       %s %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+      }
     } else {
-      sprintf(l_new_code, "                       %s %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+      if ( io_generated_code->code_type == 0 ) {
+        sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1);
+      } else {
+        sprintf(l_new_code, "                       %s %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+      }
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
+void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code, 
+                                          const unsigned int      i_vec_instr,
+                                          const char              i_vector_name,                                
+                                          const unsigned int      i_vec_reg_number_0,
+                                          const unsigned int      i_vec_reg_number_1,
+                                          const unsigned int      i_vec_reg_number_2,
+                                          const unsigned int      i_shuffle_operand ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    char l_new_code[512];
+    char l_instr_name[16];
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+
+    if (i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF) {
+      if ( io_generated_code->code_type == 0 ) {
+        sprintf(l_new_code, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+      } else {
+        sprintf(l_new_code, "                       %s $%i, %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+      }
+    } else {
+      if ( io_generated_code->code_type == 0 ) {
+        sprintf(l_new_code, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+      } else {
+        sprintf(l_new_code, "                       %s $%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+      }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }

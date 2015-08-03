@@ -34,12 +34,54 @@
 #include <string.h>
 
 #include "generator_common.h"
+#include "generator_dense_common.h"
 
 void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                                   const char*                     i_arch,
                                                                   const unsigned int              i_use_masking_a_c ) {
-  if( strcmp( i_arch, "snb" ) == 0 ) {
+  if( strcmp( i_arch, "wsm" ) == 0 ) {
+    io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
+    io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
+    io_micro_kernel_config->vector_name = 'x';
+    if ( i_xgemm_desc->single_precision == 0 ) {  
+      io_micro_kernel_config->vector_length = 2;
+      io_micro_kernel_config->datatype_size = 8;
+      if ( i_xgemm_desc->aligned_a != 0 ) {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVDDUP;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      if ( i_xgemm_desc->aligned_c != 0 ) {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPD;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPD;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDPD;
+    } else {
+      io_micro_kernel_config->vector_length = 4;
+      io_micro_kernel_config->datatype_size = 4;
+      if ( i_xgemm_desc->aligned_a != 0 ) {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_SHUFPS;
+      if ( i_xgemm_desc->aligned_c != 0 ) {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPS;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPS;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDPS;
+    }
+  } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
@@ -138,7 +180,10 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
                                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                                   const char*                     i_arch,
                                                                   const unsigned int              i_use_masking_a_c ) {
-  if( strcmp( i_arch, "snb" ) == 0 ) {
+  if( strcmp( i_arch, "wsm" ) == 0 ) {
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, redirecting to scalar, please fix the generation code!!!\n");
+    libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
+  } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
@@ -237,7 +282,32 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
                                                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                               const char*                     i_arch,
                                                               const unsigned int              i_use_masking_a_c ) {
-  if( strcmp( i_arch, "snb" ) == 0 ) {
+  if( strcmp( i_arch, "wsm" ) == 0 ) {
+    io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
+    io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
+    io_micro_kernel_config->vector_name = 'x';
+    if ( i_xgemm_desc->single_precision == 0 ) {  
+      io_micro_kernel_config->vector_length = 1;
+      io_micro_kernel_config->datatype_size = 8;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPD;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULSD;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDSD;
+    } else {
+      io_micro_kernel_config->vector_length = 1;
+      io_micro_kernel_config->datatype_size = 4;
+      io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPS;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULSS;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_ADDSS;
+    }
+  } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
@@ -355,7 +425,7 @@ void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_ge
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
     libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n");
   } else {
-    fprintf(stderr, "unsupported architecture in libxsmm_generator_dense_add_isa_check_header\n");
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_add_isa_check_header: unsupported architecture in libxsmm_generator_dense_add_isa_check_header\n");
     exit(-1);   
   }
 }
@@ -377,7 +447,7 @@ void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_ge
     libxsmm_append_code_as_string( io_generated_code, "#endif\n\n");
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
   } else {
-    fprintf(stderr, "unsupported architecture in libxsmm_generator_dense_add_isa_check_footer\n");
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_add_isa_check_footer: unsupported architecture in libxsmm_generator_dense_add_isa_check_footer\n");
     exit(-1);   
   }
 }

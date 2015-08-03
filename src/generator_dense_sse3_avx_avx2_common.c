@@ -36,11 +36,11 @@
 #include "generator_dense_sse3_avx_avx2_common.h"
 
 void libxsmm_generator_dense_sse3_avx_avx2_load_C( libxsmm_generated_code*             io_generated_code,
-                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                  const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                                  const unsigned int                  i_m_blocking,
-                                                  const unsigned int                  i_n_blocking ) {
+                                                   const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                                   const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                                   const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                                   const unsigned int                  i_m_blocking,
+                                                   const unsigned int                  i_n_blocking ) {
 #ifndef NDEGUG
   /* Do some test if it's possible to generated the requested code. 
      This is not done in release mode and therefore bad
@@ -90,11 +90,11 @@ void libxsmm_generator_dense_sse3_avx_avx2_load_C( libxsmm_generated_code*      
 }
 
 void libxsmm_generator_dense_sse3_avx_avx2_store_C( libxsmm_generated_code*             io_generated_code,
-                                                   const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                   const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                   const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                                   const unsigned int                  i_m_blocking,
-                                                   const unsigned int                  i_n_blocking ) {
+                                                    const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                                    const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                                    const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                                    const unsigned int                  i_m_blocking,
+                                                    const unsigned int                  i_n_blocking ) {
   /* @TODO fix this test */ 
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
@@ -142,8 +142,8 @@ void libxsmm_generator_dense_sse3_avx_avx2_store_C( libxsmm_generated_code*     
 }
 
 unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                         const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                                         const char* i_arch ) {
+                                                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                                          const char*                     i_arch ) {
   unsigned int l_m_blocking = 0;
 
   if ( (strcmp( i_arch, "wsm" ) == 0) && (i_xgemm_desc->single_precision == 1) ) {
@@ -169,15 +169,33 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsm
 }
 
 unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                     const libxsmm_xgemm_descriptor* i_xgemm_desc, 
-                                                                     const char*                     i_arch,
-                                                                     const unsigned int              i_current_m_blocking ) {
+                                                                      const libxsmm_xgemm_descriptor* i_xgemm_desc, 
+                                                                      const char*                     i_arch,
+                                                                      const unsigned int              i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
 
   if ( (strcmp( i_arch, "wsm" ) == 0) && (i_xgemm_desc->single_precision == 1) ) {
-    l_m_blocking = 12;
+    if (i_current_m_blocking == 4) {
+      l_m_blocking = 1;
+      libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 8) {
+      l_m_blocking = 4;
+    } else if (i_current_m_blocking == 12) {
+      l_m_blocking = 8;
+    } else {
+      /* we are done with m_blocking */
+    }
   } else if ( (strcmp( i_arch, "wsm" ) == 0) && (i_xgemm_desc->single_precision == 0) ) {
-    l_m_blocking = 6;
+    if (i_current_m_blocking == 2) {
+      l_m_blocking = 1;
+      libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 4) {
+      l_m_blocking = 2;
+    } else if (i_current_m_blocking == 6) {
+      l_m_blocking = 4;
+    } else {
+      /* we are done with m_blocking */
+    }
   } else if ( (strcmp( i_arch, "snb" ) == 0) && (i_xgemm_desc->single_precision == 1) ) {
     if (i_current_m_blocking == 4) {
       l_m_blocking = 1;

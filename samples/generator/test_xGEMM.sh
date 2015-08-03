@@ -75,9 +75,14 @@ do
         ./../../bin/generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
       fi
       if [ "${ARCH}" == 'wsm' ]; then
-        #icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
-        #./xgemm_${m}_${n}_${k}_${PREC}
-        echo "wsm is currently supported by this version of the generator"
+        icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        ./xgemm_${m}_${n}_${k}_${PREC}
+        if [ $ASM -eq 1 ]
+        then
+          as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
+          icpc -O2 -msse3 -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          ./xgemm_${m}_${n}_${k}_${PREC}_asm
+        fi
       elif [ "${ARCH}" == 'snb' ]; then
         icpc -O3 -mavx -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
