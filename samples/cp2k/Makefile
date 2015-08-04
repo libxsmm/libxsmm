@@ -10,6 +10,7 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
+STATIC ?= 0
 BLAS ?= 1 # sequential
 OMP ?= 1
 SYM ?= 0
