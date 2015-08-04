@@ -59,6 +59,7 @@ elif [ "${PREC}" == 'SP' ]; then
 fi
 
 N="9"
+#N="1 2 3 4 5 6 7 8 9 10"
 for m in ${M}
 do
   for n in ${N}
@@ -89,7 +90,7 @@ do
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icpc -O2 -mavx-DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icpc -O2 -mavx -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'hsw' ]; then
