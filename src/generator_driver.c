@@ -137,8 +137,7 @@ void print_help() {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
-  /* printf("    ARCH: noarch, wsm, snb, hsw, knc, skx, knl\n"); */
-  printf("    ARCH: noarch, wsm, snb, hsw\n");
+  printf("    ARCH: noarch, wsm, snb, hsw, knc, knl, skx\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");
@@ -228,9 +227,9 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_arch, "wsm") != 0)    &&
        (strcmp(l_arch, "snb") != 0)    && 
        (strcmp(l_arch, "hsw") != 0)    && 
-       /*(strcmp(l_arch, "knc") != 0)    && */
-       /*(strcmp(l_arch, "knl") != 0)    && */
-       /*(strcmp(l_arch, "skx") != 0)    && */
+       (strcmp(l_arch, "knc") != 0)    && 
+       (strcmp(l_arch, "knl") != 0)    && 
+       (strcmp(l_arch, "skx") != 0)    && 
        (strcmp(l_arch, "noarch") != 0)    ) {
     print_help();
     return -1;

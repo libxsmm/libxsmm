@@ -39,54 +39,64 @@
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
+ * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in addtional gp reg inits
  */
-void libxsmm_generator_dense_sse_avx_open_instrucion_stream( libxsmm_generated_code*       io_generated_code,
-                                                             const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                             const char*                   i_prefetch);
+void libxsmm_generator_dense_x86_open_instrucion_stream( libxsmm_generated_code*       io_generated_code,
+                                                         const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                         const char*                   i_arch,
+                                                         const char*                   i_prefetch );
 
 /**
  * Closes the inline assembly section / jit stream
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
+ * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in addtional gp reg clobbers
  */
-void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
-                                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                               const char*                   i_prefetch);
+void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
+                                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                           const char*                   i_arch, 
+                                                           const char*                   i_prefetch );
 
 /**
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not
  * supported by this function
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
  * @param i_vmove_instr actual vmov variant
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address 
  * @param i_vector_name the vector register name prefix (x, y or z)
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_mask_reg_number the mask register to be used
  * @param i_is_store 0: load semantik, other: store semantik  
  */
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
+                                   const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement,
                                    const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
+                                   const unsigned int      i_use_masking,
                                    const unsigned int      i_is_store );
 
 /**
  * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 or 3 vector registers, memory operands are not supported as first operand
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_1 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
-void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
+void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
+                                          const unsigned int      i_instruction_set, 
                                           const unsigned int      i_vec_instr,
                                           const char              i_vector_name,                              
                                           const unsigned int      i_vec_reg_number_0,
@@ -97,6 +107,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
  * Generates shuffle instructions with 2 or 3 vector registers, memory operands are not supported as first operand
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
@@ -104,6 +115,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
  * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
 void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code, 
+                                          const unsigned int      i_instruction_set,
                                           const unsigned int      i_vec_instr,
                                           const char              i_vector_name,                              
                                           const unsigned int      i_vec_reg_number_0,

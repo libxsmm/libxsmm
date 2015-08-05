@@ -86,7 +86,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   unsigned int l_n_blocking = 3;
 
   /* open asm */
-  libxsmm_generator_dense_sse_avx_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_generator_dense_x86_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
   
   /* apply n_blocking */
   while (l_n_done != i_xgemm_desc->n) {
@@ -124,7 +124,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   
         if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
           libxsmm_generator_dense_header_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
-          libxsmm_generator_dense_sse3_avx_avx2_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
+          libxsmm_generator_dense_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
           /* apply multiple k_blocking strategies */
           /* 1. we are larger the k_threshold and a multple of a predefined blocking parameter */
@@ -172,7 +172,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
             }
           }
 
-          libxsmm_generator_dense_sse3_avx_avx2_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
+          libxsmm_generator_dense_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
           libxsmm_generator_dense_footer_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_m_done );
         }
 
@@ -193,6 +193,6 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   }
 
   /* close asm */
-  libxsmm_generator_dense_sse_avx_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
+  libxsmm_generator_dense_x86_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }
 

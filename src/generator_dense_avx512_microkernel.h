@@ -29,14 +29,19 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_SSE3_AVX_AVX2_H
-#define GENERATOR_DENSE_SSE3_AVX_AVX2_H
+#ifndef GENERATOR_DENSE_AVX512_MICROKERNEL_H
+#define GENERATOR_DENSE_AVX512_MICROKERNEL_H
 
 #include "generator_common.h"
+#include "generator_dense_common.h"
 
-void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
-                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                   const char*                     i_arch );
+void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*             io_generated_code,
+                                                 const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                                 const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                                 const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                                 const unsigned int                  i_m_blocking,
+                                                 const unsigned int                  i_n_blocking,
+                                                 const int                           i_offset );
 
-#endif /* GENERATOR_DENSE_SSE3_AVX_AVX2_H */
+#endif /* GENERATOR_DENSE_AVX512_MICROKERNEL_H */
 

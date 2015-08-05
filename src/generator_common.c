@@ -326,7 +326,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number is out of range!\n");
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%i) is out of range!\n", i_instr_number);
       exit(-1);
   }
 }

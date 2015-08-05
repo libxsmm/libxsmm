@@ -35,6 +35,7 @@
 
 #include "generator_common.h"
 #include "generator_dense_common.h"
+#include "generator_dense_instructions.h"
 
 void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
@@ -42,22 +43,23 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
                                                                   const unsigned int              i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPD;
@@ -66,16 +68,16 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_SHUFPS;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_XORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_MULPS;
@@ -83,22 +85,23 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     }
   } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VMULPD;
@@ -107,16 +110,16 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 4;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VMULPS;
@@ -124,22 +127,23 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     }
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PD;
@@ -148,16 +152,64 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 4;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
+    }
+  } else if ( (strcmp( i_arch, "knc" ) == 0) ||
+              (strcmp( i_arch, "knl" ) == 0) ||
+              (strcmp( i_arch, "skx" ) == 0)    ) {
+    if ((strcmp( i_arch, "knc" ) == 0)) {
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_IMCI;
+    } else {
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512;
+    }
+    io_micro_kernel_config->vector_reg_count = 32;
+    io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
+    io_micro_kernel_config->vector_name = 'z';
+    if ( i_xgemm_desc->single_precision == 0 ) {  
+      io_micro_kernel_config->vector_length = 8;
+      io_micro_kernel_config->datatype_size = 8;
+      if ( i_xgemm_desc->aligned_a != 0 ) {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      if ( i_xgemm_desc->aligned_c != 0 ) {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
+      }
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
+      io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PD;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
+    } else {
+      io_micro_kernel_config->vector_length = 16;
+      io_micro_kernel_config->datatype_size = 4;
+      if ( i_xgemm_desc->aligned_a != 0 ) {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+      }
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      if ( i_xgemm_desc->aligned_c != 0 ) {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
@@ -185,22 +237,23 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VMULPD;
@@ -209,16 +262,16 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VMULPS;
@@ -226,22 +279,23 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     }
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PD;
@@ -250,21 +304,26 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
       if ( i_xgemm_desc->aligned_a != 0 ) {
-        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( i_xgemm_desc->aligned_c != 0 ) {
-        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+      } else {
+        io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
     }
+  } else if ( (strcmp( i_arch, "knc" ) == 0) ||
+              (strcmp( i_arch, "knl" ) == 0) ||
+              (strcmp( i_arch, "skx" ) == 0)    ) {
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
+    libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else {
     fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
     exit(-1);
@@ -284,6 +343,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
                                                               const unsigned int              i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
@@ -309,6 +369,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     }
   } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
@@ -334,6 +395,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     }
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX2;
+    io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
     if ( i_xgemm_desc->single_precision == 0 ) {  
@@ -357,6 +419,11 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231SS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
     }
+  } else if ( (strcmp( i_arch, "knc" ) == 0) ||
+              (strcmp( i_arch, "knl" ) == 0) ||
+              (strcmp( i_arch, "skx" ) == 0)    ) {
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
+    libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else {
     fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
     exit(-1);
@@ -566,5 +633,137 @@ void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             i
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_mloop, i_m_done );
   sprintf( l_new_code, "20%ib", i_m_blocking );
   libxsmm_instruction_jump_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, l_new_code );  
+}
+
+void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_generated_code,
+                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                     const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                     const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                     const unsigned int                  i_m_blocking,
+                                     const unsigned int                  i_n_blocking ) {
+#ifndef NDEGUG
+  /* Do some test if it's possible to generated the requested code. 
+     This is not done in release mode and therefore bad
+     things might happen.... HUAAH */
+  if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  || 
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
+    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
+      exit(-1);
+    }
+  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
+    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
+      exit(-1);
+    }
+  } else {}
+  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+#endif
+
+  /* deriving register blocking from kernel config */ 
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
+  /* load C accumulator */
+  if (i_xgemm_desc->beta == 1) {
+    /* adding to C, so let's load C */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+        libxsmm_instruction_vec_move( io_generated_code, 
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->c_vmove_instruction, 
+                                      i_gp_reg_mapping->gp_reg_c, 
+                                      ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size), 
+                                      i_micro_kernel_config->vector_name, 
+                                      l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 0 );
+      }
+    }
+  } else {
+    /* overwriting C, so let's xout accumulator */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) { 
+        libxsmm_instruction_vec_compute_reg( io_generated_code, 
+                                             i_micro_kernel_config->instruction_set,
+                                             i_micro_kernel_config->vxor_instruction,
+                                             i_micro_kernel_config->vector_name, 
+                                             l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 
+                                             l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 
+                                             l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+      }
+    }
+  }
+}
+
+void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_generated_code,
+                                      const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                      const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                      const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                      const unsigned int                  i_m_blocking,
+                                      const unsigned int                  i_n_blocking ) {
+  /* @TODO fix this test */ 
+#ifndef NDEBUG
+  if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  || 
+      i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
+    if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
+      exit(-1);
+    }
+  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
+    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
+      exit(-1);
+    }
+  } else {}
+  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+#endif
+
+  /* deriving register blocking from kernel config */ 
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
+  /* storing C accumulator */
+  /* adding to C, so let's load C */
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+      libxsmm_instruction_vec_move( io_generated_code, 
+                                    i_micro_kernel_config->instruction_set,
+                                    i_micro_kernel_config->c_vmove_instruction, 
+                                    i_gp_reg_mapping->gp_reg_c, 
+                                    ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size), 
+                                    i_micro_kernel_config->vector_name, 
+                                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1 );
+    }
+  }
+
+  if ( ( strcmp( i_xgemm_desc->prefetch, "BL2viaC" ) == 0 )         || 
+       ( strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0 )  ||
+       ( strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0 )     ||
+       ( strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0 )    )  {
+    /* determining how many prefetches we need M direction as we just need one prefetch per cache line */
+    unsigned int l_m_advance = 64/((i_micro_kernel_config->vector_length) * (i_micro_kernel_config->datatype_size)); /* 64: hardcoded cache line length */
+        
+    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+      for (l_m = 0; l_m < l_m_blocking; l_m += l_m_advance ) {
+        libxsmm_instruction_prefetch( io_generated_code, 
+                                      i_micro_kernel_config->prefetch_instruction,
+                                      i_gp_reg_mapping->gp_reg_b_prefetch, 
+                                      ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size));
+      }
+    }
+  }
 }
 

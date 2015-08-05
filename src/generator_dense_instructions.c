@@ -35,16 +35,19 @@
 #include <malloc.h>
 
 #include "generator_common.h"
+#include "generator_dense_instructions.h"
 
 /* TODO change this */
 int libxsmm_jit_code = 0;
 
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
+                                   const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 
                                    const unsigned int      i_gp_reg_number,
                                    const int               i_displacement,
                                    const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
+                                   const unsigned int      i_use_masking,
                                    const unsigned int      i_is_store ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
@@ -56,18 +59,24 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name );
 
-    /* build vmovpd/ps/sd/ss instruction, load use */
-    if ( i_is_store == 0 ) {
-      if ( io_generated_code->code_type == 0 ) {
-        sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
-      } else {
-        sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
-      }
+    if ( (i_instruction_set == LIBXSMM_X86_AVX512) && (i_use_masking != 0) ) {
+
+    } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_use_masking != 0) ) {
+
     } else {
-      if ( io_generated_code->code_type == 0 ) {
-        sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+      /* build vmovpd/ps/sd/ss instruction, load use */
+      if ( i_is_store == 0 ) {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
+        }
       } else {
-        sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+        } else {
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+        }
       }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
@@ -75,6 +84,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
 }
 
 void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code, 
+                                          const unsigned int      i_instruction_set,
                                           const unsigned int      i_vec_instr,
                                           const char              i_vector_name,                                
                                           const unsigned int      i_vec_reg_number_0,
@@ -89,7 +99,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if (i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF) {
+    if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
       if ( io_generated_code->code_type == 0 ) {
         sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       } else {
@@ -106,7 +116,8 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
-void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code, 
+void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
+                                          const unsigned int      i_instruction_set, 
                                           const unsigned int      i_vec_instr,
                                           const char              i_vector_name,                                
                                           const unsigned int      i_vec_reg_number_0,
@@ -121,7 +132,7 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
 
-    if (i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF) {
+    if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
       if ( io_generated_code->code_type == 0 ) {
         sprintf(l_new_code, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       } else {
@@ -221,9 +232,10 @@ void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_cod
   }
 }
 
-void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
-                                                              const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                              const char*                   i_prefetch) { 
+void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
+                                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                           const char*                   i_arch, 
+                                                           const char*                   i_prefetch) { 
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
@@ -254,20 +266,30 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
       exit(-1);
     }
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    }
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    }
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    if ( (strcmp(i_arch, "wsm") == 0) ||
+         (strcmp(i_arch, "snb") == 0) ||
+         (strcmp(i_arch, "hsw") == 0)    ) {
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       pushq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+    } else {
+      libxsmm_append_code_as_string( io_generated_code, "                       pushq %rbx\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       pushq %r12\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       pushq %r13\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       pushq %r14\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       pushq %r15\n" );
     }
   } else {
     char l_new_code[512];
@@ -290,15 +312,24 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_
 
     /* loading b prefetch pointer in assembly */
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
-         ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
+         ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
       sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
     /* loading a prefetch pointer in assembly */
-    } else if ( ( strcmp(i_prefetch, "AL1viaC") == 0 ) ||
+    } else if ( ( strcmp(i_prefetch, "AL2jpst") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
       sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    /* loading a and b prefetch pointer in assembly */
+    } else if ( ( strcmp(i_prefetch, "AL2jpst_BL2viaC") == 0 ) ||
+                ( strcmp(i_prefetch, "AL2_BL2viaC") == 0 )        ) {
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
+      sprintf( l_new_code, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
+      sprintf( l_new_code, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
     } else {}
   }
@@ -309,9 +340,10 @@ void libxsmm_generator_dense_sse_avx_open_instruction_stream( libxsmm_generated_
   libxsmm_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_kloop, 0 );
 }
 
-void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
-                                                               const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                               const char*                   i_prefetch) {
+void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
+                                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                                           const char*                   i_arch, 
+                                                           const char*                   i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
@@ -322,21 +354,32 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
     char l_new_code[512];
     char l_gp_reg_name[4];
 
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    if ( (strcmp(i_arch, "wsm") == 0) ||
+         (strcmp(i_arch, "snb") == 0) ||
+         (strcmp(i_arch, "hsw") == 0)    ) {
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+      if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+        sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+    } else {
+      libxsmm_append_code_as_string( io_generated_code, "                       popq %r15\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       popq %r14\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       popq %r13\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       popq %r12\n" );
+      libxsmm_append_code_as_string( io_generated_code, "                       popq %rbx\n" );
     }
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    }
-    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
-      sprintf( l_new_code, "                       popq %%%s\n", l_gp_reg_name );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    }
+
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
       exit(-1);
@@ -360,7 +403,7 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
     /* @TODO: I don't know if this is the correct placement in the generation process */
     libxsmm_append_code_as_string( io_generated_code, "                       retq\n" );
   } else {
-    char l_new_code[512];
+    char l_new_code[1024];
     char l_gp_reg_a[4];
     char l_gp_reg_b[4];
     char l_gp_reg_c[4];
@@ -380,16 +423,47 @@ void libxsmm_generator_dense_sse_avx_close_instruction_stream( libxsmm_generated
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop );
 
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
-         ( strcmp(i_prefetch, "BL1viaC") == 0 )    ) {
-      sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    } else if ( ( strcmp(i_prefetch, "AL1viaC") == 0 ) ||
+         ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
+      if ( (strcmp(i_arch, "wsm") == 0) ||
+           (strcmp(i_arch, "snb") == 0) ||
+           (strcmp(i_arch, "hsw") == 0)    ) {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      } else {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+      }
+    } else if ( ( strcmp(i_prefetch, "AL2jpst") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
-      sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      if ( (strcmp(i_arch, "wsm") == 0) ||
+           (strcmp(i_arch, "snb") == 0) ||
+           (strcmp(i_arch, "hsw") == 0)    ) {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      } else {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
+    } else if ( ( strcmp(i_prefetch, "AL2jpst_BL2viaC") == 0 ) ||
+                ( strcmp(i_prefetch, "AL2_BL2viaC") == 0 )        ) {
+      if ( (strcmp(i_arch, "wsm") == 0) ||
+           (strcmp(i_arch, "snb") == 0) ||
+           (strcmp(i_arch, "hsw") == 0)    ) {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      } else {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
     } else {
-      sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
-      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      if ( (strcmp(i_arch, "wsm") == 0) ||
+           (strcmp(i_arch, "snb") == 0) ||
+           (strcmp(i_arch, "hsw") == 0)    ) {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      } else {
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      }
     }
   }
 }

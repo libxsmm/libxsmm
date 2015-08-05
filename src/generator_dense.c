@@ -37,6 +37,7 @@
 #include "generator_common.h"
 #include "generator_dense_common.h"
 #include "generator_dense_sse3_avx_avx2.h"
+#include "generator_dense_imci_avx512.h"
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
@@ -83,9 +84,13 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   /* derive if alignment is possible */
   if ( (l_xgemm_desc_mod.lda % l_vector_length) == 0 ) {
     l_xgemm_desc_mod.aligned_a = 1;
+  } else {
+    l_xgemm_desc_mod.aligned_a = 0;
   }
   if ( (l_xgemm_desc_mod.ldc % l_vector_length) == 0 ) {
     l_xgemm_desc_mod.aligned_c = 1;
+  } else {
+    l_xgemm_desc_mod.aligned_c = 0;
   }
 
   /* enforce possible external overwrite */
@@ -99,13 +104,11 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
     libxsmm_generator_dense_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   }
 
-  if ( strcmp(i_arch, "knc") == 0 ) {
-    /* libxsmm_generator_dense_knc(); */
-  }
-
-  if ( (strcmp(i_arch, "knl") == 0) || 
+  if ( (strcmp(i_arch, "knc") == 0) || 
+       (strcmp(i_arch, "knl") == 0) || 
        (strcmp(i_arch, "skx") == 0)    ) {
-    /* libxsmm_generator_dense_avx512(); */
+    /* call actual kernel generation with revided parameters */
+    libxsmm_generator_dense_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   }
 
   /* add instruction set mismatch check to code, footer */
