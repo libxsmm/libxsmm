@@ -242,6 +242,29 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
+void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
+                                    const unsigned int      i_mask_instr,
+                                    const unsigned int      i_gp_reg_number,
+                                    const unsigned int      i_mask_reg_number ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    char l_new_code[512];
+    char l_gp_reg_name[4];
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    char l_instr_name[16];
+    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name );
+
+    if ( io_generated_code->code_type == 0 ) {
+      sprintf(l_new_code, "                       \"%s %%%%%sd, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
+    } else { 
+      sprintf(l_new_code, "                      %s %%%%%sd, %%%%k%i\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
 void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generated_code,
                                               const char*             i_jmp_label ) {
   /* @TODO add checks in debug mode */

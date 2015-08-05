@@ -324,6 +324,12 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_PREFETCH1: 
       strcpy(o_instr_name, "prefetch1");
       break;
+    case LIBXSMM_X86_INSTR_KMOV: 
+      strcpy(o_instr_name, "kmov");
+      break;
+    case LIBXSMM_X86_INSTR_KMOVW: 
+      strcpy(o_instr_name, "kmovw");
+      break;
     /* default, we didn't had a match */
     default:
       fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%i) is out of range!\n", i_instr_number);

@@ -56,7 +56,9 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
   unsigned int l_n;
   unsigned int l_k;
 
+  /* if we have an offset greater-equal -> external k-unrolling */
   if (i_offset != (-1)) {
+    /* load A */
     libxsmm_instruction_vec_move( io_generated_code,
                                   i_micro_kernel_config->instruction_set,
                                   i_micro_kernel_config->a_vmove_instruction, 
@@ -86,6 +88,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                     (i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size) );
     }
 
+    /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
       libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                                 i_micro_kernel_config->instruction_set,
@@ -102,6 +105,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
     /* apply k blocking */
     for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
       if ( l_k == 0 ) {
+        /* load A */
         libxsmm_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction, 
@@ -111,6 +115,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                       0, 
                                       i_micro_kernel_config->use_masking_a_c, 0 );
         if ( i_k_blocking > 1 ) {
+          /* second A load in first iteration, in case of large blockings -> hiding L1 latencies */
           libxsmm_instruction_vec_move( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
                                         i_micro_kernel_config->a_vmove_instruction, 
@@ -121,6 +126,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                         i_micro_kernel_config->use_masking_a_c, 0 );
         }
       } else if ( l_k < (i_k_blocking - 1) ) {
+        /* pipelined load of A, one k iteration ahead */
         libxsmm_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction, 
@@ -131,7 +137,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                       i_micro_kernel_config->use_masking_a_c, 0 );
       }
 
-      // current A prefetch, next 8 rows for the current column
+      /* current A prefetch, next 8 rows for the current column */
       if ( (strcmp( i_xgemm_desc->prefetch, "curAL2" ) == 0)         ||
            (strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0)    ) {
         libxsmm_instruction_prefetch( io_generated_code,
@@ -140,7 +146,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                       (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) + 64 );
       }
 
-      // next A prefetch "same" rows in "same" column, but in a different matrix 
+      /* next A prefetch "same" rows in "same" column, but in a different matrix */
       if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
            (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
            (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
@@ -157,6 +163,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
         }
       }
 
+      /* in last k-iteration: advance pointers */
       if ( l_k == (i_k_blocking - 1) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction, 
@@ -164,6 +171,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                      i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
       }
 
+      /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
         libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                                   i_micro_kernel_config->instruction_set,
@@ -178,6 +186,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       }
     }
 
+    /* advance pointers of B */
     libxsmm_instruction_alu_imm( io_generated_code,
                                  i_micro_kernel_config->alu_add_instruction, 
                                  i_gp_reg_mapping->gp_reg_b,

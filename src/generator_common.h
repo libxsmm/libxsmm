@@ -58,7 +58,7 @@
    using this values as the third operand means SSE */
 #define LIBXSMM_X86_VEC_REG_UNDEF         255
 #define LIBXSMM_X86_MASK_REG_UNDEF        255
-#define LIBXSMM_X86_IMCI_AVX512_MASK        1
+#define LIBXSMM_X86_IMCI_AVX512_MASK        1  /* this specifies k1 */
 
 /* defining instruction sets */
 #define LIBXSMM_X86_SSE3                 1000
@@ -126,6 +126,10 @@
 #define LIBXSMM_X86_INSTR_CMPQ          30003
 #define LIBXSMM_X86_INSTR_JL            30004
 #define LIBXSMM_X86_INSTR_PREFETCH1     30005
+
+/* Mask move instructions */
+#define LIBXSMM_X86_INSTR_KMOV          40000
+#define LIBXSMM_X86_INSTR_KMOVW         40001
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
