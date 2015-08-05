@@ -40,20 +40,20 @@
 /*
 #include "generator_dense_imci_avx512_common.h"
 #include "generator_dense_imci_microkernel.h"
-#include "generator_dense_avx512_microkernel.h"
 */
+#include "generator_dense_avx512_microkernel.h"
 
-int libxsmm_generator_dense_imci_avx512_kernel_k_loop( libxsmm_generated_code*            io_generated_code,
+int libxsmm_generator_dense_imci_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
                                                        const char*                        i_arch,
                                                        unsigned int                       i_n_blocking ) {
-  const unsigned int k_blocking = 8;
-  const unsigned int k_threshold = 8;
+  const unsigned int l_k_blocking = 8;
+  const unsigned int l_k_threshold = 8;
   unsigned int KisFullyUnrolled = 0;
 
-#if 0
+
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
   /*if ((K != 9) && (K >= 8) && (N == 9)) {
     avx512_kernel_8x9xKfullyunrolled_indexed_dp_asm(codestream, K, lda, ldb, ldc, alignA, tPrefetch, bUseMasking);
@@ -61,16 +61,22 @@ int libxsmm_generator_dense_imci_avx512_kernel_k_loop( libxsmm_generated_code*  
   } else if ((K == 9) && (N == 9)) {
     avx512_kernel_8x9x9fullyunrolled_indexed_dp_asm(codestream, K, lda, ldb, ldc, alignA, tPrefetch, bUseMasking);
     KisFullyUnrolled = true;
-  } else*/ if (K % k_blocking == 0 && K >= k_threshold) {
-    avx512_header_kloop_dp_asm(codestream, 8, k_blocking);
-    if (k_blocking == 8) {
-      avx512_kernel_8xNx8_dp_asm(codestream, N, lda, ldb, ldc, alignA, tPrefetch, bUseMasking);
-    } else {
-      std::cout << " !!! ERROR, AVX-512, k-blocking !!! " << std::endl;
-      exit(-1);
-    }
-    avx512_footer_kloop_dp_asm(codestream, 8, K);
-  } else {
+  } else*/ if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
+    libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+
+    libxsmm_generator_dense_avx512_microkernel( io_generated_code,
+                                                i_gp_reg_mapping,
+                                                i_micro_kernel_config,
+                                                i_xgemm_desc,
+                                                i_n_blocking,
+                                                l_k_blocking,
+                                                -1 ); 
+
+    libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                                          i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
+  } 
+#if 0
+  else {
     int max_blocked_K = (K/k_blocking)*k_blocking;
     if (max_blocked_K > 0 ) {
       avx512_header_kloop_dp_asm(codestream, 8, k_blocking);
@@ -97,7 +103,7 @@ int libxsmm_generator_dense_imci_avx512_kernel_k_loop( libxsmm_generated_code*  
   return KisFullyUnrolled;
 }
 
-void libxsmm_generator_dense_imci_avx512_kernel_m_loop( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                         const libxsmm_xgemm_descriptor*    i_xgemm_desc,
@@ -112,7 +118,12 @@ void libxsmm_generator_dense_imci_avx512_kernel_m_loop( libxsmm_generated_code* 
     libxsmm_generator_dense_load_C( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
                                     i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking );
 
-    /*bool KisFullyUnrolled = avx512_generate_inner_k_loop_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, tPrefetch, false);*/
+    int KisFullyUnrolled = libxsmm_generator_dense_imci_avx512_kernel_kloop( io_generated_code,
+                                                                             i_gp_reg_mapping,
+                                                                             i_micro_kernel_config,
+                                                                             i_xgemm_desc,
+                                                                             i_arch,
+                                                                             i_n_blocking );
 
     libxsmm_generator_dense_store_C( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
                                      i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking  );
@@ -231,7 +242,7 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   libxsmm_generator_dense_x86_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   if (l_number_of_chunks == 1) {
-    libxsmm_generator_dense_imci_avx512_kernel_m_loop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+    libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                        i_xgemm_desc, i_arch, l_n2); 
   } else {
 #if 0

@@ -127,7 +127,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
           libxsmm_generator_dense_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
           /* apply multiple k_blocking strategies */
-          /* 1. we are larger the k_threshold and a multple of a predefined blocking parameter */
+          /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
           if ((i_xgemm_desc->k % l_k_blocking) == 0 && i_xgemm_desc->k > l_k_threshold) {
             libxsmm_generator_dense_header_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
             

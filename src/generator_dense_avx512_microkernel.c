@@ -41,19 +41,20 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                  const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                                 const unsigned int                  i_m_blocking,
                                                  const unsigned int                  i_n_blocking,
+                                                 const unsigned int                  i_k_blocking,
                                                  const int                           i_offset ) {
 #ifndef NDEBUG
   if ( i_n_blocking > 30 ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel: i_n_blocking exceeds 30\n");
     exit(-1); 
   }
-  if ( i_m_blocking != i_micro_kernel_config->vector_length ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel: i_m_blocking doesn't match the vector_length\n");
-    exit(-1); 
+  if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
+    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
   }
 #endif
+  unsigned int l_n;
+  unsigned int l_k;
 
   if (i_offset != (-1)) {
     libxsmm_instruction_vec_move( io_generated_code,
@@ -65,52 +66,122 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                   0, 
                                   i_micro_kernel_config->use_masking_a_c, 0 );
 
-#if 0
-    // current A prefetch, next 8 rows for the current column
-    if (    (tPrefetch.compare("curAL2") == 0) 
-         || (tPrefetch.compare("curAL2_BL2viaC") == 0) ) {
-      codestream << "                         \"prefetcht1 " << (lda * 8 * call) + 64 << "(%%r9)\\n\\t\"" << std::endl;
+    /* current A prefetch, next 8 rows for the current column */
+    if ( (strcmp( i_xgemm_desc->prefetch,"curAL2" ) == 0)         ||
+         (strcmp( i_xgemm_desc->prefetch,"curAL2_BL2viaC" ) == 0)    ) {
+      libxsmm_instruction_prefetch( io_generated_code,
+                                    i_micro_kernel_config->prefetch_instruction,
+                                    i_gp_reg_mapping->gp_reg_a,
+                                    (i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size) + 64 );
     }
-    // next A prefetch "same" rows in "same" column, but in a different matrix 
-    if (    (tPrefetch.compare("AL2jpst") == 0)
-         || (tPrefetch.compare("AL2jpst_BL2viaC") == 0)
-         || (tPrefetch.compare("AL2") == 0)
-         || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-      codestream << "                         \"prefetcht1 " << (lda * 8 * call) << "(%%r11)\\n\\t\"" << std::endl;
+
+    /* next A prefetch "same" rows in "same" column, but in a different matrix */ 
+    if ( (strcmp( i_xgemm_desc->prefetch,"AL2jpst" ) == 0)         ||
+         (strcmp( i_xgemm_desc->prefetch,"AL2jpst_BL2viaC" ) == 0) ||
+         (strcmp( i_xgemm_desc->prefetch,"AL2" ) == 0)             || 
+         (strcmp( i_xgemm_desc->prefetch,"AL2_BL2viaC" ) == 0)        ) {
+      libxsmm_instruction_prefetch( io_generated_code,
+                                    i_micro_kernel_config->prefetch_instruction,
+                                    i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    (i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size) );
     }
-    for (int n_local = 0; n_local < max_local_N; n_local++) {
-      codestream << "                         \"vfmadd231pd " << (8 * call) + (ldb * 8 * n_local) << "(%%r8){{1to8}}, %%zmm0, %%zmm" << 31-n_local << "\\n\\t\"" << std::endl;
+
+    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+      libxsmm_instruction_vec_compute_membcast( io_generated_code, 
+                                                i_micro_kernel_config->instruction_set,
+                                                i_micro_kernel_config->vmul_instruction,
+                                                i_gp_reg_mapping->gp_reg_b,
+                                                LIBXSMM_X86_GP_REG_UNDEF,
+                                                0,
+                                                (i_offset * i_micro_kernel_config->datatype_size) + (i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                                i_micro_kernel_config->vector_name,
+                                                0,
+                                                i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
     }
-#endif
   } else {
-    libxsmm_instruction_vec_move( io_generated_code,
-                                  i_micro_kernel_config->instruction_set,
-                                  i_micro_kernel_config->a_vmove_instruction, 
-                                  i_gp_reg_mapping->gp_reg_a, 
-                                  i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size, 
-                                  i_micro_kernel_config->vector_name, 
-                                  0, 
-                                  i_micro_kernel_config->use_masking_a_c, 0 );
-#if 0
-    // current A prefetch, next 8 rows for the current column
-    if (    (tPrefetch.compare("curAL2") == 0) 
-         || (tPrefetch.compare("curAL2_BL2viaC") == 0) ) {
-      codestream << "                         \"prefetcht1 64(%%r9)\\n\\t\"" << std::endl;
+    /* apply k blocking */
+    for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
+      if ( l_k == 0 ) {
+        libxsmm_instruction_vec_move( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->a_vmove_instruction, 
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size, 
+                                      i_micro_kernel_config->vector_name, 
+                                      0, 
+                                      i_micro_kernel_config->use_masking_a_c, 0 );
+        if ( i_k_blocking > 1 ) {
+          libxsmm_instruction_vec_move( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        i_micro_kernel_config->a_vmove_instruction, 
+                                        i_gp_reg_mapping->gp_reg_a, 
+                                        i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
+                                        i_micro_kernel_config->vector_name, 
+                                        1, 
+                                        i_micro_kernel_config->use_masking_a_c, 0 );
+        }
+      } else if ( l_k < (i_k_blocking - 1) ) {
+        libxsmm_instruction_vec_move( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->a_vmove_instruction, 
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
+                                      i_micro_kernel_config->vector_name, 
+                                      (l_k+1)%2, 
+                                      i_micro_kernel_config->use_masking_a_c, 0 );
+      }
+
+      // current A prefetch, next 8 rows for the current column
+      if ( (strcmp( i_xgemm_desc->prefetch, "curAL2" ) == 0)         ||
+           (strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0)    ) {
+        libxsmm_instruction_prefetch( io_generated_code,
+                                      i_micro_kernel_config->prefetch_instruction,
+                                      i_gp_reg_mapping->gp_reg_a,
+                                      (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) + 64 );
+      }
+
+      // next A prefetch "same" rows in "same" column, but in a different matrix 
+      if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
+           (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
+           (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
+           (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
+        libxsmm_instruction_prefetch( io_generated_code,
+                                      i_micro_kernel_config->prefetch_instruction,
+                                      i_gp_reg_mapping->gp_reg_a_prefetch,
+                                      (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
+        if ( l_k == (i_k_blocking - 1) ) {
+          libxsmm_instruction_alu_imm( io_generated_code,
+                                       i_micro_kernel_config->alu_add_instruction, 
+                                       i_gp_reg_mapping->gp_reg_a_prefetch,
+                                       i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
+        }
+      }
+
+      if ( l_k == (i_k_blocking - 1) ) {
+        libxsmm_instruction_alu_imm( io_generated_code,
+                                     i_micro_kernel_config->alu_add_instruction, 
+                                     i_gp_reg_mapping->gp_reg_a,
+                                     i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
+      }
+
+      for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+        libxsmm_instruction_vec_compute_membcast( io_generated_code, 
+                                                  i_micro_kernel_config->instruction_set,
+                                                  i_micro_kernel_config->vmul_instruction,
+                                                  i_gp_reg_mapping->gp_reg_b,
+                                                  LIBXSMM_X86_GP_REG_UNDEF,
+                                                  0,
+                                                  (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                                  i_micro_kernel_config->vector_name,
+                                                  l_k%2,
+                                                  i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+      }
     }
-    // next A prefetch "same" rows in "same" column, but in a different matrix 
-    if (    (tPrefetch.compare("AL2jpst") == 0) 
-         || (tPrefetch.compare("AL2jpst_BL2viaC") == 0)
-         || (tPrefetch.compare("AL2") == 0)
-         || (tPrefetch.compare("AL2_BL2viaC") == 0) ) {
-      codestream << "                         \"prefetcht1 (%%r11)\\n\\t\"" << std::endl;
-      codestream << "                         \"addq $" << lda * 8 << ", %%r11\\n\\t\"" << std::endl;
-    }
-    codestream << "                         \"addq $" << lda * 8 << ", %%r9\\n\\t\"" << std::endl;
-    for (int n_local = 0; n_local < max_local_N; n_local++) {
-      codestream << "                         \"vfmadd231pd " << (ldb * 8 * n_local) << "(%%r8){{1to8}}, %%zmm0, %%zmm" << 31-n_local << "\\n\\t\"" << std::endl;
-    }
-    codestream << "                         \"addq $8, %%r8\\n\\t\"" << std::endl;
-#endif
+
+    libxsmm_instruction_alu_imm( io_generated_code,
+                                 i_micro_kernel_config->alu_add_instruction, 
+                                 i_gp_reg_mapping->gp_reg_b,
+                                 i_k_blocking * i_micro_kernel_config->datatype_size );
   }
 }
 

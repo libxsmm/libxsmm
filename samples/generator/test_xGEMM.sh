@@ -49,7 +49,12 @@ then
   ARCH=$1
   PREC=$2
 fi
+
+# build also assembly variant
 ASM=1
+
+# set SDE to run AVX512 code
+SDE="/nfs_home/aheineck/Simulators/sde/sde-buildkit-internal-rs-7.23.0-2015-04-30-lin/sde64 -knl -mix -- "
 
 # select precision 
 if [ "${PREC}" == 'DP' ]; then
@@ -65,7 +70,7 @@ do
   for n in ${N}
   do
     K="${m} ${N}"
-    #K="${m}"
+    K="${m}"
     for k in ${K}
     do 
       rm -rf kernel_${m}_${n}_${k}_${PREC}.*
@@ -76,43 +81,47 @@ do
         ./../../bin/generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
       fi
       if [ "${ARCH}" == 'wsm' ]; then
-        icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        icpc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icpc -O2 -msse3 -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icpc -O2 -msse3 -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'snb' ]; then
-        icpc -O3 -mavx -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        icpc -O3 -mavx -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icpc -O2 -mavx -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icpc -O2 -mavx -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'hsw' ]; then
-        #icpc -O2 -xCORE_AVX2 -fma -D__USE_MKL -mkl -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
-        icpc -O2 -xCORE_AVX2 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" -static-intel validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        #icpc -O2 -xCORE_AVX2 -fma -D__USE_MKL -mkl -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        icpc -O2 -xCORE_AVX2 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icpc -O2 -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT -static-intel validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icpc -O2 -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'knc' ]; then
-        #icpc -O3 -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -static-intel validation.cpp -o xgemm_${m}_${n}_${k}
+        #icpc -O3 -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} validation.cpp -o xgemm_${m}_${n}_${k}
         #scp xgemm_${m}_${n}_${k} mic0:
 	#ssh mic0 "./xgemm_${m}_${n}_${k}"
         echo "knc is currently NOT supported by this version of the generator!"
       elif [ "${ARCH}" == 'knl' ]; then
-         #icpc -O3 -xMIC-AVX512 -fma -ansi-alias -static-intel -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} validation.cpp -o xgemm_${m}_${n}_${k}
-         #/nfs_home/aheineck/Simulators/sde/sde-buildkit-internal-rs-7.23.0-2015-04-30-lin/sde64 -knl -mix -- ./xgemm_${m}_${n}_${k}
-         #./xgemm_${m}_${n}_${k}
-        echo "knl is currently NOT supported by this version of the generator!"
+        icpc -O2 -xCOMMON-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}
+        if [ $ASM -eq 1 ]
+        then
+          as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
+          icpc -O2 -xCOMMON_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.cpp kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}_asm
+        fi
       else
         echo "unsupported architecture!"
       fi

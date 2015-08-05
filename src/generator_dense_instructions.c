@@ -116,6 +116,53 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
+void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_generated_code, 
+                                               const unsigned int      i_instruction_set,
+                                               const unsigned int      i_vec_instr,
+                                               const unsigned int      i_gp_reg_base,
+                                               const unsigned int      i_gp_reg_idx,
+                                               const unsigned int      i_scale,
+                                               const unsigned int      i_displacement,
+                                               const char              i_vector_name,                                
+                                               const unsigned int      i_vec_reg_number_0,
+                                               const unsigned int      i_vec_reg_number_1 ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    char l_new_code[512];
+    char l_gp_reg_base[4];
+    char l_gp_reg_idx[4];
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base );
+    char l_instr_name[16];
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+
+    /* build vXYZpd/ps/sd/ss instruction pure register use*/
+    if ( i_instruction_set == LIBXSMM_X86_AVX512 || i_instruction_set == LIBXSMM_X86_IMCI ) {
+      /* we just a have displacement */
+      if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s)%%{1to8%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s){1to8}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      } else {
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{1to8%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){1to8}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      }
+    } else {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_instruction_vec_compute_membcast: is not supported on other platforms than AVX512/IMCI\n");
+      exit(-1);
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
+
 void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_instruction_set, 
                                           const unsigned int      i_vec_instr,
