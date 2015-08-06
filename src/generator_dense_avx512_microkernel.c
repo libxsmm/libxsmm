@@ -390,9 +390,10 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
     if ( (l_k > 0) && (l_k%(128/i_micro_kernel_config->datatype_size) == 0) ) {
-      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, 128 );
-      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, 128 );
       libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_2, 128 );
+      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, 128 );
+      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, 128 );
+      
       l_displacement_k = 0;
       l_k_updates++;
     }
