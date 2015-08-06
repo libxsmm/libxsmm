@@ -543,7 +543,11 @@ void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             i
   char l_new_code[32];
 
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_kloop, 0);
-  sprintf( l_new_code, "30%i", i_m_blocking );
+  if ( i_micro_kernel_config->use_masking_a_c == 0 ) {
+    sprintf( l_new_code, "30%i", i_m_blocking );
+  } else {
+    sprintf( l_new_code, "40%i", i_m_blocking );
+  }
   libxsmm_instruction_register_jump_label( io_generated_code, l_new_code );
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
@@ -558,7 +562,11 @@ void libxsmm_generator_dense_footer_kloop( libxsmm_generated_code*             i
   char l_new_code[32];
 
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_kloop, i_max_blocked_k );
-  sprintf( l_new_code, "30%ib", i_m_blocking );
+  if ( i_micro_kernel_config->use_masking_a_c == 0 ) {
+    sprintf( l_new_code, "30%ib", i_m_blocking );
+  } else {
+    sprintf( l_new_code, "40%ib", i_m_blocking );
+  }
   libxsmm_instruction_jump_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, l_new_code );
   if ( i_kloop_complete != 0 ) {
     libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, 

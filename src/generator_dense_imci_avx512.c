@@ -59,6 +59,12 @@ void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generat
   /* shift right by "inverse" remainder */
   l_mask = l_mask >> ( i_micro_kernel_config->vector_length - (i_xgemm_desc->m - i_m_done) );
 
+  /* move mask to GP register */
+  libxsmm_instruction_alu_imm( io_generated_code,
+                               i_micro_kernel_config->alu_mov_instruction, 
+                               i_gp_reg_mapping->gp_reg_help_5,
+                               l_mask );
+
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI ) {
     libxsmm_instruction_mask_move( io_generated_code,
                                    LIBXSMM_X86_INSTR_KMOV,
@@ -193,48 +199,35 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
     /* initialize k1 register */
     libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( io_generated_code,
                                                                 i_gp_reg_mapping,
-                                                                i_micro_kernel_config,
+                                                                &l_micro_kernel_config_mask,
                                                                 i_xgemm_desc,
                                                                 l_m_done );
 
     /* run masked micro kernel */    
+    libxsmm_generator_dense_load_C( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
+                                    i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking );
 
-#if 0
-    switch(M - mDone)
-    {
-      case 1: 
-        codestream << "                         \"movq $1, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 2: 
-        codestream << "                         \"movq $3, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 3: 
-        codestream << "                         \"movq $7, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 4: 
-        codestream << "                         \"movq $15, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 5: 
-        codestream << "                         \"movq $31, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 6: 
-        codestream << "                         \"movq $63, %%r14\\n\\t\"" << std::endl;
-        break;
-      case 7: 
-        codestream << "                         \"movq $127, %%r14\\n\\t\"" << std::endl;
-        break;       
-    }
-    codestream << "                         \"kmovw %%r14d, %%k1\\n\\t\"" << std::endl;
-    avx512_load_8xN_dp_asm(codestream, N, ldc, alignC, bAdd, true);
-    // innner loop over K
-    avx512_generate_inner_k_loop_dp(codestream, lda, ldb, ldc, M, N, K, alignA, alignC, bAdd, tPrefetch, true);
-    avx512_store_8xN_dp_asm(codestream, N, ldc, alignC, tPrefetch, true);
-    codestream << "                         \"addq $" << (M - mDone) * 8 << ", %%r10\\n\\t\"" << std::endl;
-    codestream << "                         \"subq $" << (K * 8 * lda) - ( (M - mDone) * 8) << ", %%r9\\n\\t\"" << std::endl;
-#else
-    fprintf(stderr, "ERROR MASKING AVX512\n");
-    exit(-1);
-#endif
+    int KisFullyUnrolled = libxsmm_generator_dense_imci_avx512_kernel_kloop( io_generated_code,
+                                                                             i_gp_reg_mapping,
+                                                                             &l_micro_kernel_config_mask,
+                                                                             i_xgemm_desc,
+                                                                             i_arch,
+                                                                             i_n_blocking );
+
+    libxsmm_generator_dense_store_C( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
+                                     i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking  );
+
+    /* adjust pointers as we don't have a m-loop body */
+    /* C */
+    libxsmm_instruction_alu_imm( io_generated_code,
+                                 l_micro_kernel_config_mask.alu_add_instruction, 
+                                 i_gp_reg_mapping->gp_reg_c,
+                                 (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
+    /* A */
+    libxsmm_instruction_alu_imm( io_generated_code,
+                                 l_micro_kernel_config_mask.alu_sub_instruction, 
+                                 i_gp_reg_mapping->gp_reg_a,
+                                 (i_xgemm_desc->k * l_micro_kernel_config_mask.datatype_size * i_xgemm_desc->lda) - ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
   }
 }
 

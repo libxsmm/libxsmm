@@ -60,9 +60,35 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name );
 
     if ( (i_instruction_set == LIBXSMM_X86_AVX512) && (i_use_masking != 0) ) {
-
+      /* build vmovpd/ps/sd/ss instruction, load use */
+      if ( i_is_store == 0 ) {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+        }
+      } else {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+        } else {
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+        }
+      }
     } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_use_masking != 0) ) {
-
+      /* build vmovpd/ps/sd/ss instruction, load use */
+      if ( i_is_store == 0 ) {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+        }
+      } else {
+        if ( io_generated_code->code_type == 0 ) {
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+        } else {
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+        }
+      }
     } else {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
@@ -259,7 +285,7 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     if ( io_generated_code->code_type == 0 ) {
       sprintf(l_new_code, "                       \"%s %%%%%sd, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
     } else { 
-      sprintf(l_new_code, "                      %s %%%%%sd, %%%%k%i\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
+      sprintf(l_new_code, "                       %s %%%sd, %%k%i\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
