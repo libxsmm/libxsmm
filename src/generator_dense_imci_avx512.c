@@ -294,26 +294,24 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
 
   if (l_number_of_chunks == 1) {
     libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
-                                                       i_xgemm_desc, i_arch, l_n2); 
+                                                      i_xgemm_desc, i_arch, i_xgemm_desc->n); 
   } else {
-#if 0
     if ((l_N2 > 0) && (l_N1 > 0)) {
-      avx512_header_nloop_dp_asm(codestream, l_n1);
-      avx512_generate_inner_m_loop_dp(codestream, lda, ldb, ldc, M, l_n1, K, alignA, alignC, bAdd, tPrefetch);
-      avx512_footer_nloop_dp_asm(codestream, l_n1, l_N1, M, lda, ldb, ldc);
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n1 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+                                                        i_xgemm_desc, i_arch, l_n1); 
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n1, l_N1 );
 
-      avx512_header_nloop_dp_asm(codestream, l_n2);
-      avx512_generate_inner_m_loop_dp(codestream, lda, ldb, ldc, M, l_n2, K, alignA, alignC, bAdd, tPrefetch);
-      avx512_footer_nloop_dp_asm(codestream, l_n2, N, M, lda, ldb, ldc);
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+                                                        i_xgemm_desc, i_arch, l_n2); 
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
     } else if ((l_N2 > 0) && (l_N1 == 0)) {
-      avx512_header_nloop_dp_asm(codestream, l_n2);
-      avx512_generate_inner_m_loop_dp(codestream, lda, ldb, ldc, M, l_n2, K, alignA, alignC, bAdd, tPrefetch);
-      avx512_footer_nloop_dp_asm(codestream, l_n2, N, M, lda, ldb, ldc);
-    } else {
-      std::cout << " !!! ERROR, AVX512 n-blocking !!! " << std::endl;
-      exit(-1);
-    }
-#endif
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+                                                        i_xgemm_desc, i_arch, l_n2); 
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
+    } else {}
   }
   
   /* close asm */
