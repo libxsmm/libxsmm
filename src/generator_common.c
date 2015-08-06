@@ -337,6 +337,148 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
   }
 }
 
+unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number ) {
+  unsigned int l_return = 0;
+  
+  switch (i_instr_number) {
+    case LIBXSMM_X86_INSTR_VMOVAPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVUPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVAPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVUPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VBROADCASTSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VBROADCASTSS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVDDUP:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMOVSS:
+      l_return = 1;
+      break;
+    /* SSE vector moves */
+    case LIBXSMM_X86_INSTR_MOVAPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MOVUPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MOVAPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_MOVUPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_MOVDDUP:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MOVSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MOVSS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_SHUFPS:
+      l_return = 1;
+      break;
+    /* AVX double precision */
+    case LIBXSMM_X86_INSTR_VXORPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMULPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VADDPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231PD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VMULSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VADDSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231SD:
+      l_return = 0;
+      break;
+    /* AVX single precision */
+    case LIBXSMM_X86_INSTR_VXORPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VMULPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VADDPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231PS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VMULSS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VADDSS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VFMADD231SS:
+      l_return = 1;
+      break;
+    /* SSE double precision */
+    case LIBXSMM_X86_INSTR_XORPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MULPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_ADDPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_MULSD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_ADDSD:
+      l_return = 0;
+      break;
+    /* SSE single precision */
+    case LIBXSMM_X86_INSTR_XORPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_MULPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_ADDPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_MULSS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_ADDSS:
+      l_return = 1;
+      break;
+    /* default, we didn't had a match */
+    default:
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%i) is not a x86 FP vector instruction!\n", i_instr_number);
+      exit(-1);
+  }
+
+  return l_return;
+}
+
+
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
   i_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
   i_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;

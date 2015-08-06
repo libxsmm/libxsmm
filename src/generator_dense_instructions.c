@@ -162,22 +162,29 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base );
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+    char l_broadcast[8];
+    unsigned int l_single_precision = libxsmm_is_x86_vec_instr_single_precision( i_vec_instr );
+    if (l_single_precision == 0) {
+      sprintf( l_broadcast, "1to8" );
+    } else {
+      sprintf( l_broadcast, "1to16" );
+    }
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_instruction_set == LIBXSMM_X86_AVX512 || i_instruction_set == LIBXSMM_X86_IMCI ) {
       /* we just a have displacement */
       if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s)%%{1to8%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s){1to8}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       } else {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{1to8%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){1to8}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       }
     } else {

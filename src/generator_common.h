@@ -182,6 +182,8 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
 
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping );
 
+unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
+
 /* some string manipulation helper needed to 
    generated code */
 char* libxsmm_empty_string();
