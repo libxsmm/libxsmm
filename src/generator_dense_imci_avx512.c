@@ -78,114 +78,55 @@ void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generat
   } else {}
 }
 
-int libxsmm_generator_dense_imci_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
                                                        const char*                        i_arch,
                                                        unsigned int                       i_n_blocking ) {
-  const unsigned int l_k_blocking = 8;
-  const unsigned int l_k_threshold = 8;
-  unsigned int l_k_fully_unrolled = 0;
+  /* set function pointers for AVX512 and IMCI */
+  void (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
+                                   const libxsmm_xgemm_descriptor*, const char*, unsigned int );
+  void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
+                            const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
+  void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
+                            const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
 
-  /* Let's do something special for SeisSol high-order (N == 9 holds true) */
-  if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9)) {
-    libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( io_generated_code,
-                                                               i_gp_reg_mapping,
-                                                               i_micro_kernel_config,
-                                                               i_xgemm_desc,
-                                                               i_xgemm_desc->k ); 
-  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
-    libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
-
-    libxsmm_generator_dense_avx512_microkernel( io_generated_code,
-                                                i_gp_reg_mapping,
-                                                i_micro_kernel_config,
-                                                i_xgemm_desc,
-                                                i_n_blocking,
-                                                l_k_blocking,
-                                                -1 ); 
-
-    libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                          i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
+  if ( (strcmp(i_arch, "knl") == 0) ) {
+    l_generator_microkernel = libxsmm_generator_dense_avx512_kernel_kloop;
+    l_generator_load = libxsmm_generator_dense_load_C;
+    l_generator_store = libxsmm_generator_dense_store_C;
+  } else if ( (strcmp(i_arch, "skx") == 0) ) {
+    l_generator_microkernel = libxsmm_generator_dense_avx512_kernel_kloop;
+    l_generator_load = libxsmm_generator_dense_load_C;
+    l_generator_store = libxsmm_generator_dense_store_C; 
+  } else if ( (strcmp(i_arch, "knc") == 0) ) {
+    /*l_generator_microkernel = libxsmm_generator_dense_imci_kernel_kloop;
+    l_generator_load = libxsmm_generator_dense_load_C_imci;
+    l_generator_store = libxsmm_generator_dense_store_C_imci;*/
   } else {
-    unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
-    if (l_max_blocked_k > 0 ) {
-      libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
-
-      libxsmm_generator_dense_avx512_microkernel( io_generated_code,
-                                                i_gp_reg_mapping,
-                                                i_micro_kernel_config,
-                                                i_xgemm_desc,
-                                                i_n_blocking,
-                                                l_k_blocking,
-                                                -1 ); 
-
-      libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                          i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
-    }
-    unsigned int l_k;
-    for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
-      libxsmm_generator_dense_avx512_microkernel( io_generated_code,
-                                                i_gp_reg_mapping,
-                                                i_micro_kernel_config,
-                                                i_xgemm_desc,
-                                                i_n_blocking,
-                                                1,	
-                                                l_k-l_max_blocked_k );
-    }
-    /* update A, B and a_prefetch pointers */
-    libxsmm_instruction_alu_imm( io_generated_code,
-                                 i_micro_kernel_config->alu_add_instruction, 
-                                 i_gp_reg_mapping->gp_reg_a,
-                                 (i_xgemm_desc->k - l_max_blocked_k) * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
-   
-    /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
-         (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
-      libxsmm_instruction_prefetch( io_generated_code,
-                                    i_micro_kernel_config->prefetch_instruction,
-                                    i_gp_reg_mapping->gp_reg_a_prefetch,
-                                    (i_xgemm_desc->k - l_max_blocked_k) * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
-    }
-    /* reset on B is just needed when we had more than iterations left */
-    if (l_max_blocked_k > 0 ) {
-      libxsmm_instruction_alu_imm( io_generated_code,
-                                   i_micro_kernel_config->alu_sub_instruction, 
-                                   i_gp_reg_mapping->gp_reg_b,
-                                   l_max_blocked_k * i_micro_kernel_config->datatype_size );
-    }
+    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_imci_avx512_kernel_mloop, cannot select microkernel\n");
+    exit(-1);
   }
 
-  return l_k_fully_unrolled;
-}
-
-void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
-                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
-                                                        const char*                        i_arch,
-                                                        unsigned int                       i_n_blocking ) {
   /* we proceed as much as we can in vector length steps, remainder is handled uisng masking */
   int l_m_done = (i_xgemm_desc->m / i_micro_kernel_config->vector_length) * i_micro_kernel_config->vector_length;
 
   /* multiples of vector_length in M */
   if (l_m_done > 0) {
     libxsmm_generator_dense_header_mloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length );
-    libxsmm_generator_dense_load_C( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                    i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking );
+    l_generator_load( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                      i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking );
 
-    int KisFullyUnrolled = libxsmm_generator_dense_imci_avx512_kernel_kloop( io_generated_code,
-                                                                             i_gp_reg_mapping,
-                                                                             i_micro_kernel_config,
-                                                                             i_xgemm_desc,
-                                                                             i_arch,
-                                                                             i_n_blocking );
+    l_generator_microkernel( io_generated_code,
+                             i_gp_reg_mapping,
+                             i_micro_kernel_config,
+                             i_xgemm_desc,
+                             i_arch,
+                             i_n_blocking );
 
-    libxsmm_generator_dense_store_C( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                     i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking  );
+    l_generator_store( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                       i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking  );
     libxsmm_generator_dense_footer_mloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, 
                                           i_micro_kernel_config->vector_length, l_m_done );
   }
@@ -204,18 +145,18 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
                                                                 l_m_done );
 
     /* run masked micro kernel */    
-    libxsmm_generator_dense_load_C( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
-                                    i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking );
+    l_generator_load( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
+                      i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking );
 
-    int KisFullyUnrolled = libxsmm_generator_dense_imci_avx512_kernel_kloop( io_generated_code,
-                                                                             i_gp_reg_mapping,
-                                                                             &l_micro_kernel_config_mask,
-                                                                             i_xgemm_desc,
-                                                                             i_arch,
-                                                                             i_n_blocking );
+    l_generator_microkernel( io_generated_code,
+                             i_gp_reg_mapping,
+                             &l_micro_kernel_config_mask,
+                             i_xgemm_desc,
+                             i_arch,
+                             i_n_blocking );
 
-    libxsmm_generator_dense_store_C( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
-                                     i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking  );
+    l_generator_store( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
+                       i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking  );
 
     /* adjust pointers as we don't have a m-loop body */
     /* C */
