@@ -195,7 +195,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PD;
-      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPD;
     } else {
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size = 4;
@@ -213,7 +213,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       }
       io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
-      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     }
   } else {
     fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
