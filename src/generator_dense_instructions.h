@@ -178,6 +178,19 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_immediate );
 
 /**
+ * Generates regular all instructions with immediates
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_alu_instr actual alu gpr instruction
+ * @param i_gp_reg_number_src the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_gp_reg_number_dest the destination register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ */
+void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
+                                  const unsigned int      i_alu_instr,
+                                  const unsigned int      i_gp_reg_number_src,
+                                  const unsigned int      i_gp_reg_number_dest);
+
+/**
  * Allows for mask move instructions in AVX512
  *
  * @param io_generated_code pointer to the pointer of the generated code structure

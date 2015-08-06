@@ -89,13 +89,13 @@ int libxsmm_generator_dense_imci_avx512_kernel_kloop( libxsmm_generated_code*   
   unsigned int l_k_fully_unrolled = 0;
 
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
-  /*if ((K != 9) && (K >= 8) && (N == 9)) {
-    avx512_kernel_8x9xKfullyunrolled_indexed_dp_asm(codestream, K, lda, ldb, ldc, alignA, tPrefetch, bUseMasking);
-    KisFullyUnrolled = true;
-  } else if ((K == 9) && (N == 9)) {
-    avx512_kernel_8x9x9fullyunrolled_indexed_dp_asm(codestream, K, lda, ldb, ldc, alignA, tPrefetch, bUseMasking);
-    KisFullyUnrolled = true;
-  } else*/ if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
+  if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9)) {
+    libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( io_generated_code,
+                                                               i_gp_reg_mapping,
+                                                               i_micro_kernel_config,
+                                                               i_xgemm_desc,
+                                                               i_xgemm_desc->k ); 
+  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
     libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
 
     libxsmm_generator_dense_avx512_microkernel( io_generated_code,

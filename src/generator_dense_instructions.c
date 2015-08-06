@@ -275,6 +275,31 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
+void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
+                                  const unsigned int      i_alu_instr,
+                                  const unsigned int      i_gp_reg_number_src,
+                                  const unsigned int      i_gp_reg_number_dest) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    char l_new_code[512];
+    char l_gp_reg_name_src[4];
+    char l_gp_reg_name_dest[4];
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_src, l_gp_reg_name_src );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_dest, l_gp_reg_name_dest );
+    char l_instr_name[16];
+    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name );
+
+    if ( io_generated_code->code_type == 0 ) {
+      sprintf(l_new_code, "                       \"%s %%%%%s, %%%%%s\\n\\t\"\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
+    } else { 
+      sprintf(l_new_code, "                       %s %%%s, %%%s\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
 void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                     const unsigned int      i_mask_instr,
                                     const unsigned int      i_gp_reg_number,
@@ -564,7 +589,7 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
         sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
         libxsmm_append_code_as_string( io_generated_code, l_new_code );
       } else {
-        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        sprintf( l_new_code, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
         libxsmm_append_code_as_string( io_generated_code, l_new_code );
       }
     }
