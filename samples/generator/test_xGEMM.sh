@@ -70,7 +70,7 @@ do
   for n in ${N}
   do
     K="${m} ${N}"
-    K="${m}"
+#    K="${m}"
     for k in ${K}
     do 
       rm -rf kernel_${m}_${n}_${k}_${PREC}.*
