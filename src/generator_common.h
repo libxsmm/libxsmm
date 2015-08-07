@@ -36,100 +36,111 @@
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
-#define LIBXSMM_X86_GP_REG_RAX              0
-#define LIBXSMM_X86_GP_REG_RCX              1
-#define LIBXSMM_X86_GP_REG_RDX              2
-#define LIBXSMM_X86_GP_REG_RBX              3
-#define LIBXSMM_X86_GP_REG_RSP              4
-#define LIBXSMM_X86_GP_REG_RBP              5
-#define LIBXSMM_X86_GP_REG_RSI              6
-#define LIBXSMM_X86_GP_REG_RDI              7
-#define LIBXSMM_X86_GP_REG_R8               8
-#define LIBXSMM_X86_GP_REG_R9               9
-#define LIBXSMM_X86_GP_REG_R10             10
-#define LIBXSMM_X86_GP_REG_R11             11
-#define LIBXSMM_X86_GP_REG_R12             12
-#define LIBXSMM_X86_GP_REG_R13             13
-#define LIBXSMM_X86_GP_REG_R14             14
-#define LIBXSMM_X86_GP_REG_R15             15
-#define LIBXSMM_X86_GP_REG_UNDEF          127
+#define LIBXSMM_X86_GP_REG_RAX               0
+#define LIBXSMM_X86_GP_REG_RCX               1
+#define LIBXSMM_X86_GP_REG_RDX               2
+#define LIBXSMM_X86_GP_REG_RBX               3
+#define LIBXSMM_X86_GP_REG_RSP               4
+#define LIBXSMM_X86_GP_REG_RBP               5
+#define LIBXSMM_X86_GP_REG_RSI               6
+#define LIBXSMM_X86_GP_REG_RDI               7
+#define LIBXSMM_X86_GP_REG_R8                8
+#define LIBXSMM_X86_GP_REG_R9                9
+#define LIBXSMM_X86_GP_REG_R10              10
+#define LIBXSMM_X86_GP_REG_R11              11
+#define LIBXSMM_X86_GP_REG_R12              12
+#define LIBXSMM_X86_GP_REG_R13              13
+#define LIBXSMM_X86_GP_REG_R14              14
+#define LIBXSMM_X86_GP_REG_R15              15
+#define LIBXSMM_X86_GP_REG_UNDEF           127
 
 /* define a place holder to handle AVX and SSE with a single encoder function
    using this values as the third operand means SSE */
-#define LIBXSMM_X86_VEC_REG_UNDEF         255
-#define LIBXSMM_X86_MASK_REG_UNDEF        255
-#define LIBXSMM_X86_IMCI_AVX512_MASK        1  /* this specifies k1 */
+#define LIBXSMM_X86_VEC_REG_UNDEF          255
+#define LIBXSMM_X86_MASK_REG_UNDEF         255
+#define LIBXSMM_X86_IMCI_AVX512_MASK         1  /* this specifies k1 */
 
 /* defining instruction sets */
-#define LIBXSMM_X86_SSE3                 1000
-#define LIBXSMM_X86_AVX                  1001
-#define LIBXSMM_X86_AVX2                 1002
-#define LIBXSMM_X86_IMCI                 1003
-#define LIBXSMM_X86_AVX512               1004
+#define LIBXSMM_X86_SSE3                  1000
+#define LIBXSMM_X86_AVX                   1001
+#define LIBXSMM_X86_AVX2                  1002
+#define LIBXSMM_X86_IMCI                  1003
+#define LIBXSMM_X86_AVX512                1004
 
 /* special instruction */
-#define LIBXSMM_X86_INSTR_UNDEF          9999
+#define LIBXSMM_X86_INSTR_UNDEF           9999
 
 /* Load/Store/Move instructions */
 /* AVX1,AVX2,AVX512 */
-#define LIBXSMM_X86_INSTR_VMOVAPD       10000
-#define LIBXSMM_X86_INSTR_VMOVUPD       10001
-#define LIBXSMM_X86_INSTR_VMOVAPS       10002
-#define LIBXSMM_X86_INSTR_VMOVUPS       10003
-#define LIBXSMM_X86_INSTR_VBROADCASTSD  10004
-#define LIBXSMM_X86_INSTR_VBROADCASTSS  10005
-#define LIBXSMM_X86_INSTR_VMOVDDUP      10006 
-#define LIBXSMM_X86_INSTR_VMOVSD        10007
-#define LIBXSMM_X86_INSTR_VMOVSS        10008
+#define LIBXSMM_X86_INSTR_VMOVAPD        10000
+#define LIBXSMM_X86_INSTR_VMOVUPD        10001
+#define LIBXSMM_X86_INSTR_VMOVAPS        10002
+#define LIBXSMM_X86_INSTR_VMOVUPS        10003
+#define LIBXSMM_X86_INSTR_VBROADCASTSD   10004
+#define LIBXSMM_X86_INSTR_VBROADCASTSS   10005
+#define LIBXSMM_X86_INSTR_VMOVDDUP       10006 
+#define LIBXSMM_X86_INSTR_VMOVSD         10007
+#define LIBXSMM_X86_INSTR_VMOVSS         10008
 /* SSE */
-#define LIBXSMM_X86_INSTR_MOVAPD        10009
-#define LIBXSMM_X86_INSTR_MOVUPD        10010
-#define LIBXSMM_X86_INSTR_MOVAPS        10011
-#define LIBXSMM_X86_INSTR_MOVUPS        10012
-#define LIBXSMM_X86_INSTR_MOVSD         10013
-#define LIBXSMM_X86_INSTR_MOVSS         10014
-#define LIBXSMM_X86_INSTR_MOVDDUP       10015 
-#define LIBXSMM_X86_INSTR_SHUFPS        10016
+#define LIBXSMM_X86_INSTR_MOVAPD         10009
+#define LIBXSMM_X86_INSTR_MOVUPD         10010
+#define LIBXSMM_X86_INSTR_MOVAPS         10011
+#define LIBXSMM_X86_INSTR_MOVUPS         10012
+#define LIBXSMM_X86_INSTR_MOVSD          10013
+#define LIBXSMM_X86_INSTR_MOVSS          10014
+#define LIBXSMM_X86_INSTR_MOVDDUP        10015 
+#define LIBXSMM_X86_INSTR_SHUFPS         10016
+/* IMCI */
+#define LIBXSMM_X86_INSTR_VLOADUNPACKLPD 10017
+#define LIBXSMM_X86_INSTR_VLOADUNPACKHPD 10018
+#define LIBXSMM_X86_INSTR_VLOADUNPACKLPS 10019
+#define LIBXSMM_X86_INSTR_VLOADUNPACKHPS 10020
+#define LIBXSMM_X86_INSTR_VPACKSTORELPD  10021
+#define LIBXSMM_X86_INSTR_VPACKSTOREHPD  10022
+#define LIBXSMM_X86_INSTR_VPACKSTORELPS  10023
+#define LIBXSMM_X86_INSTR_VPACKSTOREHPS  10024
 
 /* Vector compute instructions */
 /* AVX1,AVX2,AVX512 */
-#define LIBXSMM_X86_INSTR_VXORPD        20000
-#define LIBXSMM_X86_INSTR_VMULPD        20001
-#define LIBXSMM_X86_INSTR_VADDPD        20002
-#define LIBXSMM_X86_INSTR_VFMADD231PD   20003
-#define LIBXSMM_X86_INSTR_VMULSD        20004
-#define LIBXSMM_X86_INSTR_VADDSD        20005
-#define LIBXSMM_X86_INSTR_VFMADD231SD   20006
-#define LIBXSMM_X86_INSTR_VXORPS        20007
-#define LIBXSMM_X86_INSTR_VMULPS        20008
-#define LIBXSMM_X86_INSTR_VADDPS        20009
-#define LIBXSMM_X86_INSTR_VFMADD231PS   20010
-#define LIBXSMM_X86_INSTR_VMULSS        20011
-#define LIBXSMM_X86_INSTR_VADDSS        20012
-#define LIBXSMM_X86_INSTR_VFMADD231SS   20013
+#define LIBXSMM_X86_INSTR_VXORPD         20000
+#define LIBXSMM_X86_INSTR_VMULPD         20001
+#define LIBXSMM_X86_INSTR_VADDPD         20002
+#define LIBXSMM_X86_INSTR_VFMADD231PD    20003
+#define LIBXSMM_X86_INSTR_VMULSD         20004
+#define LIBXSMM_X86_INSTR_VADDSD         20005
+#define LIBXSMM_X86_INSTR_VFMADD231SD    20006
+#define LIBXSMM_X86_INSTR_VXORPS         20007
+#define LIBXSMM_X86_INSTR_VMULPS         20008
+#define LIBXSMM_X86_INSTR_VADDPS         20009
+#define LIBXSMM_X86_INSTR_VFMADD231PS    20010
+#define LIBXSMM_X86_INSTR_VMULSS         20011
+#define LIBXSMM_X86_INSTR_VADDSS         20012
+#define LIBXSMM_X86_INSTR_VFMADD231SS    20013
 /* SSE */
-#define LIBXSMM_X86_INSTR_XORPD         20014
-#define LIBXSMM_X86_INSTR_MULPD         20015
-#define LIBXSMM_X86_INSTR_ADDPD         20016
-#define LIBXSMM_X86_INSTR_MULSD         20017
-#define LIBXSMM_X86_INSTR_ADDSD         20018
-#define LIBXSMM_X86_INSTR_XORPS         20019
-#define LIBXSMM_X86_INSTR_MULPS         20020
-#define LIBXSMM_X86_INSTR_ADDPS         20021
-#define LIBXSMM_X86_INSTR_MULSS         20022
-#define LIBXSMM_X86_INSTR_ADDSS         20023
+#define LIBXSMM_X86_INSTR_XORPD          20014
+#define LIBXSMM_X86_INSTR_MULPD          20015
+#define LIBXSMM_X86_INSTR_ADDPD          20016
+#define LIBXSMM_X86_INSTR_MULSD          20017
+#define LIBXSMM_X86_INSTR_ADDSD          20018
+#define LIBXSMM_X86_INSTR_XORPS          20019
+#define LIBXSMM_X86_INSTR_MULPS          20020
+#define LIBXSMM_X86_INSTR_ADDPS          20021
+#define LIBXSMM_X86_INSTR_MULSS          20022
+#define LIBXSMM_X86_INSTR_ADDSS          20023
 
 /* GP instructions */
-#define LIBXSMM_X86_INSTR_ADDQ          30000
-#define LIBXSMM_X86_INSTR_SUBQ          30001
-#define LIBXSMM_X86_INSTR_MOVQ          30002
-#define LIBXSMM_X86_INSTR_CMPQ          30003
-#define LIBXSMM_X86_INSTR_JL            30004
-#define LIBXSMM_X86_INSTR_PREFETCH1     30005
+#define LIBXSMM_X86_INSTR_ADDQ           30000
+#define LIBXSMM_X86_INSTR_SUBQ           30001
+#define LIBXSMM_X86_INSTR_MOVQ           30002
+#define LIBXSMM_X86_INSTR_CMPQ           30003
+#define LIBXSMM_X86_INSTR_JL             30004
+#define LIBXSMM_X86_INSTR_PREFETCH1      30005
+#define LIBXSMM_X86_INSTR_VPREFETCH1     30006
+#define LIBXSMM_X86_INSTR_VPREFETCH0     30007
 
 /* Mask move instructions */
-#define LIBXSMM_X86_INSTR_KMOV          40000
-#define LIBXSMM_X86_INSTR_KMOVW         40001
+#define LIBXSMM_X86_INSTR_KMOV           40000
+#define LIBXSMM_X86_INSTR_KMOVW          40001
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

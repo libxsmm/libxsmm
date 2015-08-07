@@ -229,6 +229,37 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_SHUFPS:
       strcpy(o_instr_name, "shufps");
       break;
+    /* IMCI special */
+    case LIBXSMM_X86_INSTR_VLOADUNPACKLPD:
+      strcpy(o_instr_name, "vloadunpacklpd");
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKHPD:
+      strcpy(o_instr_name, "vloadunpackhpd");
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKLPS:
+      strcpy(o_instr_name, "vloadunpacklps");
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKHPS:
+      strcpy(o_instr_name, "vloadunpackhps");
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTORELPD:
+      strcpy(o_instr_name, "vpackstorelpd");
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTOREHPD:
+      strcpy(o_instr_name, "vpackstorehpd");
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTORELPS:
+      strcpy(o_instr_name, "vpackstorelps");
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTOREHPS:
+      strcpy(o_instr_name, "vpackstorehps");
+      break;
+    case LIBXSMM_X86_INSTR_VPREFETCH1:
+      strcpy(o_instr_name, "vprefetch1");
+      break;
+    case LIBXSMM_X86_INSTR_VPREFETCH0:
+      strcpy(o_instr_name, "vprefetch0");
+      break;
     /* AVX double precision */
     case LIBXSMM_X86_INSTR_VXORPD:
       strcpy(o_instr_name, "vxorpd");
@@ -391,6 +422,31 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       l_return = 1;
       break;
     case LIBXSMM_X86_INSTR_SHUFPS:
+      l_return = 1;
+      break;
+    /* IMCI special */
+    case LIBXSMM_X86_INSTR_VLOADUNPACKLPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKHPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKLPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VLOADUNPACKHPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTORELPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTOREHPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTORELPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VPACKSTOREHPS:
       l_return = 1;
       break;
     /* AVX double precision */

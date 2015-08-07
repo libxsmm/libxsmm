@@ -489,6 +489,8 @@ void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_ge
   } else if ( (strcmp( i_arch, "knl" ) == 0) ||
               (strcmp( i_arch, "skx" ) == 0) ) {
     libxsmm_append_code_as_string( io_generated_code, "#ifdef __AVX512F__\n");
+  } else if ( (strcmp( i_arch, "knc" ) == 0) ) {
+    libxsmm_append_code_as_string( io_generated_code, "#ifdef __MIC__\n");
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
     libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n");
   } else {

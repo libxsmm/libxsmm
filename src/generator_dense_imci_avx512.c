@@ -37,10 +37,8 @@
 #include "generator_common.h"
 #include "generator_dense_common.h"
 #include "generator_dense_instructions.h"
-/*
-#include "generator_dense_imci_avx512_common.h"
+
 #include "generator_dense_imci_microkernel.h"
-*/
 #include "generator_dense_avx512_microkernel.h"
 
 void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
@@ -101,9 +99,9 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
     l_generator_load = libxsmm_generator_dense_load_C;
     l_generator_store = libxsmm_generator_dense_store_C; 
   } else if ( (strcmp(i_arch, "knc") == 0) ) {
-    /*l_generator_microkernel = libxsmm_generator_dense_imci_kernel_kloop;
+    l_generator_microkernel = libxsmm_generator_dense_imci_kernel_kloop;
     l_generator_load = libxsmm_generator_dense_load_C_imci;
-    l_generator_store = libxsmm_generator_dense_store_C_imci;*/
+    l_generator_store = libxsmm_generator_dense_store_C_imci;
   } else {
     fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_imci_avx512_kernel_mloop, cannot select microkernel\n");
     exit(-1);

@@ -1,0 +1,411 @@
+/******************************************************************************
+** Copyright (c) 2014-2015, Intel Corporation                                **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
+/* Alexander Heinecke (Intel Corp.)
+******************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+
+#include "generator_dense_instructions.h"
+#include "generator_dense_imci_microkernel.h"
+
+void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*             io_generated_code,
+                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                               const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                               const unsigned int                  i_n_blocking,
+                                               const unsigned int                  i_k_blocking,
+                                               const int                           i_offset ) {
+#ifndef NDEBUG
+  if ( i_n_blocking > 30 ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel: i_n_blocking exceeds 30\n");
+    exit(-1); 
+  }
+  if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
+    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
+  }
+#endif
+  unsigned int l_n;
+  unsigned int l_k;
+
+  /* if we have an offset greater-equal -> external k-unrolling */
+  if (i_offset != (-1)) {
+    /* load A */
+    libxsmm_instruction_vec_move_imci( io_generated_code,
+                                       i_micro_kernel_config->instruction_set,
+                                       i_micro_kernel_config->a_vmove_instruction, 
+                                       i_gp_reg_mapping->gp_reg_a, 
+                                       i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size, 
+                                       i_micro_kernel_config->vector_name, 
+                                       0, 
+                                       i_micro_kernel_config->use_masking_a_c, 0 );
+
+    /* compute vectorwidth (A) * column broadcast (B) */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+      libxsmm_instruction_vec_compute_membcast( io_generated_code, 
+                                                i_micro_kernel_config->instruction_set,
+                                                i_micro_kernel_config->vmul_instruction,
+                                                i_gp_reg_mapping->gp_reg_b,
+                                                LIBXSMM_X86_GP_REG_UNDEF,
+                                                0,
+                                                (i_offset * i_micro_kernel_config->datatype_size) + (i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                                i_micro_kernel_config->vector_name,
+                                                0,
+                                                i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+    }
+  } else {
+    unsigned int l_b_prefetches = 0;
+    /* apply k blocking */
+    for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
+      if ( l_k == 0 ) {
+        /* load A */
+        libxsmm_instruction_vec_move_imci( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->a_vmove_instruction, 
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size, 
+                                      i_micro_kernel_config->vector_name, 
+                                      0, 
+                                      i_micro_kernel_config->use_masking_a_c, 0 );
+        libxsmm_instruction_prefetch( io_generated_code,
+                                      LIBXSMM_X86_INSTR_VPREFETCH1,
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size)+64 );
+        if ( i_k_blocking > 1 ) {
+          /* second A load in first iteration, in case of large blockings -> hiding L1 latencies */
+          libxsmm_instruction_vec_move_imci( io_generated_code,
+                                        i_micro_kernel_config->instruction_set,
+                                        i_micro_kernel_config->a_vmove_instruction, 
+                                        i_gp_reg_mapping->gp_reg_a, 
+                                        i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
+                                        i_micro_kernel_config->vector_name, 
+                                        1, 
+                                        i_micro_kernel_config->use_masking_a_c, 0 );
+          libxsmm_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VPREFETCH1,
+                                        i_gp_reg_mapping->gp_reg_a, 
+                                        (i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size)+64 );
+        }
+      } else if ( l_k < (i_k_blocking - 1) ) {
+        /* pipelined load of A, one k iteration ahead */
+        libxsmm_instruction_vec_move_imci( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      i_micro_kernel_config->a_vmove_instruction, 
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
+                                      i_micro_kernel_config->vector_name, 
+                                      (l_k+1)%2, 
+                                      i_micro_kernel_config->use_masking_a_c, 0 );
+        libxsmm_instruction_prefetch( io_generated_code,
+                                      LIBXSMM_X86_INSTR_VPREFETCH1,
+                                      i_gp_reg_mapping->gp_reg_a, 
+                                      (i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size)+64 );
+      }
+
+      /* in last k-iteration: advance pointers */
+      if ( l_k == (i_k_blocking - 1) ) {
+        libxsmm_instruction_alu_imm( io_generated_code,
+                                     i_micro_kernel_config->alu_add_instruction, 
+                                     i_gp_reg_mapping->gp_reg_a,
+                                     i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
+      }
+
+      /* compute vectorwidth (A) * column broadcast (B) */
+      for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+        if ( (l_n == 1) && (l_k < i_k_blocking - 1) ) {
+          libxsmm_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VPREFETCH0,
+                                        i_gp_reg_mapping->gp_reg_a, 
+                                        (i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size) );
+        }
+        if ( (l_n == 2) && (l_b_prefetches < i_n_blocking) ) {
+          libxsmm_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_VPREFETCH0,
+                                        i_gp_reg_mapping->gp_reg_b, 
+                                        (i_xgemm_desc->ldb * (l_b_prefetches) * i_micro_kernel_config->datatype_size)+64 );
+          l_b_prefetches++;
+        }
+        libxsmm_instruction_vec_compute_membcast( io_generated_code, 
+                                                  i_micro_kernel_config->instruction_set,
+                                                  i_micro_kernel_config->vmul_instruction,
+                                                  i_gp_reg_mapping->gp_reg_b,
+                                                  LIBXSMM_X86_GP_REG_UNDEF,
+                                                  0,
+                                                  (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                                  i_micro_kernel_config->vector_name,
+                                                  l_k%2,
+                                                  i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+      }
+    }
+
+    /* advance pointers of B only when we are not fully unrolling K*/
+    if ( i_k_blocking < i_xgemm_desc->k ) {
+      /* advance pointers of B */
+      libxsmm_instruction_alu_imm( io_generated_code,
+                                   i_micro_kernel_config->alu_add_instruction, 
+                                   i_gp_reg_mapping->gp_reg_b,
+                                   i_k_blocking * i_micro_kernel_config->datatype_size );
+    }
+  }
+}
+
+void libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                const char*                        i_arch,
+                                                unsigned int                       i_n_blocking ) {
+  const unsigned int l_k_blocking = 8;
+  const unsigned int l_k_threshold = 8;
+
+  /* Let's do something special for SeisSol with k=9, fully unroll */
+  if ((i_xgemm_desc->k == 9)) {
+    libxsmm_generator_dense_imci_microkernel( io_generated_code,
+                                                i_gp_reg_mapping,
+                                                i_micro_kernel_config,
+                                                i_xgemm_desc,
+                                                i_n_blocking,
+                                                i_xgemm_desc->k,
+                                                -1 ); 
+  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
+    libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+
+    libxsmm_generator_dense_imci_microkernel( io_generated_code,
+                                                i_gp_reg_mapping,
+                                                i_micro_kernel_config,
+                                                i_xgemm_desc,
+                                                i_n_blocking,
+                                                l_k_blocking,
+                                                -1 ); 
+
+    libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                                          i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
+  } else {
+    unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
+    if (l_max_blocked_k > 0 ) {
+      libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+
+      libxsmm_generator_dense_imci_microkernel( io_generated_code,
+                                                i_gp_reg_mapping,
+                                                i_micro_kernel_config,
+                                                i_xgemm_desc,
+                                                i_n_blocking,
+                                                l_k_blocking,
+                                                -1 ); 
+
+      libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                                          i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
+    }
+    unsigned int l_k;
+    for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
+      libxsmm_generator_dense_imci_microkernel( io_generated_code,
+                                                i_gp_reg_mapping,
+                                                i_micro_kernel_config,
+                                                i_xgemm_desc,
+                                                i_n_blocking,
+                                                1,	
+                                                l_k-l_max_blocked_k );
+    }
+    /* update A, B and a_prefetch pointers */
+    libxsmm_instruction_alu_imm( io_generated_code,
+                                 i_micro_kernel_config->alu_add_instruction, 
+                                 i_gp_reg_mapping->gp_reg_a,
+                                 (i_xgemm_desc->k - l_max_blocked_k) * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
+   
+    /* reset on B is just needed when we had more than iterations left */
+    if (l_max_blocked_k > 0 ) {
+      libxsmm_instruction_alu_imm( io_generated_code,
+                                   i_micro_kernel_config->alu_sub_instruction, 
+                                   i_gp_reg_mapping->gp_reg_b,
+                                   l_max_blocked_k * i_micro_kernel_config->datatype_size );
+    }
+  }
+}
+
+void libxsmm_instruction_vec_move_imci( libxsmm_generated_code* io_generated_code, 
+                                        const unsigned int      i_instruction_set,
+                                        const unsigned int      i_vmove_instr, 
+                                        const unsigned int      i_gp_reg_number,
+                                        const int               i_displacement,
+                                        const char              i_vector_name,
+                                        const unsigned int      i_vec_reg_number_0,
+                                        const unsigned int      i_use_masking,
+                                        const unsigned int      i_is_store ) {
+  if ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVAPD) || 
+       (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVAPS)    ) {
+    libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, i_vmove_instr, 
+                                      i_gp_reg_number, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+  } else if ( i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPD ) {
+    unsigned int l_instr_1 = 0;
+    unsigned int l_instr_2 = 0;
+    if (i_is_store == 0) {
+      l_instr_1 = LIBXSMM_X86_INSTR_VLOADUNPACKLPD;
+      l_instr_2 = LIBXSMM_X86_INSTR_VLOADUNPACKHPD;
+    } else {
+      l_instr_1 = LIBXSMM_X86_INSTR_VPACKSTORELPD;
+      l_instr_2 = LIBXSMM_X86_INSTR_VPACKSTOREHPD;
+    }
+    libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_1, 
+                                  i_gp_reg_number, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+    libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2, 
+                                  i_gp_reg_number, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+  } else if ( i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPS ) {
+    unsigned int l_instr_1 = 0;
+    unsigned int l_instr_2 = 0;
+    if (i_is_store == 0) {
+      l_instr_1 = LIBXSMM_X86_INSTR_VLOADUNPACKLPS;
+      l_instr_2 = LIBXSMM_X86_INSTR_VLOADUNPACKHPS;
+    } else {
+      l_instr_1 = LIBXSMM_X86_INSTR_VPACKSTORELPS;
+      l_instr_2 = LIBXSMM_X86_INSTR_VPACKSTOREHPS;
+    }
+    libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_1, 
+                                  i_gp_reg_number, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+    libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2, 
+                                  i_gp_reg_number, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_instruction_vec_move_imci: invalid move instruction!\n");
+    exit(-1);
+  }
+}
+
+void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io_generated_code,
+                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                          const unsigned int                  i_m_blocking,
+                                          const unsigned int                  i_n_blocking ) {
+#ifndef NDEGUG
+  /* Do some test if it's possible to generated the requested code. 
+     This is not done in release mode and therefore bad
+     things might happen.... HUAAH */
+  if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, non imci architecture!!!\n");
+    exit(-1);
+  }
+  if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, register blocking is invalid!!!\n");
+    exit(-1);
+  }
+  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+#endif
+
+  /* deriving register blocking from kernel config */ 
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
+  /* load C accumulator */
+  if (i_xgemm_desc->beta == 1) {
+    /* adding to C, so let's load C */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      libxsmm_instruction_vec_move_imci( io_generated_code, 
+                                         i_micro_kernel_config->instruction_set,
+                                         i_micro_kernel_config->c_vmove_instruction, 
+                                         i_gp_reg_mapping->gp_reg_c, 
+                                         (l_n * i_xgemm_desc->ldc * i_micro_kernel_config->datatype_size), 
+                                         i_micro_kernel_config->vector_name, 
+                                         l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 0 );
+      if ( i_micro_kernel_config->c_vmove_instruction == LIBXSMM_X86_INSTR_VMOVAPD || 
+           i_micro_kernel_config->c_vmove_instruction == LIBXSMM_X86_INSTR_VMOVAPS    ) {   
+        libxsmm_instruction_prefetch( io_generated_code,
+                                      LIBXSMM_X86_INSTR_VPREFETCH1,
+                                      i_gp_reg_mapping->gp_reg_c,
+                                      (l_n * i_xgemm_desc->ldc * i_micro_kernel_config->datatype_size)+64 );
+      }
+    }
+  } else {
+    /* overwriting C, so let's xout accumulator */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      libxsmm_instruction_vec_compute_reg( io_generated_code, 
+                                           i_micro_kernel_config->instruction_set,
+                                           i_micro_kernel_config->vxor_instruction,
+                                           i_micro_kernel_config->vector_name, 
+                                           l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 
+                                           l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), 
+                                           l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
+      libxsmm_instruction_prefetch( io_generated_code,
+                                    LIBXSMM_X86_INSTR_VPREFETCH1,
+                                    i_gp_reg_mapping->gp_reg_c,
+                                    (l_n * i_xgemm_desc->ldc * i_micro_kernel_config->datatype_size) );
+    }
+  }
+}
+
+void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             io_generated_code,
+                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                           const unsigned int                  i_m_blocking,
+                                           const unsigned int                  i_n_blocking ) {
+  /* @TODO fix this test */ 
+#ifndef NDEBUG
+  /* Do some test if it's possible to generated the requested code. 
+     This is not done in release mode and therefore bad
+     things might happen.... HUAAH */
+  if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, non imci architecture!!!\n");
+    exit(-1);
+  }
+  if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, register blocking is invalid!!!\n");
+    exit(-1);
+  }
+  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+#endif
+
+  /* deriving register blocking from kernel config */ 
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
+  /* storing C accumulator */
+  /* adding to C, so let's load C */
+  for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+    libxsmm_instruction_vec_move_imci( io_generated_code, 
+                                       i_micro_kernel_config->instruction_set,
+                                       i_micro_kernel_config->c_vmove_instruction, 
+                                       i_gp_reg_mapping->gp_reg_c, 
+                                       ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size), 
+                                       i_micro_kernel_config->vector_name, 
+                                       l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1 );
+  }
+}
+
+

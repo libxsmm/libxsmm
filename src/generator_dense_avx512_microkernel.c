@@ -186,11 +186,14 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       }
     }
 
-    /* advance pointers of B */
-    libxsmm_instruction_alu_imm( io_generated_code,
-                                 i_micro_kernel_config->alu_add_instruction, 
-                                 i_gp_reg_mapping->gp_reg_b,
-                                 i_k_blocking * i_micro_kernel_config->datatype_size );
+    /* advance pointers of B only when we are not fully unrolling K*/
+    if ( i_k_blocking < i_xgemm_desc->k ) {
+      /* advance pointers of B */
+      libxsmm_instruction_alu_imm( io_generated_code,
+                                   i_micro_kernel_config->alu_add_instruction, 
+                                   i_gp_reg_mapping->gp_reg_b,
+                                   i_k_blocking * i_micro_kernel_config->datatype_size );
+    }
   }
 }
 
