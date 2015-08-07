@@ -674,7 +674,9 @@ void libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*       
                                                                i_xgemm_desc,
                                                                i_xgemm_desc->k ); 
   } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
-    libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+    if ( i_xgemm_desc->k != l_k_blocking ) {
+      libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+    }
 
     libxsmm_generator_dense_avx512_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
@@ -683,9 +685,10 @@ void libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*       
                                                 i_n_blocking,
                                                 l_k_blocking,
                                                 -1 ); 
-
-    libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                          i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
+    if ( i_xgemm_desc->k != l_k_blocking ) {
+      libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+                                            i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
+    }
   } else {
     unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
     if (l_max_blocked_k > 0 ) {
