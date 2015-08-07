@@ -146,14 +146,15 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
   }
 }
 
-void libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
-                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                const libxsmm_xgemm_descriptor*    i_xgemm_desc,
-                                                const char*                        i_arch,
-                                                unsigned int                       i_n_blocking ) {
+unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                        const char*                        i_arch,
+                                                        unsigned int                       i_n_blocking ) {
   const unsigned int l_k_blocking = 8;
   const unsigned int l_k_threshold = 8;
+  unsigned int l_k_unrolled = 0;
 
   /* Let's do something special for SeisSol with k=9, fully unroll */
   if ((i_xgemm_desc->k == 9)) {
@@ -221,6 +222,8 @@ void libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*         
                                    l_max_blocked_k * i_micro_kernel_config->datatype_size );
     }
   }
+
+  return l_k_unrolled;
 }
 
 void libxsmm_instruction_vec_move_imci( libxsmm_generated_code* io_generated_code, 

@@ -503,7 +503,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
-      if ( l_k == (i_k_blocking - 1) ) {
+      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction, 
                                      i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -512,7 +512,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     }
 
     /* in last k-iteration: advance pointers */
-    if ( l_k == (i_k_blocking - 1) ) {
+    if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
       libxsmm_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction, 
                                    i_gp_reg_mapping->gp_reg_a,
@@ -521,7 +521,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
 
     /* compute vectorwidth (A) * column broadcast (B) */
     /* defning the compute routine */
-    unsigned int l_vcompute = i_micro_kernel_config->vmul_instruction;
+    unsigned int l_vcompute = i_micro_kernel_config->vmul_instruction;  
     if (l_k == 1) {
       if ( i_xgemm_desc->single_precision == 0 ) {
         l_vcompute = LIBXSMM_X86_INSTR_VMULPD;
@@ -657,14 +657,15 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   }
 }
 
-void libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
-                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                  const libxsmm_xgemm_descriptor*    i_xgemm_desc,
-                                                  const char*                        i_arch,
-                                                  unsigned int                       i_n_blocking ) {
+unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                          const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                          const char*                        i_arch,
+                                                          unsigned int                       i_n_blocking ) {
   const unsigned int l_k_blocking = 8;
   const unsigned int l_k_threshold = 8;
+  unsigned int l_k_unrolled = 0;
 
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
   if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9)) {
@@ -672,7 +673,8 @@ void libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*       
                                                                i_gp_reg_mapping,
                                                                i_micro_kernel_config,
                                                                i_xgemm_desc,
-                                                               i_xgemm_desc->k ); 
+                                                               i_xgemm_desc->k );
+    l_k_unrolled = 1; 
   } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
     if ( i_xgemm_desc->k != l_k_blocking ) {
       libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
@@ -739,5 +741,7 @@ void libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*       
                                    l_max_blocked_k * i_micro_kernel_config->datatype_size );
     }
   }
+
+  return l_k_unrolled;
 }
 

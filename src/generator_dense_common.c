@@ -625,7 +625,8 @@ void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             i
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                            const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                            const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_m_done ) {
+                                           const unsigned int                  i_m_done,
+                                           const unsigned int                  i_k_unrolled ) {
   char l_new_code[32];
 
   /* advance C pointer */
@@ -639,16 +640,30 @@ void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             i
     libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, 
                                  i_gp_reg_mapping->gp_reg_b_prefetch, i_m_blocking*(i_micro_kernel_config->datatype_size) );
   }
-  /* A prefetch */
-  if ( (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC") == 0) ||
-       (strcmp( i_xgemm_desc->prefetch, "AL2") == 0)            ) { 
-    libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a_prefetch, 
-                                 ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size) * (i_xgemm_desc->lda) ) - 
-                                   (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
+
+  if (i_k_unrolled == 0) {
+    /* A prefetch */
+    if ( (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC") == 0) ||
+         (strcmp( i_xgemm_desc->prefetch, "AL2") == 0)            ) { 
+      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a_prefetch, 
+                                   ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size) * (i_xgemm_desc->lda) ) - 
+                                     (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
+    }
+    /* advance A pointer */
+    libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a, 
+                                 ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size) * (i_xgemm_desc->lda) ) - (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
+  } else {
+    /* A prefetch */
+    if ( (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC") == 0) ||
+         (strcmp( i_xgemm_desc->prefetch, "AL2") == 0)            ) { 
+      libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a_prefetch,  
+                                     (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
+    }
+    /* advance A pointer */
+    libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, 
+                                 (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
   }
-  /* advance A pointer */
-  libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a, 
-                               ((i_xgemm_desc->k) * (i_micro_kernel_config->datatype_size) * (i_xgemm_desc->lda) ) - (i_m_blocking * (i_micro_kernel_config->datatype_size)) );
+
   /* loop handling */
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_mloop, i_m_done );
   sprintf( l_new_code, "20%ib", i_m_blocking );
