@@ -64,7 +64,7 @@ elif [ "${PREC}" == 'SP' ]; then
 fi
 
 N="9"
-#N="1 2 3 4 5 6 7 8 9 10"
+#N="1 2 3 4 5 6 7 8 9 10 30 31 60 62"
 for m in ${M}
 do
   for n in ${N}
@@ -109,10 +109,9 @@ do
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'knc' ]; then
-        #icpc -O3 -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} validation.cpp -o xgemm_${m}_${n}_${k}
-        #scp xgemm_${m}_${n}_${k} mic0:
-	#ssh mic0 "./xgemm_${m}_${n}_${k}"
-        echo "knc is currently NOT supported by this version of the generator!"
+        icpc -O2 -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
+        scp ./xgemm_${m}_${n}_${k}_${PREC} mic0:
+        ssh mic0 "./xgemm_${m}_${n}_${k}_${PREC}"
       elif [ "${ARCH}" == 'knl' ]; then
         icpc -O2 -xCOMMON-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.cpp -o xgemm_${m}_${n}_${k}_${PREC}
         ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}

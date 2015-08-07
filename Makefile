@@ -263,7 +263,7 @@ endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,generator_driver.c, generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_avx_avx2_common.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c)
+SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,generator_driver.c, generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_avx_avx2_common.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c, generator_dense_imci_microkernel.c)
 OBJFILES_GEN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
