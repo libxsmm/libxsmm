@@ -220,7 +220,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     exit(-1);
   }
 
-  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCH1;
+  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
   io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
@@ -329,7 +329,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     exit(-1);
   }
 
-  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCH1;
+  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
   io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
@@ -429,7 +429,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     exit(-1);
   }
 
-  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCH1;
+  io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   io_micro_kernel_config->alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
   io_micro_kernel_config->alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;

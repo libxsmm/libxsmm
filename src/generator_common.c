@@ -352,8 +352,8 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JL:
       strcpy(o_instr_name, "jl");
       break;
-    case LIBXSMM_X86_INSTR_PREFETCH1: 
-      strcpy(o_instr_name, "prefetch1");
+    case LIBXSMM_X86_INSTR_PREFETCHT1: 
+      strcpy(o_instr_name, "prefetcht1");
       break;
     case LIBXSMM_X86_INSTR_KMOV: 
       strcpy(o_instr_name, "kmov");

@@ -521,13 +521,18 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
 
     /* compute vectorwidth (A) * column broadcast (B) */
     /* defning the compute routine */
-    unsigned int l_vcompute = i_micro_kernel_config->vmul_instruction;  
-    if (l_k == 1) {
-      if ( i_xgemm_desc->single_precision == 0 ) {
-        l_vcompute = LIBXSMM_X86_INSTR_VMULPD;
-      } else {
-        l_vcompute = LIBXSMM_X86_INSTR_VMULPS;
+    unsigned int l_vcompute = i_micro_kernel_config->vmul_instruction;
+    unsigned int l_register_offset = l_n_blocking;
+
+    if ( i_k_blocking != 9 ) { 
+      if (l_k == 1) {
+        if ( i_xgemm_desc->single_precision == 0 ) {
+          l_vcompute = LIBXSMM_X86_INSTR_VMULPD;
+        } else {
+          l_vcompute = LIBXSMM_X86_INSTR_VMULPS;
+        }
       }
+      l_register_offset = (l_n_blocking*((l_k%2)+1));
     }
 
     /* l_n = 0 */
@@ -540,7 +545,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 0 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 0 );
     /* l_n = 1 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -551,7 +556,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 1 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 1 );
     /* l_n = 2 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -562,7 +567,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 2 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 2 );
     /* l_n = 3 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -573,7 +578,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 3 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 3 );
     /* l_n = 4 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -584,7 +589,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 4 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 4 );
     /* l_n = 5 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -595,7 +600,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 5 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 5 );
     /* l_n = 6 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -606,7 +611,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 6 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 6 );
     /* l_n = 7 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -617,7 +622,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 7 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 7 );
     /* l_n = 8 */
     libxsmm_instruction_vec_compute_membcast( io_generated_code, 
                                               i_micro_kernel_config->instruction_set,
@@ -628,7 +633,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                               l_displacement_k*i_micro_kernel_config->datatype_size,
                                               i_micro_kernel_config->vector_name,
                                               l_k%8,
-                                              i_micro_kernel_config->vector_reg_count - (l_n_blocking*((l_k%2)+1)) + 8 );
+                                              i_micro_kernel_config->vector_reg_count - l_register_offset + 8 );
 
     l_displacement_k++;
   }
@@ -646,14 +651,16 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   }
 
   /* add C buffers */
-  for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
-    libxsmm_instruction_vec_compute_reg( io_generated_code, 
-                                         i_micro_kernel_config->instruction_set,
-                                         i_micro_kernel_config->vadd_instruction, 
-                                         i_micro_kernel_config->vector_name, 
-                                         i_micro_kernel_config->vector_reg_count - (l_n_blocking*2) + l_n, 
-                                         i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n, 
-                                         i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n );
+  if ( i_k_blocking != 9 ) { 
+    for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+      libxsmm_instruction_vec_compute_reg( io_generated_code, 
+                                           i_micro_kernel_config->instruction_set,
+                                           i_micro_kernel_config->vadd_instruction, 
+                                           i_micro_kernel_config->vector_name, 
+                                           i_micro_kernel_config->vector_reg_count - (l_n_blocking*2) + l_n, 
+                                           i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n, 
+                                           i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n );
+    }
   }
 }
 
