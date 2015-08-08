@@ -121,6 +121,9 @@ do
           icc -O2 -ansi-alias -xMIC_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
+      elif [ "${ARCH}" == 'noarch' ]; then
+        icc -O2 -ansi-alias -xHOST -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        ./xgemm_${m}_${n}_${k}_${PREC}
       else
         echo "unsupported architecture!"
       fi

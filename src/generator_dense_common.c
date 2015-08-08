@@ -534,7 +534,7 @@ void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         i
   libxsmm_append_code_as_string( io_generated_code, "#endif\n");
   sprintf( l_new_code, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
   libxsmm_append_code_as_string( io_generated_code, l_new_code);
-  libxsmm_append_code_as_string( io_generated_code, "#endif\n\n");
+  libxsmm_append_code_as_string( io_generated_code, "#endif\n");
 }
 
 void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             io_generated_code,
