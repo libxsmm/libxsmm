@@ -32,18 +32,7 @@
 #ifndef GENERATOR_DENSE_SSE3_AVX_AVX2_COMMON_H
 #define GENERATOR_DENSE_SSE3_AVX_AVX2_COMMON_H
 
-#include "generator_common.h"
-#include "generator_dense_common.h"
-#include "generator_dense_instructions.h"
 
-unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                          const libxsmm_xgemm_descriptor* i_xgemm_desc, 
-                                                                          const char*                     i_arch );
-
-unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                      const libxsmm_xgemm_descriptor* i_xgemm_desc, 
-                                                                      const char*                     i_arch,
-                                                                      const unsigned int              i_current_m_blocking );
 
 #endif /* #define GENERATOR_DENSE_SSE3_AVX_AVX2_COMMON_H */
 
