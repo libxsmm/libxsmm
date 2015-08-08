@@ -336,6 +336,10 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_ADDSS:
       strcpy(o_instr_name, "addss");
       break;
+    /* XOR AVX512,IMCI */
+    case LIBXSMM_X86_INSTR_VPXORD:
+      strcpy(o_instr_name, "vpxord");
+      break;
     /* GP instructions */
     case LIBXSMM_X86_INSTR_ADDQ:
       strcpy(o_instr_name, "addq");

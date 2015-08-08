@@ -127,6 +127,8 @@
 #define LIBXSMM_X86_INSTR_ADDPS          20021
 #define LIBXSMM_X86_INSTR_MULSS          20022
 #define LIBXSMM_X86_INSTR_ADDSS          20023
+/* AVX512, IMCI Integer XOR as there is no FP */
+#define LIBXSMM_X86_INSTR_VPXORD         20024
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000

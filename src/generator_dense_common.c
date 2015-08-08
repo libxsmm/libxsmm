@@ -193,7 +193,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
-      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPD;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PD;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPD;
     } else {
@@ -211,7 +211,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
-      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
+      io_micro_kernel_config->vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     }
