@@ -381,12 +381,13 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, 
                                i_gp_reg_mapping->gp_reg_help_0, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
-  /* helper 1: B + 3*ldb, additional base address */
+
+  /* helper 1: B + 3*ldb, additional base address
+     helper 2: B + 6*ldb, additional base adrress */
   libxsmm_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1);
-  libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, 
-                               i_gp_reg_mapping->gp_reg_help_1, 3 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
-  /* helper 2: B + 6*ldb, additional base adrress */
   libxsmm_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_2);
+  libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, 
+                               i_gp_reg_mapping->gp_reg_help_1, 3 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );  
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, 
                                i_gp_reg_mapping->gp_reg_help_2, 6 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
   
@@ -495,15 +496,27 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
-         (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
+    if ( (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
          (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
       if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+        libxsmm_instruction_alu_imm( io_generated_code,
+                                     i_micro_kernel_config->alu_add_instruction, 
+                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                     i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
+      }
+    }
+
+    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
+         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0)    ) {
+      libxsmm_instruction_prefetch( io_generated_code,
+                                    i_micro_kernel_config->prefetch_instruction,
+                                    i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
+      if ( l_k == (i_k_blocking - 1) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction, 
                                      i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -642,14 +655,6 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_b, 128*l_k_updates );
   }
 
-  /* advance pointers of B only when we are not fully unrolling K*/
-  if ( i_k_blocking < i_xgemm_desc->k ) {
-    libxsmm_instruction_alu_imm( io_generated_code,
-                                 i_micro_kernel_config->alu_add_instruction, 
-                                 i_gp_reg_mapping->gp_reg_b,
-                                 i_k_blocking * i_micro_kernel_config->datatype_size );
-  }
-
   /* add C buffers */
   if ( i_k_blocking != 9 ) { 
     for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
@@ -661,6 +666,14 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                            i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n, 
                                            i_micro_kernel_config->vector_reg_count - l_n_blocking + l_n );
     }
+  }
+
+  /* advance pointers of B only when we are not fully unrolling K*/
+  if ( i_k_blocking < i_xgemm_desc->k ) {
+    libxsmm_instruction_alu_imm( io_generated_code,
+                                 i_micro_kernel_config->alu_add_instruction, 
+                                 i_gp_reg_mapping->gp_reg_b,
+                                 i_k_blocking * i_micro_kernel_config->datatype_size );
   }
 }
 

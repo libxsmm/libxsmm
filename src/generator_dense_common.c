@@ -782,16 +782,14 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
                                     i_micro_kernel_config->vector_name, 
                                     l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1 );
     }
-  }
-
-  if ( ( strcmp( i_xgemm_desc->prefetch, "BL2viaC" ) == 0 )         || 
-       ( strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0 )  ||
-       ( strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0 )     ||
-       ( strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0 )    )  {
-    /* determining how many prefetches we need M direction as we just need one prefetch per cache line */
-    unsigned int l_m_advance = 64/((i_micro_kernel_config->vector_length) * (i_micro_kernel_config->datatype_size)); /* 64: hardcoded cache line length */
+  
+    if ( ( strcmp( i_xgemm_desc->prefetch, "BL2viaC" ) == 0 )         || 
+         ( strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0 )  ||
+         ( strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0 )     ||
+         ( strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0 )    )  {
+      /* determining how many prefetches we need M direction as we just need one prefetch per cache line */
+      unsigned int l_m_advance = 64/((i_micro_kernel_config->vector_length) * (i_micro_kernel_config->datatype_size)); /* 64: hardcoded cache line length */
         
-    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
       for (l_m = 0; l_m < l_m_blocking; l_m += l_m_advance ) {
         libxsmm_instruction_prefetch( io_generated_code, 
                                       i_micro_kernel_config->prefetch_instruction,
