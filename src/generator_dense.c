@@ -35,6 +35,7 @@
 #include <malloc.h>
 
 #include "generator_common.h"
+#include "generator_dense.h"
 #include "generator_dense_common.h"
 #include "generator_dense_sse3_avx_avx2.h"
 #include "generator_dense_imci_avx512.h"

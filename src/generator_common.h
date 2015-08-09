@@ -32,7 +32,7 @@
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
 
-#include "libxsmm_generator.h"
+#include "generator_extern_typedefs.h"
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */

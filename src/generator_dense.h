@@ -29,12 +29,27 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef LIBXSMM_GENERATOR_H
-#define LIBXSMM_GENERATOR_H
+#ifndef GENERATOR_DENSE_H
+#define GENERATOR_DENSE_H
 
 #include "generator_extern_typedefs.h"
-#include "generator_dense.h"
-#include "generator_sparse.h"
 
-#endif /* LIBXSMM_GENERATOR_H */
+/* @TODO change int based architecture value */
+void libxsmm_generator_dense_inlineasm(const char*                     i_file_out,
+                                       const char*                     i_routine_name,
+                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                       const char*                     i_arch );
+
+/* @TODO change int based architecture value */
+void libxsmm_generator_dense_directasm(const char*                     i_file_out,
+                                       const char*                     i_routine_name,
+                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                       const char*                     i_arch );
+
+/* @TODO change int based architecture value */
+void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
+                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                     const char*                     i_arch );
+
+#endif /* GENERATOR_DENSE_H */
 

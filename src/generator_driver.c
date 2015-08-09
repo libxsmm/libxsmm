@@ -98,7 +98,9 @@ void generator_sparse(std::string tFileOut, std::string tRoutineName, std::strin
 #include <stdlib.h>
 #include <string.h>
 
-#include "libxsmm_generator.h"
+#include "generator_extern_typedefs.h"
+#include "generator_dense.h"
+#include "generator_sparse.h"
 
 void print_help() {
   printf("\nwrong usage -> exit!\n\n\n");
