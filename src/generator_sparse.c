@@ -45,7 +45,17 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
                                       const unsigned int*             i_rows_idx,
                                       const unsigned int*             i_column_idx,
                                       const double*                   i_values ) {
+  /* A matrix is sparse */
+  if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
 
+  /* B matrix is sparse */
+  } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
+
+  } else {
+    /* Something bad happened... */
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: couldn't determine which variant is needed!\n");
+    exit(-1);
+  }
 }
 
 void libxsmm_generator_sparse( const char*                     i_file_out,
@@ -69,7 +79,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   unsigned int l_element_count;
 
   /* add signature to code string */
-  /*libxsmm_generator_sparse_signature( &l_generated_code, i_routine_name, i_xgemm_desc );*/
+  libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* read CSC file and consturct CSC datastructure */
   libxsmm_sparse_csc_reader( i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
@@ -105,7 +115,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
 #endif  
 
   /* generate the actual kernel code for current description depending on the architecture */
-  /*libxsmm_generator_sparse_kernel(  );*/
+  libxsmm_generator_sparse_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );

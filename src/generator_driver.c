@@ -258,12 +258,12 @@ int main(int argc, char* argv []) {
   }
 
   libxsmm_xgemm_descriptor l_xgemm_desc;
-  if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m };
-  if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n };
-  if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k };
-  if ( l_lda < 0 ) { l_xgemm_desc.lda = 0; } else {  l_xgemm_desc.lda = l_lda };
-  if ( l_ldb < 0 ) { l_xgemm_desc.ldb = 0; } else {  l_xgemm_desc.ldb = l_ldb };
-  if ( l_ldc < 0 ) { l_xgemm_desc.ldc = 0; } else {  l_xgemm_desc.ldc = l_ldc };
+  if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m; }
+  if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n; }
+  if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k; }
+  if ( l_lda < 0 ) { l_xgemm_desc.lda = 0; } else {  l_xgemm_desc.lda = l_lda; }
+  if ( l_ldb < 0 ) { l_xgemm_desc.ldb = 0; } else {  l_xgemm_desc.ldb = l_ldb; }
+  if ( l_ldc < 0 ) { l_xgemm_desc.ldc = 0; } else {  l_xgemm_desc.ldc = l_ldc; }
   l_xgemm_desc.alpha = l_alpha;
   l_xgemm_desc.beta = l_beta;
   l_xgemm_desc.trans_a = 'n';
