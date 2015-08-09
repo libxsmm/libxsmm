@@ -29,57 +29,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
+#ifndef GENERATOR_SPARSE_CSC_READER_H
+#define GENERATOR_SPARSE_CSC_READER_H
 
-#include "generator_common.h"
-#include "generator_sparse.h"
-#include "generator_sparse_common.h"
-#include "generator_sparse_csc_reader.h"
 
-void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
-                                      const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                      const char*                     i_arch, 
-                                      const unsigned int*             i_rows_idx,
-                                      const unsigned int*             i_column_idx,
-                                      const double*                   i_values ) {
-
-}
-
-void libxsmm_generator_sparse( const char*                     i_file_out,
-                               const char*                     i_routine_name,
-                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                               const char*                     i_arch, 
-                               const char*                     i_csc_file_in ) {
-  /* init generated code object */
-  libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = NULL;
-  l_generated_code.buffer_size = 0;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 0;
-  
-  /* add signature to code string */
-  /*libxsmm_generator_sparse_signature( &l_generated_code, i_routine_name, i_xgemm_desc );*/
-
-  /* generate the actual kernel code for current description depending on the architecture */
-  /*libxsmm_generator_sparse_kernel(  );*/
-
-  /* close current function */
-  libxsmm_close_function( &l_generated_code );
-
-  /* append code to source file */
-  FILE *l_file_handle = fopen( i_file_out, "a" );
-  if ( l_file_handle != NULL ) {
-    fputs( l_generated_code.generated_code, l_file_handle );
-    fclose( l_file_handle );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: could not write to into destination source file\n");
-    exit(-1);
-  }
-
-  /* free code memory */
-  free( l_generated_code.generated_code );
-}
+#endif /* GENERATOR_SPARSE_CSC_READER_H */
 
