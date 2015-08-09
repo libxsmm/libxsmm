@@ -60,14 +60,66 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 0;
   
+  /* CSC structure */
+  unsigned int* l_row_idx = NULL;
+  unsigned int* l_column_idx = NULL;
+  double* l_values = NULL;
+  unsigned int l_row_count;
+  unsigned int l_column_count;
+  unsigned int l_element_count;
+
   /* add signature to code string */
   /*libxsmm_generator_sparse_signature( &l_generated_code, i_routine_name, i_xgemm_desc );*/
+
+  /* read CSC file and consturct CSC datastructure */
+  libxsmm_sparse_csc_reader( i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
+
+#if 1
+  printf("CSC matrix data structure we just read:\n");
+  printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
+
+  double* l_tmp = (double*)malloc(l_row_count * l_column_count * sizeof(double));
+  unsigned int l_n;
+  unsigned int l_m;
+
+  for ( l_n = 0; l_n < (l_row_count * l_column_count); l_n++) {
+    l_tmp[l_n] = 0.0;
+  }
+
+  for ( l_n = 0; l_n < l_column_count; l_n++) {
+    int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+
+    for ( l_m = 0; l_m < l_column_elems; l_m++) {
+      l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
+    }
+  }
+
+  for ( l_n = 0; l_n < l_row_count; l_n++) {
+    for ( l_m = 0; l_m < l_column_count; l_m++) {
+      printf("%lf ", l_tmp[(l_m * l_row_count) + l_n]);
+    }
+    printf("\n");
+  }
+  
+  free( l_tmp );
+#endif  
 
   /* generate the actual kernel code for current description depending on the architecture */
   /*libxsmm_generator_sparse_kernel(  );*/
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );
+
+  /* free if not NULL */
+  if ( l_row_idx != NULL ) {
+    free( l_row_idx );
+  }
+  if ( l_column_idx != NULL ) {
+    free( l_column_idx );
+  }
+  if ( l_values != NULL ) {
+    free( l_values );
+  }
 
   /* append code to source file */
   FILE *l_file_handle = fopen( i_file_out, "a" );

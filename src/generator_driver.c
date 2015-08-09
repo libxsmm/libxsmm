@@ -104,7 +104,6 @@ void generator_sparse(std::string tFileOut, std::string tRoutineName, std::strin
 
 void print_help() {
   printf("\nwrong usage -> exit!\n\n\n");
-#if 0
   printf("Usage (sparse*dense=dense, dense*sparse=dense):\n");
   printf("    sparse\n");
   printf("    filename to append\n");
@@ -124,7 +123,6 @@ void print_help() {
   printf("    PRECISION: SP, DP\n");
   printf("    matrix input (CSC mtx file)\n");
   printf("\n\n");
-#endif
   printf("Usage (dense*dense=dense):\n");
   printf("    dense\n");
   printf("    filename to append\n");
@@ -275,7 +273,6 @@ int main(int argc, char* argv []) {
   l_xgemm_desc.single_precision = l_single_precision;
   strcpy ( l_xgemm_desc.prefetch, l_prefetch );
 
-#if 0
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */
     l_matrix_file_in = argv[17];
@@ -296,9 +293,8 @@ int main(int argc, char* argv []) {
       return -1;
     }
 
-    /* generator_sparse(tFileOut, tRoutineName, tFileIn, nM, nN, nK, nDenseLDA, nDenseLDB, nDenseLDC, l_alpha, l_beta, bSP, tVec, tPrefetch); */
+    libxsmm_generator_sparse( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in );
   }
-#endif
 
   if ( (strcmp(l_type, "dense")     == 0) || 
        (strcmp(l_type, "dense_asm") == 0)    ) {
@@ -308,9 +304,9 @@ int main(int argc, char* argv []) {
     }
 
     if ( strcmp(l_type, "dense")  == 0 ) {
-      libxsmm_generator_dense_inlineasm(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_dense_inlineasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
     } else {
-      libxsmm_generator_dense_directasm(l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_dense_directasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
     }
   }
   
