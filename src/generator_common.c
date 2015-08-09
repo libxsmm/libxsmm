@@ -538,7 +538,6 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
   return l_return;
 }
 
-
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
   i_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
   i_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
@@ -555,4 +554,34 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping 
   i_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   i_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
 }
+
+void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
+                                  const char*                     i_routine_name,
+                                  const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
+  char l_new_code_line[512];
+
+  if ( io_generated_code->code_type > 1 ) {
+    return;
+  } else if ( io_generated_code->code_type == 1 ) {
+    sprintf(l_new_code_line, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
+  } else {
+    /* selecting the correct signature */
+    if (i_xgemm_desc->single_precision == 1) {
+      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+        sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
+      } else {
+        sprintf(l_new_code_line, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
+      }
+    } else {
+      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+        sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
+      } else {
+        sprintf(l_new_code_line, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
+      }
+    }
+  }
+
+  libxsmm_append_code_as_string( io_generated_code, l_new_code_line );
+}
+
 

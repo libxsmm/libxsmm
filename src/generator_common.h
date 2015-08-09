@@ -206,4 +206,8 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
+void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
+                                  const char*                     i_routine_name,
+                                  const libxsmm_xgemm_descriptor* i_xgemm_desc );
+
 #endif /* GENERATOR_COMMON_H */
