@@ -41,10 +41,10 @@ typedef struct libxsmm_xgemm_descriptor_struct {
   unsigned int lda;
   unsigned int ldb;
   unsigned int ldc;
-  unsigned int alpha;
-  unsigned int beta;
-  unsigned int trans_a;
-  unsigned int trans_b;
+  int alpha;
+  int beta;
+  char trans_a;
+  char trans_b;
   unsigned int aligned_a;
   unsigned int aligned_c;
   unsigned int single_precision;

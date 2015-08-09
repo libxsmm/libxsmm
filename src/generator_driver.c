@@ -157,17 +157,17 @@ int main(int argc, char* argv []) {
   char* l_arch;
   char* l_prefetch;
   char* l_precision;
-  unsigned int l_m = 0;
-  unsigned int l_n = 0;
-  unsigned int l_k = 0;
-  unsigned int l_lda = 0;
-  unsigned int l_ldb = 0;
-  unsigned int l_ldc = 0;
-  unsigned int l_aligned_a = 0;
-  unsigned int l_aligned_c = 0;
+  int l_m = 0;
+  int l_n = 0;
+  int l_k = 0;
+  int l_lda = 0;
+  int l_ldb = 0;
+  int l_ldc = 0;
+  int l_aligned_a = 0;
+  int l_aligned_c = 0;
   int l_alpha = 0;
   int l_beta = 0;
-  unsigned int l_single_precision = 0;
+  int l_single_precision = 0;
 
   /* names of files and routines */
   l_type = argv[1];
@@ -258,7 +258,13 @@ int main(int argc, char* argv []) {
   }
 
   libxsmm_xgemm_descriptor l_xgemm_desc;
-  l_xgemm_desc.m = l_m;
+  if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m };
+  if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n };
+  if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k };
+  if ( l_lda < 0 ) { l_xgemm_desc.lda = 0; } else {  l_xgemm_desc.lda = l_lda };
+  if ( l_ldb < 0 ) { l_xgemm_desc.ldb = 0; } else {  l_xgemm_desc.ldb = l_ldb };
+  if ( l_ldc < 0 ) { l_xgemm_desc.ldc = 0; } else {  l_xgemm_desc.ldc = l_ldc };
+
   l_xgemm_desc.n = l_n;
   l_xgemm_desc.k = l_k;
   l_xgemm_desc.lda = l_lda;
@@ -266,8 +272,8 @@ int main(int argc, char* argv []) {
   l_xgemm_desc.ldc = l_ldc;
   l_xgemm_desc.alpha = l_alpha;
   l_xgemm_desc.beta = l_beta;
-  l_xgemm_desc.trans_a = 0;
-  l_xgemm_desc.trans_b = 0;
+  l_xgemm_desc.trans_a = 'n';
+  l_xgemm_desc.trans_b = 'n';
   l_xgemm_desc.aligned_a = l_aligned_a;
   l_xgemm_desc.aligned_c = l_aligned_c;
   l_xgemm_desc.single_precision = l_single_precision;
