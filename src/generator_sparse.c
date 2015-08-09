@@ -38,11 +38,12 @@
 #include "generator_sparse.h"
 #include "generator_sparse_common.h"
 #include "generator_sparse_csc_reader.h"
+#include "generator_sparse_bsparse.h"
 
 void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                       const char*                     i_arch, 
-                                      const unsigned int*             i_rows_idx,
+                                      const unsigned int*             i_row_idx,
                                       const unsigned int*             i_column_idx,
                                       const double*                   i_values ) {
   /* A matrix is sparse */
@@ -50,7 +51,7 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
 
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
-
+    libxsmm_generator_sparse_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* Something bad happened... */
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: couldn't determine which variant is needed!\n");
