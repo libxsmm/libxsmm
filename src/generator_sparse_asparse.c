@@ -76,6 +76,133 @@
 #include "generator_common.h"
 #include "generator_sparse_asparse.h"
 
+void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
+                                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                              unsigned int                    i_k, 
+                                              unsigned int                    i_z, 
+                                              unsigned int*                   i_row_idx,
+                                              unsigned int*                   i_column_idx ) {
+  char l_new_code[512];
+
+  if ( i_xgemm_desc->single_precision == 0 ) {
+    sprintf(l_new_code, "    __m128d c%u_%u = _mm_load_sd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m128d a%u_%u = _mm_load_sd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#if defined(__SSE3__) && defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_sd(c%u_%u, _mm_mul_sd(a%u_%u, _mm256_castpd256_pd128(b%u)))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#if defined(__SSE3__) && !defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_sd(c%u_%u, _mm_mul_sd(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm_store_sd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  } else {
+    sprintf(l_new_code, "    __m128 c%u_%u = _mm_load_ss(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m128 a%u_%u = _mm_load_ss(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_ss(c%u_%u, _mm_mul_ss(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm_store_ss(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
+void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*         io_generated_code,
+                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                  unsigned int                    i_k, 
+                                                  unsigned int                    i_z, 
+                                                  unsigned int*                   i_row_idx,
+                                                  unsigned int*                   i_column_idx ) {
+  char l_new_code[512];
+
+  if ( i_xgemm_desc->single_precision == 0 ) {
+    sprintf(l_new_code, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m128d a%u_%u = _mm_loadu_pd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#if defined(__SSE3__) && defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_pd(c%u_%u, _mm_mul_pd(a%u_%u, _mm256_castpd256_pd128(b%u)))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#if defined(__SSE3__) && !defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_pd(c%u_%u, _mm_mul_pd(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm_store_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  } else {
+    sprintf(l_new_code, "    __m128 c%u_%u = _mm_castpd_ps(_mm_load_sd(&C[(l_n*%u)+%u]));\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m128 a%u_%u = _mm_castpd_ps(_mm_load_sd(&A[%u]));\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_ps(c%u_%u, _mm_mul_ps(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm_store_sd(&C[(l_n*%u)+%u], _mm_castps_pd(c%u_%u));\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
+void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*         io_generated_code,
+                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                   unsigned int                    i_k, 
+                                                   unsigned int                    i_z, 
+                                                   unsigned int*                   i_row_idx,
+                                                   unsigned int*                   i_column_idx ) {
+  char l_new_code[512];
+
+  if ( i_xgemm_desc->single_precision == 0 ) {
+    sprintf(l_new_code, "#if defined(__SSE3__) && defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m256d c%u_%u = _mm256_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m256d a%u_%u = _mm256_loadu_pd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _m256m_add_pd(c%u_%u, _mm256_mul_pd(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm256_storeu_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "#if defined(__SSE3__) && !defined(__AVX__)\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    unsigned int l_i;
+    for ( l_i = 0; l_i < 4; l_i += 2 ) {
+      sprintf(l_new_code, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      sprintf(l_new_code, "    __m128d a%u_%u = _mm_loadu_pd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      sprintf(l_new_code, "    c%u_%u = _mm_add_pd(c%u_%u, _mm_mul_pd(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      sprintf(l_new_code, "    _mm_store_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code );
+      i_z += 2;
+    }
+    sprintf(l_new_code, "#endif\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  } else {
+    sprintf(l_new_code, "    __m128 c%u_%u = _mm_loadu_ps(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    __m128 a%u_%u = _mm_loadu_ps(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    c%u_%u = _mm_add_ps(c%u_%u, _mm_mul_ps(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    sprintf(l_new_code, "    _mm_storeu_ps(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code );
+  }
+}
+
 void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_generated_code,
                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch, 
@@ -137,17 +264,17 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
             (i_row_idx[i_column_idx[l_k] + l_z] + 2 == i_row_idx[i_column_idx[l_k] + l_z + 2]) &&
             (i_row_idx[i_column_idx[l_k] + l_z] + 3 == i_row_idx[i_column_idx[l_k] + l_z + 3]) && 
             (i_row_idx[i_column_idx[l_k] + l_z + 3] < i_xgemm_desc->m)) {
-          /*generate_code_left_innerloop_4vector(codestream, ldc, l, z, rowidx, colidx);*/
+          /*libxsmm_sparse_asparse_innerloop_four_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
           l_z += 3;
         /* check for 128bit vector instruction */
         } else if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
                    (i_row_idx[i_column_idx[l_k] + l_z + 1] < i_xgemm_desc->m) ) {
-          /* generate_code_left_innerloop_2vector(codestream, ldc, l, z, rowidx, colidx);*/
+          /*libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
           l_z++;
         /* scalare instruction */
         } else {
           if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-            /* generate_code_left_innerloop_scalar(codestream, ldc, l, z, rowidx, colidx); */
+            /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
           }
         }
       /* 2 element vector might be possible */
@@ -155,18 +282,18 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
         /* check for 128bit vector instruction */
         if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
             (i_row_idx[i_column_idx[l_k] + l_z + 1] < i_xgemm_desc->m) ) {
-          /* generate_code_left_innerloop_2vector(codestream, ldc, l, z, rowidx, colidx);*/
+          /*libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
           l_z++;
         /* scalare instruction */
         } else {
           if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-            /* generate_code_left_innerloop_scalar(codestream, ldc, l, z, rowidx, colidx); */
+            /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
           }
         }
       /* scalar anayways */
       } else {
         if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-           /* generate_code_left_innerloop_scalar(codestream, ldc, l, z, rowidx, colidx); */
+           /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
         }
       }
     }

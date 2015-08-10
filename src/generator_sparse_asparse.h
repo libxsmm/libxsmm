@@ -34,6 +34,27 @@
 
 #include "generator_extern_typedefs.h"
 
+void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
+                                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                              unsigned int                    i_k, 
+                                              unsigned int                    i_z, 
+                                              unsigned int*                   i_row_idx,
+                                              unsigned int*                   i_column_idx );
+
+void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*         io_generated_code,
+                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                  unsigned int                    i_k, 
+                                                  unsigned int                    i_z, 
+                                                  unsigned int*                   i_row_idx,
+                                                  unsigned int*                   i_column_idx );
+
+void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*         io_generated_code,
+                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                   unsigned int                    i_k, 
+                                                   unsigned int                    i_z, 
+                                                   unsigned int*                   i_row_idx,
+                                                   unsigned int*                   i_column_idx );
+
 /* @TODO change int based architecture value */
 void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_generated_code,
                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
