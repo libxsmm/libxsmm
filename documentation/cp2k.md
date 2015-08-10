@@ -16,7 +16,7 @@ In order to build CP2K/intel from source, make sure to rely on the recommended v
 source /opt/intel/composer_xe_2015.3.187/bin/compilervars.sh intel64
 source /opt/intel/impi/5.1.0.069/intel64/bin/mpivars.sh
 cd cp2k/makefiles
-make ARCH=Linux-x86-64-intel-host VERSION=psmp -j
+make ARCH=Linux-x86-64-intel VERSION=psmp -j
 ```
 
 ## Running the Application
@@ -26,7 +26,7 @@ Running the application may go beyond a single node, however below command line 
 mpirun -np 16 \
   -genv "I_MPI_PIN_DOMAIN=auto" \
   -genv "KMP_AFFINITY=compact,granularity=fine,1" \
-  cp2k/exe/Linux-x86-64-intel-host/cp2k.psmp workload.inp
+  cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
 For an actual workload, one may try cp2k/tests/QS/benchmark/H2O-32.inp.
@@ -37,11 +37,11 @@ The CP2K/intel branch aims to enable a clear performance advantage by default. H
 * **LIBXSMM_ACC_RECONFIGURE=0**: this environment variable setting avoids reconfiguring CP2K. There are a number of properties reconfigured e.g., the number of entries per matrix stack is raised.
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords; beside of the listed keywords (ACC, BLAS, MATMUL, and SMM), the XSMM keyword is supported as well (also the default in CP2K/intel).
 
-Further, key-value pairs (`make ARCH=Linux-x86-64-intel-host VERSION=psmp KEY1=VALUE1 ...`) allow adjusting CP2K at build time of the application.
+Further, key-value pairs (`make ARCH=Linux-x86-64-intel VERSION=psmp KEY1=VALUE1 ...`) allow adjusting CP2K at build time of the application.
 
 * **LIBXSMMROOT**: set LIBXSMMROOT= (no path) to disable LIBXSMM and thereby the XSMM driver.
 * **MPI**: set MPI=3 to experiment with more recent MPI features e.g., with remote memory access.
 * **SYM**: set SYM=1 to include debug symbols into the executable e.g., helpful for performance profiling.
 * **DBG**: set DBG=1 to include debug symbols, and to generate unoptimized code.
 
-There is one more experimental code path (`make ARCH=Linux-x86-64-intel-mic VERSION=psmp OFFLOAD=0 -j`) able to run on a general host system. It is going through CP2K's ACCeleration layer which was originally built for attached accelerators. Usually the "host" code path is showing better performance, anyhow the actual code which is performing the work is the same in both cases.
+There is one more experimental code path (`make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j`) able to run on a general host system. It is going through CP2K's ACCeleration layer which was originally built for attached accelerators. Usually the "host" code path is showing better performance, anyhow the actual code which is performing the work is the same in both cases.
