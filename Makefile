@@ -52,7 +52,7 @@ IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
 STATIC ?= 1
 OMP ?= 0
 SYM ?= 0
-DBG ?= 1
+DBG ?= 0
 IPO ?= 0
 
 OFFLOAD ?= 0

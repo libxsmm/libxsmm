@@ -78,10 +78,10 @@
 
 void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
                                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                              unsigned int                    i_k, 
-                                              unsigned int                    i_z, 
-                                              unsigned int*                   i_row_idx,
-                                              unsigned int*                   i_column_idx ) {
+                                              const unsigned int              i_k, 
+                                              const unsigned int              i_z, 
+                                              const unsigned int*             i_row_idx,
+                                              const unsigned int*             i_column_idx ) {
   char l_new_code[512];
 
   if ( i_xgemm_desc->single_precision == 0 ) {
@@ -117,10 +117,10 @@ void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io
 
 void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                  unsigned int                    i_k, 
-                                                  unsigned int                    i_z, 
-                                                  unsigned int*                   i_row_idx,
-                                                  unsigned int*                   i_column_idx ) {
+                                                  const unsigned int              i_k, 
+                                                  const unsigned int              i_z, 
+                                                  const unsigned int*             i_row_idx,
+                                                  const unsigned int*             i_column_idx ) {
   char l_new_code[512];
 
   if ( i_xgemm_desc->single_precision == 0 ) {
@@ -156,10 +156,10 @@ void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*       
 
 void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                   unsigned int                    i_k, 
-                                                   unsigned int                    i_z, 
-                                                   unsigned int*                   i_row_idx,
-                                                   unsigned int*                   i_column_idx ) {
+                                                   const unsigned int              i_k, 
+                                                   const unsigned int              i_z, 
+                                                   const unsigned int*             i_row_idx,
+                                                   const unsigned int*             i_column_idx ) {
   char l_new_code[512];
 
   if ( i_xgemm_desc->single_precision == 0 ) {
@@ -178,16 +178,17 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
     sprintf(l_new_code, "#if defined(__SSE3__) && !defined(__AVX__)\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
     unsigned int l_i;
-    for ( l_i = 0; l_i < 4; l_i += 2 ) {
-      sprintf(l_new_code, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    unsigned int l_z = i_z;
+    for ( l_i = 0; l_i < 2; l_i++ ) {
+      sprintf(l_new_code, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, l_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + l_z] );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
-      sprintf(l_new_code, "    __m128d a%u_%u = _mm_loadu_pd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
+      sprintf(l_new_code, "    __m128d a%u_%u = _mm_loadu_pd(&A[%u]);\n", i_k, l_z, i_column_idx[i_k] + l_z );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
-      sprintf(l_new_code, "    c%u_%u = _mm_add_pd(c%u_%u, _mm_mul_pd(a%u_%u, b%u))\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
+      sprintf(l_new_code, "    c%u_%u = _mm_add_pd(c%u_%u, _mm_mul_pd(a%u_%u, b%u))\n", i_k, l_z, i_k, l_z, i_k, l_z, i_k );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
-      sprintf(l_new_code, "    _mm_store_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+      sprintf(l_new_code, "    _mm_store_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + l_z], i_k, l_z );
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
-      i_z += 2;
+      l_z += 2;
     }
     sprintf(l_new_code, "#endif\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
@@ -214,7 +215,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
   unsigned int l_flop_count = 0;
 
   /* loop over columns in C in generated code, we fully unroll inside each column */
-  sprintf(l_new_code, "  #pragma nounroll_and_jam\n  unsigned int l_n = 0;\n  for ( l_n = 0; l_n < %u; l_n++) {", i_xgemm_desc->n);
+  sprintf(l_new_code, "  #pragma nounroll_and_jam\n  unsigned int l_n = 0;\n  for ( l_n = 0; l_n < %u; l_n++) {\n", i_xgemm_desc->n);
   libxsmm_append_code_as_string( io_generated_code, l_new_code );
 
   /* reset the current column in C if needed */
@@ -238,7 +239,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
     unsigned int l_column_elements = i_column_idx[l_k + 1] - i_column_idx[l_k];
     unsigned int l_z = 0;
 
-    sprintf(l_new_code, "#if defined(__SSE3__) && defined(__AVX__)\n");
+    sprintf(l_new_code, "#if defined(__SSE3__) || defined(__AVX__)\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
     
     if ( l_column_elements > 0 ) {
@@ -264,17 +265,17 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
             (i_row_idx[i_column_idx[l_k] + l_z] + 2 == i_row_idx[i_column_idx[l_k] + l_z + 2]) &&
             (i_row_idx[i_column_idx[l_k] + l_z] + 3 == i_row_idx[i_column_idx[l_k] + l_z + 3]) && 
             (i_row_idx[i_column_idx[l_k] + l_z + 3] < i_xgemm_desc->m)) {
-          /*libxsmm_sparse_asparse_innerloop_four_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+          libxsmm_sparse_asparse_innerloop_four_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           l_z += 3;
         /* check for 128bit vector instruction */
         } else if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
                    (i_row_idx[i_column_idx[l_k] + l_z + 1] < i_xgemm_desc->m) ) {
-          /*libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+          libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           l_z++;
         /* scalare instruction */
         } else {
           if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-            /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+            libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           }
         }
       /* 2 element vector might be possible */
@@ -282,18 +283,18 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
         /* check for 128bit vector instruction */
         if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
             (i_row_idx[i_column_idx[l_k] + l_z + 1] < i_xgemm_desc->m) ) {
-          /*libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+          libxsmm_sparse_asparse_innerloop_two_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           l_z++;
         /* scalare instruction */
         } else {
           if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-            /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+            libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           }
         }
       /* scalar anayways */
       } else {
         if ( (i_row_idx[i_column_idx[l_k] + l_z] < i_xgemm_desc->m) ) {
-           /*libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);*/
+           libxsmm_sparse_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
         }
       }
     }
