@@ -204,20 +204,6 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
-  /* set up architecture dependent compute micro kernel generator */
-  void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
-                                  const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int, const int);
-  if ( (strcmp(i_arch, "knc") == 0) ) {
-    /*l_generator_microkernel = libxsmm_generator_dense_imci_microkernel;*/
-  } else if ( (strcmp(i_arch, "knl") == 0) ) {
-    /*l_generator_microkernel = libxsmm_generator_dense_avx512_microkernel;*/
-  } else if ( (strcmp(i_arch, "skx") == 0) ) {
-    /*l_generator_microkernel = libxsmm_generator_dense_avx512_microkernel;*/
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_imci_avx512_kernel, cannot select microkernel\n");
-    exit(-1);
-  }
-
   unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/30);
   unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
   unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;

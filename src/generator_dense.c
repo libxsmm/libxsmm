@@ -39,6 +39,7 @@
 #include "generator_dense_common.h"
 #include "generator_dense_sse3_avx_avx2.h"
 #include "generator_dense_imci_avx512.h"
+#include "generator_dense_noarch.h"
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,

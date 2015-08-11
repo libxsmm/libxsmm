@@ -42,7 +42,7 @@
  * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in addtional gp reg inits
  */
-void libxsmm_generator_dense_x86_open_instrucion_stream( libxsmm_generated_code*       io_generated_code,
+void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                          const char*                   i_arch,
                                                          const char*                   i_prefetch );
