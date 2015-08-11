@@ -164,7 +164,7 @@ Although the library is under development, the published interface is rather sta
 * API supporting sparse matrices and other cases
 
 ## Applications and References
-**\[1] http://cp2k.org/**: Open Source Molecular Dynamics which (optionally) uses LIBXSMM. The application is generating batches of small matrix-matrix multiplications ("matrix stack") out of a problem-specific distributed block-sparse matrix (see https://github.com/cp2k/cp2k/tree/intel).
+**\[1] http://cp2k.org/**: Open Source Molecular Dynamics which (optionally) uses LIBXSMM. The application is generating batches of small matrix-matrix multiplications ("matrix stack") out of a problem-specific distributed block-sparse matrix (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
 
 **\[2] http://www.seissol.org/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/tree/lts_compressed).
 
