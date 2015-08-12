@@ -463,29 +463,23 @@ samples: smm cp2k
 
 .PHONY: smm
 smm: lib_all
-	@cd $(SPLDIR)/smm && $(MAKE)
+	@cd $(SPLDIR)/smm && $(MAKE) OMP=1
 .PHONY: smm_hst
 smm_hst: lib_hst
-	@cd $(SPLDIR)/smm && $(MAKE) OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/smm && $(MAKE) OMP=1 OFFLOAD=$(OFFLOAD)
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(MAKE) MIC=$(MIC)
+	@cd $(SPLDIR)/smm && $(MAKE) OMP=1 MIC=$(MIC)
 
 .PHONY: cp2k
 cp2k: lib_all
-	@cd $(SPLDIR)/cp2k && $(MAKE)
+	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1
 .PHONY: cp2k_hst
 cp2k_hst: lib_hst
-	@cd $(SPLDIR)/cp2k && $(MAKE) OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1 OFFLOAD=$(OFFLOAD)
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@cd $(SPLDIR)/cp2k && $(MAKE) MIC=$(MIC)
-
-.PHONY: test
-test: $(SPLDIR)/cp2k/cp2k-perf.txt
-$(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
-	@cd $(SPLDIR)/cp2k && $(MAKE) realclean && $(MAKE)
-	@$(SPLDIR)/cp2k/cp2k-perf.sh
+	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1 MIC=$(MIC)
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh
@@ -494,10 +488,14 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "FILE=cp2k-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
-	@echo >> $@
-	@echo "cat /dev/null > cp2k-perf.txt" >> $@
+	@echo "if [[ "" != "$1" ]] ; then" >> $@
+	@echo "  FILE=$1" >> $@
+	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
@@ -506,12 +504,18 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> cp2k-perf.txt" >> $@
-	@echo "  echo >> cp2k-perf.txt" >> $@
+	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN + 1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
+
+.PHONY: test
+test: $(SPLDIR)/cp2k/cp2k-perf.txt
+$(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
+	@cd $(SPLDIR)/cp2k && $(MAKE) realclean && $(MAKE) OMP=1
+	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
