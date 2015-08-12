@@ -105,7 +105,7 @@ endif
 
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall -Werror -std=c++0x
-	CFLAGS += -fPIC -Wall -Werror
+	CFLAGS += -fPIC -Wall -Werror -std=c89
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
@@ -324,8 +324,6 @@ generator: $(OBJFILES_GEN)
 $(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(OBJFILES_GEN) -o $@
-.PHONY: generator_backend
-generator_backend: $(BINDIR)/generator
 
 .PHONY: sources
 sources: $(SRCFILES)
@@ -398,9 +396,9 @@ endif
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
-		-e '/#pragma message ("KERNEL COMPILATION ERROR in: " __FILE__)/d' \
+		-e '/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/d' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
-		-e '/#pragma message ("KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
+		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 
