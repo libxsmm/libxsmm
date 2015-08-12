@@ -125,9 +125,11 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
     } else if ( i_xgemm_desc->m > 1 ) {
       sprintf(l_new_code, "  #pragma simd vectorlength(2)\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    } if ( (i_xgemm_desc->m > 1)          && 
-           (i_xgemm_desc->aligned_a != 0) && 
-           (i_xgemm_desc->aligned_c != 0)    ) {
+    } else {} 
+
+    if ( (i_xgemm_desc->m > 1)          && 
+         (i_xgemm_desc->aligned_a != 0) && 
+         (i_xgemm_desc->aligned_c != 0)    ) {
       sprintf(l_new_code, "  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
     }
