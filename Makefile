@@ -322,7 +322,7 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 .PHONY: generator
-generator: $(OBJFILES_GEN)
+generator: $(BINDIR)/generator
 $(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(OBJFILES_GEN) -o $@
