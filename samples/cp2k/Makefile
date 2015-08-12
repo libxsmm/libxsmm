@@ -1,8 +1,8 @@
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
-DEPDIR = $(ROOTDIR)/../..
-INCDIR = $(ROOTDIR)
 SRCDIR = $(ROOTDIR)
+INCDIR = $(ROOTDIR)
 BLDDIR = build
+DEPDIR = ../..
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
@@ -32,7 +32,7 @@ else
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
 endif
 
-ifneq ("","$(wildcard $(LIBNAME).a)")
+ifneq (,$(wildcard $(LIBNAME).a))
 	STATIC ?= 1
 	LIBEXT = a
 else

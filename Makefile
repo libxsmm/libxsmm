@@ -1,5 +1,5 @@
 # export all variables to sub-make processes
-.EXPORT_ALL_VARIABLES: #export
+#.EXPORT_ALL_VARIABLES: #export
 # Set NOTPARALLEL=1 for older GNU Make
 ifneq (,$(NOTPARALLEL))
 ifneq (0,$(NOTPARALLEL))
@@ -453,23 +453,24 @@ samples: smm cp2k
 
 .PHONY: smm
 smm: lib_all
-	@cd $(SPLDIR)/smm && $(MAKE) OMP=1
+	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+
 .PHONY: smm_hst
 smm_hst: lib_hst
-	@cd $(SPLDIR)/smm && $(MAKE) OMP=1 OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) OFFLOAD=$(OFFLOAD)
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(MAKE) OMP=1 MIC=$(MIC)
+	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: cp2k
 cp2k: lib_all
-	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1
+	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 .PHONY: cp2k_hst
 cp2k_hst: lib_hst
-	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1 OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) OFFLOAD=$(OFFLOAD)
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@cd $(SPLDIR)/cp2k && $(MAKE) OMP=1 MIC=$(MIC)
+	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh
@@ -504,7 +505,9 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
-	@cd $(SPLDIR)/cp2k && $(MAKE) realclean && $(MAKE) OMP=1
+	@cd $(SPLDIR)/cp2k && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
