@@ -42,22 +42,28 @@ int libxsmm_jit_code = 0;
 
 // This routine is for the jit code. All offsets/displacements have similar
 // byte patterns, so this is used for all of them
-static inline int add_offset ( int place1, int place2, int offset,
-                               int forced, int sizereg, unsigned char *buf )
+static inline int add_offset ( const unsigned int i_place1,
+                               const unsigned int i_place2,
+                               const int i_offset,
+                               const unsigned int i_forced,
+                               const int i_sizereg,
+                               unsigned char *buf )
 {
-   if ( (offset == 0) && (forced==0) ) return ( 0 );
-   else if ( ((offset%sizereg)==0) && (offset/sizereg <= 127) && (offset/sizereg >=-128) )
+   if ( (i_offset == 0) && (i_forced==0) ) return ( 0 );
+   else if ( ((i_offset%i_sizereg)==0) &&
+              (i_offset/i_sizereg <= 127) &&
+              (i_offset/i_sizereg >=-128) )
    {
-      buf[place1] += 0x40;
-      buf[place2] = offset/sizereg;
+      buf[i_place1] += 0x40;
+      buf[i_place2] = i_offset/i_sizereg;
       return ( 1 );
    } else {
-      unsigned char *cptr = (unsigned char *) &offset;
-      buf[place1] += 0x80;
-      buf[place2] = cptr[0];
-      buf[place2+1] = cptr[1];
-      buf[place2+2] = cptr[2];
-      buf[place2+3] = cptr[3];
+      unsigned char *l_cptr = (unsigned char *) &i_offset;
+      buf[ i_place1 ] += 0x80;
+      buf[ i_place2 ] = l_cptr[0];
+      buf[i_place2+1] = l_cptr[1];
+      buf[i_place2+2] = l_cptr[2];
+      buf[i_place2+3] = l_cptr[3];
       return ( 4 );
    }
 }
@@ -76,14 +82,15 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    int maxsize = io_generated_code->buffer_size;
-    int iregnum = i_gp_reg_number % 8;
-    int vregnum = i_vec_reg_number_0 % 8;
-    int ivectype=0, ivectype2=0, iregoff=0, vregoffset2=0, ivectype3=0;
-    int aligned=0, forced_offset=0, penultimate=0;
-    int place, num=0, vregoffset=0, num2=0, num3=0, sizereg=1;
-    int maskingoff=0;
-    int bytes = 4; // base number of bytes
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int l_iregnum = i_gp_reg_number % 8;
+    int l_vregnum = i_vec_reg_number_0 % 8;
+    int l_ivectype=0, l_ivectype2=0, l_iregoff=0, l_ivectype3=0;
+    int l_vregoffset=0, l_vregoffset2=0;
+    int l_aligned=0, l_forced_offset=0, l_penultimate=0;
+    int l_place, l_num=0, l_num2=0, l_num3=0, l_sizereg=1;
+    int l_maskingoff=0;
+    int l_bytes = 4; // base number of bytes
 
     int i_mask_reg_number = 1; // change if you don't want k1
  
@@ -92,25 +99,25 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
        fprintf(stderr,"Masking is only enabled with zmm registers!\n");
        exit(-1);
     }
-    if ( maxsize - i < 20 )
+    if ( l_maxsize - i < 20 )
     {
        fprintf(stderr,"Most instructions need at most 20 bytes\n");
        exit(-1);
     }
-    num = i_vec_reg_number_0 / 8;
+    l_num = i_vec_reg_number_0 / 8;
     switch ( i_vmove_instr ) {
        case LIBXSMM_X86_INSTR_VMOVAPD:
-          aligned += 0x18;
-          if ( i_vector_name=='x' ) ivectype += 1;
-          if ( num == 1 ) ivectype3 -= 0x80;
-          ivectype2 += 0x81;
-          sizereg = 64;
+          l_aligned += 0x18;
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_ivectype2 += 0x81;
+          l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VMOVAPS:
-          aligned += 0x18;
-          if ( num == 1 ) ivectype3 -= 0x80;
-          if ( i_vector_name!='x' ) ivectype -= 1; // single
-          sizereg = 64;
+          l_aligned += 0x18;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          if ( i_vector_name!='x' ) l_ivectype -= 1; // single
+          l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VMOVSS:
           if ( i_vector_name!='x' )
@@ -118,7 +125,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"You want to use vmovss without xmm? ha!\n");
              exit(-1);
           }
-          ivectype += 2;
+          l_ivectype += 2;
           break;
        case LIBXSMM_X86_INSTR_VMOVSD:
           if ( i_vector_name!='x' )
@@ -126,10 +133,10 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"You want to use vmovsd without xmm? ha!\n");
              exit(-1);
           }
-          ivectype += 3;
+          l_ivectype += 3;
           break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
-          bytes = 5;
+          l_bytes = 5;
           if ( i_vector_name=='x' ) 
           {
              fprintf(stderr,"vbroadcastsd and xmm? Fool!\n");
@@ -140,11 +147,11 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"vbroadcastsd and stores? I wish!\n");
              exit(-1);
           }
-          ivectype2 += 0x81;
-          penultimate += 9;
-          num2 += 1;
-          num3 += 0x21;
-          sizereg = 8;
+          l_ivectype2 += 0x81;
+          l_penultimate += 9;
+          l_num2 += 1;
+          l_num3 += 0x21;
+          l_sizereg = 8;
           break;
        case LIBXSMM_X86_INSTR_VBROADCASTSS:
           if ( i_vector_name=='x' ) 
@@ -157,23 +164,23 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"vbroadcastss and stores? I wish!\n");
              exit(-1);
           }
-          bytes = 5;
-          ivectype2 += 0x1;
-          penultimate += 8;
-          sizereg = 4;
-          num2 += 1;
-          num3 += 0x21;
+          l_bytes = 5;
+          l_ivectype2 += 0x1;
+          l_penultimate += 8;
+          l_sizereg = 4;
+          l_num2 += 1;
+          l_num3 += 0x21;
           break;
        case LIBXSMM_X86_INSTR_VMOVUPD:
-          if ( i_vector_name=='x' ) ivectype += 1;
-          if ( num == 1 ) ivectype3 -= 0x80;
-          sizereg = 64;
-          ivectype2 += 0x81;
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 64;
+          l_ivectype2 += 0x81;
           break;
        case LIBXSMM_X86_INSTR_VMOVUPS:
-          if ( num == 1 ) ivectype3 -= 0x80;
-          if ( i_vector_name!='x' ) ivectype -= 1; // single
-          sizereg = 64;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          if ( i_vector_name!='x' ) l_ivectype -= 1; // single
+          l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VMOVDDUP:
           if ( i_is_store == 1 ) 
@@ -181,12 +188,12 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"vmovddup and stores? I wish!\n");
              exit(-1);
           }
-          ivectype += 2;
-          ivectype2 += 0x83;
-          if ( num == 1 ) ivectype3 -= 0x80;
-          penultimate += 2;
-          sizereg = 64;
-          if ( i_vector_name=='x' ) ivectype += 1;
+          l_ivectype += 2;
+          l_ivectype2 += 0x83;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_penultimate += 2;
+          l_sizereg = 64;
+          if ( i_vector_name=='x' ) l_ivectype += 1;
           break;
        default:
           fprintf(stderr,"Are you looney?\n"); 
@@ -194,24 +201,24 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     }
     switch ( i_vector_name ) {
        case 'x':
-          sizereg = 1;
-          if ( num > 1 ) 
+          l_sizereg = 1;
+          if ( l_num > 1 ) 
           {
              fprintf(stderr,"Are you sure xmm%d exists?\n",i_vec_reg_number_0);
              exit(-1);
           }
           break;
        case 'y':
-          ivectype += 5;
-          sizereg = 1;
-          if ( num > 2 ) 
+          l_ivectype += 5;
+          l_sizereg = 1;
+          if ( l_num > 2 ) 
           {
              fprintf(stderr,"Are you sure ymm%d exists?\n",i_vec_reg_number_0);
              exit(-1);
           }
           break;
        case 'z':
-          bytes = 6;
+          l_bytes = 6;
           break;
        default:
           fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
@@ -219,46 +226,46 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     }
     if ( i_gp_reg_number >= 8 ) 
     {
-       if ( bytes < 5 ) bytes = 5;
-       else iregoff -= 0x20;
+       if ( l_bytes < 5 ) l_bytes = 5;
+       else l_iregoff -= 0x20;
     }
     if ( i_is_store == 1 ) 
     {
-       aligned += 1;
-       if ( i_use_masking != 0 ) maskingoff = i_mask_reg_number;
+       l_aligned += 1;
+       if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
     } else {
-       if ( i_use_masking != 0 ) maskingoff = 0x80 + i_mask_reg_number;
+       if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number;
     }
-    if ( num == 0 ) vregoffset = 0x90;
-    else if ( num == 1 ) { vregoffset = 0x10; vregoffset2 = -0x80; }
-    else if ( num == 2 ) vregoffset = 0x80;
-    else if ( num == 3 ) vregoffset = 0x00;
-    if ( (iregnum == 5) && (i_displacement==0) ) 
+    if ( l_num == 0 ) l_vregoffset = 0x90;
+    else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
+    else if ( l_num == 2 ) l_vregoffset = 0x80;
+    else if ( l_num == 3 ) l_vregoffset = 0x00;
+    if ( (l_iregnum == 5) && (i_displacement==0) ) 
     {
        // Registers like rbp/r13 when you have a displacement of 0, we need
        // force the single byte of zero to appear. 
-       forced_offset=1;
+       l_forced_offset=1;
     }
  
-    if ( bytes == 4 )
+    if ( l_bytes == 4 )
     {
        buf[i++] = 0xc5;
-       buf[i++] = 0xf8 + ivectype + ivectype3;
-    } else if ( bytes == 5 ) {
+       buf[i++] = 0xf8 + l_ivectype + l_ivectype3;
+    } else if ( l_bytes == 5 ) {
        buf[i++] = 0xc4;
-       buf[i++] = 0xc1 + num3 + vregoffset2 + iregoff;
-       buf[i++] = 0x78 + ivectype;
-    } else if ( bytes == 6 ) {
+       buf[i++] = 0xc1 + l_num3 + l_vregoffset2 + l_iregoff;
+       buf[i++] = 0x78 + l_ivectype;
+    } else if ( l_bytes == 6 ) {
        buf[i++] = 0x62;
-       buf[i++] = 0x61 + vregoffset + iregoff + num2;
-       buf[i++] = 0x7c + ivectype2;
-       buf[i++] = 0x48 + maskingoff;
+       buf[i++] = 0x61 + l_vregoffset + l_iregoff + l_num2;
+       buf[i++] = 0x7c + l_ivectype2;
+       buf[i++] = 0x48 + l_maskingoff;
     }
-    buf[i++] = 0x10 + aligned + penultimate;
-    buf[i++] = 0x00 + iregnum + 8*vregnum;
-    place = i-1;
-    if ( iregnum == LIBXSMM_X86_GP_REG_RSP ) buf[i++] = 0x24;
-    i += add_offset ( place, i, i_displacement, forced_offset, sizereg, buf );
+    buf[i++] = 0x10 + l_aligned + l_penultimate;
+    buf[i++] = 0x00 + l_iregnum + 8*l_vregnum;
+    l_place = i-1;
+    if ( l_iregnum == LIBXSMM_X86_GP_REG_RSP ) buf[i++] = 0x24;
+    i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
     
     io_generated_code->code_size = i;
     
