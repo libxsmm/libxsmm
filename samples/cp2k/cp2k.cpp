@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 #   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if defined(MKL_ENABLE_AVX512_MIC) && (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
