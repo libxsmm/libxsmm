@@ -336,6 +336,180 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    // int i = *loc;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    // unsigned int l_maxsize = 1024;
+    int l_second=0, l_third=0, l_fourth=0, l_xreg=0;
+    int l_reg0   = i_vec_reg_number_0;
+    int l_reg1   = i_vec_reg_number_1; 
+    int l_reg2   = i_vec_reg_number_2;
+    int l_fpadj=0;
+    int l_fpadj2=0;
+    int l_bytes=4;
+
+    if ( l_maxsize - i < 20 )
+    {
+       fprintf(stderr,"Most instructions need at most 20 bytes\n");
+       exit(-1);
+    }
+    switch ( i_vec_instr ) {
+       case LIBXSMM_X86_INSTR_VXORPD:
+          l_fpadj = -2;
+          break;
+       case LIBXSMM_X86_INSTR_VMULPD:
+          break;
+       case LIBXSMM_X86_INSTR_VADDPD:
+          l_fpadj = -1;
+          break;
+       case LIBXSMM_X86_INSTR_VFMADD231PD:
+          l_second += 0x21;
+          l_fpadj  += 0x5f;
+          l_fpadj2 += 0x80;
+          if ( i_vector_name == 'z' ) 
+          {  
+             l_second -= 0x20; 
+             l_fpadj2 -= 0x80; 
+          } else if ( i_vec_reg_number_0 > 7 ) {
+             l_second -= 0x20;
+          }
+          l_bytes = 5;
+          break;
+       case LIBXSMM_X86_INSTR_VMULSD:
+          l_fpadj2 = 2; 
+          break;
+       case LIBXSMM_X86_INSTR_VADDSD:
+          l_fpadj  =-1;
+          l_fpadj2 = 2;
+          break;
+       case LIBXSMM_X86_INSTR_VFMADD231SD:
+          l_second += 0x21;
+          l_fpadj  += 0x60;
+          l_fpadj2 += 0x80;
+          if ( i_vector_name == 'z' ) 
+          {  
+             l_second -= 0x20; 
+             l_fpadj2 -= 0x80; 
+          } else if ( i_vec_reg_number_0 > 7 ) {
+             l_second -= 0x20;
+          }
+          l_bytes = 5;
+          break;
+       case LIBXSMM_X86_INSTR_VXORPS:
+          l_fpadj2 = -1;
+          l_fpadj = -2;
+          if ( i_vector_name == 'z' )
+          {
+             l_fpadj2 -= 0x80;
+          }
+          break;
+       case LIBXSMM_X86_INSTR_VMULPS:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          break;
+       case LIBXSMM_X86_INSTR_VADDPS:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = -1;
+          break;
+       case LIBXSMM_X86_INSTR_VFMADD231PS:
+          l_second += 0x21;
+          l_fpadj  += 0x5f;
+          if ( i_vector_name == 'z' ) 
+          {  
+             l_second -= 0x20; 
+             l_fpadj2 -= 0x80; 
+          } else if ( i_vec_reg_number_0 > 7 ) {
+             l_second -= 0x20;
+          }
+          l_bytes = 5;
+          break;
+       case LIBXSMM_X86_INSTR_VMULSS:
+          l_fpadj2 = 1; 
+          break;
+       case LIBXSMM_X86_INSTR_VADDSS:
+          l_fpadj  =-1;
+          l_fpadj2 = 1;
+          break;
+       case LIBXSMM_X86_INSTR_VFMADD231SS:
+          l_second += 0x21;
+          l_fpadj  += 0x60;
+          if ( i_vector_name == 'z' ) 
+          {  
+             l_second -= 0x20; 
+             l_fpadj2 -= 0x80; 
+          } else if ( i_vec_reg_number_0 > 7 ) {
+             l_second -= 0x20;
+          }
+          l_bytes = 5;
+          break;
+       default:
+          fprintf(stderr,"WTF! what are you doing?\n");
+          break;
+    }
+    if ( i_vector_name == 'x' ) l_xreg = -4;
+    l_reg0 = i_vec_reg_number_0 % 8;
+    l_reg1 = i_vec_reg_number_1 % 8;
+    l_reg2 = i_vec_reg_number_2 % 8;
+    if ( i_vec_reg_number_2 >= 8 ) { l_second -= 0x80; }
+    if ( i_vec_reg_number_1 >= 8 ) { l_third  -= 0x40; }
+    if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
+         (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+    {
+       if ( i_vec_reg_number_0 >= 8 ) 
+       {
+          if ( l_bytes < 5 ) l_bytes = 5;
+       }
+    } else l_bytes = 6;
+ 
+    if ( l_bytes == 4 )
+    {
+       buf[i++] = 0xc5;
+       buf[i++] = 0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2;
+       buf[i++] = 0x59 + l_fpadj;
+       buf[i++] = 0xc0 + l_reg0    + 8*l_reg2 ;
+    } else if ( l_bytes == 5 )
+    {
+       buf[i++] = 0xc4;
+       buf[i++] = 0xc1 + l_second;
+       buf[i++] = 0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2;
+       buf[i++] = 0x59 + l_fpadj;
+       buf[i++] = 0xc0 + l_reg0    + 8*l_reg2 ;
+    } else if ( l_bytes == 6 )
+    {
+       if ( i_vec_reg_number_0 >= 8 ) { l_second -= 0x20; }
+       if ( i_vec_reg_number_0 >= 16 ) 
+       { 
+          l_second -= 0x20; 
+          if ( i_vector_name=='x' ) l_fourth -= 0x40;
+          if ( i_vector_name=='y' ) l_fourth -= 0x20;
+       }
+       if ( i_vec_reg_number_0 >= 24 ) { l_second -= 0x20; }
+       if ( i_vec_reg_number_1 >= 16 ) 
+       { 
+          l_third += 0x40; 
+          l_fourth -= 0x08; 
+          if ( i_vector_name=='x' ) l_fourth -= 0x40;
+          if ( i_vector_name=='y' ) l_fourth -= 0x20;
+       }
+       if ( i_vec_reg_number_1 >= 24 ) { l_third -= 0x40; }
+       if ( i_vec_reg_number_2 >= 16 ) { l_second += 0x70; }
+       if ( i_vec_reg_number_2 >= 24 ) { l_second -= 0x80; }
+       buf[i++] = 0x62;
+       buf[i++] = 0xf1 + l_second;
+       buf[i++] = 0xfd - 8*l_reg1   + l_third + l_fpadj2;
+       buf[i++] = 0x48 + l_fourth;
+       buf[i++] = 0x59 + l_fpadj;
+       buf[i++] = 0xc0 + l_reg0    + 8*l_reg2 ;
+    }
+
+    io_generated_code->code_size = i;
+    // *loc = i;
   } else {
     char l_new_code[512];
     char l_instr_name[16];
