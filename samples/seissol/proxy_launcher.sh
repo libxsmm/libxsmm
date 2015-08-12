@@ -48,6 +48,9 @@ PREFETCH="0"
 DERS="0"
 LIBXSMM_ROOT=${SEISSOL_PROXY_ROOT}/../../
 
+# test for seissol kernels and clone from git hub if needed.
+# @TODO
+
 while getopts a:k:c:n:t:o:p:g:s:d: opts; do
    case ${opts} in
       a) SIMARCH=${OPTARG} ;;
