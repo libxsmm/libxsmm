@@ -326,6 +326,9 @@ generator: $(BINDIR)/generator
 $(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(OBJFILES_GEN) -o $@
+.PHONY: generator_backend
+generator_backend: $(BINDIR)/generator
+
 
 .PHONY: sources
 sources: $(SRCFILES)
