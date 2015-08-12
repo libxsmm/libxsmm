@@ -40,6 +40,28 @@
 /* TODO change this */
 int libxsmm_jit_code = 0;
 
+// This routine is for the jit code. All offsets/displacements have similar
+// byte patterns, so this is used for all of them
+static inline int add_offset ( int place1, int place2, int offset,
+                               int forced, int sizereg, unsigned char *buf )
+{
+   if ( (offset == 0) && (forced==0) ) return ( 0 );
+   else if ( ((offset%sizereg)==0) && (offset/sizereg <= 127) && (offset/sizereg >=-128) )
+   {
+      buf[place1] += 0x40;
+      buf[place2] = offset/sizereg;
+      return ( 1 );
+   } else {
+      unsigned char *cptr = (unsigned char *) &offset;
+      buf[place1] += 0x80;
+      buf[place2] = cptr[0];
+      buf[place2+1] = cptr[1];
+      buf[place2+2] = cptr[2];
+      buf[place2+3] = cptr[3];
+      return ( 4 );
+   }
+}
+
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
                                    const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 
@@ -52,6 +74,194 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    int maxsize = io_generated_code->buffer_size;
+    int iregnum = i_gp_reg_number % 8;
+    int vregnum = i_vec_reg_number_0 % 8;
+    int ivectype=0, ivectype2=0, iregoff=0, vregoffset2=0, ivectype3=0;
+    int aligned=0, forced_offset=0, penultimate=0;
+    int place, num=0, vregoffset=0, num2=0, num3=0, sizereg=1;
+    int maskingoff=0;
+    int bytes = 4; // base number of bytes
+
+    int i_mask_reg_number = 1; // change if you don't want k1
+ 
+    if ( (i_vector_name != 'z') && (i_use_masking!=0) )
+    {
+       fprintf(stderr,"Masking is only enabled with zmm registers!\n");
+       exit(-1);
+    }
+    if ( maxsize - i < 20 )
+    {
+       fprintf(stderr,"Most instructions need at most 20 bytes\n");
+       exit(-1);
+    }
+    num = i_vec_reg_number_0 / 8;
+    switch ( i_vmove_instr ) {
+       case LIBXSMM_X86_INSTR_VMOVAPD:
+          aligned += 0x18;
+          if ( i_vector_name=='x' ) ivectype += 1;
+          if ( num == 1 ) ivectype3 -= 0x80;
+          ivectype2 += 0x81;
+          sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVAPS:
+          aligned += 0x18;
+          if ( num == 1 ) ivectype3 -= 0x80;
+          if ( i_vector_name!='x' ) ivectype -= 1; // single
+          sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVSS:
+          if ( i_vector_name!='x' )
+          {
+             fprintf(stderr,"You want to use vmovss without xmm? ha!\n");
+             exit(-1);
+          }
+          ivectype += 2;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVSD:
+          if ( i_vector_name!='x' )
+          {
+             fprintf(stderr,"You want to use vmovsd without xmm? ha!\n");
+             exit(-1);
+          }
+          ivectype += 3;
+          break;
+       case LIBXSMM_X86_INSTR_VBROADCASTSD:
+          bytes = 5;
+          if ( i_vector_name=='x' ) 
+          {
+             fprintf(stderr,"vbroadcastsd and xmm? Fool!\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 ) 
+          {
+             fprintf(stderr,"vbroadcastsd and stores? I wish!\n");
+             exit(-1);
+          }
+          ivectype2 += 0x81;
+          penultimate += 9;
+          num2 += 1;
+          num3 += 0x21;
+          sizereg = 8;
+          break;
+       case LIBXSMM_X86_INSTR_VBROADCASTSS:
+          if ( i_vector_name=='x' ) 
+          {
+             fprintf(stderr,"vbroadcastss and xmm? Fool!\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 ) 
+          {
+             fprintf(stderr,"vbroadcastss and stores? I wish!\n");
+             exit(-1);
+          }
+          bytes = 5;
+          ivectype2 += 0x1;
+          penultimate += 8;
+          sizereg = 4;
+          num2 += 1;
+          num3 += 0x21;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVUPD:
+          if ( i_vector_name=='x' ) ivectype += 1;
+          if ( num == 1 ) ivectype3 -= 0x80;
+          sizereg = 64;
+          ivectype2 += 0x81;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVUPS:
+          if ( num == 1 ) ivectype3 -= 0x80;
+          if ( i_vector_name!='x' ) ivectype -= 1; // single
+          sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDDUP:
+          if ( i_is_store == 1 ) 
+          {
+             fprintf(stderr,"vmovddup and stores? I wish!\n");
+             exit(-1);
+          }
+          ivectype += 2;
+          ivectype2 += 0x83;
+          if ( num == 1 ) ivectype3 -= 0x80;
+          penultimate += 2;
+          sizereg = 64;
+          if ( i_vector_name=='x' ) ivectype += 1;
+          break;
+       default:
+          fprintf(stderr,"Are you looney?\n"); 
+          exit(-1);
+    }
+    switch ( i_vector_name ) {
+       case 'x':
+          sizereg = 1;
+          if ( num > 1 ) 
+          {
+             fprintf(stderr,"Are you sure xmm%d exists?\n",i_vec_reg_number_0);
+             exit(-1);
+          }
+          break;
+       case 'y':
+          ivectype += 5;
+          sizereg = 1;
+          if ( num > 2 ) 
+          {
+             fprintf(stderr,"Are you sure ymm%d exists?\n",i_vec_reg_number_0);
+             exit(-1);
+          }
+          break;
+       case 'z':
+          bytes = 6;
+          break;
+       default:
+          fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
+          exit(-1);
+    }
+    if ( i_gp_reg_number >= 8 ) 
+    {
+       if ( bytes < 5 ) bytes = 5;
+       else iregoff -= 0x20;
+    }
+    if ( i_is_store == 1 ) 
+    {
+       aligned += 1;
+       if ( i_use_masking != 0 ) maskingoff = i_mask_reg_number;
+    } else {
+       if ( i_use_masking != 0 ) maskingoff = 0x80 + i_mask_reg_number;
+    }
+    if ( num == 0 ) vregoffset = 0x90;
+    else if ( num == 1 ) { vregoffset = 0x10; vregoffset2 = -0x80; }
+    else if ( num == 2 ) vregoffset = 0x80;
+    else if ( num == 3 ) vregoffset = 0x00;
+    if ( (iregnum == 5) && (i_displacement==0) ) 
+    {
+       // Registers like rbp/r13 when you have a displacement of 0, we need
+       // force the single byte of zero to appear. 
+       forced_offset=1;
+    }
+ 
+    if ( bytes == 4 )
+    {
+       buf[i++] = 0xc5;
+       buf[i++] = 0xf8 + ivectype + ivectype3;
+    } else if ( bytes == 5 ) {
+       buf[i++] = 0xc4;
+       buf[i++] = 0xc1 + num3 + vregoffset2 + iregoff;
+       buf[i++] = 0x78 + ivectype;
+    } else if ( bytes == 6 ) {
+       buf[i++] = 0x62;
+       buf[i++] = 0x61 + vregoffset + iregoff + num2;
+       buf[i++] = 0x7c + ivectype2;
+       buf[i++] = 0x48 + maskingoff;
+    }
+    buf[i++] = 0x10 + aligned + penultimate;
+    buf[i++] = 0x00 + iregnum + 8*vregnum;
+    place = i-1;
+    if ( iregnum == LIBXSMM_X86_GP_REG_RSP ) buf[i++] = 0x24;
+    i += add_offset ( place, i, i_displacement, forced_offset, sizereg, buf );
+    
+    io_generated_code->code_size = i;
+    
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
