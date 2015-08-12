@@ -54,6 +54,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define CP2K_MAX_SIZE (64 * 64)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -82,24 +83,12 @@ public:
   }
 
 public:
-  void acquire_nonpot(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
-    omp_set_lock(m_lock + (id % CP2K_SYNCHRONIZATION));
-  }
-
-  void release_nonpot(const void* address) {
-    const uintptr_t id = reinterpret_cast<uintptr_t>(address) / (LIBXSMM_ALIGNED_MAX);
-    omp_unset_lock(m_lock + (id % CP2K_SYNCHRONIZATION));
-  }
-
   void acquire(const void* address) {
-    const uintptr_t id = LIBXSMM_DIV2(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
-    omp_set_lock(m_lock + LIBXSMM_MOD2(id, CP2K_SYNCHRONIZATION));
+    omp_set_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNED_MAX, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    const uintptr_t id = LIBXSMM_DIV2(reinterpret_cast<uintptr_t>(address), LIBXSMM_ALIGNED_MAX);
-    omp_unset_lock(m_lock + LIBXSMM_MOD2(id, CP2K_SYNCHRONIZATION));
+    omp_unset_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNED_MAX, CP2K_SYNCHRONIZATION));
   }
 
 private:
@@ -112,25 +101,12 @@ template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
     const int ldx = 0 == ld ? ncols : ld;
+    const double minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
+    const double shift = 0.5 * addval + minval, norm = 0 != addval ? (1.0 / addval) : 1.0;
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < ncols; ++j) {
-        // initialize similar to CP2K's (libsmm_acc) benchmark driver
-        dst[i*ldx+j] = static_cast<T>(i * ldx + j + n + Seed);
-      }
-    }
-  }
-};
-
-
-template<>
-struct LIBXSMM_TARGET(mic) init<0> {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int ld = 0) {
-    static const double scale = 1.0 / RAND_MAX;
-    const int ldx = 0 == ld ? ncols : ld;
-    for (int i = 0; i < nrows; ++i) {
-      for (int j = 0; j < ncols; ++j) {
-        // initialize every value using a normalized random number [-1, +1]
-        dst[i*ldx+j] = static_cast<T>(scale * (2 * std::rand() - RAND_MAX));
+        const double value = static_cast<double>(i * ldx + j + minval);
+        dst[i*ldx+j] = static_cast<T>(norm * (value - shift));
       }
     }
   }
@@ -197,12 +173,13 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    if ((LIBXSMM_MAX_SIZE) < size_t(m * n)) {
-      throw std::runtime_error("The size M x N is exceeding LIBXSMM_MAX_SIZE!");
+    const int csize = m * n;
+    if ((CP2K_MAX_SIZE) < csize) {
+      throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
     }
 
-    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNMENT) / sizeof(T);
-    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T)), csize = LIBXSMM_LD(n, m) * ldc;
+    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
+    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
 #if defined(_OPENMP)
@@ -212,11 +189,9 @@ int main(int argc, char* argv[])
 
     LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int s, int asize, int bsize, int csize, int aspace)
-        : a(new T[s*asize+aspace-1]), b(new T[s*bsize+aspace-1]), c(new T[csize])
-      {}
+      raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
-    } buffer(s, asize, bsize, csize, aspace);
+    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
@@ -238,12 +213,12 @@ int main(int argc, char* argv[])
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
-        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
+        1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
 #if defined(CP2K_CHECK)
       LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
-        raii(int csize): expect(new T[csize]) {}
+        explicit raii(int size): expect(new T[size]) {}
         ~raii() { delete[] expect; }
       } buffer(csize);
       T *const expect = buffer.expect;
@@ -251,34 +226,26 @@ int main(int argc, char* argv[])
 
       { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(c, csize, 0);
+        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-#         pragma omp for CP2K_SCHEDULE
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for CP2K_SCHEDULE
 #endif
-          for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-              libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
-            }
-            add(c, tmp, m, n, ldc); // atomic
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
-#if defined(_OPENMP)
+          add(expect, tmp, m, n, ldc); // atomic
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
-#endif
-#if defined(CP2K_CHECK)
-        std::copy(c, c + csize, expect);
 #endif
       }
 
@@ -286,24 +253,19 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Inlined...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-#         pragma omp for CP2K_SCHEDULE
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for CP2K_SCHEDULE
 #endif
-          for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-              libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
-            }
-            add(c, tmp, m, n, ldc); // atomic
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
-#if defined(_OPENMP)
+          add(c, tmp, m, n, ldc); // atomic
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
@@ -319,24 +281,19 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Dispatched...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-#         pragma omp for CP2K_SCHEDULE
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for CP2K_SCHEDULE
 #endif
-          for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-              libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
-            }
-            add(c, tmp, m, n, ldc); // atomic
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
-#if defined(_OPENMP)
+          add(c, tmp, m, n, ldc); // atomic
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
@@ -353,24 +310,19 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);
 #if defined(_OPENMP)
-        double start = 0;
-#       pragma omp parallel
-        {
-#         pragma omp master
-          start = omp_get_wtime();
-#         pragma omp for CP2K_SCHEDULE
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for CP2K_SCHEDULE
 #endif
-          for (int i = 0; i < s; i += u) {
-            LIBXSMM_ALIGNED(T tmp[LIBXSMM_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-            for (int j = 0; j < csize; ++j) tmp[j] = 0; // clear
-            for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-              xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
-            }
-            add(c, tmp, m, n, ldc); // atomic
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
           }
-#if defined(_OPENMP)
+          add(c, tmp, m, n, ldc); // atomic
         }
-        const double duration = omp_get_wtime() - start;
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));

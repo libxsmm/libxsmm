@@ -1,7 +1,14 @@
 #!/bin/bash
 
-# output basename
-BASENAME=$(basename ${PWD})
+HERE=$(cd $(dirname $0); pwd -P)
+
+# output directory
+if [[ "" != "$1" ]] ; then
+  DOCDIR=$1
+  shift
+else
+  DOCDIR=documentation
+fi
 
 # temporary file
 TEMPLATE=$(mktemp --tmpdir=. --suffix=.tex)
@@ -16,7 +23,9 @@ sed -i \
   ${TEMPLATE}
 
 # cleanup markup and pipe into pandoc using the template
+# LIBXSMM documentation
 sed \
+  -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
   -e 's/\[\[.\+\](.\+)\]//' \
   -e '/!\[.\+\](.\+)/{n;d}' \
   README.md | tee >( \
@@ -25,14 +34,39 @@ pandoc \
   --template=${TEMPLATE} --listings \
   -f markdown_github+implicit_figures \
   -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation" \
+  -V author-meta="Hans Pabst" \
   -V classoption=DIV=45 \
   -V linkcolor=black \
   -V citecolor=black \
   -V urlcolor=black \
-  -o documentation/${BASENAME}.pdf) | \
+  -o ${DOCDIR}/libxsmm.pdf) | \
 pandoc \
   -f markdown_github+implicit_figures \
-  -o documentation/${BASENAME}.docx
+  -o ${DOCDIR}/libxsmm.docx
+
+# cleanup markup and pipe into pandoc using the template
+# CP2K recipe
+sed \
+  -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
+  -e 's/\[\[.\+\](.\+)\]//' \
+  -e '/!\[.\+\](.\+)/{n;d}' \
+  ${HERE}/documentation/cp2k.md | tee >( \
+pandoc \
+  --latex-engine=xelatex \
+  --template=${TEMPLATE} --listings \
+  -f markdown_github+implicit_figures \
+  -V documentclass=scrartcl \
+  -V title-meta="CP2K with LIBXSMM" \
+  -V author-meta="Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/cp2k.pdf) | \
+pandoc \
+  -f markdown_github+implicit_figures \
+  -o ${DOCDIR}/cp2k.docx
 
 # remove temporary file
 rm ${TEMPLATE}
