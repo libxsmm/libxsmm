@@ -27,8 +27,9 @@
 
 # Please adjust 
 SEISSOL_KERNELS_ROOT=/nfs_home/aheineck/Projects/SeisSol_workspace/seissol_kernels
-SEISSOL_KERNELS_CONFIG=all_dense   #define this if you want to generate an all-dense backend
-#SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
+SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
+#SEISSOL_KERNELS_CONFIG=all_dense   #define this if you want to generate an all-dense backend
+#SEISSOL_KERNELS_CONFIG=all_sparse   #define this if you want to generate an all-sparse backend
 
 # some defaults
 SIMARCH=snb_dp

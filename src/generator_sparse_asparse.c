@@ -259,7 +259,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
     /* loop over the columns of A and look for vectorization potential */
     for ( l_z = 0; l_z < l_column_elements; l_z++ ) {
       /* 4 element vector might be possible */
-      if ( l_z < (l_column_elements - 3) ) {
+      if ( (l_z < (l_column_elements - 3)) && (l_column_elements > 3) ) {
         /* check for 256bit vector instruction */
         if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
             (i_row_idx[i_column_idx[l_k] + l_z] + 2 == i_row_idx[i_column_idx[l_k] + l_z + 2]) &&
@@ -279,7 +279,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
           }
         }
       /* 2 element vector might be possible */
-      } else if ( l_z < (l_column_elements - 1) ) {
+      } else if ( (l_z < (l_column_elements - 1)) && (l_column_elements > 1)) {
         /* check for 128bit vector instruction */
         if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
             (i_row_idx[i_column_idx[l_k] + l_z + 1] < i_xgemm_desc->m) ) {
