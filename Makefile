@@ -491,8 +491,8 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "FILE=cp2k-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
-	@echo "if [[ "" != "$1" ]] ; then" >> $@
-	@echo "  FILE=$1" >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
