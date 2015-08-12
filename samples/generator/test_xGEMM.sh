@@ -34,7 +34,7 @@ M="4 12 20 36 56 84"
 cd ./../../
 
 make realclean
-make generator_backend
+make generator
 
 #exit if compiler fails
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
@@ -71,58 +71,62 @@ do
   do
     K="${m} ${N}"
 #    K="${m}"
+#    K="1 2 3 4 5 6 7 8 9 10 30 31 60 62"
     for k in ${K}
-    do 
+    do
+      lda=$m
+      ldb=$k
+      ldc=$m 
       rm -rf kernel_${m}_${n}_${k}_${PREC}.*
       rm -rf xgemm_${m}_${n}_${k}_${PREC}
-      ./../../bin/generator dense kernel_${m}_${n}_${k}_${PREC}.h dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
+      ./../../bin/generator dense kernel_${m}_${n}_${k}_${PREC}.h dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       if [ $ASM -eq 1 ]
       then
-        ./../../bin/generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $m $k $m 1 1 1 1 ${ARCH} nopf ${PREC}
+        ./../../bin/generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       fi
       if [ "${ARCH}" == 'wsm' ]; then
-        icc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icc -O2 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icc -O2 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'snb' ]; then
-        icc -O3 -mavx -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O3 -mavx -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icc -O2 -ansi-alias -mavx -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icc -O2 -ansi-alias -mavx -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'hsw' ]; then
-        #icc -O2 -xCORE_AVX2 -fma -D__USE_MKL -mkl -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
-        icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        #icc -O2 -xCORE_AVX2 -fma -D__USE_MKL -mkl -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icc -O2 -ansi-alias -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icc -O2 -ansi-alias -mavx -D__AVX2__ -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'knc' ]; then
-        icc -O2 -ansi-alias -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O2 -ansi-alias -mmic -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         scp ./xgemm_${m}_${n}_${k}_${PREC} mic0:
         ssh mic0 "./xgemm_${m}_${n}_${k}_${PREC}"
       elif [ "${ARCH}" == 'knl' ]; then
-        icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icc -O2 -ansi-alias -xMIC_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icc -O2 -ansi-alias -xMIC_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'noarch' ]; then
-        icc -O2 -ansi-alias -xHOST -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O2 -ansi-alias -xHOST -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ./xgemm_${m}_${n}_${k}_${PREC}
       else
         echo "unsupported architecture!"

@@ -268,8 +268,16 @@ int main(int argc, char* argv []) {
   l_xgemm_desc.beta = l_beta;
   l_xgemm_desc.trans_a = 'n';
   l_xgemm_desc.trans_b = 'n';
-  l_xgemm_desc.aligned_a = l_aligned_a;
-  l_xgemm_desc.aligned_c = l_aligned_c;
+  if (l_aligned_a == 0) {
+    l_xgemm_desc.aligned_a = 0;
+  } else {
+    l_xgemm_desc.aligned_a = 1;
+  }
+  if (l_aligned_c == 0) {
+    l_xgemm_desc.aligned_c = 0;
+  } else {
+    l_xgemm_desc.aligned_c = 1;
+  }
   l_xgemm_desc.single_precision = l_single_precision;
   strcpy ( l_xgemm_desc.prefetch, l_prefetch );
 

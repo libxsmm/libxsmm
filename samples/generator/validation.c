@@ -60,6 +60,18 @@ void dense_test_mul(const REALTYPE* a, const REALTYPE* b, REALTYPE* c);
 #define MY_K MY_N
 #endif
 
+#ifndef MY_LDA
+#define MY_LDA MY_M
+#endif
+
+#ifndef MY_LDB
+#define MY_LDB MY_K
+#endif
+
+#ifndef MY_LDC
+#define MY_LDC MY_M
+#endif
+
 #define REPS 10000
 //#define REPS 1
 
@@ -69,10 +81,10 @@ inline double sec(struct timeval start, struct timeval end) {
 
 void run_test() {
   // allocate
-  REALTYPE* l_a = (REALTYPE*)_mm_malloc(MY_M * MY_K * sizeof(REALTYPE), 64);
-  REALTYPE* l_b = (REALTYPE*)_mm_malloc(MY_K * MY_N * sizeof(REALTYPE), 64);
-  REALTYPE* l_c = (REALTYPE*)_mm_malloc(MY_M * MY_N * sizeof(REALTYPE), 64);
-  REALTYPE* l_c_gold = (REALTYPE*)_mm_malloc(MY_M * MY_N * sizeof(REALTYPE), 64);
+  REALTYPE* l_a = (REALTYPE*)_mm_malloc(MY_LDA * MY_K * sizeof(REALTYPE), 64);
+  REALTYPE* l_b = (REALTYPE*)_mm_malloc(MY_LDB * MY_N * sizeof(REALTYPE), 64);
+  REALTYPE* l_c = (REALTYPE*)_mm_malloc(MY_LDC * MY_N * sizeof(REALTYPE), 64);
+  REALTYPE* l_c_gold = (REALTYPE*)_mm_malloc(MY_LDC * MY_N * sizeof(REALTYPE), 64);
 
   unsigned int l_i;
   unsigned int l_j;
@@ -82,30 +94,30 @@ void run_test() {
   unsigned int l_k;
 
   // touch A
-  for ( l_i = 0; l_i < MY_M; l_i++) {
+  for ( l_i = 0; l_i < MY_LDA; l_i++) {
     for ( l_j = 0; l_j < MY_K; l_j++) {
 #if REPS==1
-      l_a[(l_j * MY_M) + l_i] = (REALTYPE)drand48();
+      l_a[(l_j * MY_LDA) + l_i] = (REALTYPE)drand48();
 #else
-      l_a[(l_j * MY_M) + l_i] = (REALTYPE)(l_i + (l_j * MY_M));
+      l_a[(l_j * MY_LDA) + l_i] = (REALTYPE)(l_i + (l_j * MY_M));
 #endif
     }
   }
   // touch B
-  for ( l_i = 0; l_i < MY_K; l_i++ ) {
+  for ( l_i = 0; l_i < MY_LDB; l_i++ ) {
     for ( l_j = 0; l_j < MY_N; l_j++ ) {
 #if REPS==1
-      l_b[(l_j * MY_K) + l_i] = (REALTYPE)drand48();
+      l_b[(l_j * MY_LDB) + l_i] = (REALTYPE)drand48();
 #else
-      l_b[(l_j * MY_K) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
+      l_b[(l_j * MY_LDB) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
 #endif
     }
   }
   // touch C
-  for ( l_i = 0; l_i < MY_M; l_i++) {
+  for ( l_i = 0; l_i < MY_LDC; l_i++) {
     for ( l_j = 0; l_j < MY_N; l_j++) {
-      l_c[(l_j * MY_M) + l_i] = (REALTYPE)0.0;
-      l_c_gold[(l_j * MY_M) + l_i] = (REALTYPE)0.0;
+      l_c[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
+      l_c_gold[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
     }
   }
 
@@ -118,7 +130,7 @@ void run_test() {
     for ( l_n = 0; l_n < MY_N; l_n++  ) {
       for ( l_k = 0; l_k < MY_K; l_k++  ) {
         for ( l_m = 0; l_m < MY_M; l_m++ ) {
-          l_c_gold[(l_n * MY_M) + l_m] += l_a[(l_k * MY_M) + l_m] * l_b[(l_n * MY_K) + l_k];
+          l_c_gold[(l_n * MY_LDC) + l_m] += l_a[(l_k * MY_LDA) + l_m] * l_b[(l_n * MY_LDB) + l_k];
         }
       }
     }
@@ -128,15 +140,18 @@ void run_test() {
   int l_M = MY_M;
   int l_N = MY_N;
   int l_K = MY_K;
+  int l_lda = MY_LDA;
+  int l_ldb = MY_LDB;
+  int l_ldc = MY_LDC;
   if (sizeof(REALTYPE) == sizeof(double)) {
     for ( l_t = 0; l_t < REPS; l_t++  ) {
       double l_one = 1.0;    
-      dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_a, &l_M, (double*)l_b, &l_K, &l_one, (double*)l_c_gold, &l_M);
+      dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_a, &l_lda, (double*)l_b, &l_ldb, &l_one, (double*)l_c_gold, &l_ldc);
     } 
   } else {
     for ( l_t = 0; l_t < REPS; l_t++  ) {
       float l_one = 1.0f;    
-      sgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (float*)l_a, &l_M, (float*)l_b, &l_K, &l_one, (float*)l_c_gold, &l_M);
+      sgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (float*)l_a, &l_lda, (float*)l_b, &l_ldb, &l_one, (float*)l_c_gold, &l_ldc);
     }
   }
 #endif
@@ -172,8 +187,8 @@ void run_test() {
 #if 0
       printf("Entries in row %i, column %i, gold: %f, assembly: %f\n", l_i+1, l_j+1, l_c_gold[(l_j*MY_M)+l_i], l_c[(l_j*MY_M)+l_i]);
 #endif
-      if (l_max_error < fabs( l_c_gold[(l_j * MY_M) + l_i] - l_c[(l_j * MY_M) + l_i]))
-        l_max_error = fabs( l_c_gold[(l_j * MY_M) + l_i] - l_c[(l_j * MY_M) + l_i]);
+      if (l_max_error < fabs( l_c_gold[(l_j * MY_LDC) + l_i] - l_c[(l_j * MY_LDC) + l_i]))
+        l_max_error = fabs( l_c_gold[(l_j * MY_LDC) + l_i] - l_c[(l_j * MY_LDC) + l_i]);
     }
   }
 
