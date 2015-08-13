@@ -448,6 +448,18 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
           }
           l_bytes = 5;
           break;
+       case LIBXSMM_X86_INSTR_VPXORD:
+          l_bytes = 6;
+          if ( i_vector_name == 'x' )
+          {
+             l_fourth -= 0x40;
+          } else if ( i_vector_name == 'y' )
+          {
+             l_fourth -= 0x20;
+          }
+          l_fpadj += 0x96;
+          l_fpadj2 += 0x80;
+          break;
        default:
           fprintf(stderr,"WTF! what are you doing?\n");
           break;
