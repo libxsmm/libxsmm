@@ -116,10 +116,10 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
        ( strcmp( i_arch, "wsm" ) == 0 )    ||
        ( strcmp( i_arch, "snb" ) == 0 )    ||
        ( strcmp( i_arch, "hsw" ) == 0 )       ) {
-    if ( i_xgemm_desc->m > 8 ) {
+    if ( i_xgemm_desc->m > 7 ) {
        sprintf(l_new_code, "  #pragma simd vectorlength(8)\n");
        libxsmm_append_code_as_string( io_generated_code, l_new_code );
-    } else if ( i_xgemm_desc->m > 4 ) {
+    } else if ( i_xgemm_desc->m > 3 ) {
        sprintf(l_new_code, "  #pragma simd vectorlength(4)\n");
        libxsmm_append_code_as_string( io_generated_code, l_new_code );
     } else if ( i_xgemm_desc->m > 1 ) {
@@ -148,7 +148,7 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
   } 
 
   /* generate the actuel kernel */
-  sprintf(l_new_code, "  for ( l_m = 0; l_m < %u; l_m++) {\n", i_xgemm_desc->ldc);
+  sprintf(l_new_code, "  for ( l_m = 0; l_m < %u; l_m++) {\n", i_xgemm_desc->m);
   libxsmm_append_code_as_string( io_generated_code, l_new_code );
 
   unsigned int l_n;
