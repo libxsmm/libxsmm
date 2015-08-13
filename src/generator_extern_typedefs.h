@@ -63,6 +63,8 @@ typedef struct libxsmm_generated_code_struct {
                                              dumped into a *.s file
                                          >1: generated code contains a function in binary code which can be 
                                              called, when the buffer is copied to executable memory */ 
+  unsigned int last_error;           /* 0    no error occured
+                                        > 0  the occured error code */ 
 } libxsmm_generated_code;
 
 #endif /* GENERATOR_GLOBAL_DEFINES_H */

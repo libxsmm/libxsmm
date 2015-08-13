@@ -70,6 +70,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   l_generated_code.buffer_size = 0;
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 0;
+  l_generated_code.last_error = 0;
   
   /* CSC structure */
   unsigned int* l_row_idx = NULL;
