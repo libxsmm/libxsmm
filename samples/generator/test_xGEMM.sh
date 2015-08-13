@@ -33,7 +33,7 @@ M="4 12 20 36 56 84"
 
 cd ./../../
 
-make realclean
+#make realclean
 make generator
 
 #exit if compiler fails

@@ -129,8 +129,8 @@ set -x
 if [ "${GENCODE}" == '1' ]; then
   # build libxsmm generator backend
   cd ${LIBXSMM_ROOT}
-  make realclean
-  make generator_backend
+#  make realclean
+  make generator
 
   cd ${SEISSOL_KERNELS_ROOT}/preprocessing
   rm -rf generated_code/*
