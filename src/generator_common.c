@@ -36,11 +36,7 @@
 
 #include "generator_common.h"
 
-char* libxsmm_empty_string() {
-  char* l_string = (char*) malloc( sizeof(char) );
-  l_string[0] = '\0';
-  return l_string;
-}
+static char libxsmm_global_error_message[512];
 
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
                                     const char*             i_code_to_append ) {
@@ -582,6 +578,27 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
   }
 
   libxsmm_append_code_as_string( io_generated_code, l_new_code_line );
+}
+
+void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
+                           const unsigned int      i_error_code ) {
+  io_generated_code->last_error = i_error_code;
+
+  fprintf( stderr, libxsmm_strerror( i_error_code ) );
+}
+
+char* libxsmm_strerror( const unsigned int      i_error_code ) {
+  switch (i_error_code) {
+    case LIBXSMM_ERR_GENERAL:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: a general error occured!\n" );
+      break;
+    /* default, we didn't don't know what happend */
+    default:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );
+      break;
+  }
+
+  return libxsmm_global_error_message;
 }
 
 

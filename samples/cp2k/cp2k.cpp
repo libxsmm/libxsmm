@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif
       }
 
@@ -301,7 +301,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif
       }
 
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n, ldc));
+        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif
       }
 

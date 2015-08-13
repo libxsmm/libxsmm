@@ -136,6 +136,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   l_generated_code.buffer_size = 0;
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 0;
+  l_generated_code.last_error = 0;
   
   /* add signature to code string */
   libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
@@ -170,6 +171,7 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
   l_generated_code.buffer_size = 0;
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 1;
+  l_generated_code.last_error = 0;
 
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {

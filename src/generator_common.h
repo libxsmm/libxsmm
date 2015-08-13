@@ -105,30 +105,50 @@
 #define LIBXSMM_X86_INSTR_VXORPD         20000
 #define LIBXSMM_X86_INSTR_VMULPD         20001
 #define LIBXSMM_X86_INSTR_VADDPD         20002
-#define LIBXSMM_X86_INSTR_VFMADD231PD    20003
-#define LIBXSMM_X86_INSTR_VMULSD         20004
-#define LIBXSMM_X86_INSTR_VADDSD         20005
-#define LIBXSMM_X86_INSTR_VFMADD231SD    20006
-#define LIBXSMM_X86_INSTR_VXORPS         20007
-#define LIBXSMM_X86_INSTR_VMULPS         20008
-#define LIBXSMM_X86_INSTR_VADDPS         20009
-#define LIBXSMM_X86_INSTR_VFMADD231PS    20010
-#define LIBXSMM_X86_INSTR_VMULSS         20011
-#define LIBXSMM_X86_INSTR_VADDSS         20012
-#define LIBXSMM_X86_INSTR_VFMADD231SS    20013
+#define LIBXSMM_X86_INSTR_VSUBPD         20003
+#define LIBXSMM_X86_INSTR_VFMADD231PD    20004
+#define LIBXSMM_X86_INSTR_VFMSUB231PD    20005
+#define LIBXSMM_X86_INSTR_VFNMADD231PD   20006
+#define LIBXSMM_X86_INSTR_VFNMSUB231PD   20007
+#define LIBXSMM_X86_INSTR_VMULSD         20008
+#define LIBXSMM_X86_INSTR_VADDSD         20009
+#define LIBXSMM_X86_INSTR_VSUBSD         20010
+#define LIBXSMM_X86_INSTR_VFMADD231SD    20011
+#define LIBXSMM_X86_INSTR_VFMSUB231SD    20012
+#define LIBXSMM_X86_INSTR_VFNMADD231SD   20013
+#define LIBXSMM_X86_INSTR_VFNMSUB231SD   20014
+#define LIBXSMM_X86_INSTR_VXORPS         20015
+#define LIBXSMM_X86_INSTR_VMULPS         20016
+#define LIBXSMM_X86_INSTR_VADDPS         20017
+#define LIBXSMM_X86_INSTR_VSUBPS         20018
+#define LIBXSMM_X86_INSTR_VFMADD231PS    20019
+#define LIBXSMM_X86_INSTR_VFMSUB231PS    20020
+#define LIBXSMM_X86_INSTR_VFNMADD231PS   20021
+#define LIBXSMM_X86_INSTR_VFNMSUB231PS   20022
+#define LIBXSMM_X86_INSTR_VMULSS         20023
+#define LIBXSMM_X86_INSTR_VADDSS         20024
+#define LIBXSMM_X86_INSTR_VSUBSS         20025
+#define LIBXSMM_X86_INSTR_VFMADD231SS    20026
+#define LIBXSMM_X86_INSTR_VFMSUB231SS    20027
+#define LIBXSMM_X86_INSTR_VFNMADD231SS   20028
+#define LIBXSMM_X86_INSTR_VFNMSUB231SS   20029
 /* SSE */
-#define LIBXSMM_X86_INSTR_XORPD          20014
-#define LIBXSMM_X86_INSTR_MULPD          20015
-#define LIBXSMM_X86_INSTR_ADDPD          20016
-#define LIBXSMM_X86_INSTR_MULSD          20017
-#define LIBXSMM_X86_INSTR_ADDSD          20018
-#define LIBXSMM_X86_INSTR_XORPS          20019
-#define LIBXSMM_X86_INSTR_MULPS          20020
-#define LIBXSMM_X86_INSTR_ADDPS          20021
-#define LIBXSMM_X86_INSTR_MULSS          20022
-#define LIBXSMM_X86_INSTR_ADDSS          20023
+#define LIBXSMM_X86_INSTR_XORPD          20030
+#define LIBXSMM_X86_INSTR_MULPD          20031
+#define LIBXSMM_X86_INSTR_ADDPD          20032
+#define LIBXSMM_X86_INSTR_SUBPD          20033
+#define LIBXSMM_X86_INSTR_MULSD          20034
+#define LIBXSMM_X86_INSTR_ADDSD          20035
+#define LIBXSMM_X86_INSTR_SUBSD          20036
+#define LIBXSMM_X86_INSTR_XORPS          20037
+#define LIBXSMM_X86_INSTR_MULPS          20038
+#define LIBXSMM_X86_INSTR_ADDPS          20039
+#define LIBXSMM_X86_INSTR_SUBPS          20040
+#define LIBXSMM_X86_INSTR_MULSS          20041
+#define LIBXSMM_X86_INSTR_ADDSS          20042
+#define LIBXSMM_X86_INSTR_SUBSS          20043
 /* AVX512, IMCI Integer XOR as there is no FP */
-#define LIBXSMM_X86_INSTR_VPXORD         20024
+#define LIBXSMM_X86_INSTR_VPXORD         20044
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000
@@ -143,6 +163,10 @@
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
 #define LIBXSMM_X86_INSTR_KMOVW          40001
+
+/* define error codes */
+#define LIBXSMM_ERR_GENERAL              90000
+
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
@@ -199,8 +223,6 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
 
 /* some string manipulation helper needed to 
    generated code */
-char* libxsmm_empty_string();
-
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
                                     const char*             i_code_to_append );
 
@@ -209,5 +231,10 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_xgemm_descriptor* i_xgemm_desc );
+
+void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
+                           const unsigned int      i_error_code );
+
+char* libxsmm_strerror( const unsigned int      i_error_code );
 
 #endif /* GENERATOR_COMMON_H */
