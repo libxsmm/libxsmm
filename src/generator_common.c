@@ -584,4 +584,23 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
   libxsmm_append_code_as_string( io_generated_code, l_new_code_line );
 }
 
+void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
+                           const unsigned int      i_error_code ) {
+  char l_error_string[512];
+
+  io_generated_code->last_error = i_error_code;
+ 
+  switch (i_error_code) {
+    case LIBXSMM_ERR_GENERAL:
+      sprintf( l_error_string, " LIBXSMM ERROR: a general error occured!\n" );
+      break;
+    /* default, we didn't don't know what happend */
+    default:
+      sprintf( l_error_string, " LIBXSMM ERROR: an unknown error occured!\n" );
+      break;
+  }
+
+  fprintf( stderr, l_error_string );
+}
+
 

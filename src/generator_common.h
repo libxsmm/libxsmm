@@ -144,6 +144,10 @@
 #define LIBXSMM_X86_INSTR_KMOV           40000
 #define LIBXSMM_X86_INSTR_KMOVW          40001
 
+/* define error codes */
+#define LIBXSMM_ERR_GENERAL              90000
+
+
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int instruction_set;
@@ -209,5 +213,8 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_xgemm_descriptor* i_xgemm_desc );
+
+void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
+                           const unsigned int      i_error_code );
 
 #endif /* GENERATOR_COMMON_H */
