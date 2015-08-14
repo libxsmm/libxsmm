@@ -144,33 +144,59 @@ bin\generator
 ```
 
 The generator application requires following inputs:
+
 1. dense/dense_asm/sparse (dense create C file, dense_asm creates ASM)
+
 2. Filename to append
+
 3. Routinename to create in 2.
+
 4. M
+
 5. N
+
 6. K
+
 7. LDA (0 when 1. is “sparse” indicates A is sparse)
+
 8. LDB (0 when 1. is “sparse” indicates B is sparse)
+
 9. LDC
+
 10. alpha (currently only 1)
+
 11. beta (0 or 1)
+
 12. Alignment override for A (1 auto, 0 no alignment)
+
 13. Alignment override for C ( 1 auto, 0 no alignment)
+
 14. Prefetching mode (just dense & dense_asm, see next list)
+
 15. SP/DP single or double precision
-16. CSC file (just required when 1. is “sparse”)
+
+16. CSC file (just required when 1. is “sparse”). Matrix market format.
 
 The prefetch specifier can be:
+
 1. "nopf": no prefetching at all, just 3 inputs (*A, *B, *C)
+
 2. "pfsigonly": just prefetching signature, 6 inputs (*A, *B, *C, *A’, *B’, *C’)
+
 3. "BL2viaC": uses accesses to *C to prefetch *B’
+
 4. "AL2": uses accesses to *A to prefetch *A’
+
 5. "curAL2": prefetches current *A ahead in the kernel
+
 6. "AL2_BL2viaC": combines AL2 and BL2viaC
+
 7. "curAL2_BL2viaC": combines curAL2 and BL2viaC
+
 8. "AL2jpst": aggressive *A’ prefetch of first rows without any structure
+
 9. "AL2jpst_BL2viaC": combines AL2jpst and BL2viaC
+
 
 Since this is a complicated, here come some examples:
 
