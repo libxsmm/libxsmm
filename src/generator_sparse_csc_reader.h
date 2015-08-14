@@ -32,13 +32,14 @@
 #ifndef GENERATOR_SPARSE_CSC_READER_H
 #define GENERATOR_SPARSE_CSC_READER_H
 
-void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
-                               unsigned int** o_row_idx,
-                               unsigned int** o_column_idx,
-                               double**       o_values,
-                               unsigned int*  o_row_count,
-                               unsigned int*  o_column_count,
-                               unsigned int*  o_element_count);
+void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
+                                const char*             i_csc_file_in,
+                                unsigned int**          o_row_idx,
+                                unsigned int**          o_column_idx,
+                                double**                o_values,
+                                unsigned int*           o_row_count,
+                                unsigned int*           o_column_count,
+                                unsigned int*           o_element_count );
 
 #endif /* GENERATOR_SPARSE_CSC_READER_H */
 

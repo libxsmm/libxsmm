@@ -47,8 +47,8 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* check if end up here accidentally */
   if ( io_generated_code->code_type > 1 ) {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string was called although jiting code was requested!" );
-    exit(-3);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_APPEND_STR );
+    return;
   }
 
   /* some safety checks */
@@ -67,8 +67,8 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* allocate new string */
   l_new_string = (char*) malloc( (l_length_1+l_length_2+1)*sizeof(char) );
   if (l_new_string == NULL) {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_append_code_as_string failed to allocate new code string buffer!" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ALLOC );
+    return;
   }
 
   /* copy old content */
@@ -583,8 +583,9 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code ) {
   io_generated_code->last_error = i_error_code;
-
+#ifndef NDEBUG
   fprintf( stderr, libxsmm_strerror( i_error_code ) );
+#endif
 }
 
 char* libxsmm_strerror( const unsigned int      i_error_code ) {
@@ -592,6 +593,78 @@ char* libxsmm_strerror( const unsigned int      i_error_code ) {
     case LIBXSMM_ERR_GENERAL:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: a general error occured!\n" );
       break;
+    case LIBXSMM_ERR_ARCH_PREC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: unknown architecture and precision!\n" );
+      break;
+    case LIBXSMM_ERR_ARCH:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: unknown architecture!\n" );
+      break;
+    case LIBXSMM_ERR_LDA:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: lda need to be bigger than m!\n" );
+      break;
+    case LIBXSMM_ERR_LDB:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: ldb need to be bigger than k!\n" );
+      break;
+    case LIBXSMM_ERR_LDC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: ldc need to be bigger than m!\n" );
+      break;
+    case LIBXSMM_ERR_SPARSE_GEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
+      break;
+    case LIBXSMM_ERR_CSC_INPUT:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
+      break;   
+    case LIBXSMM_ERR_CSC_READ_LEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
+      break;   
+    case LIBXSMM_ERR_CSC_READ_DESC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
+      break; 
+    case LIBXSMM_ERR_CSC_READ_ELEMS:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
+      break; 
+    case LIBXSMM_ERR_CSC_LEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
+      break; 
+    case LIBXSMM_ERR_N_BLOCK:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: invalid N blocking in microkernel!\n" );
+      break; 
+    case LIBXSMM_ERR_M_BLOCK:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
+      break; 
+    case LIBXSMM_ERR_NO_IMCI:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: IMCI architecture requested but called for a different on!\n" );
+      break; 
+    case LIBXSMM_ERR_REG_BLOCK:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
+      break; 
+    case LIBXSMM_ERR_VEC_MOVE_IMCI:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: invalid vec move instruction for IMCI instruction replacement!\n" );
+      break; 
+    case LIBXSMM_ERR_APPEND_STR:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: append code as string was called for generation mode which does not support this!\n" );
+      break; 
+    case LIBXSMM_ERR_ALLOC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: memory allocation failed!\n" );
+      break; 
+    case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: fused memory broadcast is not supported on other platforms than AVX512/IMCI!\n" );
+      break; 
+    case LIBXSMM_ERR_CALLEE_SAVE_A:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      break;      
+    case LIBXSMM_ERR_CALLEE_SAVE_B:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      break;      
+    case LIBXSMM_ERR_CALLEE_SAVE_C:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      break;      
+    case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      break;      
+    case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      break;      
     /* default, we didn't don't know what happend */
     default:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );

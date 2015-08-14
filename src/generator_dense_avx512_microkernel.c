@@ -46,8 +46,8 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                                  const int                           i_offset ) {
 #ifndef NDEBUG
   if ( i_n_blocking > 30 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel: i_n_blocking exceeds 30\n");
-    exit(-1); 
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
   if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");

@@ -68,8 +68,8 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   } else if ( (strcmp(i_arch, "hsw") == 0) ) {
     l_generator_microkernel = libxsmm_generator_dense_avx2_microkernel;
   } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_sse3_avx_avx2_kernel, cannot select microkernel\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   /* define the micro kernel code gen properties */
@@ -213,10 +213,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsm
     l_m_blocking = 32;
   } else if ( (strcmp( i_arch, "hsw" ) == 0) && (i_xgemm_desc->single_precision == 0) ) {
     l_m_blocking = 16;
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_avx2_get_inital_m_blocking unknown architecture!\n");
-    exit(-1);
-  }
+  } else { }
 
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
@@ -311,10 +308,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_avx2_update_m_blocking unknown architecture!\n");
-    exit(-1);
-  }
+  } else { }
 
   return l_m_blocking;
 }

@@ -46,8 +46,8 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
                                                const int                           i_offset ) {
 #ifndef NDEBUG
   if ( i_n_blocking > 30 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel: i_n_blocking exceeds 30\n");
-    exit(-1); 
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
   if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
@@ -268,8 +268,8 @@ void libxsmm_instruction_vec_move_imci( libxsmm_generated_code* io_generated_cod
     libxsmm_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2, 
                                   i_gp_reg_number, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_instruction_vec_move_imci: invalid move instruction!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_VEC_MOVE_IMCI );
+    return;
   }
 }
 
@@ -284,14 +284,17 @@ void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
   if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, non imci architecture!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI );
+    return;
   }
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, register blocking is invalid!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+    return;
   }
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
 
   /* deriving register blocking from kernel config */ 
@@ -346,20 +349,22 @@ void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             i
                                            const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                            const unsigned int                  i_m_blocking,
                                            const unsigned int                  i_n_blocking ) {
-  /* @TODO fix this test */ 
 #ifndef NDEBUG
   /* Do some test if it's possible to generated the requested code. 
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
   if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, non imci architecture!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI );
+    return;
   }
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_load_C_imci, register blocking is invalid!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+    return;
   }
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
 
   /* deriving register blocking from kernel config */ 

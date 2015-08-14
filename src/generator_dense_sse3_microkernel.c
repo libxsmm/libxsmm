@@ -37,19 +37,21 @@
 #include "generator_dense_sse3_microkernel.h"
 
 void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
-                                              const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                              const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                              const unsigned int                  i_m_blocking,
-                                              const unsigned int                  i_n_blocking,
-                                              const int                           i_offset ) {
-  /* @TODO fix this test */
+                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
+                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                               const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                               const unsigned int                  i_m_blocking,
+                                               const unsigned int                  i_n_blocking,
+                                               const int                           i_offset ) {
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_sse3_microkernel, i_n_blocking smaller 1 or larger 3!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
   /* deriving register blocking from kernel config */ 
   unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
