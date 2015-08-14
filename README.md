@@ -135,6 +135,53 @@ make SPARSITY=2
 
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. Furthermore, the size of the direct lookup table is limited to 512 KB (currently hardcoded). The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
+### Directly invoking the generator backend
+In some special, extremely performance-critical situations it might be useful to bypass LIBXSMM's frontend entirely and to directly call into the generated code. This is possible by either invoking the code generator after a regular build process (as described above) or by just building the backend and invoking the generator:
+
+```
+make generator
+bin\generator
+```
+
+The generator application requires following inputs:
+1. dense/dense_asm/sparse (dense create C file, dense_asm creates ASM)
+2. Filename to append
+3. Routinename to create in 2.
+4. M
+5. N
+6. K
+7. LDA (0 when 1. is “sparse” indicates A is sparse)
+8. LDB (0 when 1. is “sparse” indicates B is sparse)
+9. LDC
+10. alpha (currently only 1)
+11. beta (0 or 1)
+12. Alignment override for A (1 auto, 0 no alignment)
+13. Alignment override for C ( 1 auto, 0 no alignment)
+14. Prefetching mode (just dense & dense_asm, see next list)
+15. SP/DP single or double precision
+16. CSC file (just required when 1. is “sparse”)
+
+The prefetch specifier can be:
+1. "nopf": no prefetching at all, just 3 inputs (*A, *B, *C)
+2. "pfsigonly": just prefetching signature, 6 inputs (*A, *B, *C, *A’, *B’, *C’)
+3. "BL2viaC": uses accesses to *C to prefetch *B’
+4. "AL2": uses accesses to *A to prefetch *A’
+5. "curAL2": prefetches current *A ahead in the kernel
+6. "AL2_BL2viaC": combines AL2 and BL2viaC
+7. "curAL2_BL2viaC": combines curAL2 and BL2viaC
+8. "AL2jpst": aggressive *A’ prefetch of first rows without any structure
+9. "AL2jpst_BL2viaC": combines AL2jpst and BL2viaC
+
+Since this is a complicated, here come some examples:
+
+```
+bin/generator dense foo.c foo 16 16 16 32 32 32 1 1 1 1 hsw nopf DP
+bin/generator dense_asm foo.c foo 16 16 16 32 32 32 1 1 1 1 knl AL2_BL2viaC DP
+bin/generator sparse foo.c foo 16 16 16 32 0 32 1 1 1 1 hsw nopf DP bar.csc
+```
+
+Please note, in samples/generator and samples/seissol examples are shown that directly use LIBXSMM's generator backend.
+
 ### Results
 The library does not claim to be "optimal" or "best-performing", and the presented results are modeling certain applications which are not representative "in general". Instead, information on how to reproduce the results are given for each of the reported cases.
 
@@ -166,10 +213,8 @@ Although the library is under development, the published interface is rather sta
 ## Applications and References
 **\[1] http://cp2k.org/**: Open Source Molecular Dynamics which (optionally) uses LIBXSMM. The application is generating batches of small matrix-matrix multiplications ("matrix stack") out of a problem-specific distributed block-sparse matrix (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
 
-**\[2] http://www.seissol.org/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/tree/lts_compressed).
+**\[2] https://github.com/SeisSol/SeisSol/**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/).
 
-**\[3] https://github.com/TUM-I5/GemmCodeGenerator**: Code generator for matrix-matrix multiplications used as an infrastructure to develop LIBXSMM's assembly code generator.
+**\[3] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
 
-**\[4] http://software.intel.com/xeonphicatalog**: Intel Xeon Phi Applications and Solutions Catalog.
-
-**\[5] [http://goo.gl/qsnOOf](https://software.intel.com/en-us/articles/intel-and-third-party-tools-and-libraries-available-with-support-for-intelr-xeon-phitm)**: Intel 3rd Party Tools and Libraries.
+**\[4] [http://goo.gl/qsnOOf](https://software.intel.com/en-us/articles/intel-and-third-party-tools-and-libraries-available-with-support-for-intelr-xeon-phitm)**: Intel 3rd Party Tools and Libraries.
