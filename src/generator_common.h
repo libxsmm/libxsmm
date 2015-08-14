@@ -166,7 +166,17 @@
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL              90000
-
+#define LIBXSMM_ERR_ARCH_PREC            90001
+#define LIBXSMM_ERR_ARCH                 90002
+#define LIBXSMM_ERR_LDA                  90003
+#define LIBXSMM_ERR_LDB                  90004
+#define LIBXSMM_ERR_LDC                  90005
+#define LIBXSMM_ERR_SPARSE_GEN           90006
+#define LIBXSMM_ERR_CSC_INPUT            90007
+#define LIBXSMM_ERR_CSC_READ_LEN         90008
+#define LIBXSMM_ERR_CSC_READ_DESC        90009
+#define LIBXSMM_ERR_CSC_READ_ELEMS       90010
+#define LIBXSMM_ERR_CSC_LEN              90011
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

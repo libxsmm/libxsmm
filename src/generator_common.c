@@ -583,8 +583,9 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code ) {
   io_generated_code->last_error = i_error_code;
-
+#ifndef NDEBUG
   fprintf( stderr, libxsmm_strerror( i_error_code ) );
+#endif
 }
 
 char* libxsmm_strerror( const unsigned int      i_error_code ) {
@@ -592,6 +593,39 @@ char* libxsmm_strerror( const unsigned int      i_error_code ) {
     case LIBXSMM_ERR_GENERAL:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: a general error occured!\n" );
       break;
+    case LIBXSMM_ERR_ARCH_PREC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: unknown architecture and precision!\n" );
+      break;
+    case LIBXSMM_ERR_ARCH:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: unknown architecture!\n" );
+      break;
+    case LIBXSMM_ERR_LDA:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: lda need to be bigger than m!\n" );
+      break;
+    case LIBXSMM_ERR_LDB:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: ldb need to be bigger than k!\n" );
+      break;
+    case LIBXSMM_ERR_LDC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: ldc need to be bigger than m!\n" );
+      break;
+    case LIBXSMM_ERR_SPARSE_GEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
+      break;
+    case LIBXSMM_ERR_CSC_INPUT:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
+      break;   
+    case LIBXSMM_ERR_CSC_READ_LEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
+      break;   
+    case LIBXSMM_ERR_CSC_READ_DESC:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
+      break; 
+    case LIBXSMM_ERR_CSC_READ_ELEMS:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
+      break; 
+    case LIBXSMM_ERR_CSC_LEN:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
+      break; 
     /* default, we didn't don't know what happend */
     default:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );

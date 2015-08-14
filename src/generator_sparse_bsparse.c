@@ -143,8 +143,8 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
       libxsmm_append_code_as_string( io_generated_code, l_new_code );
     }
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse_bsparse: unsupported architecture!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   } 
 
   /* generate the actuel kernel */

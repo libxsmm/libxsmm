@@ -37,9 +37,6 @@
 #include "generator_common.h"
 #include "generator_dense_instructions.h"
 
-/* TODO change this */
-int libxsmm_jit_code = 0;
-
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
                                    const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 

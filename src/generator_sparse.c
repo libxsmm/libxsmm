@@ -48,14 +48,34 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
                                       const double*                   i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
+    /* check LDB */
+    if ( i_xgemm_desc->ldb < i_xgemm_desc->k ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }  
+    /* check LDC */
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      return;
+    }  
     libxsmm_generator_sparse_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
+    /* check LDA */
+    if ( i_xgemm_desc->lda < i_xgemm_desc->m ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }  
+    /* check LDC */
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      return;
+    }  
     libxsmm_generator_sparse_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: couldn't determine which variant is needed!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPARSE_GEN );
+    return;
   }
 }
 
@@ -84,9 +104,9 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* read CSC file and consturct CSC datastructure */
-  libxsmm_sparse_csc_reader( i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
+  libxsmm_sparse_csc_reader( &l_generated_code, i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
-#if 1
+#ifndef NDEBUG
   printf("CSC matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
@@ -131,6 +151,13 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   }
   if ( l_values != NULL ) {
     free( l_values );
+  }
+
+  /* check for errors during code generation */
+  if ( l_generated_code.last_error != 0 ) {
+    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n");
+    fprintf(stderr, libxsmm_strerror(l_generated_code.last_error) );
+    exit(-1);
   }
 
   /* append code to source file */

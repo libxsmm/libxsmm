@@ -73,15 +73,17 @@
 #include <string.h>
 #include <malloc.h>
 
+#include "generator_common.h"
 #include "generator_sparse_csc_reader.h"
 
-void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
-                               unsigned int** o_row_idx,
-                               unsigned int** o_column_idx,
-                               double**       o_values,
-                               unsigned int*  o_row_count,
-                               unsigned int*  o_column_count,
-                               unsigned int*  o_element_count) {
+void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
+                                const char*             i_csc_file_in,
+                                unsigned int**          o_row_idx,
+                                unsigned int**          o_column_idx,
+                                double**                o_values,
+                                unsigned int*           o_row_count,
+                                unsigned int*           o_column_count,
+                                unsigned int*           o_element_count ) {
   FILE *l_csc_file_handle;
   const unsigned int l_line_length = 512;
   char l_line[l_line_length+1];
@@ -91,14 +93,14 @@ void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
 
   l_csc_file_handle = fopen( i_csc_file_in, "r" );
   if ( l_csc_file_handle == NULL ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_sparse_csc_reader: cannot open input-file %s\n", i_csc_file_in);
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_INPUT );
+    return;
   }
 
   while (fgets(l_line, l_line_length, l_csc_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_sparse_csc_reader: read more than %i in a line from input-file %s\n", l_line_length, i_csc_file_in);
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
+      return;
     }
     /* check if we are still reading comments header */ 
     if ( l_line[0] == '%' ) {
@@ -128,8 +130,8 @@ void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
           l_i = 0; 
           l_header_read = 1;
         } else {
-          fprintf(stderr, "LIBXSMM ERROR, libxsmm_sparse_csc_reader: could not read the CSC descriptor\n");
-          exit(-1);
+          libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_DESC );
+          return;
         }
       /* now we read the actual content */
       } else {
@@ -137,8 +139,8 @@ void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
         double l_value;
         /* read a line of content */
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
-          fprintf(stderr, "LIBXSMM ERROR, libxsmm_sparse_csc_reader: could not read CSC line!\n");
-          exit(-1);
+          libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
+          return;
         }
         /* adjust numbers to zero termination */
         l_row--;
@@ -159,8 +161,8 @@ void libxsmm_sparse_csc_reader(const char* i_csc_file_in,
 
   /* check if we read a file which was consitent */
   if ( l_i != (*o_element_count) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_sparse_csc_reader: number of elements read differs from number of elements specified!\n");
-    exit(-1);    
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+    return;
   }
 
   /* let's handle empty colums */

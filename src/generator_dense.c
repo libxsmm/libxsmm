@@ -81,9 +81,27 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_kernel: received invalid arch and precision\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    return;
   }
+
+  /* check LDA */
+  if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+    return;
+  }  
+
+  /* check LDB */
+  if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+    return;
+  }  
+
+  /* check LDC */
+  if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+    return;
+  }  
  
   /* derive if alignment is possible */
   if ( (l_xgemm_desc_mod.lda % l_vector_length) == 0 ) {
@@ -95,7 +113,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
     l_xgemm_desc_mod.aligned_c = 1;
   } else {
     l_xgemm_desc_mod.aligned_c = 0;
-  }
+  }  
 
   /* enforce possible external overwrite */
   l_xgemm_desc_mod.aligned_a = l_xgemm_desc_mod.aligned_a && i_xgemm_desc->aligned_a;
@@ -115,8 +133,8 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_dense_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch ); 
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_kernel: received invalid arch\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   /* add instruction set mismatch check to code, footer */
@@ -146,6 +164,13 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );
+
+  /* check for errors during code generation */
+  if ( l_generated_code.last_error != 0 ) {
+    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n");
+    fprintf(stderr, libxsmm_strerror(l_generated_code.last_error) );
+    exit(-1);
+  }
 
   /* append code to source file */
   FILE *l_file_handle = fopen( i_file_out, "a" );
@@ -184,6 +209,13 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
+
+  /* check for errors during code generation */
+  if ( l_generated_code.last_error != 0 ) {
+    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n");
+    fprintf(stderr, libxsmm_strerror(l_generated_code.last_error) );
+    exit(-1);
+  }
 
   /* append code to source file */
   FILE *l_file_handle = fopen( i_file_out, "w" );
