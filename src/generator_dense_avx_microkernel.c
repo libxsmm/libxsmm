@@ -43,13 +43,15 @@ void libxsmm_generator_dense_avx_microkernel( libxsmm_generated_code*           
                                               const unsigned int                  i_m_blocking,
                                               const unsigned int                  i_n_blocking,
                                               const int                           i_offset ) {
-  /* @TODO fix this test */
 #ifndef NDEBUG
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_microkernel, i_n_blocking smaller 1 or larger 3!!!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
   /* deriving register blocking from kernel config */ 
   unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;

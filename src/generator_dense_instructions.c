@@ -185,8 +185,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
         }
       }
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_instruction_vec_compute_membcast: is not supported on other platforms than AVX512/IMCI\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
+      return;
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
@@ -372,24 +372,24 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
     char l_gp_reg_name[4];
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_c cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      return;
     }
     if ( (strcmp(i_arch, "wsm") == 0) ||
          (strcmp(i_arch, "snb") == 0) ||
@@ -506,24 +506,24 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
     }
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_pra_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_c cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_b cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_dense_sse_avx_close_instruction_stream, reg_a cannot by callee save since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      return;
     }
     /* @TODO: I don't know if this is the correct placement in the generation process */
     libxsmm_append_code_as_string( io_generated_code, "                       retq\n" );

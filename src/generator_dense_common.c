@@ -215,10 +215,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     }
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
-    exit(-1);
-  }
+  } else { }
 
   io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
@@ -324,10 +321,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
               (strcmp( i_arch, "skx" ) == 0)    ) {
     fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
     libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
-    exit(-1);
-  }
+  } else {  }
 
   io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
@@ -424,10 +418,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
               (strcmp( i_arch, "skx" ) == 0)    ) {
     fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
     libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, ibxsmm_generator_dense_init_micro_kernel_config_fullvector, unsupported architecture!!!\n");
-    exit(-1);
-  }
+  } else {  }
 
   io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   io_micro_kernel_config->alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
@@ -465,8 +456,8 @@ void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_ge
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
     libxsmm_append_code_as_string( io_generated_code, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n");
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_add_isa_check_header: unsupported architecture in libxsmm_generator_dense_add_isa_check_header\n");
-    exit(-1);   
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 }
 
@@ -487,8 +478,8 @@ void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_ge
     libxsmm_append_code_as_string( io_generated_code, "#endif\n\n");
   } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
   } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_add_isa_check_footer: unsupported architecture in libxsmm_generator_dense_add_isa_check_footer\n");
-    exit(-1);   
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 }
 
@@ -655,17 +646,20 @@ void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_gene
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  || 
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
     }
   } else {}
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
 
   /* deriving register blocking from kernel config */ 
@@ -719,17 +713,20 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  || 
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx_load_MxN, register blocking is invalid!!!\n");
-      exit(-1);
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
     }
   } else {}
-  /* test that l_m_blocking % i_micro_kernel_config->vector_length is 0 */
+  if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    return;
+  }
 #endif
 
   /* deriving register blocking from kernel config */ 

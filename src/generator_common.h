@@ -177,6 +177,19 @@
 #define LIBXSMM_ERR_CSC_READ_DESC        90009
 #define LIBXSMM_ERR_CSC_READ_ELEMS       90010
 #define LIBXSMM_ERR_CSC_LEN              90011
+#define LIBXSMM_ERR_N_BLOCK              90012
+#define LIBXSMM_ERR_M_BLOCK              90013
+#define LIBXSMM_ERR_NO_IMCI              90014
+#define LIBXSMM_ERR_REG_BLOCK            90015
+#define LIBXSMM_ERR_VEC_MOVE_IMCI        90016
+#define LIBXSMM_ERR_APPEND_STR           90017
+#define LIBXSMM_ERR_ALLOC                90018
+#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90019
+#define LIBXSMM_ERR_CALLEE_SAVE_A        90020
+#define LIBXSMM_ERR_CALLEE_SAVE_B        90021
+#define LIBXSMM_ERR_CALLEE_SAVE_C        90022
+#define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90023
+#define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90024
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
