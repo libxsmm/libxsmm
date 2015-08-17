@@ -118,7 +118,7 @@ PROGRAM smm
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL xmm(C_LOC(a(i,:,:)), C_LOC(b(i,:,:)), C_LOC(c))
+        CALL xmm(C_LOC(a(i,LBOUND(a,2),LBOUND(a,3))), C_LOC(b(i,LBOUND(b,2),LBOUND(b,3))), C_LOC(c))
       END DO
       !$OMP MASTER
       !$ duration = duration + omp_get_wtime()
