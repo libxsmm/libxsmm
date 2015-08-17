@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
           xmm(a, b, tmp);
         }
 #if defined(_OPENMP)
-        duration = omp_get_wtime();
+        duration += omp_get_wtime();
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
