@@ -81,7 +81,7 @@ PROGRAM smm
   ALLOCATE(b(s,k,n))
 
   ! Initialize matrices
-  !$OMP PARALLEL DO DEFAULT(NONE) PRIVATE(i) SHARED(a, b)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b)
   DO i = LBOUND(a, 1), UBOUND(a, 1)
     CALL init(42, a(i,:,:), i - 1)
     CALL init(24, b(i,:,:), i - 1)
@@ -90,7 +90,7 @@ PROGRAM smm
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
     !$ duration = -omp_get_wtime()
-    !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, k)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(a, b, m, n, k)
     ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     c(:,:) = 0
     !$OMP DO
@@ -106,7 +106,7 @@ PROGRAM smm
       CALL C_F_PROCPOINTER(f, xmm)
       WRITE(*, "(A)") "Streamed... (specialized)"
       !$ duration = -omp_get_wtime()
-      !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, xmm)
+      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(a, b, m, n, xmm)
       ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       c(:,:) = 0
       !$OMP DO
@@ -123,7 +123,7 @@ PROGRAM smm
         WRITE(*, "(A)") "Streamed... (optimized)"
       ENDIF
       !$ duration = -omp_get_wtime()
-      !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, k)
+      !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(a, b, m, n, k)
       ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       c(:,:) = 0
       !$OMP DO
