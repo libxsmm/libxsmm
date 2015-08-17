@@ -75,8 +75,14 @@ PROGRAM smm
   ELSE
     routine = -1
   END IF
+  IF (5 <= argc) THEN
+    CALL GETARG(5, argv)
+    READ(argv, "(I32)") i
+  ELSE
+    i = 2048 ! 2 GByte
+  END IF
+  s = LSHIFT(INT8(MAX(i, 0)), 20) / ((m * k + k * n) * T)
 
-  s = LSHIFT(2_8, 30) / ((m * k + k * n) * T) ! 2 GByte
   ALLOCATE(a(s,m,k))
   ALLOCATE(b(s,k,n))
   ALLOCATE(c(m,n))
