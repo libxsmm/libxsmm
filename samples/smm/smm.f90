@@ -31,24 +31,24 @@
 
 PROGRAM smm
   USE :: LIBXSMM
-!DIR$ IF DEFINED(_OPENMP)
-  USE omp_lib
-!DIR$ ENDIF
+  !$ USE omp_lib
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
+  INTEGER, PARAMETER :: MAX_NTHREADS = 512
+
   REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
   REAL(T), ALLOCATABLE, SAVE, TARGET :: c(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c
   !$OMP THREADPRIVATE(c)
   PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
   INTEGER :: argc, m, n, k, ld, routine
-!DIR$ IF DEFINED(_OPENMP)
-  REAL(8) :: duration
-!DIR$ ENDIF
   INTEGER(8) :: i, s
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f
+
+  REAL(8) :: duration
+  duration = 0
 
   argc = IARGC()
   IF (1 <= argc) THEN
@@ -80,65 +80,63 @@ PROGRAM smm
   ALLOCATE(a(s,m,k))
   ALLOCATE(b(s,k,n))
 
-  !$OMP PARALLEL !DEFAULT(NONE) SHARED(m, n, k, a, b, s, ld, duration, routine, xmm, f)
   ! Initialize matrices
-  !$OMP DO PRIVATE(i)
+  !$OMP PARALLEL DO DEFAULT(NONE) PRIVATE(i) SHARED(a, b)
   DO i = LBOUND(a, 1), UBOUND(a, 1)
     CALL init(42, a(i,:,:), i - 1)
     CALL init(24, b(i,:,:), i - 1)
   END DO
 
-  ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-  c(:,:) = 0
-
   IF (0.GT.routine) THEN
-    !$OMP MASTER
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-!DIR$ IF DEFINED(_OPENMP)
-    duration = -omp_get_wtime()
-!DIR$ ENDIF
-    !$OMP END MASTER
-    !$OMP DO PRIVATE(i)
+    !$ duration = -omp_get_wtime()
+    !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, k)
+    ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+    c(:,:) = 0
+    !$OMP DO
     DO i = LBOUND(a, 1), UBOUND(a, 1)
       CALL libxsmm_mm(m, n, k, a(i,:,:), b(i,:,:), c)
     END DO
+    ! Deallocate thread-local arrays
+    DEALLOCATE(c)
+    !$OMP END PARALLEL
   ELSE
-    !$OMP MASTER
     f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
-    !$OMP END MASTER
     IF (C_ASSOCIATED(f)) THEN
-      !$OMP MASTER
-      WRITE(*, "(A)") "Streamed... (specialized)"
       CALL C_F_PROCPOINTER(f, xmm)
-!DIR$ IF DEFINED(_OPENMP)
-      duration = -omp_get_wtime()
-!DIR$ ENDIF
-      !$OMP END MASTER
-      !$OMP DO PRIVATE(i)
+      WRITE(*, "(A)") "Streamed... (specialized)"
+      !$ duration = -omp_get_wtime()
+      !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, xmm)
+      ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+      c(:,:) = 0
+      !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
         CALL xmm(C_LOC(a(i,:,:)), C_LOC(b(i,:,:)), C_LOC(c))
       END DO
+      ! Deallocate thread-local arrays
+      DEALLOCATE(c)
+      !$OMP END PARALLEL
     ELSE
-      !$OMP MASTER
       IF (0.EQ.routine) THEN
         WRITE(*, "(A)") "Streamed... (optimized; no specialization found)"
       ELSE
         WRITE(*, "(A)") "Streamed... (optimized)"
       ENDIF
-!DIR$ IF DEFINED(_OPENMP)
-      duration = -omp_get_wtime()
-!DIR$ ENDIF
-      !$OMP END MASTER
-      !$OMP DO PRIVATE(i)
+      !$ duration = -omp_get_wtime()
+      !$OMP PARALLEL DEFAULT(NONE) PRIVATE(i) SHARED(a, b, m, n, k)
+      ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+      c(:,:) = 0
+      !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
         CALL libxsmm_imm(m, n, k, a(i,:,:), b(i,:,:), c)
       END DO
+      ! Deallocate thread-local arrays
+      DEALLOCATE(c)
+      !$OMP END PARALLEL
     ENDIF
   END IF
 
-!DIR$ IF DEFINED(_OPENMP)
-  !$OMP MASTER
-  duration = duration + omp_get_wtime()
+  !$ duration = duration + omp_get_wtime()
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
       (2D0 * s * m * n * k * 1D-9 / duration), " GFLOPS/s"
@@ -146,12 +144,6 @@ PROGRAM smm
       (s * (m * k + k * n + m * n * 2) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-  !$OMP END MASTER
-!DIR$ ENDIF
-
-  ! Deallocate thread-local arrays
-  DEALLOCATE(c)
-  !$OMP END PARALLEL
 
   ! Deallocate global arrays
   DEALLOCATE(a)
