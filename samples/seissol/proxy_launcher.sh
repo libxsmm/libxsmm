@@ -49,6 +49,7 @@ DERS="0"
 # some relative pathes
 LIBXSMM_ROOT=${SEISSOL_PROXY_ROOT}/../../
 SEISSOL_KERNELS_ROOT=${SEISSOL_PROXY_ROOT}/seissol_kernels
+#SEISSOL_KERNELS_ROOT=/nfs_home/aheineck/Projects/SeisSol_workspace/seissol_kernels
 
 # test for seissol kernels and clone from git hub if needed.
 if [ ! -d "${SEISSOL_KERNELS_ROOT}" ]; then
@@ -150,6 +151,9 @@ fi
 # added prefetch flag
 if [ "${PREFETCH}" == '1' ]; then
   ARCH_FLAGS="${ARCH_FLAGS} -DENABLE_MATRIX_PREFETCH"
+fi
+if [ "${PREFETCH}" == '2' ]; then
+  ARCH_FLAGS="${ARCH_FLAGS} -DENABLE_MATRIX_PREFETCH -DENABLE_STREAM_MATRIX_PREFETCH"
 fi
 
 # added use derivations flag
