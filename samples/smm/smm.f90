@@ -206,19 +206,22 @@ PROGRAM smm
   DEALLOCATE(c)
 
 CONTAINS
-  PURE SUBROUTINE init(seed, matrix, n, ld)
+  PURE SUBROUTINE init(seed, matrix, n)
     INTEGER, INTENT(IN) :: seed
     REAL(T), INTENT(OUT) :: matrix(:,:)
     INTEGER(8), INTENT(IN), OPTIONAL :: n
-    INTEGER, INTENT(IN), OPTIONAL :: ld
-    INTEGER :: i0, i1, i, j
-    INTEGER(8) :: shift
-    i0 = LBOUND(matrix, 1)
-    i1 = MIN(MERGE(i0 + ld - 1, UBOUND(matrix, 1), PRESENT(ld)), UBOUND(matrix, 1))
-    shift = seed + MERGE(n, 0_8, PRESENT(n)) - LBOUND(matrix, 1)
+    INTEGER(8) :: minval, addval, maxval
+    INTEGER :: ld, i, j
+    REAL(8) :: value, norm
+    ld = UBOUND(matrix, 1) - LBOUND(matrix, 1) + 1
+    minval = MERGE(n, 0_8, PRESENT(n)) + seed
+    addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
+    maxval = MAX(ABS(minval), addval)
+    norm = MERGE(1D0 / maxval, 1D0, 0.NE.maxval)
     DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-      DO i = i0, i1
-        matrix(i,j) = (j - LBOUND(matrix, 2)) * SIZE(matrix, 1) + i + shift
+      DO i = LBOUND(matrix, 1), LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
+        value = (i - LBOUND(matrix, 1)) * ld + (j - LBOUND(matrix, 2)) + minval
+        matrix(i,j) = norm * (value - 0.5D0 * addval)
       END DO
     END DO
   END SUBROUTINE
