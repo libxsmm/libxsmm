@@ -3,7 +3,7 @@
 HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0 .sh)
 
-MICINFO=$(which micinfo)
+MICINFO=$(which micinfo 2> /dev/null)
 if [[ "" != "${MICINFO}" ]] ; then
   MICCORES=$("${MICINFO}" | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
 fi

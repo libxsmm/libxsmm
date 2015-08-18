@@ -101,12 +101,13 @@ template<int Seed>
 struct LIBXSMM_TARGET(mic) init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
     const int ldx = 0 == ld ? ncols : ld;
-    const double minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
-    const double shift = 0.5 * addval + minval, norm = 0 != addval ? (1.0 / addval) : 1.0;
+    const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
+    const int maxval = std::max(std::abs(minval), addval);
+    const double norm = 0 != maxval ? (1.0 / maxval) : 1.0;
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < ncols; ++j) {
         const double value = static_cast<double>(i * ldx + j + minval);
-        dst[i*ldx+j] = static_cast<T>(norm * (value - shift));
+        dst[i*ldx+j] = static_cast<T>(norm * (value - 0.5 * addval));
       }
     }
   }
@@ -220,8 +221,8 @@ int main(int argc, char* argv[])
         T *expect;
         explicit raii(int size): expect(new T[size]) {}
         ~raii() { delete[] expect; }
-      } buffer(csize);
-      T *const expect = buffer.expect;
+      } expect_buffer(csize);
+      T *const expect = expect_buffer.expect;
 #endif
 
       { // LAPACK/BLAS3 (fallback/reference)

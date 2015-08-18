@@ -62,7 +62,13 @@ void computeLocalBoundaryIntegration() {
                                            m_globalData->fluxMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].nApNm1,
+#ifdef ENABLE_STREAM_MATRIX_PREFETCH
+                                           m_cells->dofs[l_cell],
+                                           m_cells->buffers[l_cell+1],
+                                           m_cells->dofs[l_cell+1] );
+#else
                                            m_cells->dofs[l_cell] );
+#endif
   }
 }
 
@@ -87,7 +93,13 @@ void computeLocalIntegration() {
                                            m_globalData->fluxMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].nApNm1,
+#ifdef ENABLE_STREAM_MATRIX_PREFETCH
+                                           m_cells->dofs[l_cell],
+                                           m_cells->buffers[l_cell+1],
+                                           m_cells->dofs[l_cell+1] );
+#else
                                            m_cells->dofs[l_cell] );
+#endif
   }
 }
 

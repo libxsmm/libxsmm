@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (c) 2015, Intel Corporation
 #
@@ -26,7 +26,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Please adjust 
-SEISSOL_KERNELS_ROOT=/nfs_home/aheineck/Projects/SeisSol_workspace/seissol_kernels
 SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
 #SEISSOL_KERNELS_CONFIG=all_dense   #define this if you want to generate an all-dense backend
 #SEISSOL_KERNELS_CONFIG=all_sparse   #define this if you want to generate an all-sparse backend
@@ -46,10 +45,16 @@ GENCONF="default"
 GENCODE="0"
 PREFETCH="0"
 DERS="0"
+
+# some relative pathes
 LIBXSMM_ROOT=${SEISSOL_PROXY_ROOT}/../../
+SEISSOL_KERNELS_ROOT=${SEISSOL_PROXY_ROOT}/seissol_kernels
+#SEISSOL_KERNELS_ROOT=/nfs_home/aheineck/Projects/SeisSol_workspace/seissol_kernels
 
 # test for seissol kernels and clone from git hub if needed.
-# @TODO
+if [ ! -d "${SEISSOL_KERNELS_ROOT}" ]; then
+  git clone --recursive https://github.com/TUM-I5/seissol_kernels.git
+fi
 
 while getopts a:k:c:n:t:o:p:g:s:d: opts; do
    case ${opts} in
@@ -67,19 +72,19 @@ while getopts a:k:c:n:t:o:p:g:s:d: opts; do
 done
 
 case ${SIMARCH} in
-  wsm_dp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DDWSM -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dwsm.cpp ;;
-  snb_dp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DDSNB -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dsnb.cpp ;;
-  hsw_dp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DDHSW -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dhsw.cpp ;;
-  knc_dp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DDKNC -qopt-threads-per-core=4 -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknc.cpp ;;
-  wsm_sp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DSWSM -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_swsm.cpp ;;
-  snb_sp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DSSNB -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_ssnb.cpp ;;
-  hsw_sp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DSHSW -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_shsw.cpp ;;
-  knc_sp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DSKNC -qopt-threads-per-core=4 -opnemp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknc.cpp ;;
-  knl_dp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -DDKNL -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknl.cpp ;;
-  knl_sp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -SDKNL -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknl.cpp ;;
-  noarch_dp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dnoarch.cpp ;;
-  noarch_sp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -openmp -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_snoarch.cpp ;;
-  *) echo "Unsupported architecture -> Exit Launcher! Supported architectures are: wsm_dp, snb_dp, hsw_dp, knc_dp, wsm_sp, snb_sp, hsw_sp, knc_sp!"; exit ;;
+  wsm_dp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DDWSM -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dwsm.cpp ;;
+  snb_dp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DDSNB -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dsnb.cpp ;;
+  hsw_dp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DDHSW -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dhsw.cpp ;;
+  knc_dp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DDKNC -qopt-threads-per-core=4 -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknc.cpp ;;
+  wsm_sp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DSWSM -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_swsm.cpp ;;
+  snb_sp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DSSNB -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_ssnb.cpp ;;
+  hsw_sp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DSHSW -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_shsw.cpp ;;
+  knc_sp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DSKNC -qopt-threads-per-core=4 -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknc.cpp ;;
+  knl_dp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -DDKNL -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknl.cpp ;;
+  knl_sp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -SDKNL -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknl.cpp ;;
+  noarch_dp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -openmp"; MATMUL_KERNEL_DENSE_FILE=dgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dnoarch.cpp ;;
+  noarch_sp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -openmp"; MATMUL_KERNEL_DENSE_FILE=sgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_snoarch.cpp ;;
+  *) echo "Unsupported architecture -> Exit Launcher! Supported architectures are: wsm_dp, snb_dp, hsw_dp, knc_dp, wsm_sp, snb_sp, hsw_sp, knc_sp, knl_dp, knl_sp, noarch_dp, noarch_sp!"; exit ;;
 esac
 
 case ${KERNEL} in
@@ -146,6 +151,9 @@ fi
 # added prefetch flag
 if [ "${PREFETCH}" == '1' ]; then
   ARCH_FLAGS="${ARCH_FLAGS} -DENABLE_MATRIX_PREFETCH"
+fi
+if [ "${PREFETCH}" == '2' ]; then
+  ARCH_FLAGS="${ARCH_FLAGS} -DENABLE_MATRIX_PREFETCH -DENABLE_STREAM_MATRIX_PREFETCH"
 fi
 
 # added use derivations flag

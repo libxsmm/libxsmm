@@ -31,24 +31,24 @@
 
 PROGRAM smm
   USE :: LIBXSMM
-!DIR$ IF DEFINED(_OPENMP)
-  USE omp_lib
-!DIR$ ENDIF
+  !$ USE omp_lib
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
-  REAL(T), ALLOCATABLE, SAVE, TARGET :: c(:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c
-  !$OMP THREADPRIVATE(c)
+  INTEGER, PARAMETER :: MAX_NTHREADS = 512
+
+  REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:), c(:,:), d(:,:)
+  REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, tmp
+  !$OMP THREADPRIVATE(tmp)
   PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
-  INTEGER :: argc, m, n, k, ld, routine
-!DIR$ IF DEFINED(_OPENMP)
-  REAL(8) :: duration
-!DIR$ ENDIF
+  INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, s
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f
+
+  REAL(8) :: duration
+  duration = 0
 
   argc = IARGC()
   IF (1 <= argc) THEN
@@ -75,70 +75,119 @@ PROGRAM smm
   ELSE
     routine = -1
   END IF
+  IF (5 <= argc) THEN
+    CALL GETARG(5, argv)
+    READ(argv, "(I32)") i
+  ELSE
+    i = 2048 ! 2 GByte
+  END IF
+  s = LSHIFT(INT8(MAX(i, 0)), 20) / ((m * k + k * n) * T)
 
-  s = LSHIFT(2_8, 30) / ((m * k + k * n) * T) ! 2 GByte
   ALLOCATE(a(s,m,k))
   ALLOCATE(b(s,k,n))
+  ALLOCATE(c(m,n))
 
-  !$OMP PARALLEL !DEFAULT(NONE) SHARED(m, n, k, a, b, s, ld, duration, routine, xmm, f)
   ! Initialize matrices
-  !$OMP DO PRIVATE(i)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b)
   DO i = LBOUND(a, 1), UBOUND(a, 1)
     CALL init(42, a(i,:,:), i - 1)
     CALL init(24, b(i,:,:), i - 1)
   END DO
-
-  ALLOCATE(c(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
   c(:,:) = 0
 
-  IF (0.GT.routine) THEN
-    !$OMP MASTER
-    WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-!DIR$ IF DEFINED(_OPENMP)
-    duration = -omp_get_wtime()
-!DIR$ ENDIF
-    !$OMP END MASTER
-    !$OMP DO PRIVATE(i)
+  CALL GETENV("CHECK", argv)
+  READ(argv, "(I32)") check
+  IF (0.NE.check) THEN
+    ALLOCATE(d(m,n))
+    d(:,:) = 0
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, d, m, n, k)
+    ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+    tmp(:,:) = 0
+    !$OMP DO
     DO i = LBOUND(a, 1), UBOUND(a, 1)
-      CALL libxsmm_mm(m, n, k, a(i,:,:), b(i,:,:), c)
+      CALL libxsmm_blasmm(m, n, k, a(i,:,:), b(i,:,:), tmp)
     END DO
-  ELSE
+    !$OMP CRITICAL
+    d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tmp)
+    !$OMP END PARALLEL
+  END IF
+
+  IF (0.GT.routine) THEN
+    WRITE(*, "(A)") "Streamed... (auto-dispatched)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+    ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+    tmp(:,:) = 0
     !$OMP MASTER
-    f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
+    !$ duration = -omp_get_wtime()
     !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 1), UBOUND(a, 1)
+      CALL libxsmm_mm(m, n, k, a(i,:,:), b(i,:,:), tmp)
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tmp)
+    !$OMP END PARALLEL
+  ELSE
+    f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
     IF (C_ASSOCIATED(f)) THEN
-      !$OMP MASTER
-      WRITE(*, "(A)") "Streamed... (specialized)"
       CALL C_F_PROCPOINTER(f, xmm)
-!DIR$ IF DEFINED(_OPENMP)
-      duration = -omp_get_wtime()
-!DIR$ ENDIF
-      !$OMP END MASTER
-      !$OMP DO PRIVATE(i)
-      DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL xmm(C_LOC(a(i,:,:)), C_LOC(b(i,:,:)), C_LOC(c))
-      END DO
-    ELSE
+      WRITE(*, "(A)") "Streamed... (specialized)"
+      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, xmm)
+      ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+      tmp(:,:) = 0
       !$OMP MASTER
+      !$ duration = -omp_get_wtime()
+      !$OMP END MASTER
+      !$OMP DO
+      DO i = LBOUND(a, 1), UBOUND(a, 1)
+        CALL xmm(C_LOC(a(i,LBOUND(a,2),LBOUND(a,3))), C_LOC(b(i,LBOUND(b,2),LBOUND(b,3))), C_LOC(tmp))
+      END DO
+      !$OMP MASTER
+      !$ duration = duration + omp_get_wtime()
+      !$OMP END MASTER
+      !$OMP CRITICAL
+      c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
+      !$OMP END CRITICAL
+      ! Deallocate thread-local arrays
+      DEALLOCATE(tmp)
+      !$OMP END PARALLEL
+    ELSE
       IF (0.EQ.routine) THEN
         WRITE(*, "(A)") "Streamed... (optimized; no specialization found)"
       ELSE
         WRITE(*, "(A)") "Streamed... (optimized)"
       ENDIF
-!DIR$ IF DEFINED(_OPENMP)
-      duration = -omp_get_wtime()
-!DIR$ ENDIF
+      !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+      ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
+      tmp(:,:) = 0
+      !$OMP MASTER
+      !$ duration = -omp_get_wtime()
       !$OMP END MASTER
-      !$OMP DO PRIVATE(i)
+      !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL libxsmm_imm(m, n, k, a(i,:,:), b(i,:,:), c)
+        CALL libxsmm_imm(m, n, k, a(i,:,:), b(i,:,:), tmp)
       END DO
+      !$OMP MASTER
+      !$ duration = duration + omp_get_wtime()
+      !$OMP END MASTER
+      !$OMP CRITICAL
+      c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
+      !$OMP END CRITICAL
+      ! Deallocate thread-local arrays
+      DEALLOCATE(tmp)
+      !$OMP END PARALLEL
     ENDIF
   END IF
 
-!DIR$ IF DEFINED(_OPENMP)
-  !$OMP MASTER
-  duration = duration + omp_get_wtime()
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
       (2D0 * s * m * n * k * 1D-9 / duration), " GFLOPS/s"
@@ -146,31 +195,33 @@ PROGRAM smm
       (s * (m * k + k * n + m * n * 2) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-  !$OMP END MASTER
-!DIR$ ENDIF
-
-  ! Deallocate thread-local arrays
-  DEALLOCATE(c)
-  !$OMP END PARALLEL
+  IF (0.NE.check) THEN
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+    DEALLOCATE(d)
+  END IF
 
   ! Deallocate global arrays
   DEALLOCATE(a)
   DEALLOCATE(b)
+  DEALLOCATE(c)
 
 CONTAINS
-  PURE SUBROUTINE init(seed, matrix, n, ld)
+  PURE SUBROUTINE init(seed, matrix, n)
     INTEGER, INTENT(IN) :: seed
     REAL(T), INTENT(OUT) :: matrix(:,:)
     INTEGER(8), INTENT(IN), OPTIONAL :: n
-    INTEGER, INTENT(IN), OPTIONAL :: ld
-    INTEGER :: i0, i1, i, j
-    INTEGER(8) :: shift
-    i0 = LBOUND(matrix, 1)
-    i1 = MIN(MERGE(i0 + ld - 1, UBOUND(matrix, 1), PRESENT(ld)), UBOUND(matrix, 1))
-    shift = seed + MERGE(n, 0_8, PRESENT(n)) - LBOUND(matrix, 1)
+    INTEGER(8) :: minval, addval, maxval
+    INTEGER :: ld, i, j
+    REAL(8) :: value, norm
+    ld = UBOUND(matrix, 1) - LBOUND(matrix, 1) + 1
+    minval = MERGE(n, 0_8, PRESENT(n)) + seed
+    addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
+    maxval = MAX(ABS(minval), addval)
+    norm = MERGE(1D0 / maxval, 1D0, 0.NE.maxval)
     DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-      DO i = i0, i1
-        matrix(i,j) = (j - LBOUND(matrix, 2)) * SIZE(matrix, 1) + i + shift
+      DO i = LBOUND(matrix, 1), LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
+        value = (i - LBOUND(matrix, 1)) * ld + (j - LBOUND(matrix, 2)) + minval
+        matrix(i,j) = norm * (value - 0.5D0 * addval)
       END DO
     END DO
   END SUBROUTINE
@@ -182,7 +233,7 @@ CONTAINS
     CHARACTER(32) :: fmt
     INTEGER :: i0, i1, i, j
     IF (.NOT.PRESENT(format)) THEN
-      fmt = "(16F8.0)"
+      fmt = "(16F20.0)"
     ELSE
       WRITE(fmt, "('(16',A,')')") format
     ENDIF

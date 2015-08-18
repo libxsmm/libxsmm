@@ -24,7 +24,7 @@ To further adjust CP2K at build time of the application, additional key-value pa
 * **LIBXSMMROOT**: set `LIBXSMMROOT=` (no path) to disable LIBXSMM and thereby the XSMM driver.
 * **MPI**: set `MPI=3` to experiment with more recent MPI features e.g., with remote memory access.
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful for performance profiling.
-* **DBG**: set `DBG=1` to include debug symbols, and to generate unoptimized code.
+* **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
 Please note that the arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "psmp"-configuration by using even more of the above key-value pairs (`OMP`, `ACC`, etc.).
 
@@ -67,4 +67,4 @@ make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
 
 ### Memory Allocation Wrapper
 
-Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use the malloc-proxy of Intel Threading Building Blocks (Intel TBB), use the `TBBMALLOC=1` key-value pair at build time of CP2K. Usually, Intel TBB is just available due to sourcing the Intel development tools (see TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build time of CP2K by pointing the a TCMALLOC installation path (configured with `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).
+Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use the malloc-proxy of Intel Threading Building Blocks (Intel TBB), use the `TBBMALLOC=1` key-value pair at build time of CP2K. Usually, Intel TBB is just available due to sourcing the Intel development tools (see TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build time of CP2K by pointing to the TCMALLOC's installation path (configured with `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).
