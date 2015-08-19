@@ -54,7 +54,7 @@ make ARCH=Linux-x86-64-intel VERSION=popt ACC=1 -j
 mpirun.sh -p8 -x exe/Linux-x86-64-intel/cp2k.popt workload.inp
 ```
 
-Cross-building CP2K for the Intel Xeon Phi coprocessor in order to run in a self-hosted fashion is currently out of scope for this document. However, running through CP2K's ACCeleration layer while executing on a host system is another possibility enabled by the universal implementation. However, the code path omitting the ACCeleration layer (see [Running the Application](#running-the-application)) is showing better performance (although the code which is actually performing the work is the same).
+For more details about offloading CP2K's DBCSR matrix multiplications to an Intel Xeon Phi Coprocessor, please have a look at https://github.com/hfp/libxstream/raw/master/documentation/cp2k.pdf. Further, cross-building CP2K for the Intel Xeon Phi coprocessor in order to run in a self-hosted fashion is currently out of scope for this document. However, running through CP2K's ACCeleration layer while executing on a host system is another possibility enabled by the universal implementation. However, the code path omitting the ACCeleration layer (see [Running the Application](#running-the-application)) is showing better performance (although the code which is actually performing the work is the same).
 
 ```
 make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
