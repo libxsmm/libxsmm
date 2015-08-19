@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
     const int s = (2ULL << 30) / ((asize + bsize) * sizeof(T)); // 2 GByte
 #if defined(_OPENMP)
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/ + csize * 2/*load and store*/) * sizeof(T); // cached
+    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, we skip C as this just in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
