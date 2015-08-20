@@ -38,9 +38,9 @@ mpirun -np 16 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
-For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`. The CP2K/intel branch aims to enable a clear performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
+For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
-* **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K. There are a number of properties reconfigured by default e.g., an increased number of entries per matrix stack.
+* **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K (only enabled when the ACCeleration layer is active; see below). With the ACCeleration layer enabled, a number of properties reconfigured e.g. an increased number of entries per matrix stack.
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. Beside of the listed keywords (ACC, BLAS, MATMUL, and SMM), the CP2K/intel branch is supporting the XSMM keyword (which is also the default).
 
 ## Tuning
