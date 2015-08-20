@@ -5,6 +5,9 @@ ifneq (,$(NOTPARALLEL))
 ifneq (0,$(NOTPARALLEL))
 .NOTPARALLEL:
 endif
+ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
+.NOTPARALLEL:
+endif
 endif
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
