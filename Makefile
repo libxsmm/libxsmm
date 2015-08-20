@@ -1,7 +1,7 @@
 # export all variables to sub-make processes
 #.EXPORT_ALL_VARIABLES: #export
-# Set NOTPARALLEL=1 for older GNU Make
-ifneq (0,$(NOTPARALLEL))
+# Set MAKE_PARALLEL=0 for issues with parallel make (older GNU Make)
+ifeq (0,$(MAKE_PARALLEL))
 .NOTPARALLEL:
 else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
