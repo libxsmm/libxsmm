@@ -1,13 +1,10 @@
 # export all variables to sub-make processes
 #.EXPORT_ALL_VARIABLES: #export
 # Set NOTPARALLEL=1 for older GNU Make
-ifneq (,$(NOTPARALLEL))
 ifneq (0,$(NOTPARALLEL))
 .NOTPARALLEL:
-endif
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
+else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
-endif
 endif
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
