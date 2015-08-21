@@ -548,7 +548,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_base,
                                                const unsigned int      i_gp_reg_idx,
                                                const unsigned int      i_scale,
-                                               const unsigned int      i_displacement,
+                                               const int               i_displacement,
                                                const char              i_vector_name,                                
                                                const unsigned int      i_vec_reg_number_0,
                                                const unsigned int      i_vec_reg_number_1 ) {

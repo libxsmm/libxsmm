@@ -38,9 +38,9 @@ mpirun -np 16 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
-For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`. The CP2K/intel branch aims to enable a clear performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
+For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
-* **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K. There are a number of properties reconfigured by default e.g., an increased number of entries per matrix stack.
+* **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K (only enabled when the ACCeleration layer is active; see below). With the ACCeleration layer enabled, a number of properties reconfigured e.g. an increased number of entries per matrix stack.
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. Beside of the listed keywords (ACC, BLAS, MATMUL, and SMM), the CP2K/intel branch is supporting the XSMM keyword (which is also the default).
 
 ## Tuning
@@ -54,7 +54,7 @@ make ARCH=Linux-x86-64-intel VERSION=popt ACC=1 -j
 mpirun.sh -p8 -x exe/Linux-x86-64-intel/cp2k.popt workload.inp
 ```
 
-Cross-building CP2K for the Intel Xeon Phi coprocessor in order to run in a self-hosted fashion is currently out of scope for this document. However, running through CP2K's ACCeleration layer while executing on a host system is another possibility enabled by the universal implementation. However, the code path omitting the ACCeleration layer (see [Running the Application](#running-the-application)) is showing better performance (although the code which is actually performing the work is the same).
+For more details about offloading CP2K's DBCSR matrix multiplications to an Intel Xeon Phi Coprocessor, please have a look at https://github.com/hfp/libxstream/raw/master/documentation/cp2k.pdf. Further, cross-building CP2K for the Intel Xeon Phi coprocessor in order to run in a self-hosted fashion is currently out of scope for this document. However, running through CP2K's ACCeleration layer while executing on a host system is another possibility enabled by the universal implementation. However, the code path omitting the ACCeleration layer (see [Running the Application](#running-the-application)) is showing better performance (although the code which is actually performing the work is the same).
 
 ```
 make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
@@ -67,4 +67,4 @@ make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
 
 ### Memory Allocation Wrapper
 
-Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use the malloc-proxy of Intel Threading Building Blocks (Intel TBB), use the `TBBMALLOC=1` key-value pair at build time of CP2K. Usually, Intel TBB is just available due to sourcing the Intel development tools (see TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build time of CP2K by pointing to the TCMALLOC's installation path (configured with `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).
+Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use the malloc-proxy of Intel Threading Building Blocks (Intel TBB), use the `TBBMALLOC=1` key-value pair at build time of CP2K. Usually, Intel TBB is just available due to sourcing the Intel development tools (see TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build time of CP2K by pointing to TCMALLOC's installation path (configured with `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).

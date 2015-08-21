@@ -92,8 +92,8 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
+ * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
 void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
                                           const unsigned int      i_instruction_set, 
@@ -116,7 +116,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
  * @param i_displacement displacement to SIB address
  * @param i_vector_name the vector register name prefix (z)
  * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
- * @param i_vec_reg_number_1 the first vector register number (zmm: 0-31)
+ * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
  */
 void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_generated_code, 
                                                const unsigned int      i_instruction_set,
@@ -124,7 +124,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
                                                const unsigned int      i_gp_reg_base,
                                                const unsigned int      i_gp_reg_idx,
                                                const unsigned int      i_scale,
-                                               const unsigned int      i_displacement,
+                                               const int               i_displacement,
                                                const char              i_vector_name,                                
                                                const unsigned int      i_vec_reg_number_0,
                                                const unsigned int      i_vec_reg_number_1 );
@@ -137,8 +137,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number_0 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_1 the first vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_number_2 the first vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
+ * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
 void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code, 
                                           const unsigned int      i_instruction_set,
