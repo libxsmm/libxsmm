@@ -40,19 +40,27 @@
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
                                    const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 
-                                   const unsigned int      i_gp_reg_number,
+                                   const unsigned int      i_gp_reg_base,
+                                   const unsigned int      i_gp_reg_idx,
+                                   const unsigned int      i_scale,
                                    const int               i_displacement,
                                    const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
                                    const unsigned int      i_use_masking,
                                    const unsigned int      i_is_store ) {
+#ifndef NDEBUG
+  if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
+    return;
+  }
+#endif
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
-    char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    char l_gp_reg_base_name[4];
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name );
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name );
 
@@ -60,45 +68,45 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       }
     } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       }
     } else {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_name, i_vector_name, i_vec_reg_number_0 );
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+          sprintf(l_new_code, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
         } else {
-          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_name );
+          sprintf(l_new_code, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
         }
       }
     }
@@ -228,22 +236,30 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
 
 void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                    const unsigned int      i_prefetch_instr, 
-                                   const unsigned int      i_gp_reg_number,
+                                   const unsigned int      i_gp_reg_base,
+                                   const unsigned int      i_gp_reg_idx,
+                                   const unsigned int      i_scale,
                                    const int               i_displacement ) {
+#ifndef NDEBUG
+  if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
+    return;
+  }
+#endif
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
-    char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    char l_gp_reg_base_name[4];
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name );
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name );
 
     if ( io_generated_code->code_type == 0 ) {
-      sprintf(l_new_code, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_name );
+      sprintf(l_new_code, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
     } else {
-      sprintf(l_new_code, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_name );
+      sprintf(l_new_code, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_base_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }

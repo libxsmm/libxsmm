@@ -77,7 +77,9 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
 void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code, 
                                    const unsigned int      i_instruction_set,
                                    const unsigned int      i_vmove_instr, 
-                                   const unsigned int      i_gp_reg_number,
+                                   const unsigned int      i_gp_reg_base,
+                                   const unsigned int      i_gp_reg_idx,
+                                   const unsigned int      i_scale,
                                    const int               i_displacement,
                                    const char              i_vector_name,
                                    const unsigned int      i_vec_reg_number_0,
@@ -161,7 +163,9 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
  */
 void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                    const unsigned int      i_prefetch_instr, 
-                                   const unsigned int      i_gp_reg_number,
+                                   const unsigned int      i_gp_reg_base,
+                                   const unsigned int      i_gp_reg_idx,
+                                   const unsigned int      i_scale,
                                    const int               i_displacement );
 
 /**

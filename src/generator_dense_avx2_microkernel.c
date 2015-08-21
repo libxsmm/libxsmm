@@ -68,6 +68,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                   i_micro_kernel_config->instruction_set,
                                   i_micro_kernel_config->a_vmove_instruction, 
                                   i_gp_reg_mapping->gp_reg_a, 
+                                  LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                   0, 
                                   i_micro_kernel_config->vector_name, 
                                   i_n_blocking, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -86,6 +87,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_b, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       ((i_micro_kernel_config->datatype_size) * i_offset) + (i_xgemm_desc->ldb * l_n * (i_micro_kernel_config->datatype_size)), 
                                       i_micro_kernel_config->vector_name, 
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -94,6 +96,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_b, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       i_xgemm_desc->ldb * l_n *  i_micro_kernel_config->datatype_size, 
                                       i_micro_kernel_config->vector_name, 
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -121,6 +124,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_b, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       ((i_micro_kernel_config->datatype_size) * i_offset) + (i_xgemm_desc->ldb * l_n * (i_micro_kernel_config->datatype_size)), 
                                       i_micro_kernel_config->vector_name, 
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -131,6 +135,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_b, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       i_xgemm_desc->ldb * l_n *  i_micro_kernel_config->datatype_size, 
                                       i_micro_kernel_config->vector_name, 
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -148,6 +153,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_a, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m, 
                                       i_micro_kernel_config->vector_name, 
                                       i_n_blocking, i_micro_kernel_config->use_masking_a_c, 0 );
@@ -177,6 +183,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->instruction_set, 
                                       i_micro_kernel_config->a_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_a, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m, 
                                       i_micro_kernel_config->vector_name, 
                                       i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 0 );

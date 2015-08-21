@@ -679,7 +679,8 @@ void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_gene
         libxsmm_instruction_vec_move( io_generated_code, 
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->c_vmove_instruction, 
-                                      i_gp_reg_mapping->gp_reg_c, 
+                                      i_gp_reg_mapping->gp_reg_c,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size), 
                                       i_micro_kernel_config->vector_name, 
                                       l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 0 );
@@ -746,6 +747,7 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->c_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_c, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size), 
                                     i_micro_kernel_config->vector_name, 
                                     l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1 );
@@ -762,6 +764,7 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
         libxsmm_instruction_prefetch( io_generated_code, 
                                       i_micro_kernel_config->prefetch_instruction,
                                       i_gp_reg_mapping->gp_reg_b_prefetch, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size));
       }
     }
