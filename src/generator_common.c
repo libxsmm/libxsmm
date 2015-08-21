@@ -352,8 +352,17 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JL:
       strcpy(o_instr_name, "jl");
       break;
+    case LIBXSMM_X86_INSTR_PREFETCHT0: 
+      strcpy(o_instr_name, "prefetcht0");
+      break;
     case LIBXSMM_X86_INSTR_PREFETCHT1: 
       strcpy(o_instr_name, "prefetcht1");
+      break;
+    case LIBXSMM_X86_INSTR_PREFETCHT2: 
+      strcpy(o_instr_name, "prefetcht2");
+      break;
+    case LIBXSMM_X86_INSTR_PREFETCHNTA: 
+      strcpy(o_instr_name, "prefetchnta");
       break;
     case LIBXSMM_X86_INSTR_KMOV: 
       strcpy(o_instr_name, "kmov");
@@ -664,7 +673,10 @@ char* libxsmm_strerror( const unsigned int      i_error_code ) {
       break;      
     case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;      
+      break;
+    case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: Index + Scale addressing mode is currently not implemented!\n");
+      break;   
     /* default, we didn't don't know what happend */
     default:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );

@@ -269,8 +269,10 @@ endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN = $(patsubst %,$(SRCDIR)/%,generator_driver.c, generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c, generator_dense_imci_microkernel.c, generator_dense_noarch.c, generator_sparse.c, generator_sparse_csc_reader.c, generator_sparse_bsparse.c, generator_sparse_asparse.c)
-OBJFILES_GEN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN))))
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c, generator_dense_imci_microkernel.c, generator_dense_noarch.c, generator_sparse.c, generator_sparse_csc_reader.c, generator_sparse_bsparse.c, generator_sparse_asparse.c)
+SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
+OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
+OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
@@ -316,16 +318,30 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
 		$(ALIGNED_ST) $(ALIGNED_LD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 
-.PHONY: compile_gen
-compile_gen: $(SRCFILES_GEN)
+.PHONY: compile_generator_lib
+compile_generator_lib: $(SRCFILES_GEN_LIB)
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+.PHONY: build_generator_lib
+build_generator_lib: $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
+$(OUTDIR)/intel64/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB)
+	@mkdir -p $(dir $@)
+ifeq ($(STATIC),0)
+	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
+else
+	$(AR) -rs $@ $^
+endif
+.PHONY: compile_generator
+compile_generator: $(SRCFILES_GEN_BIN)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/generator
-$(BINDIR)/generator: $(OBJFILES_GEN) $(ROOTDIR)/Makefile
+$(BINDIR)/generator: $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(OBJFILES_GEN) -o $@
+	$(CC) $(LDFLAGS) $(CLDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64/ -lxsmmgen -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)

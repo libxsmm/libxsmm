@@ -63,6 +63,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                   i_micro_kernel_config->instruction_set,
                                   i_micro_kernel_config->a_vmove_instruction, 
                                   i_gp_reg_mapping->gp_reg_a, 
+                                  LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                   i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size, 
                                   i_micro_kernel_config->vector_name, 
                                   0, 
@@ -74,6 +75,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size) + 64 );
     }
 
@@ -85,6 +87,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * i_offset * i_micro_kernel_config->datatype_size) );
     }
 
@@ -110,6 +113,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_a, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size, 
                                       i_micro_kernel_config->vector_name, 
                                       0, 
@@ -120,6 +124,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                         i_micro_kernel_config->instruction_set,
                                         i_micro_kernel_config->a_vmove_instruction, 
                                         i_gp_reg_mapping->gp_reg_a, 
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                         i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                         i_micro_kernel_config->vector_name, 
                                         1, 
@@ -131,6 +136,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction, 
                                       i_gp_reg_mapping->gp_reg_a, 
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                       i_micro_kernel_config->vector_name, 
                                       (l_k+1)%2, 
@@ -143,6 +149,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
         libxsmm_instruction_prefetch( io_generated_code,
                                       i_micro_kernel_config->prefetch_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) + 64 );
       }
 
@@ -154,6 +161,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
         libxsmm_instruction_prefetch( io_generated_code,
                                       i_micro_kernel_config->prefetch_instruction,
                                       i_gp_reg_mapping->gp_reg_a_prefetch,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                       (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
         if ( l_k == (i_k_blocking - 1) ) {
           libxsmm_instruction_alu_imm( io_generated_code,
@@ -224,6 +232,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+0) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     0, 
@@ -232,6 +241,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     1, 
@@ -242,6 +252,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     2, 
@@ -250,6 +261,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     3, 
@@ -260,6 +272,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     4, 
@@ -267,7 +280,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
       libxsmm_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
-                                    i_gp_reg_mapping->gp_reg_a, 
+                                    i_gp_reg_mapping->gp_reg_a,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0,  
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     5, 
@@ -278,6 +292,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     6, 
@@ -286,6 +301,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     7, 
@@ -296,6 +312,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     (l_k+4)%8, 
@@ -308,6 +325,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) + 64 );
     }
 
@@ -319,6 +337,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
       if ( l_k == (i_k_blocking - 1) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
@@ -408,6 +427,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+0) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     0, 
@@ -416,6 +436,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     1, 
@@ -426,6 +447,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     2, 
@@ -434,6 +456,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     3, 
@@ -444,6 +467,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     4, 
@@ -452,6 +476,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     5, 
@@ -462,6 +487,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     6, 
@@ -470,6 +496,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     7, 
@@ -480,6 +507,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction, 
                                     i_gp_reg_mapping->gp_reg_a, 
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size, 
                                     i_micro_kernel_config->vector_name, 
                                     (l_k+4)%8, 
@@ -492,6 +520,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) + 64 );
     }
 
@@ -501,6 +530,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
       if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
@@ -515,6 +545,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
       if ( l_k == (i_k_blocking - 1) ) {
         libxsmm_instruction_alu_imm( io_generated_code,
@@ -751,6 +782,7 @@ unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                     (i_xgemm_desc->k - l_max_blocked_k) * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
     }
     /* reset on B is just needed when we had more than iterations left */
