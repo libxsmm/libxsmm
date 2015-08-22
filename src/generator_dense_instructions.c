@@ -88,7 +88,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_iregnum = i_gp_reg_number % 8;
+    int l_iregnum = i_gp_reg_base % 8;
     int l_vregnum = i_vec_reg_number_0 % 8;
     int l_ivectype=0, l_ivectype2=0, l_iregoff=0, l_ivectype3=0;
     int l_vregoffset=0, l_vregoffset2=0;
@@ -229,7 +229,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
           fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
           exit(-1);
     }
-    if ( i_gp_reg_number >= 8 ) 
+    if ( i_gp_reg_base >= 8 ) 
     {
        if ( l_bytes < 5 ) l_bytes = 5;
        else l_iregoff -= 0x20;
