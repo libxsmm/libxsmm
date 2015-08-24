@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -296,6 +296,8 @@ int main(int argc, char* argv[])
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
             libxsmm_mm(m, n, k, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+            pa = paj;
+            pb = pbj;
           }
           add(c, tmp, m, n, ldc); // atomic
         }
@@ -327,6 +329,8 @@ int main(int argc, char* argv[])
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
             xmm(pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+            pa = paj;
+            pb = pbj;
           }
           add(c, tmp, m, n, ldc); // atomic
         }
