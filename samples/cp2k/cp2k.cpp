@@ -259,9 +259,13 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_imm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            const T *const paj = pa + asize, *const pbj = pb + bsize;
+            libxsmm_imm(m, n, k, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+            pa = paj;
+            pb = pbj;
           }
           add(c, tmp, m, n, ldc); // atomic
         }
@@ -287,9 +291,11 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_mm(m, n, k, &a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            const T *const paj = pa + asize, *const pbj = pb + bsize;
+            libxsmm_mm(m, n, k, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
           }
           add(c, tmp, m, n, ldc); // atomic
         }
@@ -316,9 +322,11 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            xmm(&a[0] + (i + j) * asize, &b[0] + (i + j) * bsize, tmp);
+            const T *const paj = pa + asize, *const pbj = pb + bsize;
+            xmm(pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
           }
           add(c, tmp, m, n, ldc); // atomic
         }

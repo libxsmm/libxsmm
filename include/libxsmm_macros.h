@@ -91,10 +91,18 @@
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min(MIN) max(MAX) avg(AVG))
 # define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(unroll(N))
 # define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA(unroll)
+# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
 #else
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_N(N)
 # define LIBXSMM_PRAGMA_UNROLL
+# define LIBXSMM_UNUSED(VARIABLE)
+#endif
+
+#if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
+# define LIBXSMM_UNUSED_ARG LIBXSMM_ATTRIBUTE(unused)
+#else
+# define LIBXSMM_UNUSED_ARG
 #endif
 
 /*Based on Stackoverflow's NBITSx macro.*/
