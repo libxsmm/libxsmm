@@ -1513,6 +1513,35 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
     /* @TODO-GREG call encoding here */
     /* @TODO-GREG: how do we interface here? */
     /* this is start of the xGEMM kernel, the registers are in the variables */
+
+
+    /* this is a very simple System V ABI 64 interfacce */
+    unsigned char* l_code_buffer = (unsigned char *) io_generated_code->generated_code;
+    unsigned int l_code_size = io_generated_code->code_size;
+    unsigned int l_max_size = io_generated_code->buffer_size;
+
+    if (l_max_size < (l_code_size + 9)) {
+      fprintf(stderr, "Jit buffer to small\n!");
+      exit(-1);
+    }
+
+    /* push rbx */
+    l_code_buffer[l_code_size++] = 0x53;
+    /* push r12 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x54;
+    /* push r13 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x55;
+    /* push r14 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x56;
+    /* push r15 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x57;
+
+    /* update code length */
+    io_generated_code->code_size = l_code_size;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];
@@ -1621,6 +1650,36 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
     /* @TODO-GREG call encoding here */
     /* @TODO-GREG: how do we interface here? */
     /* this is start of the xGEMM kernel, the registers are in the variables */
+
+    /* this is a very simple System V ABI 64 interfacce */
+    unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
+    unsigned int l_code_size = io_generated_code->code_size;
+    unsigned int l_max_size = io_generated_code->buffer_size;
+
+    if (l_max_size < (l_code_size + 10)) {
+      fprintf(stderr, "Jit buffer to small\n!" );
+      exit(-1);
+    }
+
+    /* pop r15 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5f;
+    /* pop r14 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5e;
+    /* pop r13 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5d;
+    /* pop r12 */
+    l_code_buffer[l_code_size++] = 0x41;
+    l_code_buffer[l_code_size++] = 0x5c;
+    /* pop rbx */
+    l_code_buffer[l_code_size++] = 0x5b;
+    /* retq */
+    l_code_buffer[l_code_size++] = 0xc3;
+
+    /* update code length */
+    io_generated_code->code_size = l_code_size;
   } else if ( io_generated_code->code_type == 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     char l_new_code[512];

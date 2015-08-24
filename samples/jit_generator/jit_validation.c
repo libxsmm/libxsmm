@@ -32,7 +32,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+/* this is linux specific */
 #include <sys/time.h>
+#include <sys/mman.h>
 
 #include <immintrin.h>
 
@@ -42,6 +44,8 @@
 #include <generator_extern_typedefs.h>
 #include <generator_dense.h>
 #include <generator_sparse.h>
+#include <generator_common.h>
+#include <generator_dense_instructions.h>
 
 #define REPS 10000
 
@@ -150,6 +154,7 @@ void run_gold_double( const double*                   i_a,
   printf("%f GFLOPS for C\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
+
 void run_gold_float( const float*                   i_a,
                      const float*                   i_b,
                      float*                         o_c,
@@ -175,6 +180,73 @@ void run_gold_float( const float*                   i_a,
 
   printf("%fs for C\n", l_runtime);
   printf("%f GFLOPS for C\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+}
+
+void run_gold_double_temp( const double*                   i_a,
+                           const double*                   i_b,
+                           double*                         o_c ) {
+  o_c[0] = i_a[0] + i_b[0]; 
+  o_c[1] = i_a[1] + i_b[1]; 
+  o_c[2] = i_a[2] + i_b[2]; 
+  o_c[3] = i_a[3] + i_b[3];
+  o_c[4] = i_a[4] + i_b[4]; 
+  o_c[5] = i_a[5] + i_b[5]; 
+  o_c[6] = i_a[6] + i_b[6]; 
+  o_c[7] = i_a[7] + i_b[7];
+}
+
+void run_jit_double_temp( const double*                   i_a,
+                          const double*                   i_b,
+                          double*                         o_c,
+                          const char*                     i_arch,
+                          const char*                     i_prefetch ) {
+  /* define function pointer */
+  typedef void (*jitfun)(const double* a, const double* b, double* c);
+
+  /* allocate buffer for code */
+  unsigned char* l_gen_code = (unsigned char*) malloc( 4096 * sizeof(unsigned char) );
+  libxsmm_generated_code l_generated_code;
+  l_generated_code.generated_code = (void*)l_gen_code;
+  l_generated_code.buffer_size = 4096;
+  l_generated_code.code_size = 0;
+  l_generated_code.code_type = 2;
+  l_generated_code.last_error = 0;
+
+  /* define gp register mapping */
+  libxsmm_gp_reg_mapping l_gp_reg_mapping;
+  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+  /* machting calling convention on Linux */
+  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RSI;
+  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
+
+  libxsmm_generator_dense_x86_open_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
+
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 0, 0, 0 );
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 0 );
+  libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 1 );
+
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 0, 0, 0 );
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 1, 0, 0 );
+  libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
+  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 1, 0, 1 );
+
+  libxsmm_generator_dense_x86_close_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
+
+  printf("size of generated code: %i\n", l_generated_code.code_size );
+
+  /* create executable buffer */
+  unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
+  memcpy( l_code, l_gen_code, l_generated_code.code_size );
+  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC );
+  
+  /* set function pointer */
+  jitfun l_test_jit = (jitfun)l_code;
+  l_test_jit(i_a, i_b, o_c);
+
+  free(l_gen_code);
+  _mm_free(l_code);
 }
 
 void max_error_double( const double*                   i_c,
@@ -351,24 +423,29 @@ int main(int argc, char* argv []) {
 
   /* print some output... */
   printf("------------------------------------------------\n");
-  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
+   /*@TODO FIXME printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);*/
+  printf("RUNNING a very simple 8 element vector add!\n");
   if ( l_xgemm_desc.single_precision == 0 ) {
-    printf(", DP\n");
+     /*@TODO FIXME printf(", DP\n");*/
   } else {
-    printf(", SP\n");
+    printf("SP is not supported, switching to DP...\n");
+    l_xgemm_desc.single_precision = 0;
+    /*@TODO FIXME printf(", SP\n");*/
   }
   printf("------------------------------------------------\n");
 
   /* run C */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
+    run_gold_double_temp( l_a_d, l_b_d, l_c_gold_d );
+    /*run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );*/
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
   }  
 
   /* run jit */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    run_gold_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc );
+    run_jit_double_temp( l_a_d, l_b_d, l_c_d, l_arch, l_prefetch );
+    /*run_gold_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc );*/
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc );
   }  
