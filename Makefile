@@ -463,7 +463,7 @@ endif
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
-		-e '/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/d' \
+		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@

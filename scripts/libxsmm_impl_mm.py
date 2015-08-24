@@ -59,7 +59,7 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
         print "  libxsmm_dmm_" + mnkstr + "_knc(" + a + ", " + b + ", c LIBXSMM_PREFETCH_ARGA(p" + a + ") LIBXSMM_PREFETCH_ARGB(p" + b + ") LIBXSMM_PREFETCH_ARGC(pc));"
         print "#else"
-        print "  LIBXSMM_IMM(double, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, pa, pb, pc);"
+        print "  LIBXSMM_IMM(double, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);"
         print "#endif"
         print "}"
         print
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
         print "  libxsmm_smm_" + mnkstr + "_knc(" + a + ", " + b + ", c LIBXSMM_PREFETCH_ARGA(p" + a + ") LIBXSMM_PREFETCH_ARGB(p" + b + ") LIBXSMM_PREFETCH_ARGC(pc));"
         print "#else"
-        print "  LIBXSMM_IMM(float, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, pa, pb, pc);"
+        print "  LIBXSMM_IMM(float, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);"
         print "#endif"
         print "}"
     else:

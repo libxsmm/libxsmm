@@ -96,7 +96,14 @@
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_N(N)
 # define LIBXSMM_PRAGMA_UNROLL
-# define LIBXSMM_UNUSED(VARIABLE)
+#endif
+
+#if !defined(LIBXSMM_UNUSED)
+# if defined(_MSC_VER)
+#   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
+# else
+#   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(LIBXSMM_STRINGIFY(unused(VARIABLE)))
+# endif
 #endif
 
 #if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))

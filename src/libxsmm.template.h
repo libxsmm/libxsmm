@@ -132,6 +132,9 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
 # define LIBXSMM_PREFETCH_ARGA(ARG)
 # define LIBXSMM_PREFETCH_ARGB(ARG)
 # define LIBXSMM_PREFETCH_ARGC(ARG)
+# define LIBXSMM_PREFETCH_ARG_pa 0
+# define LIBXSMM_PREFETCH_ARG_pb 0
+# define LIBXSMM_PREFETCH_ARG_pc 0
 # define LIBXSMM_USE(ARG)
 #endif
 
@@ -155,6 +158,7 @@ LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void LIBXSMM_FSYMBOL(sgemm)(
     const UINT libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)); \
     UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
     REAL *const libxsmm_c_ = (C); \
+    LIBXSMM_UNUSED(PA); LIBXSMM_UNUSED(PB); LIBXSMM_UNUSED(PC); /*TODO: prefetching*/ \
     LIBXSMM_ASSUME_ALIGNED_STORES(libxsmm_c_); \
     /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_a_);*/ \
     /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_b_);*/ \
@@ -215,7 +219,7 @@ LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_smm(int m, int n, int k, const f
   LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc))
 {
   LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_MM(float, m, n, k, a, b, c, pa, pb, pc);
+  LIBXSMM_MM(float, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
 }
 
 /** Dispatched matrix-matrix multiplication; double-precision. */
@@ -223,7 +227,7 @@ LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_dmm(int m, int n, int k, const d
   LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc))
 {
   LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_MM(double, m, n, k, a, b, c, pa, pb, pc);
+  LIBXSMM_MM(double, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code; single-precision. */
@@ -231,7 +235,7 @@ LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_simm(int m, int n, int k, const 
   LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc))
 {
   LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_IMM(float, int, m, n, k, a, b, c, pa, pb, pc);
+  LIBXSMM_IMM(float, int, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code; double-precision. */
@@ -239,7 +243,7 @@ LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_dimm(int m, int n, int k, const 
   LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc))
 {
   LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_IMM(double, int, m, n, k, a, b, c, pa, pb, pc);
+  LIBXSMM_IMM(double, int, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
 }
 
 /** Non-dispatched matrix-matrix multiplication using BLAS; single-precision. */
