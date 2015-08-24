@@ -1250,6 +1250,136 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+      int i = io_generated_code->code_size;
+    // int i = *loc;
+       unsigned int l_maxsize = io_generated_code->buffer_size;
+    // unsigned int l_maxsize = 1024;
+    int l_last = 0, l_first=0;
+    int l_instype = 0;
+    int l_place=0;
+    int l_bytes=4;
+    int l_forced_offset=0;
+    int l_sizereg=64;
+
+    if ( l_maxsize - i < 20 )
+    {
+       fprintf(stderr,"Most instructions need at most 20 bytes\n");
+       exit(-1);
+    }
+    if ( (i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) && 
+         (i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) && 
+         (i_gp_reg_base < 0) && (i_gp_reg_base > 15) &&
+         (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) ) 
+    {
+       fprintf(stderr,"i_gp_reg_base error in libxsmm_instruction_prefetch\n");
+       exit(-1);
+    }
+    if ( (i_gp_reg_idx  < LIBXSMM_X86_GP_REG_RAX) && 
+         (i_gp_reg_idx  > LIBXSMM_X86_GP_REG_R15) && 
+         (i_gp_reg_idx  < 0) && (i_gp_reg_idx  > 15) &&
+         (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) ) 
+    {
+       fprintf(stderr,"i_gp_reg_idx error in libxsmm_instruction_prefetch\n");
+       exit(-1);
+    }
+    switch ( i_prefetch_instr ) {
+       case LIBXSMM_X86_INSTR_PREFETCHT0:
+          l_instype -= 8;
+          break;
+       case LIBXSMM_X86_INSTR_PREFETCHT1:
+          break;
+       case LIBXSMM_X86_INSTR_PREFETCHT2:
+          l_instype += 8;
+          break;
+       case LIBXSMM_X86_INSTR_PREFETCHNTA:
+          l_instype -= 16;
+          break;
+       case LIBXSMM_X86_INSTR_VPREFETCH0:
+          fprintf(stderr,"don't yet do vprefetch0");
+          exit(-1);
+          break;
+       case LIBXSMM_X86_INSTR_VPREFETCH1:
+          fprintf(stderr,"don't yet do vprefetch1");
+          exit(-1);
+          break;
+       default:
+          fprintf(stderr,"Strange prefetch instruction");
+          exit(-1);
+          break;
+    }
+    if ( (i_gp_reg_base < 8) && (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
+    {
+       // prefetcht1 (%rax)
+       buf[i++] = 0x0f;
+       buf[i++] = 0x18;
+       buf[i++] = 0x10 + l_instype + i_gp_reg_base;
+       l_place = i-1;
+       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP ) 
+       {
+          buf[i++] = 0x24;
+       }
+    } else if (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) {
+       // prefetcht1 (%r8)
+       buf[i++] = 0x41;
+       buf[i++] = 0x0f;
+       buf[i++] = 0x18;
+       buf[i++] = 0x10 + l_instype + i_gp_reg_base - 8;
+       l_place = i-1;
+       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_R12 ) 
+       {
+          buf[i++] = 0x24;
+       }
+    } else { // two GP regs are being used
+       l_last = 0;
+       if ( i_scale == 2 ) l_last = 0x40;
+       else if ( i_scale == 4 ) l_last = 0x80;
+       else if ( i_scale == 8 ) l_last = 0xc0;
+       l_bytes = 4;
+       l_first = 0;
+       if ( i_gp_reg_base < 8 )
+       {
+          l_last += i_gp_reg_base;
+          if ( i_gp_reg_idx >= 8 ) 
+          { 
+             l_first = 1; 
+             l_bytes = 5; 
+             l_last += 8*(i_gp_reg_idx - 8);
+          } else {
+             l_last += 8*(i_gp_reg_idx);
+          }
+       } else {
+          l_last += i_gp_reg_base-8;
+          l_bytes = 5;
+          if ( i_gp_reg_idx >= 8 )
+          {
+             l_first = 2;
+             l_last += 8*(i_gp_reg_idx - 8);
+          } else {
+             l_last += 8*(i_gp_reg_idx);
+          }
+       }
+       if ( l_bytes == 5 )
+       {
+          buf[i++] = 0x41 + l_first;
+       }
+       buf[i++] = 0x0f;
+       buf[i++] = 0x18;
+       buf[i++] = 0x14 + l_instype;
+       l_place = i - 1;
+       buf[i++] = 0x00 + l_last;
+    }
+    l_sizereg = 1;
+    if ( ( (i_gp_reg_base%8) == 5) && (i_displacement==0) )
+    {
+       // Registers like rbp/r13 when you have a displacement of 0, we need
+       // force the single byte of zero to appear.
+       l_forced_offset = 1;
+    }
+    i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
+
+    io_generated_code->code_size = i;
+    // *loc = i;
   } else {
     char l_new_code[512];
     char l_gp_reg_base_name[4];
