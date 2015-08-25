@@ -761,8 +761,10 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     int l_fpadj=0, l_place=0;
     int l_fpadj2=0;
     int l_bytes=4;
+    int l_regi=0;
     int l_forced_offset=0;
     int l_sizereg=64;
+    int l_scaleadj=0;
     int l_iregoff = 0;
 
     if ( l_maxsize - i < 20 )
@@ -775,6 +777,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           l_sizereg = 1;
           break;
        case 'y':
+          // l_ivectype += 5;
           l_sizereg = 1;
           break;
        case 'z':
@@ -806,6 +809,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -818,6 +823,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -832,6 +839,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -844,6 +853,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -873,6 +884,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -886,6 +899,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -901,6 +916,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -914,6 +931,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -955,6 +974,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -966,6 +987,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -979,6 +1002,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -990,6 +1015,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -1018,6 +1045,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -1030,6 +1059,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -1044,6 +1075,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
              l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+             l_second -= 0x20;
           }
           l_bytes = 5;
           break;
@@ -1056,6 +1089,8 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
           } else if ( i_gp_reg_base      > 7 ) {
+             l_second -= 0x20;
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -1078,10 +1113,37 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           fprintf(stderr,"WTF! what are you doing?\n");
           break;
     }
-    if ( i_gp_reg_base >= 8 )
+    if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
+    {
+       switch ( i_scale ) {
+          case 1:
+             l_scaleadj=0;
+             break;
+          case 2:
+             l_scaleadj=0x40;
+             break;
+          case 4:
+             l_scaleadj=0x80;
+             break;
+          case 8:
+             l_scaleadj=0xc0;
+             break;
+          default:
+             fprintf(stderr,"i_scale parameter appears bogus\n");
+             exit(-1);
+             break;
+       }
+    }
+    if ( (i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
     {
        if ( l_bytes < 5 ) l_bytes = 5;
        // else l_iregoff -= 0x20;
+    }
+    l_regi = i_gp_reg_idx;
+    if ( (i_gp_reg_idx  >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
+    {
+       if ( l_bytes < 5 ) l_bytes = 5;
+       l_regi = i_gp_reg_idx-8;
     }
     if ( i_vector_name == 'x' ) l_xreg = -4;
     l_reg0 = i_gp_reg_base % 8 ;
@@ -1097,6 +1159,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
 //        if ( l_bytes < 5 ) l_bytes = 5;
 //     }
     } else l_bytes = 6;
+
  
     if ( l_bytes == 4 )
     {
@@ -1105,25 +1168,44 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
        buf[i++] = 0x59 + l_fpadj;
        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) 
        { 
-          buf[i++] = 0x04; 
+          buf[i++] = 0x04 + 8*l_reg2; 
           l_place = i-1; 
+          buf[i++] = 0x00 + l_reg0 + l_scaleadj + 8*l_regi;
+       } else {
+          buf[i++] = 0x00 + l_reg0 + 8*l_reg2 ;
        }
-       buf[i++] = 0x00 + l_reg0    + 8*l_reg2 ;
     } else if ( l_bytes == 5 )
     {
+       if ((i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
+       {
+          if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
+          {
+             l_second -= 0x20;
+          }
+       }
+       if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
+       {
+          l_second -= 0x20;
+       }
        buf[i++] = 0xc4;
        buf[i++] = 0xc1 + l_second;
        buf[i++] = 0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2;
        buf[i++] = 0x59 + l_fpadj;
        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) 
        { 
-          buf[i++] = 0x04; 
+          buf[i++] = 0x04 + 8*l_reg2; 
           l_place = i-1; 
+          buf[i++] = 0x00 + l_reg0 + l_scaleadj + 8*l_regi ;
+       } else {
+          buf[i++] = 0x00 + l_reg0 + 8*l_reg2 ;
        }
-       buf[i++] = 0x00 + l_reg0    + 8*l_reg2 ;
     } else if ( l_bytes == 6 )
     {
        if ( i_gp_reg_base >= 8 ) { l_second -= 0x20; }
+       if ( (i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
+       {
+          l_second -= 0x40;
+       }
 
 //     if ( i_vec_reg_number_0 >= 8 ) { l_third -= 0x40; }
        if ( i_vec_reg_number_0 >= 16) { l_third += 0x40; l_fourth -= 0x8; }
@@ -1140,10 +1222,12 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
        buf[i++] = 0x59 + l_fpadj;
        if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) 
        { 
-          buf[i++] = 0x04; 
+          buf[i++] = 0x04 + 8*l_reg2; 
           l_place = i-1; 
+          buf[i++] = 0x00 + l_reg0 + l_scaleadj + 8*l_regi;
+       } else {
+          buf[i++] = 0x00 + l_reg0    + 8*l_reg2 ;
        }
-       buf[i++] = 0x00 + l_reg0    + 8*l_reg2 ;
     }
     if (l_place==0) l_place = i - 1;
     if ( ((i_gp_reg_base % 8) == LIBXSMM_X86_GP_REG_RSP) && 
