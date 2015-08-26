@@ -1487,6 +1487,71 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    // int i = *loc;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    // unsigned int l_maxsize = 1024;
+    int l_first = 0;
+    int l_second = 0;
+    int l_third = 0;
+    int l_reg0 = 0;
+    int l_extra = 0;
+    
+    switch ( i_alu_instr ) {
+       case LIBXSMM_X86_INSTR_ADDQ:  
+          break;
+       case LIBXSMM_X86_INSTR_SUBQ:
+          l_second += 0x28;
+          l_third += 0x28;
+          break;
+       case LIBXSMM_X86_INSTR_MOVQ:
+          l_second += 0x46;
+          l_extra += 0x46;
+          break;
+       case LIBXSMM_X86_INSTR_CMPQ:
+          l_second += 0x38;
+          l_third += 0x38;
+          break;
+       default:
+          fprintf(stderr,"Not sure what instruction you have in mind here\n");
+          exit(-1);
+    }
+    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <= 15) )
+    {
+       l_first += 1;
+       l_reg0 = i_gp_reg_number - 8;
+    } else {
+       l_reg0 = i_gp_reg_number;
+    }
+    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
+         (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+    {
+       // one byte (even for 0!) - but never for MOVQ
+       buf[i++] = 0x48 + l_first;
+       buf[i++] = 0x83;
+       buf[i++] = 0xc0 + l_third + l_reg0;
+       buf[i++] = i_immediate;
+    } else {
+       // four bytes
+       unsigned char *l_cptr = (unsigned char *) &i_immediate;
+       buf[i++] = 0x48 + l_first;
+       if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+       {
+          // special case for %rax!
+          buf[i++] = 0x05 + l_second;
+       } else {
+          buf[i++] = 0x81 + l_extra;
+          buf[i++] = 0xc0 + l_third + l_reg0;
+       }
+       buf[i++] = l_cptr[0]; 
+       buf[i++] = l_cptr[1]; 
+       buf[i++] = l_cptr[2]; 
+       buf[i++] = l_cptr[3]; 
+    }
+
+    io_generated_code->code_size = i;
+    // *loc = i;
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
