@@ -87,14 +87,18 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
+    //int i = *loc;
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_iregnum = i_gp_reg_base % 8;
+    //unsigned int l_maxsize = 1024;
+    int l_iregnum = i_gp_reg_base   % 8;
     int l_vregnum = i_vec_reg_number_0 % 8;
     int l_ivectype=0, l_ivectype2=0, l_iregoff=0, l_ivectype3=0;
     int l_vregoffset=0, l_vregoffset2=0;
     int l_aligned=0, l_forced_offset=0, l_penultimate=0;
     int l_place, l_num=0, l_num2=0, l_num3=0, l_sizereg=1;
     int l_maskingoff=0;
+    int l_wow = 0;
+    int l_tscale= 0;
     int l_bytes = 4; // base number of bytes
 
     int i_mask_reg_number = 1; // change if you don't want k1
@@ -229,10 +233,20 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
           fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
           exit(-1);
     }
-    if ( i_gp_reg_base >= 8 ) 
+    if ( (i_gp_reg_base >= 8) && (i_gp_reg_base <=15) ) 
     {
        if ( l_bytes < 5 ) l_bytes = 5;
        else l_iregoff -= 0x20;
+    }
+    if ( (i_gp_reg_idx>=8) && (i_gp_reg_idx<=15) )
+    {
+       if ( l_bytes < 5 ) 
+       {
+          l_bytes = 5;
+       } else {
+          l_wow -= 0x20;
+       }
+       l_wow -= 0x20;
     }
     if ( i_is_store == 1 ) 
     {
@@ -258,22 +272,41 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
        buf[i++] = 0xf8 + l_ivectype + l_ivectype3;
     } else if ( l_bytes == 5 ) {
        buf[i++] = 0xc4;
-       buf[i++] = 0xc1 + l_num3 + l_vregoffset2 + l_iregoff;
+       buf[i++] = 0xc1 + l_num3 + l_vregoffset2 + l_iregoff + l_wow;
        buf[i++] = 0x78 + l_ivectype;
     } else if ( l_bytes == 6 ) {
        buf[i++] = 0x62;
-       buf[i++] = 0x61 + l_vregoffset + l_iregoff + l_num2;
+       buf[i++] = 0x61 + l_vregoffset + l_iregoff + l_num2 + l_wow;
        buf[i++] = 0x7c + l_ivectype2;
        buf[i++] = 0x48 + l_maskingoff;
     }
     buf[i++] = 0x10 + l_aligned + l_penultimate;
-    buf[i++] = 0x00 + l_iregnum + 8*l_vregnum;
-    l_place = i-1;
-    if ( l_iregnum == LIBXSMM_X86_GP_REG_RSP ) buf[i++] = 0x24;
+    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) )
+    {
+       buf[i++] = 0x04 + 8*l_vregnum;
+       l_place = i-1;
+       if ( i_scale == 1 ) l_tscale = 0x00;
+       else if ( i_scale == 2 ) l_tscale = 0x40;
+       else if ( i_scale == 4 ) l_tscale = 0x80;
+       else if ( i_scale == 8 ) l_tscale = 0xc0;
+       else
+       {
+          fprintf(stderr,"Don't understand the i_scale parameter");
+          exit(-1);
+       }
+       buf[i++] = l_tscale + l_iregnum + 8*(i_gp_reg_idx%8);
+    } else {
+       l_place = i;
+       buf[i++] = 0x00 + l_iregnum + 8*l_vregnum;
+       if ( l_iregnum == LIBXSMM_X86_GP_REG_RSP ) 
+       {
+          buf[i++] = 0x24;
+       }
+    }
     i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
     
     io_generated_code->code_size = i;
-    
+    //*loc = i;
   } else {
     char l_new_code[512];
     char l_gp_reg_base_name[4];
