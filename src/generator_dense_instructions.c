@@ -1680,6 +1680,46 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+      int i = io_generated_code->code_size;
+    //int i = *loc;
+      unsigned int l_maxsize = io_generated_code->buffer_size;
+    //unsigned int l_maxsize = 1024;
+
+    if ( l_maxsize - i < 20 )
+    {
+       fprintf(stderr,"Most instructions need at most 20 bytes\n");
+       exit(-1);
+    }
+    switch ( i_mask_instr ) {
+       case LIBXSMM_X86_INSTR_KMOVW:
+          break;
+       default:
+          fprintf(stderr,"Strange kmov instruction");
+          exit(-1);
+          break;
+    }
+    if ( i_mask_reg_number > 7 ) 
+    {
+       fprintf(stderr,"Strange mask number");
+       exit(-1);
+    }
+    if ( (i_gp_reg_number >=8) && (i_gp_reg_number <=15) )
+    {
+       buf[i++] = 0xc4;
+       buf[i++] = 0xc1;
+       buf[i++] = 0x78;
+       buf[i++] = 0x92;
+       buf[i++] = 0xb8 + i_gp_reg_number + 8*i_mask_reg_number;
+    } else {
+       buf[i++] = 0xc5;
+       buf[i++] = 0xf8;
+       buf[i++] = 0x92;
+       buf[i++] = 0xc0 + i_gp_reg_number + 8*i_mask_reg_number;
+    }
+
+    io_generated_code->code_size = i;
+    //*loc = i;
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
