@@ -91,7 +91,7 @@
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min(MIN) max(MAX) avg(AVG))
 # define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(unroll(N))
 # define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA(unroll)
-# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
+/*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_N(N)
@@ -99,10 +99,10 @@
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
-# if defined(_MSC_VER)
-#   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
-# else
+# if defined(__GNUC__) || defined(__clang__)
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(LIBXSMM_STRINGIFY(unused(VARIABLE)))
+# else
+#   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
 #endif
 
