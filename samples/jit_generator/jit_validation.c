@@ -219,6 +219,11 @@ void run_jit_double_temp( const double*                   i_a,
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
+  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
+  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R12;
+  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R12;
+
+  printf("size of generated code: %i\n", l_generated_code.code_size );
 
   libxsmm_generator_dense_x86_open_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
 
@@ -226,7 +231,6 @@ void run_jit_double_temp( const double*                   i_a,
   libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 0 );
   libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
   libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 1 );
-
   libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 0, 0, 0 );
   libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 1, 0, 0 );
   libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
@@ -236,14 +240,26 @@ void run_jit_double_temp( const double*                   i_a,
 
   printf("size of generated code: %i\n", l_generated_code.code_size );
 
+
   /* create executable buffer */
   unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC );
+  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ | PROT_WRITE );
   
-  /* set function pointer */
+  /* set function pointer and jitted code */
   jitfun l_test_jit = (jitfun)l_code;
   l_test_jit(i_a, i_b, o_c);
+
+
+  /* write buffer for manual decode as binary to a file */
+  FILE *l_byte_code = fopen( "bytecode.bin", "wb");
+
+  if ( l_byte_code != NULL ){
+    fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
+    fclose( l_byte_code );
+  } else {
+    /* error */
+  }
 
   free(l_gen_code);
   _mm_free(l_code);
