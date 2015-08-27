@@ -223,8 +223,6 @@ void run_jit_double_temp( const double*                   i_a,
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R12;
 
-  printf("size of generated code: %i\n", l_generated_code.code_size );
-
   libxsmm_generator_dense_x86_open_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
 
   libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 0, 0, 0 );
@@ -239,7 +237,6 @@ void run_jit_double_temp( const double*                   i_a,
   libxsmm_generator_dense_x86_close_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
 
   printf("size of generated code: %i\n", l_generated_code.code_size );
-
 
   /* create executable buffer */
   unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
