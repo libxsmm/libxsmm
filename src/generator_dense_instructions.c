@@ -326,11 +326,24 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name );
+    char l_prefix = '\0';
+
+    /* check if we need to add a prefix for accessing 32bit in a 64bit register */
+    if ( i_gp_reg_number == LIBXSMM_X86_GP_REG_R8  ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R9  ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R10 ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R11 ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R12 ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R13 ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R14 ||
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R15    ) {
+      l_prefix = 'd';
+    }
 
     if ( io_generated_code->code_type == 0 ) {
-      sprintf(l_new_code, "                       \"%s %%%%%sd, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
+      sprintf(l_new_code, "                       \"%s %%%%%s%c, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
     } else { 
-      sprintf(l_new_code, "                       %s %%%sd, %%k%i\n", l_instr_name, l_gp_reg_name, i_mask_reg_number );
+      sprintf(l_new_code, "                       %s %%%s%c, %%k%i\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
