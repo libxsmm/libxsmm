@@ -45,8 +45,12 @@ if __name__ == "__main__":
         alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[3])) if (3 < argc) else 64
         aligned_stores = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 1
         aligned_loads = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 1
-        threshold = int(sys.argv[6]) if (6 < argc) else 0
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[7:], 0, threshold) if (7 < argc) else list()
+        prefetch = int(sys.argv[6]) if (6 < argc) else 0
+        prefetch_a = int(sys.argv[7]) if (7 < argc) else 0
+        prefetch_b = int(sys.argv[8]) if (8 < argc) else 0
+        prefetch_c = int(sys.argv[9]) if (9 < argc) else 0
+        threshold = int(sys.argv[10]) if (10 < argc) else 0
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[11:], 0, threshold) if (11 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -68,6 +72,10 @@ if __name__ == "__main__":
             "ALIGNED_MAX":    max(alignment, aligned_stores, aligned_loads), \
             "ROW_MAJOR":      1 if (0 != row_major) else 0, \
             "COL_MAJOR":      0 if (0 != row_major) else 1, \
+            "PREFETCH":       prefetch, \
+            "PREFETCH_A":     1 if (0 != prefetch_a) else 0, \
+            "PREFETCH_B":     1 if (0 != prefetch_b) else 0, \
+            "PREFETCH_C":     1 if (0 != prefetch_c) else 0, \
             "MAX_MNK":        maxmnk, \
             "MAX_M":          maxm if (avgm < maxm) else maxdim, \
             "MAX_N":          maxn if (avgn < maxn) else maxdim, \
@@ -82,8 +90,10 @@ if __name__ == "__main__":
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c);\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c);\n"
+                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c " \
+                      "LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc));\n" \
+                    "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c " \
+                      "LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc));\n"
             print template.substitute(substitute)
         else:
             if (mnklist):

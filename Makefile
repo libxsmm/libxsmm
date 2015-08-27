@@ -32,6 +32,9 @@ ALIGNMENT ?= 64
 ALIGNED_STORES ?= 0
 ALIGNED_LOADS ?= 0
 
+# Generate prefetches
+PREFETCH ?= 0
+
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 
@@ -62,7 +65,7 @@ DBG ?= 0
 IPO ?= 0
 
 OFFLOAD ?= 0
-ifneq ($(OFFLOAD),0)
+ifneq (0,$(OFFLOAD))
 	MIC ?= 1
 else
 	MIC ?= 0
@@ -98,13 +101,13 @@ ifneq (,$(IFORT))
 else
 	FC = $(GFC)
 endif
-ifneq ($(CXX),)
+ifneq (,$(CXX))
 	LD = $(CXX)
 endif
-ifeq ($(LD),)
+ifeq (,$(LD))
 	LD = $(CC)
 endif
-ifeq ($(LD),)
+ifeq (,$(LD))
 	LD = $(FC)
 endif
 
@@ -119,16 +122,16 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		CFLAGS += -fno-alias -ansi-alias -O2
 		FCFLAGS += -O2
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
-		ifeq ($(AVX),1)
+		ifeq (1,$(AVX))
 			TARGET = -xAVX
-		else ifeq ($(AVX),2)
+		else ifeq (2,$(AVX))
 			TARGET = -xCORE-AVX2
-		else ifeq ($(AVX),3)
+		else ifeq (3,$(AVX))
 			TARGET = -xCOMMON-AVX512
 		else
 			TARGET = -xHost
@@ -150,7 +153,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
 		FCFLAGS += -openmp
@@ -161,7 +164,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
 	endif
-	ifneq ($(STATIC),0)
+	ifneq (0,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel
 	endif
 	FCMODDIRFLAG = -module
@@ -173,7 +176,7 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -Werror -std=c++0x -Wno-unused-function
 	CFLAGS += -Wall -Werror -Wno-unused-function
-	ifneq ($(OS),Windows_NT)
+	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 		FCFLAGS += -fPIC
@@ -184,17 +187,17 @@ else # GCC assumed
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
-		ifeq ($(AVX),1)
+		ifeq (1,$(AVX))
 			TARGET = -mavx
-		else ifeq ($(AVX),2)
+		else ifeq (2,$(AVX))
 			TARGET = -mavx2
-		else ifeq ($(AVX),3)
+		else ifeq (3,$(AVX))
 			TARGET = -mavx512f
 		else
 			TARGET = -march=native
@@ -216,13 +219,13 @@ else # GCC assumed
 			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
 		FCFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
 	endif
-	ifneq ($(STATIC),0)
+	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -J
@@ -241,19 +244,19 @@ ifeq (,$(LDFLAGS))
 	LDFLAGS = $(CFLAGS)
 endif
 
-ifneq ($(STATIC),0)
+ifneq (0,$(STATIC))
 	LIBEXT = a
 else
 	LIBEXT = so
 endif
 
-ifeq ($(AVX),1)
+ifeq (1,$(AVX))
 	GENTARGET = snb
-else ifeq ($(AVX),2)
+else ifeq (2,$(AVX))
 	GENTARGET = hsw
-else ifeq ($(AVX),3)
+else ifeq (3,$(AVX))
 	GENTARGET = knl
-else ifneq ($(SSE),0)
+else ifneq (0,$(SSE))
 	GENTARGET = wsm
 else
 	GENTARGET = noarch
@@ -277,14 +280,14 @@ OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
 .PHONY: lib_all
-ifeq ($(OFFLOAD),0)
-ifeq ($(MIC),0)
+ifeq (0,$(OFFLOAD))
+ifeq (0,$(MIC))
 lib_all: fheader drytest lib_hst
 else
 lib_all: fheader drytest lib_hst lib_mic
 endif
 else
-ifeq ($(MIC),0)
+ifeq (0,$(MIC))
 lib_all: fheader drytest lib_hst
 else
 lib_all: fheader drytest lib_hst lib_mic
@@ -303,20 +306,83 @@ header: cheader fheader
 ALIGNED_ST = $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))
 ALIGNED_LD = $(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT))))
 
+ifeq (1,$(PREFETCH)) # AL2_BL2viaC
+	PREFETCH_ID = 6
+else ifeq (pfsigonly,$(PREFETCH))
+	PREFETCH_ID = 2
+else ifeq (BL2viaC,$(PREFETCH))
+	PREFETCH_ID = 3
+else ifeq (AL2,$(PREFETCH))
+	PREFETCH_ID = 4
+else ifeq (curAL2,$(PREFETCH))
+	PREFETCH_ID = 5
+else ifeq (AL2_BL2viaC,$(PREFETCH))
+	PREFETCH_ID = 6
+else ifeq (curAL2_BL2viaC,$(PREFETCH))
+	PREFETCH_ID = 7
+else ifeq (AL2jpst,$(PREFETCH))
+	PREFETCH_ID = 8
+else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
+	PREFETCH_ID = 9
+else # nopf
+	PREFETCH_ID = 0
+endif
+
+PREFETCH_A = 0
+PREFETCH_B = 0
+PREFETCH_C = 0
+
+ifeq (2,$(PREFETCH_ID))
+	PREFETCH_SCHEME = pfsigonly
+else ifeq (3,$(PREFETCH_ID))
+	PREFETCH_SCHEME = BL2viaC
+	PREFETCH_B = 1
+else ifeq (4,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2
+	PREFETCH_A = 1
+else ifeq (5,$(PREFETCH_ID))
+	PREFETCH_SCHEME = curAL2
+	PREFETCH_A = 1
+else ifeq (6,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2_BL2viaC
+	PREFETCH_A = 1
+	PREFETCH_B = 1
+else ifeq (7,$(PREFETCH_ID))
+	PREFETCH_SCHEME = curAL2_BL2viaC
+	PREFETCH_A = 1
+	PREFETCH_B = 1
+else ifeq (8,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2jpst
+	PREFETCH_A = 1
+else ifeq (9,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2jpst_BL2viaC
+	PREFETCH_A = 1
+	PREFETCH_B = 1
+else
+	PREFETCH_SCHEME = nopf
+endif
+
+SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
+ifneq (nopf,$(PREFETCH_SCHEME))
+	SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);
+endif
+
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/include/libxsmm_macros.h
 	@mkdir -p $(dir $@)
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f90
 $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f90
 	@mkdir -p $(dir $@)
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(SRCFILES_GEN_LIB)
@@ -327,7 +393,7 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 build_generator_lib: $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB)
 	@mkdir -p $(dir $@)
-ifeq ($(STATIC),0)
+ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
 else
 	$(AR) -rs $@ $^
@@ -349,14 +415,14 @@ $(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utiliti
 	$(eval MVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f2))
 	$(eval NVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f3))
 	$(eval KVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f4))
-ifneq ($(ROW_MAJOR),0) # row-major
+ifneq (0,$(ROW_MAJOR)) # row-major
 	$(eval MVALUE2 := $(NVALUE))
 	$(eval NVALUE2 := $(MVALUE))
 else # column-major
 	$(eval MVALUE2 := $(MVALUE))
 	$(eval NVALUE2 := $(NVALUE))
 endif
-ifneq ($(ALIGNED_STORES),0) # aligned stores
+ifneq (0,$(ALIGNED_STORES)) # aligned stores
 	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE2) $(ALIGNED_ST)))
 	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE2) $(ALIGNED_ST)))
 else # unaligned stores
@@ -370,7 +436,7 @@ endif
 	@echo >> $@
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@
-ifeq ($(GENTARGET),noarch)
+ifeq (noarch,$(GENTARGET))
 	@echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >> $@
@@ -381,28 +447,28 @@ ifeq ($(GENTARGET),noarch)
 	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knl nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knl nopf SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) hsw nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) hsw nopf SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) snb nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) snb nopf SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) wsm nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) wsm nopf SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) SP
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) nopf SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knc nopf DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knc nopf SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
-		-e '/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/d' \
+		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
@@ -414,7 +480,7 @@ $(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
 	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
 
-ifneq ($(MIC),0)
+ifneq (0,$(MIC))
 .PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h
@@ -434,16 +500,16 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-ifneq ($(MIC),0)
+ifneq (0,$(MIC))
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-ifeq ($(origin NO_MAIN), undefined)
+ifeq (undefined,$(origin NO_MAIN))
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm.o
 else
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC)
 endif
 	@mkdir -p $(dir $@)
-ifeq ($(STATIC),0)
+ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
 else
 	$(AR) -rs $@ $^
@@ -452,13 +518,13 @@ endif
 
 .PHONY: lib_hst
 lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
-ifeq ($(origin NO_MAIN),undefined)
+ifeq (undefined,$(origin NO_MAIN))
 $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm.o
 else
 $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
 endif
 	@mkdir -p $(dir $@)
-ifeq ($(STATIC),0)
+ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
 else
 	$(AR) -rs $@ $^
@@ -615,6 +681,7 @@ endif
 else
 	@rm -f $(BINDIR)/generator
 endif
+	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(INCDIR)/libxsmm.f90
 	@rm -f $(INCDIR)/libxsmm.h

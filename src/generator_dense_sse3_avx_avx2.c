@@ -56,7 +56,11 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14; 
+  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
+
+  /* define loop_label_tracker */
+  libxsmm_loop_label_tracker l_loop_label_tracker;
+  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker ); 
 
   /* set up architecture dependent compute micro kernel generator */
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
@@ -95,7 +99,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
 
     if (l_n_done != l_n_done_old && l_n_done > 0) {
 
-      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
   
       /* define the micro kernel code gen properties, espically m-blocking affects the vector instruction length */
       unsigned int l_m_done = 0;
@@ -123,13 +127,13 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
         }
   
         if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
-          libxsmm_generator_dense_header_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
+          libxsmm_generator_dense_header_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
           libxsmm_generator_dense_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
           /* apply multiple k_blocking strategies */
           /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
           if ((i_xgemm_desc->k % l_k_blocking) == 0 && i_xgemm_desc->k > l_k_threshold) {
-            libxsmm_generator_dense_header_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
+            libxsmm_generator_dense_header_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
             
             unsigned int l_k;
             for ( l_k = 0; l_k < l_k_blocking; l_k++) {
@@ -137,7 +141,8 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
                                       i_xgemm_desc, l_m_blocking, l_n_blocking, -1);
             }
 
-            libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, i_xgemm_desc->k, 1 );
+            libxsmm_generator_dense_footer_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, 
+                                                  i_xgemm_desc, l_m_blocking, i_xgemm_desc->k, 1 );
           } else {
             /* 2. we want to fully unroll below the threshold */
             if (i_xgemm_desc->k <= l_k_threshold) {
@@ -150,7 +155,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
             } else {
 	      unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
 	      if ( l_max_blocked_k > 0 ) {
-	        libxsmm_generator_dense_header_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
+	        libxsmm_generator_dense_header_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
                
                 unsigned int l_k;
                 for ( l_k = 0; l_k < l_k_blocking; l_k++) {
@@ -158,7 +163,8 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
                                           i_xgemm_desc, l_m_blocking, l_n_blocking, -1);
                 }
 
-	        libxsmm_generator_dense_footer_kloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_max_blocked_k, 0 );
+	        libxsmm_generator_dense_footer_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, 
+                                                      i_xgemm_desc, l_m_blocking, l_max_blocked_k, 0 );
 	      }
 	      if (l_max_blocked_k > 0 ) {
                 libxsmm_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction, 
@@ -173,13 +179,13 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
           }
 
           libxsmm_generator_dense_store_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
-          libxsmm_generator_dense_footer_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_m_done, 0 );
+          libxsmm_generator_dense_footer_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_m_done, 0 );
         }
 
         /* switch to next smaller m_blocking */
         l_m_blocking = libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch, l_m_blocking );
       }
-      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n_blocking, l_n_done );
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n_blocking, l_n_done );
     }
 
     /* switch to a different, smaller n_blocking */
