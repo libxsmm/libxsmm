@@ -152,6 +152,7 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
 }
 
 unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+                                                        libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                         const libxsmm_xgemm_descriptor*    i_xgemm_desc,
@@ -172,7 +173,8 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 -1 ); 
   } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
     if (i_xgemm_desc->k != l_k_blocking) {
-      libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+      libxsmm_generator_dense_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
+                                            i_micro_kernel_config->vector_length, l_k_blocking);
     }
 
     libxsmm_generator_dense_imci_microkernel( io_generated_code,
@@ -184,13 +186,14 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 -1 ); 
 
     if (i_xgemm_desc->k != l_k_blocking) {
-      libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
+      libxsmm_generator_dense_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
                                            i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
     }
   } else {
     unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
     if (l_max_blocked_k > 0 ) {
-      libxsmm_generator_dense_header_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length, l_k_blocking);
+      libxsmm_generator_dense_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
+                                            i_micro_kernel_config->vector_length, l_k_blocking);
 
       libxsmm_generator_dense_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
@@ -200,8 +203,8 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 l_k_blocking,
                                                 -1 ); 
 
-      libxsmm_generator_dense_footer_kloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
-                                          i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
+      libxsmm_generator_dense_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
+                                             i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
     }
     unsigned int l_k;
     for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {

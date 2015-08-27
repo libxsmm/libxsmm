@@ -211,21 +211,21 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
  * Generates regular all instructions with immediates
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_jmp_label jump label that is insert into the code
+ * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops
 */
-void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generated_code,
-                                              const char*             i_jmp_label );
+void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                              libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
  * Generates regular all instructions with immediates
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_instr the particular jump instruction used
- * @param i_jmp_label jump label that is the target of the jump, THIS IS NOT CHECKED, YOU TO ENSURE THAT IT EXISTS IN ORDER TO AVOID ASSEMBLER ERRORS
+ * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label
 */
-void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_code,
-                                        const unsigned int      i_jmp_instr,
-                                        const char*             i_jmp_label );
+void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
+                                             const unsigned int          i_jmp_instr,
+                                             libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 #endif /* GENERATOR_DENSE_INSTRUCTIONS_H */
 

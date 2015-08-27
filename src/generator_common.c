@@ -543,21 +543,29 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
   return l_return;
 }
 
-void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping ) {
-  i_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
-  i_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
+void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
+  io_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
+}
+
+void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+  unsigned int l_i;
+  for ( l_i = 0; l_i < 32; l_i++) {
+    io_loop_label_tracker->label_address[l_i] = 0;
+  }
+  io_loop_label_tracker->label_count = 0;
 }
 
 void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
@@ -676,7 +684,16 @@ char* libxsmm_strerror( const unsigned int      i_error_code ) {
       break;
     case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: Index + Scale addressing mode is currently not implemented!\n");
-      break;   
+      break;
+    case LIBXSMM_ERR_UNSUPPORTED_JUMP:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: Unsupported jump instruction requested!\n");
+      break;
+    case LIBXSMM_ERR_NO_JMPLBL_AVAIL:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: No destination jump label is available!\n");
+      break;
+    case LIBXSMM_ERR_EXCEED_JMPLBL:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: too many nested loop, exceed loop label tracker!\n");
+      break;
     /* default, we didn't don't know what happend */
     default:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );

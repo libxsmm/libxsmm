@@ -77,14 +77,15 @@ void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generat
 }
 
 void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
+                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
                                                        const char*                        i_arch,
                                                        unsigned int                       i_n_blocking ) {
   /* set function pointers for AVX512 and IMCI */
-  unsigned int (*l_generator_microkernel)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
-                                           const libxsmm_xgemm_descriptor*, const char*, unsigned int );
+  unsigned int (*l_generator_microkernel_kloop)( libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*, 
+                                                 const libxsmm_xgemm_descriptor*, const char*, unsigned int );
   void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                             const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
@@ -92,15 +93,15 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
   unsigned int l_k_unrolled;
 
   if ( (strcmp(i_arch, "knl") == 0) ) {
-    l_generator_microkernel = libxsmm_generator_dense_avx512_kernel_kloop;
+    l_generator_microkernel_kloop = libxsmm_generator_dense_avx512_kernel_kloop;
     l_generator_load = libxsmm_generator_dense_load_C;
     l_generator_store = libxsmm_generator_dense_store_C;
   } else if ( (strcmp(i_arch, "skx") == 0) ) {
-    l_generator_microkernel = libxsmm_generator_dense_avx512_kernel_kloop;
+    l_generator_microkernel_kloop = libxsmm_generator_dense_avx512_kernel_kloop;
     l_generator_load = libxsmm_generator_dense_load_C;
     l_generator_store = libxsmm_generator_dense_store_C; 
   } else if ( (strcmp(i_arch, "knc") == 0) ) {
-    l_generator_microkernel = libxsmm_generator_dense_imci_kernel_kloop;
+    l_generator_microkernel_kloop = libxsmm_generator_dense_imci_kernel_kloop;
     l_generator_load = libxsmm_generator_dense_load_C_imci;
     l_generator_store = libxsmm_generator_dense_store_C_imci;
   } else {
@@ -113,20 +114,21 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
 
   /* multiples of vector_length in M */
   if (l_m_done > 0) {
-    libxsmm_generator_dense_header_mloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length );
+    libxsmm_generator_dense_header_mloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_micro_kernel_config->vector_length );
     l_generator_load( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
                       i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking );
 
-    l_k_unrolled = l_generator_microkernel( io_generated_code,
-                                            i_gp_reg_mapping,
-                                            i_micro_kernel_config,
-                                            i_xgemm_desc,
-                                            i_arch,
-                                            i_n_blocking );
+    l_k_unrolled = l_generator_microkernel_kloop( io_generated_code,
+                                                  io_loop_label_tracker,
+                                                  i_gp_reg_mapping,
+                                                  i_micro_kernel_config,
+                                                  i_xgemm_desc,
+                                                  i_arch,
+                                                  i_n_blocking );
 
     l_generator_store( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, 
                        i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking  );
-    libxsmm_generator_dense_footer_mloop( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, 
+    libxsmm_generator_dense_footer_mloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, 
                                           i_micro_kernel_config->vector_length, l_m_done, l_k_unrolled );
   }
 
@@ -147,12 +149,13 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
     l_generator_load( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
                       i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking );
 
-    l_k_unrolled = l_generator_microkernel( io_generated_code,
-                                            i_gp_reg_mapping,
-                                            &l_micro_kernel_config_mask,
-                                            i_xgemm_desc,
-                                            i_arch,
-                                            i_n_blocking );
+    l_k_unrolled = l_generator_microkernel_kloop( io_generated_code,
+                                                  io_loop_label_tracker,
+                                                  i_gp_reg_mapping,
+                                                  &l_micro_kernel_config_mask,
+                                                  i_xgemm_desc,
+                                                  i_arch,
+                                                  i_n_blocking );
 
     l_generator_store( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask, 
                        i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking  );
@@ -200,6 +203,10 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_R10; /* B stride helper */
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R11; /* B stride helper */
 
+  /* define loop_label_tracker */
+  libxsmm_loop_label_tracker l_loop_label_tracker;
+  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
+
   /* define the micro kernel code gen properties */
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -226,24 +233,24 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   libxsmm_generator_dense_x86_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   if (l_number_of_chunks == 1) {
-    libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+    libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                       i_xgemm_desc, i_arch, i_xgemm_desc->n); 
   } else {
     if ((l_N2 > 0) && (l_N1 > 0)) {
-      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n1 );
-      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n1 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                         i_xgemm_desc, i_arch, l_n1); 
-      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n1, l_N1 );
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n1, l_N1 );
 
-      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
-      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                         i_xgemm_desc, i_arch, l_n2); 
-      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
     } else if ((l_N2 > 0) && (l_N1 == 0)) {
-      libxsmm_generator_dense_header_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
-      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
+      libxsmm_generator_dense_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
+      libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
                                                         i_xgemm_desc, i_arch, l_n2); 
-      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
+      libxsmm_generator_dense_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
     } else {}
   }
   

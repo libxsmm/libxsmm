@@ -194,6 +194,9 @@
 #define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90023
 #define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90024
 #define LIBXSMM_ERR_NO_INDEX_SCALE_ADDR  90025
+#define LIBXSMM_ERR_UNSUPPORTED_JUMP     90026
+#define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90027
+#define LIBXSMM_ERR_EXCEED_JMPLBL        90028
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
@@ -236,6 +239,15 @@ typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_5;
 } libxsmm_gp_reg_mapping;
 
+/* struct for tracking local labels in assembly
+   we don't allow overlapping loops */
+typedef struct libxsmm_loop_label_tracker_struct {
+  unsigned int label_address[32];
+  unsigned int label_count;
+} libxsmm_loop_label_tracker;
+
+void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
+
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name ); 
 
@@ -244,7 +256,7 @@ unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_
 void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
                                  char*              o_instr_name ); 
 
-void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* i_gp_reg_mapping );
+void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
 
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 

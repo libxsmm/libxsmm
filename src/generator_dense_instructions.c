@@ -349,26 +349,47 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
   }
 }
 
-void libxsmm_instruction_register_jump_label( libxsmm_generated_code* io_generated_code,
-                                              const char*             i_jmp_label ) {
+void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                              libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+  /* check if we still have lable we can jump to */
+  if ( io_loop_label_tracker->label_count == 32 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
     char l_new_code[512];
+    
+    io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = io_loop_label_tracker->label_count;
 
     if ( io_generated_code->code_type == 0 ) {
-      sprintf(l_new_code, "                       \"%s:\\n\\t\"\n", i_jmp_label );
+      sprintf(l_new_code, "                       \"%i:\\n\\t\"\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     } else {
-      sprintf(l_new_code, "                       %s:\n", i_jmp_label );
+      sprintf(l_new_code, "                       %i:\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    io_loop_label_tracker->label_count++;
   }  
 }
 
-void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_code,
-                                        const unsigned int      i_jmp_instr,
-                                        const char*             i_jmp_label ) {
+void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
+                                             const unsigned int          i_jmp_instr,
+                                             libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+  /* check that we just handle jl */
+  if ( i_jmp_instr != LIBXSMM_X86_INSTR_JL) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
+    return;
+  }
+
+  /* check if we still have lable we can jump to */
+  if ( io_loop_label_tracker->label_count == 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_JMPLBL_AVAIL );
+    return;
+  }
+
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
@@ -376,13 +397,17 @@ void libxsmm_instruction_jump_to_label( libxsmm_generated_code* io_generated_cod
     char l_new_code[512];
     char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_jmp_instr, l_instr_name );
-
+    
+    io_loop_label_tracker->label_count--;
+    
     if ( io_generated_code->code_type == 0 ) {
-      sprintf(l_new_code, "                       \"%s %s\\n\\t\"\n", l_instr_name, i_jmp_label );
+      sprintf(l_new_code, "                       \"%s %ib\\n\\t\"\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     } else {
-      sprintf(l_new_code, "                       %s %s\n", l_instr_name, i_jmp_label );
+      sprintf(l_new_code, "                       %s %ib\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
+    
+    io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = 0;
   }
 }
 
