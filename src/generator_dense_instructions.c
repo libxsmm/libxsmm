@@ -769,6 +769,8 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
 }
 
 // i_displacement should be just const int!!!
+// i_broadcast should be added as a parameter. See comments in code for how
+//    to change the code to use it.
 void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_generated_code, 
                                                const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
@@ -784,9 +786,9 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    // int i = *loc;
+    //int i = *loc;
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    // unsigned int l_maxsize = 1024;
+    //unsigned int l_maxsize = 1024;
     int l_second=0, l_third=0, l_fourth=0, l_xreg=0;
     int l_reg0 = 0;
     int l_reg1   = i_vec_reg_number_0; 
@@ -800,6 +802,12 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     int l_scaleadj=0;
     int l_iregoff = 0;
 
+    // To enable broadcasts off, pass in i_broadcast as an unsigned int and
+    // let l_broadcast = i_broadcast; - also remove the setting of l_broadcast
+    // in the switch statement of i_vector_name
+       int l_broadcast;
+    // int l_broadcast = i_broadcast;  
+
     if ( l_maxsize - i < 20 )
     {
        fprintf(stderr,"Most instructions need at most 20 bytes\n");
@@ -808,18 +816,31 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     switch ( i_vector_name ) {
        case 'x':
           l_sizereg = 1;
+             l_broadcast = 0;  // comment this line to make broadcasts optional
+          if ( l_broadcast == 1 ) 
+          {
+             fprintf(stderr,"broadcasts aren't enabled with xmm yet\n");
+             exit(-1);
+          }
           break;
        case 'y':
-          // l_ivectype += 5;
           l_sizereg = 1;
+             l_broadcast = 0;  // comment this line to make broadcasts optional
+          if ( l_broadcast == 1 ) 
+          {
+             fprintf(stderr,"broadcasts aren't enabled with ymm yet\n");
+             exit(-1);
+          }
           break;
        case 'z':
+             l_broadcast = 1;  // comment this line to make broadcasts optional
           l_bytes = 6;
           break;
        default:
           fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
           exit(-1);
     }
+    if ( l_broadcast == 1 ) l_sizereg = 8;
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VXORPD:
           l_fpadj = -2;
@@ -840,9 +861,9 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -855,9 +876,9 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -870,9 +891,9 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -885,87 +906,99 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VMULSD:
           l_fpadj2 = 2; 
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vmulsd and ymm/zmm?\n");
+             exit(-1);
+          }
           break;
        case LIBXSMM_X86_INSTR_VADDSD:
           l_fpadj  =-1;
           l_fpadj2 = 2;
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vaddsd and ymm/zmm?\n");
+             exit(-1);
+          }
           break;
        case LIBXSMM_X86_INSTR_VSUBSD:
           l_fpadj  = 3;
           l_fpadj2 = 2;
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vsubsd and ymm/zmm?\n");
+             exit(-1);
+          }
           break;
        case LIBXSMM_X86_INSTR_VFMADD231SD:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfmadd231sd and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x60;
           l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFMSUB231SD:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfmsub231sd and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x62;
           l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMADD231SD:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfnmadd231sd and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x64;
           l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMSUB231SD:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SD and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfnmsub231sd and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x66;
           l_fpadj2 += 0x80;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -973,18 +1006,21 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
        case LIBXSMM_X86_INSTR_VXORPS:
           l_fpadj2 = -1;
           l_fpadj = -2;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( i_vector_name == 'z' )
           {
              l_fpadj2 -= 0x80;
           }
           break;
        case LIBXSMM_X86_INSTR_VMULPS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
                (i_vec_reg_number_1<=15) )
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
           break;
        case LIBXSMM_X86_INSTR_VADDPS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
                (i_vec_reg_number_1<=15) )
                l_fpadj2 = -1;
@@ -992,6 +1028,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           l_fpadj = -1;
           break;
        case LIBXSMM_X86_INSTR_VSUBPS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
                (i_vec_reg_number_1<=15) )
                l_fpadj2 = -1;
@@ -999,131 +1036,147 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           l_fpadj = 3;
           break;
        case LIBXSMM_X86_INSTR_VFMADD231PS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_second += 0x21;
           l_fpadj  += 0x5f;
           if ( i_vector_name == 'z' ) 
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFMSUB231PS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_second += 0x21;
           l_fpadj  += 0x61;
           if ( i_vector_name == 'z' ) 
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMADD231PS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_second += 0x21;
           l_fpadj  += 0x63;
           if ( i_vector_name == 'z' ) 
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMSUB231PS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_second += 0x21;
           l_fpadj  += 0x65;
           if ( i_vector_name == 'z' ) 
           {  
              l_second -= 0x20; 
              l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          } else if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VMULSS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vmulss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_fpadj2 = 1; 
           break;
        case LIBXSMM_X86_INSTR_VADDSS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vaddss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_fpadj  =-1;
           l_fpadj2 = 1;
           break;
        case LIBXSMM_X86_INSTR_VSUBSS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vsubss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_fpadj  = 3;
           l_fpadj2 = 1;
           break;
        case LIBXSMM_X86_INSTR_VFMADD231SS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfmadd231ss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x60;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFMSUB231SS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfmsub231ss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x62;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMADD231SS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfnmadd231ss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x64;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
           break;
        case LIBXSMM_X86_INSTR_VFNMSUB231SS:
-          if (i_vector_name != 'x') fprintf(stderr,"Really? SS and ymm/zmm?\n");
+          if (i_vector_name != 'x') 
+          {
+             fprintf(stderr,"Really? vfnmsub231ss and ymm/zmm?\n");
+             exit(-1);
+          }
           l_second += 0x21;
           l_fpadj  += 0x66;
-          if ( i_vector_name == 'z' ) 
-          {  
-             l_second -= 0x20; 
-             l_fpadj2 -= 0x80; 
-          } else if ( i_gp_reg_base      > 7 ) {
+          if ( (i_gp_reg_base > 7) && (i_gp_reg_base <= 15 ) ) {
              l_second -= 0x20;
-          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx!=LIBXSMM_X86_GP_REG_UNDEF) ) {
+          } else if ( (i_gp_reg_idx > 7) && (i_gp_reg_idx<=15) ) {
              l_second -= 0x20;
           }
           l_bytes = 5;
@@ -1139,6 +1192,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fourth -= 0x20;
              l_sizereg = 32;
           }
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
           break;
@@ -1247,6 +1301,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
 //     if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; }
        if ( i_vec_reg_number_1 >= 16) { l_second += 0x70; }
        if ( i_vec_reg_number_1 >= 24) { l_second -= 0x80; }
+       if ( l_broadcast == 1 ) { l_fourth += 0x10; }
 
        buf[i++] = 0x62;
        buf[i++] = 0xf1 + l_second;
@@ -1278,6 +1333,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
 
     io_generated_code->code_size = i;
     // *loc = i;
+
   } else {
     char l_new_code[512];
     char l_gp_reg_base[4];
@@ -1513,6 +1569,8 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
   }
 }
 
+// Note that i_immediate should be const int! Immediates can be negative
+// 
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
@@ -1530,6 +1588,7 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     int l_third = 0;
     int l_reg0 = 0;
     int l_extra = 0;
+    int l_immediate = i_immediate; // Remove this if i_immediate is already int
     
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:  
@@ -1557,17 +1616,17 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     } else {
        l_reg0 = i_gp_reg_number;
     }
-    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
+    if ( (l_immediate <= 127) && (l_immediate >= -128) &&
          (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
     {
        // one byte (even for 0!) - but never for MOVQ
        buf[i++] = 0x48 + l_first;
        buf[i++] = 0x83;
        buf[i++] = 0xc0 + l_third + l_reg0;
-       buf[i++] = i_immediate;
+       buf[i++] = l_immediate;
     } else {
        // four bytes
-       unsigned char *l_cptr = (unsigned char *) &i_immediate;
+       unsigned char *l_cptr = (unsigned char *) &l_immediate;
        buf[i++] = 0x48 + l_first;
        if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
        {
