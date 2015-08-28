@@ -50,6 +50,7 @@
 #define REPS 10000
 
 void print_help() {
+  printf("\n\n");
   printf("Usage (dense*dense=dense):\n");
   printf("    M\n");
   printf("    N\n");
@@ -64,7 +65,7 @@ void print_help() {
   printf("    ARCH: snb, hsw, knl, skx\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
   printf("    PRECISION: SP, DP\n");
-  printf("\n\n\n\n");
+  printf("\n\n");
 }
 
 inline double sec(struct timeval start, struct timeval end) {
