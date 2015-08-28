@@ -268,7 +268,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
-                                  const unsigned int      i_immediate ) {
+                                  const int               i_immediate ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */

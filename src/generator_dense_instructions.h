@@ -179,7 +179,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
-                                  const unsigned int      i_immediate );
+                                  const int               i_immediate );
 
 /**
  * Generates regular all instructions with immediates
