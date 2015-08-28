@@ -39,7 +39,7 @@ def calc_direct_index(mnk, d, h):
 
 
 def create_dispatch_direct_function(typeflag, mnklist):
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
     maxm = libxsmm_utilities.max_mnk(mnklist, 0, 0)
     maxn = libxsmm_utilities.max_mnk(mnklist, 0, 1)
@@ -84,7 +84,7 @@ def create_dispatch_direct(mnklist):
 
 
 def create_dispatch_bsearch_function(typeflag, mnklist):
-    print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
+    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
     print "{"
     i, n, mnklen = 0, 6, len(mnklist)
     print "  static /*const*/ libxsmm_" + typeflag + "mm_function functions[/*" + str(mnklen) + "*/] = {"
@@ -104,16 +104,16 @@ def create_dispatch_bsearch_function(typeflag, mnklist):
 def create_dispatch_bsearch(mnklist):
     print "#include <libxsmm.h>"
     print
-    print "#if defined(LIBXSMM_OFFLOAD)"
-    print "# pragma offload_attribute(push,target(mic))"
+    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
+    print "# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))"
     print "#endif"
     print "#include <stdlib.h>"
-    print "#if defined(LIBXSMM_OFFLOAD)"
+    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
     print "# pragma offload_attribute(pop)"
     print "#endif"
     print
     print
-    print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_compare3(const void* a, const void* b)"
+    print "LIBXSMM_RETARGETABLE int libxsmm_dispatch_compare3(const void* a, const void* b)"
     print "{"
     print "  const int *const ia = (const int*)a, *const ib = (const int*)b;"
     print "  const int d0 = ia[0] - ib[0], d1 = ia[1] - ib[1], d2 = ia[2] - ib[2];"
@@ -121,7 +121,7 @@ def create_dispatch_bsearch(mnklist):
     print "}"
     print
     print
-    print "LIBXSMM_TARGET(mic) int libxsmm_dispatch_index(int m, int n, int k)"
+    print "LIBXSMM_RETARGETABLE int libxsmm_dispatch_index(int m, int n, int k)"
     print "{"
     i, n, mnklen = 0, 12, len(mnklist)
     print "  static /*const*/ int indices[/*" + str(3 * mnklen) + "*/] = {"
@@ -166,13 +166,13 @@ if __name__ == "__main__":
         print "#include <libxsmm.h>"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)"
         print "{"
         print "  return 0;"
         print "}"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_TARGET(mic) libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)"
         print "{"
         print "  return 0;"
         print "}"
