@@ -162,7 +162,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     LIBXSMM_ASSUME_ALIGNED_STORES(libxsmm_c_); \
     /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_a_);*/ \
     /*TODO: LIBXSMM_ASSUME_ALIGNED_LOADS(libxsmm_b_);*/ \
-    LIBXSMM_PRAGMA_SIMD_COLLAPSE(2) \
+    LIBXSMM_PRAGMA_SIMD/*_COLLAPSE(2)*/ \
     for (libxsmm_j_ = 0; libxsmm_j_ < LIBXSMM_LD(M, N); ++libxsmm_j_) { \
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M)) \
       for (libxsmm_i_ = 0; libxsmm_i_ < LIBXSMM_LD(N, M); ++libxsmm_i_) { \
