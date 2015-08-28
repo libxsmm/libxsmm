@@ -30,8 +30,8 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if defined(LIBXSMM_OFFLOAD)
-# pragma offload_attribute(push,target(mic))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
 #include <algorithm>
@@ -50,7 +50,7 @@
 # include <omp.h>
 #endif
 
-#if defined(LIBXSMM_OFFLOAD)
+#if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
 
@@ -58,7 +58,7 @@
 
 
 template<int Seed>
-struct LIBXSMM_TARGET(mic) init {
+struct LIBXSMM_RETARGETABLE init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
     const int ldx = 0 == ld ? ncols : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
@@ -111,8 +111,8 @@ int main(int argc, char* argv[])
       init<24>(b + i * bsize, k, n, i);
     }
 
-#if defined(LIBXSMM_OFFLOAD)
-#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512_MIC) && (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
