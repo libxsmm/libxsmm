@@ -182,6 +182,190 @@ void run_gold_float( const float*                   i_a,
   printf("%f GFLOPS for C\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
+void run_jit_double( const double*                   i_a,
+                     const double*                   i_b,
+                     double*                         o_c,
+                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                     const char*                     i_arch ) {
+  struct timeval l_start, l_end;
+
+  /* define function pointer */
+  typedef void (*jitfun)(const double* a, const double* b, double* c);
+  typedef void (*jitfun_pf)(const double* a, const double* b, double* c, const double* a_pf, const double* b_pf, const double* c_pf);
+  jitfun l_test_jit;
+  jitfun_pf l_test_jit_pf;
+
+  double l_jittime = 0.0;
+  gettimeofday(&l_start, NULL);
+  
+  /* allocate buffer for code */
+  unsigned char* l_gen_code = (unsigned char*) malloc( 32768 * sizeof(unsigned char) );
+  libxsmm_generated_code l_generated_code;
+  l_generated_code.generated_code = (void*)l_gen_code;
+  l_generated_code.buffer_size = 32768;
+  l_generated_code.code_size = 0;
+  l_generated_code.code_type = 2;
+  l_generated_code.last_error = 0;
+
+  /* generate kernel */
+  libxsmm_generator_dense_kernel( &l_generated_code,
+                                  i_xgemm_desc,
+                                  i_arch );
+
+  /* handle evetl. errors */
+  if ( l_generated_code.last_error != 0 ) {
+    fprintf(stderr, "%s\n", libxsmm_strerror( l_generated_code.last_error ) );
+    exit(-1);
+  }
+
+  /* create executable buffer */
+  unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
+  memcpy( l_code, l_gen_code, l_generated_code.code_size );
+  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ | PROT_WRITE );
+
+  /* set function pointer and jitted code */
+  if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+      l_test_jit = (jitfun)l_code;
+    } else {
+      l_test_jit_pf = (jitfun_pf)l_code;
+    }
+  }
+
+  gettimeofday(&l_end, NULL);  
+  l_jittime = sec(l_start, l_end);
+
+  printf("size of generated code: %i\n", l_generated_code.code_size );
+
+  /* write buffer for manual decode as binary to a file */
+  char l_objdump_name[128];
+  sprintf( l_objdump_name, "kernel_%i_%i_%i.bin", i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k ); 
+  FILE *l_byte_code = fopen( l_objdump_name, "wb");
+
+  if ( l_byte_code != NULL ){
+    fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
+    fclose( l_byte_code );
+  } else {
+    /* error */
+  }
+
+  unsigned int l_t;
+  double l_runtime = 0.0;
+
+  gettimeofday(&l_start, NULL);
+
+  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
+      l_test_jit(i_a, i_b, o_c);
+    }
+  } else {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
+      l_test_jit_pf(i_a, i_b, o_c, i_a, i_b, o_c);
+    }
+  }
+
+  gettimeofday(&l_end, NULL);  
+  l_runtime = sec(l_start, l_end);
+
+  printf("%fs for creating jit\n", l_jittime);
+  printf("%fs for executing jit\n", l_runtime);
+  printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+
+  free(l_gen_code);
+  _mm_free(l_code);
+}
+
+void run_jit_float( const float*                    i_a,
+                    const float*                    i_b,
+                    float*                          o_c,
+                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                    const char*                     i_arch ) {
+  struct timeval l_start, l_end;
+
+  /* define function pointer */
+  typedef void (*jitfun)(const float* a, const float* b, float* c);
+  typedef void (*jitfun_pf)(const float* a, const float* b, float* c, const float* a_pf, const float* b_pf, const float* c_pf);
+  jitfun l_test_jit;
+  jitfun_pf l_test_jit_pf;
+
+  double l_jittime = 0.0;
+  gettimeofday(&l_start, NULL);
+  
+  /* allocate buffer for code */
+  unsigned char* l_gen_code = (unsigned char*) malloc( 32768 * sizeof(unsigned char) );
+  libxsmm_generated_code l_generated_code;
+  l_generated_code.generated_code = (void*)l_gen_code;
+  l_generated_code.buffer_size = 32768;
+  l_generated_code.code_size = 0;
+  l_generated_code.code_type = 2;
+  l_generated_code.last_error = 0;
+
+  /* generate kernel */
+  libxsmm_generator_dense_kernel( &l_generated_code,
+                                  i_xgemm_desc,
+                                  i_arch );
+
+  /* handle evetl. errors */
+  if ( l_generated_code.last_error != 0 ) {
+    fprintf(stderr, "%s\n", libxsmm_strerror( l_generated_code.last_error ) );
+    exit(-1);
+  }
+
+  /* create executable buffer */
+  unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
+  memcpy( l_code, l_gen_code, l_generated_code.code_size );
+  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ | PROT_WRITE );
+
+  /* set function pointer and jitted code */
+  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+    l_test_jit = (jitfun)l_code;
+  } else {
+    l_test_jit_pf = (jitfun_pf)l_code;
+  }
+
+  gettimeofday(&l_end, NULL);  
+  l_jittime = sec(l_start, l_end);
+
+  printf("size of generated code: %i\n", l_generated_code.code_size );
+
+  /* write buffer for manual decode as binary to a file */
+  char l_objdump_name[128];
+  sprintf( l_objdump_name, "kernel_%i_%i_%i.bin", i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k ); 
+  FILE *l_byte_code = fopen( l_objdump_name, "wb");
+
+  if ( l_byte_code != NULL ){
+    fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
+    fclose( l_byte_code );
+  } else {
+    /* error */
+  }
+
+  unsigned int l_t;
+  double l_runtime = 0.0;
+
+  gettimeofday(&l_start, NULL);
+
+  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
+      l_test_jit(i_a, i_b, o_c);
+    }
+  } else {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
+      l_test_jit_pf(i_a, i_b, o_c, i_a, i_b, o_c);
+    }
+  }
+
+  gettimeofday(&l_end, NULL);  
+  l_runtime = sec(l_start, l_end);
+
+  printf("%fs for creating jit\n", l_jittime);
+  printf("%fs for executing jit\n", l_runtime);
+  printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+
+  free(l_gen_code);
+  _mm_free(l_code);
+}
+
 void run_gold_double_temp( const double*                   i_a,
                            const double*                   i_b,
                            double*                         o_c ) {
@@ -436,31 +620,29 @@ int main(int argc, char* argv []) {
 
   /* print some output... */
   printf("------------------------------------------------\n");
-   /*@TODO FIXME printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);*/
-  printf("RUNNING a very simple 8 element vector add!\n");
+  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
   if ( l_xgemm_desc.single_precision == 0 ) {
-     /*@TODO FIXME printf(", DP\n");*/
+    printf(", DP\n");
   } else {
-    printf("SP is not supported, switching to DP...\n");
     l_xgemm_desc.single_precision = 0;
-    /*@TODO FIXME printf(", SP\n");*/
+    printf(", SP\n");
   }
   printf("------------------------------------------------\n");
 
   /* run C */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    run_gold_double_temp( l_a_d, l_b_d, l_c_gold_d );
-    /*run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );*/
+    /*run_gold_double_temp( l_a_d, l_b_d, l_c_gold_d );*/
+    run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
   }  
 
   /* run jit */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    run_jit_double_temp( l_a_d, l_b_d, l_c_d, l_arch, l_prefetch );
-    /*run_gold_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc );*/
+    /*run_jit_double_temp( l_a_d, l_b_d, l_c_d, l_arch, l_prefetch );*/
+    run_jit_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc, l_arch );
   } else {
-    run_gold_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc );
+    run_jit_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc, l_arch );
   }  
   
   /* test result */

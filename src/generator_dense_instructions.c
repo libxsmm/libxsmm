@@ -1760,6 +1760,7 @@ void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_gen
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    io_loop_label_tracker->label_count++;
   } else {
     char l_new_code[512];
     
@@ -1793,6 +1794,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    io_loop_label_tracker->label_count--;
   } else {
     char l_new_code[512];
     char l_instr_name[16];
