@@ -70,7 +70,7 @@ do
       rm -rf xgemm
       if [ "${ARCH}" == 'snb' ]; then
         icc -O3 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../src -L./../../lib/intel64 -lxsmmgen -o xgemm
-        valgrind ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+        ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       elif [ "${ARCH}" == 'hsw' ]; then
         icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../src -L./../../lib/intel64 -lxsmmgen -o xgemm
         ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
