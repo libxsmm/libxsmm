@@ -625,7 +625,6 @@ int main(int argc, char* argv []) {
   if ( l_xgemm_desc.single_precision == 0 ) {
     printf(", DP\n");
   } else {
-    l_xgemm_desc.single_precision = 0;
     printf(", SP\n");
   }
   printf("------------------------------------------------\n");
