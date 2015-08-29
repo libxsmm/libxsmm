@@ -1819,7 +1819,9 @@ void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_gen
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    int l_lab = io_loop_label_tracker->label_count; 
     io_loop_label_tracker->label_count++;
+    io_loop_label_tracker->label_address[l_lab] = io_generated_code->code_size;
   } else {
     char l_new_code[512];
     
@@ -1853,7 +1855,45 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
     io_loop_label_tracker->label_count--;
+    int l_lab = io_loop_label_tracker->label_count;
+    int l_val = io_loop_label_tracker->label_address[l_lab];
+    int l_dist;
+
+    if ( l_maxsize - i < 6 )
+    {
+       fprintf(stderr,"Our jump instructions need at most 6 bytes\n");
+       exit(-1);
+    }
+    if ( l_val < i + 2 )
+    {
+       l_dist = -1*(i+2-l_val); // assume 1-byte jump initially
+fprintf(stderr,"l_dist=%d\n",l_dist);
+       if ( l_dist >= -128 )    // can it be done in a single byte?
+       {
+          // Single byte back jump
+          buf[i++] = 0x7c;
+          buf[i++] = (unsigned char) l_dist; 
+       } else {
+          // 4-byte back jump
+          l_dist = -1*(i+6-l_val);  // recalc the distance assuming 4-bytes
+          buf[i++] = 0x0f;
+          buf[i++] = 0x8c;
+          unsigned char *l_cptr = (unsigned char *) &l_dist; 
+          buf[i++] = l_cptr[0];
+          buf[i++] = l_cptr[1];
+          buf[i++] = l_cptr[2];
+          buf[i++] = l_cptr[3];
+       } 
+    } else {
+       fprintf(stderr,"Looks like we're attempting a forward jump");
+       exit(-1);
+    }
+    io_generated_code->code_size = i;
+    //*loc = i;
   } else {
     char l_new_code[512];
     char l_instr_name[16];
