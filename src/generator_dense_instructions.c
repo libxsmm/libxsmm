@@ -1879,7 +1879,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
     if ( l_val < i + 2 )
     {
        l_dist = -1*(i+2-l_val); // assume 1-byte jump initially
-fprintf(stderr,"l_dist=%d\n",l_dist);
+/*fprintf(stderr,"l_dist=%d\n",l_dist);*/
        if ( l_dist >= -128 )    // can it be done in a single byte?
        {
           // Single byte back jump
