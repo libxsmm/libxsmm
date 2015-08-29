@@ -147,17 +147,25 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
-void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_generated_code, 
-                                               const unsigned int      i_instruction_set,
-                                               const unsigned int      i_vec_instr,
-                                               const unsigned int      i_gp_reg_base,
-                                               const unsigned int      i_gp_reg_idx,
-                                               const unsigned int      i_scale,
-                                               const int               i_displacement,
-                                               const char              i_vector_name,                                
-                                               const unsigned int      i_vec_reg_number_0,
-                                               const unsigned int      i_vec_reg_number_1 ) {
+void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code, 
+                                          const unsigned int      i_instruction_set,
+                                          const unsigned int      i_vec_instr,
+                                          const unsigned int      i_use_broadcast, 
+                                          const unsigned int      i_gp_reg_base,
+                                          const unsigned int      i_gp_reg_idx,
+                                          const unsigned int      i_scale,
+                                          const int               i_displacement,
+                                          const char              i_vector_name,                                
+                                          const unsigned int      i_vec_reg_number_0,
+                                          const unsigned int      i_vec_reg_number_1 ) {
   /* @TODO add checks in debug mode */
+  if ( (i_instruction_set != LIBXSMM_X86_IMCI)   && 
+       (i_instruction_set != LIBXSMM_X86_AVX512) &&
+       (i_use_broadcast != 0)                       ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
+    return;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
@@ -176,25 +184,35 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     }
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set == LIBXSMM_X86_AVX512 || i_instruction_set == LIBXSMM_X86_IMCI ) {
-      /* we just a have displacement */
-      if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
-        if ( io_generated_code->code_type == 0 ) {
+    if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+      if ( io_generated_code->code_type == 0 ) {
+        if (i_use_broadcast != 0) {
           sprintf(l_new_code, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       } else {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
-        if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       }
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
-      return;
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
+      if ( io_generated_code->code_type == 0 ) {
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      } else {
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }

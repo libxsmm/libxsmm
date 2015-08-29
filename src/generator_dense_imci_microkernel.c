@@ -71,16 +71,17 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
 
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      libxsmm_instruction_vec_compute_membcast( io_generated_code, 
-                                                i_micro_kernel_config->instruction_set,
-                                                i_micro_kernel_config->vmul_instruction,
-                                                i_gp_reg_mapping->gp_reg_b,
-                                                LIBXSMM_X86_GP_REG_UNDEF,
-                                                0,
-                                                (i_offset * i_micro_kernel_config->datatype_size) + (i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
-                                                i_micro_kernel_config->vector_name,
-                                                0,
-                                                i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+      libxsmm_instruction_vec_compute_mem( io_generated_code, 
+                                           i_micro_kernel_config->instruction_set,
+                                           i_micro_kernel_config->vmul_instruction,
+                                           1,
+                                           i_gp_reg_mapping->gp_reg_b,
+                                           LIBXSMM_X86_GP_REG_UNDEF,
+                                           0,
+                                           (i_offset * i_micro_kernel_config->datatype_size) + (i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                           i_micro_kernel_config->vector_name,
+                                           0,
+                                           i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
     }
   } else {
     unsigned int l_b_prefetches = 0;
@@ -121,16 +122,17 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
                                         (i_xgemm_desc->ldb * (l_b_prefetches) * i_micro_kernel_config->datatype_size)+64 );
           l_b_prefetches++;
         }
-        libxsmm_instruction_vec_compute_membcast( io_generated_code, 
-                                                  i_micro_kernel_config->instruction_set,
-                                                  i_micro_kernel_config->vmul_instruction,
-                                                  i_gp_reg_mapping->gp_reg_b,
-                                                  LIBXSMM_X86_GP_REG_UNDEF,
-                                                  0,
-                                                  (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
-                                                  i_micro_kernel_config->vector_name,
-                                                  0,
-                                                  i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+        libxsmm_instruction_vec_compute_mem( io_generated_code, 
+                                             i_micro_kernel_config->instruction_set,
+                                             i_micro_kernel_config->vmul_instruction,
+                                             1,
+                                             i_gp_reg_mapping->gp_reg_b,
+                                             LIBXSMM_X86_GP_REG_UNDEF,
+                                             0,
+                                             (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
+                                             i_micro_kernel_config->vector_name,
+                                             0,
+                                             i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
       }
     }
 
