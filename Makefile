@@ -112,8 +112,8 @@ ifeq (,$(LD))
 endif
 
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
-	CXXFLAGS += -fPIC -Wall -Werror -std=c++0x
-	CFLAGS += -fPIC -Wall -Werror -std=c89
+	CXXFLAGS += -fPIC -Wall -std=c++0x
+	CFLAGS += -fPIC -Wall -std=c89
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
@@ -174,8 +174,8 @@ else # GCC assumed
 	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -Werror -std=c++0x -Wno-unused-function
-	CFLAGS += -Wall -Werror -Wno-unused-function
+	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -466,7 +466,7 @@ endif
 	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
 	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
 	@sed -i'' \
-		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_TARGET(mic) void libxsmm_/' \
+		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \

@@ -41,8 +41,10 @@
 #if defined(__cplusplus)
 # define LIBXSMM_EXTERN_C extern "C"
 # define LIBXSMM_INLINE inline
+# define LIBXSMM_VARIADIC ...
 #else
 # define LIBXSMM_EXTERN_C
+# define LIBXSMM_VARIADIC
 # if (199901L <= __STDC_VERSION__)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
@@ -132,12 +134,15 @@
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
+# define LIBXSMM_CDECL __cdecl
 #elif defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+# define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
 # define LIBXSMM_ATTRIBUTE(A)
 # define LIBXSMM_ALIGNED(DECL, N)
+# define LIBXSMM_CDECL
 #endif
 
 #if defined(__INTEL_COMPILER)
@@ -168,19 +173,21 @@
 #endif
 
 #if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# define LIBXSMM_OFFLOAD 1
-# define LIBXSMM_TARGET(A) LIBXSMM_ATTRIBUTE(target(A))
+# define LIBXSMM_OFFLOAD_BUILD 1
+# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 #else
-/*# define LIBXSMM_OFFLOAD 0*/
-# define LIBXSMM_TARGET(A)
+/*# define LIBXSMM_OFFLOAD_BUILD 0*/
+# define LIBXSMM_OFFLOAD(A)
 #endif
+#define LIBXSMM_OFFLOAD_TARGET mic
+#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 #define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
 #define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION
 #define LIBXSMM_BLASPREC_float(PREFIX, FUNCTION) PREFIX##s##FUNCTION
 
-#if defined(LIBXSMM_OFFLOAD)
-# pragma offload_attribute(push,target(mic))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 # include <stdint.h>
 # pragma offload_attribute(pop)
 #else

@@ -30,8 +30,8 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if defined(LIBXSMM_OFFLOAD)
-# pragma offload_attribute(push,target(mic))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
 #include <algorithm>
@@ -50,7 +50,7 @@
 # include <omp.h>
 #endif
 
-#if defined(LIBXSMM_OFFLOAD)
+#if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
 
@@ -72,7 +72,7 @@
 
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
-LIBXSMM_TARGET(mic) class LIBXSMM_TARGET(mic) lock_type {
+LIBXSMM_RETARGETABLE class LIBXSMM_RETARGETABLE lock_type {
 public:
   lock_type() {
     for (int i = 0; i < (CP2K_SYNCHRONIZATION); ++i) omp_init_lock(m_lock + i);
@@ -98,7 +98,7 @@ private:
 
 
 template<int Seed>
-struct LIBXSMM_TARGET(mic) init {
+struct LIBXSMM_RETARGETABLE init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
     const int ldx = 0 == ld ? ncols : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
@@ -115,7 +115,7 @@ struct LIBXSMM_TARGET(mic) init {
 
 
 template<typename T>
-LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
+LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
 {
   const int ld = 0 == ld_src ? ncols : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
@@ -145,7 +145,7 @@ LIBXSMM_TARGET(mic) void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT 
 
 
 template<typename T>
-LIBXSMM_TARGET(mic) double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int nrows, int ncols, int ld = 0)
+LIBXSMM_RETARGETABLE double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int nrows, int ncols, int ld = 0)
 {
   const int ldx = 0 == ld ? ncols : ld;
   double diff = 0;
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
-    LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
+    LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
       raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
@@ -205,8 +205,8 @@ int main(int argc, char* argv[])
       init<24>(b + i * bsize, k, n, i);
     }
 
-#if defined(LIBXSMM_OFFLOAD)
-#   pragma offload target(mic) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) out(c: length(csize))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512_MIC) && (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
 #if defined(CP2K_CHECK)
-      LIBXSMM_TARGET(mic) struct LIBXSMM_TARGET(mic) raii { // avoid std::vector (first-touch init. causes NUMA issue)
+      LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
         explicit raii(int size): expect(new T[size]) {}
         ~raii() { delete[] expect; }

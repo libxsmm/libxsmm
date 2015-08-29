@@ -768,20 +768,25 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
-// i_displacement should be just const int!!!
-// i_broadcast should be added as a parameter. See comments in code for how
-//    to change the code to use it.
-void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_generated_code, 
-                                               const unsigned int      i_instruction_set,
-                                               const unsigned int      i_vec_instr,
-                                               const unsigned int      i_gp_reg_base,
-                                               const unsigned int      i_gp_reg_idx,
-                                               const unsigned int      i_scale,
-                                               const int               i_displacement,
-                                               const char              i_vector_name,                                
-                                               const unsigned int      i_vec_reg_number_0,
-                                               const unsigned int      i_vec_reg_number_1 ) {
+void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code, 
+                                          const unsigned int      i_instruction_set,
+                                          const unsigned int      i_vec_instr,
+                                          const unsigned int      i_use_broadcast, 
+                                          const unsigned int      i_gp_reg_base,
+                                          const unsigned int      i_gp_reg_idx,
+                                          const unsigned int      i_scale,
+                                          const int               i_displacement,
+                                          const char              i_vector_name,                                
+                                          const unsigned int      i_vec_reg_number_0,
+                                          const unsigned int      i_vec_reg_number_1 ) {
   /* @TODO add checks in debug mode */
+  if ( (i_instruction_set != LIBXSMM_X86_IMCI)   && 
+       (i_instruction_set != LIBXSMM_X86_AVX512) &&
+       (i_use_broadcast != 0)                       ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
+    return;
+  }
+
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -802,11 +807,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     int l_scaleadj=0;
     int l_iregoff = 0;
 
-    // To enable broadcasts off, pass in i_broadcast as an unsigned int and
-    // let l_broadcast = i_broadcast; - also remove the setting of l_broadcast
-    // in the switch statement of i_vector_name
-       int l_broadcast;
-    // int l_broadcast = i_broadcast;  
+    int l_broadcast = (int)i_use_broadcast;  
 
     if ( l_maxsize - i < 20 )
     {
@@ -816,8 +817,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     switch ( i_vector_name ) {
        case 'x':
           l_sizereg = 1;
-             l_broadcast = 0;  // comment this line to make broadcasts optional
-          if ( l_broadcast == 1 ) 
+          if ( l_broadcast != 0 ) 
           {
              fprintf(stderr,"broadcasts aren't enabled with xmm yet\n");
              exit(-1);
@@ -825,22 +825,20 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
           break;
        case 'y':
           l_sizereg = 1;
-             l_broadcast = 0;  // comment this line to make broadcasts optional
-          if ( l_broadcast == 1 ) 
+          if ( l_broadcast != 0 ) 
           {
              fprintf(stderr,"broadcasts aren't enabled with ymm yet\n");
              exit(-1);
           }
           break;
        case 'z':
-             l_broadcast = 1;  // comment this line to make broadcasts optional
           l_bytes = 6;
           break;
        default:
           fprintf(stderr,"Exactly what sort of fp regs are you using?\n");
           exit(-1);
     }
-    if ( l_broadcast == 1 ) l_sizereg = 8;
+    if ( l_broadcast != 0 ) l_sizereg = 8;
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VXORPD:
           l_fpadj = -2;
@@ -1192,7 +1190,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
              l_fourth -= 0x20;
              l_sizereg = 32;
           }
-          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( l_broadcast != 0 ) l_sizereg = 4;
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
           break;
@@ -1301,7 +1299,7 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
 //     if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; }
        if ( i_vec_reg_number_1 >= 16) { l_second += 0x70; }
        if ( i_vec_reg_number_1 >= 24) { l_second -= 0x80; }
-       if ( l_broadcast == 1 ) { l_fourth += 0x10; }
+       if ( l_broadcast != 0 ) { l_fourth += 0x10; }
 
        buf[i++] = 0x62;
        buf[i++] = 0xf1 + l_second;
@@ -1350,25 +1348,35 @@ void libxsmm_instruction_vec_compute_membcast( libxsmm_generated_code* io_genera
     }
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set == LIBXSMM_X86_AVX512 || i_instruction_set == LIBXSMM_X86_IMCI ) {
-      /* we just a have displacement */
-      if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
-        if ( io_generated_code->code_type == 0 ) {
+    if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
+      if ( io_generated_code->code_type == 0 ) {
+        if (i_use_broadcast != 0) {
           sprintf(l_new_code, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       } else {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
-        if ( io_generated_code->code_type == 0 ) {
-          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          sprintf(l_new_code, "                       %s %i(%%%s), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       }
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
-      return;
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
+      if ( io_generated_code->code_type == 0 ) {
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       \"%s %i(%%%%%s,%%%%%s,%i), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      } else {
+        if (i_use_broadcast != 0) {
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        } else {
+          sprintf(l_new_code, "                       %s %i(%%%s,%%%s,%i), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        }
+      }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code );
   }
@@ -1574,7 +1582,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
-                                  const unsigned int      i_immediate ) {
+                                  const int               i_immediate ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
