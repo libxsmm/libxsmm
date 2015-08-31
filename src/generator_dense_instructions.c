@@ -165,8 +165,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_VBROADCASTSS:
           if ( i_vector_name=='x' ) 
           {
-             fprintf(stderr,"vbroadcastss and xmm? Fool!\n");
-             exit(-1);
+             l_ivectype += 1;
           }
           if ( i_is_store == 1 ) 
           {
@@ -1596,7 +1595,6 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     int l_third = 0;
     int l_reg0 = 0;
     int l_extra = 0;
-    int l_immediate = i_immediate; // Remove this if i_immediate is already int
     
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:  
@@ -1624,17 +1622,17 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     } else {
        l_reg0 = i_gp_reg_number;
     }
-    if ( (l_immediate <= 127) && (l_immediate >= -128) &&
+    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
          (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
     {
        // one byte (even for 0!) - but never for MOVQ
        buf[i++] = 0x48 + l_first;
        buf[i++] = 0x83;
        buf[i++] = 0xc0 + l_third + l_reg0;
-       buf[i++] = l_immediate;
+       buf[i++] = i_immediate;
     } else {
        // four bytes
-       unsigned char *l_cptr = (unsigned char *) &l_immediate;
+       unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = 0x48 + l_first;
        if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
        {
