@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 
 #include "generator_dense_instructions.h"
 #include "generator_dense_imci_microkernel.h"

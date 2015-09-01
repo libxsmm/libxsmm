@@ -71,7 +71,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 
 #include "generator_common.h"
 #include "generator_sparse_asparse.h"

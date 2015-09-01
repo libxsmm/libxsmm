@@ -10,7 +10,11 @@ ln -s cp2k.git/cp2k cp2k
 ```
 
 ## Build Instructions
-In order to build CP2K/intel from source, make sure to rely on the recommended version of the Intel Compiler (see below command). For Intel MPI, usually any version is fine.
+In order to build CP2K/intel from source, make sure to rely on one of the recommended compiler versions:
+* Intel Compiler 15.0.3.187 (Build 20150407)
+* Intel Compiler 16.0.0.109 (Build 20150815)
+
+For Intel MPI, usually any version is fine.
 
 ```
 source /opt/intel/composer_xe_2015.3.187/bin/compilervars.sh intel64
