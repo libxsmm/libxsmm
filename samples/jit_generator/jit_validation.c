@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 /* this is linux specific */
 #include <sys/time.h>
 #include <sys/mman.h>
