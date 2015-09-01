@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Greg Henry (Intel Corp.)
 ******************************************************************************/
 
 #include <stdio.h>
@@ -1926,21 +1926,100 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
       fprintf(stderr, "Jit buffer to small\n!");
       exit(-1);
     }
+    
+    /* check for a valid register allocation for input pointers */
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      return;
+    }
 
-    /* push rbx */
-    l_code_buffer[l_code_size++] = 0x53;
-    /* push r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x54;
-    /* push r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x55;
-    /* push r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x56;
-    /* push r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x57;
+    /* push callee save registers */
+    if ( (strcmp(i_arch, "wsm") == 0) ||
+         (strcmp(i_arch, "snb") == 0) ||
+         (strcmp(i_arch, "hsw") == 0)    ) {
+      /* handle m-loop */
+      if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x53;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x54;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x55;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x56;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x57;
+      } else {}
+
+      /* handle n-loop */
+      if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x53;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x54;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x55;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x56;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x57;
+      } else {}
+
+      /* handle k-loop */
+      if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x53;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x54;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x55;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x56;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x57;
+      } else {}
+
+    } else {
+      /* push rbx */
+      l_code_buffer[l_code_size++] = 0x53;
+      /* push r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x54;
+      /* push r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x55;
+      /* push r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x56;
+      /* push r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x57;
+    }
 
     /* update code length */
     io_generated_code->code_size = l_code_size;
@@ -2049,11 +2128,7 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
                                                            const char*                   i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-    /* @TODO-GREG: how do we interface here? */
-    /* this is start of the xGEMM kernel, the registers are in the variables */
-
-    /* this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is a very simple System V ABI 64 interfacce */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -2063,21 +2138,102 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
       exit(-1);
     }
 
-    /* pop r15 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5f;
-    /* pop r14 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5e;
-    /* pop r13 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5d;
-    /* pop r12 */
-    l_code_buffer[l_code_size++] = 0x41;
-    l_code_buffer[l_code_size++] = 0x5c;
-    /* pop rbx */
-    l_code_buffer[l_code_size++] = 0x5b;
-    /* retq */
+    /* check for a valid register allocation for input pointers */
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      return;
+    }
+    if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      return;
+    }
+
+    /* pop callee save registers */
+    if ( (strcmp(i_arch, "wsm") == 0) ||
+         (strcmp(i_arch, "snb") == 0) ||
+         (strcmp(i_arch, "hsw") == 0)    ) {
+      /* handle k-loop */
+      if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x5b;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5c;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5d;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5e;
+      } else if ( i_gp_reg_mapping->gp_reg_kloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5f;
+      } else {}
+
+      /* handle n-loop */
+      if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x5b;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5c;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5d;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5e;
+      } else if ( i_gp_reg_mapping->gp_reg_nloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5f;
+      } else {}
+
+      /* handle m-loop */
+      if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_RBX ) {
+        l_code_buffer[l_code_size++] = 0x5b;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R12 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5c;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R13 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5d;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R14 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5e;
+      } else if ( i_gp_reg_mapping->gp_reg_mloop == LIBXSMM_X86_GP_REG_R15 ) {
+        l_code_buffer[l_code_size++] = 0x41;
+        l_code_buffer[l_code_size++] = 0x5f;
+      } else {}
+
+    } else {
+      /* pop r15 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5f;
+      /* pop r14 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5e;
+      /* pop r13 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5d;
+      /* pop r12 */
+      l_code_buffer[l_code_size++] = 0x41;
+      l_code_buffer[l_code_size++] = 0x5c;
+      /* pop rbx */
+      l_code_buffer[l_code_size++] = 0x5b;
+      /* retq */
+    }
+
+    /* @TODO: I don't know if this is the correct placement in the generation process */
     l_code_buffer[l_code_size++] = 0xc3;
 
     /* update code length */
