@@ -37,7 +37,7 @@
 #include <immintrin.h>
 
 #ifdef __USE_MKL
-#define MKL_DIRECT_CALL
+//#define MKL_DIRECT_CALL
 #define MKL_DIRECT_CALL_SEQ
 #include <mkl.h>
 #endif
