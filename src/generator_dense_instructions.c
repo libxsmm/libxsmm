@@ -37,8 +37,8 @@
 #include "generator_common.h"
 #include "generator_dense_instructions.h"
 
-// This routine is for the jit code. All offsets/displacements have similar
-// byte patterns, so this is used for all of them
+/* This routine is for the jit code. All offsets/displacements have similar
+   byte patterns, so this is used for all of them */
 static inline int add_offset ( const unsigned int i_place1,
                                const unsigned int i_place2,
                                const int i_offset,
@@ -84,12 +84,11 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
 #endif
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    //int i = *loc;
+    /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    //unsigned int l_maxsize = 1024;
+    /* unsigned int l_maxsize = 1024; */
     int l_iregnum = i_gp_reg_base   % 8;
     int l_vregnum = i_vec_reg_number_0 % 8;
     int l_ivectype=0, l_ivectype2=0, l_iregoff=0, l_ivectype3=0;
@@ -99,9 +98,9 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     int l_maskingoff=0;
     int l_wow = 0;
     int l_tscale= 0;
-    int l_bytes = 4; // base number of bytes
+    int l_bytes = 4; /* base number of bytes */
 
-    int i_mask_reg_number = 1; // change if you don't want k1
+    int i_mask_reg_number = 1; /* change if you don't want k1 */
  
     if ( (i_vector_name != 'z') && (i_use_masking!=0) )
     {
@@ -125,7 +124,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_VMOVAPS:
           l_aligned += 0x18;
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
-          if ( i_vector_name!='x' ) l_ivectype -= 1; // single
+          if ( i_vector_name!='x' ) l_ivectype -= 1; /* single */
           l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VMOVSS:
@@ -187,7 +186,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
           break;
        case LIBXSMM_X86_INSTR_VMOVUPS:
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
-          if ( i_vector_name!='x' ) l_ivectype -= 1; // single
+          if ( i_vector_name!='x' ) l_ivectype -= 1; /* single */
           l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VMOVDDUP:
@@ -260,8 +259,8 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     else if ( l_num == 3 ) l_vregoffset = 0x00;
     if ( (l_iregnum == 5) && (i_displacement==0) ) 
     {
-       // Registers like rbp/r13 when you have a displacement of 0, we need
-       // force the single byte of zero to appear. 
+       /* Registers like rbp/r13 when you have a displacement of 0, we need
+          force the single byte of zero to appear. */
        l_forced_offset=1;
     }
  
@@ -305,7 +304,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
     
     io_generated_code->code_size = i;
-    //*loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_gp_reg_base_name[4];
@@ -377,9 +376,9 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    // int i = *loc;
+    /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    // unsigned int l_maxsize = 1024;
+    /* unsigned int l_maxsize = 1024; */
     int l_second=0, l_third=0, l_fourth=0, l_xreg=0;
     int l_reg0   = i_vec_reg_number_0;
     int l_reg1   = i_vec_reg_number_1; 
@@ -742,7 +741,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     }
 
     io_generated_code->code_size = i;
-    // *loc = i;
+    /* *loc = i; */
 
   } else {
     char l_new_code[512];
@@ -787,12 +786,11 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
   }
 
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    //int i = *loc;
+    /*int i = *loc;*/
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    //unsigned int l_maxsize = 1024;
+    /*unsigned int l_maxsize = 1024;*/
     int l_second=0, l_third=0, l_fourth=0, l_xreg=0;
     int l_reg0 = 0;
     int l_reg1   = i_vec_reg_number_0; 
@@ -804,7 +802,7 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     int l_forced_offset=0;
     int l_sizereg=64;
     int l_scaleadj=0;
-    int l_iregoff = 0;
+    /* int l_iregoff = 0; */
 
     int l_broadcast = (int)i_use_broadcast;  
 
@@ -1221,7 +1219,7 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     if ( (i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
     {
        if ( l_bytes < 5 ) l_bytes = 5;
-       // else l_iregoff -= 0x20;
+       /* else l_iregoff -= 0x20; */
     }
     l_regi = i_gp_reg_idx;
     if ( (i_gp_reg_idx  >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
@@ -1238,10 +1236,12 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) && 
          (i_vec_reg_number_1<=15) )
     {
-//     if ( i_vec_reg_number_0 >= 8 ) 
-//     {
-//        if ( l_bytes < 5 ) l_bytes = 5;
-//     }
+#if 0
+     if ( i_vec_reg_number_0 >= 8 ) 
+     {
+        if ( l_bytes < 5 ) l_bytes = 5;
+     }
+#endif
     } else l_bytes = 6;
 
  
@@ -1291,11 +1291,11 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
           l_second -= 0x40;
        }
 
-//     if ( i_vec_reg_number_0 >= 8 ) { l_third -= 0x40; }
+/*     if ( i_vec_reg_number_0 >= 8 ) { l_third -= 0x40; } */
        if ( i_vec_reg_number_0 >= 16) { l_third += 0x40; l_fourth -= 0x8; }
        if ( i_vec_reg_number_0 >= 24) { l_third -= 0x40; }
 
-//     if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; }
+/*     if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; } */
        if ( i_vec_reg_number_1 >= 16) { l_second += 0x70; }
        if ( i_vec_reg_number_1 >= 24) { l_second -= 0x80; }
        if ( l_broadcast != 0 ) { l_fourth += 0x10; }
@@ -1322,14 +1322,14 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     }
     if ( ( (i_gp_reg_base%8) == 5) && (i_displacement==0) ) 
     {
-       // Registers like rbp/r13 when you have a displacement of 0, we need
-       // force the single byte of zero to appear.
+       /* Registers like rbp/r13 when you have a displacement of 0, we need
+          force the single byte of zero to appear. */
        l_forced_offset = 1;
     }
     i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
 
     io_generated_code->code_size = i;
-    // *loc = i;
+    /* *loc = i; */
 
   } else {
     char l_new_code[512];
@@ -1429,12 +1429,11 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
 #endif
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-      int i = io_generated_code->code_size;
-    // int i = *loc;
-       unsigned int l_maxsize = io_generated_code->buffer_size;
-    // unsigned int l_maxsize = 1024;
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    /* int i = *loc; */
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    /* unsigned int l_maxsize = 1024; */
     int l_last = 0, l_first=0;
     int l_instype = 0;
     int l_place=0;
@@ -1490,7 +1489,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     }
     if ( (i_gp_reg_base < 8) && (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
     {
-       // prefetcht1 (%rax)
+       /* prefetcht1 (%rax) */
        buf[i++] = 0x0f;
        buf[i++] = 0x18;
        buf[i++] = 0x10 + l_instype + i_gp_reg_base;
@@ -1500,7 +1499,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
           buf[i++] = 0x24;
        }
     } else if (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) {
-       // prefetcht1 (%r8)
+       /* prefetcht1 (%r8) */
        buf[i++] = 0x41;
        buf[i++] = 0x0f;
        buf[i++] = 0x18;
@@ -1510,7 +1509,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
        {
           buf[i++] = 0x24;
        }
-    } else { // two GP regs are being used
+    } else { /* two GP regs are being used */
        l_last = 0;
        if ( i_scale == 2 ) l_last = 0x40;
        else if ( i_scale == 4 ) l_last = 0x80;
@@ -1552,14 +1551,14 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     l_sizereg = 1;
     if ( ( (i_gp_reg_base%8) == 5) && (i_displacement==0) )
     {
-       // Registers like rbp/r13 when you have a displacement of 0, we need
-       // force the single byte of zero to appear.
+       /* Registers like rbp/r13 when you have a displacement of 0, we need
+          force the single byte of zero to appear. */
        l_forced_offset = 1;
     }
     i += add_offset ( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
 
     io_generated_code->code_size = i;
-    // *loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_gp_reg_base_name[4];
@@ -1576,20 +1575,18 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
   }
 }
 
-// Note that i_immediate should be const int! Immediates can be negative
-// 
+/* Note that i_immediate should be const int! Immediates can be negative */ 
 void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_alu_instr,
                                   const unsigned int      i_gp_reg_number,
                                   const int               i_immediate ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    // int i = *loc;
-    unsigned int l_maxsize = io_generated_code->buffer_size;
-    // unsigned int l_maxsize = 1024;
+    /* int i = *loc; */
+    /* unsigned int l_maxsize = io_generated_code->buffer_size; */
+    /* unsigned int l_maxsize = 1024; */
     int l_first = 0;
     int l_second = 0;
     int l_third = 0;
@@ -1625,18 +1622,18 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     if ( (i_immediate <= 127) && (i_immediate >= -128) &&
          (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
     {
-       // one byte (even for 0!) - but never for MOVQ
+       /* one byte (even for 0!) - but never for MOVQ */
        buf[i++] = 0x48 + l_first;
        buf[i++] = 0x83;
        buf[i++] = 0xc0 + l_third + l_reg0;
        buf[i++] = i_immediate;
     } else {
-       // four bytes
+       /* four bytes */
        unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = 0x48 + l_first;
        if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
        {
-          // special case for %rax!
+          /* special case for %rax! */
           buf[i++] = 0x05 + l_second;
        } else {
           buf[i++] = 0x81 + l_extra;
@@ -1649,7 +1646,7 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     }
 
     io_generated_code->code_size = i;
-    // *loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
@@ -1672,12 +1669,11 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                   const unsigned int      i_gp_reg_number_dest) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-      int i = io_generated_code->code_size;
-    //int i = *loc;
-      unsigned int l_maxsize = io_generated_code->buffer_size;
-    //unsigned int l_maxsize = 1024;
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    /* int i = *loc; */
+    /* unsigned int l_maxsize = io_generated_code->buffer_size; */
+    /* unsigned int l_maxsize = 1024; */
     int l_first = 0;
     int l_second = 0;
     int l_reg0 = 0;
@@ -1719,7 +1715,7 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     buf[i++] = 0xc0 + 8*l_reg0 + l_reg1;
 
     io_generated_code->code_size = i;
-    //*loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_gp_reg_name_src[4];
@@ -1744,12 +1740,11 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                     const unsigned int      i_mask_reg_number ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-      int i = io_generated_code->code_size;
-    //int i = *loc;
-      unsigned int l_maxsize = io_generated_code->buffer_size;
-    //unsigned int l_maxsize = 1024;
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    /* int i = *loc; */
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    /* unsigned int l_maxsize = 1024; */
 
     if ( l_maxsize - i < 20 )
     {
@@ -1784,7 +1779,7 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     }
 
     io_generated_code->code_size = i;
-    //*loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_gp_reg_name[4];
@@ -1876,16 +1871,15 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
     }
     if ( l_val < i + 2 )
     {
-       l_dist = -1*(i+2-l_val); // assume 1-byte jump initially
-/*fprintf(stderr,"l_dist=%d\n",l_dist);*/
-       if ( l_dist >= -128 )    // can it be done in a single byte?
+       l_dist = -1*(i+2-l_val); /* assume 1-byte jump initially */
+       if ( l_dist >= -128 )    /* can it be done in a single byte? */
        {
-          // Single byte back jump
+          /* Single byte back jump */
           buf[i++] = 0x7c;
           buf[i++] = (unsigned char) l_dist; 
        } else {
-          // 4-byte back jump
-          l_dist = -1*(i+6-l_val);  // recalc the distance assuming 4-bytes
+          /* 4-byte back jump */
+          l_dist = -1*(i+6-l_val);  /* recalc the distance assuming 4-bytes */
           buf[i++] = 0x0f;
           buf[i++] = 0x8c;
           unsigned char *l_cptr = (unsigned char *) &l_dist; 
@@ -1899,7 +1893,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
        exit(-1);
     }
     io_generated_code->code_size = i;
-    //*loc = i;
+    /* *loc = i; */
   } else {
     char l_new_code[512];
     char l_instr_name[16];
@@ -1924,12 +1918,7 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
                                                            const char*                   i_prefetch) { 
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO-GREG call encoding here */
-    /* @TODO-GREG: how do we interface here? */
-    /* this is start of the xGEMM kernel, the registers are in the variables */
-
-
-    /* this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is currently System V AMD64 RTL(C) ABI only */
     unsigned char* l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
