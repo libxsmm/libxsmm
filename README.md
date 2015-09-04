@@ -44,13 +44,7 @@ make install
 make realclean
 ```
 
-The library can be configured to accept row-major (default) or column-major order matrices. This is accomplished using the variable ROW_MAJOR (0 for column-major, and row-major order otherwise). The following configures the column-major format:
-
-```
-make ROW_MAJOR=0
-```
-
-By default, LIBXSMM is not optimized for particular matrix sizes (M, N, and K values). Specializing the library for certain matrix sizes (and therefore optimizing the performance) can be achieved in the following way:
+By default, LIBXSMM is not optimized for particular matrix sizes (M, N, and K values) and works on column-major data-layout. Specializing the library for certain matrix sizes (and therefore optimizing the performance) can be achieved in the following way:
 
 ```
 make M="2 4" N="1" K="$(echo $(seq 2 5))"

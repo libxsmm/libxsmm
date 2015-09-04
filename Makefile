@@ -8,7 +8,8 @@ else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
-ROW_MAJOR ?= 1
+# @TODO: ROW_MAJOR = 1 is currently not available
+ROW_MAJOR ?= 0
 
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
