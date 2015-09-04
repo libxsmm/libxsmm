@@ -89,19 +89,22 @@ int main(int argc, char* argv[])
 
     const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
     const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
-    const int s = (2ULL << 30) / ((asize + bsize) * sizeof(T)); // 2 GByte
+    const int csize_act = ldc*n;
+    const int s = (2ULL << 30) / ((asize + bsize + csize_act) * sizeof(T)); // 2 GByte
 #if defined(_OPENMP)
+    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2*csize_act /*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, we skip C as this just in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 #endif
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      T *a, *b;
-      raii(int asize, int bsize): a(new T[asize]), b(new T[bsize]) {}
-      ~raii() { delete[] a; delete[] b; }
-    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1);
+      T *a, *b, *c;
+      raii(int asize, int bsize, int csize_act): a(new T[asize]), b(new T[bsize]), c(new T[csize_act]) {}
+      ~raii() { delete[] a; delete[] b; delete[] c; }
+    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize_act + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
+    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNED_MAX);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -109,10 +112,11 @@ int main(int argc, char* argv[])
     for (int i = 0; i < s; ++i) {
       init<42>(a + i * asize, m, k, i);
       init<24>(b + i * bsize, k, n, i);
+      init<22>(c + i * csize_act, ldc, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize_act))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512_MIC) && (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
@@ -120,10 +124,31 @@ int main(int argc, char* argv[])
 #endif
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
-        s, 1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
+        s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
+
+      { // batched
+        fprintf(stdout, "Batched (A,B,C)...\n");
+#if defined(_OPENMP)
+        double duration = -omp_get_wtime();
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          const T *const pa = a + i * asize, *const pb = b + i * bsize;
+          T* pc = c + i * csize_act;
+          libxsmm_mm(m, n, k, pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
+        }
+#if defined(_OPENMP)
+        duration += omp_get_wtime();
+        if (0 < duration) {
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
+#endif
+      }
 
       { // streaming
-        fprintf(stdout, "Streamed...\n");
+        fprintf(stdout, "Streamed (A,B)...\n");
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for
