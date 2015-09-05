@@ -47,6 +47,18 @@ THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 # With SPARSITY < 1, the binary search is enabled by default (no threshold).
 SPARSITY ?= 2
 
+# Beta paramater of DGEMM
+# we currently support 0 and 1
+# 1 generates C += A * B
+# 0 generates C = A * B
+BETA ?= 1
+ifneq (0,$(BETA))
+ifneq (1,$(BETA))
+$(error BETA needs to be eiter 0 or 1)
+endif
+endif
+
+
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
@@ -451,24 +463,24 @@ ifeq (noarch,$(GENTARGET))
 	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) knl $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) hsw $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) snb $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) wsm $(PREFETCH_SCHEME) SP
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 1 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
