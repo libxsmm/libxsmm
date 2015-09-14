@@ -110,6 +110,11 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
   double* l_tmp = (double*)malloc(l_row_count * l_column_count * sizeof(double));
+  if (l_tmp == NULL) {
+    fprintf( stderr, "LIBXSMM ERROR, Could allocate dense value array to test CSC datastructure!\n");
+    exit(-1);
+  }
+
   unsigned int l_n;
   unsigned int l_m;
 
