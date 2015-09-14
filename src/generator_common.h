@@ -197,6 +197,7 @@
 #define LIBXSMM_ERR_UNSUPPORTED_JUMP     90026
 #define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90027
 #define LIBXSMM_ERR_EXCEED_JMPLBL        90028
+#define LIBXSMM_ERR_CSC_ALLOC_DATA       90029
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

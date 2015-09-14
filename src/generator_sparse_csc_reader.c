@@ -114,6 +114,15 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
           l_column_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count));
 
+          /* check if mallocs were successful */
+          if ( ( *o_row_idx == NULL )      ||
+               ( *o_column_idx == NULL )   ||
+               ( *o_values == NULL )       || 
+               ( l_column_idx_id == NULL )    ) {
+            libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
+            return;            
+          }
+
           /* set everything to zero for init */
           memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_element_count));
           memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_column_count + 1));
