@@ -192,7 +192,7 @@ PROGRAM smm
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
       (2D0 * s * m * n * k * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * (m * k + k * n + m * n * 2) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+      (s * (m * k + k * n) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   IF (0.NE.check) THEN

@@ -693,6 +693,9 @@ char* libxsmm_strerror( const unsigned int      i_error_code ) {
     case LIBXSMM_ERR_EXCEED_JMPLBL:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: too many nested loop, exceed loop label tracker!\n");
       break;
+    case LIBXSMM_ERR_CSC_ALLOC_DATA:
+      sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: could not alloc temporay memory for reading CSC file!\n");
+      break;
     /* default, we didn't don't know what happend */
     default:
       sprintf( libxsmm_global_error_message, " LIBXSMM ERROR: an unknown error occured!\n" );
