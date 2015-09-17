@@ -104,9 +104,16 @@ seissol::kernels::Time     m_timeKernel;
 seissol::kernels::Volume   m_volumeKernel;
 seissol::kernels::Boundary m_boundaryKernel;
 
+/* This option is needed to create multiple copies of global data to reduce CC pressure */
 #define NUMBER_OF_GLOBAL_DATA_COPIES 1
 #ifndef NUMBER_OF_GLOBAL_DATA_COPIES
 #define NUMBER_OF_GLOBAL_DATA_COPIES 1
+#endif
+
+/* This option is needed to avoid polution of low-level caches */
+#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
+#ifndef NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY
+#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
 #endif
 
 real m_timeStepWidthSimulation = (real)1.0;
