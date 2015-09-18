@@ -264,7 +264,8 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
 /* some string manipulation helper needed to 
    generated code */
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
-                                    const char*             i_code_to_append );
+                                    const char*             i_code_to_append,
+                                    const int               i_append_length );
 
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
@@ -276,5 +277,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code );
 
 char* libxsmm_strerror( const unsigned int      i_error_code );
+
+int libxsmm_snprintf(char* io_str, const int i_size, const char* i_format, ... );
 
 #endif /* GENERATOR_COMMON_H */
