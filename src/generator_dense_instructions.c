@@ -61,9 +61,9 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
     if ( (i_instruction_set == LIBXSMM_X86_AVX512) && (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
@@ -130,7 +130,7 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
@@ -177,9 +177,9 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     int l_code_length = 0;
     char l_gp_reg_base[4];
     char l_gp_reg_idx[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
     char l_broadcast[8];
     unsigned int l_single_precision = libxsmm_is_x86_vec_instr_single_precision( i_vec_instr );
     if (l_single_precision == 0) {
@@ -204,7 +204,7 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
         }
       }
     } else {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
       if ( io_generated_code->code_type == 0 ) {
         if (i_use_broadcast != 0) {
           l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
@@ -240,7 +240,7 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
     if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
       if ( io_generated_code->code_type == 0 ) {
@@ -279,9 +279,9 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
       l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
@@ -304,9 +304,9 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
       l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
@@ -330,10 +330,10 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     int l_code_length = 0;
     char l_gp_reg_name_src[4];
     char l_gp_reg_name_dest[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_src, l_gp_reg_name_src );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_dest, l_gp_reg_name_dest );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_src, l_gp_reg_name_src, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number_dest, l_gp_reg_name_dest, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
       l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%s, %%%%%s\\n\\t\"\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
@@ -356,9 +356,9 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
     char l_prefix = '\0';
 
     /* check if we need to add a prefix for accessing 32bit in a 64bit register */
@@ -433,7 +433,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_jmp_instr, l_instr_name );
+    libxsmm_get_x86_instr_name( i_jmp_instr, l_instr_name, 15 );
     
     io_loop_label_tracker->label_count--;
     
@@ -488,17 +488,17 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
          (strcmp(i_arch, "snb") == 0) ||
          (strcmp(i_arch, "hsw") == 0)    ) {
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
@@ -521,39 +521,39 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
     char l_gp_reg_name[4];
     
     /* loading b pointer in assembley */
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name, 3 );
     l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading a pointer in assembley */
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name, 3 );
     l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading c pointer in assembley */
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name, 3 );
     l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading b prefetch pointer in assembly */
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a prefetch pointer in assembly */
     } else if ( ( strcmp(i_prefetch, "AL2jpst") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2") == 0 )        ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a and b prefetch pointer in assembly */
     } else if ( ( strcmp(i_prefetch, "AL2jpst_BL2viaC") == 0 ) ||
                 ( strcmp(i_prefetch, "AL2_BL2viaC") == 0 )        ) {
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name );
+      libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {}
@@ -585,17 +585,17 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
          (strcmp(i_arch, "snb") == 0) ||
          (strcmp(i_arch, "hsw") == 0)    ) {
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
-        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name );
+        libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
@@ -648,14 +648,14 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
     char l_gp_reg_nloop[4];
     char l_gp_reg_kloop[4];
 
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_a );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_b );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_c );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_pre_a );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_pre_b );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_mloop );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_nloop );
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_a, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_b, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_c, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_pre_a, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_pre_b, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_mloop, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_nloop, 3 );
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop, 3 );
 
     if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
          ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
