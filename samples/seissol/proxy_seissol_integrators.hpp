@@ -29,37 +29,70 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void computeAderIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel 
+  {
+#if NUMBER_OF_GLOBAL_DATA_COPIES>1
+  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#else
+  GlobalData* l_globalData = m_globalData;
+#endif
+  #pragma omp for schedule(static)
+#else
+  GlobalData* l_globalData = m_globalData;
 #endif
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeAder(              m_timeStepWidthSimulation,
-                                           m_globalData->stiffnessMatricesTransposed,
+                                           l_globalData->stiffnessMatricesTransposed,
                                            m_cells->dofs[l_cell],
                                            m_cellData->localIntegration[l_cell].starMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cells->derivatives[l_cell] );
   }
+#ifdef _OPENMP
+  }
+#endif
 }
 
 void computeVolumeIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel 
+  {
+#if NUMBER_OF_GLOBAL_DATA_COPIES>1
+  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#else
+  GlobalData* l_globalData = m_globalData;
+#endif
+  #pragma omp for schedule(static)
+#else
+  GlobalData* l_globalData = m_globalData;
 #endif
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
-    m_volumeKernel.computeIntegral(        m_globalData->stiffnessMatrices,
+    m_volumeKernel.computeIntegral(        l_globalData->stiffnessMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].starMatrices,
                                            m_cells->dofs[l_cell] );
   }
+#ifdef _OPENMP
+  }
+#endif
 }
 
 void computeLocalBoundaryIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel
+  {
+#if NUMBER_OF_GLOBAL_DATA_COPIES>1
+  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#else
+  GlobalData* l_globalData = m_globalData;
+#endif
+  #pragma omp for schedule(static)
+#else
+  GlobalData* l_globalData = m_globalData;
 #endif
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_boundaryKernel.computeLocalIntegral( m_cellInformation[l_cell].faceTypes,
-                                           m_globalData->fluxMatrices,
+                                           l_globalData->fluxMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].nApNm1,
 #ifdef ENABLE_STREAM_MATRIX_PREFETCH
@@ -70,27 +103,39 @@ void computeLocalBoundaryIntegration() {
                                            m_cells->dofs[l_cell] );
 #endif
   }
+#ifdef _OPENMP
+  }
+#endif
 }
 
 void computeLocalIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel
+  {
+#if NUMBER_OF_GLOBAL_DATA_COPIES>1
+  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#else
+  GlobalData* l_globalData = m_globalData;
+#endif
+  #pragma omp for schedule(static)
+#else
+  GlobalData* l_globalData = m_globalData;
 #endif
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeAder(      (double)m_timeStepWidthSimulation,
-                                           m_globalData->stiffnessMatricesTransposed,
+                                           l_globalData->stiffnessMatricesTransposed,
                                            m_cells->dofs[l_cell],
                                            m_cellData->localIntegration[l_cell].starMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cells->derivatives[l_cell] );
 
-    m_volumeKernel.computeIntegral(        m_globalData->stiffnessMatrices,
+    m_volumeKernel.computeIntegral(        l_globalData->stiffnessMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].starMatrices,
                                            m_cells->dofs[l_cell] );
 
     m_boundaryKernel.computeLocalIntegral( m_cellInformation[l_cell].faceTypes,
-                                           m_globalData->fluxMatrices,
+                                           l_globalData->fluxMatrices,
                                            m_cells->buffers[l_cell],
                                            m_cellData->localIntegration[l_cell].nApNm1,
 #ifdef ENABLE_STREAM_MATRIX_PREFETCH
@@ -101,6 +146,9 @@ void computeLocalIntegration() {
                                            m_cells->dofs[l_cell] );
 #endif
   }
+#ifdef _OPENMP
+  }
+#endif
 }
 
 void computeNeighboringIntegration() {
@@ -112,10 +160,14 @@ void computeNeighboringIntegration() {
 #ifdef _OPENMP
   #pragma omp parallel private(l_integrationBuffer, l_timeIntegrated, l_faceNeighbors_prefetch, l_fluxMatricies_prefetch)
   {
-  GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()%NUMBER_OF_GLOBAL_DATA_COPIES];
-  //GlobalData* l_globalData = m_globalData;
-
+#if NUMBER_OF_GLOBAL_DATA_COPIES>1
+  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#else
+  GlobalData* l_globalData = m_globalData;
+#endif
   #pragma omp for schedule(static)
+#else
+  GlobalData* l_globalData = m_globalData;
 #endif
   for( int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     m_timeKernel.computeIntegrals(             m_cellInformation[l_cell].ltsSetup,
