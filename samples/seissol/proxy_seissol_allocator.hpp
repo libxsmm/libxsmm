@@ -105,12 +105,14 @@ seissol::kernels::Volume   m_volumeKernel;
 seissol::kernels::Boundary m_boundaryKernel;
 
 /* This option is needed to create multiple copies of global data to reduce CC pressure */
+//#define NUMBER_OF_GLOBAL_DATA_COPIES 9
 #define NUMBER_OF_GLOBAL_DATA_COPIES 1
 #ifndef NUMBER_OF_GLOBAL_DATA_COPIES
 #define NUMBER_OF_GLOBAL_DATA_COPIES 1
 #endif
 
 /* This option is needed to avoid polution of low-level caches */
+//#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 8
 #define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
 #ifndef NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY
 #define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
@@ -264,11 +266,26 @@ unsigned int init_data_structures(unsigned int i_cells) {
   }
 
   // DOFs, tIntegrated buffer
-  m_dofs = (real*)_mm_malloc(sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells, 2097152 /*ALIGNMENT*/);
-  m_tdofs = (real*)_mm_malloc(sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells, 2097152 /*ALIGNMENT*/);
-#ifdef __USE_DERS
-  m_ders = (real*)_mm_malloc(sizeof(real[NUMBER_OF_ALIGNED_DERS])*i_cells, 2097152/*ALIGNMENT*/);
+#ifdef USE_HBM_DOFS
+  hbw_posix_memalign( (void**) &m_dofs, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells );
+#else
+  posix_memalign( (void**) &m_dofs, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells );
 #endif
+
+#ifdef USE_HBM_TDOFS
+  hbw_posix_memalign( (void**) &m_tdofs, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells );
+#else
+  posix_memalign( (void**) &m_tdofs, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DOFS])*i_cells );
+#endif
+
+#ifdef __USE_DERS
+#ifdef USE_HBM_DERS
+  hbw_posix_memalign( (void**) &m_ders, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DERS])*i_cells );
+#else
+  posix_memalign( (void**) &m_ders, 2097152, sizeof(real[NUMBER_OF_ALIGNED_DERS])*i_cells );
+#endif
+#endif
+
   m_ptdofs = (real**)malloc(sizeof(real*)*i_cells);
   m_pder = (real**)malloc(sizeof(real*)*i_cells);
   m_faceNeighbors = (real*)malloc(sizeof(real*[4])*i_cells);
@@ -335,7 +352,12 @@ unsigned int init_data_structures(unsigned int i_cells) {
   }
 
   // local integration
-  m_localIntegration = (LocalIntegrationData*)_mm_malloc(i_cells*sizeof(LocalIntegrationData), 2097152);
+#ifdef USE_HBM_CELLLOCAL_LOCAL
+  hbw_posix_memalign( (void**) &m_localIntegration, 2097152, i_cells*sizeof(LocalIntegrationData) );
+#else
+  posix_memalign( (void**) &m_localIntegration, 2097152, i_cells*sizeof(LocalIntegrationData) );
+#endif
+
 #ifdef _OPENMP
   #pragma omp parallel for schedule(static)
 #endif
@@ -355,7 +377,12 @@ unsigned int init_data_structures(unsigned int i_cells) {
   }
   
   // neighbor integration
-  m_neighboringIntegration = (NeighboringIntegrationData*)_mm_malloc(i_cells*sizeof(NeighboringIntegrationData), 2097152);
+#ifdef USE_HBM_CELLLOCAL_NEIGH
+  hbw_posix_memalign( (void**) &m_neighboringIntegration, 2097152, i_cells*sizeof(NeighboringIntegrationData) );
+#else
+  posix_memalign( (void**) &m_neighboringIntegration, 2097152, i_cells*sizeof(NeighboringIntegrationData) );
+#endif
+
 #ifdef _OPENMP
   #pragma omp parallel for schedule(static)
 #endif
@@ -384,7 +411,11 @@ unsigned int init_data_structures(unsigned int i_cells) {
 
   // @TODO: for NUMA we need to bind this
   for (unsigned int l_globalDataCount = 0; l_globalDataCount < NUMBER_OF_GLOBAL_DATA_COPIES; l_globalDataCount++) {
-    m_globalPointerArray[l_globalDataCount] = (real*) _mm_malloc(l_globalMatrices, 2097152 /*ALIGNMENT*/ );
+#ifdef USE_HBM_GLOBALDATA
+    hbw_posix_memalign( (void**) &(m_globalPointerArray[l_globalDataCount]), 2097152, l_globalMatrices );
+#else
+    posix_memalign( (void**) &(m_globalPointerArray[l_globalDataCount]), 2097152, l_globalMatrices );
+#endif
     m_globalPointer = m_globalPointerArray[l_globalDataCount];
     m_globalDataArray[l_globalDataCount] = (GlobalData*) malloc(sizeof(GlobalData));
     m_globalData =  m_globalDataArray[l_globalDataCount];
@@ -436,19 +467,53 @@ void free_data_structures() {
   free(m_cellInformation);
   free(m_cellData);
   free(m_cells);
-  _mm_free(m_localIntegration);
-  _mm_free(m_neighboringIntegration);
-  _mm_free(m_dofs);
-  _mm_free(m_tdofs);
-#ifdef __USE_DERS
-  _mm_free(m_ders);
+
+#ifdef USE_HBM_CELLLOCAL_LOCAL
+  hbw_free(m_localIntegration);
+#else
+  free(m_localIntegration);
 #endif
+
+#ifdef USE_HBM_CELLLOCAL_NEIGH
+  hbw_free(m_neighboringIntegration);
+#else
+  free(m_neighboringIntegration);
+#endif
+
+#ifdef USE_HBM_DOFS
+  hbw_free(m_dofs);
+#else
+  free(m_dofs);
+#endif
+
+#ifdef USE_HBM_TDOFS
+  hbw_free(m_tdofs);
+#else
+  free(m_tdofs);
+#endif
+
+#ifdef __USE_DERS
+#ifdef USE_HBM_DERS
+  hbw_free(m_ders);
+#else
+  free(m_ders);
+#endif
+#endif
+
   free(m_ptdofs); 
+
   free(m_pder); 
+
   free(m_faceNeighbors);
+
   for (unsigned int l_globalDataCount = 0; l_globalDataCount < NUMBER_OF_GLOBAL_DATA_COPIES; l_globalDataCount++) {
     m_globalPointer = m_globalPointerArray[l_globalDataCount];
-    _mm_free(m_globalPointer);
+#ifdef USE_HBM_GLOBALDATA
+    hbw_free(m_globalPointer);
+#else
+    free(m_globalPointer);
+#endif
   }
+
   free(m_globalPointerArray);
 }
