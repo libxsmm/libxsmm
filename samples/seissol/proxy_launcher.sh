@@ -29,6 +29,7 @@
 SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
 #SEISSOL_KERNELS_CONFIG=all_dense   #define this if you want to generate an all-dense backend
 #SEISSOL_KERNELS_CONFIG=all_sparse   #define this if you want to generate an all-sparse backend
+MEMKIND_ROOT_DIR=/swtools/memkind/latest
 
 # some defaults
 SIMARCH=snb_dp
@@ -45,6 +46,7 @@ GENCONF="default"
 GENCODE="0"
 PREFETCH="0"
 DERS="0"
+MEMKIND="0"
 
 # some relative pathes
 LIBXSMM_ROOT=${SEISSOL_PROXY_ROOT}/../../
@@ -56,7 +58,7 @@ if [ ! -d "${SEISSOL_KERNELS_ROOT}" ]; then
   git clone --recursive https://github.com/TUM-I5/seissol_kernels.git
 fi
 
-while getopts a:k:c:n:t:o:p:g:s:d: opts; do
+while getopts a:k:c:n:t:o:p:g:s:d:m: opts; do
    case ${opts} in
       a) SIMARCH=${OPTARG} ;;
       k) KERNEL=${OPTARG} ;;
@@ -68,6 +70,7 @@ while getopts a:k:c:n:t:o:p:g:s:d: opts; do
       p) PREFETCH=${OPTARG} ;;
       g) GENCODE=${OPTARG} ;;
       d) DERS=${OPTARG} ;;
+      m) MEMKIND=${OPTARG} ;;
    esac
 done
 
@@ -160,6 +163,12 @@ fi
 if [ "${DERS}" == '1' ]; then
   ARCH_FLAGS="${ARCH_FLAGS} -D__USE_DERS"
 fi
+
+# check for memkind
+if [ "${MEMKIND}" == '1' ]; then
+  ARCH_FLAGS="${ARCH_FLAGS} -DUSE_MEMKIND -I${MEMKIND_ROOT_DIR}/include -L${MEMKIND_ROOT_DIR}/lib -lmemkind"
+fi
+
 
 # compile proxy app
 rm -rf driver_${SIMARCH}_${ORDER}.exe

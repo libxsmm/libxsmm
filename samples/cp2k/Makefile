@@ -163,6 +163,9 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
+	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
@@ -228,6 +231,9 @@ else # GCC assumed
 			CFLAGS := -g $(CFLAGS)
 			FCFLAGS := -g $(FCFLAGS)
 		endif
+	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq ($(OMP),0)
 		CXXFLAGS += -fopenmp
