@@ -31,9 +31,6 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
-#include "libxsmm_prefetch.h"
-#include "libxsmm_fallback.h"
-
 /** Parameters the library was built for. */
 #define LIBXSMM_ALIGNMENT $ALIGNMENT
 #define LIBXSMM_ALIGNED_STORES $ALIGNED_STORES
@@ -52,6 +49,9 @@
 #define LIBXSMM_AVG_M $AVG_M
 #define LIBXSMM_AVG_N $AVG_N
 #define LIBXSMM_AVG_K $AVG_K
+
+#include "libxsmm_prefetch.h"
+#include "libxsmm_fallback.h"
 
 
 /** Type of a function generated for a specific M, N, and K. */
