@@ -37,7 +37,6 @@
 #include <immintrin.h>
 
 #ifdef __USE_MKL
-//#define MKL_DIRECT_CALL
 #define MKL_DIRECT_CALL_SEQ
 #include <mkl.h>
 #endif
@@ -72,7 +71,7 @@ void dense_test_mul(const REALTYPE* a, const REALTYPE* b, REALTYPE* c);
 #define MY_LDC MY_M
 #endif
 
-#define REPS 10000
+#define REPS 100000
 //#define REPS 1
 
 inline double sec(struct timeval start, struct timeval end) {
@@ -121,14 +120,43 @@ void run_test() {
     }
   }
 
+#ifdef __USE_MKL
+  {
+    char l_trans = 'N';
+    int l_M = MY_M;
+    int l_N = MY_N;
+    int l_K = MY_K;
+    int l_lda = MY_LDA;
+    int l_ldb = MY_LDB;
+    int l_ldc = MY_LDC;
+    if (sizeof(REALTYPE) == sizeof(double)) {
+      double l_one = 1.0;    
+      dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_a, &l_lda, (double*)l_b, &l_ldb, &l_one, (double*)l_c_gold, &l_ldc); 
+    } else {
+      float l_one = 1.0f;    
+      sgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (float*)l_a, &l_lda, (float*)l_b, &l_ldb, &l_one, (float*)l_c_gold, &l_ldc);
+    }
+  }
+
+  // touch C
+  for ( l_i = 0; l_i < MY_LDC; l_i++) {
+    for ( l_j = 0; l_j < MY_N; l_j++) {
+      l_c[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
+      l_c_gold[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
+    }
+  }
+#endif   
+
   // C routine
   struct timeval l_start, l_end;
-
+  
   gettimeofday(&l_start, NULL);
 #ifndef __USE_MKL
+  #pragma nounroll_and_jam
   for ( l_t = 0; l_t < REPS; l_t++  ) {
     for ( l_n = 0; l_n < MY_N; l_n++  ) {
       for ( l_k = 0; l_k < MY_K; l_k++  ) {
+        #pragma vector always
         for ( l_m = 0; l_m < MY_M; l_m++ ) {
           l_c_gold[(l_n * MY_LDC) + l_m] += l_a[(l_k * MY_LDA) + l_m] * l_b[(l_n * MY_LDB) + l_k];
         }
