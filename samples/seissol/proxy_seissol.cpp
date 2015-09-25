@@ -68,6 +68,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <immintrin.h>
 #include <sys/time.h>
 
+#ifdef USE_MEMKIND
+#include <hbwmalloc.h>
+//#define USE_HBM_DOFS
+//#define USE_HBM_TDOFS
+//#define USE_HBM_DERS
+//#define USE_HBM_CELLLOCAL_LOCAL
+//#define USE_HBM_CELLLOCAL_NEIGH
+//#define USE_HBM_GLOBALDATA
+#endif
+
 #ifdef __MIC__
 #define __USE_RDTSC
 #endif
