@@ -146,13 +146,13 @@ void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*       
     l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    _mm_storeu_pd(&C[(l_n*%u)+%u], c%u_%u);\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
-    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    __m128 c%u_%u = _mm_castpd_ps(_mm_load_sd(&C[(l_n*%u)+%u]));\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
+    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    __m128 c%u_%u = _mm_castpd_ps(_mm_load_sd((const double*)&C[(l_n*%u)+%u]));\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    __m128 a%u_%u = _mm_castpd_ps(_mm_load_sd(&A[%u]));\n", i_k, i_z, i_column_idx[i_k] + i_z );
+    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    __m128 a%u_%u = _mm_castpd_ps(_mm_load_sd((const double*)&A[%u]));\n", i_k, i_z, i_column_idx[i_k] + i_z );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    c%u_%u = _mm_add_ps(c%u_%u, _mm_mul_ps(a%u_%u, b%u));\n", i_k, i_z, i_k, i_z, i_k, i_z, i_k );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    _mm_store_sd(&C[(l_n*%u)+%u], _mm_castps_pd(c%u_%u));\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
+    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "    _mm_store_sd((double*)&C[(l_n*%u)+%u], _mm_castps_pd(c%u_%u));\n", i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z], i_k, i_z );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
