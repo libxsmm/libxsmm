@@ -9,9 +9,6 @@ endif
 
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 0
-ifeq (1,$(ROW_MAJOR))
-$(error ROW_MAJOR=1 is not supported at this time)
-endif
 
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
