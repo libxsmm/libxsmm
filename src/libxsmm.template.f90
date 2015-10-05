@@ -34,8 +34,8 @@ MODULE LIBXSMM
   IMPLICIT NONE
 
   ! Kind of types used to parameterize the implementation.
-  INTEGER, PARAMETER :: LIBXSMM_SINGLE_PRECISION  = KIND(1.0)
-  INTEGER, PARAMETER :: LIBXSMM_DOUBLE_PRECISION  = KIND(1D0)
+  INTEGER, PARAMETER :: LIBXSMM_SINGLE_PRECISION  = 4 !KIND(1.0)
+  INTEGER, PARAMETER :: LIBXSMM_DOUBLE_PRECISION  = 8 !KIND(1D0)
   INTEGER, PARAMETER :: LIBXSMM_INTEGER_TYPE      = KIND(1)
 
   ! Parameters the library was built for.
@@ -52,6 +52,7 @@ MODULE LIBXSMM
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_M           = $AVG_M
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_BETA            = $BETA
 
   ! Overloaded BLAS routines (single/double precision)
   INTERFACE libxsmm_blasmm
@@ -138,7 +139,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: a(:,:), b(:,:)
     REAL(T), INTENT(INOUT) :: c(:,:)
-    REAL(T), PARAMETER :: alpha = 1, beta = 1
+    REAL(T), PARAMETER :: alpha = 1, beta = LIBXSMM_BETA
     IF (0.NE.LIBXSMM_COL_MAJOR) THEN
       CALL sgemm('N', 'N', m, n, k, alpha, a, m, b, k, beta, c, SIZE(c, 1))
     ELSE
@@ -154,7 +155,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: a(:,:), b(:,:)
     REAL(T), INTENT(INOUT) :: c(:,:)
-    REAL(T), PARAMETER :: alpha = 1, beta = 1
+    REAL(T), PARAMETER :: alpha = 1, beta = LIBXSMM_BETA
     IF (0.NE.LIBXSMM_COL_MAJOR) THEN
       CALL dgemm('N', 'N', m, n, k, alpha, a, m, b, k, beta, c, SIZE(c, 1))
     ELSE
@@ -172,12 +173,30 @@ CONTAINS
     REAL(T), INTENT(IN), TARGET, CONTIGUOUS :: a(:,:), b(:,:)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C1,$SHAPE_C2)
     REAL(T), POINTER :: x(:,:), y(:,:)
-    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+    IF (0.NE.LIBXSMM_COL_MAJOR.AND.LIBXSMM_BETA.NE.0) THEN
       !DIR$ OMP SIMD COLLAPSE(2)
       DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
         DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
           c(i,j) = c(i,j) + DOT_PRODUCT(a(i,:), b(:,j))
+        END DO
+      END DO
+    ELSE IF (LIBXSMM_BETA.NE.0) THEN
+      x(1:$SHAPE_AT1,1:$SHAPE_AT2) => b(:,:)
+      y(1:$SHAPE_BT1,1:$SHAPE_BT2) => a(:,:)
+      !DIR$ OMP SIMD COLLAPSE(2)
+      DO j = 1, m
+        !DIR$ LOOP COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
+        DO i = 1, n
+          c(i,j) = c(i,j) + DOT_PRODUCT(x(i,:), y(:,j))
+        END DO
+      END DO
+    ELSE IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      !DIR$ OMP SIMD COLLAPSE(2)
+      DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
+        !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
+        DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
+          c(i,j) = DOT_PRODUCT(a(i,:), b(:,j))
         END DO
       END DO
     ELSE
@@ -187,7 +206,7 @@ CONTAINS
       DO j = 1, m
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
         DO i = 1, n
-          c(i,j) = c(i,j) + DOT_PRODUCT(x(i,:), y(:,j))
+          c(i,j) = DOT_PRODUCT(x(i,:), y(:,j))
         END DO
       END DO
     ENDIF
@@ -203,12 +222,30 @@ CONTAINS
     REAL(T), INTENT(IN), TARGET, CONTIGUOUS :: a(:,:), b(:,:)
     REAL(T), INTENT(INOUT) :: c($SHAPE_C1,$SHAPE_C2)
     REAL(T), POINTER :: x(:,:), y(:,:)
-    IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+    IF (0.NE.LIBXSMM_COL_MAJOR.AND.LIBXSMM_BETA.NE.0) THEN
       !DIR$ OMP SIMD COLLAPSE(2)
       DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
         DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
           c(i,j) = c(i,j) + DOT_PRODUCT(a(i,:), b(:,j))
+        END DO
+      END DO
+    ELSE IF (LIBXSMM_BETA.NE.0) THEN
+      x(1:$SHAPE_AT1,1:$SHAPE_AT2) => b(:,:)
+      y(1:$SHAPE_BT1,1:$SHAPE_BT2) => a(:,:)
+      !DIR$ OMP SIMD COLLAPSE(2)
+      DO j = 1, m
+        !DIR$ LOOP COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
+        DO i = 1, n
+          c(i,j) = c(i,j) + DOT_PRODUCT(x(i,:), y(:,j))
+        END DO
+      END DO
+    ELSE IF (0.NE.LIBXSMM_COL_MAJOR) THEN
+      !DIR$ OMP SIMD COLLAPSE(2)
+      DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
+        !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
+        DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
+          c(i,j) = DOT_PRODUCT(a(i,:), b(:,j))
         END DO
       END DO
     ELSE
@@ -218,7 +255,7 @@ CONTAINS
       DO j = 1, m
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_N, LIBXSMM_AVG_N)
         DO i = 1, n
-          c(i,j) = c(i,j) + DOT_PRODUCT(x(i,:), y(:,j))
+          c(i,j) = DOT_PRODUCT(x(i,:), y(:,j))
         END DO
       END DO
     ENDIF
