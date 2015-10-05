@@ -397,6 +397,10 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
 		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
 		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+ifeq (0,$(OFFLOAD))
+	@sed -i '/ATTRIBUTES OFFLOAD:MIC/d' $@
+endif
+ 
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(SRCFILES_GEN_LIB)
@@ -448,8 +452,10 @@ endif
 	@mkdir -p $(dir $@)
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
+ifneq (0,$(MIC))
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@
+endif
 ifeq (noarch,$(GENTARGET))
 	@echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
@@ -477,8 +483,10 @@ else
 	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) DP
 	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
+ifneq (0,$(MIC))
 	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
 	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
+endif
 	@sed -i'' \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
