@@ -7,6 +7,14 @@ else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
 endif
 
+# Linux cut has features we use that do not work elsewhere
+# Mac, etc. users should install GNU coreutils and use cut from there.
+#
+# For example, if you use Homebrew, run "brew install coreutils" once
+# and then invoke the LIBXSMM make command with
+# CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+CUT ?= cut
+
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
 ROW_MAJOR ?= 0
 
@@ -182,9 +190,9 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	FCMODDIRFLAG = -module
 else # GCC assumed
 	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
+	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
+	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
+	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
 	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
@@ -398,7 +406,7 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
 		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
-	@sed -i '/ATTRIBUTES OFFLOAD:MIC/d' $@
+	@sed -i .tmp '/ATTRIBUTES OFFLOAD:MIC/d' $@
 endif
  
 
@@ -430,9 +438,9 @@ $(BINDIR)/generator: $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) 
 .PHONY: sources
 sources: $(SRCFILES)
 $(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_impl_mm.py
-	$(eval MVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f2))
-	$(eval NVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f3))
-	$(eval KVALUE := $(shell echo $* | cut --output-delimiter=' ' -d_ -f4))
+	$(eval MVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f2))
+	$(eval NVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f3))
+	$(eval KVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f4))
 ifneq (0,$(ROW_MAJOR)) # row-major
 	$(eval MVALUE2 := $(NVALUE))
 	$(eval NVALUE2 := $(MVALUE))
@@ -487,7 +495,7 @@ ifneq (0,$(MIC))
 	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
 	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
 endif
-	@sed -i'' \
+	@sed -i .tmp \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
@@ -595,9 +603,9 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN} | cut --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
@@ -618,7 +626,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@sed -i \
+	@sed -i .tmp \
 		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
@@ -645,7 +653,7 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 	@mkdir -p $(dir $@)
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@sed -i \
+	@sed -i .tmp \
 		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
