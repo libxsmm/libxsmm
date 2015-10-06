@@ -122,7 +122,7 @@ ifeq ($(LD),)
 endif
 
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
-	CXXFLAGS += -fPIC -Wall -std=c++0x
+	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
@@ -187,7 +187,7 @@ else # GCC assumed
 	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -std=c++0x
+	CXXFLAGS += -Wall
 	CFLAGS += -Wall
 	ifneq ($(OS),Windows_NT)
 		CXXFLAGS += -fPIC
