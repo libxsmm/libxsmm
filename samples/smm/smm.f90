@@ -79,9 +79,9 @@ PROGRAM smm
     CALL GETARG(5, argv)
     READ(argv, "(I32)") i
   ELSE
-    i = 2048 ! 2 GByte
+    i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-  s = LSHIFT(INT8(MAX(i, 0)), 20) / ((m * k + k * n) * T)
+  s = LSHIFT(INT8(MAX(i, 0)), 30) / ((m * k + k * n + m * n) * T)
 
   ALLOCATE(a(s,m,k))
   ALLOCATE(b(s,k,n))
@@ -94,6 +94,8 @@ PROGRAM smm
     CALL init(24, b(i,:,:), i - 1)
   END DO
   c(:,:) = 0
+
+  WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 1) 
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
@@ -149,7 +151,7 @@ PROGRAM smm
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL xmm(C_LOC(a(i,LBOUND(a,2),LBOUND(a,3))), C_LOC(b(i,LBOUND(b,2),LBOUND(b,3))), C_LOC(tmp))
+        CALL xmm(C_LOC(a(i,:,:)), C_LOC(b(i,:,:)), C_LOC(tmp))
       END DO
       !$OMP MASTER
       !$ duration = duration + omp_get_wtime()
