@@ -230,7 +230,6 @@ A future version of the library may support an auto-tuning stage when generating
 Although the library is under development, the published interface is rather stable and may only be extended in future revisions. The following issues are being addressed in upcoming revisions:
 
 * Full xGEMM interface, and extended code dispatcher
-* Just-in-Time (JIT) runtime dynamic code generation
 * API supporting sparse matrices and other cases
 
 ## Applications and References
