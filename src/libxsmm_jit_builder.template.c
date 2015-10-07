@@ -49,7 +49,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build
   l_xgemm_desc.ldb = k;
   l_xgemm_desc.ldc = m;
   l_xgemm_desc.alpha = 1.0;
+#if LIBXSMM_BETA == 0
+  l_xgemm_desc.beta = 0.0;
+#else
   l_xgemm_desc.beta = 1.0;
+#endif
   l_xgemm_desc.trans_a = 'n';
   l_xgemm_desc.trans_b = 'n';
   l_xgemm_desc.aligned_a = 0;
@@ -131,7 +135,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_jit_build
   l_xgemm_desc.ldb = k;
   l_xgemm_desc.ldc = m;
   l_xgemm_desc.alpha = 1.0;
+#if LIBXSMM_BETA == 0
+  l_xgemm_desc.beta = 0.0;
+#else
   l_xgemm_desc.beta = 1.0;
+#endif
   l_xgemm_desc.trans_a = 'n';
   l_xgemm_desc.trans_b = 'n';
   l_xgemm_desc.aligned_a = 0;
