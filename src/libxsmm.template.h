@@ -49,6 +49,8 @@
 #define LIBXSMM_AVG_M $AVG_M
 #define LIBXSMM_AVG_N $AVG_N
 #define LIBXSMM_AVG_K $AVG_K
+#define LIBXSMM_BETA $BETA
+#define LIBXSMM_OFFLOAD_ENABLED $OFFLOAD
 
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"

@@ -111,8 +111,8 @@ double derive_cycles_from_time(double time) {
 }
 
 // seissol_kernel includes
-#include <typedefs.hpp>
-#include <common.hpp>
+#include <Initializer/typedefs.hpp>
+#include <Kernels/common.hpp>
 #include <Time.h>
 #include <Volume.h>
 #include <Boundary.h>

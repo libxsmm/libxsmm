@@ -158,11 +158,17 @@ void computeLocalIntegration() {
 void computeNeighboringIntegration() {
   real  l_integrationBuffer[4][NUMBER_OF_ALIGNED_DOFS] __attribute__((aligned(4096)));
   real *l_timeIntegrated[4];
+#ifdef ENABLE_MATRIX_PREFETCH
   real *l_faceNeighbors_prefetch[4];
   real *l_fluxMatricies_prefetch[4];
+#endif
 
 #ifdef _OPENMP
+#ifdef ENABLE_MATRIX_PREFETCH
   #pragma omp parallel private(l_integrationBuffer, l_timeIntegrated, l_faceNeighbors_prefetch, l_fluxMatricies_prefetch)
+#else
+  #pragma omp parallel private(l_integrationBuffer, l_timeIntegrated)
+#endif
   {
 #if NUMBER_OF_GLOBAL_DATA_COPIES>1
   GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
@@ -181,79 +187,35 @@ void computeNeighboringIntegration() {
                                                m_cells->faceNeighbors[l_cell],
                                                l_integrationBuffer,
                                                l_timeIntegrated );
-    
-#if CONVERGENCE_ORDER == 2
-    l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell+8][0];
-    l_faceNeighbors_prefetch[1] = m_cells->faceNeighbors[l_cell+8][1];
-    l_faceNeighbors_prefetch[2] = m_cells->faceNeighbors[l_cell+8][2];
-    l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell+8][3];
 
-    l_fluxMatricies_prefetch[0] = NULL;
-    l_fluxMatricies_prefetch[1] = NULL;
-    l_fluxMatricies_prefetch[2] = NULL;
-    l_fluxMatricies_prefetch[3] = NULL;
-#elif CONVERGENCE_ORDER == 6
-#ifdef __USE_DERS
-    if (l_cell < (m_cells->numberOfCells-1) ) {
-      l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell+1][0];
-      l_faceNeighbors_prefetch[1] = m_cells->faceNeighbors[l_cell+1][1];
-      l_faceNeighbors_prefetch[2] = m_cells->faceNeighbors[l_cell+1][2];
-      l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell+1][3];
-    } else {
-      l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell][0];
-      l_faceNeighbors_prefetch[1] = m_cells->faceNeighbors[l_cell][1];
-      l_faceNeighbors_prefetch[2] = m_cells->faceNeighbors[l_cell][2];
-      l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell][3];
-    }
-#else
-    l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell][1];
-    l_faceNeighbors_prefetch[1] = m_cells->faceNeighbors[l_cell][2];
-    l_faceNeighbors_prefetch[2] = m_cells->faceNeighbors[l_cell][3];
-     if (l_cell < (m_cells->numberOfCells-1) ) {
-       l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell+1][0];
-     } else {
-       l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell][3];
-     }
-#endif
-#if 1
+#ifdef ENABLE_MATRIX_PREFETCH
     int l_face = 1;
+    l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell][l_face];
     l_fluxMatricies_prefetch[0] = l_globalData->fluxMatrices[4+(l_face*12)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][0]*3)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][1])];
     l_face = 2;
+    l_faceNeighbors_prefetch[1] = m_cells->faceNeighbors[l_cell][l_face];
     l_fluxMatricies_prefetch[1] = l_globalData->fluxMatrices[4+(l_face*12)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][0]*3)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][1])];
     l_face = 3;
+    l_faceNeighbors_prefetch[2] = m_cells->faceNeighbors[l_cell][l_face];
     l_fluxMatricies_prefetch[2] = l_globalData->fluxMatrices[4+(l_face*12)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][0]*3)
                                                              +(m_cellInformation[l_cell].faceRelations[l_face][1])];
     l_face = 0;
     if (l_cell < (m_cells->numberOfCells-1) ) {
+      l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell+1][l_face];
       l_fluxMatricies_prefetch[3] = l_globalData->fluxMatrices[4+(l_face*12)
                                                                +(m_cellInformation[l_cell+1].faceRelations[l_face][0]*3)
                                                                +(m_cellInformation[l_cell+1].faceRelations[l_face][1])];
     } else {
-      l_fluxMatricies_prefetch[3] = l_globalData->fluxMatrices[4+(l_face*12)
+      l_faceNeighbors_prefetch[3] = m_cells->faceNeighbors[l_cell][3];
+      l_fluxMatricies_prefetch[3] = l_globalData->fluxMatrices[4+(3*12)
                                                                +(m_cellInformation[l_cell].faceRelations[l_face][0]*3)
                                                                +(m_cellInformation[l_cell].faceRelations[l_face][1])];
     }
-#else
-    l_fluxMatricies_prefetch[0] = NULL;
-    l_fluxMatricies_prefetch[1] = NULL;
-    l_fluxMatricies_prefetch[2] = NULL;
-    l_fluxMatricies_prefetch[3] = NULL;
-#endif
-#else
-    l_faceNeighbors_prefetch[0] = NULL;
-    l_faceNeighbors_prefetch[1] = NULL;
-    l_faceNeighbors_prefetch[2] = NULL;
-    l_faceNeighbors_prefetch[3] = NULL;
-
-    l_fluxMatricies_prefetch[0] = NULL;
-    l_fluxMatricies_prefetch[1] = NULL;
-    l_fluxMatricies_prefetch[2] = NULL;
-    l_fluxMatricies_prefetch[3] = NULL;
 #endif
 
     m_boundaryKernel.computeNeighborsIntegral( m_cellInformation[l_cell].faceTypes,

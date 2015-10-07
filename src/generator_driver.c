@@ -42,7 +42,7 @@ void print_help() {
   printf("Usage (sparse*dense=dense, dense*sparse=dense):\n");
   printf("    sparse\n");
   printf("    filename to append\n");
-  printf("    rountine name\n");
+  printf("    routine name\n");
   printf("    M\n");
   printf("    N\n");
   printf("    K\n");
@@ -61,7 +61,7 @@ void print_help() {
   printf("Usage (dense*dense=dense):\n");
   printf("    dense\n");
   printf("    filename to append\n");
-  printf("    rountine name\n");
+  printf("    routine name\n");
   printf("    M\n");
   printf("    N\n");
   printf("    K\n");
