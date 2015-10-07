@@ -1,9 +1,12 @@
-language: C
+language: cpp
+
+compiler:
+  - clang
+  - gcc
 
 before_install: 
  - sudo apt-get update -qq
  - sudo apt-get install -y liblapack-dev
- - sudo apt-get install -y build-essentials
 
 script: 
  - make MNK="2 3, 23" test
