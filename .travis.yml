@@ -3,7 +3,6 @@ language: cpp
 addons:
   apt:
     packages: 
-    - build-essential
     - gfortran
     - libblas-dev
     - liblapack-dev
@@ -14,4 +13,3 @@ compiler:
 
 script: 
  - make MNK="2 3, 23" test
- - grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000" 
