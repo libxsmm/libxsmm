@@ -135,7 +135,28 @@ make SPARSITY=2
 
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. Furthermore, the size of the direct lookup table is limited to 512 KB (currently hardcoded). The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
-### Directly invoking the generator backend
+## JIT Backend
+There might be situations in which it is up-front not clear which problem sizes will be needed during an application run. In order to leverage LIBXSMM's
+high-performance kernels here, LIBXSMM offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is done by emitting the
+corresponding byte-code directly into an executable buffer to ensure highest performance during the generation process. As the JIT backend is still experimental,
+some limitations are in place:
+
+1. there is no support for ALIGNED_STORE/ALIGNED_LOAD build options
+2. there is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
+3. LIBXSMM MUST NOT be called from several PTHREADS, but OpenMP is fine (we use an OpenMP critical section to proctect code buffers), therefore OpenMP is mandatory 
+when building the JIT backend
+4. There is no support for the binary search feature during function dispatching
+
+The JIT backend version of the LIBXSMM can be built by:
+
+```
+make JIT=1
+```
+
+You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed, capped at 256 * 256 *256.
+
+
+## Directly invoking the generator backend
 In some special, extremely performance-critical situations it might be useful to bypass LIBXSMM's frontend entirely and to directly call into the generated code. This is possible by either invoking the code generator after a regular build process (as described above) or by just building the backend and invoking the generator:
 
 ```
