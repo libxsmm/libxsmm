@@ -1,12 +1,12 @@
 language: cpp
 
+addons.apt.packages: 
+ - gfortran
+ - liblapack-dev
+
 compiler:
   - clang
   - gcc
-
-before_install: 
- - sudo apt-get update -qq
- - sudo apt-get install -y liblapack-dev
 
 script: 
  - make MNK="2 3, 23" test
