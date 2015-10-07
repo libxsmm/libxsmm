@@ -12,6 +12,10 @@ compiler:
   - gcc
 
 script: 
- - make MNK="2 3, 23" test
+ - make realclean
+ - bash make.sh -cp2k -j
  - cd samples/cp2k/
+ - make clean
+ - make
+ - bash cp2k-perf.sh
  - bash test.sh
