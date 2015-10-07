@@ -1,10 +1,12 @@
 language: cpp
 
-addons.apt.packages: 
- - build-essential
- - gfortran
- - libblas-dev
- - liblapack-dev
+addons:
+  apt:
+    packages: 
+    - build-essential
+    - gfortran
+    - libblas-dev
+    - liblapack-dev
 
 compiler:
   - clang
