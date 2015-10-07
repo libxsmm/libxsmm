@@ -43,6 +43,45 @@ THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 # With SPARSITY < 1, the binary search is enabled by default (no threshold).
 SPARSITY ?= 2
 
+# Beta paramater of DGEMM
+# we currently support 0 and 1
+# 1 generates C += A * B
+# 0 generates C = A * B
+BETA ?= 1
+ifneq (0,$(BETA))
+ifneq (1,$(BETA))
+$(error BETA needs to be eiter 0 or 1)
+endif
+endif
+
+ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+SPLDIR = $(ROOTDIR)/samples
+SCRDIR = $(ROOTDIR)/scripts
+SRCDIR = $(ROOTDIR)/src
+INCDIR = include
+BLDDIR = build
+OUTDIR = lib
+BINDIR = bin
+DOCDIR = documentation
+
+CXXFLAGS = $(NULL)
+CFLAGS = $(NULL)
+DFLAGS = $(NULL)
+IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
+
+STATIC ?= 1
+OMP ?= 0
+SYM ?= 0
+DBG ?= 0
+IPO ?= 0
+
+OFFLOAD ?= 0
+ifneq (0,$(OFFLOAD))
+	MIC ?= 1
+else
+	MIC ?= 0
+endif
+
 # JIT support (Binary search in sparsity is not supported when building
 # a jit enanled version of LIBXSMM
 # PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE
@@ -71,46 +110,15 @@ endif
 ifneq (0,$(ALIGNED_LOADS))
 $(error ALIGNED_LOADS needs to be 0 for JIT support!)
 endif
-endif
-
-# Beta paramater of DGEMM
-# we currently support 0 and 1
-# 1 generates C += A * B
-# 0 generates C = A * B
-BETA ?= 1
-ifneq (0,$(BETA))
 ifneq (1,$(BETA))
-$(error BETA needs to be eiter 0 or 1)
+$(error BETA needs to be 1 for JIT support!)
 endif
-endif
-
-
-ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
-SPLDIR = $(ROOTDIR)/samples
-SCRDIR = $(ROOTDIR)/scripts
-SRCDIR = $(ROOTDIR)/src
-INCDIR = include
-BLDDIR = build
-OUTDIR = lib
-BINDIR = bin
-DOCDIR = documentation
-
-CXXFLAGS = $(NULL)
-CFLAGS = $(NULL)
-DFLAGS = $(NULL)
-IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
-
-STATIC ?= 1
-OMP ?= 0
-SYM ?= 0
-DBG ?= 0
-IPO ?= 0
-
-OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
-	MIC ?= 1
-else
-	MIC ?= 0
+$(error OFFLOAD needs to be 0 for JIT support!)
+endif
+ifneq (0,$(MIC))
+$(error MIC needs to be 0 for JIT support!)
+endif
 endif
 
 ICPC    = $(notdir $(shell which icpc     2> /dev/null))
