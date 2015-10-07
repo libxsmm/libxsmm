@@ -1,0 +1,21 @@
+language: cpp
+
+addons:
+  apt:
+    packages: 
+    - gfortran
+    - libblas-dev
+    - liblapack-dev
+
+compiler:
+  - clang
+  - gcc
+
+script: 
+ - make realclean
+ - bash make.sh -cp2k -j
+ - cd samples/cp2k/
+ - make clean
+ - make
+ - bash cp2k-perf.sh
+ - bash test.sh
