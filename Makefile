@@ -406,7 +406,9 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
 		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
-	@sed -i .tmp '/ATTRIBUTES OFFLOAD:MIC/d' $@
+	@TMPFILE=`mktemp`
+	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
+	@rm -f ${TMPFILE} 
 endif
  
 
@@ -495,13 +497,15 @@ ifneq (0,$(MIC))
 	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCDP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) DP
 	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDA) $(LDB) $(LDCSP) 1 $(BETA) 0 $(ALIGNED_ST) knc $(PREFETCH_SCHEME) SP
 endif
-	@sed -i .tmp \
+	@TMPFILE=`mktemp`
+	@sed -i ${TMPFILE} \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
+	@rm -f ${TMPFILE}
 	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 
 .PHONY: main
@@ -626,10 +630,12 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@sed -i .tmp \
+	@TMPFILE=`mktemp`
+	@sed -i ${TMPFILE} \
 		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
+	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[\[.\+\](.\+)\]//' \
@@ -653,10 +659,12 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 	@mkdir -p $(dir $@)
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@sed -i .tmp \
+	@TMPFILE=`mktemp`
+	@sed -i ${TMPFILE} \
 		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
+	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[\[.\+\](.\+)\]//' \
