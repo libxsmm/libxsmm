@@ -69,7 +69,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build
 #endif
 #endif
 #ifdef __MIC__
-#error "IMCI architecture has no jitting support!"
+#error "Xeon Phi coprocessors (IMCI architecture) have no jitting support!"
 #endif
 #ifdef __AVX__
   strcpy ( l_arch, "snb" );
@@ -155,7 +155,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_jit_build
 #endif
 #endif
 #ifdef __MIC__
-#error "IMCI architecture has no jitting support!"
+#error "Xeon Phi coprocessors (IMCI architecture) have no jitting support!"
 #endif
 #ifdef __AVX__
   strcpy ( l_arch, "snb" );
