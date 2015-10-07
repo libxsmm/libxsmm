@@ -132,6 +132,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"You want to use vmovss without xmm? ha!\n");
              exit(-1);
           }
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
           l_ivectype += 2;
           break;
        case LIBXSMM_X86_INSTR_VMOVSD:
@@ -140,6 +141,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
              fprintf(stderr,"You want to use vmovsd without xmm? ha!\n");
              exit(-1);
           }
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
           l_ivectype += 3;
           break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
