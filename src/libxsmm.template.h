@@ -55,7 +55,6 @@
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"
 
-
 /** Type of a function generated for a specific M, N, and K. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c
                                     LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa)
