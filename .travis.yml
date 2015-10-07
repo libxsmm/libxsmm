@@ -1,0 +1,17 @@
+language: cpp
+
+addons:
+  apt:
+    packages: 
+    - gfortran
+    - libblas-dev
+    - liblapack-dev
+
+compiler:
+  - clang
+  - gcc
+
+script: 
+ - make MNK="2 3, 23" test
+ - cd samples/cp2k/
+ - bash test.sh
