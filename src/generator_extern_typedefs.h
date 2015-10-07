@@ -67,5 +67,9 @@ typedef struct libxsmm_generated_code_struct {
                                         > 0  the occured error code */ 
 } libxsmm_generated_code;
 
+/* function to translate LIBXSMM Generator error codes
+   to error messages */
+char* libxsmm_strerror( const unsigned int      i_error_code );
+
 #endif /* GENERATOR_GLOBAL_DEFINES_H */
 

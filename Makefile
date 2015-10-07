@@ -43,6 +43,36 @@ THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 # With SPARSITY < 1, the binary search is enabled by default (no threshold).
 SPARSITY ?= 2
 
+# JIT support (Binary search in sparsity is not supported when building
+# a jit enanled version of LIBXSMM
+# PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE
+# IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!:
+JIT ?= 0
+ifneq (0,$(JIT))
+$(info ======================================================================)
+$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
+$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
+$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
+$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+$(info ======================================================================)
+OMP=1
+ifneq (2,$(SPARSITY))
+$(error SPARSITY needs to be 2 for JIT support!)
+endif
+ifneq (0,$(ROW_MAJOR))
+$(error ROW_MAJOR needs to be 0 for JIT support!)
+endif
+ifneq (0,$(PREFETCH))
+$(error PREFETCH needs to be 0 for JIT support!)
+endif
+ifneq (0,$(ALIGNED_STORES))
+$(error ALIGNED_STORES needs to be 0 for JIT support!)
+endif
+ifneq (0,$(ALIGNED_LOADS))
+$(error ALIGNED_LOADS needs to be 0 for JIT support!)
+endif
+endif
+
 # Beta paramater of DGEMM
 # we currently support 0 and 1
 # 1 generates C += A * B
@@ -416,6 +446,11 @@ ifeq (0,$(STATIC))
 else
 	$(AR) -rs $@ $^
 endif
+	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_extern_typedefs.h >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+
 .PHONY: compile_generator
 compile_generator: $(SRCFILES_GEN_BIN)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
@@ -500,7 +535,14 @@ endif
 main: $(BLDDIR)/libxsmm.c
 $(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(JIT) $(INDICES) > $@
+ifneq (0,$(JIT))
+	@cat $(SRCDIR)/libxsmm_jit_builder.template.c >> $@
+	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_extern_typedefs.h >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+endif
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic
@@ -541,15 +583,31 @@ endif
 .PHONY: lib_hst
 lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
 ifeq (undefined,$(origin NO_MAIN))
+ifneq (0,$(JIT))
+$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm.o
+else
 $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm.o
+endif
+else
+ifneq (0,$(JIT))
+$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 else
 $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
+endif
 endif
 	@mkdir -p $(dir $@)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
 else
 	$(AR) -rs $@ $^
+endif
+ifneq (0,$(JIT))
+	$(info ======================================================================)
+	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
+	$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
+	$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
+	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+	$(info ======================================================================)
 endif
 
 .PHONY: samples
@@ -689,10 +747,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
 endif
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
 endif
 ifneq ($(abspath $(BINDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BINDIR)),$(abspath .))
@@ -707,6 +765,8 @@ endif
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(INCDIR)/libxsmm.f90
 	@rm -f $(INCDIR)/libxsmm.h
+	@rm -f $(INCDIR)/libxsmm_generator.h
 
 install: all clean
+
 
