@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const pa = a + i * asize, *const pb = b + i * bsize;
           T* pc = c + i * csize_act;
-          xmm(pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(tmp) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
+          xmm(pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
         }
 #if defined(_OPENMP)
         duration += omp_get_wtime();
