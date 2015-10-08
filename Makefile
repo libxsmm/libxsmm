@@ -7,7 +7,7 @@ else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
 endif
 
-# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
+# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise
 ROW_MAJOR ?= 0
 
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
@@ -38,11 +38,6 @@ PREFETCH ?= 0
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 
-# SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
-# Use binary search in auto-dispatch when SPARSITY exceeds the given value.
-# With SPARSITY < 1, the binary search is enabled by default (no threshold).
-SPARSITY ?= 2
-
 # Beta paramater of DGEMM
 # we currently support 0 and 1
 # 1 generates C += A * B
@@ -68,7 +63,7 @@ DOCDIR = documentation
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
+IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(SRCDIR)
 
 STATIC ?= 1
 OMP ?= 0
@@ -284,7 +279,10 @@ endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c, generator_dense_imci_microkernel.c, generator_dense_noarch.c, generator_sparse.c, generator_sparse_csc_reader.c, generator_sparse_bsparse.c, generator_sparse_asparse.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_instructions.c \
+                                            generator_dense_sse3_avx_avx2.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, \
+                                            generator_dense_avx512_microkernel.c, generator_dense_imci_avx512.c, generator_dense_imci_microkernel.c, generator_dense_noarch.c, \
+                                            generator_sparse.c, generator_sparse_csc_reader.c, generator_sparse_bsparse.c, generator_sparse_asparse.c)
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
@@ -400,7 +398,7 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 ifeq (0,$(OFFLOAD))
 	@sed -i '/ATTRIBUTES OFFLOAD:MIC/d' $@
 endif
- 
+
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(SRCFILES_GEN_LIB)
@@ -500,7 +498,7 @@ endif
 main: $(BLDDIR)/libxsmm.c
 $(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic
@@ -508,9 +506,9 @@ compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 
 .PHONY: compile_hst
@@ -518,17 +516,17 @@ compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 ifeq (undefined,$(origin NO_MAIN))
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm.o
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o $(BLDDIR)/mic/libxsmm.o
 else
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC)
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o
 endif
 	@mkdir -p $(dir $@)
 ifeq (0,$(STATIC))
@@ -541,9 +539,9 @@ endif
 .PHONY: lib_hst
 lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
 ifeq (undefined,$(origin NO_MAIN))
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm.o
+$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o $(BLDDIR)/intel64/libxsmm.o
 else
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
+$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o
 endif
 	@mkdir -p $(dir $@)
 ifeq (0,$(STATIC))
