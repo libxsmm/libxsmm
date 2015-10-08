@@ -342,7 +342,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned shor
 #if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u16(init, value);
 #else
-  const union { uint16_t value; uint8_t half[2]; } split = { value };
+  union { uint16_t value; uint8_t half[2]; } split; split.value = value;
   init = libxsmm_crc32_u8(split.half[0], init);
   init = libxsmm_crc32_u8(split.half[1], init);
 #endif
@@ -363,12 +363,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int 
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned long long libxsmm_crc32_u64(unsigned long long value, unsigned long long init)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned long long value, unsigned int init)
 {
 #if defined(__SSE4_2__) && (64 == __WORDSIZE) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u64(init, value);
 #else
-  const union { uint64_t value; uint32_t half[2]; } split = { value };
+  union { uint64_t value; uint32_t half[2]; } split; split.value = value;
   init = libxsmm_crc32_u32(split.half[0], init);
   init = libxsmm_crc32_u32(split.half[1], init);
 #endif
@@ -382,7 +382,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
   const char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_ALIGNED_MAX);
   const char *const endb = begin + size;
 
-  if (size > (endb - enda)) {
+  if (enda > begin) {
     for (; begin < (enda - 7); begin += 8) {
       init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
     }

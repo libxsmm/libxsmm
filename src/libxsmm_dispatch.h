@@ -41,7 +41,9 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const void* libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, const void* value);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const void* libxsmm_lookup(const void* key, size_t key_size, size_t cache_id);
+typedef void (/*LIBXSMM_CDECL*/*libxsmm_function)(LIBXSMM_VARIADIC);
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, libxsmm_function function);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, size_t key_size, size_t cache_id);
 
 #endif /*LIBXSMM_DISPATCH_H*/
