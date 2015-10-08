@@ -1,6 +1,14 @@
 #!/bin/bash
 
-if [[ "-cp2k" == "$1" ]] ; then
+if [[ "-nek" == "$1" ]] ; then
+  shift
+  make $* M="4 8 10 12 16 64 100 144" N="4 8 10 12 16 64 100 144" K="4 8 10 12" \
+    BETA=0 OFFLOAD=0 MIC=0 THRESHOLD=$((16*16*256+1))
+  elif [[ "-nekbone" == "$1" ]] ; then
+  shift
+  make $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
+    BETA=0 OFFLOAD=0 MIC=0 THRESHOLD=$((18*18*18*18+1)) 
+  elif [[ "-cp2k" == "$1" ]] ; then
   shift
   make $* ROW_MAJOR=0 ALIGNED_STORES=1 PREFETCH=1 MNK=" \
     23, \
