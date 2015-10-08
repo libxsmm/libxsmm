@@ -66,8 +66,8 @@ def create_dispatch(mnklist):
     for mnk in mnklist:
         mnkstr = "_".join(map(str, mnk))
         print "    args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0, libxsmm_smm_" + mnkstr + "));"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1, libxsmm_dmm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
     print "    libxsmm_init = 1;"
     print "  }"
     print "}"
