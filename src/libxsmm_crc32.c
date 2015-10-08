@@ -28,13 +28,18 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm_crc32.h>
 #include <libxsmm.h>
+
+#if !defined(LIBXSMM_CRC32_FORCESW)
+/*# define LIBXSMM_CRC32_FORCESW*/
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <limits.h>
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
 # include <nmmintrin.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -42,7 +47,7 @@
 #endif
 
 
-#if !defined(__SSE4_2__)
+#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
 /* table-based implementation taken from http://dpdk.org/. */
 static const uint32_t libxsmm_crc32_table[][256] = {
   { /*table0*/
@@ -323,7 +328,7 @@ static const uint32_t libxsmm_crc32_table[][256] = {
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned char value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u8(init, value);
 #else
   init = libxsmm_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
@@ -334,7 +339,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned char 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned short value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u16(init, value);
 #else
   const union { uint16_t value; uint8_t half[2]; } split = { value };
@@ -347,7 +352,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned shor
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u32(init, value);
 #else
   init ^= value;
@@ -360,7 +365,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned long long libxsmm_crc32_u64(unsigned long long value, unsigned long long init)
 {
-#if defined(__SSE4_2__) && (64 == __WORDSIZE)
+#if defined(__SSE4_2__) && (64 == __WORDSIZE) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u64(init, value);
 #else
   const union { uint64_t value; uint32_t half[2]; } split = { value };
