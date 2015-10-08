@@ -7,8 +7,8 @@
 
 
 /** Filled with zeros due to C language rule. */
-static const void* libxsmm_cache[2][(LIBXSMM_CACHESIZE)];
-static int libxsmm_init = 0;
+LIBXSMM_RETARGETABLE const void* libxsmm_cache[2][(LIBXSMM_CACHESIZE)];
+LIBXSMM_RETARGETABLE int libxsmm_init = 0;
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const void* libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, const void* value)

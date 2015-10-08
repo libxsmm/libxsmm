@@ -42,15 +42,34 @@ def create_dispatch(mnklist):
     print "#include <libxsmm_dispatch.h>"
     print "#include <libxsmm.h>"
     print
+    print "#if defined(NDEBUG)"
+    print "# define LIBXSMM_DISPATCH_CHECK(DISP) DISP"
+    print "#else"
+    print "# if defined(LIBXSMM_OFFLOAD_BUILD)"
+    print "# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))"
+    print "# endif"
+    print "# include <assert.h>"
+    print "# if defined(LIBXSMM_OFFLOAD_BUILD)"
+    print "# pragma offload_attribute(pop)"
+    print "# endif"
+    print "# define LIBXSMM_DISPATCH_CHECK(DISP) assert(NULL == (DISP))"
+    print "#endif"
+    print
+    print
+    print "LIBXSMM_RETARGETABLE extern int libxsmm_init;"
+    print
     print
     print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_initialize()"
     print "{"
-    print "  struct { int m, n, k; } args;"
+    print "  if (0 == libxsmm_init) {"
+    print "    struct { int m, n, k; } args;"
     for mnk in mnklist:
         mnkstr = "_".join(map(str, mnk))
-        print "  args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
-        print "  libxsmm_dispatch(&args, sizeof(args), 0, libxsmm_smm_" + mnkstr + ");"
-        print "  libxsmm_dispatch(&args, sizeof(args), 1, libxsmm_dmm_" + mnkstr + ");"
+        print "    args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0, libxsmm_smm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1, libxsmm_dmm_" + mnkstr + "));"
+    print "    libxsmm_init = 1;"
+    print "  }"
     print "}"
 
 
