@@ -38,34 +38,20 @@ def calc_direct_index(mnk, d, h):
     return d * (h * (mnk[0]) + mnk[1]) + mnk[2]
 
 
-def create_dispatch_function(typeflag, mnklist):
-    cacheid = 0 if ('d' != typeflag) else 1
-    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_" + typeflag + "mm_function libxsmm_" + typeflag + "mm_dispatch(int m, int n, int k)"
-    print "{"
-    print "  struct { int m, n, k; } args = { m, n, k };"
-    print "  static int init = 0;"
-    print
-    print "  if (0 == init) {"
-    for mnk in mnklist:
-        print "    args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
-        print "    libxsmm_dispatch(&args, sizeof(args), " + str(cacheid) + ", libxsmm_" + typeflag + "mm_" + "_".join(map(str, mnk)) + ");"
-    print "    args.m = m; args.n = n; args.k = k;"
-    print "    init = 1;"
-    print "  }"
-    print
-    print "  return libxsmm_lookup(&args, sizeof(args), " + str(cacheid) + ");"
-    print "}"
-
-
 def create_dispatch(mnklist):
     print "#include <libxsmm_dispatch.h>"
     print "#include <libxsmm.h>"
     print
     print
-    create_dispatch_function("s", mnklist)
-    print
-    print
-    create_dispatch_function("d", mnklist)
+    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_initialize()"
+    print "{"
+    print "  struct { int m, n, k; } args;"
+    for mnk in mnklist:
+        mnkstr = "_".join(map(str, mnk))
+        print "  args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
+        print "  libxsmm_dispatch(&args, sizeof(args), 0, libxsmm_smm_" + mnkstr + ");"
+        print "  libxsmm_dispatch(&args, sizeof(args), 1, libxsmm_dmm_" + mnkstr + ");"
+    print "}"
 
 
 if __name__ == "__main__":

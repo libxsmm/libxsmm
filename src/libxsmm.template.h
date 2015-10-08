@@ -55,6 +55,9 @@
 #include "libxsmm_fallback.h"
 
 
+/** Explictly initializes the library; can be used to pay for setup cost at a specific point. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_initialize();
+
 /** Type of a function generated for a specific M, N, and K. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c
                                     LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa)

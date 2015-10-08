@@ -212,6 +212,7 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
+      libxsmm_initialize();
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
@@ -245,6 +246,7 @@ int main(int argc, char* argv[])
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
 #endif
@@ -274,6 +276,7 @@ int main(int argc, char* argv[])
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -306,6 +309,7 @@ int main(int argc, char* argv[])
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
@@ -339,6 +343,7 @@ int main(int argc, char* argv[])
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.1f s\n", duration);
 #endif
