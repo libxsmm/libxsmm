@@ -49,11 +49,11 @@
 #define LIBXSMM_AVG_M $AVG_M
 #define LIBXSMM_AVG_N $AVG_N
 #define LIBXSMM_AVG_K $AVG_K
+#define LIBXSMM_BETA $BETA
 #define LIBXSMM_OFFLOAD_ENABLED $OFFLOAD
 
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"
-
 
 /** Explictly initializes the library; can be used to pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_initialize();
@@ -71,6 +71,10 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmm_function)(const double *LIBXSMM_
 /** Query the pointer of a generated function; zero if it does not exist. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
+
+/** JIT a function and return the pointer to the executable memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build(int m, int n, int k);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_jit_build(int m, int n, int k);
 
 /** Dispatched matrix-matrix multiplication; single-precision. */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_smm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c

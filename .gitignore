@@ -1,5 +1,6 @@
 include/libxsmm.f90
 include/libxsmm.h
+include/libxsmm_generator.h
 build/libxsmm.c
 build/mm_*_*_*.c
 bin/generator
