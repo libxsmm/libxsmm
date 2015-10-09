@@ -85,22 +85,17 @@ else
 	MIC ?= 0
 endif
 
-# JIT support (Binary search in sparsity is not supported when building
-# a jit enanled version of LIBXSMM
 # PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE
-# IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!:
+# IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!
 JIT ?= 0
 ifneq (0,$(JIT))
 $(info ======================================================================)
 $(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 $(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
-$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
+$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
 $(info ======================================================================)
 OMP=1
-ifneq (2,$(SPARSITY))
-$(error SPARSITY needs to be 2 for JIT support!)
-endif
 ifneq (0,$(ROW_MAJOR))
 $(error ROW_MAJOR needs to be 0 for JIT support!)
 endif
@@ -432,7 +427,7 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_fallback.h $(INCDIR) 2> /dev/null || true
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
 		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
-		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f90
@@ -440,7 +435,7 @@ $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRD
 	@mkdir -p $(dir $@)
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
 		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
-		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
@@ -553,7 +548,7 @@ endif
 main: $(BLDDIR)/libxsmm.c
 $(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(JIT) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(INDICES) > $@
 ifneq (0,$(JIT))
 	@cat $(SRCDIR)/libxsmm_jit_builder.template.c >> $@
 	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
@@ -623,8 +618,8 @@ ifneq (0,$(JIT))
 	$(info ======================================================================)
 	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 	$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-	$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
-	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+	$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
+	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
 	$(info ======================================================================)
 endif
 
