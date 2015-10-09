@@ -172,7 +172,7 @@
 # define LIBXSMM_TLS thread_local
 #endif
 
-#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER)) && (LIBXSMM_OFFLOAD_ENABLED > 0)
+#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD_BUILD 1
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 #else

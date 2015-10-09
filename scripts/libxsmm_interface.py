@@ -49,10 +49,9 @@ if __name__ == "__main__":
         prefetch_a = int(sys.argv[7]) if (7 < argc) else 0
         prefetch_b = int(sys.argv[8]) if (8 < argc) else 0
         prefetch_c = int(sys.argv[9]) if (9 < argc) else 0
-        beta       = int(sys.argv[10]) if (10 < argc) else 1
-        offload = int(sys.argv[11]) if (11 < argc) else 0
-        threshold = int(sys.argv[12]) if (12 < argc) else 0
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[13:], 0, threshold) if (13 < argc) else list()
+        beta = int(sys.argv[10]) if (10 < argc) else 1
+        threshold = int(sys.argv[11]) if (11 < argc) else 0
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[12:], 0, threshold) if (12 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -86,7 +85,6 @@ if __name__ == "__main__":
             "AVG_M":          avgm, \
             "AVG_N":          avgn, \
             "AVG_K":          avgk, \
-            "OFFLOAD":        offload, \
             "MNK_INTERFACE_LIST": "" \
         }
 
@@ -94,10 +92,10 @@ if __name__ == "__main__":
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c " \
-                      "LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc));\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c " \
-                      "LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc));\n"
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c\n" \
+                    "  LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc));\n" \
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c\n" \
+                    "  LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc));\n"
             print template.substitute(substitute)
         else:
             if (mnklist):
@@ -105,11 +103,13 @@ if __name__ == "__main__":
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
+                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_PTR\n" \
                         "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         "    END SUBROUTINE" \
                         "\n" \
+                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_PTR\n" \
                         "      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
