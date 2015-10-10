@@ -41,7 +41,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # optional argument(s)
-        row_major = int(sys.argv[2]) if (2 < argc) else 1
+        row_major = int(sys.argv[2]) if (2 < argc) else 0
         alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[3])) if (3 < argc) else 64
         aligned_stores = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 1
         aligned_loads = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 1
@@ -49,9 +49,10 @@ if __name__ == "__main__":
         prefetch_a = int(sys.argv[7]) if (7 < argc) else 0
         prefetch_b = int(sys.argv[8]) if (8 < argc) else 0
         prefetch_c = int(sys.argv[9]) if (9 < argc) else 0
-        beta = int(sys.argv[10]) if (10 < argc) else 1
+        jit = int(sys.argv[10]) if (10 < argc) else 0
         threshold = int(sys.argv[11]) if (11 < argc) else 0
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[12:], 0, threshold) if (12 < argc) else list()
+        beta = int(sys.argv[12]) if (12 < argc) else 1
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[13:], 0, threshold) if (13 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -71,13 +72,12 @@ if __name__ == "__main__":
             "ALIGNED_STORES": aligned_stores, \
             "ALIGNED_LOADS":  aligned_loads, \
             "ALIGNED_MAX":    max(alignment, aligned_stores, aligned_loads), \
-            "ROW_MAJOR":      1 if (0 != row_major) else 0, \
-            "COL_MAJOR":      0 if (0 != row_major) else 1, \
             "PREFETCH":       prefetch, \
             "PREFETCH_A":     1 if (0 != prefetch_a) else 0, \
             "PREFETCH_B":     1 if (0 != prefetch_b) else 0, \
             "PREFETCH_C":     1 if (0 != prefetch_c) else 0, \
-            "BETA":           beta, 
+            "ROW_MAJOR":      1 if (0 != row_major) else 0, \
+            "COL_MAJOR":      0 if (0 != row_major) else 1, \
             "MAX_MNK":        maxmnk, \
             "MAX_M":          maxm if (avgm < maxm) else maxdim, \
             "MAX_N":          maxn if (avgn < maxn) else maxdim, \
@@ -85,6 +85,8 @@ if __name__ == "__main__":
             "AVG_M":          avgm, \
             "AVG_N":          avgn, \
             "AVG_K":          avgk, \
+            "BETA":           beta, \
+            "JIT":            1 if (0 != jit) else 0, \
             "MNK_INTERFACE_LIST": "" \
         }
 

@@ -32,12 +32,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
   struct { int m, n, k; } args;
 
   if (0 == libxsmm_init) {
-    libxsmm_initialize();
+    libxsmm_build_static();
     libxsmm_init = 1;
   }
 
   args.m = m; args.n = n; args.k = k;
-  return (libxsmm_smm_function)libxsmm_lookup(&args, sizeof(args), 0);
+  return (libxsmm_smm_function)libxsmm_lookup(&args, sizeof(args), 1/*single precision*/);
 }
 
 
@@ -46,10 +46,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
   struct { int m, n, k; } args;
 
   if (0 == libxsmm_init) {
-    libxsmm_initialize();
+    libxsmm_build_static();
     libxsmm_init = 1;
   }
 
   args.m = m; args.n = n; args.k = k;
-  return (libxsmm_dmm_function)libxsmm_lookup(&args, sizeof(args), 1);
+  return (libxsmm_dmm_function)libxsmm_lookup(&args, sizeof(args), 0/*double precision*/);
 }

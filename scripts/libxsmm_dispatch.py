@@ -59,15 +59,15 @@ def create_dispatch(mnklist):
     print "LIBXSMM_RETARGETABLE extern int libxsmm_init;"
     print
     print
-    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_initialize()"
+    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"
     print "{"
     print "  if (0 == libxsmm_init) {"
     print "    struct { int m, n, k; } args;"
     for mnk in mnklist:
         mnkstr = "_".join(map(str, mnk))
         print "    args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
     print "    libxsmm_init = 1;"
     print "  }"
     print "}"
