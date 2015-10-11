@@ -83,15 +83,8 @@ if __name__ == "__main__":
         print "#include <libxsmm.h>"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"
         print "{"
-        print "  return NULL;"
-        print "}"
-        print
-        print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)"
-        print "{"
-        print "  return NULL;"
         print "}"
     else:
         sys.tracebacklimit = 0
