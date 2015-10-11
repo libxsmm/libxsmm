@@ -123,7 +123,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precisio
   free(l_gen_code);
 
   /* make function pointer available for dispatch */
-  libxsmm_dispatch(&l_xgemm_desc, sizeof(l_xgemm_desc), single_precision % 2, (libxsmm_function)l_code);
+  libxsmm_dispatch(&l_xgemm_desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, single_precision % 2, (libxsmm_function)l_code);
 #else
   fprintf(stderr, "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!\n");
 #endif

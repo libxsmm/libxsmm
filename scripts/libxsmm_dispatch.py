@@ -69,9 +69,9 @@ def create_dispatch(mnklist):
         mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])
         print "    desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
         print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.single_precision = 1;"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, sizeof(desc), 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
         print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.single_precision = 0;"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, sizeof(desc), 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
     print "    libxsmm_init = 1;"
     print "  }"
     print "}"

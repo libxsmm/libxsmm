@@ -38,7 +38,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
     libxsmm_init = 1;
   }
 
-  return (libxsmm_smm_function)libxsmm_lookup(&desc, sizeof(desc), 1/*single precision*/);
+  return (libxsmm_smm_function)libxsmm_lookup(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/);
 }
 
 
@@ -52,5 +52,5 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
     libxsmm_init = 1;
   }
 
-  return (libxsmm_dmm_function)libxsmm_lookup(&desc, sizeof(desc), 0/*double precision*/);
+  return (libxsmm_dmm_function)libxsmm_lookup(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/);
 }

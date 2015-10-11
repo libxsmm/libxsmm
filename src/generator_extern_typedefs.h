@@ -39,6 +39,8 @@
   (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); \
   (DESCRIPTOR).aligned_a = 0; (DESCRIPTOR).aligned_c = 0
 
+#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE (12 * sizeof(int) + 2)
+
 /* Enumerate the available prefetch schemes. */
 typedef enum libxsmm_prefetch_type {
   /* No prefetching and no prefetch fn. signature. */
@@ -58,23 +60,18 @@ typedef enum libxsmm_prefetch_type {
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
 } libxsmm_prefetch_type;
 
-/* struct for storing the current xgemm description
-   which should be generated */
+/* Structure storing the xgemm argument description.
+   The binary data layout must be fixed across
+   translation units regardless of the
+   alignment and the padding. */
 typedef struct libxsmm_xgemm_descriptor_struct {
-  unsigned int m;
-  unsigned int n;
-  unsigned int k;
-  unsigned int lda;
-  unsigned int ldb;
-  unsigned int ldc;
-  int alpha;
-  int beta;
-  char trans_a;
-  char trans_b;
-  unsigned int aligned_a;
-  unsigned int aligned_c;
+  unsigned int m, n, k, lda, ldb, ldc;
+  unsigned int aligned_a, aligned_c;
   unsigned int single_precision;
   unsigned int prefetch;
+  int alpha, beta;
+  char trans_a;
+  char trans_b;
 } libxsmm_xgemm_descriptor;
 
 /* struct for storing the generated code
