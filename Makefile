@@ -381,38 +381,43 @@ else # nopf
 	PREFETCH_ID = 0
 endif
 
-PREFETCH_A = 0
-PREFETCH_B = 0
-PREFETCH_C = 0
-
 ifeq (2,$(PREFETCH_ID))
 	PREFETCH_SCHEME = pfsigonly
+	PREFETCH_TYPE = 1
 else ifeq (3,$(PREFETCH_ID))
 	PREFETCH_SCHEME = BL2viaC
+	PREFETCH_TYPE = 2
 	PREFETCH_B = 1
 else ifeq (4,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2
+	PREFETCH_TYPE = 4
 	PREFETCH_A = 1
 else ifeq (5,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2
+	PREFETCH_TYPE = 8
+	PREFETCH_A = 1
+else ifeq (8,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2jpst
+	PREFETCH_TYPE = 16
 	PREFETCH_A = 1
 else ifeq (6,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2_BL2viaC
+	PREFETCH_TYPE = $(shell echo $$((2 | 4)))
 	PREFETCH_A = 1
 	PREFETCH_B = 1
 else ifeq (7,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2_BL2viaC
+	PREFETCH_TYPE = $(shell echo $$((2 | 8)))
 	PREFETCH_A = 1
 	PREFETCH_B = 1
-else ifeq (8,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2jpst
-	PREFETCH_A = 1
 else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst_BL2viaC
+	PREFETCH_TYPE = $(shell echo $$((2 | 16)))
 	PREFETCH_A = 1
 	PREFETCH_B = 1
 else
 	PREFETCH_SCHEME = nopf
+	PREFETCH_TYPE = 0
 endif
 
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
@@ -427,17 +432,15 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_prefetch.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_fallback.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(JIT) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f90
 $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f90
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(JIT) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
@@ -448,7 +451,7 @@ endif
 compile_generator_lib: $(OBJFILES_GEN_LIB)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB)
@@ -466,12 +469,12 @@ endif
 compile_generator: $(OBJFILES_GEN_BIN)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/generator
 $(BINDIR)/generator: $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) $(CLDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64/ -lxsmmgen -o $@
+	$(CC) $(LDFLAGS) $(CLDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64 -lxsmmgen -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)

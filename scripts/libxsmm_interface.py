@@ -46,13 +46,10 @@ if __name__ == "__main__":
         aligned_stores = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 1
         aligned_loads = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 1
         prefetch = int(sys.argv[6]) if (6 < argc) else 0
-        prefetch_a = int(sys.argv[7]) if (7 < argc) else 0
-        prefetch_b = int(sys.argv[8]) if (8 < argc) else 0
-        prefetch_c = int(sys.argv[9]) if (9 < argc) else 0
-        jit = int(sys.argv[10]) if (10 < argc) else 0
-        threshold = int(sys.argv[11]) if (11 < argc) else 0
-        beta = int(sys.argv[12]) if (12 < argc) else 1
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[13:], 0, threshold) if (13 < argc) else list()
+        jit = int(sys.argv[7]) if (7 < argc) else 0
+        threshold = int(sys.argv[8]) if (8 < argc) else 0
+        beta = int(sys.argv[9]) if (9 < argc) else 1
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[10:], 0, threshold) if (10 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -73,9 +70,6 @@ if __name__ == "__main__":
             "ALIGNED_LOADS":  aligned_loads, \
             "ALIGNED_MAX":    max(alignment, aligned_stores, aligned_loads), \
             "PREFETCH":       prefetch, \
-            "PREFETCH_A":     1 if (0 != prefetch_a) else 0, \
-            "PREFETCH_B":     1 if (0 != prefetch_b) else 0, \
-            "PREFETCH_C":     1 if (0 != prefetch_c) else 0, \
             "ROW_MAJOR":      1 if (0 != row_major) else 0, \
             "COL_MAJOR":      0 if (0 != row_major) else 1, \
             "MAX_MNK":        maxmnk, \

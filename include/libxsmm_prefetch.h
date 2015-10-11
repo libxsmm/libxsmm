@@ -31,12 +31,12 @@
 #ifndef LIBXSMM_PREFETCH_H
 #define LIBXSMM_PREFETCH_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm.h"
 
 #if (0 != LIBXSMM_PREFETCH)
 # define LIBXSMM_PREFETCH_DECL(TYPE, ARG) , LIBXSMM_CONCATENATE2(LIBXSMM_UNUSED_, ARG) TYPE LIBXSMM_CONCATENATE2(LIBXSMM_PREFETCH_ARG_, ARG)
 # define LIBXSMM_USE(ARG) LIBXSMM_CONCATENATE2(LIBXSMM_USE_, ARG)
-# if (0 == LIBXSMM_PREFETCH_A)
+# if 0 != ((LIBXSMM_PREFETCH) & 4) || 0 != ((LIBXSMM_PREFETCH) & 8) || 0 != ((LIBXSMM_PREFETCH) & 16)
 #   define LIBXSMM_PREFETCH_ARG_pa unused_pa
 #   define LIBXSMM_PREFETCH_ARGA(ARG) , 0
 #   define LIBXSMM_UNUSED_pa LIBXSMM_UNUSED_ARG
@@ -47,7 +47,7 @@
 #   define LIBXSMM_UNUSED_pa
 #   define LIBXSMM_USE_pa
 # endif
-# if (0 == LIBXSMM_PREFETCH_B)
+# if 0 != ((LIBXSMM_PREFETCH) & 2)
 #   define LIBXSMM_PREFETCH_ARG_pb unused_pb
 #   define LIBXSMM_PREFETCH_ARGB(ARG) , 0
 #   define LIBXSMM_UNUSED_pb LIBXSMM_UNUSED_ARG
@@ -58,7 +58,7 @@
 #   define LIBXSMM_UNUSED_pb
 #   define LIBXSMM_USE_pb
 # endif
-# if (0 == LIBXSMM_PREFETCH_C)
+# if 1
 #   define LIBXSMM_PREFETCH_ARG_pc unused_pc
 #   define LIBXSMM_PREFETCH_ARGC(ARG) , 0
 #   define LIBXSMM_UNUSED_pc LIBXSMM_UNUSED_ARG

@@ -37,9 +37,6 @@
 #define LIBXSMM_ALIGNED_LOADS $ALIGNED_LOADS
 #define LIBXSMM_ALIGNED_MAX $ALIGNED_MAX
 #define LIBXSMM_PREFETCH $PREFETCH
-#define LIBXSMM_PREFETCH_A $PREFETCH_A
-#define LIBXSMM_PREFETCH_B $PREFETCH_B
-#define LIBXSMM_PREFETCH_C $PREFETCH_C
 #define LIBXSMM_ROW_MAJOR $ROW_MAJOR
 #define LIBXSMM_COL_MAJOR $COL_MAJOR
 #define LIBXSMM_MAX_MNK $MAX_MNK
@@ -52,6 +49,7 @@
 #define LIBXSMM_BETA $BETA
 #define LIBXSMM_JIT $JIT
 
+#include "libxsmm_macros.h"
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"
 
