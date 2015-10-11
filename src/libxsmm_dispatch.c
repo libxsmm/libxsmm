@@ -1,4 +1,5 @@
 #include "libxsmm_dispatch.h"
+#include "generator_extern_typedefs.h"
 #include "libxsmm_crc32.h"
 #include <libxsmm.h>
 
@@ -29,27 +30,27 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)
 {
-  struct { int m, n, k; } args;
+  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA,
+    m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
 
   if (0 == libxsmm_init) {
     libxsmm_build_static();
     libxsmm_init = 1;
   }
 
-  args.m = m; args.n = n; args.k = k;
-  return (libxsmm_smm_function)libxsmm_lookup(&args, sizeof(args), 1/*single precision*/);
+  return (libxsmm_smm_function)libxsmm_lookup(&desc, sizeof(desc), 1/*single precision*/);
 }
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)
 {
-  struct { int m, n, k; } args;
+  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA,
+    m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
 
   if (0 == libxsmm_init) {
     libxsmm_build_static();
     libxsmm_init = 1;
   }
 
-  args.m = m; args.n = n; args.k = k;
-  return (libxsmm_dmm_function)libxsmm_lookup(&args, sizeof(args), 0/*double precision*/);
+  return (libxsmm_dmm_function)libxsmm_lookup(&desc, sizeof(desc), 0/*double precision*/);
 }

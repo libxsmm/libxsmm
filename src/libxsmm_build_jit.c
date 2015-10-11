@@ -26,20 +26,27 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dispatch.h"
+#include <libxsmm_generator.h>
 #include <libxsmm.h>
 
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #if !defined(_WIN32)
 # include <sys/mman.h>
-# define LIBXSMM_CODE_PAGESIZE 4096
-# include <libxsmm_generator.h>
-# include <assert.h>
-# include <stdlib.h>
-# include <string.h>
-# include <stdio.h>
 #endif
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
+
+#define LIBXSMM_CODE_PAGESIZE 4096
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precision, int m, int n, int k)
@@ -50,25 +57,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precisio
 #if (0 != (LIBXSMM_JIT))
 #if !defined(_WIN32)
   /* build xgemm descriptor */
-  libxsmm_xgemm_descriptor l_xgemm_desc;
-  l_xgemm_desc.m = m;
-  l_xgemm_desc.n = n;
-  l_xgemm_desc.k = k;
-  l_xgemm_desc.lda = m;
-  l_xgemm_desc.ldb = k;
-  l_xgemm_desc.ldc = m;
-  l_xgemm_desc.alpha = 1.0;
-#if LIBXSMM_BETA == 0
-  l_xgemm_desc.beta = 0.0;
-#else
-  l_xgemm_desc.beta = 1.0;
-#endif
-  l_xgemm_desc.trans_a = 'n';
-  l_xgemm_desc.trans_b = 'n';
-  l_xgemm_desc.aligned_a = 0;
-  l_xgemm_desc.aligned_c = 0;
-  l_xgemm_desc.single_precision = single_precision;
-  strcpy ( l_xgemm_desc.prefetch, "nopf" );
+  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc, single_precision, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA,
+    m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)));
 
   /* set arch string */
   char l_arch[14];
@@ -104,7 +94,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precisio
                                   &l_xgemm_desc,
                                   l_arch );
 
-  /* handle evetl. errors */
+  /* handle an eventual error */
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "%s\n", libxsmm_strerror( l_generated_code.last_error ) );
     exit(-1);
@@ -132,7 +122,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precisio
   /* free tmp buffer */
   free(l_gen_code);
 
-  /* set pointer */
+  /* make function pointer available for dispatch */
   libxsmm_dispatch(&l_xgemm_desc, sizeof(l_xgemm_desc), single_precision % 2, (libxsmm_function)l_code);
 #else
   fprintf(stderr, "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!\n");

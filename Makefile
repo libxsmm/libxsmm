@@ -386,35 +386,25 @@ ifeq (2,$(PREFETCH_ID))
 	PREFETCH_TYPE = 1
 else ifeq (3,$(PREFETCH_ID))
 	PREFETCH_SCHEME = BL2viaC
-	PREFETCH_TYPE = 2
-	PREFETCH_B = 1
+	PREFETCH_TYPE = 8
 else ifeq (4,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2
-	PREFETCH_TYPE = 4
-	PREFETCH_A = 1
+	PREFETCH_TYPE = 2
 else ifeq (5,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2
-	PREFETCH_TYPE = 8
-	PREFETCH_A = 1
+	PREFETCH_TYPE = 16
 else ifeq (8,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst
-	PREFETCH_TYPE = 16
-	PREFETCH_A = 1
+	PREFETCH_TYPE = 4
 else ifeq (6,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((2 | 4)))
-	PREFETCH_A = 1
-	PREFETCH_B = 1
+	PREFETCH_TYPE = $(shell echo $$((8 | 2)))
 else ifeq (7,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((2 | 8)))
-	PREFETCH_A = 1
-	PREFETCH_B = 1
+	PREFETCH_TYPE = $(shell echo $$((8 | 16)))
 else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((2 | 16)))
-	PREFETCH_A = 1
-	PREFETCH_B = 1
+	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 else
 	PREFETCH_SCHEME = nopf
 	PREFETCH_TYPE = 0

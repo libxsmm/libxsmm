@@ -26,19 +26,37 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef GENERATOR_EXTERN_TYPEDEFS_H
 #define GENERATOR_EXTERN_TYPEDEFS_H
 
-#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, PRECISION, TRANSA, TRANSB, ALPHA, BETA, M, N, K, LDA, LDB, LDC) \
-  (DESCRIPTOR); (DESCRIPTOR).trans_a = (TRANSA); (DESCRIPTOR).trans_b = (TRANSB); \
+#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, PRECISION, PREFETCH, TRANSA, TRANSB, ALPHA, BETA, M, N, K, LDA, LDB, LDC) \
+  (DESCRIPTOR); (DESCRIPTOR).single_precision = (PRECISION); (DESCRIPTOR).prefetch = (PREFETCH); \
+  (DESCRIPTOR).trans_a = (TRANSA); (DESCRIPTOR).trans_b = (TRANSB); \
   (DESCRIPTOR).alpha = (ALPHA); (DESCRIPTOR).beta = (BETA); \
   (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
   (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); \
-  (DESCRIPTOR).aligned_a = 0; (DESCRIPTOR).aligned_c = 0; \
-  (DESCRIPTOR).single_precision = (PRECISION); \
-  strcpy((DESCRIPTOR).prefetch, "nopf")
+  (DESCRIPTOR).aligned_a = 0; (DESCRIPTOR).aligned_c = 0
+
+/* Enumerate the available prefetch schemes. */
+typedef enum libxsmm_prefetch_type {
+  /* No prefetching and no prefetch fn. signature. */
+  LIBXSMM_PREFETCH_NONE               = 0,
+  /* Only function prefetch signature. */
+  LIBXSMM_PREFETCH_SIGNATURE          = 1,
+  /* Prefetch PA using accesses to A. */
+  LIBXSMM_PREFETCH_AL2                = 2,
+  /* Prefetch PA (aggressive). */
+  LIBXSMM_PREFETCH_AL2_JPOST          = 4,
+  /* Prefetch PB using accesses to C. */
+  LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
+  /* Prefetch A ahead. */
+  LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPOST,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
+} libxsmm_prefetch_type;
 
 /* struct for storing the current xgemm description
    which should be generated */
@@ -56,7 +74,7 @@ typedef struct libxsmm_xgemm_descriptor_struct {
   unsigned int aligned_a;
   unsigned int aligned_c;
   unsigned int single_precision;
-  char prefetch[32]; /* TODO do this with ints as well */
+  unsigned int prefetch;
 } libxsmm_xgemm_descriptor;
 
 /* struct for storing the generated code

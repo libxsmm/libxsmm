@@ -28,13 +28,13 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Greg Henry (Intel Corp.)
 ******************************************************************************/
-
+#include "generator_dense_instructions.h"
+#include "generator_common.h"
+#include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_common.h"
-#include "generator_dense_instructions.h"
 
 /* This routine is for the jit code. All offsets/displacements have similar
    byte patterns, so this is used for all of them */
@@ -1936,7 +1936,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
 void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                            const char*                   i_arch, 
-                                                           const char*                   i_prefetch) { 
+                                                           unsigned int                  i_prefetch) { 
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
@@ -2091,15 +2091,15 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
     } else {
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %rbx\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %r12\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %r13\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %r14\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %r15\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
   } else {
@@ -2124,20 +2124,20 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading b prefetch pointer in assembly */
-    if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
-         ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
+    if ( i_prefetch == LIBXSMM_PREFETCH_BL2_VIA_C || 
+         i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a prefetch pointer in assembly */
-    } else if ( ( strcmp(i_prefetch, "AL2jpst") == 0 ) ||
-                ( strcmp(i_prefetch, "AL2") == 0 )        ) {
+    } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2 ||
+                i_prefetch == LIBXSMM_PREFETCH_AL2_JPOST) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a and b prefetch pointer in assembly */
-    } else if ( ( strcmp(i_prefetch, "AL2jpst_BL2viaC") == 0 ) ||
-                ( strcmp(i_prefetch, "AL2_BL2viaC") == 0 )        ) {
+    } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
+                i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
       l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -2156,7 +2156,7 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
 void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                            const char*                   i_arch, 
-                                                           const char*                   i_prefetch) {
+                                                           unsigned int                  i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO this is a very simple System V ABI 64 interfacce */
@@ -2295,15 +2295,15 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
     } else {
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %r15\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %r14\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r14\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %r13\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r13\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %r12\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r12\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %rbx\n" );
+      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
 
@@ -2352,8 +2352,8 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_nloop, 3 );
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_kloop, 3 );
 
-    if ( ( strcmp(i_prefetch, "BL2viaC") == 0 ) || 
-         ( strcmp(i_prefetch, "curAL2_BL2viaC") == 0 )    ) {
+    if ( i_prefetch == LIBXSMM_PREFETCH_BL2_VIA_C || 
+         i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
@@ -2361,8 +2361,8 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
       } else {
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
-    } else if ( ( strcmp(i_prefetch, "AL2jpst") == 0 ) ||
-                ( strcmp(i_prefetch, "AL2") == 0 )        ) {
+    } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2 ||
+                i_prefetch == LIBXSMM_PREFETCH_AL2_JPOST) {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
@@ -2370,8 +2370,8 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
       } else {
         l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
-    } else if ( ( strcmp(i_prefetch, "AL2jpst_BL2viaC") == 0 ) ||
-                ( strcmp(i_prefetch, "AL2_BL2viaC") == 0 )        ) {
+    } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
+                i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {

@@ -39,19 +39,21 @@ def calc_direct_index(mnk, d, h):
 
 
 def create_dispatch(mnklist):
-    print "#include <libxsmm_dispatch.h>"
     print "#include <libxsmm.h>"
+    print "#include <libxsmm_dispatch.h>"
+    print "#include <generator_extern_typedefs.h>"
+    print
+    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
+    print "# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))"
+    print "#endif"
+    print "#include <assert.h>"
+    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
+    print "# pragma offload_attribute(pop)"
+    print "#endif"
     print
     print "#if defined(NDEBUG)"
     print "# define LIBXSMM_DISPATCH_CHECK(DISP) DISP"
     print "#else"
-    print "# if defined(LIBXSMM_OFFLOAD_BUILD)"
-    print "# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))"
-    print "# endif"
-    print "# include <assert.h>"
-    print "# if defined(LIBXSMM_OFFLOAD_BUILD)"
-    print "# pragma offload_attribute(pop)"
-    print "# endif"
     print "# define LIBXSMM_DISPATCH_CHECK(DISP) assert(NULL == (DISP))"
     print "#endif"
     print
@@ -62,12 +64,14 @@ def create_dispatch(mnklist):
     print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"
     print "{"
     print "  if (0 == libxsmm_init) {"
-    print "    struct { int m, n, k; } args;"
+    print "    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA, 0/*m*/, 0/*n*/, 0/*k*/, 0/*lda*/, 0/*ldb*/, 0/*ldc*/);"
     for mnk in mnklist:
-        mnkstr = "_".join(map(str, mnk))
-        print "    args.m = " + str(mnk[0]) + "; args.n = " + str(mnk[1]) + "; args.k = " + str(mnk[2]) + ";"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&args, sizeof(args), 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
+        mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])
+        print "    desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
+        print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.single_precision = 1;"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, sizeof(desc), 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.single_precision = 0;"
+        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, sizeof(desc), 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
     print "    libxsmm_init = 1;"
     print "  }"
     print "}"

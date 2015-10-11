@@ -28,13 +28,13 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include "generator_common.h"
+#include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "generator_common.h"
 
 static char libxsmm_global_error_message[512];
 
@@ -639,13 +639,13 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
   } else {
     /* selecting the correct signature */
     if (i_xgemm_desc->single_precision == 1) {
-      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
         l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
     } else {
-      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
+      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);

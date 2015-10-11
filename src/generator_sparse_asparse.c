@@ -67,13 +67,13 @@
  * @section DESCRIPTION
  * <DESCRIPTION>
  */
-
+#include "generator_sparse_asparse.h"
+#include "generator_common.h"
+#include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_common.h"
-#include "generator_sparse_asparse.h"
 
 void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
                                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
