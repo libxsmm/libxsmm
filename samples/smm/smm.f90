@@ -46,7 +46,7 @@ PROGRAM smm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, s
   CHARACTER(32) :: argv
@@ -150,9 +150,9 @@ PROGRAM smm
   ELSE
     f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
     IF (C_ASSOCIATED(f)) THEN
-      CALL C_F_PROCPOINTER(f, xmm)
+      CALL C_F_PROCPOINTER(f, dmm)
       WRITE(*, "(A)") "Streamed... (specialized)"
-      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, xmm)
+      !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm)
       ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       tmp(:,:) = 0
       !$OMP MASTER
@@ -160,7 +160,10 @@ PROGRAM smm
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL xmm(C_LOC(a(i)%matrix(:,:)), C_LOC(b(i)%matrix(:,:)), C_LOC(tmp))
+!        This in case of a polymorph call, we need C_LOC :-(, however the next line
+!        violate Fortran standard :-(
+!        CALL xmm(C_LOC(a(i)%matrix(:,:)), C_LOC(b(i)%matrix(:,:)), C_LOC(tmp))
+        CALL dmm(a(i)%matrix, b(i)%matrix, tmp)
       END DO
       !$OMP MASTER
       !$ duration = duration + omp_get_wtime()
