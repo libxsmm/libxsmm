@@ -28,9 +28,17 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#ifndef GENERATOR_EXTERN_TYPEDEFS_H
+#define GENERATOR_EXTERN_TYPEDEFS_H
 
-#ifndef GENERATOR_GLOBAL_DEFINES_H
-#define GENERATOR_GLOBAL_DEFINES_H
+#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, PRECISION, TRANSA, TRANSB, ALPHA, BETA, M, N, K, LDA, LDB, LDC) \
+  (DESCRIPTOR); (DESCRIPTOR).trans_a = (TRANSA); (DESCRIPTOR).trans_b = (TRANSB); \
+  (DESCRIPTOR).alpha = (ALPHA); (DESCRIPTOR).beta = (BETA); \
+  (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
+  (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); \
+  (DESCRIPTOR).aligned_a = 0; (DESCRIPTOR).aligned_c = 0; \
+  (DESCRIPTOR).single_precision = (PRECISION); \
+  strcpy((DESCRIPTOR).prefetch, "nopf")
 
 /* struct for storing the current xgemm description
    which should be generated */
@@ -69,7 +77,7 @@ typedef struct libxsmm_generated_code_struct {
 
 /* function to translate LIBXSMM Generator error codes
    to error messages */
-char* libxsmm_strerror( const unsigned int      i_error_code );
+const char* libxsmm_strerror( const unsigned int      i_error_code );
 
-#endif /* GENERATOR_GLOBAL_DEFINES_H */
+#endif /* GENERATOR_EXTERN_TYPEDEFS_H */
 

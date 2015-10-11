@@ -664,7 +664,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
 #endif
 }
 
-char* libxsmm_strerror( const unsigned int      i_error_code ) {
+const char* libxsmm_strerror( const unsigned int      i_error_code ) {
   int l_max_error_length = 511;
 
   switch (i_error_code) {
