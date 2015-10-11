@@ -30,10 +30,12 @@
 ******************************************************************************/
 
 #if !defined(_WIN32)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #define LIBXSMM_CODE_PAGESIZE 4096
 #include <libxsmm_generator.h>
-#include <stdio.h>
 #endif
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build(int m, int n, int k) {
@@ -103,7 +105,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build
 
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, 4096 );
+  unsigned char* l_code;
+  posix_memalign( (void**)&l_code, LIBXSMM_CODE_PAGESIZE, l_code_pages*LIBXSMM_CODE_PAGESIZE );
   memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
@@ -189,7 +192,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_jit_build
 
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, 4096 );
+  unsigned char* l_code;
+  posix_memalign( (void**)&l_code, LIBXSMM_CODE_PAGESIZE, l_code_pages*LIBXSMM_CODE_PAGESIZE );
   memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
