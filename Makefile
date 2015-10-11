@@ -175,6 +175,13 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
+	else
+		CXXFLAGS += -O0
+		CFLAGS += -O0
+		FCFLAGS += -O0
+		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -xAVX
 		else ifeq (2,$(AVX))
@@ -184,11 +191,6 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		else
 			TARGET = -xHost
 		endif
-	else
-		CXXFLAGS += -O0
-		CFLAGS += -O0
-		FCFLAGS += -O0
-		SYM = $(DBG)
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -241,6 +243,13 @@ else # GCC assumed
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
+	else
+		CXXFLAGS += -O0
+		CFLAGS += -O0
+		FCFLAGS += -O0
+		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -mavx
 		else ifeq (2,$(AVX))
@@ -250,11 +259,6 @@ else # GCC assumed
 		else
 			TARGET = -march=native
 		endif
-	else
-		CXXFLAGS += -O0
-		CFLAGS += -O0
-		FCFLAGS += -O0
-		SYM = $(DBG)
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
