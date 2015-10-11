@@ -25,6 +25,9 @@ void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, doub
 
 With C++ and FORTRAN function overloading, the library allows to omit the 's' and 'd' prefixes denoting the numeric type in the above C interface. Further, in C++ a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mm_dispatch'.
 
+Note: Function overloading in FORTRAN is just recommended when using automatically dispatched calls. When querying function pointers, please use the type 
+specific versions as the poly-morph version relies on C_LOC on arrays which gfrotran refuses to digest (as it's not specified in the FORTRAN standard).
+
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
 
@@ -96,7 +99,7 @@ grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 
 ## Performance
 ### Tuning
-The build system allows to conveniently select the target system using an AVX flag when invoking 'make'. The default is to generate code according to the feature bits of the host system running the compiler. The device-side defaults to "MIC" targeting the Intel Xeon Phi family of coprocessors ("KNC"). However beside of generating all supported host code paths (and letting the compiler pick the one representing the host), specifying a particular code path will not only save some time when generating the code ("printing"), but also enable cross-compilation for a target that is different from the compiler's host: SSE=3 (in fact SSE!=0), AVX=1, AVX=2 (with FMA), and AVX=3 are supported. The latter is targeting the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using Intel AVX-512 foundational instructions (AVX-512F):
+The build system allows to conveniently select the target system using an AVX flag when invoking 'make'. The default is to generate code according to the feature bits of the host system running the compiler. The device-side defaults to "MIC" targeting the Intel Xeon Phi family of coprocessors ("KNC"). However beside of generating all supported host code paths (and letting the compiler pick the one representing the host), specifying a particular code path will not only save some time when generating the code ("printing"), but also enable cross-compilation for a target that is different from the compiler's host: SSE=3 (in fact SSE!=0), AVX=1, AVX=2 (with FMA), and AVX=3 are supported. The latter is targeting the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using Intel AVX-512 foundation instructions (AVX-512F):
 
 ```
 make AVX=3
@@ -135,7 +138,7 @@ make SPARSITY=2
 
 A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. Furthermore, the size of the direct lookup table is limited to 512 KB (currently hardcoded). The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
 
-## JIT Backend
+### JIT Backend
 There might be situations in which it is up-front not clear which problem sizes will be needed during an application run. In order to leverage LIBXSMM's
 high-performance kernels here, LIBXSMM offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is done by emitting the
 corresponding byte-code directly into an executable buffer to ensure highest performance during the generation process. As the JIT backend is still experimental,
@@ -156,7 +159,7 @@ make JIT=1
 You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed, capped at 256 * 256 *256.
 
 
-## Directly invoking the generator backend
+### Directly invoking the generator backend
 In some special, extremely performance-critical situations it might be useful to bypass LIBXSMM's frontend entirely and to directly call into the generated code. This is possible by either invoking the code generator after a regular build process (as described above) or by just building the backend and invoking the generator:
 
 ```
