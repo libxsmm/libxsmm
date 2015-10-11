@@ -578,6 +578,12 @@ endif
 .PHONY: lib_hst
 lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
 $(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm_build_jit.o
+	@mkdir -p $(dir $@)
+ifeq (0,$(STATIC))
+	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
+else
+	$(AR) -rs $@ $^
+endif
 ifneq (0,$(JIT))
 	$(info ======================================================================)
 	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
@@ -585,12 +591,6 @@ ifneq (0,$(JIT))
 	$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
 	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
 	$(info ======================================================================)
-endif
-	@mkdir -p $(dir $@)
-ifeq (0,$(STATIC))
-	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
-else
-	$(AR) -rs $@ $^
 endif
 
 .PHONY: samples
