@@ -454,10 +454,9 @@ ifeq (0,$(STATIC))
 else
 	$(AR) -rs $@ $^
 endif
-	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_extern_typedefs.h >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_extern_typedefs.h > $(INCDIR)/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(INCDIR)/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(INCDIR)/libxsmm_generator.h
 
 .PHONY: compile_generator
 compile_generator: $(OBJFILES_GEN_BIN)
