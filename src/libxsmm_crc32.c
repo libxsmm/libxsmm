@@ -382,7 +382,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
   const char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_ALIGNED_MAX);
   const char *const endb = begin + size;
 
-  if (size > (endb - enda)) {
+  if (size > (size_t)(endb - enda)) {
     for (; begin < (enda - 7); begin += 8) {
       init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
     }
