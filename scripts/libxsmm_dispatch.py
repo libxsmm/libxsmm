@@ -58,7 +58,7 @@ def create_dispatch(mnklist):
     print "#endif"
     print
     print
-    print "LIBXSMM_RETARGETABLE extern int libxsmm_init;"
+    print "LIBXSMM_RETARGETABLE int libxsmm_init = 0;"
     print
     print
     print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"

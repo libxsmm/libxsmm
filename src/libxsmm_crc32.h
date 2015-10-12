@@ -32,15 +32,8 @@
 #define LIBXSMM_CRC32_H
 
 #include <libxsmm_macros.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(pop)
-#endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int init);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init);
 
 #endif /*LIBXSMM_CRC32_H*/

@@ -31,19 +31,10 @@
 #ifndef LIBXSMM_DISPATCH_H
 #define LIBXSMM_DISPATCH_H
 
-#include <libxsmm_macros.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(pop)
-#endif
+#include <libxsmm.h>
 
 
-typedef void (/*LIBXSMM_CDECL*/*libxsmm_function)(LIBXSMM_VARIADIC);
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, libxsmm_function function);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, size_t key_size, size_t cache_id);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, unsigned int key_size, int cache_id, libxsmm_function function);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, unsigned int key_size, int cache_id);
 
 #endif /*LIBXSMM_DISPATCH_H*/

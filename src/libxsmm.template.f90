@@ -117,10 +117,10 @@ MODULE LIBXSMM
     END SUBROUTINE
  
     ! Build explicitly a kernel, do not rely on automatic JIT in dispatch
-    PURE SUBROUTINE libxsmm_build_jit(single_precision, m, n, k) BIND(C)
+    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_build_jit(single_precision, m, n, k) BIND(C)
       IMPORT :: C_FUNPTR, C_INT
       INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
-    END SUBROUTINE
+    END FUNCTION
 
     ! Query the pointer of a generated function; zero if it does not exist, single-precision.
     TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch(m, n, k) BIND(C)

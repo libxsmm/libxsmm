@@ -1,18 +1,46 @@
+/******************************************************************************
+** Copyright (c) 2013-2015, Intel Corporation                                **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
+/* Hans Pabst (Intel Corp.)
+******************************************************************************/
 #include "libxsmm_dispatch.h"
 #include "generator_extern_typedefs.h"
 #include "libxsmm_crc32.h"
-#include <libxsmm.h>
 
-#define LIBXSMM_CACHESIZE (LIBXSMM_MAX_M) * (LIBXSMM_MAX_N) * (LIBXSMM_MAX_K) * 24
+#define LIBXSMM_CACHESIZE (LIBXSMM_MAX_M) * (LIBXSMM_MAX_N) * (LIBXSMM_MAX_K) * 8
 #define LIBXSMM_SEED 0
 
 
 /** Filled with zeros due to C language rule. */
 LIBXSMM_RETARGETABLE libxsmm_function libxsmm_cache[2][(LIBXSMM_CACHESIZE)];
-LIBXSMM_RETARGETABLE int libxsmm_init = 0;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, libxsmm_function function)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, unsigned int key_size, int cache_id, libxsmm_function function)
 {
   const unsigned int hash = libxsmm_crc32(key, key_size, LIBXSMM_SEED), i = hash % (LIBXSMM_CACHESIZE);
   libxsmm_function *const cache = libxsmm_cache[cache_id%2];
@@ -22,35 +50,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const vo
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, size_t key_size, size_t cache_id)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, unsigned int key_size, int cache_id)
 {
   return libxsmm_cache[cache_id%2][libxsmm_crc32(key, key_size, LIBXSMM_SEED)%(LIBXSMM_CACHESIZE)];
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)
-{
-  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA,
-    m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
-
-  if (0 == libxsmm_init) {
-    libxsmm_build_static();
-    libxsmm_init = 1;
-  }
-
-  return (libxsmm_smm_function)libxsmm_lookup(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/);
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)
-{
-  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA,
-    m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
-
-  if (0 == libxsmm_init) {
-    libxsmm_build_static();
-    libxsmm_init = 1;
-  }
-
-  return (libxsmm_dmm_function)libxsmm_lookup(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/);
 }
