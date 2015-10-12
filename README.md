@@ -9,8 +9,8 @@ Library for small matrix-matrix multiplications targeting Intel Architecture (x8
 The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f90). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
 
 ```C
-/** Initilization Function to set up LIBXSMM dispatching table. Call this to avoid
-    lazy initialization overhead in the first call to LIBXSMM routines */
+/** Initialization function to set up LIBXSMM's dispatching table. On may call this routine
+    to avoid lazy initialization overhead in the first call to a LIBXSMM kernel routine */
 void libxsmm_build_static(); 
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
 libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
