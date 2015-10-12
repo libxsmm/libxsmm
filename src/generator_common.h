@@ -277,7 +277,6 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code );
 
-int libxsmm_snprintf(char* io_str, const int i_size, const char* i_format, ... );
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,

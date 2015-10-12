@@ -319,45 +319,45 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       }
     } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s){%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
         }
       }
     } else {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0 );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %i(%%%s)\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name );
         }
       }
     }
@@ -756,15 +756,15 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1);
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%i, %%%cmm%i\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
       }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -1348,39 +1348,39 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     char l_broadcast[8];
     unsigned int l_single_precision = libxsmm_is_x86_vec_instr_single_precision( i_vec_instr );
     if (l_single_precision == 0) {
-      libxsmm_snprintf( l_broadcast, 7, "1to8" );
+      LIBXSMM_SNPRINTF( l_broadcast, 7, "1to8" );
     } else {
-      libxsmm_snprintf( l_broadcast, 7, "1to16" );
+      LIBXSMM_SNPRINTF( l_broadcast, 7, "1to16" );
     }
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
       if ( io_generated_code->code_type == 0 ) {
         if (i_use_broadcast != 0) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       } else {
         if (i_use_broadcast != 0) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       }
     } else {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
       if ( io_generated_code->code_type == 0 ) {
         if (i_use_broadcast != 0) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%i)%%{%s%%}, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%i), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%i), %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       } else {
         if (i_use_broadcast != 0) {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%i){%s}, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         } else {
-          l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%i), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%i), %%%cmm%i, %%%cmm%i\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
         }
       }
     }
@@ -1409,15 +1409,15 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
 
     if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s $%i, %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%i, %%%cmm%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%cmm%i, %%%%%cmm%i\\n\\t\"\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s $%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%i, %%%cmm%i, %%%cmm%i\n", l_instr_name, i_shuffle_operand, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
       }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -1578,9 +1578,9 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name );
     } else {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_base_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s)\n", l_instr_name, i_displacement, l_gp_reg_base_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
@@ -1668,9 +1668,9 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%i, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
     } else { 
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%i, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
@@ -1741,9 +1741,9 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%s, %%%%%s\\n\\t\"\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%s, %%%%%s\\n\\t\"\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
     } else { 
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%s, %%%s\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%s, %%%s\n", l_instr_name, l_gp_reg_name_src, l_gp_reg_name_dest );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
@@ -1818,9 +1818,9 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     }
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %%%%%s%c, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%s%c, %%%%k%i\\n\\t\"\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
     } else { 
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %%%s%c, %%k%i\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%s%c, %%k%i\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
@@ -1848,9 +1848,9 @@ void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_gen
     io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = io_loop_label_tracker->label_count;
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%i:\\n\\t\"\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%i:\\n\\t\"\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     } else {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %i:\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %i:\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     io_loop_label_tracker->label_count++;
@@ -1923,9 +1923,9 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
     io_loop_label_tracker->label_count--;
     
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       \"%s %ib\\n\\t\"\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %ib\\n\\t\"\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     } else {
-      l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "                       %s %ib\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %ib\n", l_instr_name, io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     
@@ -2077,29 +2077,29 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
          (strcmp(i_arch, "hsw") == 0)    ) {
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
     } else {
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r12\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r13\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r14\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       pushq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
   } else {
@@ -2110,39 +2110,39 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
     
     /* loading b pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name, 3 );
-    l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading a pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name, 3 );
-    l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading c pointer in assembley */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name, 3 );
-    l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     /* loading b prefetch pointer in assembly */
     if ( i_prefetch == LIBXSMM_PREFETCH_BL2_VIA_C || 
          i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a prefetch pointer in assembly */
     } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2 ||
                 i_prefetch == LIBXSMM_PREFETCH_AL2_JPOST) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     /* loading a and b prefetch pointer in assembly */
     } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
                 i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a_prefetch, l_gp_reg_name, 3 );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b_prefetch, l_gp_reg_name, 3 );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {}
   }
@@ -2281,29 +2281,29 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
          (strcmp(i_arch, "hsw") == 0)    ) {
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_kloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_kloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_nloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_nloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
       if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_mloop ) ) {
         libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_mloop, l_gp_reg_name, 3 );
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       }
     } else {
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r15\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r15\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r14\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r14\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r13\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r13\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%r12\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%r12\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       popq %%rbx\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
 
@@ -2328,7 +2328,7 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
       return;
     }
     /* @TODO: I don't know if this is the correct placement in the generation process */
-    l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       retq\n" );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       retq\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   } else {
     char l_new_code[1024];
@@ -2357,35 +2357,35 @@ void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_cod
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
       } else {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
     } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2 ||
                 i_prefetch == LIBXSMM_PREFETCH_AL2_JPOST) {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
       } else {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
     } else if ( i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
                 i_prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_pre_a, l_gp_reg_pre_b, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
       } else {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C), \"m\"(A_prefetch), \"m\"(B_prefetch) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
     } else {
       if ( (strcmp(i_arch, "wsm") == 0) ||
            (strcmp(i_arch, "snb") == 0) ||
            (strcmp(i_arch, "hsw") == 0)    ) {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"xmm0\",\"xmm1\",\"xmm2\",\"xmm3\",\"xmm4\",\"xmm5\",\"xmm6\",\"xmm7\",\"xmm8\",\"xmm9\",\"xmm10\",\"xmm11\",\"xmm12\",\"xmm13\",\"xmm14\",\"xmm15\");\n", l_gp_reg_a, l_gp_reg_b, l_gp_reg_c, l_gp_reg_mloop, l_gp_reg_nloop, l_gp_reg_kloop);
       } else {
-        l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
+        l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       : : \"m\"(B), \"m\"(A), \"m\"(C) : \"k1\",\"rax\",\"rbx\",\"rcx\",\"rdx\",\"rdi\",\"rsi\",\"r8\",\"r9\",\"r10\",\"r12\",\"r13\",\"r14\",\"r15\",\"zmm0\",\"zmm1\",\"zmm2\",\"zmm3\",\"zmm4\",\"zmm5\",\"zmm6\",\"zmm7\",\"zmm8\",\"zmm9\",\"zmm10\",\"zmm11\",\"zmm12\",\"zmm13\",\"zmm14\",\"zmm15\",\"zmm16\",\"zmm17\",\"zmm18\",\"zmm19\",\"zmm20\",\"zmm21\",\"zmm22\",\"zmm23\",\"zmm24\",\"zmm25\",\"zmm26\",\"zmm27\",\"zmm28\",\"zmm29\",\"zmm30\",\"zmm31\");\n");
       }
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
