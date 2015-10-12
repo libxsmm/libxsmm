@@ -35,7 +35,7 @@
 /*# define LIBXSMM_CRC32_FORCESW*/
 #endif
 #if !defined(LIBXSMM_CRC32_ALIGNMENT)
-# define LIBXSMM_CRC32_ALIGNMENT 8
+# define LIBXSMM_CRC32_ALIGNMENT LIBXSMM_ALIGNED_MAX
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -381,7 +381,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned long
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int init)
 {
-  const unsigned char *begin = (const unsigned char*)data;
+  const unsigned char *begin = (const unsigned char*)data, *next;
   const unsigned char *const endb = begin + size;
 
 #if defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
@@ -390,17 +390,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
     for (; begin < (enda - 7); begin += 8) {
       init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
     }
-    if (4 <= (enda - begin)) {
+    next = begin + 4;
+    if (next <= enda) {
       init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
-      begin += 4;
+      begin = next;
     }
-    if (2 <= (enda - begin)) {
+    next = begin + 2;
+    if (next <= enda) {
       init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
-      begin += 2;
+      begin = next;
     }
     if (begin < enda) {
       init = libxsmm_crc32_u8(*begin, init);
-      begin += 1;
+      ++begin;
     }
   }
   LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT);
@@ -409,13 +411,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
   for (; begin < (endb - 7); begin += 8) {
     init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
   }
-  if (4 <= (endb - begin)) {
+  next = begin + 4;
+  if (next <= endb) {
     init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
-    begin += 4;
+    begin = next;
   }
-  if (2 <= (endb - begin)) {
+  next = begin + 2;
+  if (next <= endb) {
     init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
-    begin += 2;
+    begin = next;
   }
 
   return begin == endb ? init : libxsmm_crc32_u8(*begin, init);
