@@ -101,7 +101,7 @@
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
-# if (defined(__GNUC__) || defined(__clang__)) && !defined(__INTEL_COMPILER)
+# if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(LIBXSMM_STRINGIFY(unused(VARIABLE)))
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)

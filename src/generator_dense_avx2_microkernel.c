@@ -74,7 +74,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
     /* loop over columns of B */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
-      if ( (l_n == 0) ) {
+      if ( l_n == 0 ) {
         libxsmm_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a, 
