@@ -34,47 +34,15 @@ import sys
 import os
 
 
-def calc_direct_index(mnk, d, h):
-    return d * (h * (mnk[0]) + mnk[1]) + mnk[2]
-
-
 def create_dispatch(mnklist):
-    print "#include <libxsmm.h>"
-    print "#include <libxsmm_dispatch.h>"
-    print "#include <generator_extern_typedefs.h>"
-    print
-    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
-    print "# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))"
-    print "#endif"
-    print "#include <assert.h>"
-    print "#if defined(LIBXSMM_OFFLOAD_BUILD)"
-    print "# pragma offload_attribute(pop)"
-    print "#endif"
-    print
-    print "#if defined(NDEBUG)"
-    print "# define LIBXSMM_DISPATCH_CHECK(DISP) DISP"
-    print "#else"
-    print "# define LIBXSMM_DISPATCH_CHECK(DISP) assert(0 == (DISP))"
-    print "#endif"
-    print
-    print
-    print "LIBXSMM_RETARGETABLE int libxsmm_init = 0;"
-    print
-    print
-    print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"
-    print "{"
-    print "  if (0 == libxsmm_init) {"
-    print "    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA, 0/*m*/, 0/*n*/, 0/*k*/, 0/*lda*/, 0/*ldb*/, 0/*ldc*/);"
+    print "libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA, 0/*m*/, 0/*n*/, 0/*k*/, 0/*lda*/, 0/*ldb*/, 0/*ldc*/);"
     for mnk in mnklist:
         mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])
-        print "    desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
-        print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.single_precision = 1;"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
-        print "    desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.single_precision = 0;"
-        print "    LIBXSMM_DISPATCH_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
-    print "    libxsmm_init = 1;"
-    print "  }"
-    print "}"
+        print "desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
+        print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.single_precision = 1;"
+        print "LIBXSMM_BUILD_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.single_precision = 0;"
+        print "LIBXSMM_BUILD_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
 
 
 if __name__ == "__main__":
@@ -84,12 +52,7 @@ if __name__ == "__main__":
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[2:], 0, threshold)
         create_dispatch(mnklist)
     elif (1 < argc):
-        print "#include <libxsmm.h>"
-        print
-        print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()"
-        print "{"
-        print "}"
+        print "/* no static code */"
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

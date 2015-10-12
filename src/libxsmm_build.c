@@ -26,9 +26,10 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
+/* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_dispatch.h"
+#include "generator_extern_typedefs.h"
+#include "libxsmm_crc32.h"
 #include <libxsmm_generator.h>
 #include <libxsmm.h>
 
@@ -46,7 +47,45 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_BUILD_JIT_PAGESIZE 4096
+#if defined(NDEBUG)
+# define LIBXSMM_BUILD_CHECK(DISP) DISP
+#else
+# define LIBXSMM_BUILD_CHECK(DISP) assert(0 == (DISP))
+#endif
+
+#define LIBXSMM_BUILD_CACHESIZE (LIBXSMM_MAX_M) * (LIBXSMM_MAX_N) * (LIBXSMM_MAX_K) * 8
+#define LIBXSMM_BUILD_PAGESIZE 4096
+#define LIBXSMM_BUILD_SEED 0
+
+
+/** Filled with zeros due to C language rule. */
+LIBXSMM_RETARGETABLE libxsmm_function libxsmm_cache[2][(LIBXSMM_BUILD_CACHESIZE)];
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, unsigned int key_size, int cache_id, libxsmm_function function)
+{
+  const unsigned int hash = libxsmm_crc32(key, key_size, LIBXSMM_BUILD_SEED), i = hash % (LIBXSMM_BUILD_CACHESIZE);
+  libxsmm_function *const cache = libxsmm_cache[cache_id%2];
+  /*const*/ libxsmm_function f = cache[i];
+  cache[i] = function;
+  return f;
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, unsigned int key_size, int cache_id)
+{
+  return libxsmm_cache[cache_id%2][libxsmm_crc32(key, key_size, LIBXSMM_BUILD_SEED)%(LIBXSMM_BUILD_CACHESIZE)];
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()
+{
+  static int init = 0;
+  if (0 == init) {
+#include <libxsmm_build.h>
+    init = 1;
+  }
+}
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int single_precision, int m, int n, int k)
@@ -104,23 +143,23 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
     }
 
     /* create executable buffer */
-    const int l_code_pages = (((l_generated_code.code_size - 1) * sizeof(unsigned char)) / LIBXSMM_BUILD_JIT_PAGESIZE) + 1;
+    const int l_code_pages = (((l_generated_code.code_size - 1) * sizeof(unsigned char)) / LIBXSMM_BUILD_PAGESIZE) + 1;
     unsigned char* l_code = 0;
 #if defined(_WIN32)
-    l_code = (unsigned char*)_aligned_malloc(l_code_pages * LIBXSMM_BUILD_JIT_PAGESIZE, 4096);
+    l_code = (unsigned char*)_aligned_malloc(l_code_pages * LIBXSMM_BUILD_PAGESIZE, 4096);
 #else
     void* p = 0;
 #if !defined(NDEBUG)
     const int error =
 #endif
-    posix_memalign(&p, 4096, l_code_pages * LIBXSMM_BUILD_JIT_PAGESIZE);
+    posix_memalign(&p, 4096, l_code_pages * LIBXSMM_BUILD_PAGESIZE);
     assert(0 == error);
     l_code = (unsigned char*)p;
 #endif
-    memset(l_code, 0, l_code_pages * LIBXSMM_BUILD_JIT_PAGESIZE);
+    memset(l_code, 0, l_code_pages * LIBXSMM_BUILD_PAGESIZE);
     memcpy(l_code, l_gen_code, l_generated_code.code_size);
     /* set memory protection to R/E */
-    mprotect((void*)l_code, l_code_pages * LIBXSMM_BUILD_JIT_PAGESIZE, PROT_EXEC | PROT_READ);
+    mprotect((void*)l_code, l_code_pages * LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ);
 
     /* free temporary buffer, and prepare return value */
     free(l_gen_code);
