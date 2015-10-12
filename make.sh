@@ -2,7 +2,7 @@
 
 if [[ "-cp2k" == "$1" ]] ; then
   shift
-  make $* ROW_MAJOR=0 ALIGNED_STORES=1 PREFETCH=1 MNK=" \
+  make $* ROW_MAJOR=0 ALIGNED_STORES=1 MNK=" \
     23, \
     6, \
     14 16 29, \
