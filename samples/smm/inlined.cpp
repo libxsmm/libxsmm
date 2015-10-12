@@ -123,6 +123,9 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
+      /* Init LIBXSMM */
+      libxsmm_build_static();
+
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
         s, 1.0 * s * (asize + bsize + csize_act) * sizeof(T) / (1 << 20));
