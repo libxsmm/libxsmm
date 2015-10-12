@@ -54,7 +54,7 @@ def create_dispatch(mnklist):
     print "#if defined(NDEBUG)"
     print "# define LIBXSMM_DISPATCH_CHECK(DISP) DISP"
     print "#else"
-    print "# define LIBXSMM_DISPATCH_CHECK(DISP) assert(NULL == (DISP))"
+    print "# define LIBXSMM_DISPATCH_CHECK(DISP) assert(0 == (DISP))"
     print "#endif"
     print
     print
