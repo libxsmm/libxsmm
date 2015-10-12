@@ -159,7 +159,7 @@ ifeq (,$(LD))
 	LD = $(FC)
 endif
 
-ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
+ifeq (3,$(words $(filter icpc icc ifort,$(CXX) $(CC) $(FC))))
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c89
 	FCMTFLAGS += -threads
