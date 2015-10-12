@@ -107,6 +107,9 @@ PROGRAM smm
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 1) 
 
+  ! Init LIBXSMM
+  CALL libxsmm_build_static()
+
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
   IF (0.NE.check) THEN

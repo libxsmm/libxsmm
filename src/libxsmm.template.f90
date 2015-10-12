@@ -82,16 +82,16 @@ MODULE LIBXSMM
 
     PURE SUBROUTINE LIBXSMM_SMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_FLOAT
-      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: a
-      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: b
-      REAL(KIND=C_FLOAT),dimension(*),intent(out) :: c
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: a
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: b
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(out) :: c
     END SUBROUTINE
 
     PURE SUBROUTINE LIBXSMM_DMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_DOUBLE
-      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: a
-      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: b
-      REAL(KIND=C_DOUBLE),dimension(*),intent(out) :: c
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: a
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: b
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(out) :: c
     END SUBROUTINE
   END INTERFACE
 
@@ -110,6 +110,16 @@ MODULE LIBXSMM
       INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k, lda, ldb, ldc
       REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(IN) :: a(lda,*), b(ldb,*), alpha, beta
       REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c(ldc,*)
+    END SUBROUTINE
+
+    ! Init the library
+    PURE SUBROUTINE libxsmm_build_static() BIND(C)
+    END SUBROUTINE
+ 
+    ! Build explicitly a kernel, do not rely on automatic JIT in dispatch
+    PURE SUBROUTINE libxsmm_build_jit(single_precision, m, n, k) BIND(C)
+      IMPORT :: C_FUNPTR, C_INT
+      INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
     END SUBROUTINE
 
     ! Query the pointer of a generated function; zero if it does not exist, single-precision.

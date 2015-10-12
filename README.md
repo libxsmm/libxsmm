@@ -9,6 +9,10 @@ Library for small matrix-matrix multiplications targeting Intel Architecture (x8
 The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f90). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
 
 ```C
+/** Initialization function to set up LIBXSMM's dispatching table. On may 
+    call this routine to avoid lazy initialization overhead in the first 
+    call to a LIBXSMM kernel routine */
+void libxsmm_build_static(); 
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
 libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
@@ -130,13 +134,7 @@ Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*
 make THRESHOLD=$((24 * 24 * 24))
 ```
 
-The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size falls below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not. This can be implemented by bisecting a table of all specialized functions (binary search). At the expense of storing function pointers for the entire problem space below the threshold, a direct lookup can be used instead. The actual behavior can be configured using for example:
-
-```
-make SPARSITY=2
-```
-
-A binary search is implemented when a sparsity (calculated at construction time of the library) is above the given SPARSITY value. Raising the given value prevents generating a binary search (and generates a direct lookup) whereas a value below or equal one is generating the binary search. Furthermore, the size of the direct lookup table is limited to 512 KB (currently hardcoded). The overhead of auto-dispatched multiplications based on the binary search becomes negligible with reasonable problem sizes (above ~20x20 matrices), but may be significant for very small auto-dispatched matrix-matrix multiplication.
+The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size falls below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
 
 ### JIT Backend
 There might be situations in which it is up-front not clear which problem sizes will be needed during an application run. In order to leverage LIBXSMM's
@@ -148,7 +146,6 @@ some limitations are in place:
 2. there is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
 3. LIBXSMM MUST NOT be called from several PTHREADS, but OpenMP is fine (we use an OpenMP critical section to proctect code buffers), therefore OpenMP is mandatory 
 when building the JIT backend
-4. There is no support for the binary search feature during function dispatching
 
 The JIT backend version of the LIBXSMM can be built by:
 
@@ -156,7 +153,7 @@ The JIT backend version of the LIBXSMM can be built by:
 make JIT=1
 ```
 
-You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed, capped at 256 * 256 *256.
+You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed.
 
 
 ### Directly invoking the generator backend
