@@ -14,8 +14,6 @@ compiler:
 script: 
  - make realclean
  - bash make.sh -cp2k -j
- - cd samples/cp2k/
- - make clean
- - make
- - bash cp2k-perf.sh
+ - make samples
+ - make test
  - bash test.sh

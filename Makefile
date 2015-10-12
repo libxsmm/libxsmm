@@ -613,24 +613,24 @@ samples: smm cp2k
 
 .PHONY: smm
 smm: lib_all
-	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 
 .PHONY: smm_hst
 smm_hst: lib_hst
-	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD)
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
+	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: cp2k
 cp2k: lib_all
-	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 .PHONY: cp2k_hst
 cp2k_hst: lib_hst
-	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) OFFLOAD=$(OFFLOAD)
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD)
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@cd $(SPLDIR)/cp2k && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh
