@@ -12,8 +12,8 @@ compiler:
   - gcc
 
 script: 
- - make realclean
+ - make -e realclean
  - bash make.sh -cp2k -j
- - make samples
- - make test
+ - make -e samples
+ - make -e test
  - bash test.sh
