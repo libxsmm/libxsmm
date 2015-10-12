@@ -30,7 +30,7 @@ void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, doub
 With C++ and FORTRAN function overloading, the library allows to omit the 's' and 'd' prefixes denoting the numeric type in the above C interface. Further, in C++ a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mm_dispatch'.
 
 Note: Function overloading in FORTRAN is just recommended when using automatically dispatched calls. When querying function pointers, please use the type 
-specific versions as the poly-morph version relies on C_LOC on arrays which gfrotran refuses to digest (as it's not specified in the FORTRAN standard).
+specific versions as the poly-morph version relies on C_LOC on arrays which GNU Fortran (gfortran) refuses to digest (as it is not specified in the FORTRAN standard).
 
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):

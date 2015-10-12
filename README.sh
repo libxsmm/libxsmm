@@ -35,7 +35,7 @@ pandoc \
   -f markdown_github+implicit_figures \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
-  -V author-meta="Hans Pabst" \
+  -V author-meta="Hans Pabst, Alexander Heinecke" \
   -V classoption=DIV=45 \
   -V linkcolor=black \
   -V citecolor=black \
