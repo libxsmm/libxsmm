@@ -2,7 +2,7 @@
 
 if [[ "-cp2k" == "$1" ]] ; then
   shift
-  make -e $* ROW_MAJOR=0 ALIGNED_STORES=1 MNK=" \
+  make -e $* ALIGNED_STORES=1 MNK=" \
     23, \
     6, \
     14 16 29, \
@@ -18,6 +18,6 @@ if [[ "-cp2k" == "$1" ]] ; then
     13 26 28 32 45, \
     7 13 25 32"
 else
-  make $*
+  make -e $*
 fi
 
