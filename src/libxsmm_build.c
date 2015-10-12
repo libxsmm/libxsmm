@@ -99,6 +99,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 #if !defined(_WIN32)
     const unsigned int lock = LIBXSMM_MOD2(hash, sizeof(libxsmm_locks) / sizeof(*libxsmm_locks));
     LIBXSMM_LOCK_ACQUIRE(libxsmm_locks[lock]);
+    result = cache[indx];
 
     if (0 == result) {
       /* set arch string */
