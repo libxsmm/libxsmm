@@ -187,7 +187,15 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		else ifeq (2,$(AVX))
 			TARGET = -xCORE-AVX2
 		else ifeq (3,$(AVX))
-			TARGET = -xCOMMON-AVX512
+			ifeq (0,$(MIC))
+				TARGET = -xCOMMON-AVX512
+			else
+				TARGET = -xMIC-AVX512
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -xSSE$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -xSSE3
 		else
 			TARGET = -xHost
 		endif
@@ -255,7 +263,14 @@ else # GCC assumed
 		else ifeq (2,$(AVX))
 			TARGET = -mavx2
 		else ifeq (3,$(AVX))
-			TARGET = -mavx512f
+			TARGET = -mavx512f -mavx512cd
+			ifneq (0,$(MIC))
+				TARGET += -mavx512er -mavx512pf
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -msse$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -msse3
 		else
 			TARGET = -march=native
 		endif
