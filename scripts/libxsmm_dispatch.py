@@ -36,13 +36,21 @@ import os
 
 def create_dispatch(mnklist):
     print "libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*precision*/, LIBXSMM_PREFETCH, 'n', 'n', 1/*alpha*/, LIBXSMM_BETA, 0/*m*/, 0/*n*/, 0/*k*/, 0/*lda*/, 0/*ldb*/, 0/*ldc*/);"
+    print "libxsmm_function* cache;"
+    print "unsigned int indx;"
     for mnk in mnklist:
         mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])
         print "desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
         print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.single_precision = 1;"
-        print "LIBXSMM_BUILD_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 1/*single precision*/, (libxsmm_function)libxsmm_smm_" + mnkstr + "));"
+        print "indx = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED) % (LIBXSMM_BUILD_CACHESIZE);"
+        print "cache = libxsmm_cache[1/*single precision*/];"
+        print "assert(0 == cache[indx]); /*TODO: handle collision*/"
+        print "cache[indx] = (libxsmm_function)libxsmm_smm_" + mnkstr + ";"
         print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.single_precision = 0;"
-        print "LIBXSMM_BUILD_CHECK(libxsmm_dispatch(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, 0/*double precision*/, (libxsmm_function)libxsmm_dmm_" + mnkstr + "));"
+        print "indx = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED) % (LIBXSMM_BUILD_CACHESIZE);"
+        print "cache = libxsmm_cache[0/*double precision*/];"
+        print "assert(0 == cache[indx]); /*TODO: handle collision*/"
+        print "cache[indx] = (libxsmm_function)libxsmm_dmm_" + mnkstr + ";"
 
 
 if __name__ == "__main__":
