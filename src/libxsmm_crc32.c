@@ -34,6 +34,9 @@
 #if !defined(LIBXSMM_CRC32_FORCESW)
 /*# define LIBXSMM_CRC32_FORCESW*/
 #endif
+#if !defined(LIBXSMM_CRC32_ALIGNED)
+/*# define LIBXSMM_CRC32_ALIGNED*/
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -378,10 +381,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned long
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int init)
 {
-  const char *begin = (const char*)data;
-  const char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_ALIGNED_MAX);
-  const char *const endb = begin + size;
+  const unsigned char *begin = (const unsigned char*)data;
+  const unsigned char *const endb = begin + size;
 
+#if defined(LIBXSMM_CRC32_ALIGNED)
+  const char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_ALIGNED_MAX);
   if (size > (size_t)(endb - enda)) {
     for (; begin < (enda - 7); begin += 8) {
       init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
@@ -395,12 +399,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
       begin += 2;
     }
     if (begin < enda) {
-      init = libxsmm_crc32_u8(*(const uint8_t*)begin, init);
+      init = libxsmm_crc32_u8(*begin, init);
       begin += 1;
     }
   }
-
   LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_ALIGNED_MAX);
+#endif /*LIBXSMM_CRC32_ALIGNED*/
+
   for (; begin < (endb - 7); begin += 8) {
     init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
   }
@@ -412,10 +417,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
     init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
     begin += 2;
   }
-  if (begin < endb) {
-    init = libxsmm_crc32_u8(*(const uint8_t*)begin, init);
-    /*begin += 1;*/
-  }
 
-  return init;
+  return begin == endb ? init : libxsmm_crc32_u8(*begin, init);
 }
