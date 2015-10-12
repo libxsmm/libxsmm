@@ -44,7 +44,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const vo
 {
   const unsigned int hash = libxsmm_crc32(key, key_size, LIBXSMM_SEED), i = hash % (LIBXSMM_CACHESIZE);
   libxsmm_function *const cache = libxsmm_cache[cache_id%2];
-  const libxsmm_function f = cache[i];
+  /*const*/ libxsmm_function f = cache[i];
   cache[i] = function;
   return f;
 }
