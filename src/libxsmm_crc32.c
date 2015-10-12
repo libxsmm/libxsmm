@@ -28,14 +28,21 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "libxsmm_crc32.h"
 #include <libxsmm.h>
+
+#if !defined(LIBXSMM_CRC32_FORCESW)
+/*# define LIBXSMM_CRC32_FORCESW*/
+#endif
+#if !defined(LIBXSMM_CRC32_ALIGNMENT)
+# define LIBXSMM_CRC32_ALIGNMENT LIBXSMM_ALIGNED_MAX
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <string.h>
 #include <limits.h>
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
 # include <nmmintrin.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -43,9 +50,9 @@
 #endif
 
 
-#if !defined(__SSE4_2__)
+#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
 /* table-based implementation taken from http://dpdk.org/. */
-static const uint32_t libxsmm_crc32_table[][256] = {
+LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
   { /*table0*/
     0x00000000, 0xF26B8303, 0xE13B70F7, 0x1350F3F4, 0xC79A971F, 0x35F1141C, 0x26A1E7E8, 0xD4CA64EB,
     0x8AD958CF, 0x78B2DBCC, 0x6BE22838, 0x9989AB3B, 0x4D43CFD0, 0xBF284CD3, 0xAC78BF27, 0x5E133C24,
@@ -324,7 +331,7 @@ static const uint32_t libxsmm_crc32_table[][256] = {
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned char value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u8(init, value);
 #else
   init = libxsmm_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
@@ -335,10 +342,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned char 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned short value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u16(init, value);
 #else
-  const union { uint16_t value; uint8_t half[2]; } split = { value };
+  union { uint16_t value; uint8_t half[2]; } split; split.value = value;
   init = libxsmm_crc32_u8(split.half[0], init);
   init = libxsmm_crc32_u8(split.half[1], init);
 #endif
@@ -348,7 +355,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned shor
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int value, unsigned int init)
 {
-#if defined(__SSE4_2__)
+#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u32(init, value);
 #else
   init ^= value;
@@ -359,12 +366,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int 
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned long long libxsmm_crc32_u64(unsigned long long value, unsigned long long init)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned long long value, unsigned int init)
 {
-#if defined(__SSE4_2__) && (64 == __WORDSIZE)
+#if defined(__SSE4_2__) && (64 == __WORDSIZE) && !defined(LIBXSMM_CRC32_FORCESW)
   init = _mm_crc32_u64(init, value);
 #else
-  const union { uint64_t value; uint32_t half[2]; } split = { value };
+  union { uint64_t value; uint32_t half[2]; } split; split.value = value;
   init = libxsmm_crc32_u32(split.half[0], init);
   init = libxsmm_crc32_u32(split.half[1], init);
 #endif
@@ -372,45 +379,48 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned long long libxsmm_crc32_u64(unsigne
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const char* data, size_t size, unsigned int init)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int init)
 {
-  const char *const enda = LIBXSMM_ALIGN(data, LIBXSMM_ALIGNED_MAX);
-  const char *const endb = data + size;
+  const unsigned char *begin = (const unsigned char*)data, *next;
+  const unsigned char *const endb = begin + size;
 
-  if (size > (endb - enda)) {
-    for (; data < (enda - 7); data += 8) {
-      init = libxsmm_crc32_u64(*(const uint64_t*)data, init);
+#if defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
+  const unsigned char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_CRC32_ALIGNMENT);
+  if (size > (size_t)(endb - enda)) {
+    for (; begin < (enda - 7); begin += 8) {
+      init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
     }
-    if (4 <= (enda - data)) {
-      init = libxsmm_crc32_u32(*(const uint32_t*)data, init);
-      data += 4;
+    next = begin + 4;
+    if (next <= enda) {
+      init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
+      begin = next;
     }
-    if (2 <= (enda - data)) {
-      init = libxsmm_crc32_u16(*(const uint16_t*)data, init);
-      data += 2;
+    next = begin + 2;
+    if (next <= enda) {
+      init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
+      begin = next;
     }
-    if (data < enda) {
-      init = libxsmm_crc32_u8(*(const uint8_t*)data, init);
-      data += 1;
+    if (begin < enda) {
+      init = libxsmm_crc32_u8(*begin, init);
+      ++begin;
     }
+  }
+  LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT);
+#endif /*LIBXSMM_CRC32_ALIGNMENT*/
+
+  for (; begin < (endb - 7); begin += 8) {
+    init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
+  }
+  next = begin + 4;
+  if (next <= endb) {
+    init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
+    begin = next;
+  }
+  next = begin + 2;
+  if (next <= endb) {
+    init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
+    begin = next;
   }
 
-  LIBXSMM_ASSUME_ALIGNED(data, LIBXSMM_ALIGNED_MAX);
-  for (; data < (endb - 7); data += 8) {
-    init = libxsmm_crc32_u64(*(const uint64_t*)data, init);
-  }
-  if (4 <= (endb - data)) {
-    init = libxsmm_crc32_u32(*(const uint32_t*)data, init);
-    data += 4;
-  }
-  if (2 <= (endb - data)) {
-    init = libxsmm_crc32_u16(*(const uint16_t*)data, init);
-    data += 2;
-  }
-  if (data < endb) {
-    init = libxsmm_crc32_u8(*(const uint8_t*)data, init);
-    /*data += 1;*/
-  }
-
-  return init;
+  return begin == endb ? init : libxsmm_crc32_u8(*begin, init);
 }

@@ -10,7 +10,7 @@ if [[ "-nek" == "$1" ]] ; then
     BETA=0 OFFLOAD=0 MIC=0 THRESHOLD=$((18*18*18*18+1)) 
   elif [[ "-cp2k" == "$1" ]] ; then
   shift
-  make $* ROW_MAJOR=0 ALIGNED_STORES=1 PREFETCH=1 MNK=" \
+  make -e $* ROW_MAJOR=0 ALIGNED_STORES=1 MNK=" \
     23, \
     6, \
     14 16 29, \

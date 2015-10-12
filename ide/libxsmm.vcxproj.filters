@@ -18,6 +18,12 @@
     <ClInclude Include="..\src\libxsmm.template.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_crc32.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dispatch.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">
@@ -39,6 +45,15 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\build\mm_1_1_1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_crc32.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dispatch.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_build_jit.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

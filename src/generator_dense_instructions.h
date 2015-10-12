@@ -45,7 +45,7 @@
 void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                          const char*                   i_arch,
-                                                         const char*                   i_prefetch );
+                                                         unsigned int                  i_prefetch );
 
 /**
  * Closes the inline assembly section / jit stream
@@ -58,7 +58,7 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
 void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
                                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                                            const char*                   i_arch, 
-                                                           const char*                   i_prefetch );
+                                                           unsigned int                  i_prefetch );
 
 /**
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not

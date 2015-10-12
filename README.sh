@@ -26,8 +26,9 @@ sed -i \
 # LIBXSMM documentation
 sed \
   -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
+  -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
   -e 's/\[\[.\+\](.\+)\]//' \
-  -e '/!\[.\+\](.\+)/{n;d}' \
+  -e  '/!\[.\+\](.\+)/{n;d}' \
   README.md | tee >( \
 pandoc \
   --latex-engine=xelatex \
@@ -35,7 +36,7 @@ pandoc \
   -f markdown_github+implicit_figures \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
-  -V author-meta="Hans Pabst" \
+  -V author-meta="Hans Pabst, Alexander Heinecke" \
   -V classoption=DIV=45 \
   -V linkcolor=black \
   -V citecolor=black \

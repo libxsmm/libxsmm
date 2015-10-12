@@ -15,7 +15,7 @@ endif
 # CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
-# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise 
+# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise
 ROW_MAJOR ?= 0
 
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
@@ -46,11 +46,6 @@ PREFETCH ?= 0
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((60 * 60 * 60)))
 
-# SPARSITY = (LIBXSMM_MAX_M * LIBXSMM_MAX_M * LIBXSMM_MAX_M) / LIBXSMM_MAX_MNK
-# Use binary search in auto-dispatch when SPARSITY exceeds the given value.
-# With SPARSITY < 1, the binary search is enabled by default (no threshold).
-SPARSITY ?= 2
-
 # Beta paramater of DGEMM
 # we currently support 0 and 1
 # 1 generates C += A * B
@@ -75,7 +70,7 @@ DOCDIR = documentation
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR)
+IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(SRCDIR)
 
 STATIC ?= 1
 OMP ?= 0
@@ -90,22 +85,17 @@ else
 	MIC ?= 0
 endif
 
-# JIT support (Binary search in sparsity is not supported when building
-# a jit enanled version of LIBXSMM
 # PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE
-# IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!:
+# IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!
 JIT ?= 0
 ifneq (0,$(JIT))
 $(info ======================================================================)
 $(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 $(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
-$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
+$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
 $(info ======================================================================)
 OMP=1
-ifneq (2,$(SPARSITY))
-$(error SPARSITY needs to be 2 for JIT support!)
-endif
 ifneq (0,$(ROW_MAJOR))
 $(error ROW_MAJOR needs to be 0 for JIT support!)
 endif
@@ -185,20 +175,30 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
-		ifeq (1,$(AVX))
-			TARGET = -xAVX
-		else ifeq (2,$(AVX))
-			TARGET = -xCORE-AVX2
-		else ifeq (3,$(AVX))
-			TARGET = -xCOMMON-AVX512
-		else
-			TARGET = -xHost
-		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+		ifeq (1,$(AVX))
+			TARGET = -xAVX
+		else ifeq (2,$(AVX))
+			TARGET = -xCORE-AVX2
+		else ifeq (3,$(AVX))
+			ifeq (0,$(MIC))
+				TARGET = -xCOMMON-AVX512
+			else
+				TARGET = -xMIC-AVX512
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -xSSE$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -xSSE3
+		else
+			TARGET = -xHost
+		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -251,20 +251,29 @@ else # GCC assumed
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
-		ifeq (1,$(AVX))
-			TARGET = -mavx
-		else ifeq (2,$(AVX))
-			TARGET = -mavx2
-		else ifeq (3,$(AVX))
-			TARGET = -mavx512f
-		else
-			TARGET = -march=native
-		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+		ifeq (1,$(AVX))
+			TARGET = -mavx
+		else ifeq (2,$(AVX))
+			TARGET = -mavx2
+		else ifeq (3,$(AVX))
+			TARGET = -mavx512f -mavx512cd
+			ifneq (0,$(MIC))
+				TARGET += -mavx512er -mavx512pf
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -msse$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -msse3
+		else
+			TARGET = -march=native
+		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -320,8 +329,6 @@ else
 	GENTARGET = noarch
 endif
 
-parent = $(subst ?, ,$(firstword $(subst /, ,$(subst $(NULL) ,?,$(patsubst ./%,%,$1)))))
-
 ifneq ("$(M)$(N)$(K)","")
 	INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -2 $(THRESHOLD) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 else
@@ -330,12 +337,15 @@ endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c, generator_dense.c, generator_dense_common.c, generator_dense_sse3_avx_avx2.c, generator_dense_instructions.c, generator_dense_sse3_microkernel.c, generator_dense_avx_microkernel.c, generator_dense_avx2_microkernel.c, generator_dense_imci_avx512.c, generator_dense_avx512_microkernel.c, generator_dense_imci_microkernel.c, generator_dense_noarch.c, generator_sparse.c, generator_sparse_csc_reader.c, generator_sparse_bsparse.c, generator_sparse_asparse.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c generator_dense.c generator_dense_common.c generator_dense_instructions.c \
+                                            generator_dense_sse3_avx_avx2.c generator_dense_sse3_microkernel.c generator_dense_avx_microkernel.c generator_dense_avx2_microkernel.c \
+                                            generator_dense_avx512_microkernel.c generator_dense_imci_avx512.c generator_dense_imci_microkernel.c generator_dense_noarch.c \
+                                            generator_sparse.c generator_sparse_csc_reader.c generator_sparse_bsparse.c generator_sparse_asparse.c)
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o $(BLDDIR)/intel64/libxsmm.o
+OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o $(BLDDIR)/mic/libxsmm.o
 
 .PHONY: lib_all
 ifeq (0,$(OFFLOAD))
@@ -386,38 +396,33 @@ else # nopf
 	PREFETCH_ID = 0
 endif
 
-PREFETCH_A = 0
-PREFETCH_B = 0
-PREFETCH_C = 0
-
 ifeq (2,$(PREFETCH_ID))
 	PREFETCH_SCHEME = pfsigonly
+	PREFETCH_TYPE = 1
 else ifeq (3,$(PREFETCH_ID))
 	PREFETCH_SCHEME = BL2viaC
-	PREFETCH_B = 1
+	PREFETCH_TYPE = 8
 else ifeq (4,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2
-	PREFETCH_A = 1
+	PREFETCH_TYPE = 2
 else ifeq (5,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2
-	PREFETCH_A = 1
-else ifeq (6,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2_BL2viaC
-	PREFETCH_A = 1
-	PREFETCH_B = 1
-else ifeq (7,$(PREFETCH_ID))
-	PREFETCH_SCHEME = curAL2_BL2viaC
-	PREFETCH_A = 1
-	PREFETCH_B = 1
+	PREFETCH_TYPE = 16
 else ifeq (8,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst
-	PREFETCH_A = 1
+	PREFETCH_TYPE = 4
+else ifeq (6,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2_BL2viaC
+	PREFETCH_TYPE = $(shell echo $$((8 | 2)))
+else ifeq (7,$(PREFETCH_ID))
+	PREFETCH_SCHEME = curAL2_BL2viaC
+	PREFETCH_TYPE = $(shell echo $$((8 | 16)))
 else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst_BL2viaC
-	PREFETCH_A = 1
-	PREFETCH_B = 1
+	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 else
 	PREFETCH_SCHEME = nopf
+	PREFETCH_TYPE = 0
 endif
 
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
@@ -432,29 +437,26 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_prefetch.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_fallback.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
-		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f90
 $(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f90
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) \
-		$(ALIGNED_ST) $(ALIGNED_LD) $(PREFETCH) $(PREFETCH_A) $(PREFETCH_B) $(PREFETCH_C) $(BETA) \
-		$(OFFLOAD) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
 endif
- 
 
 .PHONY: compile_generator_lib
-compile_generator_lib: $(SRCFILES_GEN_LIB)
+compile_generator_lib: $(OBJFILES_GEN_LIB)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT): $(OBJFILES_GEN_LIB)
@@ -464,21 +466,20 @@ ifeq (0,$(STATIC))
 else
 	$(AR) -rs $@ $^
 endif
-	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_extern_typedefs.h >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_extern_typedefs.h > $(INCDIR)/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(INCDIR)/libxsmm_generator.h
+	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(INCDIR)/libxsmm_generator.h
 
 .PHONY: compile_generator
-compile_generator: $(SRCFILES_GEN_BIN)
+compile_generator: $(OBJFILES_GEN_BIN)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/generator
 $(BINDIR)/generator: $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) $(CLDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64/ -lxsmmgen -o $@
+	$(CC) $(LDFLAGS) $(CLDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64 -lxsmmgen -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)
@@ -555,14 +556,7 @@ endif
 main: $(BLDDIR)/libxsmm.c
 $(BLDDIR)/libxsmm.c: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(SPARSITY) $(JIT) $(INDICES) > $@
-ifneq (0,$(JIT))
-	@cat $(SRCDIR)/libxsmm_jit_builder.template.c >> $@
-	@rm -rf $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_extern_typedefs.h >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_dense.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
-	@cat $(SRCDIR)/generator_sparse.h | grep -v "generator_extern_typedefs.h" >> $(ROOTDIR)/include/libxsmm_generator.h
-endif
+	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic
@@ -570,9 +564,9 @@ compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 
 .PHONY: compile_hst
@@ -580,18 +574,14 @@ compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.cpp $(INCDIR)/libxsmm.h
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-ifeq (undefined,$(origin NO_MAIN))
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm.o
-else
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OBJFILES_MIC)
-endif
 	@mkdir -p $(dir $@)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
@@ -602,19 +592,7 @@ endif
 
 .PHONY: lib_hst
 lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
-ifeq (undefined,$(origin NO_MAIN))
-ifneq (0,$(JIT))
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm.o
-else
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(BLDDIR)/intel64/libxsmm.o
-endif
-else
-ifneq (0,$(JIT))
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
-else
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST)
-endif
-endif
+$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm_build_jit.o
 	@mkdir -p $(dir $@)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $^ -shared $(LDFLAGS) $(CLDFLAGS)
@@ -625,8 +603,8 @@ ifneq (0,$(JIT))
 	$(info ======================================================================)
 	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 	$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-	$(info IS NO CLEAN-UP ROUTINE, JITTING MEMORY IS FREED AT PROGRAM EXIT ONLY!!)
-	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED!!)
+	$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
+	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
 	$(info ======================================================================)
 endif
 
@@ -704,6 +682,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
+		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
 		-e 's/\[\[.\+\](.\+)\]//' \
 		-e '/!\[.\+\](.\+)/{n;d}' \
 		$(ROOTDIR)/README.md | \
@@ -713,7 +692,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 		-f markdown_github+implicit_figures \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
-		-V author-meta="Hans Pabst" \
+		-V author-meta="Hans Pabst, Alexander Heinecke" \
 		-V classoption=DIV=45 \
 		-V linkcolor=black \
 		-V citecolor=black \

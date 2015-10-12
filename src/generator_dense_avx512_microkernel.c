@@ -69,8 +69,8 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                   i_micro_kernel_config->use_masking_a_c, 0 );
 
     /* current A prefetch, next 8 rows for the current column */
-    if ( (strcmp( i_xgemm_desc->prefetch,"curAL2" ) == 0)         ||
-         (strcmp( i_xgemm_desc->prefetch,"curAL2_BL2viaC" ) == 0)    ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_AHEAD ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
@@ -79,10 +79,10 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */ 
-    if ( (strcmp( i_xgemm_desc->prefetch,"AL2jpst" ) == 0)         ||
-         (strcmp( i_xgemm_desc->prefetch,"AL2jpst_BL2viaC" ) == 0) ||
-         (strcmp( i_xgemm_desc->prefetch,"AL2" ) == 0)             || 
-         (strcmp( i_xgemm_desc->prefetch,"AL2_BL2viaC" ) == 0)        ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_JPOST ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -144,8 +144,8 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       }
 
       /* current A prefetch, next 8 rows for the current column */
-      if ( (strcmp( i_xgemm_desc->prefetch, "curAL2" ) == 0)         ||
-           (strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0)    ) {
+      if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_AHEAD ||
+           i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
         libxsmm_instruction_prefetch( io_generated_code,
                                       i_micro_kernel_config->prefetch_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
@@ -154,10 +154,10 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       }
 
       /* next A prefetch "same" rows in "same" column, but in a different matrix */
-      if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-           (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
-           (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
-           (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
+      if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_JPOST || 
+           i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST ||
+           i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 || 
+           i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
         libxsmm_instruction_prefetch( io_generated_code,
                                       i_micro_kernel_config->prefetch_instruction,
                                       i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -321,8 +321,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
     }
 
     /* current A prefetch, next 8 rows for the current column */
-    if ( (strcmp( i_xgemm_desc->prefetch, "curAL2" ) == 0)         ||
-         (strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0)    ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_AHEAD ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
@@ -331,10 +331,10 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
-         (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_JPOST || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -517,8 +517,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     }
 
     /* current A prefetch, next 8 rows for the current column */
-    if ( (strcmp( i_xgemm_desc->prefetch, "curAL2" ) == 0)         ||
-         (strcmp( i_xgemm_desc->prefetch, "curAL2_BL2viaC" ) == 0)    ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_AHEAD ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
@@ -527,8 +527,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     }
 
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -542,8 +542,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       }
     }
 
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0)    ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_JPOST || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -789,10 +789,10 @@ unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code
                                  (i_xgemm_desc->k - l_max_blocked_k) * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
    
     /* next A prefetch "same" rows in "same" column, but in a different matrix */
-    if ( (strcmp( i_xgemm_desc->prefetch, "AL2jpst" ) == 0)         || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2jpst_BL2viaC" ) == 0) ||
-         (strcmp( i_xgemm_desc->prefetch, "AL2" ) == 0)             || 
-         (strcmp( i_xgemm_desc->prefetch, "AL2_BL2viaC" ) == 0)        ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2_JPOST || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST ||
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 || 
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
       libxsmm_instruction_prefetch( io_generated_code,
                                     i_micro_kernel_config->prefetch_instruction,
                                     i_gp_reg_mapping->gp_reg_a_prefetch,

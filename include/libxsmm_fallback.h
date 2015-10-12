@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_FALLBACK_H
 #define LIBXSMM_FALLBACK_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm.h"
 
 #if (0 != LIBXSMM_ROW_MAJOR)
 # define LIBXSMM_LD(M, N) (N)

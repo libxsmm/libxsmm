@@ -26,7 +26,7 @@
 !* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        *!
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
-!* Hans Pabst (Intel Corp.)                                                  *!
+!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)                *!
 !*****************************************************************************!
 
 PROGRAM smm
@@ -37,11 +37,17 @@ PROGRAM smm
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
   INTEGER, PARAMETER :: MAX_NTHREADS = 512
 
-  REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:), c(:,:), d(:,:)
+  TYPE :: libxsmm_matrix
+    REAL(T), POINTER :: matrix(:,:)
+  END TYPE libxsmm_matrix
+
+  TYPE(libxsmm_matrix), ALLOCATABLE, TARGET :: a(:), b(:)
+  REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm
+!  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, s
   CHARACTER(32) :: argv
@@ -83,19 +89,26 @@ PROGRAM smm
   END IF
   s = LSHIFT(INT8(MAX(i, 0)), 30) / ((m * k + k * n + m * n) * T)
 
-  ALLOCATE(a(s,m,k))
-  ALLOCATE(b(s,k,n))
   ALLOCATE(c(m,n))
+  ALLOCATE(a(s))
+  ALLOCATE(b(s))
 
-  ! Initialize matrices
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b)
-  DO i = LBOUND(a, 1), UBOUND(a, 1)
-    CALL init(42, a(i,:,:), i - 1)
-    CALL init(24, b(i,:,:), i - 1)
-  END DO
+  ! Initialize a, b
+  !@TODO figure out how to allocate a,b matrices cont. without
+  ! additional copies when call LIBXSMM in the F90 compiler
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b, m, n, k, s)
+  DO i = 1, s
+    ALLOCATE( a(i)%matrix(m, k) )
+    CALL init(42, a(i)%matrix(:, :), i - 1)
+    ALLOCATE( b(i)%matrix(k, n) )
+    CALL init(24, b(i)%matrix(:, :), i - 1)
+  END DO 
   c(:,:) = 0
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 1) 
+
+  ! Init LIBXSMM
+  CALL libxsmm_build_static()
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
@@ -107,7 +120,7 @@ PROGRAM smm
     tmp(:,:) = 0
     !$OMP DO
     DO i = LBOUND(a, 1), UBOUND(a, 1)
-      CALL libxsmm_blasmm(m, n, k, a(i,:,:), b(i,:,:), tmp)
+      CALL libxsmm_blasmm(m, n, k, a(i)%matrix, b(i)%matrix, tmp)
     END DO
     !$OMP CRITICAL
     d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
@@ -127,7 +140,7 @@ PROGRAM smm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 1), UBOUND(a, 1)
-      CALL libxsmm_mm(m, n, k, a(i,:,:), b(i,:,:), tmp)
+      CALL libxsmm_mm(m, n, k, a(i)%matrix, b(i)%matrix, tmp)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -141,9 +154,10 @@ PROGRAM smm
   ELSE
     f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
     IF (C_ASSOCIATED(f)) THEN
-      CALL C_F_PROCPOINTER(f, xmm)
+!      CALL C_F_PROCPOINTER(f, xmm)     ! Fully polymorph variant
+      CALL C_F_PROCPOINTER(f, dmm)
       WRITE(*, "(A)") "Streamed... (specialized)"
-      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, xmm)
+      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm)
       ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       tmp(:,:) = 0
       !$OMP MASTER
@@ -151,7 +165,10 @@ PROGRAM smm
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL xmm(C_LOC(a(i,:,:)), C_LOC(b(i,:,:)), C_LOC(tmp))
+!        This in case of a polymorph call, we need C_LOC :-(, however the next line
+!        violates Fortran standard :-(
+!        CALL xmm(C_LOC(a(i)%matrix(:,:)), C_LOC(b(i)%matrix(:,:)), C_LOC(tmp))
+        CALL dmm(a(i)%matrix, b(i)%matrix, tmp)
       END DO
       !$OMP MASTER
       !$ duration = duration + omp_get_wtime()
@@ -176,7 +193,7 @@ PROGRAM smm
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL libxsmm_imm(m, n, k, a(i,:,:), b(i,:,:), tmp)
+        CALL libxsmm_imm(m, n, k, a(i)%matrix, b(i)%matrix, tmp)
       END DO
       !$OMP MASTER
       !$ duration = duration + omp_get_wtime()
@@ -203,6 +220,10 @@ PROGRAM smm
   END IF
 
   ! Deallocate global arrays
+  DO i = 1, s
+    DEALLOCATE( a(i)%matrix )
+    DEALLOCATE( b(i)%matrix )
+  END DO 
   DEALLOCATE(a)
   DEALLOCATE(b)
   DEALLOCATE(c)

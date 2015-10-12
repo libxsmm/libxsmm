@@ -172,15 +172,54 @@
 # define LIBXSMM_TLS thread_local
 #endif
 
-#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER)) && (LIBXSMM_OFFLOAD_ENABLED > 0)
+#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD_BUILD 1
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 #else
 /*# define LIBXSMM_OFFLOAD_BUILD 0*/
 # define LIBXSMM_OFFLOAD(A)
 #endif
-#define LIBXSMM_OFFLOAD_TARGET mic
+#if !defined(LIBXSMM_OFFLOAD_TARGET)
+# define LIBXSMM_OFFLOAD_TARGET mic
+#endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
+
+/**
+ * Below group of preprocessor symbols are used to fixup some platform specifics.
+ */
+#if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
+# define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
+#endif
+#if !defined(_CRT_SECURE_NO_DEPRECATE)
+# define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+#if !defined(_USE_MATH_DEFINES)
+# define _USE_MATH_DEFINES 1
+#endif
+#if !defined(WIN32_LEAN_AND_MEAN)
+# define WIN32_LEAN_AND_MEAN 1
+#endif
+#if !defined(NOMINMAX)
+# define NOMINMAX 1
+#endif
+#if defined(_WIN32)
+# define LIBXSMM_SNPRINTF(S, N, F, ...) _snprintf_s(S, N, _TRUNCATE, F, __VA_ARGS__)
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#else
+# if defined(__GNUC__)
+#   define LIBXSMM_SNPRINTF(S, N, F, ...) snprintf(S, N, F, ##__VA_ARGS__)
+# else
+#   define LIBXSMM_SNPRINTF(S, N, F, ...) snprintf(S, N, F, __VA_ARGS__)
+# endif
+# if !defined(__CYGWIN__)
+#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+# else /* Only available with __CYGWIN__ *and* C++0x. */
+#   define LIBXSMM_FLOCK(FILE)
+#   define LIBXSMM_FUNLOCK(FILE)
+# endif
+#endif
 
 #define LIBXSMM_BLASPREC(PREFIX, REAL, FUNCTION) LIBXSMM_BLASPREC_##REAL(PREFIX, FUNCTION)
 #define LIBXSMM_BLASPREC_double(PREFIX, FUNCTION) PREFIX##d##FUNCTION

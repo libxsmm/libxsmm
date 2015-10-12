@@ -28,56 +28,22 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_PREFETCH_H
-#define LIBXSMM_PREFETCH_H
+#ifndef LIBXSMM_DISPATCH_H
+#define LIBXSMM_DISPATCH_H
 
-#include "libxsmm.h"
-
-#if (0 != LIBXSMM_PREFETCH)
-# define LIBXSMM_PREFETCH_DECL(TYPE, ARG) , LIBXSMM_CONCATENATE2(LIBXSMM_UNUSED_, ARG) TYPE LIBXSMM_CONCATENATE2(LIBXSMM_PREFETCH_ARG_, ARG)
-# define LIBXSMM_USE(ARG) LIBXSMM_CONCATENATE2(LIBXSMM_USE_, ARG)
-# if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
-#   define LIBXSMM_PREFETCH_ARG_pa unused_pa
-#   define LIBXSMM_PREFETCH_ARGA(ARG) , 0
-#   define LIBXSMM_UNUSED_pa LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pa LIBXSMM_UNUSED(unused_pa)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pa pa
-#   define LIBXSMM_PREFETCH_ARGA(ARG) , ARG
-#   define LIBXSMM_UNUSED_pa
-#   define LIBXSMM_USE_pa
-# endif
-# if 0 != ((LIBXSMM_PREFETCH) & 8)
-#   define LIBXSMM_PREFETCH_ARG_pb unused_pb
-#   define LIBXSMM_PREFETCH_ARGB(ARG) , 0
-#   define LIBXSMM_UNUSED_pb LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pb LIBXSMM_UNUSED(unused_pb)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pb pb
-#   define LIBXSMM_PREFETCH_ARGB(ARG) , ARG
-#   define LIBXSMM_UNUSED_pb
-#   define LIBXSMM_USE_pb
-# endif
-# if 1
-#   define LIBXSMM_PREFETCH_ARG_pc unused_pc
-#   define LIBXSMM_PREFETCH_ARGC(ARG) , 0
-#   define LIBXSMM_UNUSED_pc LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pc LIBXSMM_UNUSED(unused_pc)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pc pc
-#   define LIBXSMM_PREFETCH_ARGC(ARG) , ARG
-#   define LIBXSMM_UNUSED_pc
-#   define LIBXSMM_USE_pc
-# endif
-#else
-# define LIBXSMM_PREFETCH_DECL(TYPE, ARG)
-# define LIBXSMM_PREFETCH_ARGA(ARG)
-# define LIBXSMM_PREFETCH_ARGB(ARG)
-# define LIBXSMM_PREFETCH_ARGC(ARG)
-# define LIBXSMM_PREFETCH_ARG_pa 0
-# define LIBXSMM_PREFETCH_ARG_pb 0
-# define LIBXSMM_PREFETCH_ARG_pc 0
-# define LIBXSMM_USE(ARG)
+#include <libxsmm_macros.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stddef.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
 #endif
 
-#endif /*LIBXSMM_PREFETCH_H*/
+
+typedef void (/*LIBXSMM_CDECL*/*libxsmm_function)(LIBXSMM_VARIADIC);
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_dispatch(const void* key, size_t key_size, size_t cache_id, libxsmm_function function);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_lookup(const void* key, size_t key_size, size_t cache_id);
+
+#endif /*LIBXSMM_DISPATCH_H*/

@@ -122,6 +122,9 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
+      /* Init LIBXSMM */
+      libxsmm_build_static();
+
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
@@ -140,7 +143,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const pa = a + i * asize, *const pb = b + i * bsize;
           T* pc = c + i * csize_act;
-          xmm(pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(tmp) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
+          xmm(pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
         }
 #if defined(_OPENMP)
         duration += omp_get_wtime();

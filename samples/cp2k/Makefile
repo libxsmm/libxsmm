@@ -16,6 +16,8 @@ OMP ?= 1
 SYM ?= 0
 DBG ?= 0
 IPO ?= 0
+SSE ?= 0
+AVX ?= 0
 
 OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
@@ -137,20 +139,30 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
-		ifeq ($(AVX),1)
-			TARGET = -xAVX
-		else ifeq ($(AVX),2)
-			TARGET = -xCORE-AVX2
-		else ifeq ($(AVX),3)
-			TARGET = -xCOMMON-AVX512
-		else
-			TARGET = -xHost
-		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+		ifeq (1,$(AVX))
+			TARGET = -xAVX
+		else ifeq (2,$(AVX))
+			TARGET = -xCORE-AVX2
+		else ifeq (3,$(AVX))
+			ifeq (0,$(MIC))
+				TARGET = -xCOMMON-AVX512
+			else
+				TARGET = -xMIC-AVX512
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -xSSE$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -xSSE3
+		else
+			TARGET = -xHost
+		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -206,20 +218,29 @@ else # GCC assumed
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
-		ifeq ($(AVX),1)
-			TARGET = -mavx
-		else ifeq ($(AVX),2)
-			TARGET = -mavx2
-		else ifeq ($(AVX),3)
-			TARGET = -mavx512f
-		else
-			TARGET = -march=native
-		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+		ifeq (1,$(AVX))
+			TARGET = -mavx
+		else ifeq (2,$(AVX))
+			TARGET = -mavx2
+		else ifeq (3,$(AVX))
+			TARGET = -mavx512f -mavx512cd
+			ifneq (0,$(MIC))
+				TARGET += -mavx512er -mavx512pf
+			endif
+		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
+			TARGET = -msse$(SSE)
+		else ifeq (1,$(SSE))
+			TARGET = -msse3
+		else
+			TARGET = -march=native
+		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
