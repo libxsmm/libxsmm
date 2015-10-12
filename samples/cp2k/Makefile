@@ -16,6 +16,8 @@ OMP ?= 1
 SYM ?= 0
 DBG ?= 0
 IPO ?= 0
+SSE ?= 0
+AVX ?= 0
 
 OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
