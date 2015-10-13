@@ -35,6 +35,7 @@
 #include <string.h>
 #include <errno.h>
 /* this is linux specific */
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/mman.h>
@@ -204,10 +205,10 @@ void run_jit_double( const double*                   i_a,
   gettimeofday(&l_start, NULL);
   
   /* allocate buffer for code */
-  unsigned char* l_gen_code = (unsigned char*) malloc( 32768 * sizeof(unsigned char) );
+  unsigned char* l_gen_code = (unsigned char*) malloc( 131072 * sizeof(unsigned char) );
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = (void*)l_gen_code;
-  l_generated_code.buffer_size = 32768;
+  l_generated_code.buffer_size = 131072;
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 2;
   l_generated_code.last_error = 0;
@@ -226,7 +227,9 @@ void run_jit_double( const double*                   i_a,
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
-  void* p = mmap(0, l_code_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  int l_fd = open("/dev/zero", O_RDWR);
+  void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  close(l_fd);
   /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
   madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
   if (p == MAP_FAILED) {
@@ -349,7 +352,8 @@ void run_jit_float( const float*                    i_a,
   /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
   madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
   if (p == MAP_FAILED) {
-    fprintf(stderr, "something bad happend in mmap!\n");
+    fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
+    exit(-1);
   }
   unsigned char* l_code = (unsigned char*)p;
   memset( l_code, 0, l_code_page_size );
