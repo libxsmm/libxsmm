@@ -92,38 +92,11 @@ GPP     = $(notdir $(shell which g++      2> /dev/null))
 GCC     = $(notdir $(shell which gcc      2> /dev/null))
 GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
-ifneq (,$(ICPC))
-	CXX = $(ICPC)
-	ifeq (,$(ICC))
-		CC = $(CXX)
-	endif
-else
-	CXX = $(GPP)
-endif
-ifneq (,$(ICC))
+ifeq (3,$(words $(filter icc icpc ifort,$(ICC) $(ICPC) $(IFORT))))
 	CC = $(ICC)
-	ifeq (,$(ICPC))
-		CXX = $(CC)
-	endif
-else
-	CC = $(GCC)
-endif
-ifneq (,$(IFORT))
+	CXX = $(ICPC)
 	FC = $(IFORT)
-else
-	FC = $(GFC)
-endif
-ifneq ($(CXX),)
-	LD = $(CXX)
-endif
-ifeq ($(LD),)
-	LD = $(CC)
-endif
-ifeq ($(LD),)
-	LD = $(FC)
-endif
-
-ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
+	AR = xiar
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
 	FCFLAGS += -fPIC
@@ -266,6 +239,16 @@ else # GCC assumed
 		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -J
+endif
+
+ifneq (,$(CXX))
+	LD = $(CXX)
+endif
+ifeq (,$(LD))
+	LD = $(CC)
+endif
+ifeq (,$(LD))
+	LD = $(FC)
 endif
 
 ifeq (,$(CXXFLAGS))
