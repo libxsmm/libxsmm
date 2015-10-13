@@ -15,4 +15,5 @@ script:
  - bash make.sh -cp2k -j
  - make -e samples
  - make -e test
+ - cd samples/cp2k
  - bash test.sh
