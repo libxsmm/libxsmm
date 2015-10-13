@@ -8,12 +8,11 @@ addons:
     - liblapack-dev
 
 compiler:
-  - clang
   - gcc
 
 script: 
  - make -e realclean
  - bash make.sh -cp2k -j
- - make -e cp2k
+ - make -e samples
  - make -e test
  - bash test.sh
