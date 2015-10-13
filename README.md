@@ -156,7 +156,7 @@ You can use the aforementioned THRESHOLD parameter to control the matrix sizes f
 
 Notes: Modern Linux distributions have support for transparent huge pages (THP). LIBXSMM takes care of this feature when setting execute permissions of the code
 cache's pages. However, we measured up to 30 precent slowdown when running JITed code which was stored on THP. For systems with kernel 2.6.38 or later it is possible
-to disabled the usage of THP of mmap regions. Please modify [src/libxsmm_build.c](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_build.c#158), if you think you got hit by this problem (you need to remove the "-c89" flag when building LIBXSMM):
+to disabled the usage of THP of mmap regions. Please modify [src/libxsmm_build.c](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_build.c#L158), if you think you got hit by this problem (you need to remove the "-c89" flag when building LIBXSMM):
 
 ```C
 int l_fd = open("/dev/zero", O_RDWR);
