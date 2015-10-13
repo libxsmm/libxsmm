@@ -44,7 +44,7 @@ ALIGNED_LOADS ?= 0
 PREFETCH ?= 0
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
-THRESHOLD ?= $(shell echo $$((80**3)))
+THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
 
 # Beta paramater of DGEMM
 # we currently support 0 and 1
