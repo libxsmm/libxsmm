@@ -226,6 +226,7 @@ int main(int argc, char* argv[])
       T *const expect = expect_buffer.expect;
 #endif
 
+#if defined(CP2K_CHECK)
       { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
         std::fill_n(expect, csize, 0);
@@ -251,6 +252,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
 #endif
       }
+#endif
 
       { // inline an optimized implementation
         fprintf(stdout, "Inlined...\n");
