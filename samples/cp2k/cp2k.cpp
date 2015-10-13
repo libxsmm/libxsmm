@@ -224,12 +224,20 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
+# if defined(_OPENMP) // pay for the OpenMP startup cost
+#     pragma omp parallel for CP2K_SCHEDULE
+      for (int i = 0; i < s; i += u) {
+        std::fill_n(expect, csize, 0);
+      }
+# else // just initialize the reference result
+      std::fill_n(expect, csize, 0);
+# endif
+#else
+      T *const expect = c;
 #endif
 
-#if defined(CP2K_CHECK)
       { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -252,7 +260,6 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
 #endif
       }
-#endif
 
       { // inline an optimized implementation
         fprintf(stdout, "Inlined...\n");
