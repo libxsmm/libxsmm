@@ -17,6 +17,7 @@ script:
  - make -e test
  - cd samples/cp2k
  - bash test.sh
+ - cd ../..
 
  - make -e realclean
  - bash make.sh -cib -j
@@ -24,3 +25,4 @@ script:
  - make -e test
  - cd samples/cp2k
  - bash test.sh
+ - cd ../..
