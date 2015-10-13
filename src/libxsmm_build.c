@@ -158,6 +158,22 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
       /* set memory protection to R/E */
       mprotect((void*)l_code, l_code_pages * LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ);
 
+#if !defined(NDEBUG)
+      /* write buffer for manual decode as binary to a file */
+      char l_objdump_name[512];
+      sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
+               l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
+               l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
+               l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch ); 
+      FILE *l_byte_code = fopen( l_objdump_name, "wb");
+      if ( l_byte_code != NULL ) {
+        fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
+        fclose( l_byte_code );
+      } else {
+        /* error */
+      }
+#endif
+
       /* free temporary buffer, and prepare return value */
       free(l_gen_code);
       result = (libxsmm_function)l_code;
