@@ -54,7 +54,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define MAX_SIZE (64 * 64)
+#define MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
 
 
 template<int Seed>
