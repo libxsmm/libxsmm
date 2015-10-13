@@ -17,6 +17,16 @@ if [[ "-cp2k" == "$1" ]] ; then
     12, \
     13 26 28 32 45, \
     7 13 25 32"
+elif [[ "-cia" == "$1" ]] ; then
+  shift
+  make -e $* MNK=" \
+    0 8 15, \
+    23 24 42"
+elif [[ "-cib" == "$1" ]] ; then
+  shift
+  make -e $* ROW_MAJOR=1 MNK=" \
+    0 8 15, \
+    23 24 42"
 else
   make -e $*
 fi

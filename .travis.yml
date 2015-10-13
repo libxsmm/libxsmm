@@ -12,7 +12,7 @@ compiler:
 
 script: 
  - make -e realclean
- - bash make.sh -cp2k -j
+ - bash make.sh -cia -j
  - make -e samples
  - make -e test
  - cd samples/cp2k
