@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <errno.h>
 /* this is linux specific */
 #include <sys/time.h>
 #include <sys/mman.h>
@@ -228,7 +229,19 @@ void run_jit_double( const double*                   i_a,
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
   int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
-  printf("error mprotect %i (should be 0) \n", error);
+  if (error == -1) {
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      printf("mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      printf("mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      printf("mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      printf("mprotect failed: Unknown Error!\n");
+    }
+    exit(-1);
+  }
 
   /* set function pointer and jitted code */
   if ( i_xgemm_desc->single_precision == 0 ) {
@@ -327,7 +340,20 @@ void run_jit_float( const float*                    i_a,
   memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  if (error == -1) {
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      printf("mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      printf("mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      printf("mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      printf("mprotect failed: Unknown Error!\n");
+    }
+    exit(-1);
+  }
 
   /* set function pointer and jitted code */
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
