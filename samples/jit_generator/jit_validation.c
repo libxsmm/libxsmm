@@ -35,6 +35,7 @@
 #include <string.h>
 #include <errno.h>
 /* this is linux specific */
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 
@@ -43,8 +44,7 @@
 /* This will be our future incldue */
 /*#include <libxsmm_generator.h>*/
 /*@TODO remove:*/
-#define LIBXSMM_BUILD_PAGESIZE 4096
-#define LIBXSMM_BUILD_HPAGESIZE 2097152
+#define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
 #include <generator_extern_typedefs.h>
 #include <generator_dense.h>
 #include <generator_sparse.h>
@@ -225,32 +225,29 @@ void run_jit_double( const double*                   i_a,
 
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_PAGESIZE, LIBXSMM_BUILD_PAGESIZE );
-  memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_PAGESIZE );
+  int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
+  void* p = mmap(0, l_code_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  if (p == MAP_FAILED) {
+    fprintf(stderr, "something bad happend in mmap!\n");
+  }
+  unsigned char* l_code = (unsigned char*)p;
+  memset( l_code, 0, l_code_page_size );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  /* set memory protection to R/E */
-  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
   if (error == -1) {
-    /* try again with 2M pages */
-    _mm_free(l_code);
-    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_HPAGESIZE)+1;
-    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_HPAGESIZE, LIBXSMM_BUILD_HPAGESIZE );
-    memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_HPAGESIZE );
-    memcpy( l_code, l_gen_code, l_generated_code.code_size );
-    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_HPAGESIZE, PROT_EXEC | PROT_READ );
-    if (error2 == -1) {
-      int errsv = errno;
-      if (errsv == EINVAL) {
-        printf("mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
-      } else if (errsv == ENOMEM) {
-        printf("mprotect failed: Internal kernel structures could not be allocated!\n");
-      } else if (errsv == EACCES) {
-        printf("mprotect failed: The memory cannot be given the specified access!\n");
-      } else {
-        printf("mprotect failed: Unknown Error!\n");
-      }
-      exit(-1);
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      fprintf(stderr, "mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      fprintf(stderr, "mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      fprintf(stderr, "mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      fprintf(stderr, "mprotect failed: Unknown Error!\n");
     }
+    exit(-1);
   }
 
   /* set function pointer and jitted code */
@@ -347,32 +344,29 @@ void run_jit_float( const float*                    i_a,
 
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_PAGESIZE, LIBXSMM_BUILD_PAGESIZE );
-  memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_PAGESIZE );
+  int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
+  void* p = mmap(0, l_code_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  if (p == MAP_FAILED) {
+    fprintf(stderr, "something bad happend in mmap!\n");
+  }
+  unsigned char* l_code = (unsigned char*)p;
+  memset( l_code, 0, l_code_page_size );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  /* set memory protection to R/E */
-  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
   if (error == -1) {
-    /* try again with 2M pages */
-    _mm_free(l_code);
-    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_HPAGESIZE)+1;
-    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_HPAGESIZE, LIBXSMM_BUILD_HPAGESIZE );
-    memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_HPAGESIZE );
-    memcpy( l_code, l_gen_code, l_generated_code.code_size );
-    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_HPAGESIZE, PROT_EXEC | PROT_READ );
-    if (error2 == -1) {
-      int errsv = errno;
-      if (errsv == EINVAL) {
-        printf("mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
-      } else if (errsv == ENOMEM) {
-        printf("mprotect failed: Internal kernel structures could not be allocated!\n");
-      } else if (errsv == EACCES) {
-        printf("mprotect failed: The memory cannot be given the specified access!\n");
-      } else {
-        printf("mprotect failed: Unknown Error!\n");
-      }
-      exit(-1);
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      fprintf(stderr, "mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      fprintf(stderr, "mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      fprintf(stderr, "mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      fprintf(stderr, "mprotect failed: Unknown Error!\n");
     }
+    exit(-1);
   }
 
   /* set function pointer and jitted code */
