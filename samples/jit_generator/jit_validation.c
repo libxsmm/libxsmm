@@ -43,8 +43,8 @@
 /* This will be our future incldue */
 /*#include <libxsmm_generator.h>*/
 /*@TODO remove:*/
-#define LIBXSMM_CODE_PAGESIZE 4096
-#define LIBXSMM_CODE_HPAGESIZE 2097152
+#define LIBXSMM_BUILD_PAGESIZE 4096
+#define LIBXSMM_BUILD_HPAGESIZE 2097152
 #include <generator_extern_typedefs.h>
 #include <generator_dense.h>
 #include <generator_sparse.h>
@@ -224,20 +224,20 @@ void run_jit_double( const double*                   i_a,
   }
 
   /* create executable buffer */
-  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, LIBXSMM_CODE_PAGESIZE );
-  memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
+  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
+  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_PAGESIZE, LIBXSMM_BUILD_PAGESIZE );
+  memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_PAGESIZE );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
-  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ );
   if (error == -1) {
     /* try again with 2M pages */
     _mm_free(l_code);
-    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_HPAGESIZE)+1;
-    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_HPAGESIZE, LIBXSMM_CODE_HPAGESIZE );
-    memset( l_code, 0, l_code_pages*LIBXSMM_CODE_HPAGESIZE );
+    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_HPAGESIZE)+1;
+    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_HPAGESIZE, LIBXSMM_BUILD_HPAGESIZE );
+    memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_HPAGESIZE );
     memcpy( l_code, l_gen_code, l_generated_code.code_size );
-    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_HPAGESIZE, PROT_EXEC | PROT_READ );
+    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_HPAGESIZE, PROT_EXEC | PROT_READ );
     if (error2 == -1) {
       int errsv = errno;
       if (errsv == EINVAL) {
@@ -302,7 +302,8 @@ void run_jit_double( const double*                   i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
   /* set memory protection back to R/W */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_READ | PROT_WRITE );
+  /* @TODO aheineck, this is not perfectly fine, but works for THP */
+  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
 
   free(l_gen_code);
   _mm_free(l_code);
@@ -345,20 +346,20 @@ void run_jit_float( const float*                    i_a,
   }
 
   /* create executable buffer */
-  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, LIBXSMM_CODE_PAGESIZE );
-  memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
+  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
+  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_PAGESIZE, LIBXSMM_BUILD_PAGESIZE );
+  memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_PAGESIZE );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
   /* set memory protection to R/E */
-  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ );
   if (error == -1) {
     /* try again with 2M pages */
     _mm_free(l_code);
-    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_HPAGESIZE)+1;
-    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_HPAGESIZE, LIBXSMM_CODE_HPAGESIZE );
-    memset( l_code, 0, l_code_pages*LIBXSMM_CODE_HPAGESIZE );
+    l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_HPAGESIZE)+1;
+    l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_BUILD_HPAGESIZE, LIBXSMM_BUILD_HPAGESIZE );
+    memset( l_code, 0, l_code_pages*LIBXSMM_BUILD_HPAGESIZE );
     memcpy( l_code, l_gen_code, l_generated_code.code_size );
-    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_HPAGESIZE, PROT_EXEC | PROT_READ );
+    int error2 = mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_HPAGESIZE, PROT_EXEC | PROT_READ );
     if (error2 == -1) {
       int errsv = errno;
       if (errsv == EINVAL) {
@@ -421,7 +422,8 @@ void run_jit_float( const float*                    i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
   /* set memory protection back to R/W */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_READ | PROT_WRITE );
+  /* @TODO aheineck, this is not perfectly fine, but works for THP */
+  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
 
   free(l_gen_code);
   _mm_free(l_code);
