@@ -89,13 +89,11 @@ endif
 # IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!
 JIT ?= 0
 ifneq (0,$(JIT))
-$(info ======================================================================)
+$(info =====================================================================)
 $(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 $(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
 $(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
-$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
-$(info ======================================================================)
-OMP=1
+$(info =====================================================================)
 ifneq (0,$(ROW_MAJOR))
 $(error ROW_MAJOR needs to be 0 for JIT support!)
 endif
@@ -600,12 +598,11 @@ else
 	$(AR) -rs $@ $^
 endif
 ifneq (0,$(JIT))
-	$(info ======================================================================)
+	$(info =====================================================================)
 	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 	$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
 	$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
-	$(info OPENMP IS SWITCHED ON, PTHREADS ARE NOT SUPPORTED, BUT NOT CHECKED.)
-	$(info ======================================================================)
+	$(info =====================================================================)
 endif
 
 .PHONY: samples
