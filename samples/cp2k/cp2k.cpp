@@ -54,7 +54,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+// aheineck: @TODO This line is broken -> 10% less performance, going back to static buffer size
+//#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+#define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -212,7 +214,8 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
-      libxsmm_build_jit(4 == sizeof(T), 23, 23, 23);
+      libxsmm_build_static();
+
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
@@ -224,20 +227,11 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
-# if defined(_OPENMP) // pay for the OpenMP startup cost
-#     pragma omp parallel for CP2K_SCHEDULE
-      for (int i = 0; i < s; i += u) {
-        std::fill_n(expect, csize, 0);
-      }
-# else // just initialize the reference result
-      std::fill_n(expect, csize, 0);
-# endif
-#else
-      T *const expect = c;
 #endif
 
       { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
+        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
