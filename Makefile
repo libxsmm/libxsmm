@@ -124,6 +124,10 @@ GPP     = $(notdir $(shell which g++      2> /dev/null))
 GCC     = $(notdir $(shell which gcc      2> /dev/null))
 GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
+CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
+CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
+FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
+
 ifeq (3,$(words $(filter icc icpc ifort,$(ICC) $(ICPC) $(IFORT))))
 	CC = $(ICC)
 	CXX = $(ICPC)
@@ -196,7 +200,16 @@ ifeq (3,$(words $(filter icc icpc ifort,$(ICC) $(ICPC) $(IFORT))))
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
-	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	ifeq (,$(CXX_CHECK))
+		CXX = $(GPP)
+	endif
+	ifeq (,$(CC_CHECK))
+		CC = $(GCC)
+	endif
+	ifeq (,$(FC_CHECK))
+		FC = $(GFC)
+	endif
+	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
 	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
 	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
