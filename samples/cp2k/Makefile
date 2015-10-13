@@ -11,7 +11,7 @@ DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
 STATIC ?= 0
-BLAS ?= 1 # sequential
+BLAS ?= 1
 OMP ?= 1
 SYM ?= 0
 DBG ?= 0
