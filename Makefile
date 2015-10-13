@@ -267,6 +267,16 @@ else # GCC assumed
 	FCMODDIRFLAG = -J
 endif
 
+ifneq (,$(CXX))
+	LD = $(CXX)
+endif
+ifeq (,$(LD))
+	LD = $(CC)
+endif
+ifeq (,$(LD))
+	LD = $(FC)
+endif
+
 ifeq (,$(CXXFLAGS))
 	CXXFLAGS = $(CFLAGS)
 endif
