@@ -54,7 +54,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define CP2K_MAX_SIZE (64 * 64)
+#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
