@@ -36,21 +36,28 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(_WIN32)
-# include <sys/mman.h>
-#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if !defined(_WIN32)
+# include <fcntl.h>
+# include <unistd.h>
+# include <sys/mman.h>
+#endif
+#if !defined(NDEBUG)
 #include <errno.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
 
 #define LIBXSMM_BUILD_CACHESIZE (LIBXSMM_MAX_M) * (LIBXSMM_MAX_N) * (LIBXSMM_MAX_K) * 8
+#if !defined(_WIN32)
+#define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
+#else
 #define LIBXSMM_BUILD_PAGESIZE 4096
-#define LIBXSMM_BUILD_HPAGESIZE 2097152
+#endif
 #define LIBXSMM_BUILD_SEED 0
 
 
@@ -124,10 +131,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
       strcpy(l_arch, "knl");
 #endif
       /* allocate buffer for code */
-      unsigned char* l_gen_code = (unsigned char*) malloc(32768 * sizeof(unsigned char));
+      unsigned char* l_gen_code = (unsigned char*) malloc(131072 * sizeof(unsigned char));
       libxsmm_generated_code l_generated_code;
       l_generated_code.generated_code = (void*)l_gen_code;
-      l_generated_code.buffer_size = 32768;
+      l_generated_code.buffer_size = 131072;
       l_generated_code.code_size = 0;
       l_generated_code.code_type = 2;
       l_generated_code.last_error = 0;
@@ -142,62 +149,41 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
       }
 
       /* create executable buffer */
-      int l_code_pages = (((l_generated_code.code_size - 1) * sizeof(unsigned char)) / LIBXSMM_BUILD_PAGESIZE) + 1;
-      unsigned char* l_code = 0;
-#if defined(_WIN32)
-      l_code = (unsigned char*)_aligned_malloc(l_code_pages * LIBXSMM_BUILD_PAGESIZE, LIBXSMM_BUILD_PAGESIZE);
-#else
-      void* p = 0;
+      int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
+      int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
+      int l_fd = open("/dev/zero", O_RDWR);
+      void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+      close(l_fd);
+      /* explicitly disable THP for this memory region, kernel 2.6.38 or higher!, remove -c89 when compiling LIBXSMM 
+      madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
 #if !defined(NDEBUG)
-      int error =
+      if (p == MAP_FAILED) {
+        fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
+        exit(-1);
+      }
 #endif
-      posix_memalign(&p, LIBXSMM_BUILD_PAGESIZE, l_code_pages * LIBXSMM_BUILD_PAGESIZE);
-      assert(0 == error);
-      l_code = (unsigned char*)p;
-#endif
-      memset(l_code, 0, l_code_pages * LIBXSMM_BUILD_PAGESIZE);
-      memcpy(l_code, l_gen_code, l_generated_code.code_size);
-      /* set memory protection to R/E */
-      const int l_error_4k = mprotect((void*)l_code, l_code_pages * LIBXSMM_BUILD_PAGESIZE, PROT_EXEC | PROT_READ);
-      if (l_error_4k == -1) {
-        /* let's try again with huge page (2M) */
-#if defined(_WIN32)
-        /* @TODO */
-#else
-        free( l_code );
-#endif
-        l_code_pages = (((l_generated_code.code_size - 1) * sizeof(unsigned char)) / LIBXSMM_BUILD_HPAGESIZE) + 1;
-#if defined(_WIN32)
-        l_code = (unsigned char*)_aligned_malloc(l_code_pages * LIBXSMM_BUILD_HPAGESIZE, LIBXSMM_BUILD_HPAGESIZE);
-#else
+      unsigned char* l_code = (unsigned char*)p;
+      /*memset( l_code, 0, l_code_page_size );*/
+      memcpy( l_code, l_gen_code, l_generated_code.code_size );
 #if !defined(NDEBUG)
-        error =
+      int error = 
 #endif
-        posix_memalign(&p, LIBXSMM_BUILD_HPAGESIZE, l_code_pages * LIBXSMM_BUILD_HPAGESIZE);
-        assert(0 == error);
-        l_code = (unsigned char*)p;
-#endif
-        memset(l_code, 0, l_code_pages * LIBXSMM_BUILD_HPAGESIZE);
-        memcpy(l_code, l_gen_code, l_generated_code.code_size);
-        /* set memory protection to R/E */
-        const int l_error_2m = mprotect((void*)l_code, l_code_pages * LIBXSMM_BUILD_HPAGESIZE, PROT_EXEC | PROT_READ);
-        if (l_error_2m == -1) {
-          /* something bad happend.... */
-          int errsv = errno;
-          if (errsv == EINVAL) {
-            fprintf(stderr, "mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
-          } else if (errsv == ENOMEM) {
-            fprintf(stderr, "mprotect failed: Internal kernel structures could not be allocated!\n");
-          } else if (errsv == EACCES) {
-            fprintf(stderr, "mprotect failed: The memory cannot be given the specified access!\n");
-          } else {
-            fprintf(stderr, "mprotect failed: Unknown Error!\n");
-          }
-          exit(-1);
+      mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
+#if !defined(NDEBUG)
+      if (error == -1) {
+        int errsv = errno;
+        if (errsv == EINVAL) {
+          fprintf(stderr, "LIBXSMM: mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+        } else if (errsv == ENOMEM) {
+          fprintf(stderr, "LIBXSMM: mprotect failed: Internal kernel structures could not be allocated!\n");
+        } else if (errsv == EACCES) {
+          fprintf(stderr, "LIBXSMM: mprotect failed: The memory cannot be given the specified access!\n");
+        } else {
+          fprintf(stderr, "LIBXSMM: mprotect failed: Unknown Error!\n");
         }
+        exit(-1);
       }
 
-#if !defined(NDEBUG)
       /* write buffer for manual decode as binary to a file */
       char l_objdump_name[512];
       sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
