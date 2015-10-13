@@ -17,3 +17,9 @@ script:
  - make -e test
  - cd samples/cp2k
  - bash test.sh
+
+ - bash make.sh -cib -j
+ - make -e samples
+ - make -e test
+ - cd samples/cp2k
+ - bash test.sh
