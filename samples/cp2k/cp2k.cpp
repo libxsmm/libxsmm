@@ -227,11 +227,13 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
+      std::fill_n(expect, csize, 0);
+#else
+      T *const expect = c;
 #endif
 
       { // LAPACK/BLAS3 (fallback/reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
