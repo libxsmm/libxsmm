@@ -142,9 +142,8 @@ high-performance kernels here, LIBXSMM offers an experimental JIT (just-in-time)
 corresponding byte-code directly into an executable buffer to ensure highest performance during the generation process. As the JIT backend is still experimental,
 some limitations are in place:
 
-1. there is no support for ALIGNED_STORE/ALIGNED_LOAD build options
-2. there is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
-3. LIBXSMM uses pthread mutexes to secure updates of the JITed code cache, make sure to link with -lpthread
+1. There is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
+1. LIBXSMM uses Pthread mutexes to guard updates of the JITted code cache, make sure to link with -lpthread; building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
 
 The JIT backend version of the LIBXSMM can be built by:
 
@@ -152,10 +151,10 @@ The JIT backend version of the LIBXSMM can be built by:
 make JIT=1
 ```
 
-You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed.
+You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed. However, explicitly requested kernels (by calling libxsmm_build_jit) are not subject to a problem size threshold. Moreover, building with JIT=2 (in fact, 1<JIT and JIT!=0) allows to solely rely on explicitly generating kernels at runtime.
 
 Notes: Modern Linux distributions have support for transparent huge pages (THP). LIBXSMM takes care of this feature when setting execute permissions of the code
-cache's pages. However, we measured up to 30 precent slowdown when running JITed code which was stored on THP. For systems with kernel 2.6.38 or later it is possible
+cache's pages. However, we measured up to 30 percent slowdown when running JITted code which was stored on THP. For systems with kernel 2.6.38 or later it is possible
 to disabled the usage of THP of mmap regions. Please modify [src/libxsmm_build.c](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_build.c#L158), if you think you got hit by this problem (you need to remove the "-c89" flag when building LIBXSMM):
 
 ```C
