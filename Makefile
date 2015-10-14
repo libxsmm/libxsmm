@@ -97,15 +97,6 @@ $(info =====================================================================)
 ifneq (0,$(ROW_MAJOR))
 $(error ROW_MAJOR needs to be 0 for JIT support!)
 endif
-ifneq (0,$(PREFETCH))
-$(error PREFETCH needs to be 0 for JIT support!)
-endif
-ifneq (0,$(ALIGNED_STORES))
-$(error ALIGNED_STORES needs to be 0 for JIT support!)
-endif
-ifneq (0,$(ALIGNED_LOADS))
-$(error ALIGNED_LOADS needs to be 0 for JIT support!)
-endif
 ifneq (0,$(OFFLOAD))
 $(error OFFLOAD needs to be 0 for JIT support!)
 endif
