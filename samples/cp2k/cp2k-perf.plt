@@ -45,7 +45,7 @@ stats BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)) nooutput; MEDAI = STA
 stats BASENAME."-perf.dat" using (log(BW(MPARM,NPARM,KPARM,FLOPS,8))) nooutput; GEOMEMBW = exp(STATS_sum/STATS_records)
 stats BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,8)) nooutput; MEDMEMBW = STATS_median; AVGMEMBW = STATS_mean; MINMEMBW = STATS_min; MAXMEMBW = STATS_max
 
-FORMAT(X) = sprintf("%%.%if", ceil(MAX(1.0 / log10(X) - 1.0, 0)))
+FORMAT(X) = sprintf("%%.%if", ceil(1.0 / MAX(log10(X), 1) - 1.0))
 MAX(A, B) = A < B ? B : A
 
 IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
