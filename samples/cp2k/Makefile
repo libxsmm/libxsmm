@@ -96,12 +96,14 @@ CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
 CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
 FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
 
-# prefer Intel Compiler if available
+# prefer Intel Compiler (if available)
 CXX = $(ICPC)
 FC = $(IFORT)
 CC = $(ICC)
 
-ifeq (3,$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))
+INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))))
+
+ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall -std=c++0x
 	CFLAGS += -fPIC -Wall -std=c99
@@ -300,12 +302,11 @@ ifeq (1,$(MKL)) # sequential
 				$(MKLROOT)/lib/intel64/libmkl_sequential.a \
 			-Wl,--end-group
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld," \
-				--start-group \
-					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
-					$(MKLROOT)/lib/mic/libmkl_core.a \
-					$(MKLROOT)/lib/mic/libmkl_sequential.a \
-				--end-group"
+			LDFLAGS += -offload-option,mic,ld,"--start-group \
+				$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/mic/libmkl_core.a \
+				$(MKLROOT)/lib/mic/libmkl_sequential.a \
+			--end-group"
 		endif
 	endif
 	LDFLAGS += -lpthread -lm
@@ -316,36 +317,48 @@ else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
-		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
-		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
+		ifneq (0,$(INTEL))
+			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
+			ifneq (0,$(OFFLOAD))
+				LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
+			endif
+		else # assuming GNU toolchain
+			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
 		endif
 	else # static
-		LDFLAGS += \
-			-Wl,--start-group \
+		ifneq (0,$(INTEL))
+			LDFLAGS += -Wl,--start-group \
 				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
 			-Wl,--end-group
-		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld," \
-				--start-group \
+			ifneq (0,$(OFFLOAD))
+				LDFLAGS += -offload-option,mic,ld,"--start-group \
 					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
 					$(MKLROOT)/lib/mic/libmkl_core.a \
 					$(MKLROOT)/lib/mic/libmkl_intel_thread.a \
 				--end-group"
+			endif
+		else # assuming GNU toolchain
+			LDFLAGS += -Wl,--start-group \
+				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/intel64/libmkl_core.a \
+				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
+			-Wl,--end-group -ldl
 		endif
 	endif
-	ifeq (0,$(OMP))
-		LDFLAGS += -liomp5
+	ifneq (0,$(INTEL))
+		ifeq (0,$(OMP))
+			LDFLAGS += -liomp5
+			ifneq (0,$(OFFLOAD))
+				LDFLAGS += -offload-option,mic,ld,"-liomp5"
+			endif
+		endif
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-liomp5"
+			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
 		endif
 	endif
 	LDFLAGS += -lpthread -lm
-	ifneq (0,$(OFFLOAD))
-		LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
-	endif
 else ifneq (0,$(BLAS)) # generic
 	ifneq ($(OS),Windows_NT)
 		LDFLAGS += -lblas
