@@ -8,6 +8,7 @@ addons:
     - liblapack-dev
 
 compiler:
+  - clang
   - gcc
 
 script: 
