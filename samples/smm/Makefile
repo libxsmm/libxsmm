@@ -96,10 +96,12 @@ CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
 CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
 FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
 
-ifeq (3,$(words $(filter icc icpc ifort,$(ICC) $(ICPC) $(IFORT))))
-	CC = $(ICC)
-	CXX = $(ICPC)
-	FC = $(IFORT)
+# prefer Intel Compiler if available
+CXX = $(ICPC)
+FC = $(IFORT)
+CC = $(ICC)
+
+ifeq (3,$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
