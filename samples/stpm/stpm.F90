@@ -29,8 +29,15 @@
 !* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)                *!
 !*****************************************************************************!
 
-PROGRAM smm
+#define XSMM_DIRECT
+
+PROGRAM stpm
+#ifdef XSMM_DIRECT
+  use libxsmm, only : LIBXSMM_DOUBLE_PRECISION, LIBXSMM_ALIGNED_MAX, LIBXSMM_DMM_FUNCTION
+#else
   USE :: LIBXSMM
+#endif
+
   !$ USE omp_lib
   IMPLICIT NONE
 
@@ -55,6 +62,29 @@ PROGRAM smm
   TYPE(C_FUNPTR) :: f
 
   REAL(8) :: duration
+
+#ifdef XSMM_DIRECT
+  interface libxsmm_dmm_8_8_8
+    subroutine libxsmm_dmm_8_8_8(a,b,c) BIND(C)
+      use iso_c_binding, only : c_ptr
+      type(c_ptr), value :: a, b, c
+    end subroutine
+  end interface
+  interface libxsmm_dmm_64_8_8
+    subroutine libxsmm_dmm_64_8_8(a,b,c) BIND(C)
+      use iso_c_binding, only : c_ptr
+      type(c_ptr), value :: a, b, c
+    end subroutine
+  end interface
+  interface libxsmm_dmm_8_64_8
+    subroutine libxsmm_dmm_8_64_8(a,b,c) BIND(C)
+      use iso_c_binding, only : c_ptr
+      type(c_ptr), value :: a, b, c
+    end subroutine
+  end interface
+#endif
+
+
   duration = 0
 
   argc = IARGC()
@@ -144,11 +174,19 @@ PROGRAM smm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
+#ifdef XSMM_DIRECT
+      call libxsmm_dmm_8_64_8(c_loc(dx), c_loc(a(1,1,1,i)), c_loc(tmp(1,1,1)))
+      do j = 1, k
+        call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tmp(1,1,j)))
+      enddo
+      call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tmp(1,1,1)))
+#else
       call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tmp(:,:,1))
       do j = 1, k
-        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tmp(:,:,j))
+          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tmp(:,:,j))
       enddo
       call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tmp(:,:,1))
+#endif
       c(:,:,:,i) = c(:,:,:,i) + tmp
     END DO
     !$OMP MASTER
