@@ -31,9 +31,8 @@ sed \
   -e  '/!\[.\+\](.\+)/{n;d}' \
   README.md | tee >( \
 pandoc \
-  --latex-engine=xelatex \
-  --template=${TEMPLATE} --listings \
-  -f markdown_github+implicit_figures \
+  --latex-engine=xelatex --listings --template=${TEMPLATE} \
+  -f markdown_github+implicit_figures+all_symbols_escapable \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
   -V author-meta="Hans Pabst, Alexander Heinecke" \
