@@ -69,7 +69,7 @@ DOCDIR = documentation
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = $(NULL)
+DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
 STATIC ?= 1
