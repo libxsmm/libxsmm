@@ -719,7 +719,7 @@ documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR)
+	@rm -rf $(BLDDIR) *.mod
 else
 	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm_build.h $(BLDDIR)/*.mod
 endif

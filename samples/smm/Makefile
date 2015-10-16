@@ -419,7 +419,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(MODULES) $(ROOTDIR)/Makefile
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR)
+	@rm -rf $(BLDDIR) *.mod
 else
 	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
 endif
