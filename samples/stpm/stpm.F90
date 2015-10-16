@@ -30,6 +30,7 @@
 !*****************************************************************************!
 
 #define XSMM_DIRECT
+!#define XSMM_DISPATCH
 
 PROGRAM stpm
 #ifdef XSMM_DIRECT
@@ -55,11 +56,11 @@ PROGRAM stpm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, tmp
   !$OMP THREADPRIVATE(tmp)
 !  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3, dmm
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz
   CHARACTER(32) :: argv
-  TYPE(C_FUNPTR) :: f
+  TYPE(C_FUNPTR) :: f1, f2, f3, f
 
   REAL(8) :: duration
 
@@ -173,22 +174,54 @@ PROGRAM stpm
     !$ duration = -omp_get_wtime()
     !$OMP END MASTER
     !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
 #ifdef XSMM_DIRECT
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
       call libxsmm_dmm_8_64_8(c_loc(dx), c_loc(a(1,1,1,i)), c_loc(tmp(1,1,1)))
       do j = 1, k
         call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tmp(1,1,j)))
       enddo
       call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tmp(1,1,1)))
+      c(:,:,:,i) = c(:,:,:,i) + tmp
+    END DO
+#else 
+#ifdef __defined(XSMM_DISPATCH) 
+    f1 = MERGE(libxsmm_mm_dispatch(m, n*k, m, T), C_NULL_FUNPTR, 0.EQ.routine)
+    f2 = MERGE(libxsmm_mm_dispatch(m, n, n, T), C_NULL_FUNPTR, 0.EQ.routine)
+    f3 = MERGE(libxsmm_mm_dispatch(m*n, n, n, T), C_NULL_FUNPTR, 0.EQ.routine)
+    if (C_ASSOCIATED(f1)) then
+      CALL C_F_PROCPOINTER(f1, dmm1)
+    else
+      write(*,*) "f1 not built"
+    endif
+    if (C_ASSOCIATED(f2)) then
+      CALL C_F_PROCPOINTER(f2, dmm2)
+    else
+      write(*,*) "f2 not built"
+    endif
+    if (C_ASSOCIATED(f3)) then
+      CALL C_F_PROCPOINTER(f3, dmm3)
+    else
+      write(*,*) "f3 not built"
+    endif
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      CALL dmm1(dx, a(1,1,1,i), tmp)
+      do j = 1, k
+          call dmm2(a(1,1,j,i), dy, tmp(1,1,j))
+      enddo
+      CALL dmm3(a(1,1,1,i), dz, tmp)
+      c(:,:,:,i) = c(:,:,:,i) + tmp
+    END DO
 #else
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
       call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tmp(:,:,1))
       do j = 1, k
           call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tmp(:,:,j))
       enddo
       call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tmp(:,:,1))
-#endif
       c(:,:,:,i) = c(:,:,:,i) + tmp
     END DO
+#endif
+#endif
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
