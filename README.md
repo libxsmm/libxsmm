@@ -9,10 +9,10 @@ LIBXSMM is a library for small matrix-matrix multiplications targeting Intel Arc
 The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f90). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
 
 ```C
-/** Initialization function to set up LIBXSMM's dispatching table. On may 
-    call this routine to avoid lazy initialization overhead in the first 
+/** Initialization function to set up LIBXSMM's dispatching table. One may
+    call this routine to avoid lazy initialization overhead in the first
     call to a LIBXSMM kernel routine */
-void libxsmm_build_static(); 
+void libxsmm_build_static();
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
 libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
@@ -151,9 +151,9 @@ The JIT backend version of the LIBXSMM can be built by:
 make JIT=1
 ```
 
-You can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed. However, explicitly requested kernels (by calling libxsmm_build_jit) are not subject to a problem size threshold. Moreover, building with JIT=2 (in fact, 1<JIT and JIT!=0) allows to solely rely on explicitly generating kernels at runtime.
+One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be performed. However, explicitly requested kernels (by calling libxsmm_build_jit) are not subject to a problem size threshold. Moreover, building with JIT=2 (in fact, 1<JIT and JIT!=0) allows to solely rely on explicitly generating kernels at runtime.
 
-Notes: Modern Linux distributions have support for transparent huge pages (THP). LIBXSMM takes care of this feature when setting execute permissions of the code
+Note: Modern Linux distributions have support for transparent huge pages (THP). LIBXSMM takes care of this feature when setting execute permissions of the code
 cache's pages. However, we measured up to 30 percent slowdown when running JITted code which was stored on THP. For systems with kernel 2.6.38 or later it is possible
 to disabled the usage of THP of mmap regions. Please modify [src/libxsmm_build.c](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_build.c#L158), if you think you got hit by this problem (you need to remove the "-c89" flag when building LIBXSMM):
 
