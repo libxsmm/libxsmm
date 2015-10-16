@@ -49,11 +49,11 @@ PROGRAM stpm
     REAL(T), POINTER :: matrix(:,:)
   END TYPE libxsmm_matrix
 
-  REAL(T), allocatable, target :: a(:,:,:,:), c(:,:,:,:)
+  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET :: d(:,:,:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:,:), tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, tmp
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, tmp
   !$OMP THREADPRIVATE(tmp, tm1, tm2, tm3)
 !  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3, dmm
@@ -123,6 +123,7 @@ PROGRAM stpm
 
   ALLOCATE(c(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
+  ALLOCATE(g1(m,n,k,s), g2(m,n,k,s), g3(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
 
   ! Initialize a, b
@@ -139,6 +140,7 @@ PROGRAM stpm
     enddo
   END DO 
   dx = 1.; dy = 1.; dz = 1.
+  g1 = 1.; g2 = 1.; g3 = 1.
   c = 0
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
@@ -167,7 +169,7 @@ PROGRAM stpm
 
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
 #ifdef XSMM_DIRECT
@@ -181,7 +183,7 @@ PROGRAM stpm
         call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tm2(1,1,j)))
       enddo
       call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tm3(1,1,1)))
-      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
+      c(:,:,:,i) =  g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
 #else 
 #ifdef XSMM_DISPATCH
@@ -214,7 +216,7 @@ PROGRAM stpm
           call dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
-      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
+      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
 #else
     !$OMP MASTER
@@ -227,7 +229,7 @@ PROGRAM stpm
           call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
       call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
+      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
 #endif
 #endif
@@ -299,9 +301,9 @@ PROGRAM stpm
 
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (2D0 * s * m * n * k * (m+n+k + .5) * 1D-9 / duration), " GFLOPS/s"
+      (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * (2 * m * n * k) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+      (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
 #if 0
