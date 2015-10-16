@@ -29,8 +29,8 @@
 !* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)                *!
 !*****************************************************************************!
 
-!#define XSMM_DIRECT
-#define XSMM_DISPATCH
+#define XSMM_DIRECT
+!#define XSMM_DISPATCH
 
 PROGRAM stpm
 #ifdef XSMM_DIRECT
@@ -52,9 +52,9 @@ PROGRAM stpm
   REAL(T), allocatable, target :: a(:,:,:,:), c(:,:,:,:)
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET :: d(:,:,:,:)
-  REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:,:)
+  REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:,:), tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, tmp
-  !$OMP THREADPRIVATE(tmp)
+  !$OMP THREADPRIVATE(tmp, tm1, tm2, tm3)
 !  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3, dmm
   INTEGER :: argc, m, n, k, ld, routine, check
@@ -168,20 +168,20 @@ PROGRAM stpm
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, f1, f2, f3)
-    ALLOCATE(tmp(m,n,k))
-    tmp = 0
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+    tm1 = 0; tm2 = 0; tm3=0
 #ifdef XSMM_DIRECT
     !$OMP MASTER
     !$ duration = -omp_get_wtime()
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_dmm_8_64_8(c_loc(dx), c_loc(a(1,1,1,i)), c_loc(tmp(1,1,1)))
+      call libxsmm_dmm_8_64_8(c_loc(dx), c_loc(a(1,1,1,i)), c_loc(tm1(1,1,1)))
       do j = 1, k
-        call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tmp(1,1,j)))
+        call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tm2(1,1,j)))
       enddo
-      call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tmp(1,1,1)))
-      c(:,:,:,i) = c(:,:,:,i) + tmp
+      call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tm3(1,1,1)))
+      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
     END DO
 #else 
 #ifdef XSMM_DISPATCH
@@ -209,12 +209,12 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL dmm1(dx, a(1,1,1,i), tmp)
+      CALL dmm1(dx, a(1,1,1,i), tm1)
       do j = 1, k
-          call dmm2(a(1,1,j,i), dy, tmp(1,1,j))
+          call dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
-      CALL dmm3(a(1,1,1,i), dz, tmp)
-      c(:,:,:,i) = c(:,:,:,i) + tmp
+      CALL dmm3(a(1,1,1,i), dz, tm3)
+      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
     END DO
 #else
     !$OMP MASTER
@@ -222,12 +222,12 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tmp(:,:,1))
+      call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tmp(:,:,j))
+          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tmp(:,:,1))
-      c(:,:,:,i) = c(:,:,:,i) + tmp
+      call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      c(:,:,:,i) = c(:,:,:,i) + tm1 + tm2 + tm3
     END DO
 #endif
 #endif
@@ -237,7 +237,7 @@ PROGRAM stpm
     !$OMP CRITICAL
     !$OMP END CRITICAL
     ! Deallocate thread-local arrays
-    DEALLOCATE(tmp)
+    DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
   ELSE
 #if 0
@@ -299,7 +299,7 @@ PROGRAM stpm
 
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (2D0 * s * m * n * k * (m+n+k-1.5) * 1D-9 / duration), " GFLOPS/s"
+      (2D0 * s * m * n * k * (m+n+k + .5) * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
       (s * (2 * m * n * k) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
