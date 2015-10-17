@@ -129,6 +129,15 @@ int main(int argc, char* argv[])
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
 
+      { // warm-up for BLAS Lib
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
+        }
+      }
+
       { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
 #if defined(_OPENMP)
