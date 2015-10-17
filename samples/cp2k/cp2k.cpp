@@ -232,8 +232,23 @@ int main(int argc, char* argv[])
       T *const expect = c;
 #endif
 
-      { // LAPACK/BLAS3 (fallback/reference)
+      { // LAPACK/BLAS3 (fallback/reference) 1. time to warm BLAS Library up
+#if defined(_OPENMP)
+#       pragma omp parallel for CP2K_SCHEDULE
+#endif
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+          }
+          add(expect, tmp, m, n, ldc); // atomic
+        }
+      }
+
+      { // LAPACK/BLAS3 (fallback/reference) 1. time to warm BLAS Library up
         fprintf(stdout, "LAPACK/BLAS...\n");
+        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE

@@ -613,7 +613,7 @@ void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             i
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
        i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
        i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-       i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST) {
+       i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST) {
     libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
                                  i_gp_reg_mapping->gp_reg_b_prefetch, i_m_blocking*(i_micro_kernel_config->datatype_size) );
   }
@@ -770,7 +770,7 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
     if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST)  {
+         i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST)  {
       /* determining how many prefetches we need in M direction as we just need one prefetch per cache line */
       unsigned int l_m_advance = 64 / ((i_micro_kernel_config->vector_length) * (i_micro_kernel_config->datatype_size)); /* 64: hardcoded cache line length */
 
