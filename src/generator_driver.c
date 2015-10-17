@@ -166,10 +166,10 @@ int main(int argc, char* argv []) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
   }
   else if (strcmp("AL2jpst", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_JPOST;
+    l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST;
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
   else {
     print_help();
