@@ -93,7 +93,7 @@ def load_mnklist(argv, format, threshold):
     else:
         sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
-    return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
+    return sorted(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
 def max_mnk(mnklist, init = 0, index = None):
@@ -109,10 +109,10 @@ def median(list_of_numbers, fallback = None, average = True):
         list_of_numbers.sort()
         size2 = size / 2
         if (average and 0 == (size - size2 * 2)):
-            result = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
+            medval = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
         else:
-            result = list_of_numbers[size2]
-        return result
+            medval = list_of_numbers[size2]
+        return min(medval, fallback) if None != fallback else medval
     elif (None != fallback):
         return fallback
     else:
