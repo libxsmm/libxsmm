@@ -54,7 +54,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define CP2K_MAX_SIZE (64 * 64)
+// aheineck: @TODO This line is broken -> 10% less performance, going back to static buffer size
+//#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+#define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -212,7 +214,8 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
-      libxsmm_build_jit(4 == sizeof(T), 23, 23, 23);
+      libxsmm_build_static();
+
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
@@ -224,9 +227,26 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
+      std::fill_n(expect, csize, 0);
+#else
+      T *const expect = c;
 #endif
 
-      { // LAPACK/BLAS3 (fallback/reference)
+      { // LAPACK/BLAS3 (warmup BLAS Library)
+#if defined(_OPENMP)
+#       pragma omp parallel for CP2K_SCHEDULE
+#endif
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+          }
+          add(expect, tmp, m, n, ldc); // atomic
+        }
+      }
+
+      { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
         std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
@@ -248,7 +268,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
       }
 
@@ -278,7 +298,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -311,7 +331,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -345,7 +365,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));

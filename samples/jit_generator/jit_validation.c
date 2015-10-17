@@ -33,7 +33,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <errno.h>
 /* this is linux specific */
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 
@@ -42,7 +45,7 @@
 /* This will be our future incldue */
 /*#include <libxsmm_generator.h>*/
 /*@TODO remove:*/
-#define LIBXSMM_CODE_PAGESIZE 4096
+#define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
 #include <generator_extern_typedefs.h>
 #include <generator_dense.h>
 #include <generator_sparse.h>
@@ -202,10 +205,10 @@ void run_jit_double( const double*                   i_a,
   gettimeofday(&l_start, NULL);
   
   /* allocate buffer for code */
-  unsigned char* l_gen_code = (unsigned char*) malloc( 32768 * sizeof(unsigned char) );
+  unsigned char* l_gen_code = (unsigned char*) malloc( 131072 * sizeof(unsigned char) );
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = (void*)l_gen_code;
-  l_generated_code.buffer_size = 32768;
+  l_generated_code.buffer_size = 131072;
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 2;
   l_generated_code.last_error = 0;
@@ -222,16 +225,37 @@ void run_jit_double( const double*                   i_a,
   }
 
   /* create executable buffer */
-  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, 4096 );
-  memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
+  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
+  int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
+  int l_fd = open("/dev/zero", O_RDWR);
+  void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  close(l_fd);
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  if (p == MAP_FAILED) {
+    fprintf(stderr, "something bad happend in mmap!\n");
+  }
+  unsigned char* l_code = (unsigned char*)p;
+  memset( l_code, 0, l_code_page_size );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  /* set memory protection to R/E */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
+  if (error == -1) {
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      fprintf(stderr, "mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      fprintf(stderr, "mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      fprintf(stderr, "mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      fprintf(stderr, "mprotect failed: Unknown Error!\n");
+    }
+    exit(-1);
+  }
 
   /* set function pointer and jitted code */
   if ( i_xgemm_desc->single_precision == 0 ) {
-    if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+    if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
       l_test_jit = (jitfun)l_code;
     } else {
       l_test_jit_pf = (jitfun_pf)l_code;
@@ -260,7 +284,7 @@ void run_jit_double( const double*                   i_a,
 
   gettimeofday(&l_start, NULL);
 
-  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+  if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < REPS; l_t++ ) {
       l_test_jit(i_a, i_b, o_c);
     }
@@ -278,7 +302,8 @@ void run_jit_double( const double*                   i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
   /* set memory protection back to R/W */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_READ | PROT_WRITE );
+  /* @TODO aheineck, this is not perfectly fine, but works for THP */
+  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
 
   free(l_gen_code);
   _mm_free(l_code);
@@ -321,15 +346,35 @@ void run_jit_float( const float*                    i_a,
   }
 
   /* create executable buffer */
-  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_CODE_PAGESIZE)+1;
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_code_pages*LIBXSMM_CODE_PAGESIZE, 4096 );
-  memset( l_code, 0, l_code_pages*LIBXSMM_CODE_PAGESIZE );
+  int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
+  int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
+  void* p = mmap(0, l_code_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  if (p == MAP_FAILED) {
+    fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
+    exit(-1);
+  }
+  unsigned char* l_code = (unsigned char*)p;
+  memset( l_code, 0, l_code_page_size );
   memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  /* set memory protection to R/E */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_EXEC | PROT_READ );
+  int error = mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
+  if (error == -1) {
+    int errsv = errno;
+    if (errsv == EINVAL) {
+      fprintf(stderr, "mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+    } else if (errsv == ENOMEM) {
+      fprintf(stderr, "mprotect failed: Internal kernel structures could not be allocated!\n");
+    } else if (errsv == EACCES) {
+      fprintf(stderr, "mprotect failed: The memory cannot be given the specified access!\n");
+    } else {
+      fprintf(stderr, "mprotect failed: Unknown Error!\n");
+    }
+    exit(-1);
+  }
 
   /* set function pointer and jitted code */
-  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+  if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
     l_test_jit = (jitfun)l_code;
   } else {
     l_test_jit_pf = (jitfun_pf)l_code;
@@ -357,7 +402,7 @@ void run_jit_float( const float*                    i_a,
 
   gettimeofday(&l_start, NULL);
 
-  if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0 ) {
+  if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < REPS; l_t++ ) {
       l_test_jit(i_a, i_b, o_c);
     }
@@ -375,87 +420,8 @@ void run_jit_float( const float*                    i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
   /* set memory protection back to R/W */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_CODE_PAGESIZE, PROT_READ | PROT_WRITE );
-
-  free(l_gen_code);
-  _mm_free(l_code);
-}
-
-void run_gold_double_temp( const double*                   i_a,
-                           const double*                   i_b,
-                           double*                         o_c ) {
-  o_c[0] = i_a[0] + i_b[0]; 
-  o_c[1] = i_a[1] + i_b[1]; 
-  o_c[2] = i_a[2] + i_b[2]; 
-  o_c[3] = i_a[3] + i_b[3];
-  o_c[4] = i_a[4] + i_b[4]; 
-  o_c[5] = i_a[5] + i_b[5]; 
-  o_c[6] = i_a[6] + i_b[6]; 
-  o_c[7] = i_a[7] + i_b[7];
-}
-
-void run_jit_double_temp( const double*                   i_a,
-                          const double*                   i_b,
-                          double*                         o_c,
-                          const char*                     i_arch,
-                          const char*                     i_prefetch ) {
-  /* define function pointer */
-  typedef void (*jitfun)(const double* a, const double* b, double* c);
-
-  /* allocate buffer for code */
-  unsigned char* l_gen_code = (unsigned char*) malloc( 4096 * sizeof(unsigned char) );
-  libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = (void*)l_gen_code;
-  l_generated_code.buffer_size = 4096;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 2;
-  l_generated_code.last_error = 0;
-
-  /* define gp register mapping */
-  libxsmm_gp_reg_mapping l_gp_reg_mapping;
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
-  /* machting calling convention on Linux */
-  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RSI;
-  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDI;
-  l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
-  l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
-  l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R12;
-  l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R12;
-
-  libxsmm_generator_dense_x86_open_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
-
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 0, 0, 0 );
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 0 );
-  libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0, 0, 'y', 1, 0, 1 );
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 0, 0, 0 );
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 1, 0, 0 );
-  libxsmm_instruction_vec_compute_reg( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VADDPD, 'y', 0, 1, 1);
-  libxsmm_instruction_vec_move( &l_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVAPD, l_gp_reg_mapping.gp_reg_c, LIBXSMM_X86_GP_REG_UNDEF, 0, 32, 'y', 1, 0, 1 );
-
-  libxsmm_generator_dense_x86_close_instruction_stream( &l_generated_code, &l_gp_reg_mapping, i_arch, i_prefetch );
-
-  printf("size of generated code: %i\n", l_generated_code.code_size );
-
-  /* create executable buffer */
-  unsigned char* l_code = (unsigned char*) _mm_malloc( l_generated_code.code_size*sizeof(unsigned char), 4096 );
-  memcpy( l_code, l_gen_code, l_generated_code.code_size );
-  mprotect( (void*)l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ | PROT_WRITE );
-  
-  /* set function pointer and jitted code */
-  jitfun l_test_jit = (jitfun)l_code;
-  l_test_jit(i_a, i_b, o_c);
-
-
-  /* write buffer for manual decode as binary to a file */
-  FILE *l_byte_code = fopen( "bytecode.bin", "wb");
-
-  if ( l_byte_code != NULL ){
-    fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
-    fclose( l_byte_code );
-  } else {
-    /* error */
-  }
+  /* @TODO aheineck, this is not perfectly fine, but works for THP */
+  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
 
   free(l_gen_code);
   _mm_free(l_code);
@@ -506,9 +472,8 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  char* l_arch;
-  char* l_prefetch;
-  char* l_precision;
+  char* l_arch = NULL;
+  char* l_precision = NULL;
   int l_m = 0;
   int l_n = 0;
   int l_k = 0;
@@ -520,6 +485,7 @@ int main(int argc, char* argv []) {
   int l_alpha = 0;
   int l_beta = 0;
   int l_single_precision = 0;
+  int l_prefetch = 0;
     
   /* xgemm sizes */
   l_m = atoi(argv[1]);
@@ -537,19 +503,37 @@ int main(int argc, char* argv []) {
 
   /* arch specific stuff */
   l_arch = argv[11];
-  l_prefetch = argv[12];
   l_precision = argv[13];
 
-  /* check value of prefetch flag */
-  if ( (strcmp(l_prefetch, "nopf") != 0 )           &&
-       (strcmp(l_prefetch, "pfsigonly") != 0 )      &&
-       (strcmp(l_prefetch, "BL2viaC") != 0 )        &&
-       (strcmp(l_prefetch, "curAL2") != 0 )         &&
-       (strcmp(l_prefetch, "curAL2_BL2viaC") != 0 ) &&
-       (strcmp(l_prefetch, "AL2") != 0 )            &&
-       (strcmp(l_prefetch, "AL2_BL2viaC") != 0 )    &&
-       (strcmp(l_prefetch, "AL2jpst") !=0 )         &&
-       (strcmp(l_prefetch, "AL2jpst_BL2viaC") !=0 )    ) {
+  /* set value of prefetch flag */
+  if (strcmp("nopf", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_NONE;
+  }
+  else if (strcmp("pfsigonly", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_SIGNATURE;
+  }
+  else if (strcmp("BL2viaC", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
+  }
+  else if (strcmp("curAL2", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  }
+  else if (strcmp("curAL2_BL2viaC", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
+  }
+  else if (strcmp("AL2", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2;
+  }
+  else if (strcmp("AL2_BL2viaC", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+  }
+  else if (strcmp("AL2jpst", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2_JPOST;
+  }
+  else if (strcmp("AL2jpst_BL2viaC", argv[12]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST;
+  }
+  else {
     print_help();
     return -1;
   }  
@@ -607,7 +591,7 @@ int main(int argc, char* argv []) {
     l_xgemm_desc.aligned_c = 1;
   }
   l_xgemm_desc.single_precision = l_single_precision;
-  strcpy ( l_xgemm_desc.prefetch, l_prefetch );
+  l_xgemm_desc.prefetch = l_prefetch;
 
   /* init data structures */
   double* l_a_d; 
@@ -645,7 +629,6 @@ int main(int argc, char* argv []) {
 
   /* run C */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    /*run_gold_double_temp( l_a_d, l_b_d, l_c_gold_d );*/
     run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
@@ -653,7 +636,6 @@ int main(int argc, char* argv []) {
 
   /* run jit */
   if ( l_xgemm_desc.single_precision == 0 ) {
-    /*run_jit_double_temp( l_a_d, l_b_d, l_c_d, l_arch, l_prefetch );*/
     run_jit_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc, l_arch );
   } else {
     run_jit_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc, l_arch );

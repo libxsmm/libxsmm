@@ -53,11 +53,15 @@
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"
 
+
 /** Explictly initializes the library; can be used to pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static();
 
-/** JIT a function and make it available for later dispatch. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_jit(int single_precision, int m, int n, int k);
+/** Generic type of a function. */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_function)(LIBXSMM_VARIADIC);
+
+/** JIT-generate a function and make it available for later dispatch. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int single_precision, int m, int n, int k);
 
 /** Type of a function generated for a specific M, N, and K. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c

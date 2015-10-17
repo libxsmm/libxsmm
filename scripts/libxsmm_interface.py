@@ -80,7 +80,7 @@ if __name__ == "__main__":
             "AVG_N":          avgn, \
             "AVG_K":          avgk, \
             "BETA":           beta, \
-            "JIT":            1 if (0 != jit) else 0, \
+            "JIT":            jit, \
             "MNK_INTERFACE_LIST": "" \
         }
 
