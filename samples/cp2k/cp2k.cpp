@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
       }
 
@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -331,7 +331,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -365,7 +365,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
