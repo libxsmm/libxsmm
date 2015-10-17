@@ -143,15 +143,15 @@ def align_value(n, typesize, alignment):
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    format = int(sys.argv[1])
-    if (3 < argc and -1 == format): # new input format
-        dims = load_mnklist(str(*sys.argv[3:]), format, int(sys.argv[2]))
+    arg1 = int(sys.argv[1])
+    if (3 < argc and -1 == arg1): # new input format
+        dims = load_mnklist(str(*sys.argv[3:]), arg1, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (5 < argc and -2 == format): # legacy format
-        dims = load_mnklist(sys.argv[2:], format, int(sys.argv[2]))
+    elif (5 < argc and -2 == arg1): # legacy format
+        dims = load_mnklist(sys.argv[2:], arg1, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (4 == argc and 0 < format):
-        print align_value(int(sys.argv[2]), format, sanitize_alignment(int(sys.argv[3])))
+    elif (4 == argc and 0 < arg1):
+        print align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3])))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

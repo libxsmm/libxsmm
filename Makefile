@@ -358,6 +358,7 @@ install: all clean
 .PHONY: header
 header: cheader fheader
 
+# inherit from the common ALIGNMENT in case ALIGNED_*=1 is given
 ALIGNED_ST = $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))
 ALIGNED_LD = $(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT))))
 
@@ -482,8 +483,8 @@ else # column-major
 	$(eval NVALUE2 := $(NVALUE))
 endif
 ifneq (0,$(ALIGNED_STORES)) # aligned stores
-	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE2) $(ALIGNED_ST)))
-	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE2) $(ALIGNED_ST)))
+	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNED_ST)))
+	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNED_ST)))
 else # unaligned stores
 	$(eval LDCDP := $(MVALUE2))
 	$(eval LDCSP := $(MVALUE2))
