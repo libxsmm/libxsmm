@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
       T *const expect = c;
 #endif
 
-      { // LAPACK/BLAS3 (fallback/reference) 1. time to warm BLAS Library up
+      { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
         }
       }
 
-      { // LAPACK/BLAS3 (fallback/reference) 1. time to warm BLAS Library up
+      { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
         std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
