@@ -358,6 +358,7 @@ install: all clean
 .PHONY: header
 header: cheader fheader
 
+# inherit from the common ALIGNMENT in case ALIGNED_*=1 is given
 ALIGNED_ST = $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))
 ALIGNED_LD = $(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT))))
 
@@ -482,8 +483,8 @@ else # column-major
 	$(eval NVALUE2 := $(NVALUE))
 endif
 ifneq (0,$(ALIGNED_STORES)) # aligned stores
-	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py 8 $(MVALUE2) $(ALIGNED_ST)))
-	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py 4 $(MVALUE2) $(ALIGNED_ST)))
+	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNED_ST)))
+	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNED_ST)))
 else # unaligned stores
 	$(eval LDCDP := $(MVALUE2))
 	$(eval LDCSP := $(MVALUE2))
@@ -673,7 +674,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 		-e '/!\[.\+\](.\+)/{n;d}' \
 		$(ROOTDIR)/README.md | \
 	pandoc \
-		--latex-engine=xelatex --listings --template=$(TEMPLATE) \
+		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -697,13 +698,13 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
+		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
 		-e 's/\[\[.\+\](.\+)\]//' \
 		-e '/!\[.\+\](.\+)/{n;d}' \
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
-		--latex-engine=xelatex \
-		--template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures \
+		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
+		-f markdown_github+implicit_figures+all_symbols_escapable \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
 		-V author-meta="Hans Pabst" \

@@ -93,7 +93,7 @@ def load_mnklist(argv, format, threshold):
     else:
         sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
-    return sorted(filter(lambda mnk: (0 >= threshold or threshold >= (mnk[0] * mnk[1] * mnk[2])) and (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
+    return sorted(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
 def max_mnk(mnklist, init = 0, index = None):
@@ -109,10 +109,10 @@ def median(list_of_numbers, fallback = None, average = True):
         list_of_numbers.sort()
         size2 = size / 2
         if (average and 0 == (size - size2 * 2)):
-            result = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
+            medval = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
         else:
-            result = list_of_numbers[size2]
-        return result
+            medval = list_of_numbers[size2]
+        return min(medval, fallback) if None != fallback else medval
     elif (None != fallback):
         return fallback
     else:
@@ -143,15 +143,15 @@ def align_value(n, typesize, alignment):
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    format = int(sys.argv[1])
-    if (3 < argc and -1 == format): # new input format
-        dims = load_mnklist(str(*sys.argv[3:]), format, int(sys.argv[2]))
+    arg1 = int(sys.argv[1])
+    if (3 < argc and -1 == arg1): # new input format
+        dims = load_mnklist(str(*sys.argv[3:]), arg1, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (5 < argc and -2 == format): # legacy format
-        dims = load_mnklist(sys.argv[2:], format, int(sys.argv[2]))
+    elif (5 < argc and -2 == arg1): # legacy format
+        dims = load_mnklist(sys.argv[2:], arg1, int(sys.argv[2]))
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (4 == argc and 0 < format):
-        print align_value(int(sys.argv[2]), format, sanitize_alignment(int(sys.argv[3])))
+    elif (4 == argc and 0 < arg1):
+        print align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3])))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

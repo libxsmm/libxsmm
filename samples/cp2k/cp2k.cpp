@@ -232,8 +232,23 @@ int main(int argc, char* argv[])
       T *const expect = c;
 #endif
 
-      { // LAPACK/BLAS3 (fallback/reference)
+      { // LAPACK/BLAS3 (warmup BLAS Library)
+#if defined(_OPENMP)
+#       pragma omp parallel for CP2K_SCHEDULE
+#endif
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+          }
+          add(expect, tmp, m, n, ldc); // atomic
+        }
+      }
+
+      { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
+        std::fill_n(expect, csize, 0);
 #if defined(_OPENMP)
         double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -253,7 +268,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
       }
 
@@ -283,7 +298,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -316,7 +331,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
@@ -350,7 +365,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.1f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #endif
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
