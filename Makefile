@@ -674,7 +674,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 		-e '/!\[.\+\](.\+)/{n;d}' \
 		$(ROOTDIR)/README.md | \
 	pandoc \
-		--latex-engine=xelatex --listings --template=$(TEMPLATE) \
+		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -698,13 +698,13 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
+		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
 		-e 's/\[\[.\+\](.\+)\]//' \
 		-e '/!\[.\+\](.\+)/{n;d}' \
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
-		--latex-engine=xelatex \
-		--template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures \
+		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
+		-f markdown_github+implicit_figures+all_symbols_escapable \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
 		-V author-meta="Hans Pabst" \
