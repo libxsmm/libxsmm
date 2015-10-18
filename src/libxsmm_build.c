@@ -244,7 +244,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k)
 {
-#if LIBXSMM_JIT == 1 /* automatic JITting */
+#if 1 == (LIBXSMM_JIT) || 0 > (LIBXSMM_JIT) /* automatic JITting */
   return (libxsmm_smm_function)libxsmm_build_jit(1/*single precision*/, m, n, k);
 #else /* explicit JITting and static code generation */
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the librar, this is lazy initializationy */
@@ -262,7 +262,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k)
 {
-#if LIBXSMM_JIT == 1 /* automatic JITting */
+#if 1 == (LIBXSMM_JIT) || 0 > (LIBXSMM_JIT) /* automatic JITting */
   return (libxsmm_dmm_function)libxsmm_build_jit(0/*double precision*/, m, n, k);
 #else /* explicit JITting and static code generation */
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the library, this is lazy initialization */
