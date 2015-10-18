@@ -122,6 +122,14 @@ MODULE LIBXSMM
       INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
     END FUNCTION
 
+    ! Build explicitly a kernel, do not rely on automatic JIT in dispatch, do not return the function pointer
+    ! However, the JIT function is available for dispatch
+    ! @TODO not all versions of gfrotran seem to like this -> commented for now
+    !PURE SUBROUTINE libxsmm_build_jit_only(single_precision, m, n, k) BIND(C, name="libxsmm_build_jit")
+    !  IMPORT :: C_INT
+    !  INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
+    !END SUBROUTINE
+
     ! Query the pointer of a generated function; zero if it does not exist, single-precision.
     TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch(m, n, k) BIND(C)
       IMPORT :: C_FUNPTR, C_INT

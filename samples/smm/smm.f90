@@ -98,7 +98,7 @@ PROGRAM smm
   END DO 
   c(:,:) = 0
 
-  WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 1) 
+  WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3) 
 
   ! Init LIBXSMM
   CALL libxsmm_build_static()
