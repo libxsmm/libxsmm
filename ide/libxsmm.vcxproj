@@ -31,19 +31,16 @@
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
-    <ClInclude Include="..\src\libxsmm_dispatch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\build\libxsmm.c" />
     <ClCompile Include="..\build\mm_1_1_1.c" />
     <ClCompile Include="..\build\mm_23_23_23.c" />
     <ClCompile Include="..\build\mm_2_2_2.c" />
     <ClCompile Include="..\build\mm_3_3_3.c" />
     <ClCompile Include="..\build\mm_4_4_4.c" />
     <ClCompile Include="..\build\mm_5_5_5.c" />
-    <ClCompile Include="..\src\libxsmm_build_jit.c" />
+    <ClCompile Include="..\src\libxsmm_build.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
-    <ClCompile Include="..\src\libxsmm_dispatch.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\libxsmm.template.f90" />
@@ -153,7 +150,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -193,7 +190,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -238,7 +235,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -279,7 +276,7 @@
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -319,7 +316,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -357,7 +354,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>

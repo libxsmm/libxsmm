@@ -21,9 +21,6 @@
     <ClInclude Include="..\src\libxsmm_crc32.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dispatch.h">
-      <Filter>src</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">
@@ -41,19 +38,13 @@
     <ClCompile Include="..\build\mm_23_23_23.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\build\libxsmm.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\build\mm_1_1_1.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_crc32.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dispatch.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_build_jit.c">
+    <ClCompile Include="..\src\libxsmm_build.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

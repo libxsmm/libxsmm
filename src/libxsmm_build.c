@@ -40,7 +40,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#if !defined(_WIN32)
+#if defined(_WIN32)
+# include <Windows.h>
+#else
 # include <fcntl.h>
 # include <unistd.h>
 # include <sys/mman.h>
