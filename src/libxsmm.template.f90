@@ -140,6 +140,16 @@ MODULE LIBXSMM
       IMPORT :: C_FUNPTR, C_INT
       INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k
     END FUNCTION$MNK_INTERFACE_LIST
+
+    ! Non-pure function returning the current clock tick using a platform-specific resolution.
+    INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
+      IMPORT :: C_LONG_LONG
+    END FUNCTION
+    ! Non-pure function (timer freq. may vary) returning the duration between two ticks (seconds).
+    REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(tick0, tick1) BIND(C)
+      IMPORT :: C_LONG_LONG, C_DOUBLE
+      INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
+    END FUNCTION
   END INTERFACE
 
 CONTAINS

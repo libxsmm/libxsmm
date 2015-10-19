@@ -15,11 +15,23 @@
     <ClInclude Include="..\include\libxsmm_macros.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm.template.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_crc32.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm.template.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_fallback.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_generator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_prefetch.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_timer.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -47,9 +59,15 @@
     <ClCompile Include="..\src\libxsmm_build.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_timer.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\libxsmm.template.f90">
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\include\libxsmm.f90">
       <Filter>include</Filter>
     </None>
   </ItemGroup>

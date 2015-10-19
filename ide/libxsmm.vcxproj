@@ -28,7 +28,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h" />
+    <ClInclude Include="..\include\libxsmm_fallback.h" />
+    <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
+    <ClInclude Include="..\include\libxsmm_prefetch.h" />
+    <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
   </ItemGroup>
@@ -41,8 +45,10 @@
     <ClCompile Include="..\build\mm_5_5_5.c" />
     <ClCompile Include="..\src\libxsmm_build.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
+    <ClCompile Include="..\src\libxsmm_timer.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\include\libxsmm.f90" />
     <None Include="..\src\libxsmm.template.f90" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
