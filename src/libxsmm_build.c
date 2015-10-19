@@ -155,10 +155,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         strcpy(l_arch, "knl");
 #endif
         /* allocate buffer for code */
-        unsigned char* l_gen_code = (unsigned char*) malloc(131072 * sizeof(unsigned char));
+        unsigned char *const l_gen_code = (unsigned char*)malloc(131072 * sizeof(unsigned char));
         libxsmm_generated_code l_generated_code;
         l_generated_code.generated_code = (void*)l_gen_code;
-        l_generated_code.buffer_size = 131072;
+        l_generated_code.buffer_size = 0 != l_gen_code ? 131072 : 0;
         l_generated_code.code_size = 0;
         l_generated_code.code_type = 2;
         l_generated_code.last_error = 0;
@@ -168,33 +168,35 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 
         /* handle an eventual error */
         if (l_generated_code.last_error != 0) {
+#if !defined(NDEBUG) /* library code is usually expected to be mute */
           fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
-          exit(-1);
+#endif
+          free(l_gen_code);
+          return 0;
         }
 
         /* create executable buffer */
-        int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
-        int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
-        int l_fd = open("/dev/zero", O_RDWR);
-        void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+        const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
+        const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
+        const int l_fd = open("/dev/zero", O_RDWR);
+        void *const p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
         close(l_fd);
         /* explicitly disable THP for this memory region, kernel 2.6.38 or higher!, remove -c89 when compiling LIBXSMM 
         madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
-#if !defined(NDEBUG)
         if (p == MAP_FAILED) {
+#if !defined(NDEBUG) /* library code is usually expected to be mute */
           fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
-          exit(-1);
-        }
 #endif
-        unsigned char* l_code = (unsigned char*)p;
+          free(l_gen_code);
+          return 0;
+        }
+
+        unsigned char *const l_code = (unsigned char*)p;
         /*memset( l_code, 0, l_code_page_size );*/
         memcpy( l_code, l_gen_code, l_generated_code.code_size );
-#if !defined(NDEBUG)
-        int error = 
-#endif
-        mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
-# if !defined(NDEBUG)
+        const int error = mprotect( (void*)l_code, l_code_page_size, PROT_EXEC | PROT_READ );
         if (error == -1) {
+#if !defined(NDEBUG)
           int errsv = errno;
           if (errsv == EINVAL) {
             fprintf(stderr, "LIBXSMM: mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
@@ -205,21 +207,22 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           } else {
             fprintf(stderr, "LIBXSMM: mprotect failed: Unknown Error!\n");
           }
-          exit(-1);
+#endif
+          free(l_gen_code);
+          return 0;
         }
 
+#if !defined(NDEBUG)
         /* write buffer for manual decode as binary to a file */
         char l_objdump_name[512];
         sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
                  l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
                  l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
                  l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch ); 
-        FILE *l_byte_code = fopen( l_objdump_name, "wb");
+        FILE *const l_byte_code = fopen( l_objdump_name, "wb");
         if ( l_byte_code != NULL ) {
           fwrite( (const void*)l_gen_code, 1, l_generated_code.code_size, l_byte_code);
           fclose( l_byte_code );
-        } else {
-          /* error */
         }
 #endif
         /* free temporary buffer, and prepare return value */
@@ -235,7 +238,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
     LIBXSMM_LOCK_RELEASE(libxsmm_build_lock[lock]);
 #endif
 #else
-    fprintf(stderr, "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!\n");
+#   error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
 #endif /*_WIN32*/
   }
 #endif
