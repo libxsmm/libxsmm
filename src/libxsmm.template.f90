@@ -124,7 +124,7 @@ MODULE LIBXSMM
 
     ! Build explicitly a kernel, do not rely on automatic JIT in dispatch, do not return the function pointer
     ! However, the JIT function is available for dispatch
-    ! @TODO not all versions of gfrotran seem to like this -> commented for now
+    ! @TODO not all versions of gfortran seem to like this -> commented for now
     !PURE SUBROUTINE libxsmm_build_jit_only(single_precision, m, n, k) BIND(C, name="libxsmm_build_jit")
     !  IMPORT :: C_INT
     !  INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
