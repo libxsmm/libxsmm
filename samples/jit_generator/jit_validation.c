@@ -301,12 +301,7 @@ void run_jit_double( const double*                   i_a,
   printf("%fs for executing jit\n", l_runtime);
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
-  /* set memory protection back to R/W */
-  /* @TODO aheineck, this is not perfectly fine, but works for THP */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
-
   free(l_gen_code);
-  _mm_free(l_code);
 }
 
 void run_jit_float( const float*                    i_a,
@@ -348,7 +343,9 @@ void run_jit_float( const float*                    i_a,
   /* create executable buffer */
   int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   int l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
-  void* p = mmap(0, l_code_pages, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  int l_fd = open("/dev/zero", O_RDWR);
+  void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  close(l_fd);
   /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
   madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
   if (p == MAP_FAILED) {
@@ -419,12 +416,7 @@ void run_jit_float( const float*                    i_a,
   printf("%fs for executing jit\n", l_runtime);
   printf("%f GFLOPS for jit\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 
-  /* set memory protection back to R/W */
-  /* @TODO aheineck, this is not perfectly fine, but works for THP */
-  mprotect( (void*)l_code, l_code_pages*LIBXSMM_BUILD_PAGESIZE, PROT_READ | PROT_WRITE );
-
   free(l_gen_code);
-  _mm_free(l_code);
 }
 
 void max_error_double( const double*                   i_c,
@@ -528,10 +520,10 @@ int main(int argc, char* argv []) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
   }
   else if (strcmp("AL2jpst", argv[12]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_JPOST;
+    l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[12]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPOST;
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
   else {
     print_help();
@@ -640,7 +632,7 @@ int main(int argc, char* argv []) {
   } else {
     run_jit_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc, l_arch );
   }  
-  
+ 
   /* test result */
   if ( l_xgemm_desc.single_precision == 0 ) {
     max_error_double( l_c_d, l_c_gold_d, &l_xgemm_desc );
