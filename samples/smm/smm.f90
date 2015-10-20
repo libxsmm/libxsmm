@@ -42,10 +42,10 @@ PROGRAM smm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
+  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorphic variant
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm     ! double precision variant
   INTEGER :: argc, m, n, k, ld, routine, check
-  INTEGER(8) :: i, s
+  INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f
 
@@ -108,7 +108,7 @@ PROGRAM smm
   IF (0.NE.check) THEN
     ALLOCATE(d(m,n))
     d(:,:) = 0
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, d, m, n, k)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(a, b, d, m, n, k)
     ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     tmp(:,:) = 0
     !$OMP DO
@@ -125,18 +125,18 @@ PROGRAM smm
 
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
     ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     tmp(:,:) = 0
     !$OMP MASTER
-    !$ duration = -omp_get_wtime()
+    start = libxsmm_timer_tick()
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
       CALL libxsmm_mm(m, n, k, a(:,:,i), b(:,:,i), tmp)
     END DO
     !$OMP MASTER
-    !$ duration = duration + omp_get_wtime()
+    duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
     !$OMP END MASTER
     !$OMP CRITICAL
     c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
@@ -150,11 +150,11 @@ PROGRAM smm
       CALL C_F_PROCPOINTER(f, xmm)     ! Fully polymorph variant
 !      CALL C_F_PROCPOINTER(f, dmm)     ! double precision variant
       WRITE(*, "(A)") "Streamed... (specialized)"
-      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm, xmm)
+      !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm, xmm)
       ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       tmp(:,:) = 0
       !$OMP MASTER
-      !$ duration = -omp_get_wtime()
+      start = libxsmm_timer_tick()
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 3), UBOUND(a, 3)
@@ -162,7 +162,7 @@ PROGRAM smm
 !        CALL dmm(a(:,:,i), b(:,:,i), tmp)                          ! double precision variant
       END DO
       !$OMP MASTER
-      !$ duration = duration + omp_get_wtime()
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
       !$OMP END MASTER
       !$OMP CRITICAL
       c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
@@ -176,18 +176,18 @@ PROGRAM smm
       ELSE
         WRITE(*, "(A)") "Streamed... (optimized)"
       ENDIF
-      !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+      !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
       ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
       tmp(:,:) = 0
       !$OMP MASTER
-      !$ duration = -omp_get_wtime()
+      start = libxsmm_timer_tick()
       !$OMP END MASTER
       !$OMP DO
       DO i = LBOUND(a, 3), UBOUND(a, 3)
         CALL libxsmm_imm(m, n, k, a(:,:,i), b(:,:,i), tmp)
       END DO
       !$OMP MASTER
-      !$ duration = duration + omp_get_wtime()
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
       !$OMP END MASTER
       !$OMP CRITICAL
       c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)

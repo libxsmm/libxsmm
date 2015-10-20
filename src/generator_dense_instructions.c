@@ -280,7 +280,7 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
        buf[i++] = 0x48 + l_maskingoff;
     }
     buf[i++] = 0x10 + l_aligned + l_penultimate;
-    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) )
+    if ( /*(i_gp_reg_idx>=0) &&*/ i_gp_reg_idx<=15 )
     {
        buf[i++] = 0x04 + 8*l_vregnum;
        l_place = i-1;
@@ -1457,7 +1457,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     }
     if ( (i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) && 
          (i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) && 
-         (i_gp_reg_base < 0) && (i_gp_reg_base > 15) &&
+         /*(i_gp_reg_base < 0) &&*/ (i_gp_reg_base > 15) &&
          (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) ) 
     {
        fprintf(stderr,"libxsmm_instruction_prefetch: i_gp_reg_base error in libxsmm_instruction_prefetch\n");
@@ -1465,7 +1465,7 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     }
     if ( (i_gp_reg_idx  < LIBXSMM_X86_GP_REG_RAX) && 
          (i_gp_reg_idx  > LIBXSMM_X86_GP_REG_R15) && 
-         (i_gp_reg_idx  < 0) && (i_gp_reg_idx  > 15) &&
+         /*(i_gp_reg_idx  < 0) &&*/ (i_gp_reg_idx  > 15) &&
          (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) ) 
     {
        fprintf(stderr,"libxsmm_instruction_prefetch: i_gp_reg_idx error in libxsmm_instruction_prefetch\n");
