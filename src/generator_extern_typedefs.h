@@ -26,29 +26,52 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef GENERATOR_EXTERN_TYPEDEFS_H
+#define GENERATOR_EXTERN_TYPEDEFS_H
 
-#ifndef GENERATOR_GLOBAL_DEFINES_H
-#define GENERATOR_GLOBAL_DEFINES_H
+#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, PRECISION, PREFETCH, ALIGN_LD, ALIGN_ST, TRANSA, TRANSB, ALPHA, BETA, M, N, K, LDA, LDB, LDC) \
+  (DESCRIPTOR); (DESCRIPTOR).single_precision = (PRECISION); (DESCRIPTOR).prefetch = (PREFETCH); \
+  (DESCRIPTOR).trans_a = (TRANSA); (DESCRIPTOR).trans_b = (TRANSB); \
+  (DESCRIPTOR).alpha = (ALPHA); (DESCRIPTOR).beta = (BETA); \
+  (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
+  (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); \
+  (DESCRIPTOR).aligned_a = (ALIGN_LD); (DESCRIPTOR).aligned_c = (ALIGN_ST)
 
-/* struct for storing the current xgemm description
-   which should be generated */
+#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE (12 * sizeof(int) + 2)
+
+/* Enumerate the available prefetch schemes. */
+typedef enum libxsmm_prefetch_type {
+  /* No prefetching and no prefetch fn. signature. */
+  LIBXSMM_PREFETCH_NONE               = 0,
+  /* Only function prefetch signature. */
+  LIBXSMM_PREFETCH_SIGNATURE          = 1,
+  /* Prefetch PA using accesses to A. */
+  LIBXSMM_PREFETCH_AL2                = 2,
+  /* Prefetch PA (aggressive). */
+  LIBXSMM_PREFETCH_AL2_JPST           = 4,
+  /* Prefetch PB using accesses to C. */
+  LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
+  /* Prefetch A ahead. */
+  LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
+} libxsmm_prefetch_type;
+
+/* Structure storing the xgemm argument description.
+   The binary data layout must be fixed across
+   translation units regardless of the
+   alignment and the padding. */
 typedef struct libxsmm_xgemm_descriptor_struct {
-  unsigned int m;
-  unsigned int n;
-  unsigned int k;
-  unsigned int lda;
-  unsigned int ldb;
-  unsigned int ldc;
-  int alpha;
-  int beta;
+  unsigned int m, n, k, lda, ldb, ldc;
+  unsigned int aligned_a, aligned_c;
+  unsigned int single_precision;
+  unsigned int prefetch;
+  int alpha, beta;
   char trans_a;
   char trans_b;
-  unsigned int aligned_a;
-  unsigned int aligned_c;
-  unsigned int single_precision;
-  char prefetch[32]; /* TODO do this with ints as well */
 } libxsmm_xgemm_descriptor;
 
 /* struct for storing the generated code
@@ -69,7 +92,7 @@ typedef struct libxsmm_generated_code_struct {
 
 /* function to translate LIBXSMM Generator error codes
    to error messages */
-char* libxsmm_strerror( const unsigned int      i_error_code );
+const char* libxsmm_strerror( const unsigned int      i_error_code );
 
-#endif /* GENERATOR_GLOBAL_DEFINES_H */
+#endif /* GENERATOR_EXTERN_TYPEDEFS_H */
 

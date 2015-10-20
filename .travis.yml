@@ -12,10 +12,18 @@ compiler:
   - gcc
 
 script: 
- - make realclean
- - bash make.sh -cp2k -j
- - cd samples/cp2k/
- - make clean
- - make
- - bash cp2k-perf.sh
+ - make -e realclean
+ - bash make.sh -cia -j
+ - make -e samples
+ - make -e test
+ - cd samples/cp2k
  - bash test.sh
+ - cd ../..
+
+ - make -e realclean
+ - bash make.sh -cib -j
+ - make -e samples
+ - make -e test
+ - cd samples/cp2k
+ - bash test.sh
+ - cd ../..

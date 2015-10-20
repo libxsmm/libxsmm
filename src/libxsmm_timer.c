@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2013-2015, Intel Corporation                                **
+** Copyright (c) 2009-2015, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,56 +28,50 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_PREFETCH_H
-#define LIBXSMM_PREFETCH_H
+#include <libxsmm_timer.h>
 
-#include "libxsmm.h"
-
-#if (0 != LIBXSMM_PREFETCH)
-# define LIBXSMM_PREFETCH_DECL(TYPE, ARG) , LIBXSMM_CONCATENATE2(LIBXSMM_UNUSED_, ARG) TYPE LIBXSMM_CONCATENATE2(LIBXSMM_PREFETCH_ARG_, ARG)
-# define LIBXSMM_USE(ARG) LIBXSMM_CONCATENATE2(LIBXSMM_USE_, ARG)
-# if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
-#   define LIBXSMM_PREFETCH_ARG_pa unused_pa
-#   define LIBXSMM_PREFETCH_ARGA(ARG) , 0
-#   define LIBXSMM_UNUSED_pa LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pa LIBXSMM_UNUSED(unused_pa)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pa pa
-#   define LIBXSMM_PREFETCH_ARGA(ARG) , ARG
-#   define LIBXSMM_UNUSED_pa
-#   define LIBXSMM_USE_pa
-# endif
-# if 0 != ((LIBXSMM_PREFETCH) & 8)
-#   define LIBXSMM_PREFETCH_ARG_pb unused_pb
-#   define LIBXSMM_PREFETCH_ARGB(ARG) , 0
-#   define LIBXSMM_UNUSED_pb LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pb LIBXSMM_UNUSED(unused_pb)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pb pb
-#   define LIBXSMM_PREFETCH_ARGB(ARG) , ARG
-#   define LIBXSMM_UNUSED_pb
-#   define LIBXSMM_USE_pb
-# endif
-# if 1
-#   define LIBXSMM_PREFETCH_ARG_pc unused_pc
-#   define LIBXSMM_PREFETCH_ARGC(ARG) , 0
-#   define LIBXSMM_UNUSED_pc LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pc LIBXSMM_UNUSED(unused_pc)
-# else
-#   define LIBXSMM_PREFETCH_ARG_pc pc
-#   define LIBXSMM_PREFETCH_ARGC(ARG) , ARG
-#   define LIBXSMM_UNUSED_pc
-#   define LIBXSMM_USE_pc
-# endif
-#else
-# define LIBXSMM_PREFETCH_DECL(TYPE, ARG)
-# define LIBXSMM_PREFETCH_ARGA(ARG)
-# define LIBXSMM_PREFETCH_ARGB(ARG)
-# define LIBXSMM_PREFETCH_ARGC(ARG)
-# define LIBXSMM_PREFETCH_ARG_pa 0
-# define LIBXSMM_PREFETCH_ARG_pb 0
-# define LIBXSMM_PREFETCH_ARG_pc 0
-# define LIBXSMM_USE(ARG)
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#if defined(_WIN32)
+# include <Windows.h>
+#elif defined(__GNUC__)
+# include <sys/time.h>
+# include <time.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
 #endif
 
-#endif /*LIBXSMM_PREFETCH_H*/
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned long long libxsmm_timer_tick()
+{
+#if defined(_WIN32)
+  LARGE_INTEGER t;
+  QueryPerformanceCounter(&t);
+  return (unsigned long long)t.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return 1000000000ULL * t.tv_sec + t.tv_nsec;
+#else
+  struct timeval t;
+  gettimeofday(&t, 0);
+  return 1000000ULL * t.tv_sec + t.tv_usec;
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1)
+{
+  const double d = (double)((tick0 < tick1 ? tick1 : tick0) - tick0);
+#if defined(_WIN32)
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  return d / (double)frequency.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+  return d * 1E-9;
+#else
+  return d * 1E-6;
+#endif
+}

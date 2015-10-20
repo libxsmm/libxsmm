@@ -90,8 +90,8 @@ int main(int argc, char* argv []) {
   char* l_matrix_file_in;
   char* l_routine_name;
   char* l_arch;
-  char* l_prefetch;
   char* l_precision;
+  int l_prefetch;
   int l_m = 0;
   int l_n = 0;
   int l_k = 0;
@@ -125,7 +125,6 @@ int main(int argc, char* argv []) {
 
   /* arch specific stuff */
   l_arch = argv[14];
-  l_prefetch = argv[15];
   l_precision = argv[16];
 
   /* some intial parameters checks */
@@ -144,16 +143,35 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  /* check value of prefetch flag */
-  if ( (strcmp(l_prefetch, "nopf") != 0 )           &&
-       (strcmp(l_prefetch, "pfsigonly") != 0 )      &&
-       (strcmp(l_prefetch, "BL2viaC") != 0 )        &&
-       (strcmp(l_prefetch, "curAL2") != 0 )         &&
-       (strcmp(l_prefetch, "curAL2_BL2viaC") != 0 ) &&
-       (strcmp(l_prefetch, "AL2") != 0 )            &&
-       (strcmp(l_prefetch, "AL2_BL2viaC") != 0 )    &&
-       (strcmp(l_prefetch, "AL2jpst") !=0 )         &&
-       (strcmp(l_prefetch, "AL2jpst_BL2viaC") !=0 )    ) {
+  /* set value of prefetch flag */
+  if (strcmp("nopf", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_NONE;
+  }
+  else if (strcmp("pfsigonly", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_SIGNATURE;
+  }
+  else if (strcmp("BL2viaC", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
+  }
+  else if (strcmp("curAL2", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  }
+  else if (strcmp("curAL2_BL2viaC", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
+  }
+  else if (strcmp("AL2", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2;
+  }
+  else if (strcmp("AL2_BL2viaC", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+  }
+  else if (strcmp("AL2jpst", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
+  }
+  else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+  }
+  else {
     print_help();
     return -1;
   }  
@@ -214,7 +232,7 @@ int main(int argc, char* argv []) {
     l_xgemm_desc.aligned_c = 1;
   }
   l_xgemm_desc.single_precision = l_single_precision;
-  strcpy ( l_xgemm_desc.prefetch, l_prefetch );
+  l_xgemm_desc.prefetch = l_prefetch;
 
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */

@@ -2,7 +2,7 @@
 
 if [[ "-cp2k" == "$1" ]] ; then
   shift
-  make $* ROW_MAJOR=0 ALIGNED_STORES=1 PREFETCH=1 MNK=" \
+  make -e $* ALIGNED_STORES=1 MNK=" \
     23, \
     6, \
     14 16 29, \
@@ -17,7 +17,25 @@ if [[ "-cp2k" == "$1" ]] ; then
     12, \
     13 26 28 32 45, \
     7 13 25 32"
+elif [[ "-nek" == "$1" ]] ; then
+  shift
+  make -e $* M="4 8 10 12 16 64 100 144" N="4 8 10 12 16 64 100 144" K="4 8 10 12" \
+    BETA=0 THRESHOLD=$((144*144*12))
+elif [[ "-nekbone" == "$1" ]] ; then
+  shift
+  make -e $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
+    BETA=0 THRESHOLD=$((324*324*18)) 
+elif [[ "-cia" == "$1" ]] ; then
+  shift
+  make -e $* MNK=" \
+    0 8 15, \
+    23 24 42"
+elif [[ "-cib" == "$1" ]] ; then
+  shift
+  make -e $* ROW_MAJOR=1 MNK=" \
+    0 8 15, \
+    23 24 42"
 else
-  make $*
+  make -e $*
 fi
 

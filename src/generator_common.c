@@ -28,48 +28,15 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include "generator_common.h"
+#include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "generator_common.h"
 
 static char libxsmm_global_error_message[512];
-
-int libxsmm_snprintf(char* io_str, const int i_size, const char* i_format, ... ) {
-  int l_return;
-
-  /* add format string checkes? */
-  /* @TODO */  
-
-  /* check for null termination and length and i_format */
-  int l_found_term = 0;
-  int l_i;
-  for ( l_i = 0; l_i < i_size; l_i++ ) {
-    if ( i_format[l_i] == '\0' ) {
-      l_found_term = 1;
-    }
-  }
-  if ( (l_found_term == 0) || (l_i > i_size) ) {
-    fprintf( stderr, "LIBXSMM FATAL ERROR: libxsmm_snprintf format has no null termination or is longer than input size!\n" );
-    exit(-1);
-  }
-
-  va_list args;
-  va_start(args, i_format);
-  l_return = vsprintf( io_str, i_format, args );
-  va_end(args);
-
-  /* this shouldn't happen, but if it does, we stop executing libxsmm */
-  if ( (l_return > i_size) || (l_return < 0) ) {
-    fprintf( stderr, "LIBXSMM FATAL ERROR: libxsmm_snprintf generated a buffer overflow or other error!\n" );
-    exit(-1);
-  }
-
-  return l_return;
-}
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
@@ -150,7 +117,7 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
   int l_max_code_length = 511;
   int l_code_length = 0;
 
-  l_code_length = libxsmm_snprintf( l_new_code, l_max_code_length, "}\n\n" );
+  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "}\n\n" );
   libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length );
 }
 
@@ -635,20 +602,20 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
   if ( io_generated_code->code_type > 1 ) {
     return;
   } else if ( io_generated_code->code_type == 1 ) {
-    l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
     if (i_xgemm_desc->single_precision == 1) {
-      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
+      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
     } else {
-      if ( strcmp(i_xgemm_desc->prefetch, "nopf") == 0) {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
+      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
-        l_code_length = libxsmm_snprintf(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
     }
   }
@@ -660,107 +627,107 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code ) {
   io_generated_code->last_error = i_error_code;
 #ifndef NDEBUG
-  fprintf( stderr, libxsmm_strerror( i_error_code ) );
+  fprintf( stderr, "%s\n", libxsmm_strerror( i_error_code ) );
 #endif
 }
 
-char* libxsmm_strerror( const unsigned int      i_error_code ) {
+const char* libxsmm_strerror( const unsigned int      i_error_code ) {
   int l_max_error_length = 511;
 
   switch (i_error_code) {
     case LIBXSMM_ERR_GENERAL:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: a general error occured!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: a general error occured!\n" );
       break;
     case LIBXSMM_ERR_ARCH_PREC:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture and precision!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture and precision!\n" );
       break;
     case LIBXSMM_ERR_ARCH:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture!\n" );
       break;
     case LIBXSMM_ERR_LDA:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda need to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda need to be bigger than m!\n" );
       break;
     case LIBXSMM_ERR_LDB:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb need to be bigger than k!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb need to be bigger than k!\n" );
       break;
     case LIBXSMM_ERR_LDC:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc need to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc need to be bigger than m!\n" );
       break;
     case LIBXSMM_ERR_SPARSE_GEN:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
       break;
     case LIBXSMM_ERR_CSC_INPUT:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
       break;   
     case LIBXSMM_ERR_CSC_READ_LEN:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
       break;   
     case LIBXSMM_ERR_CSC_READ_DESC:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
       break; 
     case LIBXSMM_ERR_CSC_READ_ELEMS:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
       break; 
     case LIBXSMM_ERR_CSC_LEN:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
       break; 
     case LIBXSMM_ERR_N_BLOCK:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid N blocking in microkernel!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid N blocking in microkernel!\n" );
       break; 
     case LIBXSMM_ERR_M_BLOCK:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
       break; 
     case LIBXSMM_ERR_NO_IMCI:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: IMCI architecture requested but called for a different on!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: IMCI architecture requested but called for a different on!\n" );
       break; 
     case LIBXSMM_ERR_REG_BLOCK:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
       break; 
     case LIBXSMM_ERR_VEC_MOVE_IMCI:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid vec move instruction for IMCI instruction replacement!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid vec move instruction for IMCI instruction replacement!\n" );
       break; 
     case LIBXSMM_ERR_APPEND_STR:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: append code as string was called for generation mode which does not support this!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: append code as string was called for generation mode which does not support this!\n" );
       break; 
     case LIBXSMM_ERR_ALLOC:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: memory allocation failed!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: memory allocation failed!\n" );
       break; 
     case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: fused memory broadcast is not supported on other platforms than AVX512/IMCI!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: fused memory broadcast is not supported on other platforms than AVX512/IMCI!\n" );
       break; 
     case LIBXSMM_ERR_CALLEE_SAVE_A:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;      
     case LIBXSMM_ERR_CALLEE_SAVE_B:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;      
     case LIBXSMM_ERR_CALLEE_SAVE_C:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;      
     case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;      
     case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;
     case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: Index + Scale addressing mode is currently not implemented!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: Index + Scale addressing mode is currently not implemented!\n");
       break;
     case LIBXSMM_ERR_UNSUPPORTED_JUMP:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: Unsupported jump instruction requested!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: Unsupported jump instruction requested!\n");
       break;
     case LIBXSMM_ERR_NO_JMPLBL_AVAIL:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: No destination jump label is available!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: No destination jump label is available!\n");
       break;
     case LIBXSMM_ERR_EXCEED_JMPLBL:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: too many nested loop, exceed loop label tracker!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: too many nested loop, exceed loop label tracker!\n");
       break;
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not alloc temporay memory for reading CSC file!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not alloc temporay memory for reading CSC file!\n");
       break;
     /* default, we didn't don't know what happend */
     default:
-      libxsmm_snprintf( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: an unknown error occured!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: an unknown error occured!\n" );
       break;
   }
 

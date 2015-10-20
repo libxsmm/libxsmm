@@ -31,7 +31,9 @@
 #ifndef LIBXSMM_CRC32_H
 #define LIBXSMM_CRC32_H
 
+#include <libxsmm_macros.h>
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const char* data, size_t size, unsigned int init);
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init);
 
 #endif /*LIBXSMM_CRC32_H*/

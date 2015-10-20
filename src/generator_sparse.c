@@ -159,8 +159,8 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n");
-    fprintf(stderr, libxsmm_strerror(l_generated_code.last_error) );
+    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
+      libxsmm_strerror(l_generated_code.last_error));
     exit(-1);
   }
 

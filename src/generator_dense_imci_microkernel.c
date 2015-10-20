@@ -99,14 +99,14 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
 
       /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-        if ( (l_n == 0) ) {
+        if ( l_n == 0 ) {
           libxsmm_instruction_prefetch( io_generated_code,
                                         LIBXSMM_X86_INSTR_VPREFETCH0,
                                         i_gp_reg_mapping->gp_reg_a, 
                                         LIBXSMM_X86_GP_REG_UNDEF, 0, 
                                         (i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size) );
         }
-        if ( (l_n == 1) ) {
+        if ( l_n == 1 ) {
           libxsmm_instruction_prefetch( io_generated_code,
                                         LIBXSMM_X86_INSTR_VPREFETCH1,
                                         i_gp_reg_mapping->gp_reg_a, 

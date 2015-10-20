@@ -36,12 +36,9 @@
 #define LIBXSMM_ALIGNED_STORES $ALIGNED_STORES
 #define LIBXSMM_ALIGNED_LOADS $ALIGNED_LOADS
 #define LIBXSMM_ALIGNED_MAX $ALIGNED_MAX
+#define LIBXSMM_PREFETCH $PREFETCH
 #define LIBXSMM_ROW_MAJOR $ROW_MAJOR
 #define LIBXSMM_COL_MAJOR $COL_MAJOR
-#define LIBXSMM_PREFETCH $PREFETCH
-#define LIBXSMM_PREFETCH_A $PREFETCH_A
-#define LIBXSMM_PREFETCH_B $PREFETCH_B
-#define LIBXSMM_PREFETCH_C $PREFETCH_C
 #define LIBXSMM_MAX_MNK $MAX_MNK
 #define LIBXSMM_MAX_M $MAX_M
 #define LIBXSMM_MAX_N $MAX_N
@@ -50,10 +47,21 @@
 #define LIBXSMM_AVG_N $AVG_N
 #define LIBXSMM_AVG_K $AVG_K
 #define LIBXSMM_BETA $BETA
-#define LIBXSMM_OFFLOAD_ENABLED $OFFLOAD
+#define LIBXSMM_JIT $JIT
 
+#include "libxsmm_macros.h"
 #include "libxsmm_prefetch.h"
 #include "libxsmm_fallback.h"
+
+
+/** Explictly initializes the library; can be used to pay for setup cost at a specific point. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static();
+
+/** Generic type of a function. */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_function)(LIBXSMM_VARIADIC);
+
+/** JIT-generate a function and make it available for later dispatch. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int single_precision, int m, int n, int k);
 
 /** Type of a function generated for a specific M, N, and K. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c
@@ -68,10 +76,6 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmm_function)(const double *LIBXSMM_
 /** Query the pointer of a generated function; zero if it does not exist. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
-
-/** JIT a function and return the pointer to the executable memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_jit_build(int m, int n, int k);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_jit_build(int m, int n, int k);
 
 /** Dispatched matrix-matrix multiplication; single-precision. */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_smm(int m, int n, int k, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c

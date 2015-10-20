@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_timer.h>
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -54,7 +55,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define CP2K_MAX_SIZE (64 * 64)
+// aheineck: @TODO This line is broken -> 10% less performance, going back to static buffer size
+//#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+#define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
@@ -183,10 +186,8 @@ int main(int argc, char* argv[])
     const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
-#if defined(_OPENMP)
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
     const double gflops = 2.0 * s * m * n * k * 1E-9;
-#endif
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
@@ -212,6 +213,8 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512_MIC)
       mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
 #endif
+      libxsmm_build_static();
+
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
@@ -223,13 +226,13 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
+      std::fill_n(expect, csize, 0);
+#else
+      T *const expect = c;
 #endif
 
-      { // LAPACK/BLAS3 (fallback/reference)
-        fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(expect, csize, 0);
+      { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
-        double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -240,21 +243,37 @@ int main(int argc, char* argv[])
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
+      }
+
+      { // LAPACK/BLAS3 (reference)
+        fprintf(stdout, "LAPACK/BLAS...\n");
+        std::fill_n(expect, csize, 0);
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-        duration += omp_get_wtime();
+#       pragma omp parallel for CP2K_SCHEDULE
+#endif
+        for (int i = 0; i < s; i += u) {
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
+          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+          }
+          add(expect, tmp, m, n, ldc); // atomic
+        }
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f ms\n", 1000.0 * duration);
-#endif
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
       { // inline an optimized implementation
         fprintf(stdout, "Inlined...\n");
         std::fill_n(c, csize, 0);
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-        double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -269,14 +288,13 @@ int main(int argc, char* argv[])
           }
           add(c, tmp, m, n, ldc); // atomic
         }
-#if defined(_OPENMP)
-        duration += omp_get_wtime();
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
-#endif
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif
@@ -285,8 +303,8 @@ int main(int argc, char* argv[])
       { // auto-dispatched
         fprintf(stdout, "Dispatched...\n");
         std::fill_n(c, csize, 0);
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-        double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -301,14 +319,13 @@ int main(int argc, char* argv[])
           }
           add(c, tmp, m, n, ldc); // atomic
         }
-#if defined(_OPENMP)
-        duration += omp_get_wtime();
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
-#endif
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif
@@ -318,8 +335,8 @@ int main(int argc, char* argv[])
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-        double duration = -omp_get_wtime();
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -334,14 +351,13 @@ int main(int argc, char* argv[])
           }
           add(c, tmp, m, n, ldc); // atomic
         }
-#if defined(_OPENMP)
-        duration += omp_get_wtime();
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
-        fprintf(stdout, "\tduration: %.1f s\n", duration);
-#endif
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
         fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
 #endif

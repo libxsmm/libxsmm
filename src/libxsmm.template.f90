@@ -43,6 +43,7 @@ MODULE LIBXSMM
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_STORES  = $ALIGNED_STORES
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_LOADS   = $ALIGNED_LOADS
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ALIGNED_MAX     = $ALIGNED_MAX
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_PREFETCH        = $PREFETCH
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_ROW_MAJOR       = $ROW_MAJOR
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_COL_MAJOR       = $COL_MAJOR
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_MAX_MNK         = $MAX_MNK
@@ -53,6 +54,7 @@ MODULE LIBXSMM
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_BETA            = $BETA
+  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_JIT             = $JIT
 
   ! Overloaded BLAS routines (single/double precision)
   INTERFACE libxsmm_blasmm
@@ -80,16 +82,16 @@ MODULE LIBXSMM
 
     PURE SUBROUTINE LIBXSMM_SMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_FLOAT
-      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: a
-      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: b
-      REAL(KIND=C_FLOAT),dimension(*),intent(out) :: c
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: a
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: b
+      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(out) :: c
     END SUBROUTINE
 
     PURE SUBROUTINE LIBXSMM_DMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_DOUBLE
-      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: a
-      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: b
-      REAL(KIND=C_DOUBLE),dimension(*),intent(out) :: c
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: a
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: b
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(out) :: c
     END SUBROUTINE
   END INTERFACE
 
@@ -110,6 +112,24 @@ MODULE LIBXSMM
       REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c(ldc,*)
     END SUBROUTINE
 
+    ! Init the library
+    PURE SUBROUTINE libxsmm_build_static() BIND(C)
+    END SUBROUTINE
+ 
+    ! Build explicitly a kernel, do not rely on automatic JIT in dispatch
+    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_build_jit(single_precision, m, n, k) BIND(C)
+      IMPORT :: C_FUNPTR, C_INT
+      INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
+    END FUNCTION
+
+    ! Build explicitly a kernel, do not rely on automatic JIT in dispatch, do not return the function pointer
+    ! However, the JIT function is available for dispatch
+    ! @TODO not all versions of gfortran seem to like this -> commented for now
+    !PURE SUBROUTINE libxsmm_build_jit_only(single_precision, m, n, k) BIND(C, name="libxsmm_build_jit")
+    !  IMPORT :: C_INT
+    !  INTEGER(C_INT), VALUE, INTENT(IN) :: single_precision, m, n, k
+    !END SUBROUTINE
+
     ! Query the pointer of a generated function; zero if it does not exist, single-precision.
     TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch(m, n, k) BIND(C)
       IMPORT :: C_FUNPTR, C_INT
@@ -120,6 +140,16 @@ MODULE LIBXSMM
       IMPORT :: C_FUNPTR, C_INT
       INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k
     END FUNCTION$MNK_INTERFACE_LIST
+
+    ! Non-pure function returning the current clock tick using a platform-specific resolution.
+    INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
+      IMPORT :: C_LONG_LONG
+    END FUNCTION
+    ! Non-pure function (timer freq. may vary) returning the duration between two ticks (seconds).
+    REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(tick0, tick1) BIND(C)
+      IMPORT :: C_LONG_LONG, C_DOUBLE
+      INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
+    END FUNCTION
   END INTERFACE
 
 CONTAINS
