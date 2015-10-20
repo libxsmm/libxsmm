@@ -115,9 +115,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
     1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
     'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)));
 
+  unsigned int hash;
   /* check if the requested xGEMM is already JITted */
-  LIBXSMM_PRAGMA_FORCEINLINE
-  const unsigned int hash = libxsmm_crc32(&l_xgemm_desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  hash = libxsmm_crc32(&l_xgemm_desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
   const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
   libxsmm_function *const cache = libxsmm_cache[single_precision&1];
   /* TODO: handle collision */
@@ -257,8 +258,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
   libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH,
     1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
     'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
-  LIBXSMM_PRAGMA_FORCEINLINE
-  const unsigned int hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+  unsigned int hash;
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
   const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
   return (libxsmm_smm_function)libxsmm_cache[1/*single precision*/][indx];
 #endif
@@ -276,8 +278,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
   libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH,
     1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
     'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
-  LIBXSMM_PRAGMA_FORCEINLINE
-  const unsigned int hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+  unsigned int hash;
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
   const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
   return (libxsmm_dmm_function)libxsmm_cache[0/*double precision*/][indx];
 #endif
