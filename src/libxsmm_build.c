@@ -181,8 +181,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         const int l_fd = open("/dev/zero", O_RDWR);
         void *const l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
         close(l_fd);
-        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher!, remove -c89 when compiling LIBXSMM 
-        madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE); */
+        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+#if defined(MADV_NOHUGEPAGE)
+        madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
+#endif
         if (l_code == MAP_FAILED) {
 #if !defined(NDEBUG) /* library code is usually expected to be mute */
           fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
