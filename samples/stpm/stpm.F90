@@ -29,15 +29,9 @@
 !* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)                *!
 !*****************************************************************************!
 
-#define XSMM_DIRECT
-!#define XSMM_DISPATCH
 
 PROGRAM stpm
-#ifdef XSMM_DIRECT
-  use libxsmm, only : LIBXSMM_DOUBLE_PRECISION, LIBXSMM_ALIGNED_MAX, LIBXSMM_DMM_FUNCTION
-#else
   USE :: LIBXSMM
-#endif
 
   !$ USE omp_lib
   IMPLICIT NONE
@@ -63,28 +57,6 @@ PROGRAM stpm
   TYPE(C_FUNPTR) :: f1, f2, f3, f
 
   REAL(8) :: duration
-
-#ifdef XSMM_DIRECT
-  interface libxsmm_dmm_8_8_8
-    subroutine libxsmm_dmm_8_8_8(a,b,c) BIND(C)
-      use iso_c_binding, only : c_ptr
-      type(c_ptr), value :: a, b, c
-    end subroutine
-  end interface
-  interface libxsmm_dmm_64_8_8
-    subroutine libxsmm_dmm_64_8_8(a,b,c) BIND(C)
-      use iso_c_binding, only : c_ptr
-      type(c_ptr), value :: a, b, c
-    end subroutine
-  end interface
-  interface libxsmm_dmm_8_64_8
-    subroutine libxsmm_dmm_8_64_8(a,b,c) BIND(C)
-      use iso_c_binding, only : c_ptr
-      type(c_ptr), value :: a, b, c
-    end subroutine
-  end interface
-#endif
-
 
   duration = 0
 
@@ -172,21 +144,31 @@ PROGRAM stpm
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
-#ifdef XSMM_DIRECT
     !$OMP MASTER
     !$ duration = -omp_get_wtime()
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_dmm_8_64_8(c_loc(dx), c_loc(a(1,1,1,i)), c_loc(tm1(1,1,1)))
+      call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-        call libxsmm_dmm_8_8_8(c_loc(a(1,1,j,i)), c_loc(dy), c_loc(tm2(1,1,j)))
+          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      call libxsmm_dmm_64_8_8(c_loc(a(1,1,1,i)), c_loc(dz), c_loc(tm3(1,1,1)))
-      c(:,:,:,i) =  g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
-#else 
-#ifdef XSMM_DISPATCH
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2, tm3)
+    !$OMP END PARALLEL
+  ELSE
+    WRITE(*, "(A)") "Streamed... (specialized)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+    tm1 = 0; tm2 = 0; tm3=0
 
     f1 = libxsmm_mm_dispatch(m, n*k, m, T)
     f2 = libxsmm_mm_dispatch(m, n, n, T)
@@ -218,21 +200,6 @@ PROGRAM stpm
       CALL dmm3(a(1,1,1,i), dz, tm3)
       c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
-#else
-    !$OMP MASTER
-    !$ duration = -omp_get_wtime()
-    !$OMP END MASTER
-    !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
-      do j = 1, k
-          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
-      enddo
-      call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
-    END DO
-#endif
-#endif
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
@@ -241,62 +208,6 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
-  ELSE
-#if 0
-    f = MERGE(libxsmm_mm_dispatch(m, n, k, T), C_NULL_FUNPTR, 0.EQ.routine)
-    IF (C_ASSOCIATED(f)) THEN
-!      CALL C_F_PROCPOINTER(f, xmm)     ! Fully polymorph variant
-      CALL C_F_PROCPOINTER(f, dmm)
-      WRITE(*, "(A)") "Streamed... (specialized)"
-      !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm)
-      ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-      tmp(:,:) = 0
-      !$OMP MASTER
-      !$ duration = -omp_get_wtime()
-      !$OMP END MASTER
-      !$OMP DO
-      DO i = LBOUND(a, 1), UBOUND(a, 1)
-!        This in case of a polymorph call, we need C_LOC :-(, however the next line
-!        violates Fortran standard :-(
-!        CALL xmm(C_LOC(a(i)%matrix(:,:)), C_LOC(b(i)%matrix(:,:)), C_LOC(tmp))
-        CALL dmm(a(i)%matrix, b(i)%matrix, tmp)
-      END DO
-      !$OMP MASTER
-      !$ duration = duration + omp_get_wtime()
-      !$OMP END MASTER
-      !$OMP CRITICAL
-      c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
-      !$OMP END CRITICAL
-      ! Deallocate thread-local arrays
-      DEALLOCATE(tmp)
-      !$OMP END PARALLEL
-    ELSE
-      IF (0.EQ.routine) THEN
-        WRITE(*, "(A)") "Streamed... (optimized; no specialization found)"
-      ELSE
-        WRITE(*, "(A)") "Streamed... (optimized)"
-      ENDIF
-      !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
-      ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-      tmp(:,:) = 0
-      !$OMP MASTER
-      !$ duration = -omp_get_wtime()
-      !$OMP END MASTER
-      !$OMP DO
-      DO i = LBOUND(a, 1), UBOUND(a, 1)
-        CALL libxsmm_imm(m, n, k, a(i)%matrix, b(i)%matrix, tmp)
-      END DO
-      !$OMP MASTER
-      !$ duration = duration + omp_get_wtime()
-      !$OMP END MASTER
-      !$OMP CRITICAL
-      c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
-      !$OMP END CRITICAL
-      ! Deallocate thread-local arrays
-      DEALLOCATE(tmp)
-      !$OMP END PARALLEL
-    ENDIF
-#endif
   END IF
 
   IF (0.LT.duration) THEN
