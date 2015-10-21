@@ -38,7 +38,7 @@
 
 /* This routine is for the jit code. All offsets/displacements have similar
    byte patterns, so this is used for all of them */
-static inline int add_offset ( const unsigned int i_place1,
+LIBXSMM_INLINE int add_offset ( const unsigned int i_place1,
                                const unsigned int i_place2,
                                const int i_offset,
                                const unsigned int i_forced,
