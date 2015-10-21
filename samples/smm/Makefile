@@ -374,7 +374,7 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 .PHONY: all
-all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/stpm
+all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized 
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
@@ -393,11 +393,6 @@ $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/smm: $(BLDDIR)/smm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
-
-$(OUTDIR)/stpm: $(BLDDIR)/stpm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) 
-	cpp stpm.F90 > stpm.f90
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
 
