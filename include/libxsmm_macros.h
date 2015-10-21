@@ -213,7 +213,7 @@
 #   if (199901L <= __STDC_VERSION__)
 #     define LIBXSMM_SNPRINTF(S, N, F, ...) snprintf(S, N, F, ##__VA_ARGS__)
 #   else
-#     define LIBXSMM_SNPRINTF(S, N, F, ...) sprintf(S, F, ##__VA_ARGS__)
+#     define LIBXSMM_SNPRINTF(S, N, F, ...) sprintf(S, F, ##__VA_ARGS__); LIBXSMM_UNUSED(N)
 #   endif
 # else
 #   define LIBXSMM_SNPRINTF(S, N, F, ...) snprintf(S, N, F, __VA_ARGS__)
