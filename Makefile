@@ -362,7 +362,9 @@ header: cheader fheader
 ALIGNED_ST = $(shell echo $$((1!=$(ALIGNED_STORES)?$(ALIGNED_STORES):$(ALIGNMENT))))
 ALIGNED_LD = $(shell echo $$((1!=$(ALIGNED_LOADS)?$(ALIGNED_LOADS):$(ALIGNMENT))))
 
-ifeq (1,$(PREFETCH)) # AL2_BL2viaC
+ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 9))))
+	PREFETCH_ID = $(PREFETCH)
+else ifeq (1,$(PREFETCH)) # AL2_BL2viaC
 	PREFETCH_ID = 6
 else ifeq (pfsigonly,$(PREFETCH))
 	PREFETCH_ID = 2
