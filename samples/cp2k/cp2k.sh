@@ -4,7 +4,7 @@ HERE=$(cd $(dirname $0); pwd -P)
 NAME=cp2k
 
 if [[ "-mic" != "$1" ]] ; then
-  if [[ "" != "$(ldd cp2k | grep libiomp5\.so)" ]] ; then
+  if [[ "" != "$(ldd ${HERE}/${NAME} | grep libiomp5\.so)" ]] ; then
     env OFFLOAD_INIT=on_start \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
