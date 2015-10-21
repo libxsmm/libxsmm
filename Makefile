@@ -210,7 +210,7 @@ else # GCC assumed
 	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
 	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
-	CFLAGS += -Wall -Wno-unused-function
+	CFLAGS += -Wall -std=c89 -Wno-unused-function
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
