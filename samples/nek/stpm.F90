@@ -26,7 +26,8 @@
 !* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        *!
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
-!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)                *!
+!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *! 
+!* Maxwell Hutchinson (University of Chicago                                 *!
 !*****************************************************************************!
 
 
@@ -39,22 +40,16 @@ PROGRAM stpm
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
   INTEGER, PARAMETER :: MAX_NTHREADS = 512
 
-  TYPE :: libxsmm_matrix
-    REAL(T), POINTER :: matrix(:,:)
-  END TYPE libxsmm_matrix
-
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
-  REAL(T), ALLOCATABLE, TARGET :: d(:,:,:,:)
-  REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:,:), tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
+  REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, tmp
   !$OMP THREADPRIVATE(tmp, tm1, tm2, tm3)
-!  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorph variant
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3, dmm
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz
   CHARACTER(32) :: argv
-  TYPE(C_FUNPTR) :: f1, f2, f3, f
+  TYPE(C_FUNPTR) :: f1, f2, f3
 
   REAL(8) :: duration
 
@@ -65,7 +60,7 @@ PROGRAM stpm
     CALL GETARG(1, argv)
     READ(argv, "(I32)") m
   ELSE
-    m = 23
+    m = 8
   END IF
   IF (2 <= argc) THEN
     CALL GETARG(2, argv)
@@ -91,7 +86,7 @@ PROGRAM stpm
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-  s = LSHIFT(INT8(MAX(i, 0)), 30) / ((m * k + k * n + m * n) * T)
+  s = LSHIFT(INT8(MAX(i, 0)), 29) / ((m * k + k * n + m * n) * T)
 
   ALLOCATE(c(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
@@ -226,73 +221,8 @@ PROGRAM stpm
 
   ! Deallocate global arrays
   DEALLOCATE(a)
+  deallocate(g1, g2, g3)
   deallocate(dx, dy, dz)
   DEALLOCATE(c)
 
-CONTAINS
-#if 0
-  PURE SUBROUTINE init(seed, matrix, n)
-    INTEGER, INTENT(IN) :: seed
-    REAL(T), INTENT(OUT) :: matrix(:,:)
-    INTEGER(8), INTENT(IN), OPTIONAL :: n
-    INTEGER(8) :: minval, addval, maxval
-    INTEGER :: ld, i, j
-    REAL(8) :: value, norm
-    ld = UBOUND(matrix, 1) - LBOUND(matrix, 1) + 1
-    minval = MERGE(n, 0_8, PRESENT(n)) + seed
-    addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
-    maxval = MAX(ABS(minval), addval)
-    norm = MERGE(1D0 / maxval, 1D0, 0.NE.maxval)
-    DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-      DO i = LBOUND(matrix, 1), LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
-        value = (i - LBOUND(matrix, 1)) * ld + (j - LBOUND(matrix, 2)) + minval
-        matrix(i,j) = norm * (value - 0.5D0 * addval)
-      END DO
-    END DO
-  END SUBROUTINE
-
-  PURE SUBROUTINE init(seed, matrix, n)
-    INTEGER, INTENT(IN) :: seed
-    REAL(T), INTENT(OUT) :: matrix(:,:,:)
-    INTEGER(8), INTENT(IN), OPTIONAL :: n
-    INTEGER(8) :: minval, addval, maxval
-    INTEGER :: ld, i, j, k
-    REAL(8) :: value, norm
-    ld = UBOUND(matrix, 1) - LBOUND(matrix, 1) + 1
-    minval = MERGE(n, 0_8, PRESENT(n)) + seed
-    addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld * ld + (UBOUND(matrix, 2) - LBOUND(matrix, 2)) * ld + (UBOUND(matrix, 3) - LBOUND(matrix, 3))
-    maxval = MAX(ABS(minval), addval)
-    norm = MERGE(1D0 / maxval, 1D0, 0.NE.maxval)
-    do k = LBOUND(matrix, 3), UBOUND(matrix, 3)
-      DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-        DO i = LBOUND(matrix, 1), LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
-          value = (i - LBOUND(matrix, 1)) * ld *ld + (j - LBOUND(matrix, 2))*ld + (k - LBOUND(matrix,3)) + minval
-          matrix(i,j) = norm * (value - 0.5D0 * addval)
-        END DO
-      END DO
-    enddo
-  END SUBROUTINE
-#endif
-
-
-  SUBROUTINE disp(matrix, ld, format)
-    REAL(T), INTENT(IN) :: matrix(:,:)
-    INTEGER, INTENT(IN), OPTIONAL :: ld
-    CHARACTER(*), INTENT(IN), OPTIONAL :: format
-    CHARACTER(32) :: fmt
-    INTEGER :: i0, i1, i, j
-    IF (.NOT.PRESENT(format)) THEN
-      fmt = "(16F20.0)"
-    ELSE
-      WRITE(fmt, "('(16',A,')')") format
-    ENDIF
-    i0 = LBOUND(matrix, 1)
-    i1 = MIN(MERGE(i0 + ld - 1, UBOUND(matrix, 1), PRESENT(ld)), UBOUND(matrix, 1))
-    DO i = i0, i1
-      DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
-        WRITE(*, fmt, advance='NO') matrix(i,j)
-      END DO
-      WRITE(*, *)
-    END DO
-  END SUBROUTINE
 END PROGRAM
