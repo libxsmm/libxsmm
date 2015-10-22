@@ -345,6 +345,11 @@ stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) stpm.F90 -c
 	$(FC) $(LDFLAGS) $(FCMTFLAGS) stpm.o $(MODULES) $(LIBNAME).$(LIBEXT) -o stpm
 
+rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
+	$(FC) $(LDFLAGS) $(FCMTFLAGS) rstr.o $(MODULES) $(LIBNAME).$(LIBEXT) -o rstr
+
+
 
 .PHONY: all
 all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/stpm
