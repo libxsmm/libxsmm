@@ -162,6 +162,32 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
+  else if (0 .eq. routine) then
+    WRITE(*, "(A)") "Streamed... (compiled)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+    tm1 = 0; tm2 = 0; tm3=0
+    !$OMP MASTER
+    !$ duration = -omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      do j = 1, k
+          call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+      enddo
+      call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      !DEC$ vector aligned nontemporal
+      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2, tm3)
+    !$OMP END PARALLEL
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
     !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)

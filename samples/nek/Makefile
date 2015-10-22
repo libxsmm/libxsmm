@@ -418,6 +418,7 @@ else
 	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
 endif
 	@rm -f fit.log *.dat
+	@rm -f *.o 
 
 .PHONY: realclean
 realclean: clean
@@ -431,6 +432,7 @@ else
 	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f *.o stpm rstr
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
