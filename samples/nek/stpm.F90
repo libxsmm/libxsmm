@@ -43,8 +43,8 @@ PROGRAM stpm
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, tmp
-  !$OMP THREADPRIVATE(tmp, tm1, tm2, tm3)
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3
+  !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz
@@ -167,7 +167,7 @@ PROGRAM stpm
 
     f1 = libxsmm_mm_dispatch(m, n*k, m, T)
     f2 = libxsmm_mm_dispatch(m, n, n, T)
-    f3 = libxsmm_mm_dispatch(m*n, n, n, T)
+    f3 = libxsmm_mm_dispatch(m*n, k, k, T)
     if (C_ASSOCIATED(f1)) then
       CALL C_F_PROCPOINTER(f1, dmm1)
     else
