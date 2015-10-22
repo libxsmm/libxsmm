@@ -12,13 +12,18 @@ if [[ "" == "${MICCORES}" ]] ; then
 fi
 
 if [[ "-mic" != "$1" ]] ; then
-  env \
-    KMP_AFFINITY=scatter,granularity=fine,1 \
-    OFFLOAD_INIT=on_start \
-    MIC_ENV_PREFIX=MIC \
-    MIC_KMP_AFFINITY=scatter,granularity=fine \
-    MIC_KMP_PLACE_THREADS=$((MICCORES-1))c3t \
-  ${HERE}/${NAME} $*
+  if [[ "" != "$(ldd ${HERE}/${NAME} | grep libiomp5\.so)" ]] ; then
+    env OFFLOAD_INIT=on_start \
+      KMP_AFFINITY=scatter,granularity=fine,1 \
+      MIC_KMP_AFFINITY=scatter,granularity=fine \
+      MIC_KMP_PLACE_THREADS=$((MICCORES-1))c3t \
+      MIC_ENV_PREFIX=MIC \
+    ${HERE}/${NAME} $*
+  else
+    env \
+      OMP_PROC_BIND=TRUE \
+    ${HERE}/${NAME} $*
+  fi
 else
   shift
   env \
