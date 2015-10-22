@@ -178,7 +178,7 @@ PROGRAM stpm
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, f1, f2, f3, dmm1, dmm2, dmm3)
-    ALLOCATE(tm1(m,n,k), tm2(m,n,k))
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0
 
     f1 = libxsmm_mm_dispatch(mm, n*k, m, T)
@@ -222,9 +222,9 @@ PROGRAM stpm
 
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
+      (s * ((2*m-1)*mm*n*k + mm*(2*n-1)*nn*k + mm*nn*(2*k-1)*kk) * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+      (s * m * n * k * (2) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
 #if 0
