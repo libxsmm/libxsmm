@@ -19,6 +19,17 @@ For Intel MPI, usually any version is fine.
 ```
 source /opt/intel/composer_xe_2015.3.187/bin/compilervars.sh intel64
 source /opt/intel/impi/5.1.0.069/intel64/bin/mpivars.sh
+```
+
+For product suites, the compiler and the MPI library can be sourced in one step.
+
+```
+source /opt/intel/compilers_and_libraries_2016.0.109/linux/bin/compilervars.sh intel64
+```
+
+To build the application, proceed in the following way.
+
+```
 cd cp2k/makefiles
 make ARCH=Linux-x86-64-intel VERSION=psmp -j
 ```
@@ -30,7 +41,7 @@ To further adjust CP2K at build time of the application, additional key-value pa
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful for performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
-Please note that the arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "psmp"-configuration by using even more of the above key-value pairs (`OMP`, `ACC`, etc.).
+Please note that the arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "x"-configuration (Linux-x86-64-intel.x) by using even more of the above key-value pairs (`OMP`, `ACC`, etc.).
 
 ## Running the Application
 Running the application may go beyond a single node, however for the purpose of an example the command line shown below is limited to a single node. Running an MPI/OpenMP-hybrid application, a number of processes (MPI ranks) which is half the number of cores might be a good starting point (below command could be for an HT-enabled dual-socket system with 16 cores per processor and 64 hardware threads).
@@ -42,10 +53,42 @@ mpirun -np 16 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
-For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
+For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or any workload under `cp2k/tests/QS/benchmark_single_node`. For latter set of workloads however LIBINT and LIBXC may be required. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
 * **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K (only enabled when the ACCeleration layer is active; see below). With the ACCeleration layer enabled, a number of properties reconfigured e.g. an increased number of entries per matrix stack.
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. Beside of the listed keywords (ACC, BLAS, MATMUL, and SMM), the CP2K/intel branch is supporting the XSMM keyword (which is also the default).
+
+## LIBINT and LIBXC Dependencies
+
+To configure, build, and install LIBINT (Version 1.1.5 has been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). Finally, in order to make use of LIBINT, the key `LIBINTROOT=$(HOME)/libint` needs to be supplied when building the CP2K application (make).
+
+```
+env \
+  AR=xiar CC=icc CXX=icpc \
+  ./configure --prefix=$HOME/libint \
+    --with-cc-optflags="-O1 -xHost" \
+    --with-cxx-optflags="-O1 -xHost" \
+    --with-libint-max-am=5 \
+    --with-libderiv-max-am1=4
+make
+make install
+make realclean
+```
+
+To configure, build, and install LIBXC (Version 2.2.2 has been tested), one may proceed as shown below. To actually make use of LIBINT, the key `LIBXCROOT=$(HOME)/libxc` needs to be supplied when building the CP2K application (make).
+
+```
+env \
+  AR=xiar F77=ifort F90=ifort \
+  FC=ifort FCFLAGS="-O2 -xHost" \
+  CC=icc CFLAGS="-O2 -xHost" \
+  ./configure --prefix=$HOME/libxc
+make
+make install
+make clean
+```
+
+In case library needs to be cross-compiled, one may add `--host=x86_64-unknown-linux-gnu` to the command line arguments of the configure script.
 
 ## Tuning
 
