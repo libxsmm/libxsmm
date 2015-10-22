@@ -177,7 +177,7 @@ PROGRAM stpm
     !$OMP END PARALLEL
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, f1, f2, f3, dmm1, dmm2, dmm3)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k))
     tm1 = 0; tm2 = 0
 
