@@ -7,17 +7,15 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -D__extern_always_inline=inline
+DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
 STATIC ?= 0
-BLAS ?= 1
+BLAS ?= 1 # sequential
 OMP ?= 1
 SYM ?= 0
 DBG ?= 0
 IPO ?= 0
-SSE ?= 0
-AVX ?= 0
 
 OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
@@ -92,19 +90,38 @@ GPP     = $(notdir $(shell which g++      2> /dev/null))
 GCC     = $(notdir $(shell which gcc      2> /dev/null))
 GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
-CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
-CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
-FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
+ifneq (,$(ICPC))
+	CXX = $(ICPC)
+	ifeq (,$(ICC))
+		CC = $(CXX)
+	endif
+else
+	CXX = $(GPP)
+endif
+ifneq (,$(ICC))
+	CC = $(ICC)
+	ifeq (,$(ICPC))
+		CXX = $(CC)
+	endif
+else
+	CC = $(GCC)
+endif
+ifneq (,$(IFORT))
+	FC = $(IFORT)
+else
+	FC = $(GFC)
+endif
+ifneq ($(CXX),)
+	LD = $(CXX)
+endif
+ifeq ($(LD),)
+	LD = $(CC)
+endif
+ifeq ($(LD),)
+	LD = $(FC)
+endif
 
-# prefer Intel Compiler (if available)
-CXX = $(ICPC)
-FC = $(IFORT)
-CC = $(ICC)
-
-INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))))
-
-ifneq (0,$(INTEL))
-	AR = xiar
+ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
 	FCFLAGS += -fPIC
@@ -120,30 +137,20 @@ ifneq (0,$(INTEL))
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
+		ifeq ($(AVX),1)
+			TARGET = -xAVX
+		else ifeq ($(AVX),2)
+			TARGET = -xCORE-AVX2
+		else ifeq ($(AVX),3)
+			TARGET = -xCOMMON-AVX512
+		else
+			TARGET = -xHost
+		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
-	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
-		ifeq (1,$(AVX))
-			TARGET = -xAVX
-		else ifeq (2,$(AVX))
-			TARGET = -xCORE-AVX2
-		else ifeq (3,$(AVX))
-			ifeq (0,$(MIC))
-				TARGET = -xCOMMON-AVX512
-			else
-				TARGET = -xMIC-AVX512
-			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -xSSE$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -xSSE3
-		else
-			TARGET = -xHost
-		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -175,16 +182,7 @@ ifneq (0,$(INTEL))
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
-	ifeq (,$(CXX_CHECK))
-		CXX = $(GPP)
-	endif
-	ifeq (,$(CC_CHECK))
-		CC = $(GCC)
-	endif
-	ifeq (,$(FC_CHECK))
-		FC = $(GFC)
-	endif
-	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	VERSION = $(shell $(GCC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
 	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
 	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
@@ -208,29 +206,20 @@ else # GCC assumed
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
+		ifeq ($(AVX),1)
+			TARGET = -mavx
+		else ifeq ($(AVX),2)
+			TARGET = -mavx2
+		else ifeq ($(AVX),3)
+			TARGET = -mavx512f
+		else
+			TARGET = -march=native
+		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
-	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
-		ifeq (1,$(AVX))
-			TARGET = -mavx
-		else ifeq (2,$(AVX))
-			TARGET = -mavx2
-		else ifeq (3,$(AVX))
-			TARGET = -mavx512f -mavx512cd
-			ifneq (0,$(MIC))
-				TARGET += -mavx512er -mavx512pf
-			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -msse$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -msse3
-		else
-			TARGET = -march=native
-		endif
 	endif
 	ifneq (0,$(SYM))
 		ifneq (1,$(SYM))
@@ -256,16 +245,6 @@ else # GCC assumed
 		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -J
-endif
-
-ifneq (,$(CXX))
-	LD = $(CXX)
-endif
-ifeq (,$(LD))
-	LD = $(CC)
-endif
-ifeq (,$(LD))
-	LD = $(FC)
 endif
 
 ifeq (,$(CXXFLAGS))
@@ -302,11 +281,12 @@ ifeq (1,$(MKL)) # sequential
 				$(MKLROOT)/lib/intel64/libmkl_sequential.a \
 			-Wl,--end-group
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"--start-group \
-				$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/mic/libmkl_core.a \
-				$(MKLROOT)/lib/mic/libmkl_sequential.a \
-			--end-group"
+			LDFLAGS += -offload-option,mic,ld," \
+				--start-group \
+					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+					$(MKLROOT)/lib/mic/libmkl_core.a \
+					$(MKLROOT)/lib/mic/libmkl_sequential.a \
+				--end-group"
 		endif
 	endif
 	LDFLAGS += -lpthread -lm
@@ -317,48 +297,36 @@ else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
-		ifneq (0,$(INTEL))
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
-			endif
-		else # assuming GNU toolchain
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
+		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
 		endif
 	else # static
-		ifneq (0,$(INTEL))
-			LDFLAGS += -Wl,--start-group \
+		LDFLAGS += \
+			-Wl,--start-group \
 				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
 			-Wl,--end-group
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"--start-group \
+		ifneq (0,$(OFFLOAD))
+			LDFLAGS += -offload-option,mic,ld," \
+				--start-group \
 					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
 					$(MKLROOT)/lib/mic/libmkl_core.a \
 					$(MKLROOT)/lib/mic/libmkl_intel_thread.a \
 				--end-group"
-			endif
-		else # assuming GNU toolchain
-			LDFLAGS += -Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/intel64/libmkl_core.a \
-				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
-			-Wl,--end-group -ldl
 		endif
 	endif
-	ifneq (0,$(INTEL))
-		ifeq (0,$(OMP))
-			LDFLAGS += -liomp5
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"-liomp5"
-			endif
-		endif
+	ifeq (0,$(OMP))
+		LDFLAGS += -liomp5
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
+			LDFLAGS += -offload-option,mic,ld,"-liomp5"
 		endif
 	endif
 	LDFLAGS += -lpthread -lm
+	ifneq (0,$(OFFLOAD))
+		LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
+	endif
 else ifneq (0,$(BLAS)) # generic
 	ifneq ($(OS),Windows_NT)
 		LDFLAGS += -lblas
@@ -373,8 +341,18 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
+stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) stpm.F90 -c
+	$(FC) $(FCMTFLAGS) stpm.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o stpm
+
+rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
+	$(FC) $(FCMTFLAGS) rstr.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
+
+
+
 .PHONY: all
-all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized 
+all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/stpm
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
@@ -432,7 +410,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(MODULES) $(ROOTDIR)/Makefile
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR) *.mod
+	@rm -rf $(BLDDIR)
 else
 	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
 endif
