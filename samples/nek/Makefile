@@ -124,8 +124,8 @@ endif
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
-	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC
+	FCFLAGS += -fPIC -align array64byte -opt-streaming-stores always
+	LDFLAGS += -fPIC 
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2

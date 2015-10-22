@@ -151,6 +151,7 @@ PROGRAM stpm
           call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
       call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      !DEC$ vector aligned nontemporal
       c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
     !$OMP MASTER
@@ -195,6 +196,7 @@ PROGRAM stpm
           call dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
+      !DEC$ vector aligned nontemporal
       c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
     !$OMP MASTER
