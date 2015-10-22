@@ -193,6 +193,35 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
+  ELSE IF (routine == 100) then
+    WRITE(*, "(A)") "Streamed... (mxm)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+    tm1 = 0; tm2 = 0; tm3=0
+    !$OMP MASTER
+    !$ duration = -omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
+      do j = 1, k
+          call mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
+      enddo
+      call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
+
+      call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      !DEC$ vector aligned nontemporal
+      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2, tm3)
+    !$OMP END PARALLEL
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
     !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
@@ -254,6 +283,8 @@ PROGRAM stpm
     DEALLOCATE(d)
   END IF
 #endif
+
+
 
   ! Deallocate global arrays
   DEALLOCATE(a)

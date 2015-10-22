@@ -208,6 +208,30 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2)
     !$OMP END PARALLEL
+  ELSE if (routine == 100) then
+    WRITE(*, "(A)") "Streamed... (mxm)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+    tm1 = 0; tm2 = 0;
+    !$OMP MASTER
+    !$ duration = -omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call mxmf2(dx, mm, a(:,:,:,i), m, tm1, n*k)
+      do j = 1, k
+          call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
+      enddo
+      call mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk)
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2)
+    !$OMP END PARALLEL
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
     !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, f1, f2, f3)
