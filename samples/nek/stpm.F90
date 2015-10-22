@@ -96,19 +96,21 @@ PROGRAM stpm
   ! Initialize a, b
   !@TODO figure out how to allocate a,b matrices cont. without
   ! additional copies when call LIBXSMM in the F90 compiler
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, m, n, k, s)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, c, m, n, k, s)
   DO i = 1, s
     do ix = 1, m
       do iy = 1, n
         do iz = 1, k
           a(ix,iy,iz,i) = ix + iy*m + iz*m*n
+          g1(ix,iy,iz,i) = 1.
+          g2(ix,iy,iz,i) = 1.
+          g3(ix,iy,iz,i) = 1.
+          c(ix,iy,iz,i) = 0.
         enddo
       enddo
     enddo
   END DO 
   dx = 1.; dy = 1.; dz = 1.
-  g1 = 1.; g2 = 1.; g3 = 1.
-  c = 0
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
 

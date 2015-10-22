@@ -160,7 +160,7 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 		else
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
+			FCFLAGS := -g -check -traceback $(FCFLAGS)
 		endif
 	endif
 	ifeq (0,$(EXP))
