@@ -349,6 +349,10 @@ rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
 	$(FC) $(FCMTFLAGS) rstr.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
 
+axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) axhm.F90 -c
+	$(FC) $(FCMTFLAGS) axhm.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
+
 
 
 .PHONY: all
