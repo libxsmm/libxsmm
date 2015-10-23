@@ -27,7 +27,7 @@
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
 !* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *! 
-!* Maxwell Hutchinson (University of Chicago                                 *!
+!* Maxwell Hutchinson (University of Chicago)                                *!
 !*****************************************************************************!
 
 
