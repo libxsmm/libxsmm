@@ -139,6 +139,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         result = cache[indx];
 
         if (0 == result) {
+          libxsmm_generated_code l_generated_code;
           char l_arch[14]; /* set arch string */
 # ifdef __SSE3__
 #   ifndef __AVX__
@@ -158,7 +159,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           strcpy(l_arch, "knl");
 # endif
           /* allocate buffer for code */
-          libxsmm_generated_code l_generated_code;
           l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
           l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
           l_generated_code.code_size = 0;
@@ -177,17 +177,18 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
             return 0;
           }
 
-          /* create executable buffer */
-          const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
-          const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
-          const int l_fd = open("/dev/zero", O_RDWR);
-          void *const l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
-          close(l_fd);
+          { /* create executable buffer */
+            const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
+            const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
+            const int l_fd = open("/dev/zero", O_RDWR);
+            void *const l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+            close(l_fd);
 
-          /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+            /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 # if defined(MADV_NOHUGEPAGE)
-          madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
+            madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
 # endif /*MADV_NOHUGEPAGE*/
+          }
 
           if (l_code == MAP_FAILED) {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
@@ -198,8 +199,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           }
 
           memcpy( l_code, l_generated_code.generated_code, l_generated_code.code_size );
-          const int error = mprotect( l_code, l_code_page_size, PROT_EXEC | PROT_READ );
-          if (error == -1) {
+          if (-1 == mprotect(l_code, l_code_page_size, PROT_EXEC | PROT_READ)) {
 # if !defined(NDEBUG)
             int errsv = errno;
             if (errsv == EINVAL) {

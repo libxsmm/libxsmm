@@ -79,12 +79,7 @@ void print_help() {
 }
 
 int main(int argc, char* argv []) {
-  /* check argument count for a valid range */
-  if (argc != 17 && argc != 18) {
-    print_help();
-    return -1;
-  }
-
+  libxsmm_xgemm_descriptor l_xgemm_desc;
   char* l_type;
   char* l_file_out;
   char* l_matrix_file_in;
@@ -103,6 +98,12 @@ int main(int argc, char* argv []) {
   int l_alpha = 0;
   int l_beta = 0;
   int l_single_precision = 0;
+
+  /* check argument count for a valid range */
+  if (argc != 17 && argc != 18) {
+    print_help();
+    return -1;
+  }
 
   /* names of files and routines */
   l_type = argv[1];
@@ -210,7 +211,6 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  libxsmm_xgemm_descriptor l_xgemm_desc;
   if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m; }
   if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n; }
   if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k; }
