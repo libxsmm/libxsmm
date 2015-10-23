@@ -141,6 +141,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         if (0 == result) {
           libxsmm_generated_code l_generated_code;
           char l_arch[14]; /* set arch string */
+          void *const l_code
+
 # ifdef __SSE3__
 #   ifndef __AVX__
 #         error "SSE3 instructions set extensions have no jitting support!"
@@ -181,7 +183,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
             const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
             const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
             const int l_fd = open("/dev/zero", O_RDWR);
-            void *const l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+            l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
             close(l_fd);
 
             /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
