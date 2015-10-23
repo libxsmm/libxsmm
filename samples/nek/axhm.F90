@@ -40,7 +40,7 @@ PROGRAM stpm
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
   INTEGER, PARAMETER :: MAX_NTHREADS = 512
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3
+  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3
@@ -51,7 +51,7 @@ PROGRAM stpm
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
 
-  REAL(8) :: duration
+  REAL(8) :: duration, h1, h2
 
   duration = 0
 
@@ -88,20 +88,22 @@ PROGRAM stpm
   END IF
   s = LSHIFT(INT8(MAX(i, 0)), 29) / ((m * k + k * n + m * n) * T)
 
-  ALLOCATE(c(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
+  ALLOCATE(b(m,n,k,s))
+  ALLOCATE(c(m,n,k,s))
   ALLOCATE(g1(m,n,k,s), g2(m,n,k,s), g3(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
 
   ! Initialize a, b
   !@TODO figure out how to allocate a,b matrices cont. without
   ! additional copies when call LIBXSMM in the F90 compiler
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, c, m, n, k, s)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, b, c, m, n, k, s)
   DO i = 1, s
     do ix = 1, m
       do iy = 1, n
         do iz = 1, k
           a(ix,iy,iz,i) = ix + iy*m + iz*m*n
+          b(ix,iy,iz,i) = -( ix + iy*m + iz*m*n)
           g1(ix,iy,iz,i) = 1.
           g2(ix,iy,iz,i) = 1.
           g3(ix,iy,iz,i) = 1.
@@ -111,6 +113,7 @@ PROGRAM stpm
     enddo
   END DO 
   dx = 1.; dy = 1.; dz = 1.
+  h1 = 1.; h2 = 1.
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
 
@@ -138,7 +141,7 @@ PROGRAM stpm
 
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3, h1, h2)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP MASTER
@@ -152,7 +155,8 @@ PROGRAM stpm
       enddo
       call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
       !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -164,7 +168,7 @@ PROGRAM stpm
     !$OMP END PARALLEL
   else if (0 .eq. routine) then
     WRITE(*, "(A)") "Streamed... (compiled)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP MASTER
@@ -178,7 +182,8 @@ PROGRAM stpm
       enddo
       call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
       !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -188,9 +193,9 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
-  ELSE if (routine == 100) then
+  ELSE IF (routine == 100) then
     WRITE(*, "(A)") "Streamed... (mxm)"
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP MASTER
@@ -203,8 +208,11 @@ PROGRAM stpm
           call mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
       enddo
       call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
+
+      call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -216,7 +224,7 @@ PROGRAM stpm
     !$OMP END PARALLEL
   ELSE
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
 
@@ -249,7 +257,8 @@ PROGRAM stpm
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
       !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -263,9 +272,9 @@ PROGRAM stpm
 
   IF (0.LT.duration) THEN
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
+      (s * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+      (s * m * n * k * (6) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
 #if 0
@@ -275,8 +284,11 @@ PROGRAM stpm
   END IF
 #endif
 
+
+
   ! Deallocate global arrays
   DEALLOCATE(a)
+  DEALLOCATE(b)
   deallocate(g1, g2, g3)
   deallocate(dx, dy, dz)
   DEALLOCATE(c)

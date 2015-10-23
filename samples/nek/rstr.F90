@@ -124,10 +124,19 @@ PROGRAM stpm
       enddo
     enddo
   END DO 
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(c, m, mm, n, nn, k, kk, s)
+  DO i = 1, s
+    do ix = 1, mm
+      do iy = 1, nn
+        do iz = 1, kk
+          c(ix,iy,iz,i) = 0 
+        enddo
+      enddo
+    enddo
+  END DO 
   dx = 1.; dy = 1.; dz = 1.
-  c = 0
 
-  WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
+  WRITE (*, "(6(A,I3),A,I10)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
 
 #if 0
   CALL GETENV("CHECK", argv)
@@ -166,6 +175,54 @@ PROGRAM stpm
           call libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
       enddo
       call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2)
+    !$OMP END PARALLEL
+  else if (routine .eq. 0) then
+    WRITE(*, "(A)") "Streamed... (compiled)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+    tm1 = 0; tm2 = 0;
+    !$OMP MASTER
+    !$ duration = -omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call libxsmm_imm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      do j = 1, k
+          call libxsmm_imm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
+      enddo
+      call libxsmm_imm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
+    END DO
+    !$OMP MASTER
+    !$ duration = duration + omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP CRITICAL
+    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2)
+    !$OMP END PARALLEL
+  ELSE if (routine == 100) then
+    WRITE(*, "(A)") "Streamed... (mxm)"
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+    tm1 = 0; tm2 = 0;
+    !$OMP MASTER
+    !$ duration = -omp_get_wtime()
+    !$OMP END MASTER
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call mxmf2(dx, mm, a(:,:,:,i), m, tm1, n*k)
+      do j = 1, k
+          call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
+      enddo
+      call mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -224,7 +281,7 @@ PROGRAM stpm
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
       (s * ((2*m-1)*mm*n*k + mm*(2*n-1)*nn*k + mm*nn*(2*k-1)*kk) * 1D-9 / duration), " GFLOPS/s"
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * m * n * k * (2) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+      (s * (m * n * k + mm*nn*kk) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
 #if 0

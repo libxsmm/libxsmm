@@ -341,13 +341,17 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
-stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) stpm.F90 -c
-	$(FC) $(FCMTFLAGS) stpm.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o stpm
+	$(FC) $(FCMTFLAGS) stpm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o stpm
 
-rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT)
+rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
-	$(FC) $(FCMTFLAGS) rstr.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
+	$(FC) $(FCMTFLAGS) rstr.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
+
+axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) axhm.F90 -c
+	$(FC) $(FCMTFLAGS) axhm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
 
 
 
@@ -418,6 +422,7 @@ else
 	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
 endif
 	@rm -f fit.log *.dat
+	@rm -f *.o 
 
 .PHONY: realclean
 realclean: clean
@@ -431,6 +436,7 @@ else
 	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f *.o stpm rstr
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
