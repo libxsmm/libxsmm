@@ -299,7 +299,7 @@ void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io
   /* register blocking counter in m */
   unsigned int l_m = 0;
 
-#ifndef NDEGUG
+#if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code. 
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
@@ -315,7 +315,7 @@ void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
-#endif
+#endif /*NDEBUG*/
 
   /* load C accumulator */
   if (i_xgemm_desc->beta == 1) {
