@@ -22,8 +22,9 @@ script:
 
  - make -e realclean
  - make -e ALIGNED_STORES=1 JIT=1
- - bash make.sh -ci test
+ - bash make.sh -ci drytest
  - cd samples/cp2k
+ - bash cp2k-perf.sh
  - bash test.sh
  - cd ../..
 
