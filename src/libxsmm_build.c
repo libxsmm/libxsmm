@@ -110,138 +110,145 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
   libxsmm_build_static();
 
 #if (0 != (LIBXSMM_JIT))
-  /* build xgemm descriptor */
-  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc, single_precision, LIBXSMM_PREFETCH,
-    1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-    'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)));
+  {
+    libxsmm_function *const cache = libxsmm_cache[single_precision&1];
+    unsigned int hash, indx;
 
-  unsigned int hash;
-  /* check if the requested xGEMM is already JITted */
-  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(&l_xgemm_desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
-  const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
-  libxsmm_function *const cache = libxsmm_cache[single_precision&1];
-  /* TODO: handle collision */
-  result = cache[indx];
+    /* build xgemm descriptor */
+    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc, single_precision, LIBXSMM_PREFETCH,
+      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
+      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)));
 
-  if (0 == result) {
-#if !defined(_WIN32)
-#if !defined(_OPENMP)
-    const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_build_lock) / sizeof(*libxsmm_build_lock));
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_build_lock[lock]);
-#else
-#   pragma omp critical(libxsmm_build_lock)
-#endif
-    {
-      result = cache[indx];
+    /* check if the requested xGEMM is already JITted */
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+    hash = libxsmm_crc32(&l_xgemm_desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
 
-      if (0 == result) {
-        /* set arch string */
-        char l_arch[14];
-#ifdef __SSE3__
-# ifndef __AVX__
-#   error "SSE3 instructions set extensions have no jitting support!"
+    indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+    /* TODO: handle collision */
+    result = cache[indx];
+
+    if (0 == result) {
+# if !defined(_WIN32)
+# if !defined(_OPENMP)
+      const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_build_lock) / sizeof(*libxsmm_build_lock));
+      LIBXSMM_LOCK_ACQUIRE(libxsmm_build_lock[lock]);
+# else
+#     pragma omp critical(libxsmm_build_lock)
 # endif
-#endif
-#ifdef __MIC__
-# error "Xeon Phi coprocessors (IMCI architecture) have no jitting support!"
-#endif
-#ifdef __AVX__
-        strcpy(l_arch, "snb");
-#endif
-#ifdef __AVX2__
-        strcpy(l_arch, "hsw");
-#endif
-#ifdef __AVX512F__
-        strcpy(l_arch, "knl");
-#endif
-        /* allocate buffer for code */
-        libxsmm_generated_code l_generated_code;
-        l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
-        l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
-        l_generated_code.code_size = 0;
-        l_generated_code.code_type = 2;
-        l_generated_code.last_error = 0;
+      {
+        result = cache[indx];
 
-        /* generate kernel */
-        libxsmm_generator_dense_kernel(&l_generated_code, &l_xgemm_desc, l_arch);
+        if (0 == result) {
+          int l_code_pages, l_code_page_size, l_fd;
+          libxsmm_generated_code l_generated_code;
+          char l_arch[14]; /* set arch string */
+          void* l_code;
 
-        /* handle an eventual error */
-        if (l_generated_code.last_error != 0) {
-#if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
-#endif
-          free(l_generated_code.generated_code);
-          return 0;
-        }
+# ifdef __SSE3__
+#   ifndef __AVX__
+#         error "SSE3 instructions set extensions have no jitting support!"
+#   endif
+# endif
+# ifdef __MIC__
+#         error "Xeon Phi coprocessors (IMCI architecture) have no jitting support!"
+# endif
+# ifdef __AVX__
+          strcpy(l_arch, "snb");
+# endif
+# ifdef __AVX2__
+          strcpy(l_arch, "hsw");
+# endif
+# ifdef __AVX512F__
+          strcpy(l_arch, "knl");
+# endif
+          /* allocate buffer for code */
+          l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
+          l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
+          l_generated_code.code_size = 0;
+          l_generated_code.code_type = 2;
+          l_generated_code.last_error = 0;
 
-        /* create executable buffer */
-        const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
-        const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
-        const int l_fd = open("/dev/zero", O_RDWR);
-        void *const l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
-        close(l_fd);
-        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
-#if defined(MADV_NOHUGEPAGE)
-        madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
-#endif
-        if (l_code == MAP_FAILED) {
-#if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
-#endif
-          free(l_generated_code.generated_code);
-          return 0;
-        }
+          /* generate kernel */
+          libxsmm_generator_dense_kernel(&l_generated_code, &l_xgemm_desc, l_arch);
 
-        memcpy( l_code, l_generated_code.generated_code, l_generated_code.code_size );
-        const int error = mprotect( l_code, l_code_page_size, PROT_EXEC | PROT_READ );
-        if (error == -1) {
-#if !defined(NDEBUG)
-          int errsv = errno;
-          if (errsv == EINVAL) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
-          } else if (errsv == ENOMEM) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: Internal kernel structures could not be allocated!\n");
-          } else if (errsv == EACCES) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: The memory cannot be given the specified access!\n");
-          } else {
-            fprintf(stderr, "LIBXSMM: mprotect failed: Unknown Error!\n");
+          /* handle an eventual error */
+          if (l_generated_code.last_error != 0) {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+            fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
+# endif /*NDEBUG*/
+            free(l_generated_code.generated_code);
+            return 0;
           }
-#endif
+
+          /* create executable buffer */
+          l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
+          l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
+          l_fd = open("/dev/zero", O_RDWR);
+          l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+          close(l_fd);
+
+          /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+# if defined(MADV_NOHUGEPAGE)
+          madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
+# endif /*MADV_NOHUGEPAGE*/
+
+          if (l_code == MAP_FAILED) {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+            fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
+# endif /*NDEBUG*/
+            free(l_generated_code.generated_code);
+            return 0;
+          }
+
+          memcpy( l_code, l_generated_code.generated_code, l_generated_code.code_size );
+          if (-1 == mprotect(l_code, l_code_page_size, PROT_EXEC | PROT_READ)) {
+# if !defined(NDEBUG)
+            int errsv = errno;
+            if (errsv == EINVAL) {
+              fprintf(stderr, "LIBXSMM: mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
+            } else if (errsv == ENOMEM) {
+              fprintf(stderr, "LIBXSMM: mprotect failed: Internal kernel structures could not be allocated!\n");
+            } else if (errsv == EACCES) {
+              fprintf(stderr, "LIBXSMM: mprotect failed: The memory cannot be given the specified access!\n");
+            } else {
+              fprintf(stderr, "LIBXSMM: mprotect failed: Unknown Error!\n");
+            }
+# endif /*NDEBUG*/
+            free(l_generated_code.generated_code);
+            return 0;
+          }
+
+# if !defined(NDEBUG)
+          /* write buffer for manual decode as binary to a file */
+          char l_objdump_name[512];
+          sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
+                   l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
+                   l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
+                   l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch ); 
+          FILE *const l_byte_code = fopen( l_objdump_name, "wb");
+          if ( l_byte_code != NULL ) {
+            fwrite( l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
+            fclose( l_byte_code );
+          }
+# endif /*NDEBUG*/
+          /* free temporary buffer, and prepare return value */
           free(l_generated_code.generated_code);
-          return 0;
-        }
+          result = (libxsmm_function)l_code;
 
-#if !defined(NDEBUG)
-        /* write buffer for manual decode as binary to a file */
-        char l_objdump_name[512];
-        sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
-                 l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
-                 l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
-                 l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch ); 
-        FILE *const l_byte_code = fopen( l_objdump_name, "wb");
-        if ( l_byte_code != NULL ) {
-          fwrite( l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
-          fclose( l_byte_code );
+          /* make function pointer available for dispatch */
+          cache[indx] = result;
         }
-#endif
-        /* free temporary buffer, and prepare return value */
-        free(l_generated_code.generated_code);
-        result = (libxsmm_function)l_code;
-
-        /* make function pointer available for dispatch */
-        cache[indx] = result;
       }
-    }
 
-#if !defined(_OPENMP)
-    LIBXSMM_LOCK_RELEASE(libxsmm_build_lock[lock]);
-#endif
-#else
-#   error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
-#endif /*_WIN32*/
+# if !defined(_OPENMP)
+      LIBXSMM_LOCK_RELEASE(libxsmm_build_lock[lock]);
+# endif
+# else
+#     error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
+# endif /*_WIN32*/
+    }
   }
-#endif
+#endif /*LIBXSMM_JIT*/
   return result;
 }
 
@@ -251,16 +258,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
 #if 1 == (LIBXSMM_JIT) || 0 > (LIBXSMM_JIT) /* automatic JITting */
   return (libxsmm_smm_function)libxsmm_build_jit(1/*single precision*/, m, n, k);
 #else /* explicit JITting and static code generation */
+  unsigned int hash, indx;
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the librar, this is lazy initializationy */
   libxsmm_build_static();
-
-  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH,
-    1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-    'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
-  unsigned int hash;
-  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
-  const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+  {
+    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH,
+      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
+      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+    hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+    indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+  }
   return (libxsmm_smm_function)libxsmm_cache[1/*single precision*/][indx];
 #endif
 }
@@ -271,16 +279,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
 #if 1 == (LIBXSMM_JIT) || 0 > (LIBXSMM_JIT) /* automatic JITting */
   return (libxsmm_dmm_function)libxsmm_build_jit(0/*double precision*/, m, n, k);
 #else /* explicit JITting and static code generation */
+  unsigned int hash, indx;
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the library, this is lazy initialization */
   libxsmm_build_static();
-
-  libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH,
-    1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-    'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
-  unsigned int hash;
-  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
-  const unsigned int indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+  {
+    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH,
+      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
+      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+    hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+    indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+  }
   return (libxsmm_dmm_function)libxsmm_cache[0/*double precision*/][indx];
 #endif
 }

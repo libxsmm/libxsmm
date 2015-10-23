@@ -110,15 +110,12 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 }
 
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
-  if ( io_generated_code->code_type != 0 )
-    return;
-  
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "}\n\n" );
-  libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length );
+  if ( io_generated_code->code_type == 0 ) {
+    char l_new_code[512];
+    const int l_max_code_length = 511;
+    const int l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "}\n\n" );
+    libxsmm_append_code_as_string(io_generated_code, l_new_code, l_code_length );
+  }
 }
 
 unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number ) {

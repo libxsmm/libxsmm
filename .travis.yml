@@ -13,7 +13,7 @@ compiler:
 
 script: 
  - make -e realclean
- - bash make.sh -cia -j
+ - bash make.sh -ci -j
  - make -e samples
  - make -e test
  - cd samples/cp2k
@@ -21,10 +21,10 @@ script:
  - cd ../..
 
  - make -e realclean
- - bash make.sh -cib -j
- - make -e samples
- - make -e test
+ - make -e ALIGNED_STORES=1 JIT=1
+ - bash make.sh -ci drytest
  - cd samples/cp2k
+ - bash cp2k-perf.sh
  - bash test.sh
  - cd ../..
 

@@ -168,6 +168,8 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
   int l_code_length = 0;
 
   if ( i_xgemm_desc->single_precision == 0 ) {
+    unsigned int l_i;
+    unsigned int l_z = i_z;
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && defined(__AVX__)\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m256d c%u_%u = _mm256_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
@@ -182,8 +184,6 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && !defined(__AVX__)\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    unsigned int l_i;
-    unsigned int l_z = i_z;
     for ( l_i = 0; l_i < 2; l_i++ ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, l_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + l_z] );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

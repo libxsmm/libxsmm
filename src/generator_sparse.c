@@ -83,14 +83,6 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
                                const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                const char*                     i_arch, 
                                const char*                     i_csc_file_in ) {
-  /* init generated code object */
-  libxsmm_generated_code l_generated_code;
-  l_generated_code.generated_code = NULL;
-  l_generated_code.buffer_size = 0;
-  l_generated_code.code_size = 0;
-  l_generated_code.code_type = 0;
-  l_generated_code.last_error = 0;
-  
   /* CSC structure */
   unsigned int* l_row_idx = NULL;
   unsigned int* l_column_idx = NULL;
@@ -98,6 +90,14 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   unsigned int l_row_count;
   unsigned int l_column_count;
   unsigned int l_element_count;
+
+  /* init generated code object */
+  libxsmm_generated_code l_generated_code;
+  l_generated_code.generated_code = NULL;
+  l_generated_code.buffer_size = 0;
+  l_generated_code.code_size = 0;
+  l_generated_code.code_type = 0;
+  l_generated_code.last_error = 0;
 
   /* add signature to code string */
   libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
@@ -165,13 +165,15 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   }
 
   /* append code to source file */
-  FILE *l_file_handle = fopen( i_file_out, "a" );
-  if ( l_file_handle != NULL ) {
-    fputs( l_generated_code.generated_code, l_file_handle );
-    fclose( l_file_handle );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: could not write to into destination source file\n");
-    exit(-1);
+  {
+    FILE *const l_file_handle = fopen( i_file_out, "a" );
+    if ( l_file_handle != NULL ) {
+      fputs( l_generated_code.generated_code, l_file_handle );
+      fclose( l_file_handle );
+    } else {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: could not write to into destination source file\n");
+      exit(-1);
+    }
   }
 
   /* free code memory */

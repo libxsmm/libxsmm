@@ -33,12 +33,7 @@ elif [[ "-nekbone" == "$1" ]] ; then
   shift
   make -e $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
     BETA=0 THRESHOLD=$((324*324*18)) 
-elif [[ "-cia" == "$1" ]] ; then
-  shift
-  make -e $* MNK=" \
-    0 8 15, \
-    23 24 42"
-elif [[ "-cib" == "$1" ]] ; then
+elif [[ "-ci" == "$1" ]] ; then
   shift
   make -e $* ROW_MAJOR=1 MNK=" \
     0 8 15, \

@@ -430,107 +430,105 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
 
 void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code* io_generated_code,
                                                    const char*             i_arch ) {
-  if ( io_generated_code->code_type != 0 )
-    return;
+  if ( io_generated_code->code_type == 0 ) {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
 
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  if ( (strcmp( i_arch, "wsm" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __SSE3__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "snb" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX code on AVX2 or newer architecture: \" __FILE__)\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "hsw" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "knl" ) == 0) ||
-              (strcmp( i_arch, "skx" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "knc" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __MIC__\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+    if ( (strcmp( i_arch, "wsm" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __SSE3__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling SSE3 code on AVX or newer architecture: \" __FILE__)\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "snb" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX code on AVX2 or newer architecture: \" __FILE__)\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "hsw" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling AVX2 code on AVX512 or newer architecture: \" __FILE__)\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "knl" ) == 0) ||
+                (strcmp( i_arch, "skx" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "knc" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __MIC__\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+      return;
+    }
   }
 }
 
 void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code* io_generated_code,
                                                    const char*             i_arch ) {
-  if ( io_generated_code->code_type != 0 )
-    return;
+  if ( io_generated_code->code_type == 0 ) {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
 
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  if ( (strcmp( i_arch, "wsm" ) == 0) ||
-       (strcmp( i_arch, "snb" ) == 0) ||
-       (strcmp( i_arch, "hsw" ) == 0) ||
-       (strcmp( i_arch, "knc" ) == 0) ||
-       (strcmp( i_arch, "knl" ) == 0) ||
-       (strcmp( i_arch, "skx" ) == 0)    ) {
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#else\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION ERROR in: \" __FILE__)\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#error No kernel was compiled, lacking support for current architecture?\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n\n" );
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
-  } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+    if ( (strcmp( i_arch, "wsm" ) == 0) ||
+         (strcmp( i_arch, "snb" ) == 0) ||
+         (strcmp( i_arch, "hsw" ) == 0) ||
+         (strcmp( i_arch, "knc" ) == 0) ||
+         (strcmp( i_arch, "knl" ) == 0) ||
+         (strcmp( i_arch, "skx" ) == 0))
+    {
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#else\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION ERROR in: \" __FILE__)\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#error No kernel was compiled, lacking support for current architecture?\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n\n" );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
+    } else {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+      return;
+    }
   }
 }
 
 void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_xgemm_descriptor* i_xgemm_desc ) {
-  if ( io_generated_code->code_type != 0 )
-    return;
+  if ( io_generated_code->code_type == 0 ) {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
 
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifndef NDEBUG\n" );
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef _OPENMP\n" );
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma omp atomic\n" );
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, 511, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifndef NDEBUG\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef _OPENMP\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma omp atomic\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, 511, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
 }
 
 void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             io_generated_code,
@@ -652,7 +650,16 @@ void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_gene
                                      const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                      const unsigned int                  i_m_blocking,
                                      const unsigned int                  i_n_blocking ) {
-#ifndef NDEGUG
+  /* deriving register blocking from kernel config */
+  const unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* start register of accumulator */
+  const unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+
+#if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
@@ -674,16 +681,7 @@ void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_gene
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
-#endif
-
-  /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* register blocking counter in n */
-  unsigned int l_n = 0;
-  /* register blocking counter in m */
-  unsigned int l_m = 0;
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+#endif /*NDEBUG*/
 
   /* load C accumulator */
   if (i_xgemm_desc->beta == 1) {
