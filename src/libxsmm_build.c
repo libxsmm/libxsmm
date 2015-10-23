@@ -141,7 +141,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         if (0 == result) {
           libxsmm_generated_code l_generated_code;
           char l_arch[14]; /* set arch string */
-          void *const l_code;
+          void* l_code;
 
 # ifdef __SSE3__
 #   ifndef __AVX__
