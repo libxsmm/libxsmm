@@ -139,6 +139,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         result = cache[indx];
 
         if (0 == result) {
+          int l_code_pages, l_code_page_size, l_fd;
           libxsmm_generated_code l_generated_code;
           char l_arch[14]; /* set arch string */
           void* l_code;
@@ -179,18 +180,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
             return 0;
           }
 
-          { /* create executable buffer */
-            const int l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
-            const int l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
-            const int l_fd = open("/dev/zero", O_RDWR);
-            l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
-            close(l_fd);
+          /* create executable buffer */
+          l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
+          l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
+          l_fd = open("/dev/zero", O_RDWR);
+          l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+          close(l_fd);
 
-            /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+          /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 # if defined(MADV_NOHUGEPAGE)
-            madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
+          madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
 # endif /*MADV_NOHUGEPAGE*/
-          }
 
           if (l_code == MAP_FAILED) {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
