@@ -311,8 +311,9 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
     if ( (i_instruction_set == LIBXSMM_X86_AVX512) && (i_use_masking != 0) ) {
@@ -1342,11 +1343,13 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
     int l_code_length = 0;
     char l_gp_reg_base[4];
     char l_gp_reg_idx[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
     char l_broadcast[8];
     unsigned int l_single_precision = libxsmm_is_x86_vec_instr_single_precision( i_vec_instr );
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
+    libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
+
     if (l_single_precision == 0) {
       LIBXSMM_SNPRINTF( l_broadcast, 7, "1to8" );
     } else {
@@ -1573,8 +1576,9 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_prefetch_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
@@ -1663,8 +1667,9 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
     char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
@@ -1735,9 +1740,10 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     int l_code_length = 0;
     char l_gp_reg_name_src[4];
     char l_gp_reg_name_dest[4];
+    char l_instr_name[16];
+
     libxsmm_get_x86_gp_reg_name( i_gp_reg_number_src, l_gp_reg_name_src, 3 );
     libxsmm_get_x86_gp_reg_name( i_gp_reg_number_dest, l_gp_reg_name_dest, 3 );
-    char l_instr_name[16];
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
@@ -1800,10 +1806,11 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_gp_reg_name[4];
-    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
     char l_instr_name[16];
-    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
     char l_prefix = '\0';
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
+    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
 
     /* check if we need to add a prefix for accessing 32bit in a 64bit register */
     if ( i_gp_reg_number == LIBXSMM_X86_GP_REG_R8  ||
@@ -1878,8 +1885,7 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    io_loop_label_tracker->label_count--;
-    int l_lab = io_loop_label_tracker->label_count;
+    int l_lab = --io_loop_label_tracker->label_count;
     int l_val = io_loop_label_tracker->label_address[l_lab];
     int l_dist;
 
@@ -1897,11 +1903,11 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
           buf[i++] = 0x7c;
           buf[i++] = (unsigned char) l_dist; 
        } else {
+          unsigned char *l_cptr = (unsigned char *) &l_dist; 
           /* 4-byte back jump */
           l_dist = -1*(i+6-l_val);  /* recalc the distance assuming 4-bytes */
           buf[i++] = 0x0f;
           buf[i++] = 0x8c;
-          unsigned char *l_cptr = (unsigned char *) &l_dist; 
           buf[i++] = l_cptr[0];
           buf[i++] = l_cptr[1];
           buf[i++] = l_cptr[2];

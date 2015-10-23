@@ -90,6 +90,7 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                             const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
   unsigned int l_k_unrolled;
+  int l_m_done;
 
   if ( (strcmp(i_arch, "knl") == 0) ) {
     l_generator_microkernel_kloop = libxsmm_generator_dense_avx512_kernel_kloop;
@@ -109,7 +110,7 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
   }
 
   /* we proceed as much as we can in vector length steps, remainder is handled uisng masking */
-  int l_m_done = (i_xgemm_desc->m / i_micro_kernel_config->vector_length) * i_micro_kernel_config->vector_length;
+  l_m_done = (i_xgemm_desc->m / i_micro_kernel_config->vector_length) * i_micro_kernel_config->vector_length;
 
   /* multiples of vector_length in M */
   if (l_m_done > 0) {
@@ -183,8 +184,19 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
 void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                                  const char*                     i_arch ) {
-  /* define gp register mapping */
+  libxsmm_micro_kernel_config l_micro_kernel_config;
+  libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
+
+  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/30);
+  unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
+  unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
+  unsigned int l_n1 = l_n2 + 1;
+  unsigned int l_N2 = 0;
+  unsigned int l_N1 = 0;
+  unsigned int l_chunk = 0;
+
+  /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
   /* machting calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
@@ -203,20 +215,11 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R11; /* B stride helper */
 
   /* define loop_label_tracker */
-  libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
-  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/30);
-  unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
-  unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
-  unsigned int l_n1 = l_n2 + 1;
-  unsigned int l_N2 = 0;
-  unsigned int l_N1 = 0;
-  unsigned int l_chunk = 0;
   if (l_n1 > 30) l_n1 = 30; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
   for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
     if (l_chunk < l_modulo) {

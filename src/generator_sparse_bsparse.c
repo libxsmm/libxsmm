@@ -81,6 +81,11 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
                                        const unsigned int*             i_row_idx,
                                        const unsigned int*             i_column_idx,
                                        const double*                   i_values ) {
+  unsigned int l_n;
+  unsigned int l_z;
+  unsigned int l_column_elements;
+  unsigned int l_flop_count = 0;
+
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
@@ -151,11 +156,6 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
   /* generate the actuel kernel */
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_m = 0; l_m < %u; l_m++) {\n", i_xgemm_desc->m);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-
-  unsigned int l_n;
-  unsigned int l_z;
-  unsigned int l_column_elements;
-  unsigned int l_flop_count = 0;
 
   for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
     l_column_elements = i_column_idx[l_n+1] - i_column_idx[l_n];

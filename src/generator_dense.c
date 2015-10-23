@@ -44,12 +44,12 @@
 void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
                                      const libxsmm_xgemm_descriptor* i_xgemm_desc,
                                      const char*                     i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
-  
   /* apply the alignement override */
   libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
+
+  /* add instruction set mismatch check to code, header */
+  libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
@@ -172,13 +172,15 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   }
 
   /* append code to source file */
-  FILE *l_file_handle = fopen( i_file_out, "a" );
-  if ( l_file_handle != NULL ) {
-    fputs( l_generated_code.generated_code, l_file_handle );
-    fclose( l_file_handle );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_inlineasm could not write to into destination source file\n");
-    exit(-1);
+  {
+    FILE *const l_file_handle = fopen( i_file_out, "a" );
+    if ( l_file_handle != NULL ) {
+      fputs( l_generated_code.generated_code, l_file_handle );
+      fclose( l_file_handle );
+    } else {
+      fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_inlineasm could not write to into destination source file\n");
+      exit(-1);
+    }
   }
 
   /* free code memory */
@@ -217,13 +219,15 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
   }
 
   /* append code to source file */
-  FILE *l_file_handle = fopen( i_file_out, "w" );
-  if ( l_file_handle != NULL ) {
-    fputs( l_generated_code.generated_code, l_file_handle );
-    fclose( l_file_handle );
-  } else {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_direct: could not write to into destination source file!\n");
-    exit(-1);
+  {
+    FILE *const l_file_handle = fopen( i_file_out, "w" );
+    if ( l_file_handle != NULL ) {
+      fputs( l_generated_code.generated_code, l_file_handle );
+      fclose( l_file_handle );
+    } else {
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_direct: could not write to into destination source file!\n");
+      exit(-1);
+    }
   }
 
   /* free code memory */

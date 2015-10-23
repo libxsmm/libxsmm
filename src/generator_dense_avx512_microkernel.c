@@ -414,6 +414,9 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
+    unsigned int l_vcompute = 0;
+    unsigned int l_register_offset = 0;
+
     if ( (l_k > 0) && (l_k%(128/i_micro_kernel_config->datatype_size) == 0) ) {
       libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_2, 128 );
       libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, 128 );
@@ -567,8 +570,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
 
     /* compute vectorwidth (A) * column broadcast (B) */
     /* defning the compute routine */
-    unsigned int l_vcompute = i_micro_kernel_config->vmul_instruction;
-    unsigned int l_register_offset = l_n_blocking;
+    l_vcompute = i_micro_kernel_config->vmul_instruction;
+    l_register_offset = l_n_blocking;
 
     if ( i_k_blocking != 9 ) { 
       if (l_k == 1) {
@@ -757,6 +760,7 @@ unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code
     }
   } else {
     unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
+    unsigned int l_k;
     if (l_max_blocked_k > 0 ) {
       libxsmm_generator_dense_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
                                             i_micro_kernel_config->vector_length, l_k_blocking);
@@ -772,7 +776,6 @@ unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code
       libxsmm_generator_dense_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 
                                           i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
     }
-    unsigned int l_k;
     for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
       libxsmm_generator_dense_avx512_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
