@@ -54,7 +54,6 @@ else
 	MKL = 0
 endif
 
-OUTNAME = $(shell basename $(ROOTDIR))
 HEADERS = $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
@@ -341,42 +340,20 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
-stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
+.PHONY: all
+all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
+
+$(OUTDIR)/stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) stpm.F90 -c
 	$(FC) $(FCMTFLAGS) stpm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o stpm
 
-rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
+$(OUTDIR)/rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
 	$(FC) $(FCMTFLAGS) rstr.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
 
-axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
+$(OUTDIR)/axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) axhm.F90 -c
 	$(FC) $(FCMTFLAGS) axhm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
-
-
-
-.PHONY: all
-all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized $(OUTDIR)/stpm
-
-$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/smm: $(BLDDIR)/smm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
@@ -390,19 +367,15 @@ $(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-
 $(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(MODULES) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(MODULES) $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+
+$(BLDDIR)/%-F90.o: $(SRCDIR)/%.F90 $(MODULES) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
@@ -430,23 +403,11 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+	@rm -f $(OUTDIR)/stpm $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 else
-	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+	@rm -f $(OUTDIR)/stpm $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f *.o stpm rstr
-
-install: all clean
-	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
-	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.plt $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-plot.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/blas.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/dispatched.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/inlined.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/specialized.sh $(OUTDIR) 2> /dev/null || true
 
