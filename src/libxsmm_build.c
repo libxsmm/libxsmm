@@ -142,7 +142,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           int l_code_pages, l_code_page_size, l_fd;
           libxsmm_generated_code l_generated_code;
           char l_arch[14]; /* set arch string */
-          void* l_code;
+          union { /* used to avoid conversion warning */
+            libxsmm_function pf;
+            void* pv;
+          } l_code;
 
 # ifdef __SSE3__
 #   ifndef __AVX__
@@ -184,15 +187,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
           l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
           l_fd = open("/dev/zero", O_RDWR);
-          l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+          l_code.pv = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
           close(l_fd);
 
           /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 # if defined(MADV_NOHUGEPAGE)
-          madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
+          madvise(l_code.pv, l_code_page_size, MADV_NOHUGEPAGE);
 # endif /*MADV_NOHUGEPAGE*/
 
-          if (l_code == MAP_FAILED) {
+          if (l_code.pv == MAP_FAILED) {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
             fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
 # endif /*NDEBUG*/
@@ -200,8 +203,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
             return 0;
           }
 
-          memcpy( l_code, l_generated_code.generated_code, l_generated_code.code_size );
-          if (-1 == mprotect(l_code, l_code_page_size, PROT_EXEC | PROT_READ)) {
+          memcpy( l_code.pv, l_generated_code.generated_code, l_generated_code.code_size );
+          if (-1 == mprotect(l_code.pv, l_code_page_size, PROT_EXEC | PROT_READ)) {
 # if !defined(NDEBUG)
             int errsv = errno;
             if (errsv == EINVAL) {
@@ -233,7 +236,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 # endif /*NDEBUG*/
           /* free temporary buffer, and prepare return value */
           free(l_generated_code.generated_code);
-          result = (libxsmm_function)l_code;
+          result = l_code.pf;
 
           /* make function pointer available for dispatch */
           cache[indx] = result;

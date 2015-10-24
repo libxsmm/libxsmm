@@ -85,7 +85,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 unsigned int*           o_element_count ) {
   FILE *l_csc_file_handle;
   const unsigned int l_line_length = 512;
-  char l_line[l_line_length+1];
+  char l_line[512/*l_line_length*/+1];
   unsigned int l_header_read = 0;
   unsigned int* l_column_idx_id = NULL;
   unsigned int l_i = 0;
