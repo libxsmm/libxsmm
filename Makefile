@@ -72,6 +72,9 @@ CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
+# Request strongest code conformance
+PEDANTIC ?= 0
+
 STATIC ?= 1
 OMP ?= 0
 SYM ?= 0
@@ -129,10 +132,15 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall -std=c++0x
-	CFLAGS += -fPIC -Wall -std=c89
+	CFLAGS += -fPIC -Wall
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC
+	ifeq (1,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck
+	else ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck -Wremarks
+	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -210,12 +218,15 @@ else # GCC assumed
 	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
 	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
-	CFLAGS += -Wall -std=c89 -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 		FCFLAGS += -fPIC
 		LDFLAGS += -fPIC
+	endif
+	ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops

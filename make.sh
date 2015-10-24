@@ -35,7 +35,7 @@ elif [[ "-nekbone" == "$1" ]] ; then
     BETA=0 THRESHOLD=$((324*324*18)) 
 elif [[ "-ci" == "$1" ]] ; then
   shift
-  make -e $* ROW_MAJOR=1 MNK=" \
+  make -e $* PEDANTIC=1 ROW_MAJOR=1 MNK=" \
     0 8 15, \
     23 24 42"
 else
