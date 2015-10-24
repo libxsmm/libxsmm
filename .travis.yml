@@ -12,23 +12,20 @@ compiler:
   - gcc
 
 script: 
- - make -e realclean
- - bash make.sh -ci -j
- - make -e samples
- - make -e test
- - cd samples/cp2k
- - bash test.sh
- - cd ../..
+ - make -e realclean && \
+   bash make.sh -ci -j && \
+   make -e samples && \
+   make -e test && \
+   bash samples/cp2k/test.sh
 
- - make -e realclean
- - make -e ALIGNED_STORES=1 JIT=1
- - bash make.sh -ci drytest
- - cd samples/cp2k
- - bash cp2k-perf.sh
- - bash test.sh
- - cd ../..
+ - make -e realclean && \
+   make -e ALIGNED_STORES=1 JIT=1 && \
+   rm -f samples/cp2k/cp2k-perf.sh && \
+   bash make.sh -ci drytest && \
+   bash samples/cp2k/cp2k-perf.sh && \
+   bash samples/cp2k/test.sh
 
- - cd samples/nek
- - make -e stpm
- - make -e rstr
- - make -e axhm
+ - cd samples/nek && \
+   make -e stpm && \
+   make -e rstr && \
+   make -e axhm
