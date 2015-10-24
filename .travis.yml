@@ -2,7 +2,7 @@ language: cpp
 
 addons:
   apt:
-    packages: 
+    packages:
     - gfortran
     - libblas-dev
     - liblapack-dev
@@ -11,21 +11,21 @@ compiler:
   - clang
   - gcc
 
-script: 
- - make -e realclean && \
-   bash make.sh -ci -j && \
-   make -e samples && \
-   make -e test && \
-   bash samples/cp2k/test.sh
+script:
+  - make -e realclean &&
+    bash make.sh -ci -j &&
+    make -e samples &&
+    make -e test &&
+    bash samples/cp2k/test.sh
 
- - make -e realclean && \
-   make -e ALIGNED_STORES=1 JIT=1 && \
-   rm -f samples/cp2k/cp2k-perf.sh && \
-   bash make.sh -ci drytest && \
-   bash samples/cp2k/cp2k-perf.sh && \
-   bash samples/cp2k/test.sh
+  - make -e realclean &&
+    make -e ALIGNED_STORES=1 JIT=1 &&
+    rm -f samples/cp2k/cp2k-perf.sh &&
+    bash make.sh -ci drytest &&
+    bash samples/cp2k/cp2k-perf.sh &&
+    bash samples/cp2k/test.sh
 
- - cd samples/nek && \
-   make -e stpm && \
-   make -e rstr && \
-   make -e axhm
+  - cd samples/nek &&
+    make -e stpm &&
+    make -e rstr &&
+    make -e axhm
