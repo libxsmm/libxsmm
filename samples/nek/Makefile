@@ -16,6 +16,7 @@ OMP ?= 1
 SYM ?= 0
 DBG ?= 0
 IPO ?= 0
+STS ?= 0
 
 OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
@@ -123,7 +124,10 @@ endif
 ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
-	FCFLAGS += -fPIC -align array64byte -opt-streaming-stores always
+	FCFLAGS += -fPIC 
+ifneq (0,$(STS))
+        FCFLAGS += -align array64byte -opt-streaming-stores always
+endif
 	LDFLAGS += -fPIC 
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
@@ -344,15 +348,15 @@ endif
 all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
 
 $(OUTDIR)/stpm: stpm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
-	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) stpm.F90 -c
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(TARGET) $(IFLAGS) stpm.F90 -c
 	$(FC) $(FCMTFLAGS) stpm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o stpm
 
 $(OUTDIR)/rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
-	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) rstr.F90 -c
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(TARGET) $(IFLAGS) rstr.F90 -c
 	$(FC) $(FCMTFLAGS) rstr.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
 
 $(OUTDIR)/axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
-	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) axhm.F90 -c
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(TARGET) $(IFLAGS) axhm.F90 -c
 	$(FC) $(FCMTFLAGS) axhm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile

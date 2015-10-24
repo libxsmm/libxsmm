@@ -209,7 +209,6 @@ PROGRAM stpm
       enddo
       call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
 
-      call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       !DEC$ vector aligned nontemporal
       c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
                  + h2*b(:,:,:,i)*a(:,:,:,i)
