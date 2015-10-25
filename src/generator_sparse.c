@@ -28,16 +28,17 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "generator_common.h"
 #include "generator_sparse.h"
 #include "generator_sparse_csc_reader.h"
 #include "generator_sparse_asparse.h"
 #include "generator_sparse_bsparse.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+
 
 void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
@@ -123,7 +124,8 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   }
 
   for ( l_n = 0; l_n < l_column_count; l_n++) {
-    int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+    const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+    assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
 
     for ( l_m = 0; l_m < l_column_elems; l_m++) {
       l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];

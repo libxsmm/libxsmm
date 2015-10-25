@@ -90,7 +90,7 @@ void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*  
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                             const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
   unsigned int l_k_unrolled;
-  int l_m_done;
+  unsigned int l_m_done;
 
   if ( (strcmp(i_arch, "knl") == 0) ) {
     l_generator_microkernel_kloop = libxsmm_generator_dense_avx512_kernel_kloop;

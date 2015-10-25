@@ -524,7 +524,7 @@ void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         i
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, 511, "libxsmm_num_total_flops += %i;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, 511, "libxsmm_num_total_flops += %u;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -537,6 +537,7 @@ void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             i
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                            const unsigned int                  i_m_blocking,
                                            const unsigned int                  i_k_blocking ) {
+  LIBXSMM_UNUSED(i_m_blocking);
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_kloop, 0);
   libxsmm_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
@@ -550,6 +551,7 @@ void libxsmm_generator_dense_footer_kloop( libxsmm_generated_code*             i
                                            const unsigned int                  i_m_blocking,
                                            const unsigned int                  i_max_blocked_k,
                                            const unsigned int                  i_kloop_complete ) {
+  LIBXSMM_UNUSED(i_m_blocking);
   libxsmm_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_kloop, i_max_blocked_k );
   libxsmm_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
   if ( i_kloop_complete != 0 ) {

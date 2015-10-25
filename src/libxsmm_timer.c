@@ -44,7 +44,7 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned long long libxsmm_timer_tick()
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned long long libxsmm_timer_tick(void)
 {
 #if defined(_WIN32)
   LARGE_INTEGER t;

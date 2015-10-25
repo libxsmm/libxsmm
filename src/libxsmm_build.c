@@ -76,7 +76,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_build_lock[] = {
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static(void)
 {
   static int init = 0;
 
@@ -251,6 +251,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 # endif /*_WIN32*/
     }
   }
+#else
+  LIBXSMM_UNUSED(single_precision); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
 #endif /*LIBXSMM_JIT*/
   return result;
 }

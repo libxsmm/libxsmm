@@ -40,8 +40,8 @@ static char libxsmm_global_error_message[512];
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
-                      const int              i_dest_length,
-                      const int              i_src_length ) {
+                      unsigned int           i_dest_length,
+                      unsigned int           i_src_length ) {
   if ( i_dest_length < i_src_length ) {
     fprintf( stderr, "LIBXSMM FATAL ERROR: libxsmm_strncpy destination buffer is too small!\n" );
     exit(-1);
@@ -89,7 +89,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* copy old content */
   if (l_length_1 > 0) {
     /* @TODO using memcpy instead? */
-    libxsmm_strncpy( l_new_string, current_code, l_length_1+l_length_2, l_length_1 );
+    libxsmm_strncpy( l_new_string, current_code, (unsigned int)(l_length_1+l_length_2), (unsigned int)l_length_1 );
   } else {
     l_new_string[0] = '\0';
   }
@@ -393,7 +393,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%i) is out of range!\n", i_instr_number);
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
       exit(-1);
   }
 }
@@ -557,7 +557,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%i) is not a x86 FP vector instruction!\n", i_instr_number);
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
       exit(-1);
   }
 

@@ -221,6 +221,9 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
   unsigned int l_k;
   unsigned int l_flop_count = 0;
 
+  LIBXSMM_UNUSED(i_arch);
+  LIBXSMM_UNUSED(i_values);
+
   /* loop over columns in C in generated code, we fully unroll inside each column */
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n  #pragma nounroll_and_jam\n  for ( l_n = 0; l_n < %u; l_n++) {\n", i_xgemm_desc->n);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

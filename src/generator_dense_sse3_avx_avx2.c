@@ -156,7 +156,6 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
               unsigned int l_max_blocked_k = ((i_xgemm_desc->k)/l_k_blocking)*l_k_blocking;
               unsigned int l_k;
               if ( l_max_blocked_k > 0 ) {
-                unsigned int l_k;
                 libxsmm_generator_dense_header_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
                
                 for ( l_k = 0; l_k < l_k_blocking; l_k++) {

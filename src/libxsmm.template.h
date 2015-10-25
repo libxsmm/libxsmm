@@ -55,7 +55,7 @@
 
 
 /** Explictly initializes the library; can be used to pay for setup cost at a specific point. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static();
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static(void);
 
 /** Generic type of a function. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_function)(LIBXSMM_VARIADIC);

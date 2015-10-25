@@ -42,6 +42,8 @@ void libxsmm_generator_dense_noarch_kernel( libxsmm_generated_code*         io_g
   int l_max_code_length = 511;
   int l_code_length = 0;
 
+  LIBXSMM_UNUSED(i_arch);
+
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_m = 0;\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n");

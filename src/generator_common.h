@@ -204,7 +204,6 @@ typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int vector_reg_count;
   unsigned int vector_length;
   unsigned int datatype_size;
-  char         vector_name;
   unsigned int a_vmove_instruction;
   unsigned int b_vmove_instruction;
   unsigned int b_shuff_instruction;
@@ -219,7 +218,8 @@ typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int alu_cmp_instruction;
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
-} libxsmm_micro_kernel_config; 
+  char vector_name;
+} libxsmm_micro_kernel_config;
 
 /* struct for storing the current gp reg mapping */
 typedef struct libxsmm_gp_reg_mapping_struct {
@@ -280,7 +280,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
-                      const int              i_dest_length,
-                      const int              i_src_length );
+                      unsigned int           i_dest_length,
+                      unsigned int           i_src_length );
 
 #endif /* GENERATOR_COMMON_H */

@@ -28,13 +28,14 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "generator_dense_instructions.h"
+#include "generator_dense_imci_microkernel.h"
+#include <libxsmm_macros.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_dense_instructions.h"
-#include "generator_dense_imci_microkernel.h"
 
 void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*             io_generated_code,
                                                const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
@@ -162,6 +163,8 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
   const unsigned int l_k_blocking = 8;
   const unsigned int l_k_threshold = 8;
   unsigned int l_k_unrolled = 0;
+
+  LIBXSMM_UNUSED(i_arch);
 
   /* Let's do something special for SeisSol with k=9, fully unroll */
   if ((i_xgemm_desc->k == 9)) {
