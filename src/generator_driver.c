@@ -28,16 +28,17 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include "generator_extern_typedefs.h"
+#include "generator_sparse.h"
+#include "generator_dense.h"
 
-#include <stdio.h>
+#include <libxsmm_macros.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-#include "generator_extern_typedefs.h"
-#include "generator_dense.h"
-#include "generator_sparse.h"
 
-void print_help() {
+LIBXSMM_INLINE void print_help(void) {
   printf("\nwrong usage -> exit!\n\n\n");
   printf("Usage (sparse*dense=dense, dense*sparse=dense):\n");
   printf("    sparse\n");

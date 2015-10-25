@@ -28,19 +28,20 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "generator_common.h"
-#include "generator_dense_common.h"
-#include "generator_dense_instructions.h"
-
+#include "generator_dense_imci_avx512.h"
 #include "generator_dense_imci_microkernel.h"
 #include "generator_dense_avx512_microkernel.h"
+#include "generator_dense_instructions.h"
+#include "generator_dense_common.h"
+#include "generator_common.h"
 
-void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
+#include <libxsmm_macros.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
                                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                  const libxsmm_xgemm_descriptor*    i_xgemm_desc,
@@ -75,7 +76,7 @@ void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generat
   } else {}
 }
 
-void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
+LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
                                                        libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
