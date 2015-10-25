@@ -33,8 +33,26 @@
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_prefetch.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
+    <ClInclude Include="..\src\generator_common.h" />
+    <ClInclude Include="..\src\generator_dense.h" />
+    <ClInclude Include="..\src\generator_dense_avx2_microkernel.h" />
+    <ClInclude Include="..\src\generator_dense_avx512_microkernel.h" />
+    <ClInclude Include="..\src\generator_dense_avx_microkernel.h" />
+    <ClInclude Include="..\src\generator_dense_common.h" />
+    <ClInclude Include="..\src\generator_dense_imci_avx512.h" />
+    <ClInclude Include="..\src\generator_dense_imci_microkernel.h" />
+    <ClInclude Include="..\src\generator_dense_instructions.h" />
+    <ClInclude Include="..\src\generator_dense_noarch.h" />
+    <ClInclude Include="..\src\generator_dense_sse3_avx_avx2.h" />
+    <ClInclude Include="..\src\generator_dense_sse3_microkernel.h" />
+    <ClInclude Include="..\src\generator_extern_typedefs.h" />
+    <ClInclude Include="..\src\generator_sparse.h" />
+    <ClInclude Include="..\src\generator_sparse_asparse.h" />
+    <ClInclude Include="..\src\generator_sparse_bsparse.h" />
+    <ClInclude Include="..\src\generator_sparse_csc_reader.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
+    <ClInclude Include="..\src\libxsmm_generator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_1_1_1.c" />
@@ -43,6 +61,22 @@
     <ClCompile Include="..\build\mm_3_3_3.c" />
     <ClCompile Include="..\build\mm_4_4_4.c" />
     <ClCompile Include="..\build\mm_5_5_5.c" />
+    <ClCompile Include="..\src\generator_common.c" />
+    <ClCompile Include="..\src\generator_dense.c" />
+    <ClCompile Include="..\src\generator_dense_avx2_microkernel.c" />
+    <ClCompile Include="..\src\generator_dense_avx512_microkernel.c" />
+    <ClCompile Include="..\src\generator_dense_avx_microkernel.c" />
+    <ClCompile Include="..\src\generator_dense_common.c" />
+    <ClCompile Include="..\src\generator_dense_imci_avx512.c" />
+    <ClCompile Include="..\src\generator_dense_imci_microkernel.c" />
+    <ClCompile Include="..\src\generator_dense_instructions.c" />
+    <ClCompile Include="..\src\generator_dense_noarch.c" />
+    <ClCompile Include="..\src\generator_dense_sse3_avx_avx2.c" />
+    <ClCompile Include="..\src\generator_dense_sse3_microkernel.c" />
+    <ClCompile Include="..\src\generator_sparse.c" />
+    <ClCompile Include="..\src\generator_sparse_asparse.c" />
+    <ClCompile Include="..\src\generator_sparse_bsparse.c" />
+    <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
     <ClCompile Include="..\src\libxsmm_build.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
@@ -161,7 +195,6 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
@@ -171,8 +204,9 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -201,7 +235,6 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
@@ -212,8 +245,9 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -246,7 +280,6 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
@@ -255,8 +288,9 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -287,7 +321,6 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
@@ -297,8 +330,9 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -325,14 +359,14 @@
       <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -363,14 +397,14 @@
       <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_EXPORTED;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
