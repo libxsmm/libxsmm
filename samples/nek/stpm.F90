@@ -38,7 +38,6 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  INTEGER, PARAMETER :: MAX_NTHREADS = 512
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
@@ -46,7 +45,7 @@ PROGRAM stpm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
-  INTEGER :: argc, m, n, k, ld, routine, check
+  INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
@@ -136,8 +135,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -162,8 +159,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -188,8 +183,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -233,8 +226,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
