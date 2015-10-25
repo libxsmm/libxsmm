@@ -80,14 +80,14 @@ typedef struct libxsmm_generated_code_struct {
   void* generated_code;              /* pointer to memory which can contain strings or binary code */
   unsigned int buffer_size;          /* total size if the buffer generated_code */
   unsigned int code_size;            /* size of bytes used in generated_code */
-  unsigned int code_type;            /*   0: generated code contains inline assembly in a C 
+  unsigned int code_type;            /*   0: generated code contains inline assembly in a C
                                              function which can be dumped into into a *.c/cc/cpp file
-                                          1: generated code contains assembly which can be 
+                                          1: generated code contains assembly which can be
                                              dumped into a *.s file
-                                         >1: generated code contains a function in binary code which can be 
-                                             called, when the buffer is copied to executable memory */ 
+                                         >1: generated code contains a function in binary code which can be
+                                             called, when the buffer is copied to executable memory */
   unsigned int last_error;           /* 0    no error occured
-                                        > 0  the occured error code */ 
+                                        > 0  the occured error code */
 } libxsmm_generated_code;
 
 /* function to translate LIBXSMM Generator error codes

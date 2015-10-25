@@ -38,13 +38,13 @@
 void libxsmm_generator_sparse( const char*                     i_file_out,
                                const char*                     i_routine_name,
                                const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                               const char*                     i_arch, 
+                               const char*                     i_arch,
                                const char*                     i_csc_file_in );
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                      const char*                     i_arch, 
+                                      const char*                     i_arch,
                                       const unsigned int*             i_row_idx,
                                       const unsigned int*             i_column_idx,
                                       const double*                   i_values );

@@ -88,20 +88,20 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
     return;
-  }  
+  }
 
   /* check LDB */
   if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
     return;
-  }  
+  }
 
   /* check LDC */
   if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
     return;
-  }  
- 
+  }
+
   /* derive if alignment is possible */
   if ( (l_xgemm_desc_mod.lda % l_vector_length) == 0 ) {
     l_xgemm_desc_mod.aligned_a = 1;
@@ -112,7 +112,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
     l_xgemm_desc_mod.aligned_c = 1;
   } else {
     l_xgemm_desc_mod.aligned_c = 0;
-  }  
+  }
 
   /* enforce possible external overwrite */
   l_xgemm_desc_mod.aligned_a = l_xgemm_desc_mod.aligned_a && i_xgemm_desc->aligned_a;
@@ -123,14 +123,14 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
        (strcmp(i_arch, "hsw") == 0)    ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_dense_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
-  } else if ( (strcmp(i_arch, "knc") == 0) || 
-       (strcmp(i_arch, "knl") == 0) || 
+  } else if ( (strcmp(i_arch, "knc") == 0) ||
+       (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "skx") == 0)    ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_dense_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_dense_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch ); 
+    libxsmm_generator_dense_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -154,7 +154,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   l_generated_code.code_size = 0;
   l_generated_code.code_type = 0;
   l_generated_code.last_error = 0;
-  
+
   /* add signature to code string */
   libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 

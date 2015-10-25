@@ -101,7 +101,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
       return;
     }
-    /* check if we are still reading comments header */ 
+    /* check if we are still reading comments header */
     if ( l_line[0] == '%' ) {
       continue;
     } else {
@@ -117,10 +117,10 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           /* check if mallocs were successful */
           if ( ( *o_row_idx == NULL )      ||
                ( *o_column_idx == NULL )   ||
-               ( *o_values == NULL )       || 
+               ( *o_values == NULL )       ||
                ( l_column_idx_id == NULL )    ) {
             libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
-            return;            
+            return;
           }
 
           /* set everything to zero for init */
@@ -132,10 +132,10 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           /* init column idx */
           for ( l_i = 0; l_i < (*o_column_count + 1); l_i++)
             (*o_column_idx)[l_i] = (*o_element_count);
-         
+
           /* init */
           (*o_column_idx)[0] = 0;
-          l_i = 0; 
+          l_i = 0;
           l_header_read = 1;
         } else {
           libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_DESC );
@@ -159,7 +159,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         l_i++;
         /* handle columns, set id to onw for this column, yeah we need to hanle empty columns */
         l_column_idx_id[l_column] = 1;
-        (*o_column_idx)[l_column+1] = l_i;          
+        (*o_column_idx)[l_column+1] = l_i;
       }
     }
   }
@@ -179,7 +179,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
       (*o_column_idx)[l_i+1] = (*o_column_idx)[l_i];
     }
   }
-  
+
   /* free helper data structure */
   if ( l_column_idx_id != NULL ) {
     free( l_column_idx_id );

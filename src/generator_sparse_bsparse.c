@@ -77,7 +77,7 @@
 
 void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_generated_code,
                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch, 
+                                       const char*                     i_arch,
                                        const unsigned int*             i_row_idx,
                                        const unsigned int*             i_column_idx,
                                        const double*                   i_values ) {
@@ -133,10 +133,10 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
     } else if ( i_xgemm_desc->m > 1 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(2)\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else {} 
+    } else {}
 
-    if ( (i_xgemm_desc->m > 1)          && 
-         (i_xgemm_desc->aligned_a != 0) && 
+    if ( (i_xgemm_desc->m > 1)          &&
+         (i_xgemm_desc->aligned_a != 0) &&
          (i_xgemm_desc->aligned_c != 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -144,8 +144,8 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
   } else if ( ( strcmp( i_arch, "knc" ) == 0 ) ||
               ( strcmp( i_arch, "knl" ) == 0 ) ||
               ( strcmp( i_arch, "skx" ) == 0 )    ) {
-    if ( (i_xgemm_desc->m > 1)          && 
-         (i_xgemm_desc->aligned_a != 0) && 
+    if ( (i_xgemm_desc->m > 1)          &&
+         (i_xgemm_desc->aligned_a != 0) &&
          (i_xgemm_desc->aligned_c != 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(32)\n  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -153,7 +153,7 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
-  } 
+  }
 
   /* generate the actuel kernel */
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_m = 0; l_m < %u; l_m++) {\n", i_xgemm_desc->m);

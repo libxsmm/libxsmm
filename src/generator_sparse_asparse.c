@@ -77,8 +77,8 @@
 
 void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
                                               const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                              const unsigned int              i_k, 
-                                              const unsigned int              i_z, 
+                                              const unsigned int              i_k,
+                                              const unsigned int              i_z,
                                               const unsigned int*             i_row_idx,
                                               const unsigned int*             i_column_idx ) {
   char l_new_code[512];
@@ -118,8 +118,8 @@ void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io
 
 void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*         io_generated_code,
                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                  const unsigned int              i_k, 
-                                                  const unsigned int              i_z, 
+                                                  const unsigned int              i_k,
+                                                  const unsigned int              i_z,
                                                   const unsigned int*             i_row_idx,
                                                   const unsigned int*             i_column_idx ) {
   char l_new_code[512];
@@ -159,8 +159,8 @@ void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*       
 
 void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                                   const unsigned int              i_k, 
-                                                   const unsigned int              i_z, 
+                                                   const unsigned int              i_k,
+                                                   const unsigned int              i_z,
                                                    const unsigned int*             i_row_idx,
                                                    const unsigned int*             i_column_idx ) {
   char l_new_code[512];
@@ -211,7 +211,7 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
 
 void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_generated_code,
                                        const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch, 
+                                       const char*                     i_arch,
                                        const unsigned int*             i_row_idx,
                                        const unsigned int*             i_column_idx,
                                        const double*                   i_values ) {
@@ -236,14 +236,14 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "   #pragma simd\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
-    if ( i_xgemm_desc->single_precision == 0 ) {  
+    if ( i_xgemm_desc->single_precision == 0 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) {\n      C[(l_n*%u)+l_m] = 0.0;\n    }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
     } else {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) {\n      C[(l_n*%u)+l_m] = 0.0f;\n    }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
-  
+
   /* loop over columns in A, rows in B and fully unroll */
   for ( l_k = 0; l_k < i_xgemm_desc->k; l_k++ ) {
     unsigned int l_column_elements = i_column_idx[l_k + 1] - i_column_idx[l_k];
@@ -251,7 +251,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
 
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) || defined(__AVX__)\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    
+
     if ( l_column_elements > 0 ) {
       if ( i_xgemm_desc->single_precision == 0 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && defined(__AVX__)\n    __m256d b%u = _mm256_broadcast_sd(&B[(l_n*%u)+%u]);\n#endif\n", l_k, i_xgemm_desc->ldb, l_k);
@@ -273,7 +273,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
         /* check for 256bit vector instruction */
         if ((i_row_idx[i_column_idx[l_k] + l_z] + 1 == i_row_idx[i_column_idx[l_k] + l_z + 1]) &&
             (i_row_idx[i_column_idx[l_k] + l_z] + 2 == i_row_idx[i_column_idx[l_k] + l_z + 2]) &&
-            (i_row_idx[i_column_idx[l_k] + l_z] + 3 == i_row_idx[i_column_idx[l_k] + l_z + 3]) && 
+            (i_row_idx[i_column_idx[l_k] + l_z] + 3 == i_row_idx[i_column_idx[l_k] + l_z + 3]) &&
             (i_row_idx[i_column_idx[l_k] + l_z + 3] < i_xgemm_desc->m)) {
           libxsmm_sparse_asparse_innerloop_four_vector(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           l_z += 3;
