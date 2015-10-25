@@ -116,7 +116,15 @@ make ALIGNED_STORES=1
 
 The general alignment (ALIGNMENT=64) as well as an alignment specific for the store instructions (ALIGNED_STORES=n) can be specified when invoking 'make' (by default ALIGNED_STORES inherits ALIGNMENT when "enabled" using ALIGNED_STORES=1). The "implicitly aligned leading dimension" optimization is not expected to have a big impact due to the relatively low amount of store instructions in the mix. In contrast, supporting an "implicitly aligned leading dimension" for loading the input matrices is supposed to make a bigger impact, however this is not exposed by the build system because: (1) aligning a batch of input matrices implies usually larger code changes for the client code whereas accumulating into a local temporary destination matrix is a relatively minor change, and (2) today's Advanced Vector Extensions including the AVX-512 capable hardware supports unaligned load/store instructions.
 
-The generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
+An extended interface can generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Directly invoking the generator backend](#directly-invoking-the-generator-backend) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
+
+```
+make PREFETCH=8
+```
+
+The interface which is supporting software prefetches extends the signature of all kernels by three arguments (pa, pb, and pc) allowing the call-side to specify where to prefetch the operands of the "next" multiplication from (a, b, and c). There are [macros](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_prefetch.h) available (C/C++ only) allowing to call the matrix multiplication functions in a prefetch-agnostic fashion (see [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) or [smm](https://github.com/hfp/libxsmm/tree/master/samples/smm samples) code samples).
+
+Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
 ### Auto-dispatch
 The function 'libxsmm_?mm_dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch is orchestrating three levels:
@@ -150,15 +158,7 @@ make JIT=1
 
 One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_build_jit) are not subject to a problem size threshold. Moreover, building with JIT=2 (in fact, 1<JIT and JIT!=0) allows to solely rely on explicitly generating kernels at runtime. Of course, JIT code generation can be used to accompanying statically generated code.
 
-Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30%% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with kernel 2.6.38 (or later) it is possible to disable THP for mmap'ed regions. Once can adjust [src/libxsmm_build.c](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_build.c#L158), in order to prevent this problem (which also requires to remove the "-c89" flag when building LIBXSMM):
-
-```C
-int l_fd = open("/dev/zero", O_RDWR);
-void* p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
-close(l_fd);
-/* explicitly disable THP for this memory region */ 
-madvise(p, l_code_page_size, MADV_NOHUGEPAGE);
-```
+Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 
 ### Directly invoking the generator backend
 In rare situations it might be useful to directly incorporate generated C code (with inline assembly regions). This is accomplished by invoking a driver program (with certain command line arguments). The driver program is built as part of LIBXSMM's build process (when requesting static code generation), but also available via a separate build target:
@@ -187,7 +187,7 @@ The code generator driver program accepts the following arguments:
 15. SP/DP single or double precision
 16. CSC file (just required when 1. is "sparse"). Matrix market format.
 
-The prefetch specifier can be:
+The prefetch strategy can be:
 
 1. "nopf": no prefetching at all, just 3 inputs (\*A, \*B, \*C)
 2. "pfsigonly": just prefetching signature, 6 inputs (\*A, \*B, \*C, \*A’, \*B’, \*C’)
