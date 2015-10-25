@@ -108,7 +108,7 @@ ifneq (0,$(INTEL))
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
 	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC
+	LDFLAGS += -fPIC -lrt
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -191,6 +191,7 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall
 	CFLAGS += -Wall
+	LDFLAGS += -lrt
 	ifneq ($(OS),Windows_NT)
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
