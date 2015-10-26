@@ -45,7 +45,7 @@
 #else
 # define LIBXSMM_EXTERN_C
 # define LIBXSMM_VARIADIC
-# if (199901L <= __STDC_VERSION__)
+# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__))
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE static inline
@@ -77,7 +77,7 @@
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(simd private(__VA_ARGS__))
 # define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(simd)
-#elif (201307 <= _OPENMP) /*OpenMP 4.0*/
+#elif defined(_OPENMP) && (201307 <= _OPENMP) /*OpenMP 4.0*/
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(omp simd private(__VA_ARGS__))
@@ -209,7 +209,7 @@
 # define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
 # define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
 #else
-# if (199901L <= __STDC_VERSION__)
+# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__))
 #   define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 # else
 #   define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)

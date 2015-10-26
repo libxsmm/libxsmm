@@ -77,7 +77,7 @@
 #define LIBXSMM_X86_INSTR_VMOVUPS        10003
 #define LIBXSMM_X86_INSTR_VBROADCASTSD   10004
 #define LIBXSMM_X86_INSTR_VBROADCASTSS   10005
-#define LIBXSMM_X86_INSTR_VMOVDDUP       10006 
+#define LIBXSMM_X86_INSTR_VMOVDDUP       10006
 #define LIBXSMM_X86_INSTR_VMOVSD         10007
 #define LIBXSMM_X86_INSTR_VMOVSS         10008
 /* SSE */
@@ -87,7 +87,7 @@
 #define LIBXSMM_X86_INSTR_MOVUPS         10012
 #define LIBXSMM_X86_INSTR_MOVSD          10013
 #define LIBXSMM_X86_INSTR_MOVSS          10014
-#define LIBXSMM_X86_INSTR_MOVDDUP        10015 
+#define LIBXSMM_X86_INSTR_MOVDDUP        10015
 #define LIBXSMM_X86_INSTR_SHUFPS         10016
 /* IMCI */
 #define LIBXSMM_X86_INSTR_VLOADUNPACKLPD 10017
@@ -204,7 +204,6 @@ typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int vector_reg_count;
   unsigned int vector_length;
   unsigned int datatype_size;
-  char         vector_name;
   unsigned int a_vmove_instruction;
   unsigned int b_vmove_instruction;
   unsigned int b_shuff_instruction;
@@ -219,7 +218,8 @@ typedef struct libxsmm_micro_kernel_config_struct {
   unsigned int alu_cmp_instruction;
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
-} libxsmm_micro_kernel_config; 
+  char vector_name;
+} libxsmm_micro_kernel_config;
 
 /* struct for storing the current gp reg mapping */
 typedef struct libxsmm_gp_reg_mapping_struct {
@@ -250,7 +250,7 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
 
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name,
-                                  const int          i_gp_reg_name_max_length ); 
+                                  const int          i_gp_reg_name_max_length );
 
 unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number );
 
@@ -262,9 +262,9 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
 
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 
-/* some string manipulation helper needed to 
+/* some string manipulation helper needed to
    generated code */
-void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
+void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
                                     const char*             i_code_to_append,
                                     const int               i_append_length );
 
@@ -280,7 +280,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
-                      const int              i_dest_length,
-                      const int              i_src_length );
+                      unsigned int           i_dest_length,
+                      unsigned int           i_src_length );
 
 #endif /* GENERATOR_COMMON_H */

@@ -40,8 +40,8 @@ static char libxsmm_global_error_message[512];
 
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
-                      const int              i_dest_length,
-                      const int              i_src_length ) {
+                      unsigned int           i_dest_length,
+                      unsigned int           i_src_length ) {
   if ( i_dest_length < i_src_length ) {
     fprintf( stderr, "LIBXSMM FATAL ERROR: libxsmm_strncpy destination buffer is too small!\n" );
     exit(-1);
@@ -52,7 +52,7 @@ void libxsmm_strncpy( char*                  o_dest,
   strcpy( o_dest, i_src );
 }
 
-void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code, 
+void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
                                     const char*             i_code_to_append,
                                     const int               i_append_length ) {
   size_t l_length_1 = 0;
@@ -89,7 +89,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* copy old content */
   if (l_length_1 > 0) {
     /* @TODO using memcpy instead? */
-    libxsmm_strncpy( l_new_string, current_code, l_length_1+l_length_2, l_length_1 );
+    libxsmm_strncpy( l_new_string, current_code, (unsigned int)(l_length_1+l_length_2), (unsigned int)l_length_1 );
   } else {
     l_new_string[0] = '\0';
   }
@@ -101,7 +101,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* free old memory and overwrite pointer */
   if (l_length_1 > 0)
     free(current_code);
-  
+
   io_generated_code->generated_code = (void*)l_new_string;
 
   /* update counters */
@@ -135,7 +135,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name,
                                   const int          i_gp_reg_name_max_length ) {
   switch (i_gp_reg_number) {
-    case LIBXSMM_X86_GP_REG_RAX: 
+    case LIBXSMM_X86_GP_REG_RAX:
       libxsmm_strncpy(o_gp_reg_name, "rax", i_gp_reg_name_max_length, 3 );
       break;
     case LIBXSMM_X86_GP_REG_RCX:
@@ -147,7 +147,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
     case LIBXSMM_X86_GP_REG_RBX:
       libxsmm_strncpy(o_gp_reg_name, "rbx", i_gp_reg_name_max_length, 3 );
       break;
-    case LIBXSMM_X86_GP_REG_RSP: 
+    case LIBXSMM_X86_GP_REG_RSP:
       libxsmm_strncpy(o_gp_reg_name, "rsp", i_gp_reg_name_max_length, 3 );
       break;
     case LIBXSMM_X86_GP_REG_RBP:
@@ -159,7 +159,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
     case LIBXSMM_X86_GP_REG_RDI:
       libxsmm_strncpy(o_gp_reg_name, "rdi", i_gp_reg_name_max_length, 3 );
       break;
-    case LIBXSMM_X86_GP_REG_R8: 
+    case LIBXSMM_X86_GP_REG_R8:
       libxsmm_strncpy(o_gp_reg_name, "r8", i_gp_reg_name_max_length, 2 );
       break;
     case LIBXSMM_X86_GP_REG_R9:
@@ -171,7 +171,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
     case LIBXSMM_X86_GP_REG_R11:
       libxsmm_strncpy(o_gp_reg_name, "r11", i_gp_reg_name_max_length, 3 );
       break;
-    case LIBXSMM_X86_GP_REG_R12: 
+    case LIBXSMM_X86_GP_REG_R12:
       libxsmm_strncpy(o_gp_reg_name, "r12", i_gp_reg_name_max_length, 3 );
       break;
     case LIBXSMM_X86_GP_REG_R13:
@@ -373,34 +373,34 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JL:
       libxsmm_strncpy(o_instr_name, "jl", i_instr_name_max_length, 2 );
       break;
-    case LIBXSMM_X86_INSTR_PREFETCHT0: 
+    case LIBXSMM_X86_INSTR_PREFETCHT0:
       libxsmm_strncpy(o_instr_name, "prefetcht0", i_instr_name_max_length, 10 );
       break;
-    case LIBXSMM_X86_INSTR_PREFETCHT1: 
+    case LIBXSMM_X86_INSTR_PREFETCHT1:
       libxsmm_strncpy(o_instr_name, "prefetcht1", i_instr_name_max_length, 10 );
       break;
-    case LIBXSMM_X86_INSTR_PREFETCHT2: 
+    case LIBXSMM_X86_INSTR_PREFETCHT2:
       libxsmm_strncpy(o_instr_name, "prefetcht2", i_instr_name_max_length, 10 );
       break;
-    case LIBXSMM_X86_INSTR_PREFETCHNTA: 
+    case LIBXSMM_X86_INSTR_PREFETCHNTA:
       libxsmm_strncpy(o_instr_name, "prefetchnta", i_instr_name_max_length, 11 );
       break;
-    case LIBXSMM_X86_INSTR_KMOV: 
+    case LIBXSMM_X86_INSTR_KMOV:
       libxsmm_strncpy(o_instr_name, "kmov", i_instr_name_max_length, 4 );
       break;
-    case LIBXSMM_X86_INSTR_KMOVW: 
+    case LIBXSMM_X86_INSTR_KMOVW:
       libxsmm_strncpy(o_instr_name, "kmovw", i_instr_name_max_length, 5 );
       break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%i) is out of range!\n", i_instr_number);
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
       exit(-1);
   }
 }
 
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number ) {
   unsigned int l_return = 0;
-  
+
   switch (i_instr_number) {
     case LIBXSMM_X86_INSTR_VMOVAPD:
       l_return = 0;
@@ -557,7 +557,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%i) is not a x86 FP vector instruction!\n", i_instr_number);
+      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
       exit(-1);
   }
 
@@ -655,55 +655,55 @@ const char* libxsmm_strerror( const unsigned int      i_error_code ) {
       break;
     case LIBXSMM_ERR_CSC_INPUT:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
-      break;   
+      break;
     case LIBXSMM_ERR_CSC_READ_LEN:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
-      break;   
+      break;
     case LIBXSMM_ERR_CSC_READ_DESC:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_CSC_READ_ELEMS:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_CSC_LEN:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_N_BLOCK:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid N blocking in microkernel!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_M_BLOCK:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_NO_IMCI:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: IMCI architecture requested but called for a different on!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_REG_BLOCK:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_VEC_MOVE_IMCI:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid vec move instruction for IMCI instruction replacement!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_APPEND_STR:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: append code as string was called for generation mode which does not support this!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_ALLOC:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: memory allocation failed!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: fused memory broadcast is not supported on other platforms than AVX512/IMCI!\n" );
-      break; 
+      break;
     case LIBXSMM_ERR_CALLEE_SAVE_A:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;      
+      break;
     case LIBXSMM_ERR_CALLEE_SAVE_B:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;      
+      break;
     case LIBXSMM_ERR_CALLEE_SAVE_C:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;      
+      break;
     case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;      
+      break;
     case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
       break;

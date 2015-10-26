@@ -76,7 +76,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_build_lock[] = {
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static()
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_build_static(void)
 {
   static int init = 0;
 
@@ -224,10 +224,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 # if !defined(NDEBUG)
           /* write buffer for manual decode as binary to a file */
           char l_objdump_name[512];
-          sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin", 
+          sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin",
                    l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
                    l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
-                   l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch ); 
+                   l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch );
           FILE *const l_byte_code = fopen( l_objdump_name, "wb");
           if ( l_byte_code != NULL ) {
             fwrite( l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
@@ -251,6 +251,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
 # endif /*_WIN32*/
     }
   }
+#else
+  LIBXSMM_UNUSED(single_precision); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
 #endif /*LIBXSMM_JIT*/
   return result;
 }

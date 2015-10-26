@@ -65,9 +65,9 @@ void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             i
                                            const unsigned int                  i_m_blocking,
                                            const unsigned int                  i_n_blocking );
 
-void libxsmm_instruction_vec_move_imci( libxsmm_generated_code* io_generated_code, 
+void libxsmm_instruction_vec_move_imci( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_instruction_set,
-                                        const unsigned int      i_vmove_instr, 
+                                        const unsigned int      i_vmove_instr,
                                         const unsigned int      i_gp_reg_base,
                                         const unsigned int      i_gp_reg_idx,
                                         const unsigned int      i_scale,

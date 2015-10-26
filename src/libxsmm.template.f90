@@ -73,7 +73,7 @@ MODULE LIBXSMM
 
   ! Type of a function generated for a specific M, N, and K
   ABSTRACT INTERFACE
-    ! This interface requires the use of C_LOC in the user code 
+    ! This interface requires the use of C_LOC in the user code
     ! on arrays which is not support in all FORTRAN compilers
     PURE SUBROUTINE LIBXSMM_XMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_PTR
@@ -115,7 +115,7 @@ MODULE LIBXSMM
     ! Init the library
     PURE SUBROUTINE libxsmm_build_static() BIND(C)
     END SUBROUTINE
- 
+
     ! Build explicitly a kernel, do not rely on automatic JIT in dispatch
     TYPE(C_FUNPTR) PURE FUNCTION libxsmm_build_jit(single_precision, m, n, k) BIND(C)
       IMPORT :: C_FUNPTR, C_INT

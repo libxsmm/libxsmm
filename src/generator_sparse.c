@@ -28,20 +28,21 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "generator_common.h"
 #include "generator_sparse.h"
 #include "generator_sparse_csc_reader.h"
 #include "generator_sparse_asparse.h"
 #include "generator_sparse_bsparse.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+
+
 void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                      const char*                     i_arch, 
+                                      const char*                     i_arch,
                                       const unsigned int*             i_row_idx,
                                       const unsigned int*             i_column_idx,
                                       const double*                   i_values ) {
@@ -51,12 +52,12 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
     if ( i_xgemm_desc->ldb < i_xgemm_desc->k ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
       return;
-    }  
+    }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
-    }  
+    }
     libxsmm_generator_sparse_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
@@ -64,12 +65,12 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
     if ( i_xgemm_desc->lda < i_xgemm_desc->m ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
       return;
-    }  
+    }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
-    }  
+    }
     libxsmm_generator_sparse_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
@@ -81,7 +82,7 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
 void libxsmm_generator_sparse( const char*                     i_file_out,
                                const char*                     i_routine_name,
                                const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                               const char*                     i_arch, 
+                               const char*                     i_arch,
                                const char*                     i_csc_file_in ) {
   /* CSC structure */
   unsigned int* l_row_idx = NULL;
@@ -123,7 +124,8 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   }
 
   for ( l_n = 0; l_n < l_column_count; l_n++) {
-    int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+    const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+    assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
 
     for ( l_m = 0; l_m < l_column_elems; l_m++) {
       l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
@@ -136,9 +138,9 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
     }
     printf("\n");
   }
-  
+
   free( l_tmp );
-#endif  
+#endif
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_sparse_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );

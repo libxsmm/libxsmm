@@ -104,15 +104,13 @@ PROGRAM stpm
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-  s = LSHIFT(INT8(MAX(i, 0)), 29) / ((m * k + k * n + m * n) * T)
+  s = LSHIFT(INT8(MAX(i, 0)), 29) / (((m * n * k) + (nn * mm * kk)) * T)
 
   ALLOCATE(a(m,n,k,s))
   ALLOCATE(c(mm,nn,kk,s))
   ALLOCATE(dx(mm,m), dy(n,nn), dz(k,kk))
 
-  ! Initialize a, b
-  !@TODO figure out how to allocate a,b matrices cont. without
-  ! additional copies when call LIBXSMM in the F90 compiler
+  ! Initialize
   !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, m, mm, n, nn, k, kk, s)
   DO i = 1, s
     do ix = 1, m
