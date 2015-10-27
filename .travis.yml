@@ -21,7 +21,7 @@ script:
   - make -e realclean &&
     bash make.sh -cif90 -j &&
     make -e samples &&
-    make -e test &&
+    make -e testf90 &&
     bash samples/smm/smmf90-test.sh
 
   - make -e realclean &&
