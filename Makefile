@@ -634,7 +634,7 @@ cp2k_mic: lib_mic
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh
+drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf90-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
@@ -663,6 +663,34 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+$(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	@echo "#!/bin/bash" > $@
+	@echo >> $@
+	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "FILE=smmf90-perf.txt" >> $@
+	@echo "RUNS='$(INDICES)'" >> $@
+	@echo >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  FILE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "cat /dev/null > \$${FILE}" >> $@
+	@echo >> $@
+	@echo "NRUN=1" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} 0 >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
+	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "done" >> $@
+	@echo >> $@
+	@chmod +x $@
+
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
@@ -670,6 +698,14 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
+
+.PHONY: testf90
+testf90: $(SPLDIR)/smm/smmf90-perf.txt
+$(SPLDIR)/smm/smmf90-perf.txt: $(SPLDIR)/smm/smmf90-perf.sh lib_all
+	@cd $(SPLDIR)/smm && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+	@$(SPLDIR)/smm/smmf90-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
@@ -766,6 +802,7 @@ else
 endif
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
+	@rm -f $(SPLDIR)/smm/smmf90-perf.sh
 	@rm -f $(INCDIR)/libxsmm.f90
 	@rm -f $(INCDIR)/libxsmm.h
 	@rm -f $(INCDIR)/libxsmm_generator.h
