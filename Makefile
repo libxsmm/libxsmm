@@ -684,7 +684,7 @@ $(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} 0 >> \$${FILE}" >> $@
+	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN + 1))" >> $@
 	@echo "done" >> $@
