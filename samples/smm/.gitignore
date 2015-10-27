@@ -3,3 +3,5 @@ dispatched
 inlined
 specialized
 specialized-perf.txt
+smmf90-perf.sh
+smmf90-perf.txt
