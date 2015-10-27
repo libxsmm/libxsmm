@@ -2,6 +2,10 @@ blas
 dispatched
 inlined
 specialized
-specialized-perf.txt
+smm
+smm-specialized.txt
+smm-blas.txt
+smm-dispatched.txt
+smm-inlined.txt
 smmf90-perf.sh
 smmf90-perf.txt
