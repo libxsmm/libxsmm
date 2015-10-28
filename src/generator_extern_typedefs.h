@@ -32,7 +32,7 @@
 #define GENERATOR_EXTERN_TYPEDEFS_H
 
 #define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
-  (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
+  (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda   = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
   (DESCRIPTOR).alpha = (signed char)(0 != (FALPHA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_ALPHA_F) ? (FALPHA) : 0) : 0); \
   (DESCRIPTOR).beta  = (signed char)(0 != (FBETA)  ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_BETA_F)  ? (FBETA)  : 0) : 0)
