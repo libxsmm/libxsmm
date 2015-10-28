@@ -49,7 +49,7 @@ LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( 
   unsigned int l_mask;
 
   /* init full mask */
-  if ( i_xgemm_desc->single_precision == 0 ) {
+  if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
     l_mask = 0xff;
   } else {
     l_mask = 0xffff;

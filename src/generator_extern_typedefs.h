@@ -31,68 +31,100 @@
 #ifndef GENERATOR_EXTERN_TYPEDEFS_H
 #define GENERATOR_EXTERN_TYPEDEFS_H
 
-#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, PRECISION, PREFETCH, ALIGN_LD, ALIGN_ST, TRANSA, TRANSB, ALPHA, BETA, M, N, K, LDA, LDB, LDC) \
-  (DESCRIPTOR); (DESCRIPTOR).single_precision = (PRECISION); (DESCRIPTOR).prefetch = (PREFETCH); \
-  (DESCRIPTOR).trans_a = (TRANSA); (DESCRIPTOR).trans_b = (TRANSB); \
-  (DESCRIPTOR).alpha = (ALPHA); (DESCRIPTOR).beta = (BETA); \
-  (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
-  (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); \
-  (DESCRIPTOR).aligned_a = (ALIGN_LD); (DESCRIPTOR).aligned_c = (ALIGN_ST)
+#define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
+  (DESCRIPTOR).flags = (FLAGS); (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
+  (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); (DESCRIPTOR).prefetch = (PREFETCH); \
+  (DESCRIPTOR).alpha = 0 != (FALPHA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_ALPHA_F) ? ((signed char)(FALPHA)) : 0) : 0; \
+  (DESCRIPTOR).beta = 0 != (FBETA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_BETA_F) ? ((signed char)(FBETA)) : 0) : 0
 
-#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE (12 * sizeof(int) + 2)
+#define LIBXSMM_XGEMM_DESCRIPTOR_TYPE(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
+  libxsmm_xgemm_descriptor DESCRIPTOR; LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, \
+    M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA)
 
-/* Enumerate the available prefetch schemes. */
+#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE ( 3 * sizeof(int) + 3/*mnk*/ + 2/*ab*/ + 1/*p*/ \
+                                      + 1 * sizeof(short)/*f*/)
+
+/**
+ * Structure storing the xgemm argument description.
+ * The binary data layout must be fixed across
+ * translation units regardless of the
+ * alignment and the padding.
+ */
+typedef struct libxsmm_xgemm_descriptor {
+  /** Leading dimensions are general offsets. */
+  unsigned int lda, ldb, ldc;
+  /** Matrix extents are limited (8 bit). */
+  unsigned char m, n, k;
+  /** Integer unless FLAG_*_F is raised. */
+  signed char alpha, beta;
+  /** Prefetch strategy enumeration (8 bit). */
+  unsigned char prefetch;
+  /** Collection of various flags (8 bit). */
+  unsigned short flags;
+} libxsmm_xgemm_descriptor;
+
+/**
+ * Flag enumeration which can be binary ORed
+ * into libxsmm_xgemm_descriptor::flags.
+ */
+typedef enum libxsmm_xgemm_flags {
+  LIBXSMM_XGEMM_FLAG_DEFAULT  = 0,
+  LIBXSMM_XGEMM_FLAG_F32PREC  = 1,
+  LIBXSMM_XGEMM_FLAG_TRANS_A  = 2,
+  LIBXSMM_XGEMM_FLAG_TRANS_B  = 4,
+  LIBXSMM_XGEMM_FLAG_ALIGN_A  = 8,
+  LIBXSMM_XGEMM_FLAG_ALIGN_C  = 16,
+  /** Fractional: 1/alpha, or General: 1/0. */
+  LIBXSMM_XGEMM_FLAG_ALPHA_F  = 32,
+  /** Fractional: 1/beta, or General: 1/0. */
+  LIBXSMM_XGEMM_FLAG_BETA_F   = 64
+} libxsmm_xgemm_flags;
+
+/**
+ * Structure referring to the generated code
+ * with some attached information.
+ */
+typedef struct libxsmm_generated_code_struct {
+  void* generated_code;       /** pointer to memory which can contain strings or binary code */
+  unsigned int buffer_size;   /** total size if the buffer generated_code */
+  unsigned int code_size;     /** size of bytes used in generated_code */
+  unsigned int code_type;     /**
+                               *  0: generated code contains inline assembly in a C function
+                               *    which can be dumped into into a *.c/cc/cpp file
+                               *  1: generated code contains assembly which can be
+                               *     dumped into an *.s file
+                               * >1: generated code contains a function in binary code which can be
+                               *     called, when the code is copied into executable memory
+                               */
+  unsigned int last_error;    /**
+                               *  0: no error occured
+                               * >0: the occured error code
+                               */
+} libxsmm_generated_code;
+
+/**
+ * Enumeration of the available prefetch schemes.
+ */
 typedef enum libxsmm_prefetch_type {
-  /* No prefetching and no prefetch fn. signature. */
+  /** No prefetching and no prefetch fn. signature. */
   LIBXSMM_PREFETCH_NONE               = 0,
-  /* Only function prefetch signature. */
+  /** Only function prefetch signature. */
   LIBXSMM_PREFETCH_SIGNATURE          = 1,
-  /* Prefetch PA using accesses to A. */
+  /** Prefetch PA using accesses to A. */
   LIBXSMM_PREFETCH_AL2                = 2,
-  /* Prefetch PA (aggressive). */
+  /** Prefetch PA (aggressive). */
   LIBXSMM_PREFETCH_AL2_JPST           = 4,
-  /* Prefetch PB using accesses to C. */
+  /** Prefetch PB using accesses to C. */
   LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
-  /* Prefetch A ahead. */
+  /** Prefetch A ahead. */
   LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
 } libxsmm_prefetch_type;
 
-/* Structure storing the xgemm argument description.
-   The binary data layout must be fixed across
-   translation units regardless of the
-   alignment and the padding. */
-typedef struct libxsmm_xgemm_descriptor_struct {
-  unsigned int m, n, k, lda, ldb, ldc;
-  unsigned int aligned_a, aligned_c;
-  unsigned int single_precision;
-  unsigned int prefetch;
-  int alpha, beta;
-  char trans_a;
-  char trans_b;
-} libxsmm_xgemm_descriptor;
-
-/* struct for storing the generated code
-   and some information attached to it */
-typedef struct libxsmm_generated_code_struct {
-  void* generated_code;              /* pointer to memory which can contain strings or binary code */
-  unsigned int buffer_size;          /* total size if the buffer generated_code */
-  unsigned int code_size;            /* size of bytes used in generated_code */
-  unsigned int code_type;            /*   0: generated code contains inline assembly in a C
-                                             function which can be dumped into into a *.c/cc/cpp file
-                                          1: generated code contains assembly which can be
-                                             dumped into a *.s file
-                                         >1: generated code contains a function in binary code which can be
-                                             called, when the buffer is copied to executable memory */
-  unsigned int last_error;           /* 0    no error occured
-                                        > 0  the occured error code */
-} libxsmm_generated_code;
-
-/* function to translate LIBXSMM Generator error codes
-   to error messages */
-const char* libxsmm_strerror( const unsigned int      i_error_code );
+/** function to translate LIBXSMM Generator error codes to error messages */
+const char* libxsmm_strerror(unsigned int i_error_code);
 
 #endif /* GENERATOR_EXTERN_TYPEDEFS_H */
 

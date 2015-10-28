@@ -54,7 +54,7 @@ void libxsmm_generator_dense_noarch_kernel( libxsmm_generated_code*         io_g
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++ ) {\n", i_xgemm_desc->n);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   if ( i_xgemm_desc->beta == 0 ) {
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++ ) { C[(l_n*%u)+l_m] = 0.0; }\n\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
     } else {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++ ) { C[(l_n*%u)+l_m] = 0.0f; }\n\n", i_xgemm_desc->m, i_xgemm_desc->ldc);

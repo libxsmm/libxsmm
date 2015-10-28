@@ -96,8 +96,8 @@ int main(int argc, char* argv []) {
   int l_ldc = 0;
   int l_aligned_a = 0;
   int l_aligned_c = 0;
-  int l_alpha = 0;
-  int l_beta = 0;
+  double l_alpha = 0;
+  double l_beta = 0;
   int l_single_precision = 0;
 
   /* check argument count for a valid range */
@@ -120,8 +120,8 @@ int main(int argc, char* argv []) {
   l_ldc = atoi(argv[9]);
 
   /* some sugar */
-  l_alpha = atoi(argv[10]);
-  l_beta = atoi(argv[11]);
+  l_alpha = atof(argv[10]);
+  l_beta = atof(argv[11]);
   l_aligned_a = atoi(argv[12]);
   l_aligned_c = atoi(argv[13]);
 
@@ -212,28 +212,13 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m; }
-  if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n; }
-  if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k; }
-  if ( l_lda < 0 ) { l_xgemm_desc.lda = 0; } else {  l_xgemm_desc.lda = l_lda; }
-  if ( l_ldb < 0 ) { l_xgemm_desc.ldb = 0; } else {  l_xgemm_desc.ldb = l_ldb; }
-  if ( l_ldc < 0 ) { l_xgemm_desc.ldc = 0; } else {  l_xgemm_desc.ldc = l_ldc; }
-  l_xgemm_desc.alpha = l_alpha;
-  l_xgemm_desc.beta = l_beta;
-  l_xgemm_desc.trans_a = 'n';
-  l_xgemm_desc.trans_b = 'n';
-  if (l_aligned_a == 0) {
-    l_xgemm_desc.aligned_a = 0;
-  } else {
-    l_xgemm_desc.aligned_a = 1;
-  }
-  if (l_aligned_c == 0) {
-    l_xgemm_desc.aligned_c = 0;
-  } else {
-    l_xgemm_desc.aligned_c = 1;
-  }
-  l_xgemm_desc.single_precision = l_single_precision;
-  l_xgemm_desc.prefetch = l_prefetch;
+  /* build xgemm descriptor: LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) */
+  LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc,
+    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0), LIBXSMM_MAX(l_lda, 0), LIBXSMM_MAX(l_ldb, 0), LIBXSMM_MAX(l_ldc, 0), l_prefetch,
+    (0 == l_single_precision ? 0 : LIBXSMM_XGEMM_FLAG_F32PREC)
+      | (0 != l_aligned_a ? LIBXSMM_XGEMM_FLAG_ALIGN_A : 0)
+      | (0 != l_aligned_c ? LIBXSMM_XGEMM_FLAG_ALIGN_C : 0),
+    l_alpha, l_beta);
 
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */

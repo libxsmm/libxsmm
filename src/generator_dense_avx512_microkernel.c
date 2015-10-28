@@ -576,7 +576,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
 
     if ( i_k_blocking != 9 ) {
       if (l_k == 1) {
-        if ( i_xgemm_desc->single_precision == 0 ) {
+        if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
           l_vcompute = LIBXSMM_X86_INSTR_VMULPD;
         } else {
           l_vcompute = LIBXSMM_X86_INSTR_VMULPS;
