@@ -32,7 +32,7 @@
 #define GENERATOR_EXTERN_TYPEDEFS_H
 
 #define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
-  (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).m = (unsigned char)(M); (DESCRIPTOR).n = (unsigned char)(N); (DESCRIPTOR).k = (unsigned char)(K); \
+  (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda   = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
   (DESCRIPTOR).alpha = (signed char)(0 != (FALPHA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_ALPHA_F) ? (FALPHA) : 0) : 0); \
   (DESCRIPTOR).beta  = (signed char)(0 != (FBETA)  ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_BETA_F)  ? (FBETA)  : 0) : 0)
@@ -41,8 +41,12 @@
   libxsmm_xgemm_descriptor DESCRIPTOR; LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, \
     M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA)
 
-#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE ( 3 * sizeof(int) + 3/*mnk*/ + 2/*ab*/ + 1/*p*/ \
-                                      + 1 * sizeof(short)/*f*/)
+/** The libxsmm_xgemm_descriptor structure must be ordered by the size of the members (packed). */
+#define LIBXSMM_XGEMM_DESCRIPTOR_SIZE ( 3 * sizeof(unsigned int)/*LDA,LDB,LDC*/ \
+                                      + 3 * sizeof(unsigned int)/*M,N,K*/ \
+                                      + 1 * sizeof(unsigned char)/*flags*/ \
+                                      + 2 * sizeof(signed char)/*alpha,beta*/ \
+                                      + 1 * sizeof(unsigned char)/*prefetch*/)
 
 /**
  * Structure storing the xgemm argument description.
@@ -53,14 +57,14 @@
 typedef struct libxsmm_xgemm_descriptor {
   /** Leading dimensions are general offsets. */
   unsigned int lda, ldb, ldc;
-  /** Matrix extents are limited (8 bit). */
-  unsigned char m, n, k;
+  /** Matrix extents are limited (16 bit). */
+  unsigned int m, n, k;
+  /** Collection of various flags (8 bit). */
+  unsigned char flags;
   /** Integer unless FLAG_*_F is raised. */
   signed char alpha, beta;
   /** Prefetch strategy enumeration (8 bit). */
   unsigned char prefetch;
-  /** Collection of various flags (8 bit). */
-  unsigned short flags;
 } libxsmm_xgemm_descriptor;
 
 /**
