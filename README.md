@@ -170,9 +170,9 @@ bin/generator
 
 The code generator driver program accepts the following arguments:
 
-1. dense/dense_asm/sparse (dense create C file, dense_asm creates ASM)
-2. Filename to append
-3. Routine name to be created in 2.
+1. dense/dense_asm/sparse (dense creates C code, dense_asm creates ASM)
+2. Filename of a file to append to
+3. Routine name to be created
 4. M parameter
 5. N parameter
 6. K parameter
@@ -182,9 +182,9 @@ The code generator driver program accepts the following arguments:
 10. alpha (currently only 1)
 11. beta (0 or 1)
 12. Alignment override for A (1 auto, 0 no alignment)
-13. Alignment override for C ( 1 auto, 0 no alignment)
-14. Prefetching mode (just dense & dense_asm, see next list)
-15. SP/DP single or double precision
+13. Alignment override for C (1 auto, 0 no alignment)
+14. Prefetch strategy, see below enumeration (dense/dense_asm only)
+15. single precision (SP), or double precision (DP)
 16. CSC file (just required when 1. is "sparse"). Matrix market format.
 
 The prefetch strategy can be:
