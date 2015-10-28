@@ -32,10 +32,10 @@
 #define GENERATOR_EXTERN_TYPEDEFS_H
 
 #define LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
-  (DESCRIPTOR).flags = (FLAGS); (DESCRIPTOR).m = (M); (DESCRIPTOR).n = (N); (DESCRIPTOR).k = (K); \
-  (DESCRIPTOR).lda = (LDA); (DESCRIPTOR).ldb = (LDB); (DESCRIPTOR).ldc = (LDC); (DESCRIPTOR).prefetch = (PREFETCH); \
-  (DESCRIPTOR).alpha = 0 != (FALPHA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_ALPHA_F) ? ((signed char)(FALPHA)) : 0) : 0; \
-  (DESCRIPTOR).beta = 0 != (FBETA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_BETA_F) ? ((signed char)(FBETA)) : 0) : 0
+  (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).m = (unsigned char)(M); (DESCRIPTOR).n = (unsigned char)(N); (DESCRIPTOR).k = (unsigned char)(K); \
+  (DESCRIPTOR).lda   = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  (DESCRIPTOR).alpha = (signed char)(0 != (FALPHA) ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_ALPHA_F) ? (FALPHA) : 0) : 0); \
+  (DESCRIPTOR).beta  = (signed char)(0 != (FBETA)  ? (0 == ((FLAGS) & LIBXSMM_XGEMM_FLAG_BETA_F)  ? (FBETA)  : 0) : 0)
 
 #define LIBXSMM_XGEMM_DESCRIPTOR_TYPE(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) \
   libxsmm_xgemm_descriptor DESCRIPTOR; LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, \
