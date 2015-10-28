@@ -106,40 +106,42 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   /* read CSC file and consturct CSC datastructure */
   libxsmm_sparse_csc_reader( &l_generated_code, i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
-#ifndef NDEBUG
-  printf("CSC matrix data structure we just read:\n");
-  printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
+#if !defined(NDEBUG)
+  {
+    double *const l_tmp = (double*)malloc(l_row_count * l_column_count * sizeof(double));
+    unsigned int l_n;
+    unsigned int l_m;
 
-  double* l_tmp = (double*)malloc(l_row_count * l_column_count * sizeof(double));
-  if (l_tmp == NULL) {
-    fprintf( stderr, "LIBXSMM ERROR, Could allocate dense value array to test CSC datastructure!\n");
-    exit(-1);
-  }
+    printf("CSC matrix data structure we just read:\n");
+    printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
-  unsigned int l_n;
-  unsigned int l_m;
-
-  for ( l_n = 0; l_n < (l_row_count * l_column_count); l_n++) {
-    l_tmp[l_n] = 0.0;
-  }
-
-  for ( l_n = 0; l_n < l_column_count; l_n++) {
-    const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
-    assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
-
-    for ( l_m = 0; l_m < l_column_elems; l_m++) {
-      l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
+    if (l_tmp == NULL) {
+      fprintf( stderr, "LIBXSMM ERROR, Could allocate dense value array to test CSC datastructure!\n");
+      exit(-1);
     }
-  }
 
-  for ( l_n = 0; l_n < l_row_count; l_n++) {
-    for ( l_m = 0; l_m < l_column_count; l_m++) {
-      printf("%lf ", l_tmp[(l_m * l_row_count) + l_n]);
+    for ( l_n = 0; l_n < (l_row_count * l_column_count); l_n++) {
+      l_tmp[l_n] = 0.0;
     }
-    printf("\n");
-  }
 
-  free( l_tmp );
+    for ( l_n = 0; l_n < l_column_count; l_n++) {
+      const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
+      assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
+
+      for ( l_m = 0; l_m < l_column_elems; l_m++) {
+        l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
+      }
+    }
+
+    for ( l_n = 0; l_n < l_row_count; l_n++) {
+      for ( l_m = 0; l_m < l_column_count; l_m++) {
+        printf("%f ", l_tmp[(l_m * l_row_count) + l_n]);
+      }
+      printf("\n");
+    }
+
+    free( l_tmp );
+  }
 #endif
 
   /* generate the actual kernel code for current description depending on the architecture */

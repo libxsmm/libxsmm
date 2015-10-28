@@ -43,8 +43,12 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                                  const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                                  const unsigned int                  i_n_blocking,
                                                  const unsigned int                  i_k_blocking,
-                                                 const int                           i_offset ) {
-#ifndef NDEBUG
+                                                 const int                           i_offset )
+{
+  unsigned int l_n;
+  unsigned int l_k;
+
+#if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
@@ -53,8 +57,6 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
   }
 #endif
-  unsigned int l_n;
-  unsigned int l_k;
 
   /* if we have an offset greater-equal -> external k-unrolling */
   if (i_offset != (-1)) {
@@ -212,8 +214,12 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                                          const unsigned int                  i_n_blocking,
-                                                         const unsigned int                  i_k_blocking ) {
-#ifndef NDEBUG
+                                                         const unsigned int                  i_k_blocking )
+{
+  unsigned int l_n;
+  unsigned int l_k;
+
+#if !defined(NDEBUG)
   if ( i_n_blocking > 24 ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel_k_large: i_n_blocking needs to be 24 or smaller!\n");
     exit(-1);
@@ -223,8 +229,6 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
     exit(-1);
   }
 #endif
-  unsigned int l_n;
-  unsigned int l_k;
 
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
@@ -386,18 +390,20 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                                                 const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                                 const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                                 const libxsmm_xgemm_descriptor*     i_xgemm_desc,
-                                                                const unsigned int                  i_k_blocking ) {
-#ifndef NDEBUG
-  if ( i_k_blocking < 8 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel_k_large_n_nine: i_k_blocking needs to be at least 8!\n");
-    exit(-1);
-  }
-#endif
+                                                                const unsigned int                  i_k_blocking )
+{
   unsigned int l_n;
   unsigned int l_k;
   const unsigned int l_n_blocking = 9;
   unsigned int l_displacement_k = 0;
   unsigned int l_k_updates = 0;
+
+#if !defined(NDEBUG)
+  if ( i_k_blocking < 8 ) {
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_avx512_microkernel_k_large_n_nine: i_k_blocking needs to be at least 8!\n");
+    exit(-1);
+  }
+#endif
 
   /* Intialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */

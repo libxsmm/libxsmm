@@ -721,9 +721,19 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
                                       const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                       const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                       const unsigned int                  i_m_blocking,
-                                      const unsigned int                  i_n_blocking ) {
+                                      const unsigned int                  i_n_blocking )
+{
+  /* deriving register blocking from kernel config */
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
   /* @TODO fix this test */
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
@@ -743,15 +753,6 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
     return;
   }
 #endif
-
-  /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* register blocking counter in n */
-  unsigned int l_n = 0;
-  /* register blocking counter in m */
-  unsigned int l_m = 0;
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
   /* storing C accumulator */
   /* adding to C, so let's load C */
