@@ -1,14 +1,6 @@
 #!/bin/bash
 
-if [[ "-nek" == "$1" ]] ; then
-  shift
-  make $* M="4 8 10 12 16 64 100 144" N="4 8 10 12 16 64 100 144" K="4 8 10 12" \
-    BETA=0 OFFLOAD=0 MIC=0 THRESHOLD=$((16*16*256+1))
-  elif [[ "-nekbone" == "$1" ]] ; then
-  shift
-  make $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
-    BETA=0 OFFLOAD=0 MIC=0 THRESHOLD=$((18*18*18*18+1)) 
-  elif [[ "-cp2k" == "$1" ]] ; then
+if [[ "-cp2k" == "$1" ]] ; then
   shift
   make -e $* ALIGNED_STORES=1 MNK=" \
     23, \
@@ -34,6 +26,11 @@ elif [[ "-nekbone" == "$1" ]] ; then
 elif [[ "-ci" == "$1" ]] ; then
   shift
   make -e $* PEDANTIC=1 ROW_MAJOR=1 MNK=" \
+    0 8 15, \
+    23 24 42"
+elif [[ "-cif90" == "$1" ]] ; then
+  shift
+  make -e $* PEDANTIC=1 MNK=" \
     0 8 15, \
     23 24 42"
 else
