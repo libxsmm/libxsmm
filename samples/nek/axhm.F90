@@ -147,14 +147,13 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      CALL libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
-                 + h2*b(:,:,:,i)*a(:,:,:,i)
+      CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -174,14 +173,13 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      CALL libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          CALL libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
-                 + h2*b(:,:,:,i)*a(:,:,:,i)
+      CALL libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -201,15 +199,13 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
+      CALL mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
       do j = 1, k
-          call mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
+          CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
       enddo
-      call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
-
-      !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
-                 + h2*b(:,:,:,i)*a(:,:,:,i)
+      CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -250,12 +246,11 @@ PROGRAM stpm
     DO i = LBOUND(a, 4), UBOUND(a, 4)
       CALL dmm1(dx, a(1,1,1,i), tm1)
       do j = 1, k
-          call dmm2(a(1,1,j,i), dy, tm2(1,1,j))
+          CALL dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
-      !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3) &
-                 + h2*b(:,:,:,i)*a(:,:,:,i)
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -289,5 +284,16 @@ PROGRAM stpm
   deallocate(g1, g2, g3)
   deallocate(dx, dy, dz)
   DEALLOCATE(c)
+
+CONTAINS
+
+  SUBROUTINE updateC( c, g1, tm1, g2, tm2, g3, tm3, b, a, h1, h2 )
+    REAL(T), INTENT(INOUT) :: c(:,:,:), b(:,:,:), a(:,:,:)
+    REAL(T), INTENT(INOUT) :: g1(:,:,:), tm1(:,:,:), g2(:,:,:), tm2(:,:,:), g3(:,:,:), tm3(:,:,:)
+    REAL(T), INTENT(IN)    :: h1, h2
+    
+    !DEC$ vector nontemporal(c)
+    c(:,:,:) = h1*(g1*tm1 + g2*tm2 + g3*tm3) + h2*(b*a)
+  END SUBROUTINE
 
 END PROGRAM
