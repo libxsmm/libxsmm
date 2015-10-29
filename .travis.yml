@@ -41,7 +41,8 @@ script:
   - cd samples/nek &&
     make -e stpm &&
     make -e rstr &&
-    make -e axhm
+    make -e axhm &&
+    cd ../..
 
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 BETA=0 &&
