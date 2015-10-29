@@ -152,8 +152,8 @@ PROGRAM stpm
           CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
       CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
-                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -178,8 +178,8 @@ PROGRAM stpm
           CALL libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
       CALL libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
-      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
-                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -204,8 +204,8 @@ PROGRAM stpm
           CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
       enddo
       CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
-      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
-                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -249,8 +249,8 @@ PROGRAM stpm
           CALL dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
-      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, 
-                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) )
+      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
+                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
