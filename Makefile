@@ -226,7 +226,7 @@ else # GCC assumed
 		LDFLAGS += -fPIC
 	endif
 	ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long
+		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops

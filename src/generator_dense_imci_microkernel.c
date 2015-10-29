@@ -43,8 +43,12 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
                                                const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                                const unsigned int                  i_n_blocking,
                                                const unsigned int                  i_k_blocking,
-                                               const int                           i_offset ) {
-#ifndef NDEBUG
+                                               const int                           i_offset )
+{
+  unsigned int l_n;
+  unsigned int l_k;
+
+#if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
@@ -53,8 +57,6 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
   }
 #endif
-  unsigned int l_n;
-  unsigned int l_k;
 
   /* if we have an offset greater-equal -> external k-unrolling */
   if (i_offset != (-1)) {
@@ -365,8 +367,18 @@ void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             i
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                            const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                            const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_n_blocking ) {
-#ifndef NDEBUG
+                                           const unsigned int                  i_n_blocking )
+{
+  /* deriving register blocking from kernel config */
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
+#if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
@@ -383,15 +395,6 @@ void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             i
     return;
   }
 #endif
-
-  /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* register blocking counter in n */
-  unsigned int l_n = 0;
-  /* register blocking counter in m */
-  unsigned int l_m = 0;
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
   /* storing C accumulator */
   /* adding to C, so let's load C */

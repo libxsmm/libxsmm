@@ -107,7 +107,7 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0; }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
     } else {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0f; }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
@@ -136,8 +136,8 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
     } else {}
 
     if ( (i_xgemm_desc->m > 1)          &&
-         (i_xgemm_desc->aligned_a != 0) &&
-         (i_xgemm_desc->aligned_c != 0)    ) {
+         ((LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
+         ((LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
@@ -145,8 +145,8 @@ void libxsmm_generator_sparse_bsparse( libxsmm_generated_code*         io_genera
               ( strcmp( i_arch, "knl" ) == 0 ) ||
               ( strcmp( i_arch, "skx" ) == 0 )    ) {
     if ( (i_xgemm_desc->m > 1)          &&
-         (i_xgemm_desc->aligned_a != 0) &&
-         (i_xgemm_desc->aligned_c != 0)    ) {
+         ((LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
+         ((LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(32)\n  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }

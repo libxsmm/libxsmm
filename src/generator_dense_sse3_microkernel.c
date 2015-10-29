@@ -41,8 +41,18 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                                const unsigned int                  i_m_blocking,
                                                const unsigned int                  i_n_blocking,
-                                               const int                           i_offset ) {
-#ifndef NDEBUG
+                                               const int                           i_offset )
+{
+  /* deriving register blocking from kernel config */
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * l_m_blocking);
+
+#if !defined(NDEBUG)
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
@@ -52,14 +62,6 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
     return;
   }
 #endif
-  /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* register blocking counter in n */
-  unsigned int l_n = 0;
-  /* register blocking counter in m */
-  unsigned int l_m = 0;
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = 16 - (i_n_blocking * l_m_blocking);
 
   if (l_m_blocking == 1) {
     /* load column vectors of A */
@@ -91,7 +93,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( (i_xgemm_desc->single_precision != 0 ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -111,7 +113,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( (i_xgemm_desc->single_precision != 0 ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -157,7 +159,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( (i_xgemm_desc->single_precision != 0 ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -179,7 +181,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( i_xgemm_desc->single_precision != 0 ) {
+        if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
           libxsmm_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,

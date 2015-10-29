@@ -85,7 +85,7 @@ void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io
   int l_max_code_length = 511;
   int l_code_length = 0;
 
-  if ( i_xgemm_desc->single_precision == 0 ) {
+  if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m128d c%u_%u = _mm_load_sd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m128d a%u_%u = _mm_load_sd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
@@ -126,7 +126,7 @@ void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*       
   int l_max_code_length = 511;
   int l_code_length = 0;
 
-  if ( i_xgemm_desc->single_precision == 0 ) {
+  if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m128d c%u_%u = _mm_loadu_pd(&C[(l_n*%u)+%u]);\n", i_k, i_z, i_xgemm_desc->ldc, i_row_idx[i_column_idx[i_k] + i_z] );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    __m128d a%u_%u = _mm_loadu_pd(&A[%u]);\n", i_k, i_z, i_column_idx[i_k] + i_z );
@@ -167,7 +167,7 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
   int l_max_code_length = 511;
   int l_code_length = 0;
 
-  if ( i_xgemm_desc->single_precision == 0 ) {
+  if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
     unsigned int l_i;
     unsigned int l_z = i_z;
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && defined(__AVX__)\n");
@@ -236,7 +236,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "   #pragma simd\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) {\n      C[(l_n*%u)+l_m] = 0.0;\n    }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
     } else {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) {\n      C[(l_n*%u)+l_m] = 0.0f;\n    }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
@@ -253,7 +253,7 @@ void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_genera
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     if ( l_column_elements > 0 ) {
-      if ( i_xgemm_desc->single_precision == 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && defined(__AVX__)\n    __m256d b%u = _mm256_broadcast_sd(&B[(l_n*%u)+%u]);\n#endif\n", l_k, i_xgemm_desc->ldb, l_k);
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#if defined(__SSE3__) && !defined(__AVX__)\n    __m128d b%u = _mm_loaddup_pd(&B[(l_n*%u)+%u]);\n#endif\n", l_k, i_xgemm_desc->ldb, l_k);

@@ -602,7 +602,7 @@ void libxsmm_function_signature( libxsmm_generated_code*         io_generated_co
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (i_xgemm_desc->single_precision == 1) {
+    if (0 != (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags)) {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
@@ -628,7 +628,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
 #endif
 }
 
-const char* libxsmm_strerror( const unsigned int      i_error_code ) {
+const char* libxsmm_strerror(unsigned int i_error_code) {
   int l_max_error_length = 511;
 
   switch (i_error_code) {

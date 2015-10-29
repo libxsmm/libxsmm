@@ -54,7 +54,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_BUILD_CACHESIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N) * (LIBXSMM_MAX_K) * 8)
+#define LIBXSMM_BUILD_CACHESIZE ((LIBXSMM_MAX_MNK) * 8)
 #if !defined(_WIN32)
 #define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
 #else
@@ -114,10 +114,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
     libxsmm_function *const cache = libxsmm_cache[single_precision&1];
     unsigned int hash, indx;
 
-    /* build xgemm descriptor */
-    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc, single_precision, LIBXSMM_PREFETCH,
-      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)));
+    /* build xgemm descriptor: LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) */
+    LIBXSMM_XGEMM_DESCRIPTOR_TYPE(l_xgemm_desc,
+      m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, 0 != single_precision ? sizeof(float) : sizeof(double)), LIBXSMM_PREFETCH,
+      (0 == single_precision ? 0 : LIBXSMM_XGEMM_FLAG_F32PREC)
+        | (1 < (LIBXSMM_ALIGNED_LOADS) ? LIBXSMM_XGEMM_FLAG_ALIGN_A : 0)
+        | (1 < (LIBXSMM_ALIGNED_STORES) ? LIBXSMM_XGEMM_FLAG_ALIGN_C : 0),
+      1/*alpha*/, LIBXSMM_BETA);
 
     /* check if the requested xGEMM is already JITted */
     LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
@@ -222,16 +225,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
           }
 
 # if !defined(NDEBUG)
-          /* write buffer for manual decode as binary to a file */
-          char l_objdump_name[512];
-          sprintf( l_objdump_name, "kernel_prec%i_m%i_n%i_k%i_lda%i_ldb%i_ldc%i_a%i_b%i_ta%c_tb%c_pf%i.bin",
-                   l_xgemm_desc.single_precision, l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k,
-                   l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc, l_xgemm_desc.alpha, l_xgemm_desc.beta,
-                   l_xgemm_desc.trans_a, l_xgemm_desc.trans_b, l_xgemm_desc.prefetch );
-          FILE *const l_byte_code = fopen( l_objdump_name, "wb");
-          if ( l_byte_code != NULL ) {
-            fwrite( l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
-            fclose( l_byte_code );
+          { /* write buffer for manual decode as binary to a file */
+            char l_objdump_name[512];
+            FILE* l_byte_code;
+            sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
+              0 == (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc.flags) ? 0 : 1,
+              l_xgemm_desc.m, l_xgemm_desc.n, l_xgemm_desc.k, l_xgemm_desc.lda, l_xgemm_desc.ldb, l_xgemm_desc.ldc,
+              l_xgemm_desc.alpha, l_xgemm_desc.beta,
+              0 == (LIBXSMM_XGEMM_FLAG_TRANS_A & l_xgemm_desc.flags) ? 'n' : 't',
+              0 == (LIBXSMM_XGEMM_FLAG_TRANS_B & l_xgemm_desc.flags) ? 'n' : 't',
+              l_xgemm_desc.prefetch);
+            l_byte_code = fopen(l_objdump_name, "wb");
+            if (l_byte_code != NULL) {
+              fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
+              fclose(l_byte_code);
+            }
           }
 # endif /*NDEBUG*/
           /* free temporary buffer, and prepare return value */
@@ -267,9 +275,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the librar, this is lazy initializationy */
   libxsmm_build_static();
   {
-    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 1/*single precision*/, LIBXSMM_PREFETCH,
-      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)));
+    /* build xgemm descriptor: LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) */
+    LIBXSMM_XGEMM_DESCRIPTOR_TYPE(desc,
+      m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(float)), LIBXSMM_PREFETCH, LIBXSMM_XGEMM_FLAG_F32PREC
+        | (1 < (LIBXSMM_ALIGNED_LOADS) ? LIBXSMM_XGEMM_FLAG_ALIGN_A : 0)
+        | (1 < (LIBXSMM_ALIGNED_STORES) ? LIBXSMM_XGEMM_FLAG_ALIGN_C : 0),
+      1/*alpha*/, LIBXSMM_BETA);
     LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
     hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
     indx = hash % (LIBXSMM_BUILD_CACHESIZE);
@@ -288,9 +299,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
   /* calling libxsmm_build_jit shall imply an early/explicit initialization of the library, this is lazy initialization */
   libxsmm_build_static();
   {
-    libxsmm_xgemm_descriptor LIBXSMM_XGEMM_DESCRIPTOR(desc, 0/*double precision*/, LIBXSMM_PREFETCH,
-      1 < (LIBXSMM_ALIGNED_LOADS) ? (LIBXSMM_ALIGNED_LOADS) : 0, 1 < (LIBXSMM_ALIGNED_STORES) ? (LIBXSMM_ALIGNED_STORES) : 0,
-      'n', 'n', 1/*alpha*/, LIBXSMM_BETA, m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)));
+    /* build xgemm descriptor: LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) */
+    LIBXSMM_XGEMM_DESCRIPTOR_TYPE(desc,
+      m, n, k, m, k, LIBXSMM_ALIGN_STORES(m, sizeof(double)), LIBXSMM_PREFETCH, 0/*double-precision*/
+        | (1 < (LIBXSMM_ALIGNED_LOADS) ? LIBXSMM_XGEMM_FLAG_ALIGN_A : 0)
+        | (1 < (LIBXSMM_ALIGNED_STORES) ? LIBXSMM_XGEMM_FLAG_ALIGN_C : 0),
+      1/*alpha*/, LIBXSMM_BETA);
     LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
     hash = libxsmm_crc32(&desc, LIBXSMM_XGEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
     indx = hash % (LIBXSMM_BUILD_CACHESIZE);

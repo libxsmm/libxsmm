@@ -46,17 +46,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPD;
@@ -67,14 +67,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_MOVSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_SHUFPS;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_MOVUPS;
@@ -88,17 +88,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -109,14 +109,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -130,17 +130,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -151,14 +151,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -178,17 +178,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 32;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'z';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -199,14 +199,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 16;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -237,17 +237,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -258,14 +258,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -279,17 +279,17 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVDDUP;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -300,14 +300,14 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
     } else {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 4;
-      if ( i_xgemm_desc->aligned_a != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
-      if ( i_xgemm_desc->aligned_c != 0 ) {
+      if ( (LIBXSMM_XGEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
       } else {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
@@ -340,7 +340,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
@@ -366,7 +366,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
@@ -392,7 +392,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( i_xgemm_desc->single_precision == 0 ) {
+    if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
@@ -721,9 +721,19 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
                                       const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                       const libxsmm_xgemm_descriptor*     i_xgemm_desc,
                                       const unsigned int                  i_m_blocking,
-                                      const unsigned int                  i_n_blocking ) {
+                                      const unsigned int                  i_n_blocking )
+{
+  /* deriving register blocking from kernel config */
+  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  /* register blocking counter in n */
+  unsigned int l_n = 0;
+  /* register blocking counter in m */
+  unsigned int l_m = 0;
+  /* start register of accumulator */
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+
   /* @TODO fix this test */
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
@@ -743,15 +753,6 @@ void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_gen
     return;
   }
 #endif
-
-  /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* register blocking counter in n */
-  unsigned int l_n = 0;
-  /* register blocking counter in m */
-  unsigned int l_m = 0;
-  /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
   /* storing C accumulator */
   /* adding to C, so let's load C */

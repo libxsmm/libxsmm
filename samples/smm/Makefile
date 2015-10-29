@@ -296,12 +296,11 @@ ifeq (1,$(MKL)) # sequential
 			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
 		endif
 	else # static
-		LDFLAGS += \
-			-Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/intel64/libmkl_core.a \
-				$(MKLROOT)/lib/intel64/libmkl_sequential.a \
-			-Wl,--end-group
+		LDFLAGS += -Wl,--start-group \
+			$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+			$(MKLROOT)/lib/intel64/libmkl_core.a \
+			$(MKLROOT)/lib/intel64/libmkl_sequential.a \
+		-Wl,--end-group
 		ifneq (0,$(OFFLOAD))
 			LDFLAGS += -offload-option,mic,ld,"--start-group \
 				$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
@@ -457,7 +456,11 @@ endif
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
+ifeq (0,$(OFFLOAD))
+ifneq (0,$(MIC))
 	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
+endif
+endif
 	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/$(OUTNAME)-perf.plt $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
