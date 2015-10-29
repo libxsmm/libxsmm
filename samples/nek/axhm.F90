@@ -299,7 +299,7 @@ CONTAINS
 !    addr = TRANSFER(ptr, C_INTPTR_T) 
 !    WRITE (*,*) MOD(addr, 64)
 
-    !DEC$ vector nontemporal(c)
+    !DEC$ vector nontemporal
     c = h1*(g1*tm1 + g2*tm2 + g3*tm3) + h2*(b*a)
   END SUBROUTINE
 
