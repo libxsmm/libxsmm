@@ -32,6 +32,7 @@
 
 
 PROGRAM stpm
+  USE, INTRINSIC :: ISO_C_BINDING
   USE :: LIBXSMM
 
   !$ USE omp_lib
@@ -292,7 +293,12 @@ CONTAINS
     REAL(T), INTENT(IN)    :: b(:,:,:), a(:,:,:)
     REAL(T), INTENT(IN)    :: g1(:,:,:), tm1(:,:,:), g2(:,:,:), tm2(:,:,:), g3(:,:,:), tm3(:,:,:)
     REAL(T), INTENT(IN)    :: h1, h2
-    
+!    TYPE(C_PTR)            :: ptr
+!    INTEGER(C_INTPTR_T)    :: addr
+!    ptr = C_LOC(c(1,1,1))
+!    addr = TRANSFER(ptr, C_INTPTR_T) 
+!    WRITE (*,*) MOD(addr, 64)
+
     !DEC$ vector nontemporal(c)
     c = h1*(g1*tm1 + g2*tm2 + g3*tm3) + h2*(b*a)
   END SUBROUTINE
