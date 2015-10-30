@@ -44,10 +44,3 @@ script:
     make -e axhm &&
     cd ../..
 
-  - make -e realclean &&
-    make -e PEDANTIC=1 JIT=1 BETA=0 &&
-    rm -f samples/stpm/stpm-perf.sh &&
-    bash make.sh -cinek drytest &&
-    bash samples/nek/stpm-perf.sh &&
-    bash samples/nek/stpm-test.sh
-
