@@ -144,27 +144,29 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_function libxsmm_build_jit(int sin
         if (0 == result) {
           int l_code_pages, l_code_page_size, l_fd;
           libxsmm_generated_code l_generated_code;
-          char l_arch[14]; /* set arch string */
+          char l_arch[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* empty initial arch string */
           union { /* used to avoid conversion warning */
             libxsmm_function pf;
             void* pv;
           } l_code;
 
-# ifdef __SSE3__
-#   ifndef __AVX__
-#         error "SSE3 instructions set extensions have no jitting support!"
+# if defined(__SSE3__)
+#   if !defined(__AVX__)
+#         error "SSE3 instruction set extension is not supported for JIT-code generation!"
 #   endif
+# elif !defined(__MIC__)
+#         error "No instruction set extension found for JIT-code generation!"
 # endif
-# ifdef __MIC__
-#         error "Xeon Phi coprocessors (IMCI architecture) have no jitting support!"
+# if defined(__MIC__)
+#         error "IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!"
 # endif
-# ifdef __AVX__
+# if defined(__AVX__)
           strcpy(l_arch, "snb");
 # endif
-# ifdef __AVX2__
+# if defined(__AVX2__)
           strcpy(l_arch, "hsw");
 # endif
-# ifdef __AVX512F__
+# if defined(__AVX512F__)
           strcpy(l_arch, "knl");
 # endif
           /* allocate buffer for code */
