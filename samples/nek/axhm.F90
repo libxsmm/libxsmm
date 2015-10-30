@@ -34,7 +34,7 @@
 PROGRAM stpm
   USE, INTRINSIC :: ISO_C_BINDING
   USE :: LIBXSMM
-
+  USE :: STREAM_UPDATE_KERNELS
   !$ USE omp_lib
   IMPLICIT NONE
 
@@ -221,8 +221,10 @@ PROGRAM stpm
           CALL dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
       CALL dmm3(a(1,1,1,i), dz, tm3)
-      CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                    g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+      CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                               tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                               a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                               h1, h2, m*n*k )
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()

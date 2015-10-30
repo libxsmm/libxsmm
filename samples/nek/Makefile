@@ -355,9 +355,13 @@ $(OUTDIR)/rstr: rstr.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(TARGET) $(IFLAGS) rstr.F90 -c
 	$(FC) $(FCMTFLAGS) rstr.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o rstr
 
-$(OUTDIR)/axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o
+$(OUTDIR)/axhm: axhm.F90 $(MODULES) $(LIBNAME).$(LIBEXT) $(BLDDIR)/mxm_std-f90.o $(BLDDIR)/stream_update_kernels-mod90.o $(BLDDIR)/stream_update_kernels-c.o
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(TARGET) $(IFLAGS) axhm.F90 -c
-	$(FC) $(FCMTFLAGS) axhm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
+	$(FC) $(FCMTFLAGS) axhm.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(BLDDIR)/stream_update_kernels-mod90.o $(BLDDIR)/stream_update_kernels-c.o $(LIBNAME).$(LIBEXT) $(LDFLAGS) -o axhm
+
+$(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.F90 $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)	
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
@@ -386,6 +390,10 @@ $(BLDDIR)/%-F90.o: $(SRCDIR)/%.F90 $(MODULES) $(ROOTDIR)/Makefile
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(MODULES) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: clean
 clean:
