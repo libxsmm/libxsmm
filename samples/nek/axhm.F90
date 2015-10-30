@@ -39,15 +39,14 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  INTEGER, PARAMETER :: MAX_NTHREADS = 512
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b
+  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
-  INTEGER :: argc, m, n, k, ld, routine, check
+  INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
@@ -116,28 +115,6 @@ PROGRAM stpm
 
   WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
 
-#if 0
-  CALL GETENV("CHECK", argv)
-  READ(argv, "(I32)") check
-  IF (0.NE.check) THEN
-    ALLOCATE(d(m,n))
-    d(:,:) = 0
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, d, m, n, k)
-    ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-    tmp(:,:) = 0
-    !$OMP DO
-    DO i = LBOUND(a, 1), UBOUND(a, 1)
-      CALL libxsmm_blasmm(m, n, k, a(i)%matrix, b(i)%matrix, tmp)
-    END DO
-    !$OMP CRITICAL
-    d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
-    !$OMP END CRITICAL
-    ! Deallocate thread-local arrays
-    DEALLOCATE(tmp)
-    !$OMP END PARALLEL
-  END IF
-#endif
-
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3, h1, h2)
@@ -159,8 +136,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -185,8 +160,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -211,8 +184,6 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -256,8 +227,32 @@ PROGRAM stpm
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
     !$OMP END MASTER
-    !$OMP CRITICAL
-    !$OMP END CRITICAL
+    ! Deallocate thread-local arrays
+    DEALLOCATE(tm1, tm2, tm3)
+    !$OMP END PARALLEL
+  END IF
+
+  CALL GETENV("CHECK", argv)
+  READ(argv, "(I32)") check
+  IF (0.NE.check) THEN
+    WRITE(*, "(A)") "Calculating check..."
+    ALLOCATE(d(m,n,k,s))
+    d = 0
+
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, b, dx, dy, dz, g1, g2, g3, d, m, n, k, f1, f2, f3, h1, h2)
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m*n,k,1))
+    tm1 = 0; tm2 = 0; tm3=0
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      call libxsmm_blasmm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      do j = 1, k
+          call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+      enddo
+      call libxsmm_blasmm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      !DEC$ vector aligned nontemporal
+      d(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*reshape(tm3, (/m,n,k/))) &
+                 + h2*b(:,:,:,i)*a(:,:,:,i)
+    END DO
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
@@ -270,12 +265,10 @@ PROGRAM stpm
       (s * m * n * k * (6) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
   ENDIF
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-#if 0
   IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c - d) * (c - d))
     DEALLOCATE(d)
   END IF
-#endif
 
 
 

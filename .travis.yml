@@ -41,4 +41,6 @@ script:
   - cd samples/nek &&
     make -e stpm &&
     make -e rstr &&
-    make -e axhm
+    make -e axhm &&
+    cd ../..
+
