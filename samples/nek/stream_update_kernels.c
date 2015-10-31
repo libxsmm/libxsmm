@@ -55,25 +55,53 @@ void stream_update_axhm( const double* i_g1,
   /* let's calculate the prolog until C is cachline aligned */ 
   /* @TODO check for shifts by the compiler */
   if ( ((size_t)io_c % 64) != 0 ) {
-    l_trip_prolog = 64 - ((size_t)io_c % 64);
+    l_trip_prolog = (64 - ((size_t)io_c % 64))/sizeof(double);
   }
   
   /* let's calculate the end of the streaming part */
   /* @TODO check for shifts by the compiler */
-  l_trip_stream = (((i_length-l_trip_prolog)/64)*64)+l_trip_prolog;
+  l_trip_stream = (((i_length-l_trip_prolog)/sizeof(double))*sizeof(double))+l_trip_prolog;
 
   /* some bound checks */
-  l_trip_prolog = (l_trip_prolog > i_length) ? i_length : l_trip_prolog;
-  l_trip_stream = (l_trip_stream > i_length) ? i_length : l_trip_stream;
+  l_trip_prolog = (l_trip_prolog > i_length) ? i_length      : l_trip_prolog;
+  l_trip_stream = (l_trip_stream > i_length) ? l_trip_prolog : l_trip_stream;
   
+  /* run the prologue */
   for ( ; l_n < l_trip_prolog;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
+  /* run the bulk, hopefully using streaming stores */
+  /* @TODO, check if different archs are needed as well */
+#if defined(__AVX__)
+  __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
+  __m256d vec_h2 = _mm256_broadcast_sd(&i_h2);
+  for ( ; l_n < l_trip_stream;  l_n+=4 ) {
+    __m256d vec_g1 = _mm256_loadu_pd(&(i_g1[l_n]));
+    __m256d vec_tm1 = _mm256_loadu_pd(&(i_tm1[l_n]));
+    vec_g1 = _mm256_mul_pd(vec_g1, vec_tm1);
+    __m256d vec_g2 = _mm256_loadu_pd(&(i_g2[l_n]));
+    __m256d vec_tm2 = _mm256_loadu_pd(&(i_tm2[l_n]));
+    vec_g2 = _mm256_mul_pd(vec_g2, vec_tm2);
+    __m256d vec_g3 = _mm256_loadu_pd(&(i_g3[l_n]));
+    __m256d vec_tm3 = _mm256_loadu_pd(&(i_tm3[l_n]));
+    vec_g3 = _mm256_mul_pd(vec_g3, vec_tm3);
+    __m256d vec_a = _mm256_loadu_pd(&(i_a[l_n]));
+    __m256d vec_b = _mm256_loadu_pd(&(i_b[l_n]));    
+    vec_a = _mm256_mul_pd(vec_a, vec_b);
+    vec_g1 = _mm256_add_pd(vec_g1, vec_g2);
+    vec_a = _mm256_mul_pd(vec_a, vec_h2);
+    vec_g1 = _mm256_add_pd(vec_g1, vec_g3);
+    vec_g1 = _mm256_mul_pd(vec_g1, vec_h1);
+    _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1, vec_a ) );
+  }
+#else
   for ( ; l_n < l_trip_stream;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
+#endif
+  /* run the epilogue */
   for ( ; l_n < i_length;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
                 + i_h2*(i_b[l_n]*i_a[l_n]);
