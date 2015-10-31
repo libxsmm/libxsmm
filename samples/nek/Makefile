@@ -16,7 +16,6 @@ OMP ?= 1
 SYM ?= 0
 DBG ?= 0
 IPO ?= 0
-STS ?= 0
 
 OFFLOAD ?= 0
 ifneq ($(OFFLOAD),0)
@@ -125,9 +124,6 @@ ifneq (,$(filter icpc icc ifort,$(CXX) $(CC) $(FC)))
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall -std=c99
 	FCFLAGS += -fPIC 
-ifneq (0,$(STS))
-        FCFLAGS += -align array64byte -opt-streaming-stores always
-endif
 	LDFLAGS += -fPIC 
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
