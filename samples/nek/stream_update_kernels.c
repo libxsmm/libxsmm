@@ -72,8 +72,7 @@ void stream_update_axhm( const double* i_g1,
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
   /* run the bulk, hopefully using streaming stores */
-  /* @TODO, check if different archs are needed as well */
-#if defined(__AVX__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
   __m256d vec_h2 = _mm256_broadcast_sd(&i_h2);
   for ( ; l_n < l_trip_stream;  l_n+=4 ) {
@@ -94,6 +93,28 @@ void stream_update_axhm( const double* i_g1,
     vec_g1 = _mm256_add_pd(vec_g1, vec_g3);
     vec_g1 = _mm256_mul_pd(vec_g1, vec_h1);
     _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1, vec_a ) );
+  }
+#elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
+  __m512d vec_h1 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h1));
+  __m512d vec_h2 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h2));
+  for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+    __m512d vec_g1 = _mm512_loadu_pd(&(i_g1[l_n]));
+    __m512d vec_tm1 = _mm512_loadu_pd(&(i_tm1[l_n]));
+    vec_g1 = _mm512_mul_pd(vec_g1, vec_tm1);
+    __m512d vec_g2 = _mm512_loadu_pd(&(i_g2[l_n]));
+    __m512d vec_tm2 = _mm512_loadu_pd(&(i_tm2[l_n]));
+    vec_g2 = _mm512_mul_pd(vec_g2, vec_tm2);
+    __m512d vec_g3 = _mm512_loadu_pd(&(i_g3[l_n]));
+    __m512d vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n]));
+    vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
+    __m512d vec_a = _mm512_loadu_pd(&(i_a[l_n]));
+    __m512d vec_b = _mm512_loadu_pd(&(i_b[l_n]));    
+    vec_a = _mm512_mul_pd(vec_a, vec_b);
+    vec_g1 = _mm512_add_pd(vec_g1, vec_g2);
+    vec_a = _mm512_mul_pd(vec_a, vec_h2);
+    vec_g1 = _mm512_add_pd(vec_g1, vec_g3);
+    vec_g1 = _mm512_mul_pd(vec_g1, vec_h1);
+    _mm512_stream_pd( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
   }
 #else
   for ( ; l_n < l_trip_stream;  l_n++ ) {
