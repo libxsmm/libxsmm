@@ -98,21 +98,21 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
+                    substitute["MNK_INTERFACE_LIST"] += "\n  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + ", libxsmm_dmm_" + mnkstr
+                substitute["MNK_INTERFACE_LIST"] += "\n  INTERFACE"
+                for mnk in mnklist:
+                    mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_FLOAT\n" \
-                        "      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: a\n" \
-                        "      REAL(KIND=C_FLOAT),dimension(*),intent(in)  :: b\n" \
-                        "      REAL(KIND=C_FLOAT),dimension(*),intent(out) :: c\n" \
+                        "      REAL(KIND=C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "      REAL(KIND=C_FLOAT), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE" \
                         "\n" \
-                        "    !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_" + mnkstr + "\n" \
                         "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_DOUBLE\n" \
-                        "      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: a\n" \
-                        "      REAL(KIND=C_DOUBLE),dimension(*),intent(in)  :: b\n" \
-                        "      REAL(KIND=C_DOUBLE),dimension(*),intent(out) :: c\n" \
+                        "      REAL(KIND=C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "      REAL(KIND=C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE"
                         #"    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c) BIND(C)\n" \
                         #"      IMPORT :: C_PTR\n" \
@@ -123,6 +123,7 @@ if __name__ == "__main__":
                         #"      IMPORT :: C_PTR\n" \
                         #"      TYPE(C_PTR), VALUE, INTENT(IN) :: a, b, c\n" \
                         #"    END SUBROUTINE"
+                substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
             substitute["SHAPE_AS2"] = "k"
             substitute["SHAPE_BS1"] = "k" if (1 == aligned_loads) else "libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS)"

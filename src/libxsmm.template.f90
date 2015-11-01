@@ -82,20 +82,21 @@ MODULE LIBXSMM
 
     PURE SUBROUTINE LIBXSMM_SMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_FLOAT
-      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: a
-      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(in)  :: b
-      REAL(KIND=C_FLOAT), DIMENSION(*), INTENT(out) :: c
+      REAL(KIND=C_FLOAT), INTENT(IN) :: a(*), b(*)
+      REAL(KIND=C_FLOAT), INTENT(INOUT) :: c(*)
     END SUBROUTINE
 
     PURE SUBROUTINE LIBXSMM_DMM_FUNCTION(a, b, c) BIND(C)
       IMPORT :: C_DOUBLE
-      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: a
-      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(in)  :: b
-      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(out) :: c
+      REAL(KIND=C_DOUBLE), INTENT(IN) :: a(*), b(*)
+      REAL(KIND=C_DOUBLE), INTENT(INOUT) :: c(*)
     END SUBROUTINE
   END INTERFACE
 
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm, dgemm, libxsmm_smm_dispatch, libxsmm_dmm_dispatch
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm, dgemm
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_build_static, libxsmm_build_jit
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch, libxsmm_dmm_dispatch
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
   INTERFACE
     SUBROUTINE sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
       IMPORT LIBXSMM_INTEGER_TYPE, LIBXSMM_SINGLE_PRECISION
@@ -139,7 +140,7 @@ MODULE LIBXSMM
     TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch(m, n, k) BIND(C)
       IMPORT :: C_FUNPTR, C_INT
       INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k
-    END FUNCTION$MNK_INTERFACE_LIST
+    END FUNCTION
 
     ! Non-pure function returning the current clock tick using a platform-specific resolution.
     INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
@@ -150,7 +151,7 @@ MODULE LIBXSMM
       IMPORT :: C_LONG_LONG, C_DOUBLE
       INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
     END FUNCTION
-  END INTERFACE
+  END INTERFACE$MNK_INTERFACE_LIST
 
 CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_up
