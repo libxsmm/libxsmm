@@ -197,13 +197,13 @@ int main(int argc, char* argv []) {
   }
 
   /* check alpha */
-  if ((l_alpha != -1) && (l_alpha != 1)) {
+  if ((l_alpha < -1 || -1 < l_alpha) && (l_alpha < 1 || 1 < l_alpha)) {
     print_help();
     return -1;
   }
 
   /* check beta */
-  if ((l_beta != 0) && (l_beta != 1)) {
+  if ((l_beta < 0 || 0 < l_beta) && (l_beta < 1 || 1 < l_beta)) {
     print_help();
     return -1;
   }
@@ -220,7 +220,7 @@ int main(int argc, char* argv []) {
     l_matrix_file_in = argv[17];
 
     /* some more restrictive checks are needed in case of sparse */
-    if ( (l_alpha != 1) ) {
+    if ( (l_alpha < 1) || (1 < l_alpha) ) {
       print_help();
       return -1;
     }

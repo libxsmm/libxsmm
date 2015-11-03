@@ -34,8 +34,8 @@
 #include "libxsmm_typedefs.h"
 
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, ALPHA, BETA, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH) \
-  (DESCRIPTOR).alpha = (signed char)(0 != (ALPHA) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
-  (DESCRIPTOR).beta  = (signed char)(0 != (BETA)  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
+  (DESCRIPTOR).alpha = (signed char)((0 < (ALPHA) || 0 > (ALPHA)) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
+  (DESCRIPTOR).beta  = (signed char)((0 < (BETA)  || 0 > (BETA))  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
   (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda   = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)

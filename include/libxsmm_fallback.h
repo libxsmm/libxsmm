@@ -102,7 +102,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M)) \
       for (libxsmm_i_ = 0; libxsmm_i_ < LIBXSMM_LD(N, M); ++libxsmm_i_) { \
         const UINT libxsmm_index_ = libxsmm_i_ * libxsmm_ldc_ + libxsmm_j_; \
-        REAL libxsmm_r_ = (REAL)(0 != (BETA) ? ((BETA) * libxsmm_c_[libxsmm_index_]) : 0); \
+        REAL libxsmm_r_ = (REAL)((0 < (BETA) || 0 > (BETA)) ? ((BETA) * libxsmm_c_[libxsmm_index_]) : 0); \
         LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \
         LIBXSMM_PRAGMA_UNROLL \
         for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \

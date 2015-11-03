@@ -43,7 +43,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
   LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 8,
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch schemes. */
