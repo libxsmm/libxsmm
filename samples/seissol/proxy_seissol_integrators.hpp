@@ -170,8 +170,8 @@ void computeNeighboringIntegration() {
   #pragma omp parallel private(l_integrationBuffer, l_timeIntegrated)
 #endif
   {
-#if NUMBER_OF_GLOBAL_DATA_COPIES>1
-  GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
+  GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
 #else
   GlobalData* l_globalData = m_globalData;
 #endif
