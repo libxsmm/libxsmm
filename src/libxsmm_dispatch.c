@@ -53,13 +53,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_BUILD_CACHESIZE ((LIBXSMM_MAX_MNK) * 8)
+#define LIBXSMM_DISPATCH_CACHESIZE ((LIBXSMM_MAX_MNK) * 8)
 #if !defined(_WIN32)
-#define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
+#define LIBXSMM_DISPATCH_PAGESIZE sysconf(_SC_PAGESIZE)
 #else
-#define LIBXSMM_BUILD_PAGESIZE 4096
+#define LIBXSMM_DISPATCH_PAGESIZE 4096
 #endif
-#define LIBXSMM_BUILD_SEED 0
+#define LIBXSMM_DISPATCH_SEED 0
 
 
 /** Filled with zeros due to C language rule. */
@@ -68,10 +68,10 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
   libxsmm_dmm_function dmm;
   const void* pv;
 } libxsmm_cache_entry;
-LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_cache[(LIBXSMM_BUILD_CACHESIZE)];
+LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_cache[(LIBXSMM_DISPATCH_CACHESIZE)];
 
 #if !defined(_OPENMP)
-LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_build_lock[] = {
+LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -88,10 +88,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 #if !defined(_OPENMP)
     int i;
     for (i = 0; i < 0; ++i) {
-      LIBXSMM_LOCK_ACQUIRE(libxsmm_build_lock[i]);
+      LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
     }
 #else
-#   pragma omp critical(libxsmm_build_lock)
+#   pragma omp critical(libxsmm_dispatch_lock)
 #endif
     if (0 == init) {
 #     include <libxsmm_dispatch.h>
@@ -99,7 +99,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
     }
 #if !defined(_OPENMP)
     for (i = 0; i < 0; ++i) {
-      LIBXSMM_LOCK_RELEASE(libxsmm_build_lock[i]);
+      LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
     }
 #endif
   }
@@ -117,19 +117,19 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_build(const libxsmm_gemm_descri
 
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED);
+  hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED);
 
-  indx = hash % (LIBXSMM_BUILD_CACHESIZE);
+  indx = hash % (LIBXSMM_DISPATCH_CACHESIZE);
   result = libxsmm_cache[indx]; /* TODO: handle collision */
 
 #if (0 != (LIBXSMM_JIT))
   if (0 == result.pv) {
 # if !defined(_WIN32)
 # if !defined(_OPENMP)
-    const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_build_lock) / sizeof(*libxsmm_build_lock));
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_build_lock[lock]);
+    const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
+    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
 # else
-#   pragma omp critical(libxsmm_build_lock)
+#   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
       result = libxsmm_cache[indx];
@@ -179,8 +179,8 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_build(const libxsmm_gemm_descri
         }
 
         /* create executable buffer */
-        l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_BUILD_PAGESIZE))+1;
-        l_code_page_size = (LIBXSMM_BUILD_PAGESIZE)*l_code_pages;
+        l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_DISPATCH_PAGESIZE))+1;
+        l_code_page_size = (LIBXSMM_DISPATCH_PAGESIZE)*l_code_pages;
         l_fd = open("/dev/zero", O_RDWR);
         l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
         close(l_fd);
@@ -245,7 +245,7 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_build(const libxsmm_gemm_descri
     }
 
 # if !defined(_OPENMP)
-    LIBXSMM_LOCK_RELEASE(libxsmm_build_lock[lock]);
+    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
 # endif
 # else
 #   error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
