@@ -28,11 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "generator_extern_typedefs.h"
-#include "generator_sparse.h"
-#include "generator_dense.h"
-
-#include <libxsmm_macros.h>
+#include <libxsmm_generator.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -80,7 +76,7 @@ LIBXSMM_INLINE void print_help(void) {
 }
 
 int main(int argc, char* argv []) {
-  libxsmm_xgemm_descriptor l_xgemm_desc;
+  libxsmm_gemm_descriptor l_xgemm_desc;
   char* l_type;
   char* l_file_out;
   char* l_matrix_file_in;
@@ -212,13 +208,12 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  /* build xgemm descriptor: LIBXSMM_XGEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, LDA, LDB, LDC, PREFETCH, FLAGS, FALPHA, FBETA) */
-  LIBXSMM_XGEMM_DESCRIPTOR(l_xgemm_desc,
-    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0), LIBXSMM_MAX(l_lda, 0), LIBXSMM_MAX(l_ldb, 0), LIBXSMM_MAX(l_ldc, 0), l_prefetch,
-    (0 == l_single_precision ? 0 : LIBXSMM_XGEMM_FLAG_F32PREC)
-      | (0 != l_aligned_a ? LIBXSMM_XGEMM_FLAG_ALIGN_A : 0)
-      | (0 != l_aligned_c ? LIBXSMM_XGEMM_FLAG_ALIGN_C : 0),
-    l_alpha, l_beta);
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, l_alpha, l_beta,
+    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0), LIBXSMM_MAX(l_lda, 0), LIBXSMM_MAX(l_ldb, 0), LIBXSMM_MAX(l_ldc, 0),
+    (0 == l_single_precision ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
+      | (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
+      | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
+    l_prefetch);
 
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */

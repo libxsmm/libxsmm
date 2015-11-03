@@ -42,10 +42,10 @@
 #include "generator_dense_avx2_microkernel.h"
 
 void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
-                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                   const char*                     i_arch ) {
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                  const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int, const int);
+                                  const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -110,7 +110,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
       while (l_m_done != i_xgemm_desc->m) {
         if (l_m_done == 0) {
           /* This is a SeisSol Order 6, HSW, DP performance fix */
-          if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+          if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
             l_m_done_old = l_m_done;
             if (i_xgemm_desc->m == 56) {
               l_m_done = 32;
@@ -202,21 +202,21 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
 }
 
 unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                          const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                           const char*                     i_arch ) {
   unsigned int l_m_blocking = 0;
 
-  if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     l_m_blocking = 12;
-  } else if ( (strcmp( i_arch, "wsm" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "wsm" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     l_m_blocking = 6;
-  } else if ( (strcmp( i_arch, "snb" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  } else if ( (strcmp( i_arch, "snb" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     l_m_blocking = 24;
-  } else if ( (strcmp( i_arch, "snb" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "snb" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     l_m_blocking = 12;
-  } else if ( (strcmp( i_arch, "hsw" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  } else if ( (strcmp( i_arch, "hsw" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     l_m_blocking = 32;
-  } else if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     l_m_blocking = 16;
   } else { }
 
@@ -226,12 +226,12 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsm
 }
 
 unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                      const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                       const char*                     i_arch,
                                                                       const unsigned int              i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
 
-  if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     if (i_current_m_blocking == 4) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -242,7 +242,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "wsm" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "wsm" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     if (i_current_m_blocking == 2) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -253,7 +253,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "snb" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  } else if ( (strcmp( i_arch, "snb" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     if (i_current_m_blocking == 4) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -267,7 +267,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "snb" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "snb" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     if (i_current_m_blocking == 2) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -281,7 +281,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "hsw" ) == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+  } else if ( (strcmp( i_arch, "hsw" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
     if (i_current_m_blocking == 4) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -297,7 +297,7 @@ unsigned int libxsmm_generator_dense_sse3_avx_avx2_update_m_blocking( libxsmm_mi
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+  } else if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     if (i_current_m_blocking == 2) {
       l_m_blocking = 1;
       libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );

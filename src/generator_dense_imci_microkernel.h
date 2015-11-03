@@ -38,7 +38,7 @@
 void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*             io_generated_code,
                                                const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                               const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                               const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                const unsigned int                  i_n_blocking,
                                                const unsigned int                  i_k_blocking,
                                                const int                           i_offset );
@@ -47,21 +47,21 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                        const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                        const libxsmm_gemm_descriptor*    i_xgemm_desc,
                                                         const char*                        i_arch,
                                                         unsigned int                       i_n_blocking );
 
 void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io_generated_code,
                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                          const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                           const unsigned int                  i_m_blocking,
                                           const unsigned int                  i_n_blocking );
 
 void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             io_generated_code,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                           const libxsmm_xgemm_descriptor*     i_xgemm_desc,
+                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                            const unsigned int                  i_m_blocking,
                                            const unsigned int                  i_n_blocking );
 

@@ -31,7 +31,7 @@
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
 
-#include "generator_extern_typedefs.h"
+#include <libxsmm_generator.h>
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -272,7 +272,7 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
 void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
-                                  const libxsmm_xgemm_descriptor* i_xgemm_desc );
+                                  const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code );

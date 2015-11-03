@@ -94,7 +94,7 @@ MODULE LIBXSMM
   END INTERFACE
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm, dgemm
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_build_static, libxsmm_build_jit
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_build_jit
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_dispatch, libxsmm_dmm_dispatch
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
   INTERFACE
@@ -113,8 +113,8 @@ MODULE LIBXSMM
       REAL(LIBXSMM_DOUBLE_PRECISION), INTENT(INOUT) :: c(ldc,*)
     END SUBROUTINE
 
-    ! Init the library
-    PURE SUBROUTINE libxsmm_build_static() BIND(C)
+    ! Initialize the library
+    PURE SUBROUTINE libxsmm_init() BIND(C)
     END SUBROUTINE
 
     ! Build explicitly a kernel, do not rely on automatic JIT in dispatch

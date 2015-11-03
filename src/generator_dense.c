@@ -33,8 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libxsmm_generator.h>
 #include "generator_common.h"
-#include "generator_dense.h"
 #include "generator_dense_common.h"
 #include "generator_dense_sse3_avx_avx2.h"
 #include "generator_dense_imci_avx512.h"
@@ -42,10 +42,10 @@
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
-                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                     const libxsmm_gemm_descriptor* i_xgemm_desc,
                                      const char*                     i_arch ) {
   /* apply the alignement override */
-  libxsmm_xgemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 
   /* add instruction set mismatch check to code, header */
@@ -53,29 +53,29 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
-  if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 2;
-  } else if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_XGEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
     l_vector_length = 16;
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */
@@ -104,10 +104,10 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
 
   /* check if alignment is not possible */
   if ( 0 != (l_xgemm_desc_mod.lda % l_vector_length) ) {
-    l_xgemm_desc_mod.flags &= ~LIBXSMM_XGEMM_FLAG_ALIGN_A;
+    l_xgemm_desc_mod.flags &= ~LIBXSMM_GEMM_FLAG_ALIGN_A;
   }
   if ( 0 != (l_xgemm_desc_mod.ldc % l_vector_length) ) {
-    l_xgemm_desc_mod.flags &= ~LIBXSMM_XGEMM_FLAG_ALIGN_C;
+    l_xgemm_desc_mod.flags &= ~LIBXSMM_GEMM_FLAG_ALIGN_C;
   }
 
   if ( (strcmp(i_arch, "wsm") == 0) ||
@@ -137,7 +137,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
 
 void libxsmm_generator_dense_inlineasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
@@ -181,7 +181,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
 
 void libxsmm_generator_dense_directasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;

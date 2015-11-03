@@ -45,9 +45,6 @@
     <ClInclude Include="..\src\generator_common.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_dense.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_dense_avx_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -78,13 +75,11 @@
     <ClInclude Include="..\src\generator_sparse_csc_reader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_extern_typedefs.h">
-      <Filter>src</Filter>
+    <ClInclude Include="..\src\libxsmm_generator.h" />
+    <ClInclude Include="..\include\libxsmm_typedefs.h">
+      <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_sparse.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_generator.h">
+    <ClInclude Include="..\build\libxsmm_dispatch.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -110,7 +105,7 @@
     <ClCompile Include="..\src\libxsmm_crc32.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_build.c">
+    <ClCompile Include="..\src\libxsmm_dispatch.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_timer.c">

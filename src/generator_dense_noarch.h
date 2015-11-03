@@ -35,7 +35,7 @@
 #include "generator_common.h"
 
 void libxsmm_generator_dense_noarch_kernel( libxsmm_generated_code*         io_generated_code,
-                                            const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                            const libxsmm_gemm_descriptor* i_xgemm_desc,
                                             const char*                     i_arch );
 
 #endif /* GENERATOR_DENSE_NOARCH_H */

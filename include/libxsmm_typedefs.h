@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015, Intel Corporation                                     **
+** Copyright (c) 2013-2015, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,30 +26,44 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_TYPEDEFS_H
+#define LIBXSMM_TYPEDEFS_H
 
-#ifndef GENERATOR_DENSE_H
-#define GENERATOR_DENSE_H
+#include "libxsmm_macros.h"
 
-#include "generator_extern_typedefs.h"
 
-/* @TODO change int based architecture value */
-void libxsmm_generator_dense_inlineasm(const char*                     i_file_out,
-                                       const char*                     i_routine_name,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch );
+/** Generic type of a function. */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(float alpha, float beta, const float* a, const float* b, float* c, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmm_function)(double alpha, double beta, const double* a, const double* b, double* c, ...);
 
-/* @TODO change int based architecture value */
-void libxsmm_generator_dense_directasm(const char*                     i_file_out,
-                                       const char*                     i_routine_name,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch );
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_gemm_flags {
+  LIBXSMM_GEMM_FLAG_TRANS_A = 1,
+  LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+  LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 8,
+} libxsmm_gemm_flags;
 
-/* @TODO change int based architecture value */
-void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
-                                     const libxsmm_xgemm_descriptor* i_xgemm_desc,
-                                     const char*                     i_arch );
+/** Enumeration of the available prefetch schemes. */
+typedef enum libxsmm_prefetch_type {
+  /** No prefetching and no prefetch fn. signature. */
+  LIBXSMM_PREFETCH_NONE               = 0,
+  /** Only function prefetch signature. */
+  LIBXSMM_PREFETCH_SIGNATURE          = 1,
+  /** Prefetch PA using accesses to A. */
+  LIBXSMM_PREFETCH_AL2                = 2,
+  /** Prefetch PA (aggressive). */
+  LIBXSMM_PREFETCH_AL2_JPST           = 4,
+  /** Prefetch PB using accesses to C. */
+  LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
+  /** Prefetch A ahead. */
+  LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
+} libxsmm_prefetch_type;
 
-#endif /* GENERATOR_DENSE_H */
+#endif /*LIBXSMM_TYPEDEFS_H*/
 

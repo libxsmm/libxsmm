@@ -32,24 +32,24 @@
 #ifndef GENERATOR_SPARSE_ASPARSE_H
 #define GENERATOR_SPARSE_ASPARSE_H
 
-#include "generator_extern_typedefs.h"
+#include <libxsmm_generator.h>
 
 void libxsmm_sparse_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
-                                              const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const unsigned int              i_k,
                                               const unsigned int              i_z,
                                               const unsigned int*             i_row_idx,
                                               const unsigned int*             i_column_idx );
 
 void libxsmm_sparse_asparse_innerloop_two_vector( libxsmm_generated_code*         io_generated_code,
-                                                  const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                   const unsigned int              i_k,
                                                   const unsigned int              i_z,
                                                   const unsigned int*             i_row_idx,
                                                   const unsigned int*             i_column_idx );
 
 void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*         io_generated_code,
-                                                   const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                    const unsigned int              i_k,
                                                    const unsigned int              i_z,
                                                    const unsigned int*             i_row_idx,
@@ -57,7 +57,7 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_generated_code,
-                                       const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch,
                                        const unsigned int*             i_row_idx,
                                        const unsigned int*             i_column_idx,

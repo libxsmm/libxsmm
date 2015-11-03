@@ -44,12 +44,12 @@
 LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
                                                                  const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                  const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                 const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                                 const libxsmm_gemm_descriptor*    i_xgemm_desc,
                                                                  unsigned int                       i_m_done ) {
   unsigned int l_mask;
 
   /* init full mask */
-  if ( (LIBXSMM_XGEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
     l_mask = 0xff;
   } else {
     l_mask = 0xffff;
@@ -80,16 +80,16 @@ LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_ge
                                                        libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                        const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                        const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                       const libxsmm_xgemm_descriptor*    i_xgemm_desc,
+                                                       const libxsmm_gemm_descriptor*    i_xgemm_desc,
                                                        const char*                        i_arch,
                                                        unsigned int                       i_n_blocking ) {
   /* set function pointers for AVX512 and IMCI */
   unsigned int (*l_generator_microkernel_kloop)( libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                                 const libxsmm_xgemm_descriptor*, const char*, unsigned int );
+                                                 const libxsmm_gemm_descriptor*, const char*, unsigned int );
   void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
+                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int );
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_xgemm_descriptor*, const unsigned int, const unsigned int );
+                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int );
   unsigned int l_k_unrolled;
   unsigned int l_m_done;
 
@@ -183,7 +183,7 @@ LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_ge
 }
 
 void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
-                                                 const libxsmm_xgemm_descriptor* i_xgemm_desc,
+                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                  const char*                     i_arch ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;

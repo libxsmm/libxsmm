@@ -27,14 +27,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
     <ClInclude Include="..\include\libxsmm_fallback.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_prefetch.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
+    <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
-    <ClInclude Include="..\src\generator_dense.h" />
     <ClInclude Include="..\src\generator_dense_avx2_microkernel.h" />
     <ClInclude Include="..\src\generator_dense_avx512_microkernel.h" />
     <ClInclude Include="..\src\generator_dense_avx_microkernel.h" />
@@ -45,14 +46,11 @@
     <ClInclude Include="..\src\generator_dense_noarch.h" />
     <ClInclude Include="..\src\generator_dense_sse3_avx_avx2.h" />
     <ClInclude Include="..\src\generator_dense_sse3_microkernel.h" />
-    <ClInclude Include="..\src\generator_extern_typedefs.h" />
-    <ClInclude Include="..\src\generator_sparse.h" />
     <ClInclude Include="..\src\generator_sparse_asparse.h" />
     <ClInclude Include="..\src\generator_sparse_bsparse.h" />
     <ClInclude Include="..\src\generator_sparse_csc_reader.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
-    <ClInclude Include="..\src\libxsmm_generator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_1_1_1.c" />
@@ -77,7 +75,7 @@
     <ClCompile Include="..\src\generator_sparse_asparse.c" />
     <ClCompile Include="..\src\generator_sparse_bsparse.c" />
     <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
-    <ClCompile Include="..\src\libxsmm_build.c" />
+    <ClCompile Include="..\src\libxsmm_dispatch.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
   </ItemGroup>

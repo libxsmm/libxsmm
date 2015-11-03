@@ -12,7 +12,7 @@ The interface of the library is *generated* according to the [Build Instructions
 /** Initialization function to set up LIBXSMM's dispatching table. One may
     call this routine to avoid lazy initialization overhead in the first
     call to a LIBXSMM kernel routine */
-void libxsmm_build_static();
+void libxsmm_init();
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
 libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
 libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
@@ -156,7 +156,7 @@ The JIT backend support in LIBXSMM can be enabled using:
 make JIT=1
 ```
 
-One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_build_jit) are not subject to a problem size threshold. Moreover, building with JIT=2 (in fact, 1<JIT and JIT!=0) allows to solely rely on explicitly generating kernels at runtime. Of course, JIT code generation can be used to accompanying statically generated code.
+One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?mm_dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used to accompanying statically generated code.
 
 Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 

@@ -95,7 +95,7 @@ PROGRAM smm
   WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3) 
 
   ! Init LIBXSMM
-  CALL libxsmm_build_static()
+  CALL libxsmm_init()
 
   ! compute refernce solution
   CALL GETENV("CHECK", argv)
