@@ -38,6 +38,7 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
+  REAL(T), PARAMETER :: alpha = 1, beta = 1
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
@@ -135,7 +136,6 @@ PROGRAM stpm
 
   WRITE (*, "(6(A,I3),A,I10)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
 
-
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
@@ -146,11 +146,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_mm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      call libxsmm_mm(alpha, beta, mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
+          call libxsmm_mm(alpha, beta, mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
       enddo
-      call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
+      call libxsmm_mm(alpha, beta, mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -168,11 +168,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_imm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      call libxsmm_imm(alpha, beta, mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_imm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
+          call libxsmm_imm(alpha, beta, mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
       enddo
-      call libxsmm_imm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
+      call libxsmm_imm(alpha, beta, mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i))
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -190,11 +190,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call mxmf2(dx, mm, a(:,:,:,i), m, tm1, n*k)
+      call mxmf2(alpha, beta, dx, mm, a(:,:,:,i), m, tm1, n*k)
       do j = 1, k
-          call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
+          call mxmf2(alpha, beta, tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
       enddo
-      call mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk)
+      call mxmf2(alpha, beta, tm2, mm*nn, dz, k, c(:,:,:,i), kk)
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -208,9 +208,9 @@ PROGRAM stpm
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0
 
-    f1 = libxsmm_mm_dispatch(mm, n*k, m, T)
-    f2 = libxsmm_mm_dispatch(mm, nn, n, T)
-    f3 = libxsmm_mm_dispatch(mm*nn, kk, k, T)
+    f1 = libxsmm_mm_dispatch(alpha, beta, mm, n*k, m, T)
+    f2 = libxsmm_mm_dispatch(alpha, beta, mm, nn, n, T)
+    f3 = libxsmm_mm_dispatch(alpha, beta, mm*nn, kk, k, T)
     if (C_ASSOCIATED(f1)) then
       CALL C_F_PROCPOINTER(f1, dmm1)
     else
@@ -231,11 +231,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL dmm1(dx, a(1,1,1,i), tm1)
+      CALL dmm1(alpha, beta, dx, a(1,1,1,i), tm1)
       do j = 1, k
-          call dmm2(tm1(1,1,j), dy, tm2(1,1,j))
+          call dmm2(alpha, beta, tm1(1,1,j), dy, tm2(1,1,j))
       enddo
-      CALL dmm3(tm2, dz, c(1,1,1,i))
+      CALL dmm3(alpha, beta, tm2, dz, c(1,1,1,i))
     END DO
     !$OMP MASTER
     !$ duration = duration + omp_get_wtime()
@@ -257,12 +257,12 @@ PROGRAM stpm
     tm1 = 0; tm2 = 0;
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_blasmm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      call libxsmm_blasmm(alpha, beta, mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_blasmm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
+          call libxsmm_blasmm(alpha, beta, mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j))
       enddo
       ! because we can't reshape d
-      call libxsmm_blasmm(mm*nn, kk, k, reshape(tm2, (/mm*nn, k/)), dz, tm3(:,:,1))
+      call libxsmm_blasmm(alpha, beta, mm*nn, kk, k, reshape(tm2, (/mm*nn, k/)), dz, tm3(:,:,1))
       d(:,:,:,i) = reshape(tm3, (/mm,nn,kk/))
     END DO
     ! Deallocate thread-local arrays
@@ -284,7 +284,6 @@ PROGRAM stpm
 
   ! Deallocate global arrays
   DEALLOCATE(a)
-  deallocate(dx, dy, dz)
+  DEALLOCATE(dx, dy, dz)
   DEALLOCATE(c)
-
 END PROGRAM
