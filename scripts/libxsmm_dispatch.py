@@ -43,11 +43,11 @@ def create_dispatch(mnklist):
         mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])
         print "desc.m = " + mstr + "; desc.n = " + nstr + "; desc.k = " + kstr + "; desc.lda = " + mstr + "; desc.ldb = " + kstr + ";"
         print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(float)); desc.flags |= LIBXSMM_GEMM_FLAG_F32PREC;"
-        print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED) % (LIBXSMM_BUILD_CACHESIZE);"
+        print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
         print "assert(0 == libxsmm_cache[indx].pv); /*TODO: handle collision*/"
         print "libxsmm_cache[indx].smm = (libxsmm_smm_function)libxsmm_smm_" + mnkstr + ";"
         print "desc.ldc = LIBXSMM_ALIGN_STORES(" + mstr + ", sizeof(double)); desc.flags &= ~LIBXSMM_GEMM_FLAG_F32PREC;"
-        print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_BUILD_SEED) % (LIBXSMM_BUILD_CACHESIZE);"
+        print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
         print "assert(0 == libxsmm_cache[indx].pv); /*TODO: handle collision*/"
         print "libxsmm_cache[indx].dmm = (libxsmm_dmm_function)libxsmm_dmm_" + mnkstr + ";"
 

@@ -62,13 +62,14 @@
 #define LIBXSMM_DISPATCH_SEED 0
 
 
-/** Filled with zeros due to C language rule. */
 typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
   libxsmm_smm_function smm;
   libxsmm_dmm_function dmm;
   const void* pv;
 } libxsmm_cache_entry;
+/** Filled with zeros due to C language rule. */
 LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_cache[(LIBXSMM_DISPATCH_CACHESIZE)];
+int libxsmm_init_check = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
@@ -80,40 +81,60 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 {
-  static int init = 0;
-
-  if (0 == init) {
 #if !defined(_OPENMP)
+  /* acquire one of the locks as the master lock */
+  LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[0]);
+#else
+# pragma omp critical(libxsmm_dispatch_lock)
+#endif
+  if (0 == libxsmm_init_check) {
+#if !defined(_OPENMP)
+    const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(libxsmm_cache_entry);
     int i;
-    for (i = 0; i < 0; ++i) {
+    /* acquire the rest of the locks to shortcut any lazy initialization later on */
+    for (i = 1; i < nlocks; ++i) {
       LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
     }
-#else
-#   pragma omp critical(libxsmm_dispatch_lock)
 #endif
-    if (0 == init) {
+    {
+      /* setup the dispatch table for the statically generated code */
 #     include <libxsmm_dispatch.h>
-      init = 1;
     }
+    libxsmm_init_check = 1;
 #if !defined(_OPENMP)
-    for (i = 0; i < 0; ++i) {
+    /* release the rest of the acquired locks */
+    for (i = 1; i < nlocks; ++i) {
       LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
     }
 #endif
   }
+#if !defined(_OPENMP)
+  /* release the master lock */
+  LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[0]);
+#endif
 }
 
 
-LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_build(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
+{
+  if (0 == libxsmm_init_check) {
+    internal_init();
+  }
+}
+
+
+LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descriptor* desc)
 {
   libxsmm_cache_entry result;
   unsigned int hash, indx;
   assert(0 != desc);
 
   /* lazy initialization */
-  libxsmm_init();
+  if (0 == libxsmm_init_check) {
+    internal_init();
+  }
 
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
@@ -124,7 +145,7 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_build(const libxsmm_gemm_descri
 
 #if (0 != (LIBXSMM_JIT))
   if (0 == result.pv) {
-# if !defined(_WIN32)
+# if !defined(_WIN32) && !defined(__CYGWIN__)
 # if !defined(_OPENMP)
     const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
     LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
@@ -263,7 +284,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
     LIBXSMM_MAX(ldc, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(double))),
     flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch);
-  return libxsmm_build(&desc).smm;
+  return internal_build(&desc).smm;
 }
 
 
@@ -273,5 +294,5 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
     LIBXSMM_MAX(ldc, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(double))),
     flags, prefetch);
-  return libxsmm_build(&desc).dmm;
+  return internal_build(&desc).dmm;
 }
