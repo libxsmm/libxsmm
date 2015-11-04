@@ -93,9 +93,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #if !defined(_OPENMP)
     const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(libxsmm_cache_entry);
     int i;
-    /* acquire the rest of the locks to shortcut any lazy initialization later on */
+    /* acquire and release remaining locks to shortcut any lazy initialization later on */
     for (i = 1; i < nlocks; ++i) {
       LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
+      LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
     }
 #endif
     {
@@ -103,12 +104,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #     include <libxsmm_dispatch.h>
     }
     libxsmm_init_check = 1;
-#if !defined(_OPENMP)
-    /* release the rest of the acquired locks */
-    for (i = 1; i < nlocks; ++i) {
-      LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
-    }
-#endif
   }
 #if !defined(_OPENMP)
   /* release the master lock */
