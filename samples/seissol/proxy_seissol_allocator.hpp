@@ -104,18 +104,10 @@ seissol::kernels::Time     m_timeKernel;
 seissol::kernels::Volume   m_volumeKernel;
 seissol::kernels::Boundary m_boundaryKernel;
 
-/* This option is needed to create multiple copies of global data to reduce CC pressure */
-//#define NUMBER_OF_GLOBAL_DATA_COPIES 9
-#define NUMBER_OF_GLOBAL_DATA_COPIES 1
-#ifndef NUMBER_OF_GLOBAL_DATA_COPIES
-#define NUMBER_OF_GLOBAL_DATA_COPIES 1
-#endif
-
 /* This option is needed to avoid polution of low-level caches */
-//#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 8
-#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
-#ifndef NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY
-#define NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY 1
+#define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 4
+#ifndef NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 
+#define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 16383
 #endif
 
 real m_timeStepWidthSimulation = (real)1.0;
@@ -406,11 +398,25 @@ unsigned int init_data_structures(unsigned int i_cells) {
                l_globalMatrices += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * NUMBER_OF_BASIS_FUNCTIONS * 52;                                         
                l_globalMatrices *= sizeof(real);
 
-  m_globalPointerArray = (real**) malloc(NUMBER_OF_GLOBAL_DATA_COPIES*sizeof(real*));
-  m_globalDataArray = (GlobalData**) malloc(NUMBER_OF_GLOBAL_DATA_COPIES*sizeof(GlobalData*));
+  // determine number of global data copies
+  unsigned int l_numberOfThreads = 1;
+#ifdef _OPENMP
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+      l_numberOfThreads = omp_get_num_threads();
+    }
+  }
+#endif
+  unsigned int l_numberOfCopiesCeil = (l_numberOfThreads%NUMBER_OF_THREADS_PER_GLOBALDATA_COPY == 0) ? 0 : 1;
+  unsigned int l_numberOfCopies = (l_numberOfThreads/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY) + l_numberOfCopiesCeil;
+
+  m_globalPointerArray = (real**) malloc(l_numberOfCopies*sizeof(real*));
+  m_globalDataArray = (GlobalData**) malloc(l_numberOfCopies*sizeof(GlobalData*));
 
   // @TODO: for NUMA we need to bind this
-  for (unsigned int l_globalDataCount = 0; l_globalDataCount < NUMBER_OF_GLOBAL_DATA_COPIES; l_globalDataCount++) {
+  for (unsigned int l_globalDataCount = 0; l_globalDataCount < l_numberOfCopies; l_globalDataCount++) {
 #ifdef USE_HBM_GLOBALDATA
     hbw_posix_memalign( (void**) &(m_globalPointerArray[l_globalDataCount]), 2097152, l_globalMatrices );
 #else
@@ -459,7 +465,20 @@ unsigned int init_data_structures(unsigned int i_cells) {
 }
 
 void free_data_structures() {
-  for (unsigned int l_globalDataCount = 0; l_globalDataCount < NUMBER_OF_GLOBAL_DATA_COPIES; l_globalDataCount++) {
+  unsigned int l_numberOfThreads = 1;
+#ifdef _OPENMP
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+      l_numberOfThreads = omp_get_num_threads();
+    }
+  }
+#endif
+  unsigned int l_numberOfCopiesCeil = (l_numberOfThreads%NUMBER_OF_THREADS_PER_GLOBALDATA_COPY == 0) ? 0 : 1;
+  unsigned int l_numberOfCopies = (l_numberOfThreads/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY) + l_numberOfCopiesCeil;
+
+  for (unsigned int l_globalDataCount = 0; l_globalDataCount < l_numberOfCopies; l_globalDataCount++) {
     m_globalData =  m_globalDataArray[l_globalDataCount];
     free(m_globalData);
   }
@@ -506,7 +525,7 @@ void free_data_structures() {
 
   free(m_faceNeighbors);
 
-  for (unsigned int l_globalDataCount = 0; l_globalDataCount < NUMBER_OF_GLOBAL_DATA_COPIES; l_globalDataCount++) {
+  for (unsigned int l_globalDataCount = 0; l_globalDataCount < l_numberOfCopies; l_globalDataCount++) {
     m_globalPointer = m_globalPointerArray[l_globalDataCount];
 #ifdef USE_HBM_GLOBALDATA
     hbw_free(m_globalPointer);

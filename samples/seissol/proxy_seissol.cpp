@@ -67,6 +67,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <immintrin.h>
 #include <sys/time.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #ifdef USE_MEMKIND
 #include <hbwmalloc.h>
