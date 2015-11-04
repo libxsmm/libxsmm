@@ -69,7 +69,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
 } libxsmm_cache_entry;
 /** Filled with zeros due to C language rule. */
 LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_cache[(LIBXSMM_DISPATCH_CACHESIZE)];
-int libxsmm_init_check = 0;
+LIBXSMM_RETARGETABLE int libxsmm_init_check = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
