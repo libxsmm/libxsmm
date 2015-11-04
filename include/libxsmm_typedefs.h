@@ -46,7 +46,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 } libxsmm_gemm_flags;
 
-/** Enumeration of the available prefetch schemes. */
+/** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_prefetch_type {
   /** No prefetching and no prefetch fn. signature. */
   LIBXSMM_PREFETCH_NONE               = 0,

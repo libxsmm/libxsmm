@@ -105,16 +105,16 @@ if __name__ == "__main__":
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_FLOAT\n" \
-                        "      REAL(KIND=C_FLOAT), VALUE, INTENT(IN) :: alpha, beta\n" \
-                        "      REAL(KIND=C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(KIND=C_FLOAT), INTENT(INOUT) :: c(*)\n" \
+                        "      REAL(C_FLOAT), VALUE, INTENT(IN) :: alpha, beta\n" \
+                        "      REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "      REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE" \
                         "\n" \
                         "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
                         "      IMPORT :: C_DOUBLE\n" \
-                        "      REAL(KIND=C_DOUBLE), VALUE, INTENT(IN) :: alpha, beta\n" \
-                        "      REAL(KIND=C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(KIND=C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
+                        "      REAL(C_DOUBLE), VALUE, INTENT(IN) :: alpha, beta\n" \
+                        "      REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "      REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
