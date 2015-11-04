@@ -354,13 +354,13 @@ CONTAINS
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: smm_dispatch
   !DIR$ ATTRIBUTES INLINE :: smm_dispatch
-  TYPE(C_FUNPTR) PURE FUNCTION smm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch)
+  PURE FUNCTION smm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) RESULT(function)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION, Zero = 0
     INTEGER(LIBXSMM_INTEGER_TYPE), OPTIONAL, INTENT(IN) :: lda, ldb, ldc, flags, prefetch
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: alpha, beta
-    TYPE(C_FUNPTR) :: f
-    f = libxsmm_smm_dispatch(alpha, beta, m, n, k, &
+    TYPE(C_FUNPTR) :: function
+    function = libxsmm_smm_dispatch(alpha, beta, m, n, k, &
           MERGE(lda, Zero, PRESENT(lda)), MERGE(ldb, Zero, PRESENT(ldb)), MERGE(ldc, Zero, PRESENT(ldc)), &
           MERGE(flags, LIBXSMM_GEMM_FLAG_DEFAULT, PRESENT(flags)), &
           MERGE(prefetch, LIBXSMM_PREFETCH, PRESENT(prefetch)))
@@ -368,13 +368,13 @@ CONTAINS
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: dmm_dispatch
   !DIR$ ATTRIBUTES INLINE :: dmm_dispatch
-  TYPE(C_FUNPTR) PURE FUNCTION dmm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch)
+  PURE FUNCTION dmm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) RESULT(function)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION, Zero = 0
     INTEGER(LIBXSMM_INTEGER_TYPE), OPTIONAL, INTENT(IN) :: lda, ldb, ldc, flags, prefetch
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: alpha, beta
-    TYPE(C_FUNPTR) :: f
-    f = libxsmm_dmm_dispatch(alpha, beta, m, n, k, &
+    TYPE(C_FUNPTR) :: function
+    function = libxsmm_dmm_dispatch(alpha, beta, m, n, k, &
           MERGE(lda, Zero, PRESENT(lda)), MERGE(ldb, Zero, PRESENT(ldb)), MERGE(ldc, Zero, PRESENT(ldc)), &
           MERGE(flags, LIBXSMM_GEMM_FLAG_DEFAULT, PRESENT(flags)), &
           MERGE(prefetch, LIBXSMM_PREFETCH, PRESENT(prefetch)))
