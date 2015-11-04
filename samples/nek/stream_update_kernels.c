@@ -50,7 +50,6 @@ void stream_update_axhm( const double* i_g1,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  int l_trip_end = i_length;
   
   /* let's calculate the prolog until C is cachline aligned */ 
   /* @TODO check for shifts by the compiler */
