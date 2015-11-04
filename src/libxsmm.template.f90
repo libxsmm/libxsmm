@@ -53,7 +53,6 @@ MODULE LIBXSMM
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_M           = $AVG_M
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_N           = $AVG_N
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_AVG_K           = $AVG_K
-  INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_BETA            = $BETA
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_JIT             = $JIT
 
   ! Flag enumeration which can be IORed.
@@ -62,9 +61,14 @@ MODULE LIBXSMM
                                               LIBXSMM_GEMM_FLAG_ALIGN_A = 4, &
                                               LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 
+  ! Flag representing the GEMM performed by the simplified interface.
   INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: LIBXSMM_GEMM_FLAG_DEFAULT = IOR( &
                                                 MERGE(LIBXSMM_GEMM_FLAG_ALIGN_A, 0, 1.LT.LIBXSMM_ALIGNED_LOADS), &
                                                 MERGE(LIBXSMM_GEMM_FLAG_ALIGN_C, 0, 1.LT.LIBXSMM_ALIGNED_STORES))
+
+  ! Parameters representing the GEMM performed by the simplified interface.
+  INTEGER(LIBXSMM_DOUBLE_PRECISION), PARAMETER :: LIBXSMM_ALPHA = $ALPHA
+  INTEGER(LIBXSMM_DOUBLE_PRECISION), PARAMETER :: LIBXSMM_BETA  = $BETA
 
   ! Enumeration of the available prefetch strategies which can be IORed.
   !   LIBXSMM_PREFETCH_NONE:      No prefetching and no prefetch fn. signature.

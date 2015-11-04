@@ -48,8 +48,9 @@ if __name__ == "__main__":
         prefetch = int(sys.argv[6]) if (6 < argc) else 0
         jit = int(sys.argv[7]) if (7 < argc) else 0
         threshold = int(sys.argv[8]) if (8 < argc) else 0
-        beta = int(sys.argv[9]) if (9 < argc) else 1
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[10:], 0, threshold) if (10 < argc) else list()
+        alpha = int(sys.argv[9]) if (9 < argc) else 1
+        beta = int(sys.argv[10]) if (10 < argc) else 1
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[11:], 0, threshold) if (11 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -79,6 +80,7 @@ if __name__ == "__main__":
             "AVG_M":          avgm, \
             "AVG_N":          avgn, \
             "AVG_K":          avgk, \
+            "ALPHA":          alpha, \
             "BETA":           beta, \
             "JIT":            jit, \
             "MNK_INTERFACE_LIST": "" \
