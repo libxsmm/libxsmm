@@ -36,14 +36,15 @@ PROGRAM smm
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
   INTEGER, PARAMETER :: MAX_NTHREADS = 512
+  REAL(T), PARAMETER :: alpha = 1, beta = 1
 
   REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
   REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  PROCEDURE(LIBXSMM_XMM_FUNCTION), POINTER :: xmm     ! Fully ploymorphic variant
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm     ! double precision variant
+  !PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: xmm
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm
   INTEGER :: argc, m, n, k, ld, routine, check
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
@@ -89,26 +90,26 @@ PROGRAM smm
   DO i = 1, s
     CALL init(42, a(:, :, i), i - 1)
     CALL init(24, b(:, :, i), i - 1)
-  END DO 
+  END DO
   c(:,:) = 0
 
-  WRITE (*, "(A,I3,A,I3,A,I3,A,I6)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3) 
+  WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
 
-  ! Init LIBXSMM
+  ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  ! compute refernce solution
+  ! compute reference solution
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
   IF (0.NE.check) THEN
     ALLOCATE(d(m,n))
     d(:,:) = 0
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(a, b, d, m, n, k)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(m, n, k, a, b, d)
     ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     tmp(:,:) = 0
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
-      CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
+      CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
     END DO
     !$OMP CRITICAL
     d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
@@ -118,8 +119,8 @@ PROGRAM smm
     !$OMP END PARALLEL
   END IF
 
-  !warm up BLAS library
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+  ! warm up BLAS library
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
   ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
   tmp(:,:) = 0
   !$OMP MASTER
@@ -127,7 +128,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -141,7 +142,7 @@ PROGRAM smm
   c(:,:) = 0
 
   WRITE(*, "(A)") "Streamed... (BLAS)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
   ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
   tmp(:,:) = 0
   !$OMP MASTER
@@ -149,7 +150,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -166,9 +167,8 @@ PROGRAM smm
   END IF
   c(:,:) = 0
 
-
   WRITE(*, "(A)") "Streamed... (inlined)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
   ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
   tmp(:,:) = 0
   !$OMP MASTER
@@ -176,7 +176,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_imm(m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_imm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -194,7 +194,7 @@ PROGRAM smm
   c(:,:) = 0
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, b, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
   ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
   tmp(:,:) = 0
   !$OMP MASTER
@@ -202,7 +202,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_mm(m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_mm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -219,12 +219,11 @@ PROGRAM smm
   END IF
   c(:,:) = 0
 
-  f = libxsmm_mm_dispatch(m, n, k, T)
+  f = libxsmm_mm_dispatch(alpha, beta, m, n, k)
   IF (C_ASSOCIATED(f)) THEN
-    CALL C_F_PROCPOINTER(f, xmm)     ! Fully polymorph variant
-!    CALL C_F_PROCPOINTER(f, dmm)     ! double precision variant
+    CALL C_F_PROCPOINTER(f, xmm)
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, b, c, m, n, dmm, xmm)
+    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(m, n, a, b, c, duration, xmm)
     ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     tmp(:,:) = 0
     !$OMP MASTER
@@ -232,8 +231,7 @@ PROGRAM smm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
-      CALL xmm(C_LOC(a(1,1,i)), C_LOC(b(1,1,i)), C_LOC(tmp))     ! Fully polymorph variant
-!     CALL dmm(a(:,:,i), b(:,:,i), tmp)                          ! double precision variant
+      CALL xmm(alpha, beta, a(:,:,i), b(:,:,i), tmp)
     END DO
     !$OMP MASTER
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
