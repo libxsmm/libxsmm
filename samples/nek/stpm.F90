@@ -113,17 +113,17 @@ PROGRAM stpm
     d = 0.
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, d, m, n, k)
-    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m*n,k,1))
+    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_blasmm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      tm1 = reshape( matmul(dx, reshape(a(:,:,:,i), (/m,n*k/))), (/m,n,k/))
       do j = 1, k
-          call libxsmm_blasmm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          tm2(:,:,j) = matmul(a(:,:,j,i), dy)
       enddo
-      call libxsmm_blasmm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      tm3 = reshape( matmul(reshape(a(:,:,:,i), (/m*n,k/)), dz), (/m,n,k/))
       !DEC$ vector aligned nontemporal
-      d(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*reshape(tm3, (/m,n,k/))
+      d(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
     END DO
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)

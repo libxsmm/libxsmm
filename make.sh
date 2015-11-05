@@ -35,9 +35,7 @@ elif [[ "-cif90" == "$1" ]] ; then
     23 24 42"
 elif [[ "-cinek" == "$1" ]] ; then
   shift
-  make -e $* PEDANTIC=1 MNK=" \
-    0 8 15, \
-    23 24 42"
+  make -e $* PEDANTIC=1 M="4 8" N="4 8" K="4 8" 
 else
   make -e $*
 fi

@@ -626,11 +626,15 @@ ifneq (0,$(JIT))
 endif
 
 .PHONY: samples
-samples: smm cp2k
+samples: smm cp2k nek
 
 .PHONY: smm
 smm: lib_all
 	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
+
+.PHONY: nek
+nek: lib_all
+	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 
 .PHONY: smm_hst
 smm_hst: lib_hst
@@ -684,7 +688,7 @@ $(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=smmf90-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/smmf90-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -712,7 +716,7 @@ $(SPLDIR)/nek/stpm-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=stpm-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/stpm-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
