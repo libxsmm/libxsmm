@@ -631,8 +631,8 @@ samples: smm cp2k nek
 smm: lib_all
 	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 
-.PHONY: smm
-smm: lib_all
+.PHONY: nek
+nek: lib_all
 	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 
 .PHONY: smm_hst
