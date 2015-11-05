@@ -138,11 +138,11 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 
 ifneq (0,$(INTEL))
 	AR = xiar
-	CXXFLAGS += -fPIC -Wall -std=c++0x
+	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC
+	LDFLAGS += -fPIC -lrt
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 	else ifneq (0,$(PEDANTIC))
@@ -191,8 +191,11 @@ ifneq (0,$(INTEL))
 		else
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
+			FCFLAGS := -g -check -traceback $(FCFLAGS)
 		endif
+	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
 		CXXFLAGS += -openmp
@@ -205,8 +208,10 @@ ifneq (0,$(INTEL))
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
 	endif
-	ifneq (0,$(STATIC))
-		SLDFLAGS += -no-intel-extensions -static-intel
+	ifeq (1,$(STATIC))
+		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+	else ifneq (0,$(STATIC))
+		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
@@ -224,8 +229,9 @@ else # GCC assumed
 	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
+	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
+	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -280,6 +286,9 @@ else # GCC assumed
 			CFLAGS := -g $(CFLAGS)
 			FCFLAGS := -g $(FCFLAGS)
 		endif
+	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
 		CXXFLAGS += -fopenmp

@@ -1,3 +1,20 @@
+# export all variables to sub-make processes
+#.EXPORT_ALL_VARIABLES: #export
+# Set MAKE_PARALLEL=0 for issues with parallel make (older GNU Make)
+ifeq (0,$(MAKE_PARALLEL))
+.NOTPARALLEL:
+else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
+.NOTPARALLEL:
+endif
+
+# Linux cut has features we use that do not work elsewhere
+# Mac, etc. users should install GNU coreutils and use cut from there.
+#
+# For example, if you use Homebrew, run "brew install coreutils" once
+# and then invoke the LIBXSMM make command with
+# CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+CUT ?= cut
+
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCDIR = $(ROOTDIR)
 INCDIR = $(ROOTDIR)
@@ -110,13 +127,18 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
-	CFLAGS += -fPIC -Wall -std=c99
+	CFLAGS += -fPIC -Wall
+	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC -lrt
+	ifeq (1,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck
+	else ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck -Wremarks
+	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
-		FCMTFLAGS += -threads
 		FCFLAGS += -O2
 		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
@@ -191,18 +213,21 @@ else # GCC assumed
 		FC = $(GFC)
 	endif
 	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
+	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
+	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
+	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall
-	CFLAGS += -Wall
+	CXXFLAGS += -Wall -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 		FCFLAGS += -fPIC
 		LDFLAGS += -fPIC
+	endif
+	ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
@@ -400,7 +425,7 @@ $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 
 $(OUTDIR)/smm: $(BLDDIR)/smm-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
