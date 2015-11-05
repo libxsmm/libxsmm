@@ -47,7 +47,7 @@ PROGRAM stpm
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
   INTEGER :: argc, m, n, k, routine, check
-  INTEGER(8) :: i, j, s, ix, iy, iz
+  INTEGER(8) :: i, j, s, ix, iy, iz, start
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
 
@@ -131,11 +131,11 @@ PROGRAM stpm
   END IF
 
   WRITE(*, "(A)") "Streamed... (compiled)"
-  !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
-  !$ duration = -omp_get_wtime()
+  start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -148,7 +148,7 @@ PROGRAM stpm
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
   !$OMP MASTER
-  !$ duration = duration + omp_get_wtime()
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
   ! Deallocate thread-local arrays
   DEALLOCATE(tm1, tm2, tm3)
@@ -158,11 +158,11 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (mxm)"
-  !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
-  !$ duration = -omp_get_wtime()
+  start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -175,7 +175,7 @@ PROGRAM stpm
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
   !$OMP MASTER
-  !$ duration = duration + omp_get_wtime()
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
   ! Deallocate thread-local arrays
   DEALLOCATE(tm1, tm2, tm3)
@@ -185,11 +185,11 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
-  !$ duration = -omp_get_wtime()
+  start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -202,7 +202,7 @@ PROGRAM stpm
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
   !$OMP MASTER
-  !$ duration = duration + omp_get_wtime()
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
   ! Deallocate thread-local arrays
   DEALLOCATE(tm1, tm2, tm3)
@@ -212,7 +212,7 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  !$OMP PARALLEL PRIVATE(i) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
 
@@ -235,7 +235,7 @@ PROGRAM stpm
     write(*,*) "f3 not built"
   endif
   !$OMP MASTER
-  !$ duration = -omp_get_wtime()
+  start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -248,7 +248,7 @@ PROGRAM stpm
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
   !$OMP MASTER
-  !$ duration = duration + omp_get_wtime()
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
   ! Deallocate thread-local arrays
   DEALLOCATE(tm1, tm2, tm3)
