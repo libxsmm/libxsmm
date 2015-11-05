@@ -104,7 +104,7 @@ PROGRAM stpm
   END DO 
   dx = 1.; dy = 1.; dz = 1.
 
-  WRITE (*, "(A,I3,A,I3,A,I3,A,I10)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
+  WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check

@@ -134,7 +134,7 @@ PROGRAM stpm
   END DO 
   dx = 1.; dy = 1.; dz = 1.
 
-  WRITE (*, "(6(A,I3),A,I10)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
+  WRITE(*, "(6(A,I0),A,I0)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
 
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
