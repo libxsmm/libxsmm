@@ -174,11 +174,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL mxmf2(alpha, beta, dx, m, a(:,:,:,i), m, tm1, n*k)
+      CALL mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
       do j = 1, k
-          CALL mxmf2(alpha, beta, a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
+          CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
       enddo
-      CALL mxmf2(alpha, beta, a(:,:,:,i), m*n, dz, k, tm3, k)
+      CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
       CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
                     g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
