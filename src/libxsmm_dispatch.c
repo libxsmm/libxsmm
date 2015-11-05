@@ -152,25 +152,20 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descr
         libxsmm_generated_code l_generated_code;
         void* l_code;
 
-# if defined(__SSE3__)
-#   if !defined(__AVX__)
-#       error "SSE3 instruction set extension is not supported for JIT-code generation!"
-#   endif
-# elif !defined(__MIC__)
-#       error "No instruction set extension found for JIT-code generation!"
-# endif
-# if defined(__MIC__)
-#       error "IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!"
-# endif
-# if defined(__AVX__)
-        strcpy(l_arch, "snb");
-# endif
-# if defined(__AVX2__)
-        strcpy(l_arch, "hsw");
-# endif
 # if defined(__AVX512F__)
         strcpy(l_arch, "knl");
+# elif defined(__AVX2__)
+        strcpy(l_arch, "hsw");
+# elif defined(__AVX__)
+        strcpy(l_arch, "snb");
+# elif defined(__SSE3__)
+#       error "SSE3 instruction set extension is not supported for JIT-code generation!"
+# elif defined(__MIC__)
+#       error "IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!"
+# else
+#       error "No instruction set extension found for JIT-code generation!"
 # endif
+
         /* allocate buffer for code */
         l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
         l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
