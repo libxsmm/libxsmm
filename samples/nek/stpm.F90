@@ -112,7 +112,7 @@ PROGRAM stpm
     ALLOCATE(d(m,n,k,s))
     d = 0.
     WRITE(*, "(A)") "Calculating check..."
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, d, m, n, k, f1, f2, f3)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, d, m, n, k)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m*n,k,1))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP DO
@@ -131,7 +131,7 @@ PROGRAM stpm
   END IF
 
   WRITE(*, "(A)") "Streamed... (compiled)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -158,7 +158,7 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (mxm)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -185,7 +185,7 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -212,10 +212,6 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3=0
-
   f1 = libxsmm_dispatch(alpha, beta, m, n*k, m, T)
   f2 = libxsmm_dispatch(alpha, beta, m, n, n, T)
   f3 = libxsmm_dispatch(alpha, beta, m*n, k, k, T)
@@ -234,6 +230,9 @@ PROGRAM stpm
   else
     write(*,*) "f3 not built"
   endif
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, dmm1, dmm2, dmm3)
+  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+  tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
@@ -264,25 +263,23 @@ PROGRAM stpm
   DEALLOCATE(c)
 
 contains
+  subroutine validate(ref, test)
+    real(T), dimension(:,:,:,:), intent(in) :: ref, test
 
-subroutine validate(ref, test)
-  real(T), dimension(:,:,:,:), intent(in) :: ref, test
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
+  end subroutine validate
 
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
-end subroutine validate
+  subroutine performance(duration, m, n, k, s)
+    real(8), intent(in) :: duration
+    integer, intent(in) :: m, n, k
+    integer(8), intent(in) :: s
 
-subroutine performance(duration, m, n, k, s)
-  real(8), intent(in) :: duration
-  integer, intent(in) :: m, n, k
-  integer(8), intent(in) :: s
-
-  IF (0.LT.duration) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
-  ENDIF
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-end subroutine performance
-
+    IF (0.LT.duration) THEN
+      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
+        (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
+      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
+        (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+    ENDIF
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
+  end subroutine performance
 END PROGRAM
