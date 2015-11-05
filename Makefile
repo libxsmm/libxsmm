@@ -625,11 +625,15 @@ ifneq (0,$(JIT))
 endif
 
 .PHONY: samples
-samples: smm cp2k
+samples: smm cp2k nek
 
 .PHONY: smm
 smm: lib_all
 	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
+
+.PHONY: smm
+smm: lib_all
+	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX)
 
 .PHONY: smm_hst
 smm_hst: lib_hst
