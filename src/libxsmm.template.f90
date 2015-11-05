@@ -247,6 +247,7 @@ CONTAINS
       !DIR$ OMP SIMD COLLAPSE(2)
       DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
+        !DIR$ OMP SIMD
         DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
           c(i,j) = xbeta * c(i,j) + xalpha * DOT_PRODUCT(a(i,:), b(:,j))
         END DO
@@ -283,6 +284,7 @@ CONTAINS
       !DIR$ OMP SIMD COLLAPSE(2)
       DO j = LBOUND(b, 2), LBOUND(b, 2) + n - 1
         !DIR$ LOOP COUNT(1, LIBXSMM_MAX_M, LIBXSMM_AVG_M)
+        !DIR$ OMP SIMD
         DO i = LBOUND(a, 1), LBOUND(a, 1) + m - 1
           c(i,j) = xbeta * c(i,j) + xalpha * DOT_PRODUCT(a(i,:), b(:,j))
         END DO
