@@ -683,7 +683,7 @@ $(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=smmf90-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/smmf90-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -711,7 +711,7 @@ $(SPLDIR)/nek/stpm-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=stpm-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/stpm-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
