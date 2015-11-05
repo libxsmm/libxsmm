@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const T alpha = 1, beta = 1;
+    const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
     const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]

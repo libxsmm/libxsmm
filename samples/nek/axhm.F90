@@ -39,7 +39,7 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), PARAMETER :: alpha = 1, beta = 1
+  REAL(T), PARAMETER :: alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
