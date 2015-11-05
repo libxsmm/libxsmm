@@ -44,7 +44,7 @@ script:
     bash make.sh -cinek drytest &&
     make -e samples &&
     bash samples/nek/stpm-perf.sh &&
-    bash samples/nek/stpm-test.sh
+    bash samples/nek/nek-test.sh
 
   - cd samples/nek &&
     make -e stpm &&
