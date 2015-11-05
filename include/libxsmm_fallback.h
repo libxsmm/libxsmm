@@ -93,6 +93,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 #else
 # define LIBXSMM_IMM(REAL, UINT, ALPHA, BETA, M, N, K, A, B, C) { \
     const REAL *const libxsmm_a_ = LIBXSMM_LD(B, A), *const libxsmm_b_ = LIBXSMM_LD(A, B); \
+    const REAL libxsmm_alpha_ = (REAL)((1 < (ALPHA) || 1 > (ALPHA)) ? (ALPHA) : 1); \
+    const REAL libxsmm_beta_ = (REAL)((0 < (BETA) || 0 > (BETA)) ? (BETA) : 0); \
     const UINT libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)); \
     UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
     REAL *const libxsmm_c_ = (C); \
@@ -103,11 +105,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M)) \
       for (libxsmm_i_ = 0; libxsmm_i_ < LIBXSMM_LD(N, M); ++libxsmm_i_) { \
         const UINT libxsmm_index_ = libxsmm_i_ * libxsmm_ldc_ + libxsmm_j_; \
-        REAL libxsmm_r_ = (REAL)((0 < (BETA) || 0 > (BETA)) ? ((BETA) * libxsmm_c_[libxsmm_index_]) : 0); \
+        REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_] * libxsmm_beta_; \
         LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \
         LIBXSMM_PRAGMA_UNROLL \
         for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \
-          libxsmm_r_ += ((REAL)(ALPHA)) * libxsmm_a_[libxsmm_i_*(K)+libxsmm_k_] \
+          libxsmm_r_ += libxsmm_a_[libxsmm_i_*(K)+libxsmm_k_] * libxsmm_alpha_ \
                       * libxsmm_b_[libxsmm_k_*LIBXSMM_LD(M,N)+libxsmm_j_]; \
         } \
         libxsmm_c_[libxsmm_index_] = libxsmm_r_; \
