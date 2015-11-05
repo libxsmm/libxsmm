@@ -63,8 +63,8 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
-  libxsmm_smm_function smm;
-  libxsmm_dmm_function dmm;
+  libxsmm_sfunction smm;
+  libxsmm_dfunction dmm;
   const void* pv;
 } libxsmm_cache_entry;
 /** Filled with zeros due to C language rule. */
@@ -84,21 +84,21 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 {
 #if !defined(_OPENMP)
-  const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
-  int i;
-  /* acquire and release remaining locks to shortcut any lazy initialization later on */
-  for (i = 1; i < nlocks; ++i) {
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
-    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
-  }
   /* acquire one of the locks as the master lock */
   LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[0]);
 #else
 # pragma omp critical(libxsmm_dispatch_lock)
 #endif
   if (0 == libxsmm_init_check) {
+    const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
+    int i;
     /* setup the dispatch table for the statically generated code */
 #   include <libxsmm_dispatch.h>
+    /* acquire and release remaining locks to shortcut any lazy initialization later on */
+    for (i = 1; i < nlocks; ++i) {
+      LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
+      LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
+    }
     libxsmm_init_check = 1;
   }
 #if !defined(_OPENMP)
@@ -269,7 +269,7 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(float alpha, float beta,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(float alpha, float beta,
   int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
 {
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
@@ -279,7 +279,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(double alpha, double beta,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(double alpha, double beta,
   int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
 {
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),

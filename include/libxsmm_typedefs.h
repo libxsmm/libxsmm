@@ -35,8 +35,8 @@
 
 
 /** Generic type of a function. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_smm_function)(float alpha, float beta, const float* a, const float* b, float* c, ...);
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmm_function)(double alpha, double beta, const double* a, const double* b, double* c, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(float alpha, float beta, const float* a, const float* b, float* c, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(double alpha, double beta, const double* a, const double* b, double* c, ...);
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {

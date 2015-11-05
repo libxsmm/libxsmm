@@ -59,10 +59,10 @@
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(float alpha, float beta, int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(float alpha, float beta, int m, int n, int k,
   int lda, int ldb, int ldc, int flags, int prefetch);
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(double alpha, double beta, int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(double alpha, double beta, int m, int n, int k,
   int lda, int ldb, int ldc, int flags, int prefetch);
 
 /** Dispatched matrix-matrix multiplication (single-precision). */
@@ -119,21 +119,21 @@ $MNK_INTERFACE_LIST
 
 /** Function type depending on T. */
 template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_function { typedef void type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_function<float>    { typedef libxsmm_smm_function type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_function<double>   { typedef libxsmm_dmm_function type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_function<float>    { typedef libxsmm_sfunction type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_function<double>   { typedef libxsmm_dfunction type; };
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported. */
-LIBXSMM_RETARGETABLE inline libxsmm_smm_function libxsmm_mm_dispatch(float alpha, float beta, int m, int n, int k,
+LIBXSMM_RETARGETABLE inline libxsmm_sfunction libxsmm_dispatch(float alpha, float beta, int m, int n, int k,
   int lda = 0, int ldb = 0, int ldc = 0, int flags = LIBXSMM_GEMM_FLAG_DEFAULT, int prefetch = LIBXSMM_PREFETCH)
 {
-  return libxsmm_smm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
+  return libxsmm_sdispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
 }
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported. */
-LIBXSMM_RETARGETABLE inline libxsmm_dmm_function libxsmm_mm_dispatch(double alpha, double beta, int m, int n, int k,
+LIBXSMM_RETARGETABLE inline libxsmm_dfunction libxsmm_dispatch(double alpha, double beta, int m, int n, int k,
   int lda = 0, int ldb = 0, int ldc = 0, int flags = LIBXSMM_GEMM_FLAG_DEFAULT, int prefetch = LIBXSMM_PREFETCH)
 {
-  return libxsmm_dmm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
+  return libxsmm_ddispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
 }
 
 /** Dispatched matrix-matrix multiplication. */

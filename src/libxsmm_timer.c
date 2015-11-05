@@ -64,7 +64,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned long long libxsmm_timer_tick(void
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1)
 {
-  const double d = (double)((tick0 < tick1 ? tick1 : tick0) - tick0);
+  const double d = (double)(LIBXSMM_MAX(tick1, tick0) - tick0);
 #if defined(_WIN32)
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);

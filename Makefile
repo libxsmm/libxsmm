@@ -138,11 +138,11 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 
 ifneq (0,$(INTEL))
 	AR = xiar
-	CXXFLAGS += -fPIC -Wall -std=c++0x
+	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall
 	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC
+	LDFLAGS += -fPIC -lrt
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 	else ifneq (0,$(PEDANTIC))
@@ -191,8 +191,11 @@ ifneq (0,$(INTEL))
 		else
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
+			FCFLAGS := -g -check -traceback $(FCFLAGS)
 		endif
+	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
 		CXXFLAGS += -openmp
@@ -205,8 +208,10 @@ ifneq (0,$(INTEL))
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
 	endif
-	ifneq (0,$(STATIC))
-		SLDFLAGS += -no-intel-extensions -static-intel
+	ifeq (1,$(STATIC))
+		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+	else ifneq (0,$(STATIC))
+		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
@@ -224,8 +229,9 @@ else # GCC assumed
 	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
 	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall -std=c++0x -Wno-unused-function
+	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
+	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -280,6 +286,9 @@ else # GCC assumed
 			CFLAGS := -g $(CFLAGS)
 			FCFLAGS := -g $(FCFLAGS)
 		endif
+	endif
+	ifeq (0,$(EXP))
+		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
 		CXXFLAGS += -fopenmp
@@ -491,7 +500,7 @@ $(BINDIR)/generator: $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) 
 
 .PHONY: sources
 sources: $(SRCFILES)
-$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_impl_mm.py
+$(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 	$(eval MVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f2))
 	$(eval NVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f3))
 	$(eval KVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f4))
@@ -558,7 +567,7 @@ endif
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
 	@rm -f ${TMPFILE}
-	@python $(SCRDIR)/libxsmm_impl_mm.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) >> $@
+	@python $(SCRDIR)/libxsmm_specialized.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) >> $@
 
 .PHONY: main
 main: $(BLDDIR)/libxsmm_dispatch.h

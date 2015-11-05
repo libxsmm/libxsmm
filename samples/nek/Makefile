@@ -1,3 +1,20 @@
+# export all variables to sub-make processes
+#.EXPORT_ALL_VARIABLES: #export
+# Set MAKE_PARALLEL=0 for issues with parallel make (older GNU Make)
+ifeq (0,$(MAKE_PARALLEL))
+.NOTPARALLEL:
+else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
+.NOTPARALLEL:
+endif
+
+# Linux cut has features we use that do not work elsewhere
+# Mac, etc. users should install GNU coreutils and use cut from there.
+#
+# For example, if you use Homebrew, run "brew install coreutils" once
+# and then invoke the LIBXSMM make command with
+# CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+CUT ?= cut
+
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCDIR = $(ROOTDIR)
 INCDIR = $(ROOTDIR)
@@ -20,15 +37,15 @@ SSE ?= 0
 AVX ?= 0
 
 OFFLOAD ?= 0
-ifneq ($(OFFLOAD),0)
+ifneq (0,$(OFFLOAD))
 	MIC ?= 1
 else
 	MIC ?= 0
 endif
 
-ifeq ($(MIC),0)
+ifeq (0,$(MIC))
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
-else ifeq ($(OFFLOAD),0)
+else ifeq (0,$(OFFLOAD))
 	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
 else
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
@@ -42,12 +59,12 @@ else
 	LIBEXT = so
 endif
 
-ifneq ($(MKLROOT),)
+ifneq (,$(MKLROOT))
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
-	ifneq ($(MKL_DIRECT),0)
+	ifneq (0,$(MKL_DIRECT))
 		MKL_STATIC ?= 1
-	else ifneq ($(STATIC),0)
+	else ifneq (0,$(STATIC))
 		MKL_STATIC ?= 1
 	else
 		MKL_STATIC ?= 0
@@ -110,16 +127,21 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
-	CFLAGS += -fPIC -Wall -std=c99
+	CFLAGS += -fPIC -Wall
+	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC -lrt
+	ifeq (1,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck
+	else ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -Wcheck -Wremarks
+	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
-		FCMTFLAGS += -threads
 		FCFLAGS += -O2
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
@@ -163,7 +185,7 @@ ifneq (0,$(INTEL))
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
 		FCFLAGS += -openmp
@@ -174,8 +196,10 @@ ifneq (0,$(INTEL))
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
 	endif
-	ifneq ($(STATIC),0)
-		SLDFLAGS += -no-intel-extensions -static-intel
+	ifeq (1,$(STATIC))
+		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+	else ifneq (0,$(STATIC))
+		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
@@ -189,25 +213,28 @@ else # GCC assumed
 		FC = $(GFC)
 	endif
 	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | cut -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | cut -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | cut -d"." -f3)
+	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
+	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
+	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
 	MIC = 0
-	CXXFLAGS += -Wall
-	CFLAGS += -Wall
+	CXXFLAGS += -Wall -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	LDFLAGS += -lrt
-	ifneq ($(OS),Windows_NT)
+	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 		FCFLAGS += -fPIC
 		LDFLAGS += -fPIC
+	endif
+	ifneq (0,$(PEDANTIC))
+		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
@@ -251,13 +278,13 @@ else # GCC assumed
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
 		FCFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
 	endif
-	ifneq ($(STATIC),0)
+	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -J
@@ -364,7 +391,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 	endif
 	LDFLAGS += -lpthread -lm
 else ifneq (0,$(BLAS)) # generic
-	ifneq ($(OS),Windows_NT)
+	ifneq (Windows_NT,$(OS))
 		LDFLAGS += -lblas
 	else
 		LDFLAGS += -lblas.dll
@@ -382,11 +409,11 @@ all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
 
 $(OUTDIR)/stpm: $(BLDDIR)/stpm-f90.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
 $(OUTDIR)/rstr: $(BLDDIR)/rstr-f90.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
 $(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.F90 $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
@@ -398,7 +425,7 @@ $(BLDDIR)/axhm-f90.o: $(SRCDIR)/axhm.F90 $(BLDDIR)/stream_update_kernels-mod90.o
 
 $(OUTDIR)/axhm: $(BLDDIR)/axhm-f90.o $(BLDDIR)/mxm_std-f90.o $(BLDDIR)/stream_update_kernels-c.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)

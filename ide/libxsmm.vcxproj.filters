@@ -7,6 +7,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{df2aad30-e992-4052-8f3a-f1343f4e3f33}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{13af66c8-51ff-4b9e-94fe-53a686556d47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h">
@@ -75,7 +78,6 @@
     <ClInclude Include="..\src\generator_sparse_csc_reader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -166,6 +168,18 @@
     </None>
     <None Include="..\include\libxsmm.f90">
       <Filter>include</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_specialized.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_utilities.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_dispatch.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\libxsmm_interface.py">
+      <Filter>scripts</Filter>
     </None>
   </ItemGroup>
 </Project>
