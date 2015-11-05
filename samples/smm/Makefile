@@ -20,15 +20,15 @@ SSE ?= 0
 AVX ?= 0
 
 OFFLOAD ?= 0
-ifneq ($(OFFLOAD),0)
+ifneq (0,$(OFFLOAD))
 	MIC ?= 1
 else
 	MIC ?= 0
 endif
 
-ifeq ($(MIC),0)
+ifeq (0,$(MIC))
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
-else ifeq ($(OFFLOAD),0)
+else ifeq (0,$(OFFLOAD))
 	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
 else
 	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
@@ -42,12 +42,12 @@ else
 	LIBEXT = so
 endif
 
-ifneq ($(MKLROOT),)
+ifneq (,$(MKLROOT))
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
-	ifneq ($(MKL_DIRECT),0)
+	ifneq (0,$(MKL_DIRECT))
 		MKL_STATIC ?= 1
-	else ifneq ($(STATIC),0)
+	else ifneq (0,$(STATIC))
 		MKL_STATIC ?= 1
 	else
 		MKL_STATIC ?= 0
@@ -119,7 +119,7 @@ ifneq (0,$(INTEL))
 		FCMTFLAGS += -threads
 		FCFLAGS += -O2
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
@@ -163,7 +163,7 @@ ifneq (0,$(INTEL))
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -openmp
 		CFLAGS += -openmp
 		FCFLAGS += -openmp
@@ -174,8 +174,10 @@ ifneq (0,$(INTEL))
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
 	endif
-	ifneq ($(STATIC),0)
-		SLDFLAGS += -no-intel-extensions -static-intel
+	ifeq (1,$(STATIC))
+		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+	else ifneq (0,$(STATIC))
+		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -module
 else # GCC assumed
@@ -196,7 +198,7 @@ else # GCC assumed
 	CXXFLAGS += -Wall
 	CFLAGS += -Wall
 	LDFLAGS += -lrt
-	ifneq ($(OS),Windows_NT)
+	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
 		FCFLAGS += -fPIC
@@ -207,7 +209,7 @@ else # GCC assumed
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		DFLAGS += -DNDEBUG
-		ifneq ($(IPO),0)
+		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
@@ -251,13 +253,13 @@ else # GCC assumed
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
-	ifneq ($(OMP),0)
+	ifneq (0,$(OMP))
 		CXXFLAGS += -fopenmp
 		CFLAGS += -fopenmp
 		FCFLAGS += -fopenmp
 		LDFLAGS += -fopenmp
 	endif
-	ifneq ($(STATIC),0)
+	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
 	FCMODDIRFLAG = -J
@@ -364,7 +366,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 	endif
 	LDFLAGS += -lpthread -lm
 else ifneq (0,$(BLAS)) # generic
-	ifneq ($(OS),Windows_NT)
+	ifneq (Windows_NT,$(OS))
 		LDFLAGS += -lblas
 	else
 		LDFLAGS += -lblas.dll
