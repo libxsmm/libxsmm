@@ -181,5 +181,11 @@
     <None Include="..\scripts\libxsmm_interface.py">
       <Filter>scripts</Filter>
     </None>
+    <None Include="..\Makefile" />
+    <None Include="..\make.sh" />
+    <None Include="..\README.md" />
+    <None Include="..\README.sh" />
+    <None Include="..\.travis.yml" />
+    <None Include="..\.gitignore" />
   </ItemGroup>
 </Project>
