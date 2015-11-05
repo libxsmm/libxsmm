@@ -654,7 +654,7 @@ cp2k_mic: lib_mic
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf90-perf.sh $(SPLDIR)/nek/stpm-perf.sh
+drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf90-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
@@ -739,6 +739,34 @@ $(SPLDIR)/nek/stpm-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	@echo "#!/bin/bash" > $@
+	@echo >> $@
+	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
+	@echo "RUNS='$(INDICES)'" >> $@
+	@echo >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  FILE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "cat /dev/null > \$${FILE}" >> $@
+	@echo >> $@
+	@echo "NRUN=1" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
+	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "done" >> $@
+	@echo >> $@
+	@chmod +x $@
+
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
@@ -756,13 +784,17 @@ $(SPLDIR)/smm/smmf90-perf.txt: $(SPLDIR)/smm/smmf90-perf.sh lib_all
 	@$(SPLDIR)/smm/smmf90-perf.sh $@
 
 .PHONY: testnek
-testnek: $(SPLDIR)/nek/stpm-perf.txt
+testnek: $(SPLDIR)/nek/stpm-perf.txt $(SPLDIR)/nek/axhm-perf.txt
 $(SPLDIR)/nek/stpm-perf.txt: $(SPLDIR)/nek/stpm-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/nek/stpm-perf.sh $@
-
+$(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_all
+	@cd $(SPLDIR)/nek && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+	@$(SPLDIR)/nek/axhm-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
