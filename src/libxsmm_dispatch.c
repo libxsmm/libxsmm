@@ -84,21 +84,21 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 {
 #if !defined(_OPENMP)
-  const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
-  int i;
-  /* acquire and release remaining locks to shortcut any lazy initialization later on */
-  for (i = 1; i < nlocks; ++i) {
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
-    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
-  }
   /* acquire one of the locks as the master lock */
   LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[0]);
 #else
 # pragma omp critical(libxsmm_dispatch_lock)
 #endif
   if (0 == libxsmm_init_check) {
+    const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
+    int i;
     /* setup the dispatch table for the statically generated code */
 #   include <libxsmm_dispatch.h>
+    /* acquire and release remaining locks to shortcut any lazy initialization later on */
+    for (i = 1; i < nlocks; ++i) {
+      LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
+      LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
+    }
     libxsmm_init_check = 1;
   }
 #if !defined(_OPENMP)
