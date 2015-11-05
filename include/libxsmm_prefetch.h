@@ -37,37 +37,37 @@
 # define LIBXSMM_PREFETCH_DECL(TYPE, ARG) , LIBXSMM_CONCATENATE2(LIBXSMM_UNUSED_, ARG) TYPE LIBXSMM_CONCATENATE2(LIBXSMM_PREFETCH_ARG_, ARG)
 # define LIBXSMM_USE(ARG) LIBXSMM_CONCATENATE2(LIBXSMM_USE_, ARG)
 # if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
-#   define LIBXSMM_PREFETCH_ARG_pa unused_pa
-#   define LIBXSMM_PREFETCH_ARGA(ARG) , 0
-#   define LIBXSMM_UNUSED_pa LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pa LIBXSMM_UNUSED(unused_pa)
-# else
 #   define LIBXSMM_PREFETCH_ARG_pa pa
 #   define LIBXSMM_PREFETCH_ARGA(ARG) , ARG
 #   define LIBXSMM_UNUSED_pa
 #   define LIBXSMM_USE_pa
+# else
+#   define LIBXSMM_PREFETCH_ARG_pa unused_pa
+#   define LIBXSMM_PREFETCH_ARGA(ARG) , 0
+#   define LIBXSMM_UNUSED_pa LIBXSMM_UNUSED_ARG
+#   define LIBXSMM_USE_pa LIBXSMM_UNUSED(unused_pa)
 # endif
 # if 0 != ((LIBXSMM_PREFETCH) & 8)
-#   define LIBXSMM_PREFETCH_ARG_pb unused_pb
-#   define LIBXSMM_PREFETCH_ARGB(ARG) , 0
-#   define LIBXSMM_UNUSED_pb LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pb LIBXSMM_UNUSED(unused_pb)
-# else
 #   define LIBXSMM_PREFETCH_ARG_pb pb
 #   define LIBXSMM_PREFETCH_ARGB(ARG) , ARG
 #   define LIBXSMM_UNUSED_pb
 #   define LIBXSMM_USE_pb
-# endif
-# if 1
-#   define LIBXSMM_PREFETCH_ARG_pc unused_pc
-#   define LIBXSMM_PREFETCH_ARGC(ARG) , 0
-#   define LIBXSMM_UNUSED_pc LIBXSMM_UNUSED_ARG
-#   define LIBXSMM_USE_pc LIBXSMM_UNUSED(unused_pc)
 # else
+#   define LIBXSMM_PREFETCH_ARG_pb unused_pb
+#   define LIBXSMM_PREFETCH_ARGB(ARG) , 0
+#   define LIBXSMM_UNUSED_pb LIBXSMM_UNUSED_ARG
+#   define LIBXSMM_USE_pb LIBXSMM_UNUSED(unused_pb)
+# endif
+# if 0
 #   define LIBXSMM_PREFETCH_ARG_pc pc
 #   define LIBXSMM_PREFETCH_ARGC(ARG) , ARG
 #   define LIBXSMM_UNUSED_pc
 #   define LIBXSMM_USE_pc
+# else
+#   define LIBXSMM_PREFETCH_ARG_pc unused_pc
+#   define LIBXSMM_PREFETCH_ARGC(ARG) , 0
+#   define LIBXSMM_UNUSED_pc LIBXSMM_UNUSED_ARG
+#   define LIBXSMM_USE_pc LIBXSMM_UNUSED(unused_pc)
 # endif
 #else
 # define LIBXSMM_PREFETCH_DECL(TYPE, ARG)
