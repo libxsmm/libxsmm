@@ -212,9 +212,9 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  f1 = libxsmm_dispatch(alpha, beta, m, n*k, m, T)
-  f2 = libxsmm_dispatch(alpha, beta, m, n, n, T)
-  f3 = libxsmm_dispatch(alpha, beta, m*n, k, k, T)
+  f1 = libxsmm_dispatch(alpha, beta, m, n*k, m)
+  f2 = libxsmm_dispatch(alpha, beta, m, n, n)
+  f3 = libxsmm_dispatch(alpha, beta, m*n, k, k)
   if (C_ASSOCIATED(f1)) then
     CALL C_F_PROCPOINTER(f1, dmm1)
   else
@@ -238,11 +238,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL dmm1(alpha, beta, dx, a(1,1,1,i), tm1)
+    CALL dmm1(alpha, beta, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
     do j = 1, k
-        call dmm2(alpha, beta, a(1,1,j,i), dy, tm2(1,1,j))
+        call dmm2(alpha, beta, a(:,:,j,i), dy, tm2(:,:,j))
     enddo
-    CALL dmm3(alpha, beta, a(1,1,1,i), dz, tm3)
+    CALL dmm3(alpha, beta, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
