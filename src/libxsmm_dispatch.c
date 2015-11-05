@@ -63,8 +63,8 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
-  libxsmm_smm_function smm;
-  libxsmm_dmm_function dmm;
+  libxsmm_sfunction smm;
+  libxsmm_dfunction dmm;
   const void* pv;
 } libxsmm_cache_entry;
 /** Filled with zeros due to C language rule. */
@@ -269,7 +269,7 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(float alpha, float beta,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(float alpha, float beta,
   int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
 {
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
@@ -279,7 +279,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smm_function libxsmm_smm_dispatch(
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmm_function libxsmm_dmm_dispatch(double alpha, double beta,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(double alpha, double beta,
   int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
 {
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),

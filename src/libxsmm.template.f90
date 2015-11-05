@@ -91,7 +91,7 @@ MODULE LIBXSMM
                                                                                         LIBXSMM_PREFETCH_AL2_AHEAD)
 
   ! Overloaded dispatch/JIT routines (single/double precision).
-  INTERFACE libxsmm_mm_dispatch
+  INTERFACE libxsmm_dispatch
     MODULE PROCEDURE smm_dispatch, dmm_dispatch
   END INTERFACE
 
@@ -127,7 +127,7 @@ MODULE LIBXSMM
   END INTERFACE
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm, dgemm
-  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_smm_dispatch, libxsmm_dmm_dispatch
+  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_sdispatch, libxsmm_ddispatch
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
   INTERFACE
     SUBROUTINE sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
@@ -150,13 +150,13 @@ MODULE LIBXSMM
     END SUBROUTINE
 
     ! Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision).
-    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_smm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
+    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sdispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
       IMPORT :: C_FUNPTR, C_FLOAT, C_INT
       REAL(C_FLOAT), VALUE, INTENT(IN) :: alpha, beta
       INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k, lda, ldb, ldc, flags, prefetch
     END FUNCTION
     ! Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision).
-    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dmm_dispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
+    TYPE(C_FUNPTR) PURE FUNCTION libxsmm_ddispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
       IMPORT :: C_FUNPTR, C_DOUBLE, C_INT
       REAL(C_DOUBLE), VALUE, INTENT(IN) :: alpha, beta
       INTEGER(C_INT), VALUE, INTENT(IN) :: m, n, k, lda, ldb, ldc, flags, prefetch
@@ -312,7 +312,7 @@ CONTAINS
     PROCEDURE(LIBXSMM_SMM_FUNCTION), POINTER :: smm
     TYPE(C_FUNPTR) :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      f = libxsmm_smm_dispatch(alpha, beta, m, n, k, libxsmm_ld(m, n), k, &
+      f = libxsmm_sdispatch(alpha, beta, m, n, k, libxsmm_ld(m, n), k, &
             libxsmm_align_value(libxsmm_ld(m, n), T, LIBXSMM_ALIGNED_STORES), &
             LIBXSMM_GEMM_FLAG_DEFAULT, LIBXSMM_PREFETCH)
       IF (C_ASSOCIATED(f)) THEN
@@ -338,7 +338,7 @@ CONTAINS
     PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm
     TYPE(C_FUNPTR) :: f
     IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-      f = libxsmm_dmm_dispatch(alpha, beta, m, n, k, libxsmm_ld(m, n), k, &
+      f = libxsmm_ddispatch(alpha, beta, m, n, k, libxsmm_ld(m, n), k, &
             libxsmm_align_value(libxsmm_ld(m, n), T, LIBXSMM_ALIGNED_STORES), &
             LIBXSMM_GEMM_FLAG_DEFAULT, LIBXSMM_PREFETCH)
       IF (C_ASSOCIATED(f)) THEN
@@ -360,7 +360,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: alpha, beta
     TYPE(C_FUNPTR) :: function
-    function = libxsmm_smm_dispatch(alpha, beta, m, n, k, &
+    function = libxsmm_sdispatch(alpha, beta, m, n, k, &
           MERGE(lda, Zero, PRESENT(lda)), MERGE(ldb, Zero, PRESENT(ldb)), MERGE(ldc, Zero, PRESENT(ldc)), &
           MERGE(flags, LIBXSMM_GEMM_FLAG_DEFAULT, PRESENT(flags)), &
           MERGE(prefetch, LIBXSMM_PREFETCH, PRESENT(prefetch)))
@@ -374,7 +374,7 @@ CONTAINS
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
     REAL(T), INTENT(IN) :: alpha, beta
     TYPE(C_FUNPTR) :: function
-    function = libxsmm_dmm_dispatch(alpha, beta, m, n, k, &
+    function = libxsmm_ddispatch(alpha, beta, m, n, k, &
           MERGE(lda, Zero, PRESENT(lda)), MERGE(ldb, Zero, PRESENT(ldb)), MERGE(ldc, Zero, PRESENT(ldc)), &
           MERGE(flags, LIBXSMM_GEMM_FLAG_DEFAULT, PRESENT(flags)), &
           MERGE(prefetch, LIBXSMM_PREFETCH, PRESENT(prefetch)))

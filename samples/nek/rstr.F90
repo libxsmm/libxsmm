@@ -208,9 +208,9 @@ PROGRAM stpm
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0
 
-    f1 = libxsmm_mm_dispatch(alpha, beta, mm, n*k, m, T)
-    f2 = libxsmm_mm_dispatch(alpha, beta, mm, nn, n, T)
-    f3 = libxsmm_mm_dispatch(alpha, beta, mm*nn, kk, k, T)
+    f1 = libxsmm_dispatch(alpha, beta, mm, n*k, m, T)
+    f2 = libxsmm_dispatch(alpha, beta, mm, nn, n, T)
+    f3 = libxsmm_dispatch(alpha, beta, mm*nn, kk, k, T)
     if (C_ASSOCIATED(f1)) then
       CALL C_F_PROCPOINTER(f1, dmm1)
     else

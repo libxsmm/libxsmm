@@ -121,16 +121,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 /**
  * Execute a generated function, inlined code, or fall back to the linked LAPACK implementation.
  * If M, N, and K does not change for multiple calls, it is more efficient to query and reuse
- * the function pointer (libxsmm_?mm_dispatch).
+ * the function pointer (libxsmm_?dispatch).
  */
 #define LIBXSMM_MM(REAL, ALPHA, BETA, M, N, K, A, B, C, PA, PB, PC) \
   if ((LIBXSMM_MAX_MNK) >= ((M) * (N) * (K))) { \
-    const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, mm_function)) libxsmm_mm_function_ = \
-      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, mm_dispatch))(ALPHA, BETA, M, N, K, \
+    const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function)) libxsmm_function_ = \
+      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch))(ALPHA, BETA, M, N, K, \
       LIBXSMM_LD(M, N), K, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)), \
       LIBXSMM_GEMM_FLAG_DEFAULT, LIBXSMM_PREFETCH); \
-    if (libxsmm_mm_function_) { \
-      libxsmm_mm_function_(ALPHA, BETA, A, B, C LIBXSMM_PREFETCH_ARGA(PA) LIBXSMM_PREFETCH_ARGB(PB) LIBXSMM_PREFETCH_ARGC(PC)); \
+    if (libxsmm_function_) { \
+      libxsmm_function_(ALPHA, BETA, A, B, C LIBXSMM_PREFETCH_ARGA(PA) LIBXSMM_PREFETCH_ARGB(PB) LIBXSMM_PREFETCH_ARGC(PC)); \
     } \
     else { \
       LIBXSMM_IMM(REAL, int, ALPHA, BETA, M, N, K, A, B, C); \

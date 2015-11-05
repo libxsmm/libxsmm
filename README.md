@@ -14,8 +14,8 @@ The interface of the library is *generated* according to the [Build Instructions
     call to a LIBXSMM kernel routine */
 void libxsmm_init();
 /** If non-zero function pointer is returned, call (*function)(M, N, K). */
-libxsmm_smm_function libxsmm_smm_dispatch(int m, int n, int k);
-libxsmm_dmm_function libxsmm_dmm_dispatch(int m, int n, int k);
+libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k);
+libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k);
 /** Automatically dispatched matrix-matrix multiplication. */
 void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c);
 void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c);
@@ -27,7 +27,7 @@ void libxsmm_sblasmm(int m, int n, int k, const float* a, const float* b, float*
 void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, double* c);
 ```
 
-With C++ and FORTRAN function overloading, the library allows to omit the 's' and 'd' prefixes denoting the numeric type in the above C interface. Further, in C++ a type 'libxsmm_mm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mm_dispatch'.
+With C++ and FORTRAN function overloading, the library allows to omit the 's' and 'd' prefixes denoting the numeric type in the above C interface. Further, in C++ a type 'libxsmm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'.
 
 Note: Function overloading in FORTRAN is only recommended when using automatically dispatched calls. When querying function pointers, using a type-specific query function avoids to rely on using C_LOC for arrays (needed by the polymorphic version) which GNU Fortran (gfortran) refuses to digest (as it is not specified in the FORTRAN standard).
 
@@ -127,7 +127,7 @@ The interface which is supporting software prefetches extends the signature of a
 Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
 ### Auto-dispatch
-The function 'libxsmm_?mm_dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch is orchestrating three levels:
+The function 'libxsmm_?dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch is orchestrating three levels:
 
 1. Specialized routine (implemented in assembly code),
 2. Inlinable C/C++ code or optimized FORTRAN code, and
@@ -156,7 +156,7 @@ The JIT backend support in LIBXSMM can be enabled using:
 make JIT=1
 ```
 
-One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?mm_dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used to accompanying statically generated code.
+One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used to accompanying statically generated code.
 
 Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 

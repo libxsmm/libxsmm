@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
 
-      const libxsmm_function<T>::type xmm = libxsmm_mm_dispatch(alpha, beta, m, n, k);
+      const libxsmm_function<T>::type xmm = libxsmm_dispatch(alpha, beta, m, n, k);
       if (!xmm) {
         throw std::runtime_error("no specialized routine found!");
       }

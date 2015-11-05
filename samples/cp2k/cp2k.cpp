@@ -333,7 +333,7 @@ int main(int argc, char* argv[])
 #endif
       }
 
-      const libxsmm_function<T>::type xmm = libxsmm_mm_dispatch(alpha, beta, m, n, k);
+      const libxsmm_function<T>::type xmm = libxsmm_dispatch(alpha, beta, m, n, k);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);

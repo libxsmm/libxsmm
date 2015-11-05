@@ -218,7 +218,7 @@ PROGRAM smm
   END IF
   c(:,:) = 0
 
-  f = libxsmm_mm_dispatch(alpha, beta, m, n, k)
+  f = libxsmm_dispatch(alpha, beta, m, n, k)
   IF (C_ASSOCIATED(f)) THEN
     CALL C_F_PROCPOINTER(f, xmm)
     WRITE(*, "(A)") "Streamed... (specialized)"

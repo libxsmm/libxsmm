@@ -81,6 +81,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f90" />
+    <None Include="..\scripts\libxsmm_dispatch.py" />
+    <None Include="..\scripts\libxsmm_interface.py" />
+    <None Include="..\scripts\libxsmm_specialized.py" />
+    <None Include="..\scripts\libxsmm_utilities.py" />
     <None Include="..\src\libxsmm.template.f90" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
