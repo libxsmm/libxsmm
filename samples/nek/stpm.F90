@@ -38,18 +38,22 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
+  REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, d
-  real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
+  REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
+  TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
   REAL(8) :: duration
+
+  xargs = LIBXSMM_DGEMM_XARGS(alpha, beta)
   duration = 0
 
   argc = IARGC()
@@ -128,7 +132,7 @@ PROGRAM stpm
   END IF
 
   WRITE(*, "(A)") "Streamed... (compiled)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -136,11 +140,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
     do j = 1, k
-        call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+        call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
-    call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
@@ -155,7 +159,7 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (mxm)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -163,11 +167,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
+    call mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k, xargs)
     do j = 1, k
-        call mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
+        call mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n, xargs)
     enddo
-    call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
+    call mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k, xargs)
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
@@ -182,7 +186,7 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -190,11 +194,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
     do j = 1, k
-        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
-    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
@@ -209,9 +213,9 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  f1 = libxsmm_dispatch(m, n*k, m, T)
-  f2 = libxsmm_dispatch(m, n, n, T)
-  f3 = libxsmm_dispatch(m*n, k, k, T)
+  f1 = libxsmm_dispatch(m, n*k, m, alpha, beta)
+  f2 = libxsmm_dispatch(m, n, n, alpha, beta)
+  f3 = libxsmm_dispatch(m*n, k, k, alpha, beta)
   if (C_ASSOCIATED(f1)) then
     CALL C_F_PROCPOINTER(f1, dmm1)
   else
@@ -227,7 +231,7 @@ PROGRAM stpm
   else
     write(*,*) "f3 not built"
   endif
-  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, dmm1, dmm2, dmm3)
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k, dmm1, dmm2, dmm3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -235,11 +239,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL dmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    CALL dmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
     do j = 1, k
-        call dmm2(a(:,:,j,i), dy, tm2(:,:,j))
+        call dmm2(a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
-    CALL dmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    CALL dmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
