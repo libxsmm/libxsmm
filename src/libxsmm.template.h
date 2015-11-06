@@ -76,8 +76,8 @@ typedef struct libxsmm_dgemm_xargs {
 } libxsmm_dgemm_xargs;
 
 /** Generic type of a function. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float a[], const float b[], float c[], const libxsmm_sgemm_xargs* xargs);
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(const double a[], const double b[], double c[], const libxsmm_dgemm_xargs* xargs);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c, const libxsmm_sgemm_xargs* xargs);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c, const libxsmm_dgemm_xargs* xargs);
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
