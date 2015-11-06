@@ -53,7 +53,7 @@ PROGRAM stpm
   TYPE(C_FUNPTR) :: f1, f2, f3
   REAL(8) :: duration
 
-  xargs = LIBXSMM_DGEMM_XARGS(alpha, beta)
+  xargs = LIBXSMM_DGEMM_XARGS_CTOR(alpha, beta)
   duration = 0
 
   argc = IARGC()
