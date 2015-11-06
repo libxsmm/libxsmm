@@ -267,12 +267,13 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descr
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
   float alpha, float beta, int lda, int ldb, int ldc, int flags, int prefetch)
 {
+  const int mn = LIBXSMM_LD(m, n);
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
-    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? LIBXSMM_LD(m, n) :
-      LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(float), LIBXSMM_ALIGNED_LOADS)) : lda,
-    0 == ldb ? k : ldb,
-    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? LIBXSMM_LD(m, n) :
-      LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(float), LIBXSMM_ALIGNED_STORES)) : ldc,
+    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? mn :
+      LIBXSMM_ALIGN_VALUE(mn, sizeof(float), LIBXSMM_ALIGNED_LOADS)) : LIBXSMM_MAX(lda, mn),
+    0 == ldb ? k : LIBXSMM_MAX(ldb, k),
+    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? mn :
+      LIBXSMM_ALIGN_VALUE(mn, sizeof(float), LIBXSMM_ALIGNED_STORES)) : LIBXSMM_MAX(ldc, mn),
     flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch);
   return internal_build(&desc).smm;
 }
@@ -281,12 +282,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m,
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
   double alpha, double beta, int lda, int ldb, int ldc, int flags, int prefetch)
 {
+  const int mn = LIBXSMM_LD(m, n);
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
-    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? LIBXSMM_LD(m, n) :
-      LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(double), LIBXSMM_ALIGNED_LOADS)) : lda,
-    0 == ldb ? k : ldb,
-    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? LIBXSMM_LD(m, n) :
-      LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(double), LIBXSMM_ALIGNED_STORES)) : ldc,
+    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? mn :
+      LIBXSMM_ALIGN_VALUE(mn, sizeof(double), LIBXSMM_ALIGNED_LOADS)) : LIBXSMM_MAX(lda, mn),
+    0 == ldb ? k : LIBXSMM_MAX(ldb, k),
+    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? mn :
+      LIBXSMM_ALIGN_VALUE(mn, sizeof(double), LIBXSMM_ALIGNED_STORES)) : LIBXSMM_MAX(ldc, mn),
     flags, prefetch);
   return internal_build(&desc).dmm;
 }
