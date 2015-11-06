@@ -107,14 +107,14 @@ if __name__ == "__main__":
                         "      IMPORT :: C_FLOAT, LIBXSMM_SGEMM_XARGS\n" \
                         "      REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                         "      REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
-                        "      TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN), OPTIONAL :: xargs\n" \
+                        "      TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN) :: xargs\n" \
                         "    END SUBROUTINE" \
                         "\n" \
                         "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
                         "      IMPORT :: C_DOUBLE, LIBXSMM_DGEMM_XARGS\n" \
                         "      REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                         "      REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
-                        "      TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN), OPTIONAL :: xargs\n" \
+                        "      TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN) :: xargs\n" \
                         "    END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
             substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
