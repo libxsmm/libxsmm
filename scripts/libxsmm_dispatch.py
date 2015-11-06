@@ -36,8 +36,8 @@ import os
 
 def create_dispatch(mnklist):
     print "unsigned int indx;"
-    print "LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALPHA, LIBXSMM_BETA,"
-    print "  0/*m*/, 0/*n*/, 0/*k*/, 0/*lda*/, 0/*ldb*/, 0/*ldc*/,"
+    print "LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, 0/*m*/, 0/*n*/, 0/*k*/,"
+    print "  LIBXSMM_ALPHA, LIBXSMM_BETA, 0/*lda*/, 0/*ldb*/, 0/*ldc*/,"
     print "  LIBXSMM_GEMM_FLAG_DEFAULT, LIBXSMM_PREFETCH);"
     for mnk in mnklist:
         mnkstr, mstr, nstr, kstr = "_".join(map(str, mnk)), str(mnk[0]), str(mnk[1]), str(mnk[2])

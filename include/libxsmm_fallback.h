@@ -76,10 +76,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const float*, float*, const int*);
 #endif
 
-#define LIBXSMM_BLASMM(REAL, ALPHA, BETA, M, N, K, A, B, C) { \
+#define LIBXSMM_BLASMM(REAL, M, N, K, A, B, C, XARGS) { \
   int libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M), libxsmm_k_ = (K); \
   int libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)); \
-  REAL libxsmm_alpha_ = (REAL)(ALPHA), libxsmm_beta_ = (REAL)(BETA); \
+  REAL libxsmm_alpha_ = 0 == (XARGS) ? ((REAL)(LIBXSMM_ALPHA)) : (XARGS)->alpha; \
+  REAL libxsmm_beta_ = 0 == (XARGS) ? ((REAL)(LIBXSMM_BETA)) : (XARGS)->beta; \
   char libxsmm_trans_ = 'N'; \
   LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(REAL, gemm))(&libxsmm_trans_, &libxsmm_trans_, \
     &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, &libxsmm_alpha_, \
@@ -89,12 +90,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 }
 
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# define LIBXSMM_IMM(REAL, UINT, ALPHA, BETA, M, N, K, A, B, C) LIBXSMM_BLASMM(REAL, ALPHA, BETA, M, N, K, A, B, C)
+# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C, XARGS) LIBXSMM_BLASMM(REAL, M, N, K, A, B, C, XARGS)
 #else
-# define LIBXSMM_IMM(REAL, UINT, ALPHA, BETA, M, N, K, A, B, C) { \
+# define LIBXSMM_IMM(REAL, UINT, M, N, K, A, B, C, XARGS) { \
     const REAL *const libxsmm_a_ = LIBXSMM_LD(B, A), *const libxsmm_b_ = LIBXSMM_LD(A, B); \
-    const REAL libxsmm_alpha_ = (REAL)((1 < (ALPHA) || 1 > (ALPHA)) ? (ALPHA) : 1); \
-    const REAL libxsmm_beta_ = (REAL)((0 < (BETA) || 0 > (BETA)) ? (BETA) : 0); \
+    const REAL libxsmm_alpha_ = 0 == (XARGS) ? ((REAL)(LIBXSMM_ALPHA)) : (1 == (XARGS)->alpha ? 1 : (XARGS)->alpha); \
+    const REAL libxsmm_beta_ = 0 == (XARGS) ? ((REAL)(LIBXSMM_BETA)) : (1 == (XARGS)->beta ? 1 : (0 == (XARGS)->beta ? 0 : (XARGS)->beta)); \
     const UINT libxsmm_ldc_ = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)); \
     UINT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
     REAL *const libxsmm_c_ = (C); \
@@ -123,21 +124,23 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
  * If M, N, and K does not change for multiple calls, it is more efficient to query and reuse
  * the function pointer (libxsmm_?dispatch).
  */
-#define LIBXSMM_MM(REAL, ALPHA, BETA, M, N, K, A, B, C, PA, PB, PC) \
+#define LIBXSMM_MM(REAL, M, N, K, A, B, C, XARGS) \
   if ((LIBXSMM_MAX_MNK) >= ((M) * (N) * (K))) { \
     const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function)) libxsmm_function_ = \
-      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch))(ALPHA, BETA, M, N, K, \
+      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch))(M, N, K, \
+      0 == (XARGS) ? ((REAL)(LIBXSMM_ALPHA)) : (XARGS)->alpha, \
+      0 == (XARGS) ? ((REAL)(LIBXSMM_BETA)) : (XARGS)->beta, \
       LIBXSMM_LD(M, N), K, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(M, N), sizeof(REAL)), \
       LIBXSMM_GEMM_FLAG_DEFAULT, LIBXSMM_PREFETCH); \
-    if (libxsmm_function_) { \
-      libxsmm_function_(ALPHA, BETA, A, B, C LIBXSMM_PREFETCH_ARGA(PA) LIBXSMM_PREFETCH_ARGB(PB) LIBXSMM_PREFETCH_ARGC(PC)); \
+    if (0 != libxsmm_function_) { \
+      libxsmm_function_(A, B, C, XARGS); \
     } \
     else { \
-      LIBXSMM_IMM(REAL, int, ALPHA, BETA, M, N, K, A, B, C); \
+      LIBXSMM_IMM(REAL, int, M, N, K, A, B, C, XARGS); \
     } \
   } \
   else { \
-    LIBXSMM_BLASMM(REAL, ALPHA, BETA, M, N, K, A, B, C); \
+    LIBXSMM_BLASMM(REAL, M, N, K, A, B, C, XARGS); \
   }
 
 #endif /*LIBXSMM_FALLBACK_H*/

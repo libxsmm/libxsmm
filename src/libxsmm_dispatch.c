@@ -264,21 +264,23 @@ LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(float alpha, float beta,
-  int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
+  float alpha, float beta, int lda, int ldb, int ldc, int flags, int prefetch)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
-    LIBXSMM_MAX(ldc, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(double))),
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
+    0 == lda ? LIBXSMM_LD(m, n) : lda, 0 == ldb ? k : ldb,
+    0 == ldc ? LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(float)) : ldc,
     flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch);
   return internal_build(&desc).smm;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(double alpha, double beta,
-  int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
+  double alpha, double beta, int lda, int ldb, int ldc, int flags, int prefetch)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, alpha, beta, m, n, k, LIBXSMM_MAX(lda, LIBXSMM_LD(m, n)), LIBXSMM_MAX(ldb, k),
-    LIBXSMM_MAX(ldc, LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(double))),
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
+    0 == lda ? LIBXSMM_LD(m, n) : lda, 0 == ldb ? k : ldb,
+    0 == ldc ? LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(double)) : ldc,
     flags, prefetch);
   return internal_build(&desc).dmm;
 }

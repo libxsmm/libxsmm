@@ -90,10 +90,8 @@ if __name__ == "__main__":
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(float alpha, float beta, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c\n" \
-                    "  LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc));\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(double alpha, double beta, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c\n" \
-                    "  LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc));\n"
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c, const libxsmm_sgemm_xargs* xargs);\n" \
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c, const libxsmm_dgemm_xargs* xargs);\n"
             print template.substitute(substitute)
         else:
             if (mnklist):
@@ -105,16 +103,16 @@ if __name__ == "__main__":
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
+                        "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c, alpha, beta) BIND(C)\n" \
                         "      IMPORT :: C_FLOAT\n" \
-                        "      REAL(C_FLOAT), VALUE, INTENT(IN) :: alpha, beta\n" \
+                        "      REAL(C_FLOAT), INTENT(IN), VALUE :: alpha, beta\n" \
                         "      REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                         "      REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE" \
                         "\n" \
-                        "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
+                        "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, alpha, beta) BIND(C)\n" \
                         "      IMPORT :: C_DOUBLE\n" \
-                        "      REAL(C_DOUBLE), VALUE, INTENT(IN) :: alpha, beta\n" \
+                        "      REAL(C_DOUBLE), INTENT(IN), VALUE :: alpha, beta\n" \
                         "      REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                         "      REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
                         "    END SUBROUTINE"

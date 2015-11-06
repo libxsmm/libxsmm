@@ -79,7 +79,6 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
@@ -129,7 +128,7 @@ int main(int argc, char* argv[])
         m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
 
-      const libxsmm_function<T>::type xmm = libxsmm_dispatch(alpha, beta, m, n, k);
+      const libxsmm_dispatch<T> xmm(m, n, k);
       if (!xmm) {
         throw std::runtime_error("no specialized routine found!");
       }
@@ -143,7 +142,12 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const pa = a + i * asize, *const pb = b + i * bsize;
           T* pc = c + i * csize_act;
-          xmm(alpha, beta, pa, pb, pc LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(pc + csize_act));
+#if (0 != LIBXSMM_PREFETCH)
+          const libxsmm_dgemm_xargs xargs = { LIBXSMM_ALPHA, LIBXSMM_BETA, pa + asize, pb + bsize, pc + csize_act };
+          xmm(pa, pb, pc, &xargs);
+#else
+          xmm(pa, pb, pc);
+#endif
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -163,7 +167,12 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
           const T *const pa = a + i * asize, *const pb = b + i * bsize;
-          xmm(alpha,beta, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(pa + asize) LIBXSMM_PREFETCH_ARGB(pb + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+#if (0 != LIBXSMM_PREFETCH)
+          const libxsmm_dgemm_xargs xargs = { LIBXSMM_ALPHA, LIBXSMM_BETA, pa + asize, pb + bsize, tmp };
+          xmm(pa, pb, tmp, &xargs);
+#else
+          xmm(pa, pb, tmp);
+#endif
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -183,7 +192,12 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
           // do nothing else with tmp; just a benchmark
-          xmm(alpha, beta, a, b, tmp LIBXSMM_PREFETCH_ARGA(a) LIBXSMM_PREFETCH_ARGB(b) LIBXSMM_PREFETCH_ARGC(tmp));
+#if (0 != LIBXSMM_PREFETCH)
+          const libxsmm_dgemm_xargs xargs = { LIBXSMM_ALPHA, LIBXSMM_BETA, a, b, tmp };
+          xmm(a, b, tmp, &xargs);
+#else
+          xmm(a, b, tmp);
+#endif
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {

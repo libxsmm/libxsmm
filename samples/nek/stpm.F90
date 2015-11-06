@@ -38,7 +38,6 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), PARAMETER :: alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
@@ -50,9 +49,7 @@ PROGRAM stpm
   INTEGER(8) :: i, j, s, ix, iy, iz, start
   CHARACTER(32) :: argv
   TYPE(C_FUNPTR) :: f1, f2, f3
-
   REAL(8) :: duration
-
   duration = 0
 
   argc = IARGC()
@@ -139,11 +136,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_imm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
     do j = 1, k
-        call libxsmm_imm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+        call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
     enddo
-    call libxsmm_imm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
@@ -193,11 +190,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_mm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
     do j = 1, k
-        call libxsmm_mm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
     enddo
-    call libxsmm_mm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO
@@ -212,9 +209,9 @@ PROGRAM stpm
   if (check /= 0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  f1 = libxsmm_dispatch(alpha, beta, m, n*k, m)
-  f2 = libxsmm_dispatch(alpha, beta, m, n, n)
-  f3 = libxsmm_dispatch(alpha, beta, m*n, k, k)
+  f1 = libxsmm_dispatch(m, n*k, m, T)
+  f2 = libxsmm_dispatch(m, n, n, T)
+  f3 = libxsmm_dispatch(m*n, k, k, T)
   if (C_ASSOCIATED(f1)) then
     CALL C_F_PROCPOINTER(f1, dmm1)
   else
@@ -238,11 +235,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL dmm1(alpha, beta, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+    CALL dmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
     do j = 1, k
-        call dmm2(alpha, beta, a(:,:,j,i), dy, tm2(:,:,j))
+        call dmm2(a(:,:,j,i), dy, tm2(:,:,j))
     enddo
-    CALL dmm3(alpha, beta, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+    CALL dmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO

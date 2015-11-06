@@ -33,16 +33,16 @@
 
 #include "libxsmm_typedefs.h"
 
-#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, ALPHA, BETA, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH) \
+#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, M, N, K, ALPHA, BETA, LDA, LDB, LDC, FLAGS, PREFETCH) \
+  (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).alpha = (signed char)((0 < (ALPHA) || 0 > (ALPHA)) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
   (DESCRIPTOR).beta  = (signed char)((0 < (BETA)  || 0 > (BETA))  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
-  (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda   = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)
 
-#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, ALPHA, BETA, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH) \
+#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, M, N, K, ALPHA, BETA, LDA, LDB, LDC, FLAGS, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, \
-    ALPHA, BETA, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH)
+    M, N, K, ALPHA, BETA, LDA, LDB, LDC, FLAGS, PREFETCH)
 
 /** The libxsmm_gemm_descriptor structure must be ordered by the size of the members (packed). */
 #define LIBXSMM_GEMM_DESCRIPTOR_SIZE (3 * sizeof(unsigned int)  /*LDA,LDB,LDC*/ \
@@ -60,13 +60,13 @@
 typedef struct libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
   unsigned int lda, ldb, ldc;
-  /** Matrix extents are limited (16 bit). */
+  /** Extents of the matrix. */
   unsigned int m, n, k;
-  /** Collection of various flags (8 bit). */
+  /** Collection of various flags. */
   unsigned char flags;
   /** Integer unless FLAG_*_F is raised. */
   signed char alpha, beta;
-  /** Prefetch strategy enumeration (8 bit). */
+  /** Prefetch strategy enumeration. */
   unsigned char prefetch;
 } libxsmm_gemm_descriptor;
 

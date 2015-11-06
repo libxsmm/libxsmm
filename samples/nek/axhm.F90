@@ -39,7 +39,6 @@ PROGRAM stpm
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), PARAMETER :: alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b, d
   real(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
@@ -126,11 +125,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_mm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      CALL libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          CALL libxsmm_mm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      CALL libxsmm_mm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
       CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
                     g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
@@ -150,11 +149,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_imm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      CALL libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          CALL libxsmm_imm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          CALL libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      CALL libxsmm_imm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      CALL libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
       CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
                     g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
     END DO
@@ -194,9 +193,9 @@ PROGRAM stpm
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3=0
 
-    f1 = libxsmm_dispatch(alpha, beta, m, n*k, m)
-    f2 = libxsmm_dispatch(alpha, beta, m, n, n)
-    f3 = libxsmm_dispatch(alpha, beta, m*n, k, k)
+    f1 = libxsmm_dispatch(m, n*k, m, T)
+    f2 = libxsmm_dispatch(m, n, n, T)
+    f3 = libxsmm_dispatch(m*n, k, k, T)
     if (C_ASSOCIATED(f1)) then
       CALL C_F_PROCPOINTER(f1, dmm1)
     else
@@ -217,11 +216,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL dmm1(alpha, beta, dx, a(1,1,1,i), tm1)
+      CALL dmm1(dx, a(1,1,1,i), tm1)
       do j = 1, k
-          CALL dmm2(alpha, beta, a(1,1,j,i), dy, tm2(1,1,j))
+          CALL dmm2(a(1,1,j,i), dy, tm2(1,1,j))
       enddo
-      CALL dmm3(alpha, beta, a(1,1,1,i), dz, tm3)
+      CALL dmm3(a(1,1,1,i), dz, tm3)
       CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
                                a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
@@ -247,11 +246,11 @@ PROGRAM stpm
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_blasmm(alpha, beta, m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
+      call libxsmm_blasmm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1))
       do j = 1, k
-          call libxsmm_blasmm(alpha, beta, m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
+          call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j))
       enddo
-      call libxsmm_blasmm(alpha, beta, m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
+      call libxsmm_blasmm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1))
       !DEC$ vector aligned nontemporal
       d(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*reshape(tm3, (/m,n,k/))) &
                  + h2*b(:,:,:,i)*a(:,:,:,i)

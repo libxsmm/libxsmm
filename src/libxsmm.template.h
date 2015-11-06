@@ -55,64 +55,86 @@
 #include "libxsmm_fallback.h"
 
 
+/** Structure providing the actual/extended arguments of an SGEMM call. */
+typedef struct libxsmm_sgemm_xargs {
+  /** The Alpha and Beta arguments. */
+  float alpha, beta;
+  /** The prefetch arguments. */
+  LIBXSMM_PREFETCH_DECL(const float* pa)
+  LIBXSMM_PREFETCH_DECL(const float* pb)
+  LIBXSMM_PREFETCH_DECL(const float* pc)
+} libxsmm_sgemm_xargs;
+
+/** Structure providing the actual/extended arguments of a DGEMM call. */
+typedef struct libxsmm_dgemm_xargs {
+  /** The Alpha and Beta arguments. */
+  double alpha, beta;
+  /** The prefetch arguments. */
+  LIBXSMM_PREFETCH_DECL(const double* pa)
+  LIBXSMM_PREFETCH_DECL(const double* pb)
+  LIBXSMM_PREFETCH_DECL(const double* pc)
+} libxsmm_dgemm_xargs;
+
+/** Generic type of a function. */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float a[], const float b[], float c[], const libxsmm_sgemm_xargs* xargs);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(const double a[], const double b[], double c[], const libxsmm_dgemm_xargs* xargs);
+
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(float alpha, float beta, int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k, float alpha, float beta,
   int lda, int ldb, int ldc, int flags, int prefetch);
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(double alpha, double beta, int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k, double alpha, double beta,
   int lda, int ldb, int ldc, int flags, int prefetch);
 
 /** Dispatched matrix-matrix multiplication (single-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_smm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c
-  LIBXSMM_PREFETCH_DECL(const float*, pa)
-  LIBXSMM_PREFETCH_DECL(const float*, pb)
-  LIBXSMM_PREFETCH_DECL(const float*, pc))
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_smm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs)
 {
-  LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_MM(float, alpha, beta, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
+  LIBXSMM_MM(float, m, n, k, a, b, c, xargs);
 }
 
 /** Dispatched matrix-matrix multiplication (double-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dmm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c
-  LIBXSMM_PREFETCH_DECL(const double*, pa)
-  LIBXSMM_PREFETCH_DECL(const double*, pb)
-  LIBXSMM_PREFETCH_DECL(const double*, pc))
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dmm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs)
 {
-  LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  LIBXSMM_MM(double, alpha, beta, m, n, k, a, b, c, LIBXSMM_PREFETCH_ARG_pa, LIBXSMM_PREFETCH_ARG_pb, LIBXSMM_PREFETCH_ARG_pc);
+  LIBXSMM_MM(double, m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code (single-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_simm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_simm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs)
 {
-  LIBXSMM_IMM(float, int, alpha, beta, m, n, k, a, b, c);
+  LIBXSMM_IMM(float, int, m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code (double-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dimm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dimm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs)
 {
-  LIBXSMM_IMM(double, int, alpha, beta, m, n, k, a, b, c);
+  LIBXSMM_IMM(double, int, m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using BLAS (single-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_sblasmm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_sblasmm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs)
 {
-  LIBXSMM_BLASMM(float, alpha, beta, m, n, k, a, b, c);
+  LIBXSMM_BLASMM(float, m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using BLAS (double-precision). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dblasmm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dblasmm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs)
 {
-  LIBXSMM_BLASMM(double, alpha, beta, m, n, k, a, b, c);
+  LIBXSMM_BLASMM(double, m, n, k, a, b, c, xargs);
 }
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
@@ -123,67 +145,94 @@ template<> struct LIBXSMM_RETARGETABLE libxsmm_function<float>    { typedef libx
 template<> struct LIBXSMM_RETARGETABLE libxsmm_function<double>   { typedef libxsmm_dfunction type; };
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported. */
-LIBXSMM_RETARGETABLE inline libxsmm_sfunction libxsmm_dispatch(float alpha, float beta, int m, int n, int k,
-  int lda = 0, int ldb = 0, int ldc = 0, int flags = LIBXSMM_GEMM_FLAG_DEFAULT, int prefetch = LIBXSMM_PREFETCH)
-{
-  return libxsmm_sdispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
-}
+template<typename T> class LIBXSMM_RETARGETABLE libxsmm_dispatch {};
+template<> class LIBXSMM_RETARGETABLE libxsmm_dispatch<float> {
+  mutable/*retargetable*/ libxsmm_sfunction m_function;
+public:
+  libxsmm_dispatch(): m_function(0) {}
+  libxsmm_dispatch(int m, int n, int k,
+    float alpha = LIBXSMM_ALPHA, float beta = LIBXSMM_BETA,
+    int lda = 0, int ldb = 0, int ldc = 0,
+    int flags = LIBXSMM_GEMM_FLAG_DEFAULT,
+    int prefetch = LIBXSMM_PREFETCH)  : m_function(libxsmm_sdispatch(m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch))
+  {}
+  operator libxsmm_sfunction() const {
+    return m_function;
+  }
+  void operator()(const float a[], const float b[], float c[], const libxsmm_sgemm_xargs* xargs = 0) const {
+    m_function(a, b, c, xargs);
+  }
+  void operator()(const float a[], const float b[], float c[], const libxsmm_sgemm_xargs& xargs) const {
+    m_function(a, b, c, &xargs);
+  }
+};
+template<> class LIBXSMM_RETARGETABLE libxsmm_dispatch<double> {
+  mutable/*retargetable*/ libxsmm_dfunction m_function;
+public:
+  libxsmm_dispatch(): m_function(0) {}
+  libxsmm_dispatch(int m, int n, int k,
+    double alpha = LIBXSMM_ALPHA, double beta = LIBXSMM_BETA,
+    int lda = 0, int ldb = 0, int ldc = 0,
+    int flags = LIBXSMM_GEMM_FLAG_DEFAULT,
+    int prefetch = LIBXSMM_PREFETCH)  : m_function(libxsmm_ddispatch(m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch))
+  {}
+  operator libxsmm_dfunction() const {
+    return m_function;
+  }
+  void operator()(const double a[], const double b[], double c[], const libxsmm_dgemm_xargs* xargs = 0) const {
+    m_function(a, b, c, xargs);
+  }
+  void operator()(const double a[], const double b[], double c[], const libxsmm_dgemm_xargs& xargs) const {
+    m_function(a, b, c, &xargs);
+  }
+};
 
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported. */
-LIBXSMM_RETARGETABLE inline libxsmm_dfunction libxsmm_dispatch(double alpha, double beta, int m, int n, int k,
-  int lda = 0, int ldb = 0, int ldc = 0, int flags = LIBXSMM_GEMM_FLAG_DEFAULT, int prefetch = LIBXSMM_PREFETCH)
+/** Dispatched matrix-matrix multiplication. */
+LIBXSMM_RETARGETABLE inline void libxsmm_mm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs = 0)
 {
-  return libxsmm_ddispatch(alpha, beta, m, n, k, lda, ldb, ldc, flags, prefetch);
+  libxsmm_smm(m, n, k, a, b, c, xargs);
 }
 
 /** Dispatched matrix-matrix multiplication. */
-LIBXSMM_RETARGETABLE inline void libxsmm_mm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c
-  LIBXSMM_PREFETCH_DECL(const float*, pa)
-  LIBXSMM_PREFETCH_DECL(const float*, pb)
-  LIBXSMM_PREFETCH_DECL(const float*, pc))
+LIBXSMM_RETARGETABLE inline void libxsmm_mm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs = 0)
 {
-  LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  libxsmm_smm(alpha, beta, m, n, k, a, b, c LIBXSMM_PREFETCH_ARGA(pa) LIBXSMM_PREFETCH_ARGB(pb) LIBXSMM_PREFETCH_ARGC(pc));
-}
-
-/** Dispatched matrix-matrix multiplication. */
-LIBXSMM_RETARGETABLE inline void libxsmm_mm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c
-  LIBXSMM_PREFETCH_DECL(const double*, pa)
-  LIBXSMM_PREFETCH_DECL(const double*, pb)
-  LIBXSMM_PREFETCH_DECL(const double*, pc))
-{
-  LIBXSMM_USE(pa); LIBXSMM_USE(pb); LIBXSMM_USE(pc);
-  libxsmm_dmm(alpha, beta, m, n, k, a, b, c LIBXSMM_PREFETCH_ARGA(pa) LIBXSMM_PREFETCH_ARGB(pb) LIBXSMM_PREFETCH_ARGC(pc));
+  libxsmm_dmm(m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code. */
-LIBXSMM_RETARGETABLE inline void libxsmm_imm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c)
+LIBXSMM_RETARGETABLE inline void libxsmm_imm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs = 0)
 {
-  libxsmm_simm(alpha, beta, m, n, k, a, b, c);
+  libxsmm_simm(m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using inline code. */
-LIBXSMM_RETARGETABLE inline void libxsmm_imm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c)
+LIBXSMM_RETARGETABLE inline void libxsmm_imm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs = 0)
 {
-  libxsmm_dimm(alpha, beta, m, n, k, a, b, c);
+  libxsmm_dimm(m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using BLAS. */
-LIBXSMM_RETARGETABLE inline void libxsmm_blasmm(float alpha, float beta, int m, int n, int k,
-  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c)
+LIBXSMM_RETARGETABLE inline void libxsmm_blasmm(int m, int n, int k,
+  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  const libxsmm_sgemm_xargs* xargs = 0)
 {
-  libxsmm_sblasmm(alpha, beta, m, n, k, a, b, c);
+  libxsmm_sblasmm(m, n, k, a, b, c, xargs);
 }
 
 /** Non-dispatched matrix-matrix multiplication using BLAS. */
-LIBXSMM_RETARGETABLE inline void libxsmm_blasmm(double alpha, double beta, int m, int n, int k,
-  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c)
+LIBXSMM_RETARGETABLE inline void libxsmm_blasmm(int m, int n, int k,
+  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  const libxsmm_dgemm_xargs* xargs = 0)
 {
-  libxsmm_dblasmm(alpha, beta, m, n, k, a, b, c);
+  libxsmm_dblasmm(m, n, k, a, b, c, xargs);
 }
 
 #endif /*__cplusplus*/

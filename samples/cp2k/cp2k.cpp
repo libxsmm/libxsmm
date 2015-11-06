@@ -166,7 +166,6 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
-    const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
     const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
@@ -241,7 +240,7 @@ int main(int argc, char* argv[])
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(alpha, beta, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -258,7 +257,7 @@ int main(int argc, char* argv[])
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(alpha, beta, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -284,7 +283,7 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
-            libxsmm_imm(alpha, beta, m, n, k, pa, pb, tmp);
+            libxsmm_imm(m, n, k, pa, pb, tmp);
             pa = paj;
             pb = pbj;
           }
@@ -315,7 +314,17 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
-            libxsmm_mm(alpha, beta, m, n, k, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+#if (0 != LIBXSMM_PREFETCH)
+            const libxsmm_dgemm_xargs xargs = {
+              LIBXSMM_ALPHA, LIBXSMM_BETA,
+              LIBXSMM_PREFETCH_A(paj + asize),
+              LIBXSMM_PREFETCH_B(pbj + bsize),
+              LIBXSMM_PREFETCH_C(tmp)
+            };
+            libxsmm_mm(m, n, k, pa, pb, tmp, &xargs);
+#else
+            libxsmm_mm(m, n, k, pa, pb, tmp);
+#endif
             pa = paj;
             pb = pbj;
           }
@@ -333,7 +342,7 @@ int main(int argc, char* argv[])
 #endif
       }
 
-      const libxsmm_function<T>::type xmm = libxsmm_dispatch(alpha, beta, m, n, k);
+      const libxsmm_dispatch<T> xmm(m, n, k);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);
@@ -347,7 +356,17 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
-            xmm(alpha, beta, pa, pb, tmp LIBXSMM_PREFETCH_ARGA(paj + asize) LIBXSMM_PREFETCH_ARGB(pbj + bsize) LIBXSMM_PREFETCH_ARGC(tmp));
+#if (0 != LIBXSMM_PREFETCH)
+            const libxsmm_dgemm_xargs xargs = {
+              LIBXSMM_ALPHA, LIBXSMM_BETA,
+              LIBXSMM_PREFETCH_A(paj + asize),
+              LIBXSMM_PREFETCH_B(pbj + bsize),
+              LIBXSMM_PREFETCH_C(tmp)
+            };
+            xmm(pa, pb, tmp, &xargs);
+#else
+            xmm(pa, pb, tmp);
+#endif
             pa = paj;
             pb = pbj;
           }
