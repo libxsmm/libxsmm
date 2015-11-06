@@ -40,7 +40,7 @@ if __name__ == "__main__":
         m, n, k = int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
         if (0 != row_major):
-            signature = "b, a, c LIBXSMM_PREFETCH_BNEXT(xargs, b) LIBXSMM_PREFETCH_ANEXT(xargs, a) LIBXSMM_PREFETCH_CNEXT(xargs, c)"
+            signature = "b, a, c LIBXSMM_PREFETCH_ANEXT(xargs, b) LIBXSMM_PREFETCH_BNEXT(xargs, a) LIBXSMM_PREFETCH_CNEXT(xargs, c)"
         else: # ColMajor
             signature = "a, b, c LIBXSMM_PREFETCH_ANEXT(xargs, a) LIBXSMM_PREFETCH_BNEXT(xargs, b) LIBXSMM_PREFETCH_CNEXT(xargs, c)"
         print
