@@ -155,8 +155,9 @@ PROGRAM stpm
   DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
+  ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
-  if (check /= 0) call validate(d, c)
+  if (check.NE.0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
@@ -182,8 +183,9 @@ PROGRAM stpm
   DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
+  ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
-  if (check /= 0) call validate(d, c)
+  if (check.NE.0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
@@ -209,8 +211,9 @@ PROGRAM stpm
   DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
+  ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
-  if (check /= 0) call validate(d, c)
+  if (check.NE.0) call validate(d, c)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
   f1 = libxsmm_dispatch(m, n*k, m, alpha, beta)
@@ -254,33 +257,37 @@ PROGRAM stpm
   DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
+  ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
-  if (check /= 0) call validate(d, c)
+  if (check.NE.0) call validate(d, c)
 
   ! Deallocate global arrays
   DEALLOCATE(a)
   deallocate(g1, g2, g3)
   deallocate(dx, dy, dz)
   DEALLOCATE(c)
+  IF (0.NE.check) THEN
+    DEALLOCATE(d)
+  END IF
 
 contains
-  subroutine validate(ref, test)
-    real(T), dimension(:,:,:,:), intent(in) :: ref, test
+  SUBROUTINE validate(ref, test)
+    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
 
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
-  end subroutine validate
+  END SUBROUTINE validate
 
-  subroutine performance(duration, m, n, k, s)
-    real(8), intent(in) :: duration
-    integer, intent(in) :: m, n, k
-    integer(8), intent(in) :: s
+  SUBROUTINE performance(duration, m, n, k, s)
+    REAL(8), INTENT(IN)    :: duration
+    INTEGER, INTENT(IN)    :: m, n, k
+    INTEGER(8), INTENT(IN) :: s
 
     IF (0.LT.duration) THEN
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-        (s * m * n * k * (2*(m+n+k) + 2) * 1D-9 / duration), " GFLOPS/s"
+        (s * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
         (s * m * n * k * (5) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
     ENDIF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-  end subroutine performance
+  END SUBROUTINE
 END PROGRAM
