@@ -136,7 +136,6 @@ ifneq (0,$(INTEL))
 	LDFLAGS += -fPIC -lrt
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
-		FCFLAGS += -e03
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
 		FCFLAGS += -e03
@@ -231,7 +230,9 @@ else # GCC assumed
 		FCFLAGS += -fPIC
 		LDFLAGS += -fPIC
 	endif
-	ifneq (0,$(PEDANTIC))
+	ifeq (1,$(PEDANTIC))
+		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
+	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -std=f2003
 	endif
