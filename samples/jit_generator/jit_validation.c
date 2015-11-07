@@ -28,7 +28,8 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include <libxsmm_generator.h>
+#include <libxsmm_timer.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -42,13 +43,8 @@
 
 #include <immintrin.h>
 
-/* This will be our future incldue */
-/*#include <libxsmm_generator.h>*/
 /*@TODO remove:*/
 #define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
-#include <libxsmm_generator.h>
-#include <generator_common.h>
-#include <generator_dense_instructions.h>
 
 #define REPS 10000
 
@@ -69,10 +65,6 @@ void print_help() {
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n");
-}
-
-inline double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
 void init_double( double*                         io_a,
@@ -138,8 +130,7 @@ void run_gold_double( const double*                   i_a,
   unsigned int l_m, l_n, l_k, l_t;
   double l_runtime = 0.0;
 
-  struct timeval l_start, l_end;
-  gettimeofday(&l_start, NULL);
+  const unsigned long long l_start = libxsmm_timer_tick();
 
   for ( l_t = 0; l_t < REPS; l_t++  ) {
     for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++  ) {
@@ -151,8 +142,7 @@ void run_gold_double( const double*                   i_a,
     }
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_runtime = sec(l_start, l_end);
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for C\n", l_runtime);
   printf("%f GFLOPS for C\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
@@ -166,8 +156,7 @@ void run_gold_float( const float*                   i_a,
   unsigned int l_m, l_n, l_k, l_t;
   double l_runtime = 0.0;
 
-  struct timeval l_start, l_end;
-  gettimeofday(&l_start, NULL);
+  const unsigned long long l_start = libxsmm_timer_tick();
 
   for ( l_t = 0; l_t < REPS; l_t++  ) {
     for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++  ) {
@@ -179,8 +168,7 @@ void run_gold_float( const float*                   i_a,
     }
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_runtime = sec(l_start, l_end);
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for C\n", l_runtime);
   printf("%f GFLOPS for C\n", ((double)((double)REPS * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
@@ -191,7 +179,6 @@ void run_jit_double( const double*                   i_a,
                      double*                         o_c,
                      const libxsmm_gemm_descriptor* i_xgemm_desc,
                      const char*                     i_arch ) {
-  struct timeval l_start, l_end;
 
   /* define function pointer */
   typedef void (*jitfun)(const double* a, const double* b, double* c);
@@ -200,7 +187,7 @@ void run_jit_double( const double*                   i_a,
   jitfun_pf l_test_jit_pf;
 
   double l_jittime = 0.0;
-  gettimeofday(&l_start, NULL);
+  unsigned long long l_start = libxsmm_timer_tick();
   
   /* allocate buffer for code */
   unsigned char* l_gen_code = (unsigned char*) malloc( 131072 * sizeof(unsigned char) );
@@ -252,7 +239,7 @@ void run_jit_double( const double*                   i_a,
   }
 
   /* set function pointer and jitted code */
-  if ( i_xgemm_desc->single_precision == 0 ) {
+  if ( 0 == (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) ) {
     if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
       l_test_jit = (jitfun)l_code;
     } else {
@@ -260,8 +247,7 @@ void run_jit_double( const double*                   i_a,
     }
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_jittime = sec(l_start, l_end);
+  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("size of generated code: %i\n", l_generated_code.code_size );
 
@@ -280,7 +266,7 @@ void run_jit_double( const double*                   i_a,
   unsigned int l_t;
   double l_runtime = 0.0;
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
 
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < REPS; l_t++ ) {
@@ -292,8 +278,7 @@ void run_jit_double( const double*                   i_a,
     }
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_runtime = sec(l_start, l_end);
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
@@ -307,7 +292,6 @@ void run_jit_float( const float*                    i_a,
                     float*                          o_c,
                     const libxsmm_gemm_descriptor* i_xgemm_desc,
                     const char*                     i_arch ) {
-  struct timeval l_start, l_end;
 
   /* define function pointer */
   typedef void (*jitfun)(const float* a, const float* b, float* c);
@@ -316,7 +300,7 @@ void run_jit_float( const float*                    i_a,
   jitfun_pf l_test_jit_pf;
 
   double l_jittime = 0.0;
-  gettimeofday(&l_start, NULL);
+  unsigned long long l_start = libxsmm_timer_tick();
   
   /* allocate buffer for code */
   unsigned char* l_gen_code = (unsigned char*) malloc( 32768 * sizeof(unsigned char) );
@@ -375,8 +359,7 @@ void run_jit_float( const float*                    i_a,
     l_test_jit_pf = (jitfun_pf)l_code;
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_jittime = sec(l_start, l_end);
+  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("size of generated code: %i\n", l_generated_code.code_size );
 
@@ -395,7 +378,7 @@ void run_jit_float( const float*                    i_a,
   unsigned int l_t;
   double l_runtime = 0.0;
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
 
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < REPS; l_t++ ) {
@@ -407,8 +390,7 @@ void run_jit_float( const float*                    i_a,
     }
   }
 
-  gettimeofday(&l_end, NULL);  
-  l_runtime = sec(l_start, l_end);
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
@@ -559,29 +541,13 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  libxsmm_gemm_descriptor l_xgemm_desc;
-  if ( l_m < 0 ) { l_xgemm_desc.m = 0; } else {  l_xgemm_desc.m = l_m; }
-  if ( l_n < 0 ) { l_xgemm_desc.n = 0; } else {  l_xgemm_desc.n = l_n; }
-  if ( l_k < 0 ) { l_xgemm_desc.k = 0; } else {  l_xgemm_desc.k = l_k; }
-  if ( l_lda < 0 ) { l_xgemm_desc.lda = 0; } else {  l_xgemm_desc.lda = l_lda; }
-  if ( l_ldb < 0 ) { l_xgemm_desc.ldb = 0; } else {  l_xgemm_desc.ldb = l_ldb; }
-  if ( l_ldc < 0 ) { l_xgemm_desc.ldc = 0; } else {  l_xgemm_desc.ldc = l_ldc; }
-  l_xgemm_desc.alpha = l_alpha;
-  l_xgemm_desc.beta = l_beta;
-  l_xgemm_desc.trans_a = 'n';
-  l_xgemm_desc.trans_b = 'n';
-  if (l_aligned_a == 0) {
-    l_xgemm_desc.aligned_a = 0;
-  } else {
-    l_xgemm_desc.aligned_a = 1;
-  }
-  if (l_aligned_c == 0) {
-    l_xgemm_desc.aligned_c = 0;
-  } else {
-    l_xgemm_desc.aligned_c = 1;
-  }
-  l_xgemm_desc.single_precision = l_single_precision;
-  l_xgemm_desc.prefetch = l_prefetch;
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(l_xgemm_desc,
+    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0),
+    l_alpha, l_beta, l_lda, l_ldb, l_ldc,
+    (0 == l_single_precision ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
+      | (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
+      | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
+    l_prefetch);
 
   /* init data structures */
   double* l_a_d; 
@@ -593,7 +559,7 @@ int main(int argc, char* argv []) {
   float* l_c_f; 
   float* l_c_gold_f;
 
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     l_a_d = (double*)_mm_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(double), 64);
     l_b_d = (double*)_mm_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(double), 64);
     l_c_d = (double*)_mm_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
@@ -610,7 +576,7 @@ int main(int argc, char* argv []) {
   /* print some output... */
   printf("------------------------------------------------\n");
   printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     printf(", DP\n");
   } else {
     printf(", SP\n");
@@ -618,28 +584,28 @@ int main(int argc, char* argv []) {
   printf("------------------------------------------------\n");
 
   /* run C */
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
   }  
 
   /* run jit */
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     run_jit_double( l_a_d, l_b_d, l_c_d, &l_xgemm_desc, l_arch );
   } else {
     run_jit_float( l_a_f, l_b_f, l_c_f, &l_xgemm_desc, l_arch );
   }  
  
   /* test result */
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     max_error_double( l_c_d, l_c_gold_d, &l_xgemm_desc );
   } else {
     max_error_float( l_c_f, l_c_gold_f, &l_xgemm_desc );
   }
 
   /* free */
-  if ( l_xgemm_desc.single_precision == 0 ) {
+  if ( l_single_precision == 0 ) {
     _mm_free(l_a_d);
     _mm_free(l_b_d);
     _mm_free(l_c_d);
