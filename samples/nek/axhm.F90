@@ -57,32 +57,32 @@ PROGRAM stpm
   xargs = LIBXSMM_DGEMM_XARGS_CTOR(alpha, beta)
   duration = 0
 
-  argc = IARGC()
+  argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
-    CALL GETARG(1, argv)
+    CALL GET_COMMAND_ARGUMENT(1, argv)
     READ(argv, "(I32)") m
   ELSE
     m = 8
   END IF
   IF (2 <= argc) THEN
-    CALL GETARG(2, argv)
+    CALL GET_COMMAND_ARGUMENT(2, argv)
     READ(argv, "(I32)") n
   ELSE
     n = m
   END IF
   IF (3 <= argc) THEN
-    CALL GETARG(3, argv)
+    CALL GET_COMMAND_ARGUMENT(3, argv)
     READ(argv, "(I32)") k
   ELSE
     k = m
   END IF
   IF (4 <= argc) THEN
-    CALL GETARG(4, argv)
+    CALL GET_COMMAND_ARGUMENT(4, argv)
     READ(argv, "(I32)") i
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-  s = LSHIFT(INT8(MAX(i, 0)), 30) / ((m * n * k) * T * 6)
+  s = ISHFT(MAX(i, 0_8), 30) / ((m * n * k) * T * 6)
 
   ALLOCATE(a(m,n,k,s))
   ALLOCATE(b(m,n,k,s))
@@ -315,7 +315,7 @@ CONTAINS
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
         (s * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (s * m * n * k * (6) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+        (s * m * n * k * (6) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     ENDIF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   END SUBROUTINE

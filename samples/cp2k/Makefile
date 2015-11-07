@@ -27,6 +27,9 @@ CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
+# Request strongest code conformance
+PEDANTIC ?= 0
+
 STATIC ?= 0
 BLAS ?= 1
 OMP ?= 1
