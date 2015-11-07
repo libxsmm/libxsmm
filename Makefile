@@ -146,7 +146,7 @@ ifneq (0,$(INTEL))
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 	else ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -Wcheck -Wremarks
+		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
 	endif
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
