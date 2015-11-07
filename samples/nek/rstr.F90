@@ -140,7 +140,8 @@ PROGRAM stpm
 
   IF (0.GT.routine) THEN
     WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0;
     !$OMP MASTER
@@ -162,7 +163,8 @@ PROGRAM stpm
     !$OMP END PARALLEL
   ELSE if (routine == 100) then
     WRITE(*, "(A)") "Streamed... (mxm)"
-    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0;
     !$OMP MASTER
@@ -202,8 +204,7 @@ PROGRAM stpm
     else
       write(*,*) "f3 not built"
     endif
-    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk, xmm1, xmm2, xmm3)
+    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk, xmm1, xmm2, xmm3)
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0
     !$OMP MASTER
@@ -232,7 +233,8 @@ PROGRAM stpm
     d = 0
 
     WRITE(*, "(A)") "Calculating check..."
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, d, m, n, k, mm, nn, kk)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) &
+    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, d, m, n, k, mm, nn, kk)
     ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm*nn, kk, 1))
     tm1 = 0; tm2 = 0;
     !$OMP DO
