@@ -195,7 +195,6 @@ MODULE LIBXSMM
 
 CONTAINS
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_SGEMM_XARGS_CTOR
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_SGEMM_XARGS_CTOR
   TYPE(LIBXSMM_DGEMM_XARGS) PURE FUNCTION LIBXSMM_SGEMM_XARGS_CTOR(alpha, beta, pa, pb, pc)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION
     REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
@@ -208,7 +207,6 @@ CONTAINS
   END FUNCTION
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: LIBXSMM_DGEMM_XARGS_CTOR
-  !DIR$ ATTRIBUTES INLINE :: LIBXSMM_DGEMM_XARGS_CTOR
   TYPE(LIBXSMM_DGEMM_XARGS) PURE FUNCTION LIBXSMM_DGEMM_XARGS_CTOR(alpha, beta, pa, pb, pc)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
     REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
@@ -221,7 +219,6 @@ CONTAINS
   END FUNCTION
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_up
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_up
   PURE FUNCTION libxsmm_up(n, up) RESULT(nup)
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: n, up
     INTEGER(LIBXSMM_INTEGER_TYPE) :: nup
@@ -229,7 +226,6 @@ CONTAINS
   END FUNCTION
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_align_value
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_align_value
   PURE FUNCTION libxsmm_align_value(n, typesize, alignment) RESULT(na)
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: n, typesize, alignment
     INTEGER(LIBXSMM_INTEGER_TYPE) :: na
@@ -237,7 +233,6 @@ CONTAINS
   END FUNCTION
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ld
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_ld
   PURE FUNCTION libxsmm_ld(m, n) RESULT(ld)
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n
     INTEGER(LIBXSMM_INTEGER_TYPE) :: ld
@@ -246,7 +241,6 @@ CONTAINS
 
   ! Non-dispatched matrix-matrix multiplication using BLAS (single-precision).
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_sblasmm
   SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c, xargs)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
@@ -270,7 +264,6 @@ CONTAINS
 
   ! Non-dispatched matrix-matrix multiplication using BLAS (double-precision).
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_dblasmm
   SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c, xargs)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
@@ -294,7 +287,6 @@ CONTAINS
 
   ! Dispatched matrix-matrix multiplication (single-precision).
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_smm
   SUBROUTINE libxsmm_smm(m, n, k, a, b, c, xargs)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
@@ -325,7 +317,6 @@ CONTAINS
 
   ! Dispatched matrix-matrix multiplication (double-precision).
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm
-  !DIR$ ATTRIBUTES INLINE :: libxsmm_dmm
   SUBROUTINE libxsmm_dmm(m, n, k, a, b, c, xargs)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN) :: m, n, k
@@ -355,7 +346,6 @@ CONTAINS
   END SUBROUTINE
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
-  !DIR$ ATTRIBUTES INLINE :: sdispatch
   PURE FUNCTION sdispatch(m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch) RESULT(function)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_SINGLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN), OPTIONAL :: lda, ldb, ldc, flags, prefetch
@@ -373,7 +363,6 @@ CONTAINS
   END FUNCTION
 
   !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
-  !DIR$ ATTRIBUTES INLINE :: ddispatch
   PURE FUNCTION ddispatch(m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch) RESULT(function)
     INTEGER(LIBXSMM_INTEGER_TYPE), PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
     INTEGER(LIBXSMM_INTEGER_TYPE), INTENT(IN), OPTIONAL :: lda, ldb, ldc, flags, prefetch
