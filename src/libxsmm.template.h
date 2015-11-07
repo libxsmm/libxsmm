@@ -124,9 +124,14 @@ $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
 /** Function type depending on T. */
-template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_function { typedef void type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_function<float>    { typedef libxsmm_sfunction type; };
-template<> struct LIBXSMM_RETARGETABLE libxsmm_function<double>   { typedef libxsmm_dfunction type; };
+template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_function   { typedef void type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_function<float>      { typedef libxsmm_sfunction type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_function<double>     { typedef libxsmm_dfunction type; };
+
+/** Extended argument type depending on T. */
+template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_gemm_xargs { typedef void type; }
+template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_xargs<float>    { typedef libxsmm_sgemm_xargs type; };
+template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_xargs<double>   { typedef libxsmm_dgemm_xargs type; };
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported. */
 template<typename T> class LIBXSMM_RETARGETABLE libxsmm_dispatch {};
