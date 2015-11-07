@@ -45,7 +45,7 @@ PROGRAM stpm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm1, xmm2, xmm3
   TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
@@ -131,34 +131,6 @@ PROGRAM stpm
     !$OMP END PARALLEL
   END IF
 
-  WRITE(*, "(A)") "Streamed... (compiled)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3=0
-  !$OMP MASTER
-  start = libxsmm_timer_tick()
-  !$OMP END MASTER
-  !$OMP DO
-  DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
-    do j = 1, k
-        call libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
-    enddo
-    call libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    !DEC$ vector aligned nontemporal
-    c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
-  END DO
-  !$OMP MASTER
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-  !$OMP END MASTER
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2, tm3)
-  !$OMP END PARALLEL
-
-  ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
-
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
@@ -220,21 +192,22 @@ PROGRAM stpm
   f2 = libxsmm_dispatch(m, n, n, alpha, beta)
   f3 = libxsmm_dispatch(m*n, k, k, alpha, beta)
   if (C_ASSOCIATED(f1)) then
-    CALL C_F_PROCPOINTER(f1, dmm1)
+    CALL C_F_PROCPOINTER(f1, xmm1)
   else
     write(*,*) "f1 not built"
   endif
   if (C_ASSOCIATED(f2)) then
-    CALL C_F_PROCPOINTER(f2, dmm2)
+    CALL C_F_PROCPOINTER(f2, xmm2)
   else
     write(*,*) "f2 not built"
   endif
   if (C_ASSOCIATED(f3)) then
-    CALL C_F_PROCPOINTER(f3, dmm3)
+    CALL C_F_PROCPOINTER(f3, xmm3)
   else
     write(*,*) "f3 not built"
   endif
-  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k, dmm1, dmm2, dmm3)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, c, m, n, k, xmm1, xmm2, xmm3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -242,11 +215,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL dmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
+    CALL xmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
     do j = 1, k
-        call dmm2(a(:,:,j,i), dy, tm2(:,:,j), xargs)
+        call xmm2(a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
-    CALL dmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
+    CALL xmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
     !DEC$ vector aligned nontemporal
     c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
   END DO

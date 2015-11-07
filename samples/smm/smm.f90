@@ -165,32 +165,6 @@ PROGRAM smm
   END IF
   c(:,:) = 0
 
-  WRITE(*, "(A)") "Streamed... (inlined)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
-  ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-  tmp(:,:) = 0
-  !$OMP MASTER
-  start = libxsmm_timer_tick()
-  !$OMP END MASTER
-  !$OMP DO
-  DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_imm(m, n, k, a(:,:,i), b(:,:,i), tmp)
-  END DO
-  !$OMP MASTER
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-  !$OMP END MASTER
-  !$OMP CRITICAL
-  c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
-  !$OMP END CRITICAL
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tmp)
-  !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, s)
-  IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-  END IF
-  c(:,:) = 0
-
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
   ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
@@ -221,7 +195,7 @@ PROGRAM smm
   IF (C_ASSOCIATED(f)) THEN
     CALL C_F_PROCPOINTER(f, xmm)
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(m, n, a, b, c, duration, xmm)
+    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, a, b, c, duration, xmm)
     ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
     tmp(:,:) = 0
     !$OMP MASTER

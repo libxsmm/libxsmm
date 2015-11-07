@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
-            libxsmm_imm(m, n, k, pa, pb, tmp);
+            LIBXSMM_XIMM(m, n, k, pa, pb, tmp, 0);
             pa = paj;
             pb = pbj;
           }

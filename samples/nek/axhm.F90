@@ -46,7 +46,7 @@ PROGRAM stpm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: dmm1, dmm2, dmm3
+  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm1, xmm2, xmm3
   TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
@@ -118,7 +118,7 @@ PROGRAM stpm
     ALLOCATE(d(m,n,k,s))
     d = 0
 
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, xargs, a, b, dx, dy, dz, g1, g2, g3, d, m, n, k, f1, f2, f3, h1, h2)
+    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) SHARED(duration, xargs, a, b, dx, dy, dz, g1, g2, g3, d, m, n, k, h1, h2)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m*n,k,1))
     tm1 = 0; tm2 = 0; tm3=0
     !$OMP DO
@@ -140,7 +140,7 @@ PROGRAM stpm
 #if 0
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (BLAS)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, h1, h2)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -169,39 +169,9 @@ PROGRAM stpm
 #endif
 
   c(:,:,:,:) = 0.0
-  WRITE(*, "(A)") "Streamed... (compiled)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3=0
-  !$OMP MASTER
-  start = libxsmm_timer_tick()
-  !$OMP END MASTER
-  !$OMP DO
-  DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_imm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
-    do j = 1, k
-        CALL libxsmm_imm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
-    enddo
-    CALL libxsmm_imm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
-  END DO
-  !$OMP MASTER
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-  !$OMP END MASTER
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2, tm3)
-  !$OMP END PARALLEL
-
-  ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
-
-  c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
+  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, h1, h2)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -231,7 +201,7 @@ PROGRAM stpm
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, xargs, a, b, dx, dy, dz, g1, g2, g3, c, m, n, k, f1, f2, f3, h1, h2)
+  !$OMP   SHARED(duration, xargs, a, b, dx, dy, dz, g1, g2, g3, c, m, n, k, h1, h2)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
@@ -260,37 +230,38 @@ PROGRAM stpm
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (specialized)"
-  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, f1, f2, f3, h1, h2)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3=0
   f1 = libxsmm_dispatch(m, n*k, m, alpha, beta)
   f2 = libxsmm_dispatch(m, n, n, alpha, beta)
   f3 = libxsmm_dispatch(m*n, k, k, alpha, beta)
   if (C_ASSOCIATED(f1)) then
-    CALL C_F_PROCPOINTER(f1, dmm1)
+    CALL C_F_PROCPOINTER(f1, xmm1)
   else
     write(*,*) "f1 not built"
   endif
   if (C_ASSOCIATED(f2)) then
-    CALL C_F_PROCPOINTER(f2, dmm2)
+    CALL C_F_PROCPOINTER(f2, xmm2)
   else
     write(*,*) "f2 not built"
   endif
   if (C_ASSOCIATED(f3)) then
-    CALL C_F_PROCPOINTER(f3, dmm3)
+    CALL C_F_PROCPOINTER(f3, xmm3)
   else
     write(*,*) "f3 not built"
   endif
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, xmm1, xmm2, xmm3, h1, h2)
+  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+  tm1 = 0; tm2 = 0; tm3=0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL dmm1(dx, a(1,1,1,i), tm1, xargs)
+    CALL xmm1(dx, a(1,1,1,i), tm1, xargs)
     do j = 1, k
-        CALL dmm2(a(1,1,j,i), dy, tm2(1,1,j), xargs)
+        CALL xmm2(a(1,1,j,i), dy, tm2(1,1,j), xargs)
     enddo
-    CALL dmm3(a(1,1,1,i), dz, tm3, xargs)
+    CALL xmm3(a(1,1,1,i), dz, tm3, xargs)
     CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                              tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
                              a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
