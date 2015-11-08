@@ -140,7 +140,7 @@ ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall
-	FCFLAGS += -fPIC
+	FCFLAGS += -fPIC -free
 	LDFLAGS += -fPIC -lrt
 	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
