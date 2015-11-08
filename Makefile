@@ -496,7 +496,7 @@ endif
 
 .PHONY: compile_generator
 compile_generator: $(OBJFILES_GEN_BIN)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
