@@ -317,8 +317,8 @@ int main(int argc, char* argv[])
 #if (0 != LIBXSMM_PREFETCH)
             const libxsmm_dgemm_xargs xargs = {
               LIBXSMM_ALPHA, LIBXSMM_BETA,
-              LIBXSMM_PREFETCH_A(paj + asize),
-              LIBXSMM_PREFETCH_B(pbj + bsize),
+              LIBXSMM_PREFETCH_A(paj + asize)
+              LIBXSMM_PREFETCH_B(pbj + bsize)
               LIBXSMM_PREFETCH_C(tmp)
             };
             libxsmm_mm(m, n, k, pa, pb, tmp, &xargs);
@@ -359,8 +359,8 @@ int main(int argc, char* argv[])
 #if (0 != LIBXSMM_PREFETCH)
             const libxsmm_dgemm_xargs xargs = {
               LIBXSMM_ALPHA, LIBXSMM_BETA,
-              LIBXSMM_PREFETCH_A(paj + asize),
-              LIBXSMM_PREFETCH_B(pbj + bsize),
+              LIBXSMM_PREFETCH_A(paj + asize)
+              LIBXSMM_PREFETCH_B(pbj + bsize)
               LIBXSMM_PREFETCH_C(tmp)
             };
             xmm(pa, pb, tmp, &xargs);
