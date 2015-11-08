@@ -19,10 +19,10 @@ script:
     bash samples/cp2k/test.sh
 
   - make -e realclean &&
-    bash make.sh -cif90 -j &&
+    bash make.sh -cif -j &&
     make -e samples &&
-    make -e testf90 &&
-    bash samples/smm/smmf90-test.sh
+    make -e testf &&
+    bash samples/smm/smm-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 ALIGNED_STORES=1 JIT=1 &&
@@ -33,10 +33,10 @@ script:
 
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 &&
-    rm -f samples/smm/smmf90-perf.sh &&
-    bash make.sh -cif90 drytest &&
-    bash samples/smm/smmf90-perf.sh &&
-    bash samples/smm/smmf90-test.sh
+    rm -f samples/smm/smmf-perf.sh &&
+    bash make.sh -cif drytest &&
+    bash samples/smm/smmf-perf.sh &&
+    bash samples/smm/smm-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 BETA=0 &&

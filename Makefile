@@ -77,7 +77,7 @@ DOCDIR = documentation
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
-IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
+IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
 # Request strongest code conformance
 PEDANTIC ?= 0
@@ -467,10 +467,10 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
-fheader: $(INCDIR)/libxsmm.f90
-$(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f90
+fheader: $(INCDIR)/libxsmm.f
+$(INCDIR)/libxsmm.f: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
@@ -659,7 +659,7 @@ cp2k_mic: lib_mic
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf90-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh
+drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
@@ -688,12 +688,12 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
+$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=\$${HERE}/smmf90-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -780,13 +780,13 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
-.PHONY: testf90
-testf90: $(SPLDIR)/smm/smmf90-perf.txt
-$(SPLDIR)/smm/smmf90-perf.txt: $(SPLDIR)/smm/smmf90-perf.sh lib_all
+.PHONY: testf
+testf: $(SPLDIR)/smm/smmf-perf.txt
+$(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 	@cd $(SPLDIR)/smm && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
-	@$(SPLDIR)/smm/smmf90-perf.sh $@
+	@$(SPLDIR)/smm/smmf-perf.sh $@
 
 .PHONY: testnek
 testnek: $(SPLDIR)/nek/stpm-perf.txt $(SPLDIR)/nek/axhm-perf.txt
@@ -896,9 +896,9 @@ else
 endif
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
-	@rm -f $(SPLDIR)/smm/smmf90-perf.sh
+	@rm -f $(SPLDIR)/smm/smmf-perf.sh
 	@rm -f $(SPLDIR)/nek/stpm-perf.sh
-	@rm -f $(INCDIR)/libxsmm.f90
+	@rm -f $(INCDIR)/libxsmm.f
 	@rm -f $(INCDIR)/libxsmm.h
 
 install: all clean

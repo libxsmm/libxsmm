@@ -163,10 +163,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\libxsmm.template.f90">
+    <None Include="..\src\libxsmm.template.f">
       <Filter>src</Filter>
     </None>
-    <None Include="..\include\libxsmm.f90">
+    <None Include="..\include\libxsmm.f">
       <Filter>include</Filter>
     </None>
     <None Include="..\scripts\libxsmm_specialized.py">
