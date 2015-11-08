@@ -313,6 +313,9 @@ int main(int argc, char* argv[])
           const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+#if 0
+            printf("outer-iteration: %i, inner-iterations: %i, c-address: %lu, 64byte-alginment: %lu, 32byte-alignment: %lu, 16byte-alignment: %lu,\n", i, LIBXSMM_MIN(u, s - i), (size_t)tmp, ((size_t)tmp)%64, ((size_t)tmp)%32, ((size_t)tmp)%16);
+#endif
             const T *const paj = pa + asize, *const pbj = pb + bsize;
 #if (0 != LIBXSMM_PREFETCH)
             const libxsmm_dgemm_xargs xargs = {
