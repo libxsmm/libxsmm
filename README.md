@@ -6,7 +6,7 @@ LIBXSMM is a library for small matrix-matrix multiplications targeting Intel Arc
 **How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against Intel MKL 11.2 (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (env MKL_VERBOSE=1 ./workload > verbose.txt). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (grep -a "MKL_VERBOSE DGEMM" verbose.txt | cut -d, -f3-5).
 
 ## Interface
-The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f90). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
+The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
 
 ```C
 /** Initialization function to set up LIBXSMM's dispatching table. One may
@@ -94,7 +94,7 @@ Testing the generated cases can be accomplished by capturing the console output 
 make MNK="2 3, 23" test
 ```
 
-The recorded output file can be further evaluated (see also [test.sh](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/test.sh)). For example:
+The recorded output file can be further evaluated (see also [cp2k-test.sh](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k-test.sh)). For example:
 
 ```
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"

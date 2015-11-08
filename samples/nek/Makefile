@@ -131,9 +131,9 @@ ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall
-	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC -lrt
+	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 	else ifneq (0,$(PEDANTIC))
@@ -223,6 +223,7 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
+	FCFLAGS += -ffree-form
 	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
@@ -414,23 +415,23 @@ endif
 .PHONY: all
 all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
 
-$(OUTDIR)/stpm: $(BLDDIR)/stpm-f90.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/stpm: $(BLDDIR)/stpm-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
-$(OUTDIR)/rstr: $(BLDDIR)/rstr-f90.o $(BLDDIR)/mxm_std-f90.o $(MODULES) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/rstr: $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
-$(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.F90 $(ROOTDIR)/Makefile
+$(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FCMODDIRFLAG) $(dir $@)
 
-$(BLDDIR)/axhm-f90.o: $(SRCDIR)/axhm.F90 $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile
+$(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/axhm: $(BLDDIR)/axhm-f90.o $(BLDDIR)/mxm_std-f90.o $(BLDDIR)/stream_update_kernels-c.o $(MODULES) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(BLDDIR)/stream_update_kernels-c.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 

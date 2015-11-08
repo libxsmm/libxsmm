@@ -28,7 +28,7 @@ elif [[ "-ci" == "$1" ]] ; then
   make -e $* PEDANTIC=1 ROW_MAJOR=1 MNK=" \
     0 8 15, \
     23 24 42"
-elif [[ "-cif90" == "$1" ]] ; then
+elif [[ "-cif" == "$1" ]] ; then
   shift
   make -e $* PEDANTIC=1 MNK=" \
     0 8 15, \
