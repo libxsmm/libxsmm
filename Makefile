@@ -140,9 +140,9 @@ ifneq (0,$(INTEL))
 	AR = xiar
 	CXXFLAGS += -fPIC -Wall
 	CFLAGS += -fPIC -Wall
-	FCMTFLAGS += -threads
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC -lrt
+	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 	else ifneq (0,$(PEDANTIC))
@@ -232,6 +232,7 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
+	FCFLAGS += -ffree-form
 	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC

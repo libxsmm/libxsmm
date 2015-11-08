@@ -94,7 +94,7 @@ Testing the generated cases can be accomplished by capturing the console output 
 make MNK="2 3, 23" test
 ```
 
-The recorded output file can be further evaluated (see also [test.sh](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/test.sh)). For example:
+The recorded output file can be further evaluated (see also [cp2k-test.sh](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k-test.sh)). For example:
 
 ```
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
