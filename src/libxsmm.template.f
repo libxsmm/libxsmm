@@ -198,7 +198,8 @@
           SUBROUTINE libxsmm_init() BIND(C)
           END SUBROUTINE
 
-          ! Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision).
+          ! Query or JIT-generate a function; return zero if it does not exist,
+          ! or if JIT is not supported (single-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sdispatch(               &
      &    m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch) BIND(C)
             IMPORT :: C_FUNPTR, C_FLOAT, C_INT
@@ -207,7 +208,8 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: lda, ldb, ldc
             INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
           END FUNCTION
-          ! Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision).
+          ! Query or JIT-generate a function; return zero if it does not exist,
+          ! or if JIT is not supported (double-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_ddispatch(               &
      &    m, n, k, alpha, beta, lda, ldb, ldc, flags, prefetch) BIND(C)
             IMPORT :: C_FUNPTR, C_DOUBLE, C_INT
@@ -217,11 +219,13 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
           END FUNCTION
 
-          ! Non-pure function returning the current clock tick using a platform-specific resolution.
+          ! Non-pure function returning the current clock tick
+          ! using a platform-specific resolution.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
-          ! Non-pure function (timer freq. may vary) returning the duration between two ticks (seconds).
+          ! Non-pure function (timer freq. may vary) returning
+          ! the duration between two ticks (seconds).
           REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(               &
      &    tick0, tick1) BIND(C)
             IMPORT :: C_LONG_LONG, C_DOUBLE
