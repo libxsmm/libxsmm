@@ -96,7 +96,7 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
 # include common Makefile artifacts
-include Makefile.inc
+include $(ROOTDIR)Makefile.inc
 
 .PHONY: all
 all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
