@@ -98,25 +98,25 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
-                    substitute["MNK_INTERFACE_LIST"] += "\n  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + ", libxsmm_dmm_" + mnkstr
-                substitute["MNK_INTERFACE_LIST"] += "\n  INTERFACE"
+                    substitute["MNK_INTERFACE_LIST"] += "\n        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + ", libxsmm_dmm_" + mnkstr
+                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
-                        "      IMPORT :: C_FLOAT, LIBXSMM_SGEMM_XARGS\n" \
-                        "      REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
-                        "      TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN) :: xargs\n" \
-                        "    END SUBROUTINE" \
+                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
+                        "            IMPORT :: C_FLOAT, LIBXSMM_SGEMM_XARGS\n" \
+                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
+                        "            TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN) :: xargs\n" \
+                        "          END SUBROUTINE" \
                         "\n" \
-                        "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
-                        "      IMPORT :: C_DOUBLE, LIBXSMM_DGEMM_XARGS\n" \
-                        "      REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
-                        "      TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN) :: xargs\n" \
-                        "    END SUBROUTINE"
-                substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
+                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
+                        "            IMPORT :: C_DOUBLE, LIBXSMM_DGEMM_XARGS\n" \
+                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
+                        "            TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN) :: xargs\n" \
+                        "          END SUBROUTINE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
             substitute["SHAPE_AS2"] = "k"
             substitute["SHAPE_BS1"] = "k" if (1 == aligned_loads) else "libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS)"
