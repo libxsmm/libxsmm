@@ -5,6 +5,7 @@ This document is intended to be a recipe for building and running CP2K's "intel"
 The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub.
 
 ```
+git clone https://github.com/hfp/libxsmm.git
 git clone --branch intel https://github.com/cp2k/cp2k.git cp2k.git
 ln -s cp2k.git/cp2k cp2k
 ```
@@ -27,16 +28,17 @@ For product suites, the compiler and the MPI library can be sourced in one step.
 source /opt/intel/compilers_and_libraries_2016.0.109/linux/bin/compilervars.sh intel64
 ```
 
-To build the application, proceed in the following way.
+To build the CP2K application, building LIBXSMM separately is not required since with the CP2K/intel branch it will be build in an out-of-tree fashion (as log as the LIBXSMMROOT path is supplied).
 
 ```
 cd cp2k/makefiles
-make ARCH=Linux-x86-64-intel VERSION=psmp -j
+make ARCH=Linux-x86-64-intel VERSION=psmp LIBXSMMROOT=/path/to/libxsmm -j
 ```
 
 To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (similar to `ARCH=Linux-x86-64-intel` and `VERSION=psmp`).
 
-* **LIBXSMMROOT**: set `LIBXSMMROOT=` (no path) to disable LIBXSMM and thereby the XSMM driver.
+* **JIT**: set `JIT=0` to disable JIT code generation (enabled by default), and to statically specialize LIBXSMM.
+* **LIBXSMM_MNK**: e.g. `LIBXSMM_MNK="23"` for static specialization (also with JIT, see LIBXSMM's MNK-key).
 * **MPI**: set `MPI=3` to experiment with more recent MPI features e.g., with remote memory access.
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful for performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
@@ -55,8 +57,8 @@ mpirun -np 16 \
 
 For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or any workload under `cp2k/tests/QS/benchmark_single_node`. For latter set of workloads however LIBINT and LIBXC may be required. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
-* **LIBXSMM_ACC_RECONFIGURE=0**: this environment setting avoids reconfiguring CP2K (only enabled when the ACCeleration layer is active; see below). With the ACCeleration layer enabled, a number of properties reconfigured e.g. an increased number of entries per matrix stack.
-* **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. Beside of the listed keywords (ACC, BLAS, MATMUL, and SMM), the CP2K/intel branch is supporting the XSMM keyword (which is also the default).
+* **LIBXSMM_ACC_RECONFIGURE**: environment setting for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if LIBXSMM_ACC_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured.
+* **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. For the CP2K/intel branch the MM_DRIVER is set to XSMM by default (if LIBXSMMROOT was present).
 
 ## LIBINT and LIBXC Dependencies
 
