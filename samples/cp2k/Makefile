@@ -27,17 +27,24 @@ CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
-# Request strongest code conformance
-PEDANTIC ?= 0
-
 STATIC ?= 0
-BLAS ?= 1
 OMP ?= 1
 SYM ?= 0
 DBG ?= 0
+
+# Request strongest code conformance
+PEDANTIC ?= 0
+
+# Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+
+# Select certain code path
 SSE ?= 0
 AVX ?= 0
+
+# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
+ILP64 ?= 0
+BLAS ?= 1
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))

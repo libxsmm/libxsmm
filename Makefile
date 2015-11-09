@@ -26,13 +26,6 @@ ROW_MAJOR ?= 0
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0
 
-# limit to certain code path(s)
-SSE ?= 0
-AVX ?= 0
-
-# Embed InterProcedural Optimization information into libraries
-IPO ?= 0
-
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
@@ -79,14 +72,24 @@ CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
-# Request strongest code conformance
-PEDANTIC ?= 0
-
 STATIC ?= 1
 OMP ?= 0
 SYM ?= 0
 DBG ?= 0
+
+# Request strongest code conformance
+PEDANTIC ?= 0
+
+# Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+
+# Select certain code path
+SSE ?= 0
+AVX ?= 0
+
+# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
+ILP64 ?= 0
+BLAS ?= 0
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -255,14 +258,14 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_prefetch.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
