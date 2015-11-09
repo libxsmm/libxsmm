@@ -28,7 +28,7 @@ ifneq (0,$(INTEL))
 		FCFLAGS += -free
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
-		FCFLAGS += -e03 -extend-source
+		FCFLAGS += -e03
 	else
 		FCFLAGS += -free
 	endif
@@ -127,7 +127,7 @@ else # GCC assumed
 		FCFLAGS += -ffree-form
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-		FCFLAGS += -std=f2003 -ffixed-line-length-132
+		FCFLAGS += -std=f2003
 	else
 		FCFLAGS += -ffree-form
 	endif
