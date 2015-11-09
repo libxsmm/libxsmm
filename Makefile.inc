@@ -127,7 +127,7 @@ else # GCC assumed
 		FCFLAGS += -ffree-form
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-		FCFLAGS += -std=f2003
+		FCFLAGS += -std=f2003 -Werror=c-binding-type
 	else
 		FCFLAGS += -ffree-form
 	endif
@@ -215,6 +215,19 @@ ifeq (,$(LDFLAGS))
 	LDFLAGS = $(CFLAGS)
 endif
 
+MAKE_ILP64 = 0
+ifneq (,$(ILP64))
+	ifneq (0,$(ILP64))
+		MAKE_ILP64 = $(ILP64)
+	endif
+endif
+ifneq (0,$(MAKE_ILP64))
+	BLAS_BITS = 64
+	MKL_BITS = ilp64
+else
+	MKL_BITS = lp64
+endif
+
 ifneq (,$(MKLROOT))
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
@@ -238,19 +251,19 @@ ifeq (1,$(MKL)) # sequential
 	DFLAGS += -D__MKL
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
-		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
+			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
 		endif
 	else # static
 		LDFLAGS += -Wl,--start-group \
-			$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+			$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 			$(MKLROOT)/lib/intel64/libmkl_core.a \
 			$(MKLROOT)/lib/intel64/libmkl_sequential.a \
 		-Wl,--end-group
 		ifneq (0,$(OFFLOAD))
 			LDFLAGS += -offload-option,mic,ld,"--start-group \
-				$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/mic/libmkl_core.a \
 				$(MKLROOT)/lib/mic/libmkl_sequential.a \
 			--end-group"
@@ -265,30 +278,30 @@ else ifneq (0,$(MKL)) # multi-threaded
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		ifneq (0,$(INTEL))
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
+			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
 			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
+				LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
 			endif
 		else # assuming GNU toolchain
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
+			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
 		endif
 	else # static
 		ifneq (0,$(INTEL))
 			LDFLAGS += -Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
 			-Wl,--end-group
 			ifneq (0,$(OFFLOAD))
 				LDFLAGS += -offload-option,mic,ld,"--start-group \
-					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
+					$(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).a \
 					$(MKLROOT)/lib/mic/libmkl_core.a \
 					$(MKLROOT)/lib/mic/libmkl_intel_thread.a \
 				--end-group"
 			endif
 		else # assuming GNU toolchain
 			LDFLAGS += -Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+				$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
 			-Wl,--end-group -ldl
@@ -308,9 +321,9 @@ else ifneq (0,$(MKL)) # multi-threaded
 	LDFLAGS += -lpthread -lm
 else ifneq (0,$(BLAS)) # generic
 	ifneq (Windows_NT,$(OS))
-		LDFLAGS += -lblas
+		LDFLAGS += -lblas$(BLAS_BITS)
 	else
-		LDFLAGS += -lblas.dll
+		LDFLAGS += -lblas$(BLAS_BITS).dll
 	endif
 	CLDFLAGS += -lgfortran
 	ifeq (,$(VERSION))
