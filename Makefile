@@ -119,7 +119,7 @@ endif
 endif
 
 # include common Makefile artifacts
-include $(ROOTDIR)Makefile.inc
+include $(ROOTDIR)/Makefile.inc
 
 ifneq (0,$(STATIC))
 	LIBEXT = a
