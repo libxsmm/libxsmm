@@ -37,7 +37,7 @@ PROGRAM stpm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
+  INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, d
