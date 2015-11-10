@@ -138,7 +138,6 @@ PROGRAM stpm
     !$OMP END PARALLEL
   END IF
 
-#if 0
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (BLAS)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
@@ -168,7 +167,6 @@ PROGRAM stpm
   ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
   if (check.NE.0) call validate(d, c)
-#endif
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (mxm)"
