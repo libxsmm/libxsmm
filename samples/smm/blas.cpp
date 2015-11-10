@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
+    const int flags = LIBXSMM_GEMM_FLAG_ALIGN_C;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
@@ -88,8 +89,8 @@ int main(int argc, char* argv[])
       throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
     }
 
-    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
-    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
+    const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
     const int csize_act = ldc*n;
     const int s = (2ULL << 30) / ((asize + bsize + csize_act) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2*csize_act /*RFO*/) * sizeof(T); // batched
@@ -101,9 +102,9 @@ int main(int argc, char* argv[])
       raii(int asize, int bsize, int csize_act): a(new T[asize]), b(new T[bsize]), c(new T[csize_act]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize_act + aspace - 1);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
-    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNED_MAX);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
+    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -125,7 +126,7 @@ int main(int argc, char* argv[])
       libxsmm_init();
 
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
+        m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
 
       { // warm-up for BLAS Lib
@@ -133,7 +134,7 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
+          libxsmm_blasmm(flags, m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
         }
       }
 
@@ -144,7 +145,7 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
+          libxsmm_blasmm(flags, m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -162,8 +163,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, tmp);
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
+          libxsmm_blasmm(flags, m, n, k, a + i * asize, b + i * bsize, tmp);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -181,9 +182,9 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
-          libxsmm_blasmm(m, n, k, a, b, tmp);
+          libxsmm_blasmm(flags, m, n, k, a, b, tmp);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {

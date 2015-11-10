@@ -56,7 +56,7 @@
 #endif
 
 // aheineck: @TODO This line is broken -> 10% less performance, going back to static buffer size
-//#define CP2K_MAX_SIZE ((LIBXSMM_MAX_MNK) / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+//#define CP2K_MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
 #define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
@@ -87,11 +87,11 @@ public:
 
 public:
   void acquire(const void* address) {
-    omp_set_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNED_MAX, CP2K_SYNCHRONIZATION));
+    omp_set_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
   }
 
   void release(const void* address) {
-    omp_unset_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNED_MAX, CP2K_SYNCHRONIZATION));
+    omp_unset_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
   }
 
 private:
@@ -129,7 +129,6 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 # endif
 #endif
   {
-    LIBXSMM_ASSUME_ALIGNED_STORES(src);
     for (int i = 0; i < nrows; ++i) {
       LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_N), LIBXSMM_LD(LIBXSMM_AVG_M, LIBXSMM_AVG_N))
       for (int j = 0; j < ncols; ++j) {
@@ -166,6 +165,7 @@ int main(int argc, char* argv[])
 {
   try {
     typedef double T;
+    const int flags = LIBXSMM_GEMM_FLAG_ALIGN_C;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
     const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
       throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
     }
 
-    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
-    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
+    const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
@@ -194,8 +194,8 @@ int main(int argc, char* argv[])
       raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
 #if defined(_OPENMP)
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
       libxsmm_init();
 
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major", s, u,
+        m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", s, u,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
 #if defined(CP2K_CHECK)
@@ -237,10 +237,10 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            libxsmm_blasmm(flags, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -254,10 +254,10 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            libxsmm_blasmm(flags, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -278,12 +278,12 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
           const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
-            LIBXSMM_XIMM(m, n, k, pa, pb, tmp, 0);
+            LIBXSMM_XIMM(flags, m, n, k, pa, pb, tmp, 0, 0);
             pa = paj;
             pb = pbj;
           }
@@ -309,7 +309,7 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
           const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -318,15 +318,9 @@ int main(int argc, char* argv[])
 #endif
             const T *const paj = pa + asize, *const pbj = pb + bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            const libxsmm_dgemm_xargs xargs = {
-              LIBXSMM_ALPHA, LIBXSMM_BETA,
-              LIBXSMM_PREFETCH_A(paj + asize)
-              LIBXSMM_PREFETCH_B(pbj + bsize)
-              LIBXSMM_PREFETCH_C(tmp)
-            };
-            libxsmm_mm(m, n, k, pa, pb, tmp, &xargs);
+            libxsmm_mm(flags, m, n, k, pa, pb, tmp, paj + asize, pbj + bsize, tmp);
 #else
-            libxsmm_mm(m, n, k, pa, pb, tmp);
+            libxsmm_mm(flags, m, n, k, pa, pb, tmp);
 #endif
             pa = paj;
             pb = pbj;
@@ -345,7 +339,7 @@ int main(int argc, char* argv[])
 #endif
       }
 
-      const libxsmm_dispatch<T> xmm(m, n, k);
+      const libxsmm_function<T> xmm(m, n, k, flags);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, 0);
@@ -354,19 +348,13 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
           const T *pa = a + i * asize, *pb = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const paj = pa + asize, *const pbj = pb + bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            const libxsmm_dgemm_xargs xargs = {
-              LIBXSMM_ALPHA, LIBXSMM_BETA,
-              LIBXSMM_PREFETCH_A(paj + asize)
-              LIBXSMM_PREFETCH_B(pbj + bsize)
-              LIBXSMM_PREFETCH_C(tmp)
-            };
-            xmm(pa, pb, tmp, &xargs);
+            xmm(pa, pb, tmp, paj + asize, pbj + bsize, tmp);
 #else
             xmm(pa, pb, tmp);
 #endif

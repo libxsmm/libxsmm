@@ -44,7 +44,7 @@ PROGRAM stpm
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b, d
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, c, g1, g2, g3, d
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm1, xmm2, xmm3
   TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
