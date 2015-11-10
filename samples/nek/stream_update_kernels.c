@@ -71,7 +71,7 @@ void stream_update_axhm( const double* i_g1,
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
     const __m256d vec_h2 = _mm256_broadcast_sd(&i_h2);
@@ -96,11 +96,10 @@ void stream_update_axhm( const double* i_g1,
       _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1, vec_a ) );
     }
   }
-#if 0
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
   {
-    const __m512d vec_h1 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h1));
-    const __m512d vec_h2 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h2));
+    const __m512d vec_h1 = _mm512_broadcastsd_pd(_mm_load_sd(&i_h1));
+    const __m512d vec_h2 = _mm512_broadcastsd_pd(_mm_load_sd(&i_h2));
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m512d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm512_loadu_pd(&(i_g1[l_n]));
@@ -112,8 +111,8 @@ void stream_update_axhm( const double* i_g1,
       vec_tm2 = _mm512_loadu_pd(&(i_tm2[l_n]));
       vec_g2 = _mm512_mul_pd(vec_g2, vec_tm2);
       vec_g3 = _mm512_loadu_pd(&(i_g3[l_n]));
-      /*_mm_prefetch((const char*)&(i_g3[l_n]), _MM_HINT_T2);*/
-      vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n+i_length]));
+      /*_mm_prefetch((const char*)&(i_g3[l_n+i_length]), _MM_HINT_T2);*/
+      vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n]));
       vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
       vec_a = _mm512_loadu_pd(&(i_a[l_n]));
       /*_mm_prefetch((const char*)&(i_a[l_n+i_length]), _MM_HINT_T2);*/
@@ -127,7 +126,6 @@ void stream_update_axhm( const double* i_g1,
       _mm512_stream_pd( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
     }
   }
-#endif
 #else
   for ( ; l_n < l_trip_stream;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
