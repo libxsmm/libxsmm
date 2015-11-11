@@ -35,18 +35,18 @@
 #include <immintrin.h>
 #endif
 
-void stream_update_axhm( const double* i_g1,
-                         const double* i_g2,
-                         const double* i_g3, 
-                         const double* i_tm1,
-                         const double* i_tm2,
-                         const double* i_tm3,
-                         const double* i_a,
-                         const double* i_b,
-                         double*       io_c,
-                         const double  i_h1,
-                         const double  i_h2,
-                         const int     i_length) {
+void stream_update_helmholtz( const double* i_g1,
+                              const double* i_g2,
+                              const double* i_g3, 
+                              const double* i_tm1,
+                              const double* i_tm2,
+                              const double* i_tm3,
+                              const double* i_a,
+                              const double* i_b,
+                              double*       io_c,
+                              const double  i_h1,
+                              const double  i_h2,
+                              const int     i_length) {
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;

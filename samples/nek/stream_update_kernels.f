@@ -34,9 +34,9 @@ MODULE STREAM_UPDATE_KERNELS
   IMPLICIT NONE
 
   INTERFACE
-    SUBROUTINE stream_update_axhm( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
+    SUBROUTINE stream_update_helmholtz( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
                                    i_a, i_b, io_c, i_h1, i_h2, i_length ) & 
-                                  BIND(C, name='stream_update_axhm')
+                                  BIND(C, name='stream_update_helmholtz')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g2
