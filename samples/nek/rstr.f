@@ -134,97 +134,10 @@ PROGRAM stpm
     enddo
   END DO 
   dx = 1.
-  dy = transpose(dx)
+  dy = 1.
+  dz = 1.
 
   WRITE(*, "(6(A,I0),A,I0)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
-
-  IF (0.GT.routine) THEN
-    WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
-    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-    tm1 = 0; tm2 = 0;
-    !$OMP MASTER
-    start = libxsmm_timer_tick()
-    !$OMP END MASTER
-    !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_mm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
-      do j = 1, k
-          call libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), xargs)
-      enddo
-      call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dy, c(:,:,1,i), xargs)
-    END DO
-    !$OMP MASTER
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-    !$OMP END MASTER
-    ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2)
-    !$OMP END PARALLEL
-  ELSE if (routine == 100) then
-    WRITE(*, "(A)") "Streamed... (mxm)"
-    !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-    !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
-    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-    tm1 = 0; tm2 = 0;
-    !$OMP MASTER
-    start = libxsmm_timer_tick()
-    !$OMP END MASTER
-    !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call mxmf2(dx, mm, a(:,:,:,i), m, tm1, n*k, xargs)
-      do j = 1, k
-          call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn, xargs)
-      enddo
-      call mxmf2(tm2, mm*nn, dy, k, c(:,:,:,i), kk, xargs)
-    END DO
-    !$OMP MASTER
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-    !$OMP END MASTER
-    ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2)
-    !$OMP END PARALLEL
-  ELSE
-    WRITE(*, "(A)") "Streamed... (specialized)"
-    f1 = libxsmm_dispatch(mm, n*k, m, alpha, beta)
-    f2 = libxsmm_dispatch(mm, nn, n, alpha, beta)
-    f3 = libxsmm_dispatch(mm*nn, kk, k, alpha, beta)
-    if (C_ASSOCIATED(f1)) then
-      CALL C_F_PROCPOINTER(f1, xmm1)
-    else
-      write(*,*) "f1 not built"
-    endif
-    if (C_ASSOCIATED(f2)) then
-      CALL C_F_PROCPOINTER(f2, xmm2)
-    else
-      write(*,*) "f2 not built"
-    endif
-    if (C_ASSOCIATED(f3)) then
-      CALL C_F_PROCPOINTER(f3, xmm3)
-    else
-      write(*,*) "f3 not built"
-    endif
-    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk, xmm1, xmm2, xmm3)
-    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-    tm1 = 0; tm2 = 0
-    !$OMP MASTER
-    start = libxsmm_timer_tick()
-    !$OMP END MASTER
-    !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL xmm1(dx, a(1,1,1,i), tm1, xargs)
-      do j = 1, k
-          call xmm2(tm1(1,1,j), dy, tm2(1,1,j), xargs)
-      enddo
-      CALL xmm3(tm2, dy, c(1,1,1,i), xargs)
-    END DO
-    !$OMP MASTER
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-    !$OMP END MASTER
-    ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2)
-    !$OMP END PARALLEL
-  END IF
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
@@ -235,37 +148,141 @@ PROGRAM stpm
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) &
     !$OMP   SHARED(duration, xargs, a, dx, dy, dz, d, m, n, k, mm, nn, kk)
-    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm*nn, kk, 1))
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
     tm1 = 0; tm2 = 0;
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_blasmm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
+      tm1 = reshape(matmul(dx, reshape(a(:,:,:,i), (/m,n*k/))), (/mm, n, k/))
       do j = 1, k
-          call libxsmm_blasmm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), xargs)
+          tm2(:,:,j) = matmul(tm1(:,:,j), dy)
       enddo
       ! because we can't reshape d
-      call libxsmm_blasmm(mm*nn, kk, k, reshape(tm2, (/mm*nn, k/)), dy, tm3(:,:,1), xargs)
-      d(:,:,:,i) = reshape(tm3, (/mm,nn,kk/))
+      d(:,:,:,i) = reshape(matmul(reshape(tm2, (/mm*nn, k/)), dz), (/mm,nn,kk/))
     END DO
     ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2, tm3)
+    DEALLOCATE(tm1, tm2)
     !$OMP END PARALLEL
   END IF
 
-  IF (0.LT.duration) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-      (s * ((2*m-1)*mm*n*k + mm*(2*n-1)*nn*k + mm*nn*(2*k-1)*kk) * 1D-9 / duration), " GFLOPS/s"
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-      (s * (m * n * k + mm*nn*kk) * T / (duration * ISHFT(1_8, 30))), " GB/s"
-  ENDIF
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-  IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c - d) * (c - d))
-    DEALLOCATE(d)
-  END IF
+  WRITE(*, "(A)") "Streamed... (auto-dispatched)"
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+  tm1 = 0; tm2 = 0;
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  !$OMP DO
+  DO i = LBOUND(a, 4), UBOUND(a, 4)
+    call libxsmm_mm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), xargs)
+    do j = 1, k
+        call libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), xargs)
+    enddo
+    call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i), xargs)
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2)
+  !$OMP END PARALLEL
+
+  call performance(duration, m, n, k, mm, nn, kk, s)
+  if (check.NE.0) call validate(c, d)
+
+  WRITE(*, "(A)") "Streamed... (mxm)"
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+  tm1 = 0; tm2 = 0;
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  !$OMP DO
+  DO i = LBOUND(a, 4), UBOUND(a, 4)
+    call mxmf2(dx, mm, a(:,:,:,i), m, tm1, n*k, xargs)
+    do j = 1, k
+        call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn, xargs)
+    enddo
+    call mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk, xargs)
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2)
+  !$OMP END PARALLEL
+
+  call performance(duration, m, n, k, mm, nn, kk, s)
+  if (check.NE.0) call validate(c, d)
+
+  WRITE(*, "(A)") "Streamed... (specialized)"
+  f1 = libxsmm_dispatch(mm, n*k, m, alpha, beta)
+  f2 = libxsmm_dispatch(mm, nn, n, alpha, beta)
+  f3 = libxsmm_dispatch(mm*nn, kk, k, alpha, beta)
+  if (C_ASSOCIATED(f1)) then
+    CALL C_F_PROCPOINTER(f1, xmm1)
+  else
+    write(*,*) "f1 not built"
+  endif
+  if (C_ASSOCIATED(f2)) then
+    CALL C_F_PROCPOINTER(f2, xmm2)
+  else
+    write(*,*) "f2 not built"
+  endif
+  if (C_ASSOCIATED(f3)) then
+    CALL C_F_PROCPOINTER(f3, xmm3)
+  else
+    write(*,*) "f3 not built"
+  endif
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, c, m, n, k, mm, nn, kk, xmm1, xmm2, xmm3)
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
+  tm1 = 0; tm2 = 0
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  !$OMP DO
+  DO i = LBOUND(a, 4), UBOUND(a, 4)
+    CALL xmm1(dx, a(1,1,1,i), tm1, xargs)
+    do j = 1, k
+        call xmm2(tm1(1,1,j), dy, tm2(1,1,j), xargs)
+    enddo
+    CALL xmm3(tm2, dz, c(1,1,1,i), xargs)
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2)
+  !$OMP END PARALLEL
+
+  call performance(duration, m, n, k, mm, nn, kk, s)
+  if (check.NE.0) call validate(c, d)
 
   ! Deallocate global arrays
   DEALLOCATE(a)
   DEALLOCATE(dx, dy, dz)
   DEALLOCATE(c)
+
+contains
+  subroutine validate(ref, test)
+    real(T), dimension(:,:,:,:), intent(in) :: ref, test
+
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
+  end subroutine validate
+
+  subroutine performance(duration, m, n, k, mm, nn, kk, s)
+    real(8), intent(in) :: duration
+    integer, intent(in) :: m, n, k, mm, nn, kk
+    integer(8), intent(in) :: s
+
+    IF (0.LT.duration) THEN
+      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
+        (s * ((2*m-1)*mm*n*k + mm*(2*n-1)*nn*k + mm*nn*(2*k-1)*kk) * 1D-9 / duration), " GFLOPS/s"
+      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
+        (s * (m * n * k + mm*nn*kk) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+    ENDIF
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
+  end subroutine performance
+
 END PROGRAM

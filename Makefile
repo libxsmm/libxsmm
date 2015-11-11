@@ -454,7 +454,7 @@ cp2k_mic: lib_mic
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh
+drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
@@ -566,6 +566,42 @@ $(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
+
+$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	@echo "#!/bin/bash" > $@
+	@echo >> $@
+	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
+	@echo "RUNS='$(INDICES)'" >> $@
+	@echo "RUNT='$(INDICES)'" >> $@
+	@echo >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  FILE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "cat /dev/null > \$${FILE}" >> $@
+	@echo >> $@
+	@echo "NRUN=1" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "for RUN1 in \$${RUNS} ; do" >> $@
+	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MMVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NNVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+
+	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
+	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "done" >> $@
+	@echo "done" >> $@
+	@echo >> $@
+	@chmod +x $@
+
 
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt
