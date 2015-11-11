@@ -98,21 +98,26 @@ void stream_update_axhm( const double* i_g1,
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
   {
-    const __m512d vec_h1 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h1));
-    const __m512d vec_h2 = _mm512_broadcast_f64x4(_mm256_broadcast_sd(&i_h2));
+    const __m512d vec_h1 = _mm512_broadcastsd_pd(_mm_load_sd(&i_h1));
+    const __m512d vec_h2 = _mm512_broadcastsd_pd(_mm_load_sd(&i_h2));
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m512d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm512_loadu_pd(&(i_g1[l_n]));
+      /*_mm_prefetch((const char*)&(i_g1[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm1 = _mm512_loadu_pd(&(i_tm1[l_n]));
       vec_g1 = _mm512_mul_pd(vec_g1, vec_tm1);
       vec_g2 = _mm512_loadu_pd(&(i_g2[l_n]));
+      /*_mm_prefetch((const char*)&(i_g2[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm2 = _mm512_loadu_pd(&(i_tm2[l_n]));
       vec_g2 = _mm512_mul_pd(vec_g2, vec_tm2);
       vec_g3 = _mm512_loadu_pd(&(i_g3[l_n]));
+      /*_mm_prefetch((const char*)&(i_g3[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n]));
       vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
       vec_a = _mm512_loadu_pd(&(i_a[l_n]));
+      /*_mm_prefetch((const char*)&(i_a[l_n+i_length]), _MM_HINT_T2);*/
       vec_b = _mm512_loadu_pd(&(i_b[l_n]));
+      /*_mm_prefetch((const char*)&(i_b[l_n+i_length]), _MM_HINT_T2);*/
       vec_a = _mm512_mul_pd(vec_a, vec_b);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g2);
       vec_a = _mm512_mul_pd(vec_a, vec_h2);

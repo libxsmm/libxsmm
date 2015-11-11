@@ -26,13 +26,6 @@ ROW_MAJOR ?= 0
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0
 
-# limit to certain code path(s)
-SSE ?= 0
-AVX ?= 0
-
-# Embed InterProcedural Optimization information into libraries
-IPO ?= 0
-
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
@@ -77,16 +70,26 @@ DOCDIR = documentation
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = -D__extern_always_inline=inline
-IFLAGS = -I$(ROOTDIR)/include -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
-
-# Request strongest code conformance
-PEDANTIC ?= 0
+IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
 STATIC ?= 1
 OMP ?= 0
 SYM ?= 0
 DBG ?= 0
+
+# Request strongest code conformance
+PEDANTIC ?= 0
+
+# Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+
+# Select certain code path
+SSE ?= 0
+AVX ?= 0
+
+# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
+ILP64 ?= 0
+BLAS ?= 0
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -118,212 +121,8 @@ $(error SSE needs to be 0 for JIT support!)
 endif
 endif
 
-ICPC    = $(notdir $(shell which icpc     2> /dev/null))
-ICC     = $(notdir $(shell which icc      2> /dev/null))
-IFORT   = $(notdir $(shell which ifort    2> /dev/null))
-GPP     = $(notdir $(shell which g++      2> /dev/null))
-GCC     = $(notdir $(shell which gcc      2> /dev/null))
-GFC     = $(notdir $(shell which gfortran 2> /dev/null))
-
-CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
-CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
-FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
-
-# prefer Intel Compiler (if available)
-CXX = $(ICPC)
-FC = $(IFORT)
-CC = $(ICC)
-
-INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))))
-
-ifneq (0,$(INTEL))
-	AR = xiar
-	CXXFLAGS += -fPIC -Wall
-	CFLAGS += -fPIC -Wall
-	FCMTFLAGS += -threads
-	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC -lrt
-	ifeq (1,$(PEDANTIC))
-		CFLAGS += -std=c89 -Wcheck
-	else ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -Wcheck -Wremarks
-	endif
-	ifeq (0,$(DBG))
-		CXXFLAGS += -fno-alias -ansi-alias -O2
-		CFLAGS += -fno-alias -ansi-alias -O2
-		FCFLAGS += -O2
-		DFLAGS += -DNDEBUG
-		ifneq (0,$(IPO))
-			CXXFLAGS += -ipo
-			CFLAGS += -ipo
-			FCFLAGS += -ipo
-		endif
-	else
-		CXXFLAGS += -O0
-		CFLAGS += -O0
-		FCFLAGS += -O0
-		SYM = $(DBG)
-	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
-		ifeq (1,$(AVX))
-			TARGET = -xAVX
-		else ifeq (2,$(AVX))
-			TARGET = -xCORE-AVX2
-		else ifeq (3,$(AVX))
-			ifeq (0,$(MIC))
-				TARGET = -xCOMMON-AVX512
-			else
-				TARGET = -xMIC-AVX512
-			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -xSSE$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -xSSE3
-		else
-			TARGET = -xHost
-		endif
-	endif
-	ifneq (0,$(SYM))
-		ifneq (1,$(SYM))
-			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
-		else
-			CXXFLAGS := -g $(CXXFLAGS)
-			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g -check -traceback $(FCFLAGS)
-		endif
-	endif
-	ifeq (0,$(EXP))
-		CXXFLAGS += -fno-exceptions
-	endif
-	ifneq (0,$(OMP))
-		CXXFLAGS += -openmp
-		CFLAGS += -openmp
-		FCFLAGS += -openmp
-		LDFLAGS += -openmp
-	endif
-	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
-		CFLAGS += -no-offload
-		FCFLAGS += -no-offload
-	endif
-	ifeq (1,$(STATIC))
-		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
-	else ifneq (0,$(STATIC))
-		SLDFLAGS += -static
-	endif
-	FCMODDIRFLAG = -module
-else # GCC assumed
-	ifeq (,$(CXX_CHECK))
-		CXX = $(GPP)
-	endif
-	ifeq (,$(CC_CHECK))
-		CC = $(GCC)
-	endif
-	ifeq (,$(FC_CHECK))
-		FC = $(GFC)
-	endif
-	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
-	MIC = 0
-	CXXFLAGS += -Wall -Wno-unused-function
-	CFLAGS += -Wall -Wno-unused-function
-	LDFLAGS += -lrt
-	ifneq (Windows_NT,$(OS))
-		CXXFLAGS += -fPIC
-		CFLAGS += -fPIC
-		FCFLAGS += -fPIC
-		LDFLAGS += -fPIC
-	endif
-	ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-	endif
-	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		DFLAGS += -DNDEBUG
-		ifneq (0,$(IPO))
-			CXXFLAGS += -flto -ffat-lto-objects
-			CFLAGS += -flto -ffat-lto-objects
-			FCFLAGS += -flto -ffat-lto-objects
-			LDFLAGS += -flto
-		endif
-	else
-		CXXFLAGS += -O0
-		CFLAGS += -O0
-		FCFLAGS += -O0
-		SYM = $(DBG)
-	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
-		ifeq (1,$(AVX))
-			TARGET = -mavx
-		else ifeq (2,$(AVX))
-			TARGET = -mavx2
-		else ifeq (3,$(AVX))
-			TARGET = -mavx512f -mavx512cd
-			ifneq (0,$(MIC))
-				TARGET += -mavx512er -mavx512pf
-			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -msse$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -msse3
-		else
-			TARGET = -march=native
-		endif
-	endif
-	ifneq (0,$(SYM))
-		ifneq (1,$(SYM))
-			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
-		else
-			CXXFLAGS := -g $(CXXFLAGS)
-			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
-		endif
-	endif
-	ifeq (0,$(EXP))
-		CXXFLAGS += -fno-exceptions
-	endif
-	ifneq (0,$(OMP))
-		CXXFLAGS += -fopenmp
-		CFLAGS += -fopenmp
-		FCFLAGS += -fopenmp
-		LDFLAGS += -fopenmp
-	endif
-	ifneq (0,$(STATIC))
-		SLDFLAGS += -static
-	endif
-	FCMODDIRFLAG = -J
-endif
-
-ifneq (,$(CXX))
-	LD = $(CXX)
-endif
-ifeq (,$(LD))
-	LD = $(CC)
-endif
-ifeq (,$(LD))
-	LD = $(FC)
-endif
-
-ifeq (,$(CXXFLAGS))
-	CXXFLAGS = $(CFLAGS)
-endif
-ifeq (,$(CFLAGS))
-	CFLAGS = $(CXXFLAGS)
-endif
-ifeq (,$(FCFLAGS))
-	FCFLAGS = $(CFLAGS)
-endif
-ifeq (,$(LDFLAGS))
-	LDFLAGS = $(CFLAGS)
-endif
+# include common Makefile artifacts
+include $(ROOTDIR)/Makefile.inc
 
 ifneq (0,$(STATIC))
 	LIBEXT = a
@@ -354,11 +153,12 @@ SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c generator_dense.c generator_dense_common.c generator_dense_instructions.c \
                                             generator_dense_sse3_avx_avx2.c generator_dense_sse3_microkernel.c generator_dense_avx_microkernel.c generator_dense_avx2_microkernel.c \
                                             generator_dense_avx512_microkernel.c generator_dense_imci_avx512.c generator_dense_imci_microkernel.c generator_dense_noarch.c \
-                                            generator_sparse.c generator_sparse_csc_reader.c generator_sparse_bsparse.c generator_sparse_asparse.c)
+                                            generator_sparse.c generator_sparse_csc_reader.c generator_sparse_bsparse.c generator_sparse_asparse.c \
+                                            libxsmm_timer.c)
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o $(BLDDIR)/intel64/libxsmm_timer.o
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o $(BLDDIR)/mic/libxsmm_timer.o
 
 .PHONY: lib_all
@@ -458,14 +258,14 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_prefetch.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
-fheader: $(INCDIR)/libxsmm.f90
-$(INCDIR)/libxsmm.f90: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f90
+fheader: $(INCDIR)/libxsmm.f
+$(INCDIR)/libxsmm.f: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f90 $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) $(ALIGNED_ST) $(ALIGNED_LD) \
 		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
@@ -490,7 +290,7 @@ endif
 
 .PHONY: compile_generator
 compile_generator: $(OBJFILES_GEN_BIN)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(ROOTDIR)/Makefile
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
@@ -654,7 +454,7 @@ cp2k_mic: lib_mic
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=$(MIC)
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf90-perf.sh $(SPLDIR)/nek/stpm-perf.sh
+drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/stpm-perf.sh $(SPLDIR)/nek/axhm-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
@@ -683,12 +483,12 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/smm/smmf90-perf.sh: $(ROOTDIR)/Makefile
+$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "FILE=\$${HERE}/smmf90-perf.txt" >> $@
+	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
 	@echo "RUNS='$(INDICES)'" >> $@
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -739,6 +539,34 @@ $(SPLDIR)/nek/stpm-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	@echo "#!/bin/bash" > $@
+	@echo >> $@
+	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
+	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
+	@echo "RUNS='$(INDICES)'" >> $@
+	@echo >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  FILE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "cat /dev/null > \$${FILE}" >> $@
+	@echo >> $@
+	@echo "NRUN=1" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "for RUN in \$${RUNS} ; do" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
+	@echo "  CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
+	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "done" >> $@
+	@echo >> $@
+	@chmod +x $@
+
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
@@ -747,22 +575,26 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
-.PHONY: testf90
-testf90: $(SPLDIR)/smm/smmf90-perf.txt
-$(SPLDIR)/smm/smmf90-perf.txt: $(SPLDIR)/smm/smmf90-perf.sh lib_all
+.PHONY: testf
+testf: $(SPLDIR)/smm/smmf-perf.txt
+$(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 	@cd $(SPLDIR)/smm && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
-	@$(SPLDIR)/smm/smmf90-perf.sh $@
+	@$(SPLDIR)/smm/smmf-perf.sh $@
 
 .PHONY: testnek
-testnek: $(SPLDIR)/nek/stpm-perf.txt
+testnek: $(SPLDIR)/nek/stpm-perf.txt $(SPLDIR)/nek/axhm-perf.txt
 $(SPLDIR)/nek/stpm-perf.txt: $(SPLDIR)/nek/stpm-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
 	@$(SPLDIR)/nek/stpm-perf.sh $@
-
+$(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_all
+	@cd $(SPLDIR)/nek && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+	@$(SPLDIR)/nek/axhm-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@mkdir -p $(dir $@)
@@ -859,9 +691,9 @@ else
 endif
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
-	@rm -f $(SPLDIR)/smm/smmf90-perf.sh
+	@rm -f $(SPLDIR)/smm/smmf-perf.sh
 	@rm -f $(SPLDIR)/nek/stpm-perf.sh
-	@rm -f $(INCDIR)/libxsmm.f90
+	@rm -f $(INCDIR)/libxsmm.f
 	@rm -f $(INCDIR)/libxsmm.h
 
 install: all clean

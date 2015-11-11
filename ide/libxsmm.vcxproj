@@ -82,7 +82,7 @@
   <ItemGroup>
     <None Include="..\.gitignore" />
     <None Include="..\.travis.yml" />
-    <None Include="..\include\libxsmm.f90" />
+    <None Include="..\include\libxsmm.f" />
     <None Include="..\make.sh" />
     <None Include="..\Makefile" />
     <None Include="..\README.md" />
@@ -91,7 +91,7 @@
     <None Include="..\scripts\libxsmm_interface.py" />
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
-    <None Include="..\src\libxsmm.template.f90" />
+    <None Include="..\src\libxsmm.template.f" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmm</ProjectName>
@@ -212,7 +212,7 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
@@ -253,7 +253,7 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
@@ -296,7 +296,7 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
@@ -338,7 +338,7 @@
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
@@ -372,7 +372,7 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>
@@ -410,7 +410,7 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>177,10373</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
     </ClCompile>

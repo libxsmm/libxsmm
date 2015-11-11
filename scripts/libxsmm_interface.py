@@ -41,16 +41,17 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # optional argument(s)
-        row_major = int(sys.argv[2]) if (2 < argc) else 0
-        alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[3])) if (3 < argc) else 64
-        aligned_stores = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 1
-        aligned_loads = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 1
-        prefetch = int(sys.argv[6]) if (6 < argc) else 0
-        jit = int(sys.argv[7]) if (7 < argc) else 0
-        threshold = int(sys.argv[8]) if (8 < argc) else 0
-        alpha = int(sys.argv[9]) if (9 < argc) else 1
-        beta = int(sys.argv[10]) if (10 < argc) else 1
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[11:], 0, threshold) if (11 < argc) else list()
+        ilp64 = int(sys.argv[2]) if (2 < argc) else 0
+        row_major = int(sys.argv[3]) if (3 < argc) else 0
+        alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 64
+        aligned_stores = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 1
+        aligned_loads = libxsmm_utilities.sanitize_alignment(int(sys.argv[6])) if (6 < argc) else 1
+        prefetch = int(sys.argv[7]) if (7 < argc) else 0
+        jit = int(sys.argv[8]) if (8 < argc) else 0
+        threshold = int(sys.argv[9]) if (9 < argc) else 0
+        alpha = int(sys.argv[10]) if (10 < argc) else 1
+        beta = int(sys.argv[11]) if (11 < argc) else 1
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[12:], 0, threshold) if (12 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -87,38 +88,38 @@ if __name__ == "__main__":
         }
 
         if (fnmatch.fnmatch(filename, "*.h*")):
+            substitute["INTEGER_TYPE"] = "int" if (0 == ilp64) else "long long"
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(float alpha, float beta, const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c\n" \
-                    "  LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const float *LIBXSMM_RESTRICT, pc));\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(double alpha, double beta, const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c\n" \
-                    "  LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pa) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pb) LIBXSMM_PREFETCH_DECL(const double *LIBXSMM_RESTRICT, pc));\n"
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c, const libxsmm_sgemm_xargs* xargs);\n" \
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c, const libxsmm_dgemm_xargs* xargs);\n"
             print template.substitute(substitute)
         else:
+            substitute["INTEGER_TYPE"] = "SELECTED_INT_KIND(9)" if (0 == ilp64) else "SELECTED_INT_KIND(18)"
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
-                    substitute["MNK_INTERFACE_LIST"] += "\n  !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + ", libxsmm_dmm_" + mnkstr
-                substitute["MNK_INTERFACE_LIST"] += "\n  INTERFACE"
+                    substitute["MNK_INTERFACE_LIST"] += "\n        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_" + mnkstr + ", libxsmm_dmm_" + mnkstr
+                substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "    PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
-                        "      IMPORT :: C_FLOAT\n" \
-                        "      REAL(C_FLOAT), VALUE, INTENT(IN) :: alpha, beta\n" \
-                        "      REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
-                        "    END SUBROUTINE" \
+                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
+                        "            IMPORT :: C_FLOAT, LIBXSMM_SGEMM_XARGS\n" \
+                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
+                        "            TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN) :: xargs\n" \
+                        "          END SUBROUTINE" \
                         "\n" \
-                        "    PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(alpha, beta, a, b, c) BIND(C)\n" \
-                        "      IMPORT :: C_DOUBLE\n" \
-                        "      REAL(C_DOUBLE), VALUE, INTENT(IN) :: alpha, beta\n" \
-                        "      REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
-                        "      REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
-                        "    END SUBROUTINE"
-                substitute["MNK_INTERFACE_LIST"] += "\n  END INTERFACE"
+                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
+                        "            IMPORT :: C_DOUBLE, LIBXSMM_DGEMM_XARGS\n" \
+                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
+                        "            TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN) :: xargs\n" \
+                        "          END SUBROUTINE"
+                substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             substitute["SHAPE_AS1"] = "m" if (1 == aligned_loads) else "libxsmm_align_value(m,T,LIBXSMM_ALIGNED_LOADS)"
             substitute["SHAPE_AS2"] = "k"
             substitute["SHAPE_BS1"] = "k" if (1 == aligned_loads) else "libxsmm_align_value(k,T,LIBXSMM_ALIGNED_LOADS)"

@@ -34,8 +34,7 @@ PROGRAM smm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = LIBXSMM_DOUBLE_PRECISION
-  REAL(T), PARAMETER :: alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA
+  INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
 
   REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
   REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
@@ -52,32 +51,32 @@ PROGRAM smm
   REAL(8) :: duration
   duration = 0
 
-  argc = IARGC()
+  argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
-    CALL GETARG(1, argv)
+    CALL GET_COMMAND_ARGUMENT(1, argv)
     READ(argv, "(I32)") m
   ELSE
     m = 23
   END IF
   IF (2 <= argc) THEN
-    CALL GETARG(2, argv)
+    CALL GET_COMMAND_ARGUMENT(2, argv)
     READ(argv, "(I32)") n
   ELSE
     n = m
   END IF
   IF (3 <= argc) THEN
-    CALL GETARG(3, argv)
+    CALL GET_COMMAND_ARGUMENT(3, argv)
     READ(argv, "(I32)") k
   ELSE
     k = m
   END IF
   IF (4 <= argc) THEN
-    CALL GETARG(4, argv)
+    CALL GET_COMMAND_ARGUMENT(4, argv)
     READ(argv, "(I32)") i
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-  s = LSHIFT(INT8(MAX(i, 0)), 30) / ((m * k + k * n + m * n) * T)
+  s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
 
   ALLOCATE(c(m,n))
   ALLOCATE(a(m,k,s))
@@ -108,7 +107,7 @@ PROGRAM smm
     tmp(:,:) = 0
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
-      CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
+      CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
     END DO
     !$OMP CRITICAL
     d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
@@ -127,7 +126,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -149,33 +148,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blasmm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
-  END DO
-  !$OMP MASTER
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-  !$OMP END MASTER
-  !$OMP CRITICAL
-  c(:,:) = c(:,:) + tmp(:UBOUND(c,1),:)
-  !$OMP END CRITICAL
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tmp)
-  !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, s)
-  IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-  END IF
-  c(:,:) = 0
-
-  WRITE(*, "(A)") "Streamed... (inlined)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) SHARED(m, n, k, a, b, c, duration)
-  ALLOCATE(tmp(libxsmm_align_value(libxsmm_ld(m,n),T,LIBXSMM_ALIGNED_STORES),libxsmm_ld(n,m)))
-  tmp(:,:) = 0
-  !$OMP MASTER
-  start = libxsmm_timer_tick()
-  !$OMP END MASTER
-  !$OMP DO
-  DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_imm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_blasmm(m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -201,7 +174,7 @@ PROGRAM smm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_mm(alpha, beta, m, n, k, a(:,:,i), b(:,:,i), tmp)
+    CALL libxsmm_mm(m, n, k, a(:,:,i), b(:,:,i), tmp)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -218,7 +191,7 @@ PROGRAM smm
   END IF
   c(:,:) = 0
 
-  f = libxsmm_dispatch(alpha, beta, m, n, k)
+  f = libxsmm_dispatch(m, n, k, T)
   IF (C_ASSOCIATED(f)) THEN
     CALL C_F_PROCPOINTER(f, xmm)
     WRITE(*, "(A)") "Streamed... (specialized)"
@@ -230,7 +203,7 @@ PROGRAM smm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
-      CALL xmm(alpha, beta, a(:,:,i), b(:,:,i), tmp)
+      CALL xmm(a(:,:,i), b(:,:,i), tmp, LIBXSMM_DGEMM_XARGS_CTOR())
     END DO
     !$OMP MASTER
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -306,7 +279,7 @@ CONTAINS
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
         (2D0 * s * m * n * k * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (s * (m * k + k * n) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+        (s * (m * k + k * n) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     ENDIF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   END SUBROUTINE

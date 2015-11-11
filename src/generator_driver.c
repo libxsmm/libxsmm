@@ -208,8 +208,9 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, l_alpha, l_beta,
-    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0), LIBXSMM_MAX(l_lda, 0), LIBXSMM_MAX(l_ldb, 0), LIBXSMM_MAX(l_ldc, 0),
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc,
+    LIBXSMM_MAX(l_m, 0), LIBXSMM_MAX(l_n, 0), LIBXSMM_MAX(l_k, 0),
+    l_alpha, l_beta, l_lda, l_ldb, l_ldc,
     (0 == l_single_precision ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
       | (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
       | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),

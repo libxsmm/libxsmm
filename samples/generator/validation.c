@@ -41,7 +41,7 @@
 #include <mkl.h>
 #endif
 
-//#define STREAM_A_B
+/*#define STREAM_A_B*/
 #ifdef STREAM_A_B
 #define STREAM_A_B_SIZE 1000
 #define STREAM_A_B_PREFETCH
@@ -78,14 +78,14 @@ void dense_test_mul(const REALTYPE* a, const REALTYPE* b, REALTYPE* c);
 #endif
 
 #define REPS 100000
-//#define REPS 1
+/*#define REPS 1*/
 
-inline double sec(struct timeval start, struct timeval end) {
+static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
 void run_test() {
-  // allocate
+  /* allocate */
 #ifdef STREAM_A_B
   REALTYPE* l_a = (REALTYPE*)_mm_malloc(MY_LDA * MY_K * sizeof(REALTYPE) * STREAM_A_B_SIZE, 64);
   REALTYPE* l_b = (REALTYPE*)_mm_malloc(MY_LDB * MY_N * sizeof(REALTYPE) * STREAM_A_B_SIZE, 64);
@@ -96,6 +96,7 @@ void run_test() {
 #endif
   REALTYPE* l_c = (REALTYPE*)_mm_malloc(MY_LDC * MY_N * sizeof(REALTYPE), 64);
   REALTYPE* l_c_gold = (REALTYPE*)_mm_malloc(MY_LDC * MY_N * sizeof(REALTYPE), 64);
+  REALTYPE l_max_error = 0.0;
 
   unsigned int l_i;
   unsigned int l_j;
@@ -104,13 +105,16 @@ void run_test() {
   unsigned int l_n;
   unsigned int l_k;
 
+  struct timeval l_start, l_end;
+  double l_total;
+
 #ifdef STREAM_A_B
   for ( l_s = 0; l_s < STREAM_A_B_SIZE; l_s++ ) {
     REALTYPE* l_p_a = l_a + (l_s * MY_K * MY_LDA);
 #else
     REALTYPE* l_p_a = l_a;
 #endif
-    // touch A
+    /* touch A */
     for ( l_i = 0; l_i < MY_LDA; l_i++) {
       for ( l_j = 0; l_j < MY_K; l_j++) {
 #if REPS==1
@@ -128,23 +132,25 @@ void run_test() {
   for ( l_s = 0; l_s < STREAM_A_B_SIZE; l_s++ ) {
     REALTYPE* l_p_b = l_b + (l_s * MY_N * MY_LDB);
 #else
-    REALTYPE* l_p_b = l_b;
+    {
+      REALTYPE* l_p_b = l_b;
 #endif
-    // touch B
-    for ( l_i = 0; l_i < MY_LDB; l_i++ ) {
-      for ( l_j = 0; l_j < MY_N; l_j++ ) {
+      /* touch B */
+      for ( l_i = 0; l_i < MY_LDB; l_i++ ) {
+        for ( l_j = 0; l_j < MY_N; l_j++ ) {
 #if REPS==1
-        l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)drand48();
+          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)drand48();
 #else
-        l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
+          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
 #endif
+        }
       }
     }
 #ifdef STREAM_A_B
   }
 #endif
 
-  // touch C
+  /* touch C */
   for ( l_i = 0; l_i < MY_LDC; l_i++) {
     for ( l_j = 0; l_j < MY_N; l_j++) {
       l_c[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
@@ -170,7 +176,7 @@ void run_test() {
     }
   }
 
-  // touch C
+  /* touch C */
   for ( l_i = 0; l_i < MY_LDC; l_i++) {
     for ( l_j = 0; l_j < MY_N; l_j++) {
       l_c[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
@@ -179,9 +185,7 @@ void run_test() {
   }
 #endif   
 
-  // C routine
-  struct timeval l_start, l_end;
-  
+  /* C routine */
   gettimeofday(&l_start, NULL);
 #ifndef __USE_MKL
   #pragma nounroll_and_jam
@@ -256,7 +260,7 @@ void run_test() {
 #endif
   gettimeofday(&l_end, NULL);
   
-  double l_total = sec(l_start, l_end);
+  l_total = sec(l_start, l_end);
 #ifndef __USE_MKL
   printf("%fs for C\n", l_total);
 #ifdef STREAM_A_B
@@ -306,9 +310,7 @@ void run_test() {
   printf("%f GFLOPS for assembly\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (l_total * 1.0e9));
 #endif
 
-  // check result
-  REALTYPE l_max_error = 0.0;
-
+  /* check result */
   for ( l_i = 0; l_i < MY_M; l_i++) {
     for ( l_j = 0; l_j < MY_N; l_j++) {
 #if 0
@@ -321,7 +323,7 @@ void run_test() {
 
   printf("max. error: %f\n", l_max_error);
 
-  // free
+  /* free */
   _mm_free(l_a);
   _mm_free(l_b);
   _mm_free(l_c);

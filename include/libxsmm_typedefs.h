@@ -34,10 +34,6 @@
 #include "libxsmm_macros.h"
 
 
-/** Generic type of a function. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(float alpha, float beta, const float* a, const float* b, float* c, ...);
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(double alpha, double beta, const double* a, const double* b, double* c, ...);
-
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,

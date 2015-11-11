@@ -16,33 +16,35 @@ script:
     bash make.sh -ci -j &&
     make -e samples &&
     make -e test &&
-    bash samples/cp2k/test.sh
+    bash samples/cp2k/cp2k-test.sh
 
   - make -e realclean &&
-    bash make.sh -cif90 -j &&
+    bash make.sh -cif -j &&
     make -e samples &&
-    make -e testf90 &&
-    bash samples/smm/smmf90-test.sh
+    make -e testf &&
+    bash samples/smm/smm-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 ALIGNED_STORES=1 JIT=1 &&
     rm -f samples/cp2k/cp2k-perf.sh &&
     bash make.sh -ci drytest &&
     bash samples/cp2k/cp2k-perf.sh &&
-    bash samples/cp2k/test.sh
+    bash samples/cp2k/cp2k-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 &&
-    rm -f samples/smm/smmf90-perf.sh &&
-    bash make.sh -cif90 drytest &&
-    bash samples/smm/smmf90-perf.sh &&
-    bash samples/smm/smmf90-test.sh
+    rm -f samples/smm/smmf-perf.sh &&
+    bash make.sh -cif drytest &&
+    bash samples/smm/smmf-perf.sh &&
+    bash samples/smm/smm-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 BETA=0 &&
     rm -f samples/nek/stpm-perf.sh &&
+    rm -f samples/nek/axhm-perf.sh &&
     bash make.sh -cinek drytest &&
     make -e samples &&
     bash samples/nek/stpm-perf.sh &&
+    bash samples/nek/axhm-perf.sh &&
     bash samples/nek/nek-test.sh
 
