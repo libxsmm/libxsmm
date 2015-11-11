@@ -139,10 +139,7 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_function<float> {
   mutable/*retargetable*/ type m_function;
 public:
   libxsmm_function(): m_function(0) {}
-  libxsmm_function(int m, int n, int k)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch(m, n, k, 0, 0, 0, 0/*flags*/)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc)
+  libxsmm_function(int m, int n, int k, int lda = 0, int ldb = 0, int ldc = 0)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch(m, n, k, lda, ldb, ldc, 0/*flags*/)))
   {}
   libxsmm_function(int m, int n, int k, int flags)
@@ -157,22 +154,10 @@ public:
   libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch1(m, n, k, lda, ldb, ldc, flags, prefetch)))
   {}
-  libxsmm_function(int m, int n, int k, float alpha, float beta)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, 0, 0, 0, 0/*flags*/, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, lda, ldb, ldc, 0/*flags*/, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags, float alpha, float beta)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, 0, 0, 0, flags, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, float alpha, float beta)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, lda, ldb, ldc, flags, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags, int prefetch, float alpha, float beta)
+  libxsmm_function(int m, int n, int k, float alpha, float beta, int flags = 0, int prefetch = LIBXSMM_PREFETCH)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, 0, 0, 0, flags, prefetch, alpha, beta)))
   {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch, float alpha, float beta)
+  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags = 0, int prefetch = LIBXSMM_PREFETCH)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch2(m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta)))
   {}
 public:
@@ -201,10 +186,7 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_function<double> {
   mutable/*retargetable*/ type m_function;
 public:
   libxsmm_function(): m_function(0) {}
-  libxsmm_function(int m, int n, int k)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch(m, n, k, 0, 0, 0, 0/*flags*/)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc)
+  libxsmm_function(int m, int n, int k, int lda = 0, int ldb = 0, int ldc = 0)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch(m, n, k, lda, ldb, ldc, 0/*flags*/)))
   {}
   libxsmm_function(int m, int n, int k, int flags)
@@ -219,22 +201,10 @@ public:
   libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch1(m, n, k, lda, ldb, ldc, flags, prefetch)))
   {}
-  libxsmm_function(int m, int n, int k, double alpha, double beta)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, 0, 0, 0, 0/*flags*/, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, lda, ldb, ldc, 0/*flags*/, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags, double alpha, double beta)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, 0, 0, 0, flags, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, double alpha, double beta)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, lda, ldb, ldc, flags, LIBXSMM_PREFETCH, alpha, beta)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags, int prefetch, double alpha, double beta)
+  libxsmm_function(int m, int n, int k, double alpha, double beta, int flags = 0, int prefetch = LIBXSMM_PREFETCH)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, 0, 0, 0, flags, prefetch, alpha, beta)))
   {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags, int prefetch, double alpha, double beta)
+  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags = 0, int prefetch = LIBXSMM_PREFETCH)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch2(m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta)))
   {}
 public:
