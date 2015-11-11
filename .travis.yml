@@ -42,6 +42,7 @@ script:
     make -e PEDANTIC=1 JIT=1 BETA=0 &&
     rm -f samples/nek/stpm-perf.sh &&
     rm -f samples/nek/axhm-perf.sh &&
+    rm -f samples/nek/rstr-perf.sh &&
     bash make.sh -cinek drytest &&
     make -e samples &&
     bash samples/nek/stpm-perf.sh &&
