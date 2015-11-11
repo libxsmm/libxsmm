@@ -154,8 +154,10 @@ PROGRAM stpm
         call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
     call libxsmm_blasmm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                             tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                             a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                             h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -184,8 +186,10 @@ PROGRAM stpm
         CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n, xargs)
     enddo
     CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k, xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                             tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                             a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                             h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -214,8 +218,10 @@ PROGRAM stpm
         CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
     CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                             tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                             a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                             h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
