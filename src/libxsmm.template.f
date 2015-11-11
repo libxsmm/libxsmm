@@ -598,7 +598,7 @@
 
         ! Dispatched matrix multiplication (single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm
-        SUBROUTINE libxsmm_smm(
+        SUBROUTINE libxsmm_smm(                                         &
      &  flags, m, n, k, a, b, c, pa, pb, pc, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
@@ -628,7 +628,7 @@
               ENDIF
             ELSE
               xmm = libxsmm_smm_function_abf(                           &
-     &          m, n, k, alpha, beta, flags,
+     &          m, n, k, alpha, beta, flags,                            &
      &          LIBXSMM_PREFETCH)
               IF (libxsmm_savailable(xmm)) THEN
                 CALL libxsmm_scall_all(                                 &
@@ -645,7 +645,7 @@
 
         ! Dispatched matrix multiplication (double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm
-        SUBROUTINE libxsmm_dmm(
+        SUBROUTINE libxsmm_dmm(                                         &
      &  flags, m, n, k, a, b, c, pa, pb, pc, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
