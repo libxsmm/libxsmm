@@ -46,5 +46,6 @@ script:
     make -e samples &&
     bash samples/nek/stpm-perf.sh &&
     bash samples/nek/axhm-perf.sh &&
+    bash samples/nek/rstr-perf.sh &&
     bash samples/nek/nek-test.sh
 
