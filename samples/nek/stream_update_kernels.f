@@ -34,9 +34,9 @@ MODULE STREAM_UPDATE_KERNELS
   IMPLICIT NONE
 
   INTERFACE
-    SUBROUTINE stream_update_axhm( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
-                                   i_a, i_b, io_c, i_h1, i_h2, i_length ) & 
-                                  BIND(C, name='stream_update_axhm')
+    SUBROUTINE stream_update_helmholtz( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
+                                        i_a, i_b, io_c, i_h1, i_h2, i_length ) & 
+                                      BIND(C, name='stream_update_helmholtz')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g2
@@ -49,6 +49,21 @@ MODULE STREAM_UPDATE_KERNELS
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(INOUT) :: io_c
       REAL(KIND=C_DOUBLE), VALUE,        INTENT(IN)    :: i_h1
       REAL(KIND=C_DOUBLE), VALUE,        INTENT(IN)    :: i_h2
+      INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
+    END SUBROUTINE
+
+    SUBROUTINE stream_update_helmholtz_no_h2( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
+                                              io_c, i_h1, i_length ) & 
+                                            BIND(C, name='stream_update_helmholtz_no_h2')
+      IMPORT :: C_DOUBLE, C_INT
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g2
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g3
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm1
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm2
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm3
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(INOUT) :: io_c
+      REAL(KIND=C_DOUBLE), VALUE,        INTENT(IN)    :: i_h1
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
   END INTERFACE

@@ -154,8 +154,10 @@ PROGRAM stpm
         call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
     call libxsmm_blasmm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                                  tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                                  a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                                  h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -184,8 +186,10 @@ PROGRAM stpm
         CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n, xargs)
     enddo
     CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k, xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                                  tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                                  a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                                  h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -214,8 +218,10 @@ PROGRAM stpm
         CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), xargs)
     enddo
     CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), xargs)
-    CALL updateC( c(:,:,:,i), g1(:,:,:,i), tm1, g2(:,:,:,i), tm2, &
-                  g3(:,:,:,i), tm3, b(:,:,:,i), a(:,:,:,i), h1, h2 ) 
+    CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                                  tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                                  a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                                  h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -261,10 +267,10 @@ PROGRAM stpm
         CALL xmm2(a(1,1,j,i), dy, tm2(1,1,j), xargs)
     enddo
     CALL xmm3(a(1,1,1,i), dz, tm3, xargs)
-    CALL stream_update_axhm( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
-                             tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
-                             a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
-                             h1, h2, m*n*k )
+    CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
+                                  tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
+                                  a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
+                                  h1, h2, m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -288,16 +294,6 @@ PROGRAM stpm
   END IF
 
 CONTAINS
-  SUBROUTINE updateC( c, g1, tm1, g2, tm2, g3, tm3, b, a, h1, h2 )
-    REAL(T), INTENT(INOUT) :: c(:,:,:)
-    REAL(T), INTENT(IN)    :: b(:,:,:), a(:,:,:)
-    REAL(T), INTENT(IN)    :: g1(:,:,:), tm1(:,:,:), g2(:,:,:), tm2(:,:,:), g3(:,:,:), tm3(:,:,:)
-    REAL(T), INTENT(IN)    :: h1, h2
-
-    !DEC$ vector nontemporal
-    c = h1*(g1*tm1 + g2*tm2 + g3*tm3) + h2*(b*a)
-  END SUBROUTINE
-
   SUBROUTINE validate(ref, test)
     REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
 
