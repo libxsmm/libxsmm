@@ -150,17 +150,17 @@
         ! Generic function type constructing a procedure pointer
         ! associated with a backend function.
         TYPE :: LIBXSMM_SMM_FUNCTION
-          PROCEDURE(LIBXSMM_SMM_FUNCTION0), POINTER :: smm0
-          PROCEDURE(LIBXSMM_SMM_FUNCTION1), POINTER :: smm1
-          PROCEDURE(LIBXSMM_SMM_FUNCTION2), POINTER :: smm2
+          PROCEDURE(LIBXSMM_SMM_FUNCTION0), NOPASS, POINTER :: smm0
+          PROCEDURE(LIBXSMM_SMM_FUNCTION1), NOPASS, POINTER :: smm1
+          PROCEDURE(LIBXSMM_SMM_FUNCTION2), NOPASS, POINTER :: smm2
         END TYPE
 
         ! Generic function type constructing a procedure pointer
         ! associated with a backend function.
         TYPE :: LIBXSMM_DMM_FUNCTION
-          PROCEDURE(LIBXSMM_DMM_FUNCTION0), POINTER :: dmm0
-          PROCEDURE(LIBXSMM_DMM_FUNCTION1), POINTER :: dmm1
-          PROCEDURE(LIBXSMM_DMM_FUNCTION2), POINTER :: dmm2
+          PROCEDURE(LIBXSMM_DMM_FUNCTION0), NOPASS, POINTER :: dmm0
+          PROCEDURE(LIBXSMM_DMM_FUNCTION1), NOPASS, POINTER :: dmm1
+          PROCEDURE(LIBXSMM_DMM_FUNCTION2), NOPASS, POINTER :: dmm2
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
