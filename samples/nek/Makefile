@@ -16,8 +16,9 @@ endif
 CUT ?= cut
 
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
-INCDIR = $(ROOTDIR)
+INCDIR = $(DEPDIR)/include
 BLDDIR = build
 ifeq (0,$(MIC))
 	LIBDIR = ../../lib/mic
@@ -76,6 +77,10 @@ endif
 
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hh  2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(SRCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
