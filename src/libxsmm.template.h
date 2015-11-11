@@ -139,13 +139,10 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_function<float> {
   mutable/*retargetable*/ type m_function;
 public:
   libxsmm_function(): m_function(0) {}
-  libxsmm_function(int m, int n, int k, int lda = 0, int ldb = 0, int ldc = 0)
-    : m_function(reinterpret_cast<type>(libxsmm_sdispatch(m, n, k, lda, ldb, ldc, 0/*flags*/)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags)
+  libxsmm_function(int m, int n, int k, int flags = 0)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch(m, n, k, 0, 0, 0, flags)))
   {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags)
+  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags = 0)
     : m_function(reinterpret_cast<type>(libxsmm_sdispatch(m, n, k, lda, ldb, ldc, flags)))
   {}
   libxsmm_function(int m, int n, int k, int flags, int prefetch)
@@ -186,13 +183,10 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_function<double> {
   mutable/*retargetable*/ type m_function;
 public:
   libxsmm_function(): m_function(0) {}
-  libxsmm_function(int m, int n, int k, int lda = 0, int ldb = 0, int ldc = 0)
-    : m_function(reinterpret_cast<type>(libxsmm_ddispatch(m, n, k, lda, ldb, ldc, 0/*flags*/)))
-  {}
-  libxsmm_function(int m, int n, int k, int flags)
+  libxsmm_function(int m, int n, int k, int flags = 0)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch(m, n, k, 0, 0, 0, flags)))
   {}
-  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags)
+  libxsmm_function(int m, int n, int k, int lda, int ldb, int ldc, int flags = 0)
     : m_function(reinterpret_cast<type>(libxsmm_ddispatch(m, n, k, lda, ldb, ldc, flags)))
   {}
   libxsmm_function(int m, int n, int k, int flags, int prefetch)
