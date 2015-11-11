@@ -19,6 +19,11 @@ ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCDIR = $(ROOTDIR)
 INCDIR = $(ROOTDIR)
 BLDDIR = build
+ifeq (0,$(MIC))
+	LIBDIR = ../../lib/mic
+else
+ 	LIBDIR = ../../lib/intel64
+endif
 DEPDIR = ../..
 OUTDIR = .
 
@@ -106,7 +111,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 include $(ROOTDIR)/Makefile.inc
 
 .PHONY: all
-all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm
+all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm $(LIBDIR)/libstream_update_kernels.a
 
 $(OUTDIR)/stpm: $(BLDDIR)/stpm-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
@@ -127,6 +132,11 @@ $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(M
 $(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(BLDDIR)/stream_update_kernels-c.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+
+$(LIBDIR)/libstream_update_kernels.a: $(BLDDIR)/stream_update_kernels-c.o
+	@mkdir -p $(dir $@)
+	$(AR) -rs $@ $^
+	@cp stream_update_kernels.f $(DEPDIR)/include/
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
@@ -193,6 +203,8 @@ else
 	@rm -f $(OUTDIR)/stpm $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(LIBDIR)/libstream_update_kernels.a
+	@rm -f $(DEPDIR)/include/stream_update_kernels.f
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
