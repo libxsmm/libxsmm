@@ -134,7 +134,8 @@ PROGRAM stpm
     enddo
   END DO 
   dx = 1.
-  dy = transpose(dx)
+  dy = 1.
+  dz = 1.
 
   WRITE(*, "(6(A,I0),A,I0)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4) 
 
@@ -156,7 +157,7 @@ PROGRAM stpm
           tm2(:,:,j) = matmul(tm1(:,:,j), dy)
       enddo
       ! because we can't reshape d
-      d(:,:,:,i) = reshape(matmul(reshape(tm2, (/mm*nn, k/)), dy), (/mm,nn,kk/))
+      d(:,:,:,i) = reshape(matmul(reshape(tm2, (/mm*nn, k/)), dz), (/mm,nn,kk/))
     END DO
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2)
@@ -177,7 +178,7 @@ PROGRAM stpm
     do j = 1, k
         call libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), xargs)
     enddo
-    call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dy, c(:,:,1,i), xargs)
+    call libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i), xargs)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -203,7 +204,7 @@ PROGRAM stpm
     do j = 1, k
         call mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn, xargs)
     enddo
-    call mxmf2(tm2, mm*nn, dy, k, c(:,:,:,i), kk, xargs)
+    call mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk, xargs)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -246,7 +247,7 @@ PROGRAM stpm
     do j = 1, k
         call xmm2(tm1(1,1,j), dy, tm2(1,1,j), xargs)
     enddo
-    CALL xmm3(tm2, dy, c(1,1,1,i), xargs)
+    CALL xmm3(tm2, dz, c(1,1,1,i), xargs)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
