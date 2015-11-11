@@ -294,16 +294,6 @@ PROGRAM stpm
   END IF
 
 CONTAINS
-  SUBROUTINE updateC( c, g1, tm1, g2, tm2, g3, tm3, b, a, h1, h2 )
-    REAL(T), INTENT(INOUT) :: c(:,:,:)
-    REAL(T), INTENT(IN)    :: b(:,:,:), a(:,:,:)
-    REAL(T), INTENT(IN)    :: g1(:,:,:), tm1(:,:,:), g2(:,:,:), tm2(:,:,:), g3(:,:,:), tm3(:,:,:)
-    REAL(T), INTENT(IN)    :: h1, h2
-
-    !DEC$ vector nontemporal
-    c = h1*(g1*tm1 + g2*tm2 + g3*tm3) + h2*(b*a)
-  END SUBROUTINE
-
   SUBROUTINE validate(ref, test)
     REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
 
