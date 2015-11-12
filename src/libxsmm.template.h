@@ -72,6 +72,8 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction2)(const double *LIBXSMM_RE
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
+/** Uninitialize the library and free internal memory (optional). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction0 libxsmm_sdispatch(int m, int n, int k, int lda, int ldb, int ldc, int flags);
