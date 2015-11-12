@@ -273,9 +273,9 @@ PROGRAM stpm
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
     CALL xmm1(dx, a(1,1,1,i), tm1, xargs)
-    do j = 1, k
+    DO j = 1, k
         CALL xmm2(a(1,1,j,i), dy, tm2(1,1,j), xargs)
-    enddo
+    END DO
     CALL xmm3(a(1,1,1,i), dz, tm3, xargs)
     CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                   tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
