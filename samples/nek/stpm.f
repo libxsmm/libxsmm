@@ -91,17 +91,17 @@ PROGRAM stpm
   ! Initialize 
   !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, c, m, n, k, s)
   DO i = 1, s
-    do ix = 1, m
-      do iy = 1, n
-        do iz = 1, k
+    DO ix = 1, m
+      DO iy = 1, n
+        DO iz = 1, k
           a(ix,iy,iz,i) = ix + iy*m + iz*m*n
           g1(ix,iy,iz,i) = 1.
           g2(ix,iy,iz,i) = 1.
           g3(ix,iy,iz,i) = 1.
           c(ix,iy,iz,i) = 0.
-        enddo
-      enddo
-    enddo
+        END DO
+      END DO
+    END DO
   END DO 
   dx = 1.; dy = 1.; dz = 1.
 
@@ -111,7 +111,17 @@ PROGRAM stpm
   READ(argv, "(I32)") check
   IF (0.NE.check) THEN
     ALLOCATE(d(m,n,k,s))
-    d = 0.
+    !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(d, m, n, k, s)
+    DO i = 1, s
+      DO ix = 1, m
+        DO iy = 1, n
+          DO iz = 1, k
+            d(ix,iy,iz,i) = 0.
+          END DO
+        END DO
+      END DO
+    END DO 
+
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) &
     !$OMP   SHARED(duration, a, dx, dy, dz, g1, g2, g3, d, m, n, k)

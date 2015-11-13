@@ -75,25 +75,54 @@ void stream_update_helmholtz( const double* i_g1,
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
     const __m256d vec_h2 = _mm256_broadcast_sd(&i_h2);
-    for ( ; l_n < l_trip_stream;  l_n+=4 ) {
-      __m256d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
-      vec_g1 = _mm256_loadu_pd(&(i_g1[l_n]));
-      vec_tm1 = _mm256_loadu_pd(&(i_tm1[l_n]));
-      vec_g1 = _mm256_mul_pd(vec_g1, vec_tm1);
-      vec_g2 = _mm256_loadu_pd(&(i_g2[l_n]));
-      vec_tm2 = _mm256_loadu_pd(&(i_tm2[l_n]));
-      vec_g2 = _mm256_mul_pd(vec_g2, vec_tm2);
-      vec_g3 = _mm256_loadu_pd(&(i_g3[l_n]));
-      vec_tm3 = _mm256_loadu_pd(&(i_tm3[l_n]));
-      vec_g3 = _mm256_mul_pd(vec_g3, vec_tm3);
-      vec_a = _mm256_loadu_pd(&(i_a[l_n]));
-      vec_b = _mm256_loadu_pd(&(i_b[l_n]));
-      vec_a = _mm256_mul_pd(vec_a, vec_b);
-      vec_g1 = _mm256_add_pd(vec_g1, vec_g2);
-      vec_a = _mm256_mul_pd(vec_a, vec_h2);
-      vec_g1 = _mm256_add_pd(vec_g1, vec_g3);
-      vec_g1 = _mm256_mul_pd(vec_g1, vec_h1);
-      _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1, vec_a ) );
+    /* we need manual unrolling as the compiler otherwise generates 
+       too many dependencies */
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      __m256d vec_g1_1, vec_g2_1, vec_g3_1, vec_tm1_1, vec_tm2_1, vec_tm3_1, vec_a_1, vec_b_1;
+      __m256d vec_g1_2, vec_g2_2, vec_g3_2, vec_tm1_2, vec_tm2_2, vec_tm3_2, vec_a_2, vec_b_2;
+
+      vec_g1_1 = _mm256_loadu_pd(&(i_g1[l_n]));
+      vec_tm1_1 = _mm256_loadu_pd(&(i_tm1[l_n]));
+      vec_g1_2 = _mm256_loadu_pd(&(i_g1[l_n+4]));
+      vec_tm1_2 = _mm256_loadu_pd(&(i_tm1[l_n+4]));
+
+      vec_g1_1 = _mm256_mul_pd(vec_g1_1, vec_tm1_1);
+      vec_g2_1 = _mm256_loadu_pd(&(i_g2[l_n]));
+      vec_g1_2 = _mm256_mul_pd(vec_g1_2, vec_tm1_2);
+      vec_g2_2 = _mm256_loadu_pd(&(i_g2[l_n+4]));
+
+      vec_tm2_1 = _mm256_loadu_pd(&(i_tm2[l_n]));
+      vec_g2_1 = _mm256_mul_pd(vec_g2_1, vec_tm2_1);
+      vec_tm2_2 = _mm256_loadu_pd(&(i_tm2[l_n+4]));
+      vec_g2_2 = _mm256_mul_pd(vec_g2_2, vec_tm2_2);
+
+      vec_g3_1 = _mm256_loadu_pd(&(i_g3[l_n]));
+      vec_tm3_1 = _mm256_loadu_pd(&(i_tm3[l_n]));
+      vec_g3_2 = _mm256_loadu_pd(&(i_g3[l_n+4]));
+      vec_tm3_2 = _mm256_loadu_pd(&(i_tm3[l_n+4]));
+
+      vec_g3_1 = _mm256_mul_pd(vec_g3_1, vec_tm3_1);
+      vec_a_1 = _mm256_loadu_pd(&(i_a[l_n]));
+      vec_g3_2 = _mm256_mul_pd(vec_g3_2, vec_tm3_2);
+      vec_a_2 = _mm256_loadu_pd(&(i_a[l_n+4]));
+
+      vec_b_1 = _mm256_loadu_pd(&(i_b[l_n]));
+      vec_a_1 = _mm256_mul_pd(vec_a_1, vec_b_1);
+      vec_b_2 = _mm256_loadu_pd(&(i_b[l_n+4]));
+      vec_a_2 = _mm256_mul_pd(vec_a_2, vec_b_2);
+
+      vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g2_1);
+      vec_a_1 = _mm256_mul_pd(vec_a_1, vec_h2);
+      vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g2_2);
+      vec_a_2 = _mm256_mul_pd(vec_a_2, vec_h2);
+
+      vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g3_1);
+      vec_g1_1 = _mm256_mul_pd(vec_g1_1, vec_h1);
+      _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1_1, vec_a_1 ) );
+
+      vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g3_2);
+      vec_g1_2 = _mm256_mul_pd(vec_g1_2, vec_h1);
+      _mm256_stream_pd( &(io_c[l_n+4]), _mm256_add_pd( vec_g1_2, vec_a_2 ) );
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
@@ -103,21 +132,16 @@ void stream_update_helmholtz( const double* i_g1,
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m512d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm512_loadu_pd(&(i_g1[l_n]));
-      /*_mm_prefetch((const char*)&(i_g1[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm1 = _mm512_loadu_pd(&(i_tm1[l_n]));
       vec_g1 = _mm512_mul_pd(vec_g1, vec_tm1);
       vec_g2 = _mm512_loadu_pd(&(i_g2[l_n]));
-      /*_mm_prefetch((const char*)&(i_g2[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm2 = _mm512_loadu_pd(&(i_tm2[l_n]));
       vec_g2 = _mm512_mul_pd(vec_g2, vec_tm2);
       vec_g3 = _mm512_loadu_pd(&(i_g3[l_n]));
-      /*_mm_prefetch((const char*)&(i_g3[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n]));
       vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
       vec_a = _mm512_loadu_pd(&(i_a[l_n]));
-      /*_mm_prefetch((const char*)&(i_a[l_n+i_length]), _MM_HINT_T2);*/
       vec_b = _mm512_loadu_pd(&(i_b[l_n]));
-      /*_mm_prefetch((const char*)&(i_b[l_n+i_length]), _MM_HINT_T2);*/
       vec_a = _mm512_mul_pd(vec_a, vec_b);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g2);
       vec_a = _mm512_mul_pd(vec_a, vec_h2);
@@ -174,20 +198,41 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
-    for ( ; l_n < l_trip_stream;  l_n+=4 ) {
-      __m256d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3;
-      vec_g1 = _mm256_loadu_pd(&(i_g1[l_n]));
-      vec_tm1 = _mm256_loadu_pd(&(i_tm1[l_n]));
-      vec_g1 = _mm256_mul_pd(vec_g1, vec_tm1);
-      vec_g2 = _mm256_loadu_pd(&(i_g2[l_n]));
-      vec_tm2 = _mm256_loadu_pd(&(i_tm2[l_n]));
-      vec_g2 = _mm256_mul_pd(vec_g2, vec_tm2);
-      vec_g3 = _mm256_loadu_pd(&(i_g3[l_n]));
-      vec_tm3 = _mm256_loadu_pd(&(i_tm3[l_n]));
-      vec_g3 = _mm256_mul_pd(vec_g3, vec_tm3);
-      vec_g1 = _mm256_add_pd(vec_g1, vec_g2);
-      vec_g1 = _mm256_add_pd(vec_g1, vec_g3);
-      _mm256_stream_pd( &(io_c[l_n]), _mm256_mul_pd(vec_g1, vec_h1) );
+    /* we need manual unrolling as the compiler otherwise generates 
+       too many dependencies */
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      __m256d vec_g1_1, vec_g2_1, vec_g3_1, vec_tm1_1, vec_tm2_1, vec_tm3_1;
+      __m256d vec_g1_2, vec_g2_2, vec_g3_2, vec_tm1_2, vec_tm2_2, vec_tm3_2;
+
+      vec_g1_1 = _mm256_loadu_pd(&(i_g1[l_n]));
+      vec_tm1_1 = _mm256_loadu_pd(&(i_tm1[l_n]));
+      vec_g1_2 = _mm256_loadu_pd(&(i_g1[l_n+4]));
+      vec_tm1_2 = _mm256_loadu_pd(&(i_tm1[l_n+4]));
+
+      vec_g1_1 = _mm256_mul_pd(vec_g1_1, vec_tm1_1);
+      vec_g2_1 = _mm256_loadu_pd(&(i_g2[l_n]));
+      vec_g1_2 = _mm256_mul_pd(vec_g1_2, vec_tm1_2);
+      vec_g2_2 = _mm256_loadu_pd(&(i_g2[l_n+4]));
+
+      vec_tm2_1 = _mm256_loadu_pd(&(i_tm2[l_n]));
+      vec_g2_1 = _mm256_mul_pd(vec_g2_1, vec_tm2_1);
+      vec_tm2_2 = _mm256_loadu_pd(&(i_tm2[l_n+4]));
+      vec_g2_2 = _mm256_mul_pd(vec_g2_2, vec_tm2_2);
+
+      vec_g3_1 = _mm256_loadu_pd(&(i_g3[l_n]));
+      vec_tm3_1 = _mm256_loadu_pd(&(i_tm3[l_n]));
+      vec_g3_2 = _mm256_loadu_pd(&(i_g3[l_n+4]));
+      vec_tm3_2 = _mm256_loadu_pd(&(i_tm3[l_n+4]));
+
+      vec_g3_1 = _mm256_mul_pd(vec_g3_1, vec_tm3_1);
+      vec_g3_2 = _mm256_mul_pd(vec_g3_2, vec_tm3_2);
+      vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g2_1);
+      vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g2_2);
+
+      vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g3_1);
+      _mm256_stream_pd( &(io_c[l_n]), _mm256_mul_pd(vec_g1_1, vec_h1) );
+      vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g3_2);
+      _mm256_stream_pd( &(io_c[l_n+4]), _mm256_mul_pd(vec_g1_2, vec_h1) );
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
@@ -196,15 +241,12 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m512d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3;
       vec_g1 = _mm512_loadu_pd(&(i_g1[l_n]));
-      /*_mm_prefetch((const char*)&(i_g1[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm1 = _mm512_loadu_pd(&(i_tm1[l_n]));
       vec_g1 = _mm512_mul_pd(vec_g1, vec_tm1);
       vec_g2 = _mm512_loadu_pd(&(i_g2[l_n]));
-      /*_mm_prefetch((const char*)&(i_g2[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm2 = _mm512_loadu_pd(&(i_tm2[l_n]));
       vec_g2 = _mm512_mul_pd(vec_g2, vec_tm2);
       vec_g3 = _mm512_loadu_pd(&(i_g3[l_n]));
-      /*_mm_prefetch((const char*)&(i_g3[l_n+i_length]), _MM_HINT_T2);*/
       vec_tm3 = _mm512_loadu_pd(&(i_tm3[l_n]));
       vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g2);
