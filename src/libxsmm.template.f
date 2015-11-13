@@ -41,37 +41,24 @@
         ! LP64: 32-bit with integers, and ILP64: 64-bit integers
      &    LIBXSMM_INT_KIND = $INTEGER_TYPE
 
-        ! Parameters the library was built for.
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_ALIGNMENT = $ALIGNMENT
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_PREFETCH = $PREFETCH
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_ROW_MAJOR = $ROW_MAJOR
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_COL_MAJOR = $COL_MAJOR
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_MAX_MNK = $MAX_MNK
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_MAX_M = $MAX_M
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_MAX_N = $MAX_N
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_MAX_K = $MAX_K
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_AVG_M = $AVG_M
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_AVG_N = $AVG_N
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_AVG_K = $AVG_K
-        INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
-     &    LIBXSMM_JIT = $JIT
+        ! Parameters the library and static kernels were built for.
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_ROW_MAJOR = $ROW_MAJOR
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_COL_MAJOR = $COL_MAJOR
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_PREFETCH = $PREFETCH
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_MAX_MNK = $MAX_MNK
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_MAX_M = $MAX_M
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_MAX_N = $MAX_N
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_MAX_K = $MAX_K
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_AVG_M = $AVG_M
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_AVG_N = $AVG_N
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_AVG_K = $AVG_K
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_FLAGS = $FLAGS
+        INTEGER(LIBXSMM_INT_KIND), PARAMETER :: LIBXSMM_JIT = $JIT
 
         ! Parameters representing the GEMM performed by the simplified interface.
         REAL(LIBXSMM_FLD_KIND), PARAMETER ::                            &
-     &    LIBXSMM_ALPHA = $ALPHA
-        REAL(LIBXSMM_FLD_KIND), PARAMETER ::                            &
-     &    LIBXSMM_BETA = $BETA
+     &    LIBXSMM_ALPHA = $ALPHA, LIBXSMM_BETA = $BETA
 
         ! Flag enumeration which can be IORed.
         INTEGER(LIBXSMM_INT_KIND), PARAMETER ::                         &
@@ -129,22 +116,6 @@
             REAL(C_DOUBLE), INTENT(INOUT) :: c(*)
             TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
           END SUBROUTINE
-          PURE SUBROUTINE LIBXSMM_SMM_FUNCTION2(a, b, c,                &
-     &    pa, pb, pc, alpha, beta) BIND(C)
-            IMPORT :: C_FLOAT, C_PTR
-            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)
-            REAL(C_FLOAT), INTENT(INOUT) :: c(*)
-            TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-            REAL(C_FLOAT), INTENT(IN), VALUE :: alpha, beta
-          END SUBROUTINE
-          PURE SUBROUTINE LIBXSMM_DMM_FUNCTION2(a, b, c,                &
-     &    pa, pb, pc, alpha, beta) BIND(C)
-            IMPORT :: C_DOUBLE, C_PTR
-            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)
-            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)
-            TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-            REAL(C_DOUBLE), INTENT(IN), VALUE :: alpha, beta
-          END SUBROUTINE
         END INTERFACE
 
         ! Generic function type constructing a procedure pointer
@@ -152,7 +123,6 @@
         TYPE :: LIBXSMM_SMM_FUNCTION
           PROCEDURE(LIBXSMM_SMM_FUNCTION0), NOPASS, POINTER :: fn0
           PROCEDURE(LIBXSMM_SMM_FUNCTION1), NOPASS, POINTER :: fn1
-          PROCEDURE(LIBXSMM_SMM_FUNCTION2), NOPASS, POINTER :: fn2
         END TYPE
 
         ! Generic function type constructing a procedure pointer
@@ -160,7 +130,6 @@
         TYPE :: LIBXSMM_DMM_FUNCTION
           PROCEDURE(LIBXSMM_DMM_FUNCTION0), NOPASS, POINTER :: fn0
           PROCEDURE(LIBXSMM_DMM_FUNCTION1), NOPASS, POINTER :: fn1
-          PROCEDURE(LIBXSMM_DMM_FUNCTION2), NOPASS, POINTER :: fn2
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
@@ -205,7 +174,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch0, libxsmm_ddispatch0
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch1, libxsmm_ddispatch1
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch2, libxsmm_ddispatch2
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sxdispatch, libxsmm_dxdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
         INTERFACE
           SUBROUTINE sgemm(                                             &
@@ -231,6 +200,9 @@
 
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
+          END SUBROUTINE
+
+          SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
 
           ! Query or JIT-generate a function; return zero if it does not exist,
@@ -271,7 +243,7 @@
 
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (single-precision).
-          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sdispatch2(              &
+          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sxdispatch(              &
      &    m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta) BIND(C)
             IMPORT :: C_FUNPTR, C_FLOAT, C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
@@ -280,7 +252,7 @@
           END FUNCTION
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (double-precision).
-          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_ddispatch2(              &
+          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dxdispatch(              &
      &    m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta) BIND(C)
             IMPORT :: C_FUNPTR, C_DOUBLE, C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
@@ -396,11 +368,11 @@
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch2(m, n, k, 0, 0, 0,                     &
+          fn = libxsmm_sxdispatch(m, n, k, 0, 0, 0,                     &
      &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
      &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
      &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_abf%fn2)
+          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_abf%fn1)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_function_abf
         TYPE(LIBXSMM_DMM_FUNCTION)                                      &
@@ -411,11 +383,11 @@
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch2(m, n, k, 0, 0, 0,                     &
+          fn = libxsmm_dxdispatch(m, n, k, 0, 0, 0,                     &
      &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
      &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
      &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_abf%fn2)
+          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_abf%fn1)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_function_all
@@ -428,11 +400,11 @@
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch2(m, n, k, lda, ldb, ldc,               &
+          fn = libxsmm_sxdispatch(m, n, k, lda, ldb, ldc,               &
      &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
      &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
      &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_all%fn2)
+          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_all%fn1)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_function_all
         TYPE(LIBXSMM_DMM_FUNCTION)                                      &
@@ -444,11 +416,11 @@
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch2(m, n, k, lda, ldb, ldc,               &
+          fn = libxsmm_dxdispatch(m, n, k, lda, ldb, ldc,               &
      &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
      &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
      &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_all%fn2)
+          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_all%fn1)
         END FUNCTION
         
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_savailable
@@ -457,7 +429,7 @@
           libxsmm_savailable =                                          &
      &      ASSOCIATED(fn%fn0).OR.                                      &
      &      ASSOCIATED(fn%fn1).OR.                                      &
-     &      ASSOCIATED(fn%fn2)
+     &      ASSOCIATED(fn%fn1)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_davailable
         LOGICAL PURE FUNCTION libxsmm_davailable(fn)
@@ -465,7 +437,7 @@
           libxsmm_davailable =                                          &
      &      ASSOCIATED(fn%fn0).OR.                                      &
      &      ASSOCIATED(fn%fn1).OR.                                      &
-     &      ASSOCIATED(fn%fn2)
+     &      ASSOCIATED(fn%fn1)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc
@@ -508,7 +480,7 @@
           REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(:,:)
           TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
           REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-          CALL fn%fn2(a, b, c, pa, pb, pc, alpha, beta)
+          CALL fn%fn1(a, b, c, pa, pb, pc, alpha, beta)
         END SUBROUTINE
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_all
         PURE SUBROUTINE libxsmm_dcall_all(                              &
@@ -518,7 +490,7 @@
           REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(:,:)
           TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
           REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-          CALL fn%fn2(a, b, c, pa, pb, pc, alpha, beta)
+          CALL fn%fn1(a, b, c, pa, pb, pc, alpha, beta)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_align_value

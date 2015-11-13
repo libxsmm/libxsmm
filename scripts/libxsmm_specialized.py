@@ -35,21 +35,19 @@ import math, sys
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (8 == argc):
+    if (6 == argc):
         row_major = int(sys.argv[1])
         m, n, k = int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
         prefetch = int(sys.argv[5])
-        align_a = int(sys.argv[6])
-        align_c = int(sys.argv[7])
 
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
-        flags = ("LIBXSMM_GEMM_FLAG_ALIGN_A" if (0 != align_a) else "0") + " | " + ("LIBXSMM_GEMM_FLAG_ALIGN_C" if (0 != align_c) else "0")
         if (0 != row_major):
             signature = "b, a, c, pb, pa, pc" if (0 != prefetch) else "b, a, c"
         else: # ColMajor
             signature = "a, b, c, pa, pb, pc" if (0 != prefetch) else "a, b, c"
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "("
+        print "  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
            + (",\n  const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")")
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)"
@@ -63,12 +61,13 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
         print "  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
-        print "  LIBXSMM_IMM(float, int, " + flags + ", " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
+        print "  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
         print "#endif"
         print "}"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "("
+        print "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
            + (",\n  const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")")
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)"
@@ -82,7 +81,7 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
         print "  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
-        print "  LIBXSMM_IMM(double, int, " + flags + ", " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
+        print "  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
         print "#endif"
         print "}"
     else:

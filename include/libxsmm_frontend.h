@@ -145,46 +145,28 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 #define LIBXSMM_MM(REAL, FLAGS, M, N, K, A, B, C, PA, PB, PC, ALPHA, BETA) { \
   if (LIBXSMM_MAX_MNK >= ((M) * (N) * (K))) { \
     int libxsmm_fallback_ = 0; \
-    if (0 == (ALPHA) && 0 == (BETA)) { /* function0 or function1 */ \
-      if (0 != (PA) || 0 != (PB) || 0 != (PC)) { /* function1 */ \
-        const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function1)) libxsmm_function_ = \
-          LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch1))(FLAGS, M, N, K, \
-            LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N), LIBXSMM_PREFETCH); \
-        if (0 != libxsmm_function_) { \
-          const REAL *const libxsmm_pa_ = ((0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_AL2) && 0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_AL2_JPST)) \
-            || 0 == (PA)) ? (A) : (PA); \
-          const REAL *const libxsmm_pb_ = ((0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_BL2_VIA_C)) \
-            || 0 == (PB)) ? (B) : (PB); \
-          const REAL *const libxsmm_pc_ = (0 == (PC)) ? (C) : (PC); \
-          libxsmm_function_(A, B, C, libxsmm_pa_, libxsmm_pb_, libxsmm_pc_); \
-        } \
-        else { \
-          libxsmm_fallback_ = 1; \
-        } \
-      } \
-      else { /* function0 */ \
-        const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function0)) libxsmm_function_ = \
-          LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch))(FLAGS, M, N, K, \
-            LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N)); \
-        if (0 != libxsmm_function_) { \
-          libxsmm_function_(A, B, C); \
-        } \
-        else { \
-          libxsmm_fallback_ = 1; \
-        } \
-      } \
-    } \
-    else { /* function2 */ \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function2)) libxsmm_function_ = \
-        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch2))(FLAGS, M, N, K, \
-          LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N), LIBXSMM_PREFETCH, *(ALPHA), *(BETA)); \
+    if (0 != (PA) || 0 != (PB) || 0 != (PC)) { \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, xfunction)) libxsmm_function_ = \
+        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, xdispatch))(FLAGS, M, N, K, \
+          LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N), ALPHA, BETA, LIBXSMM_PREFETCH); \
       if (0 != libxsmm_function_) { \
         const REAL *const libxsmm_pa_ = ((0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_AL2) && 0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_AL2_JPST)) \
           || 0 == (PA)) ? (A) : (PA); \
         const REAL *const libxsmm_pb_ = ((0 == (LIBXSMM_PREFETCH & LIBXSMM_PREFETCH_BL2_VIA_C)) \
           || 0 == (PB)) ? (B) : (PB); \
         const REAL *const libxsmm_pc_ = (0 == (PC)) ? (C) : (PC); \
-        libxsmm_function_(A, B, C, libxsmm_pa_, libxsmm_pb_, libxsmm_pc_, *(ALPHA), *(BETA)); \
+        libxsmm_function_(A, B, C, libxsmm_pa_, libxsmm_pb_, libxsmm_pc_); \
+      } \
+      else { \
+        libxsmm_fallback_ = 1; \
+      } \
+    } \
+    else { \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, function)) libxsmm_function_ = \
+        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_BLASPREC(REAL, dispatch))(FLAGS, M, N, K, \
+          LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N), ALPHA, BETA); \
+      if (0 != libxsmm_function_) { \
+        libxsmm_function_(A, B, C); \
       } \
       else { \
         libxsmm_fallback_ = 1; \

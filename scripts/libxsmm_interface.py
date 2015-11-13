@@ -42,14 +42,15 @@ if __name__ == "__main__":
 
         # optional argument(s)
         ilp64 = int(sys.argv[2]) if (2 < argc) else 0
-        row_major = int(sys.argv[3]) if (3 < argc) else 0
-        alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4])) if (4 < argc) else 64
+        alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[3])) if (3 < argc) else 64
+        row_major = int(sys.argv[4]) if (4 < argc) else 0
         prefetch = int(sys.argv[5]) if (5 < argc) else 0
-        jit = int(sys.argv[6]) if (6 < argc) else 0
-        threshold = int(sys.argv[7]) if (7 < argc) else 0
-        alpha = int(sys.argv[8]) if (8 < argc) else 1
-        beta = int(sys.argv[9]) if (9 < argc) else 1
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[10:], 0, threshold) if (10 < argc) else list()
+        threshold = int(sys.argv[6]) if (6 < argc) else 0
+        jit = int(sys.argv[7]) if (7 < argc) else 0
+        flags = int(sys.argv[8]) if (8 < argc) else 0
+        alpha = int(sys.argv[9]) if (9 < argc) else 1
+        beta = int(sys.argv[10]) if (10 < argc) else 1
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[11:], 0, threshold) if (11 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -66,9 +67,9 @@ if __name__ == "__main__":
 
         substitute = { \
             "ALIGNMENT":  alignment, \
-            "PREFETCH":   prefetch, \
             "ROW_MAJOR":  1 if (0 != row_major) else 0, \
             "COL_MAJOR":  0 if (0 != row_major) else 1, \
+            "PREFETCH":   prefetch, \
             "MAX_MNK":    maxmnk, \
             "MAX_M":      maxm if (avgm < maxm) else maxdim, \
             "MAX_N":      maxn if (avgn < maxn) else maxdim, \
@@ -76,6 +77,7 @@ if __name__ == "__main__":
             "AVG_M":      avgm, \
             "AVG_N":      avgn, \
             "AVG_K":      avgk, \
+            "FLAGS":      flags, \
             "ALPHA":      alpha, \
             "BETA":       beta, \
             "JIT":        jit, \
@@ -87,11 +89,11 @@ if __name__ == "__main__":
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(" + \
-                      "const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" + \
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(\n" + \
+                      "  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" + \
                       (",\n  const float* pa, const float* pb, const float* pc);\n" if (0 != prefetch) else ");\n") + \
-                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(" + \
-                      "const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" + \
+                    "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(\n" + \
+                      "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" + \
                       (",\n  const double* pa, const double* pb, const double* pc);\n" if (0 != prefetch) else ");\n")
             print template.substitute(substitute)
         else:

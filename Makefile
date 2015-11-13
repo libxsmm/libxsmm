@@ -29,15 +29,15 @@ MNK ?= 0
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
-# Use aligned Store and/or aligned Load instructions
-ALIGNED_STORES ?= 0
-ALIGNED_LOADS ?= 0
-
 # Generate prefetches
 PREFETCH ?= 0
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
+
+# Use aligned Store and/or aligned Load instructions
+ALIGNED_STORES ?= 0
+ALIGNED_LOADS ?= 0
 
 # Alpha argument of GEMM
 # Supported: 1.0
@@ -211,6 +211,7 @@ else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
 	PREFETCH_ID = 9
 endif
 
+# Mapping build options to libxsmm_prefetch_type (see include/libxsmm_typedefs.h)
 ifeq (2,$(PREFETCH_ID))
 	PREFETCH_SCHEME = pfsigonly
 	PREFETCH_TYPE = 1
@@ -237,6 +238,9 @@ else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 endif
 
+# Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
+FLAGS = $(shell echo $$((((0!=$(ALIGNED_LOADS))*4) | ((0!=$(ALIGNED_STORES))*8))))
+
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
 	SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
@@ -252,15 +256,15 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) \
-		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/Makefile $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ROW_MAJOR) $(ALIGNMENT) \
-		$(PREFETCH_TYPE) $(JIT) $(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(ALPHA) $(BETA) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
@@ -368,13 +372,13 @@ endif
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
 	@rm -f ${TMPFILE}
-	@python $(SCRDIR)/libxsmm_specialized.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) $(ALIGNED_LOADS) $(ALIGNED_STORES) >> $@
+	@python $(SCRDIR)/libxsmm_specialized.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $@
 
 .PHONY: main
 main: $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(PREFETCH_TYPE) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(INDICES) > $@
+	@python $(SCRDIR)/libxsmm_dispatch.py $(PREFETCH_TYPE) $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic

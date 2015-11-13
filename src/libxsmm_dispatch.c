@@ -63,12 +63,10 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
-  libxsmm_sfunction0 smm0;
-  libxsmm_dfunction0 dmm0;
-  libxsmm_sfunction1 smm1;
-  libxsmm_dfunction1 dmm1;
-  libxsmm_sfunction2 smm2;
-  libxsmm_dfunction2 dmm2;
+  libxsmm_sfunction smm;
+  libxsmm_dfunction dmm;
+  libxsmm_sxfunction sxmm;
+  libxsmm_dxfunction dxmm;
   const void* pv;
 } libxsmm_dispatch_entry;
 /** Filled with zeros due to C language rule. */
@@ -274,59 +272,41 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction0 libxsmm_sdispatch(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const float* alpha, const float* beta)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags | LIBXSMM_GEMM_FLAG_F32PREC, LIBXSMM_PREFETCH, LIBXSMM_ALPHA, LIBXSMM_BETA);
-  return internal_build(&desc).smm0;
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_FLAG_F32PREC, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, LIBXSMM_PREFETCH);
+  return internal_build(&desc).smm;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction0 libxsmm_ddispatch(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const double* alpha, const double* beta)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags, LIBXSMM_PREFETCH, LIBXSMM_ALPHA, LIBXSMM_BETA);
-  return internal_build(&desc).dmm0;
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, LIBXSMM_PREFETCH);
+  return internal_build(&desc).dmm;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction1 libxsmm_sdispatch1(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags,
-  int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sxfunction libxsmm_sxdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const float* alpha, const float* beta, int prefetch)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch, LIBXSMM_ALPHA, LIBXSMM_BETA);
-  return internal_build(&desc).smm1;
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_FLAG_F32PREC, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, prefetch);
+  return internal_build(&desc).sxmm;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction1 libxsmm_ddispatch1(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags,
-  int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dxfunction libxsmm_dxdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const double* alpha, const double* beta, int prefetch)
 {
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags, prefetch, LIBXSMM_ALPHA, LIBXSMM_BETA);
-  return internal_build(&desc).dmm1;
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction2 libxsmm_sdispatch2(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags,
-  int prefetch, float alpha, float beta)
-{
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch, alpha, beta);
-  return internal_build(&desc).smm2;
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction2 libxsmm_ddispatch2(
-  int m, int n, int k, int lda, int ldb, int ldc, int flags,
-  int prefetch, double alpha, double beta)
-{
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, m, n, k, lda, ldb, ldc,
-    flags, prefetch, alpha, beta);
-  return internal_build(&desc).dmm2;
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, prefetch);
+  return internal_build(&desc).dxmm;
 }

@@ -208,11 +208,12 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 1, l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 1,
     (0 == l_single_precision ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
       | (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
       | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
-    l_prefetch, l_alpha, l_beta);
+    l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
+    l_alpha, l_beta, l_prefetch);
 
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */

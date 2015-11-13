@@ -36,31 +36,28 @@ import os
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (5 < argc):
-        threshold = int(sys.argv[1])
-        prefetch = int(sys.argv[2])
-        align_a = int(sys.argv[3])
-        align_c = int(sys.argv[4])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[5:], 0, threshold)
+    if (3 < argc):
+        prefetch = int(sys.argv[1])
+        threshold = int(sys.argv[2])
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0, threshold)
 
-        flags = ("LIBXSMM_GEMM_FLAG_ALIGN_A" if (0 != align_a) else "0") + " | " + ("LIBXSMM_GEMM_FLAG_ALIGN_C" if (0 != align_c) else "0")
         print "libxsmm_gemm_descriptor desc;"
         print "unsigned int indx;"
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
             mn, nm = "LIBXSMM_LD(" + mstr + ", " + nstr + ")", "LIBXSMM_LD(" + nstr + ", " + mstr + ")"
-            print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT,"
+            print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,"
             print "  " + mn + ", " + nm + ", " + kstr + ", " + mn + ", " + kstr + ", " + mn + ","
-            print "  " + flags + " | LIBXSMM_GEMM_FLAG_F32PREC, LIBXSMM_PREFETCH, LIBXSMM_ALPHA, LIBXSMM_BETA);"
+            print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
             print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
-            print "libxsmm_dispatch_cache[indx].smm" + str(int(0 != prefetch)) + " = libxsmm_smm_" + mnkstr + ";"
-            print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT,"
+            print "libxsmm_dispatch_cache[indx].s" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_smm_" + mnkstr + ";"
+            print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,"
             print "  " + mn + ", " + nm + ", " + kstr + ", " + mn + ", " + kstr + ", " + mn + ","
-            print "  " + flags + ", LIBXSMM_PREFETCH, LIBXSMM_ALPHA, LIBXSMM_BETA);"
+            print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
             print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
-            print "libxsmm_dispatch_cache[indx].dmm" + str(int(0 != prefetch)) + " = libxsmm_dmm_" + mnkstr + ";"
+            print "libxsmm_dispatch_cache[indx].d" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_dmm_" + mnkstr + ";"
     elif (1 < argc):
         print "/* no static code */"
     else:

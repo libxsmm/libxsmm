@@ -33,7 +33,7 @@
 
 #include "libxsmm_typedefs.h"
 
-#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH, ALPHA, BETA) { \
+#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) { \
   (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) \
     ? (0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX(LDA, (DESCRIPTOR).m)) \
@@ -49,9 +49,9 @@
   (DESCRIPTOR).beta  = (signed char)((0 < (BETA)  || 0 > (BETA))  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
 }
 
-#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, VECTOR_WIDTH, M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH, ALPHA, BETA) \
+#define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, \
-    M, N, K, LDA, LDB, LDC, FLAGS, PREFETCH, ALPHA, BETA)
+    FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
 /** The libxsmm_gemm_descriptor structure must be ordered by the size of the members (packed). */
 #define LIBXSMM_GEMM_DESCRIPTOR_SIZE (3 * sizeof(unsigned int)  /*LDA,LDB,LDC*/ \
