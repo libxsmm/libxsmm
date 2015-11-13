@@ -35,6 +35,25 @@
 #include <immintrin.h>
 #endif
 
+__attribute__((always_inline)) static inline void stream_init( int    i_length,
+                                                               size_t i_start_address,
+                                                               int*   o_trip_prolog,
+                                                               int*   o_trip_stream    ) {
+  /* let's calculate the prolog until C is cachline aligned */ 
+  /* @TODO check for shifts by the compiler */
+  if ( (i_start_address % 64) != 0 ) {
+    *o_trip_prolog = (64 - (i_start_address % 64))/sizeof(double);
+  }
+  
+  /* let's calculate the end of the streaming part */
+  /* @TODO check for shifts by the compiler */
+  *o_trip_stream = (((i_length-(*o_trip_prolog))/sizeof(double))*sizeof(double))+(*o_trip_prolog);
+
+  /* some bound checks */
+  *o_trip_prolog = ((*o_trip_prolog) > i_length) ?   i_length       : (*o_trip_prolog);
+  *o_trip_stream = ((*o_trip_stream) > i_length) ? (*o_trip_prolog) : (*o_trip_stream);
+}
+
 void stream_update_helmholtz( const double* i_g1,
                               const double* i_g2,
                               const double* i_g3, 
@@ -51,20 +70,9 @@ void stream_update_helmholtz( const double* i_g1,
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
   
-  /* let's calculate the prolog until C is cachline aligned */ 
-  /* @TODO check for shifts by the compiler */
-  if ( ((size_t)io_c % 64) != 0 ) {
-    l_trip_prolog = (64 - ((size_t)io_c % 64))/sizeof(double);
-  }
-  
-  /* let's calculate the end of the streaming part */
-  /* @TODO check for shifts by the compiler */
-  l_trip_stream = (((i_length-l_trip_prolog)/sizeof(double))*sizeof(double))+l_trip_prolog;
+  /* init the trip counts */
+  stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
-  /* some bound checks */
-  l_trip_prolog = (l_trip_prolog > i_length) ? i_length      : l_trip_prolog;
-  l_trip_stream = (l_trip_stream > i_length) ? l_trip_prolog : l_trip_stream;
-  
   /* run the prologue */
   for ( ; l_n < l_trip_prolog;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
@@ -176,19 +184,8 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
   
-  /* let's calculate the prolog until C is cachline aligned */ 
-  /* @TODO check for shifts by the compiler */
-  if ( ((size_t)io_c % 64) != 0 ) {
-    l_trip_prolog = (64 - ((size_t)io_c % 64))/sizeof(double);
-  }
-  
-  /* let's calculate the end of the streaming part */
-  /* @TODO check for shifts by the compiler */
-  l_trip_stream = (((i_length-l_trip_prolog)/sizeof(double))*sizeof(double))+l_trip_prolog;
-
-  /* some bound checks */
-  l_trip_prolog = (l_trip_prolog > i_length) ? i_length      : l_trip_prolog;
-  l_trip_stream = (l_trip_stream > i_length) ? l_trip_prolog : l_trip_stream;
+  /* init the trip counts */
+  stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
   
   /* run the prologue */
   for ( ; l_n < l_trip_prolog;  l_n++ ) {
