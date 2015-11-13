@@ -107,18 +107,16 @@ if __name__ == "__main__":
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
-                        "            IMPORT :: C_FLOAT, LIBXSMM_SGEMM_XARGS\n" \
-                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + (", pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        "            IMPORT :: C_FLOAT\n" \
+                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)" + (", pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "\n") + \
                         "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
-                        "            TYPE(LIBXSMM_SGEMM_XARGS), INTENT(IN) :: xargs\n" \
                         "          END SUBROUTINE" \
                         "\n" \
-                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c, xargs) BIND(C)\n" \
-                        "            IMPORT :: C_DOUBLE, LIBXSMM_DGEMM_XARGS\n" \
-                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + (", pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        "            IMPORT :: C_DOUBLE\n" \
+                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)" + (", pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "\n") + \
                         "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
-                        "            TYPE(LIBXSMM_DGEMM_XARGS), INTENT(IN) :: xargs\n" \
                         "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             print template.safe_substitute(substitute)

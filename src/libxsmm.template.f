@@ -89,27 +89,30 @@
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD)
 
-        ! Type of a function generated for a specific M, N, K,
-        ! and for a specific LDA, LDB, LDC, Alpha, and Beta.
+        ! Type of a function specialized for a given parameter set.
         ABSTRACT INTERFACE
-          PURE SUBROUTINE LIBXSMM_SMM_FUNCTION0(a, b, c) BIND(C)
+          ! Specialized function with fused alpha and beta arguments (single-precision).
+          PURE SUBROUTINE LIBXSMM_SFUNCTION(a, b, c) BIND(C)
             IMPORT :: C_FLOAT
             REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)
             REAL(C_FLOAT), INTENT(INOUT) :: c(*)
           END SUBROUTINE
-          PURE SUBROUTINE LIBXSMM_DMM_FUNCTION0(a, b, c) BIND(C)
+          ! Specialized function with fused alpha and beta arguments (double-precision).
+          PURE SUBROUTINE LIBXSMM_DFUNCTION(a, b, c) BIND(C)
             IMPORT :: C_DOUBLE
             REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)
             REAL(C_DOUBLE), INTENT(INOUT) :: c(*)
           END SUBROUTINE
-          PURE SUBROUTINE LIBXSMM_SMM_FUNCTION1(a, b, c,                &
+          ! Specialized function with alpha, beta, and prefetch arguments (single-precision).
+          PURE SUBROUTINE LIBXSMM_SXFUNCTION(a, b, c,                   &
      &    pa, pb, pc) BIND(C)
             IMPORT :: C_FLOAT, C_PTR
             REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)
             REAL(C_FLOAT), INTENT(INOUT) :: c(*)
             TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
           END SUBROUTINE
-          PURE SUBROUTINE LIBXSMM_DMM_FUNCTION1(a, b, c,                &
+          ! Specialized function with alpha, beta, and prefetch arguments (double-precision).
+          PURE SUBROUTINE LIBXSMM_DXFUNCTION(a, b, c,                   &
      &    pa, pb, pc) BIND(C)
             IMPORT :: C_DOUBLE, C_PTR
             REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)
@@ -121,31 +124,31 @@
         ! Generic function type constructing a procedure pointer
         ! associated with a backend function.
         TYPE :: LIBXSMM_SMM_FUNCTION
-          PROCEDURE(LIBXSMM_SMM_FUNCTION0), NOPASS, POINTER :: fn0
-          PROCEDURE(LIBXSMM_SMM_FUNCTION1), NOPASS, POINTER :: fn1
+          PROCEDURE(LIBXSMM_SFUNCTION), NOPASS, POINTER :: fn0
+          PROCEDURE(LIBXSMM_SXFUNCTION), NOPASS, POINTER :: fn1
         END TYPE
 
         ! Generic function type constructing a procedure pointer
         ! associated with a backend function.
         TYPE :: LIBXSMM_DMM_FUNCTION
-          PROCEDURE(LIBXSMM_DMM_FUNCTION0), NOPASS, POINTER :: fn0
-          PROCEDURE(LIBXSMM_DMM_FUNCTION1), NOPASS, POINTER :: fn1
+          PROCEDURE(LIBXSMM_DFUNCTION), NOPASS, POINTER :: fn0
+          PROCEDURE(LIBXSMM_DXFUNCTION), NOPASS, POINTER :: fn1
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
         INTERFACE libxsmm_sdispatch
           MODULE PROCEDURE                                              &
-     &      libxsmm_smm_function_mnk, libxsmm_smm_function_ldx,         &
-     &      libxsmm_smm_function_prf, libxsmm_smm_function_ldf,         &
-     &      libxsmm_smm_function_abf, libxsmm_smm_function_all
+     &      libxsmm_sfunction_mnk, libxsmm_sfunction_prf,               &
+     &      libxsmm_sfunction_ldp, libxsmm_sfunction_abp,               &
+     &      libxsmm_sfunction_all
         END INTERFACE
 
         ! Construct procedure pointer depending on given argument set.
         INTERFACE libxsmm_ddispatch
           MODULE PROCEDURE                                              &
-     &      libxsmm_dmm_function_mnk, libxsmm_dmm_function_ldx,         &
-     &      libxsmm_dmm_function_prf, libxsmm_dmm_function_ldf,         &
-     &      libxsmm_dmm_function_abf, libxsmm_dmm_function_all
+     &      libxsmm_dfunction_mnk, libxsmm_dfunction_prf,               &
+     &      libxsmm_dfunction_ldp, libxsmm_dfunction_abp,               &
+     &      libxsmm_dfunction_all
         END INTERFACE
 
         ! Check if a function (LIBXSMM_?MM_FUNCTION_TYPE) is available.
@@ -156,8 +159,8 @@
         ! Call a specialized function.
         INTERFACE libxsmm_call
           MODULE PROCEDURE                                              &
-     &      libxsmm_scall_abc, libxsmm_scall_prf, libxsmm_scall_all,    &
-     &      libxsmm_dcall_abc, libxsmm_dcall_prf, libxsmm_dcall_all
+     &      libxsmm_scall_abc, libxsmm_scall_prf,                       &
+     &      libxsmm_dcall_abc, libxsmm_dcall_prf
         END INTERFACE
 
         ! Overloaded auto-dispatch routines (single/double precision).
@@ -170,34 +173,11 @@
           MODULE PROCEDURE libxsmm_sblasmm, libxsmm_dblasmm
         END INTERFACE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm, dgemm
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch0, libxsmm_ddispatch0
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch1, libxsmm_ddispatch1
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sxdispatch, libxsmm_dxdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
         INTERFACE
-          SUBROUTINE sgemm(                                             &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
-            IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLS_KIND
-            CHARACTER(1), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-            REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
-            REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(ldc,*)
-          END SUBROUTINE
-          SUBROUTINE dgemm(                                             &
-     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
-            IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLD_KIND
-            CHARACTER(1), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-            REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
-            REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(ldc,*)
-          END SUBROUTINE
-
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
           END SUBROUTINE
@@ -208,56 +188,45 @@
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (single-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sdispatch0(              &
-     &    m, n, k, lda, ldb, ldc, flags)                                &
+     &    flags, m, n, k, lda, ldb, ldc, alpha, beta)                   &
      &    BIND(C, NAME="libxsmm_sdispatch")
-            IMPORT :: C_FUNPTR, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags
+            IMPORT :: C_FUNPTR, C_INT, C_FLOAT
+            INTEGER(C_INT), INTENT(IN), VALUE :: flags, m, n, k
+            INTEGER(C_INT), INTENT(IN), VALUE :: lda, ldb, ldc
+            REAL(C_FLOAT), INTENT(IN) :: alpha, beta
           END FUNCTION
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (double-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_ddispatch0(              &
-     &    m, n, k, lda, ldb, ldc, flags)                                &
+     &    flags, m, n, k, lda, ldb, ldc, alpha, beta)                   &
      &    BIND(C, NAME="libxsmm_ddispatch")
-            IMPORT :: C_FUNPTR, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags
+            IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
+            INTEGER(C_INT), INTENT(IN), VALUE :: flags, m, n, k
+            INTEGER(C_INT), INTENT(IN), VALUE :: lda, ldb, ldc
+            REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
           END FUNCTION
 
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (single-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sdispatch1(              &
-     &    m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
-            IMPORT :: C_FUNPTR, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
+     &    flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)         &
+     &    BIND(C, NAME="libxsmm_sxdispatch")
+            IMPORT :: C_FUNPTR, C_INT, C_FLOAT
+            INTEGER(C_INT), INTENT(IN), VALUE :: flags, m, n, k
+            INTEGER(C_INT), INTENT(IN), VALUE :: lda, ldb, ldc
+            REAL(C_FLOAT), INTENT(IN) :: alpha, beta
+            INTEGER(C_INT), INTENT(IN), VALUE :: prefetch
           END FUNCTION
           ! Query or JIT-generate a function; return zero if it does not exist,
           ! or if JIT is not supported (double-precision).
           TYPE(C_FUNPTR) PURE FUNCTION libxsmm_ddispatch1(              &
-     &    m, n, k, lda, ldb, ldc, flags, prefetch) BIND(C)
-            IMPORT :: C_FUNPTR, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
-          END FUNCTION
-
-          ! Query or JIT-generate a function; return zero if it does not exist,
-          ! or if JIT is not supported (single-precision).
-          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_sxdispatch(              &
-     &    m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta) BIND(C)
-            IMPORT :: C_FUNPTR, C_FLOAT, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
-            REAL(C_FLOAT),  INTENT(IN), VALUE :: alpha, beta
-          END FUNCTION
-          ! Query or JIT-generate a function; return zero if it does not exist,
-          ! or if JIT is not supported (double-precision).
-          TYPE(C_FUNPTR) PURE FUNCTION libxsmm_dxdispatch(              &
-     &    m, n, k, lda, ldb, ldc, flags, prefetch, alpha, beta) BIND(C)
-            IMPORT :: C_FUNPTR, C_DOUBLE, C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k, lda, ldb, ldc
-            INTEGER(C_INT), INTENT(IN), VALUE :: flags, prefetch
-            REAL(C_DOUBLE), INTENT(IN), VALUE :: alpha, beta
+     &    flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)         &
+     &    BIND(C, NAME="libxsmm_dxdispatch")
+            IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
+            INTEGER(C_INT), INTENT(IN), VALUE :: flags, m, n, k
+            INTEGER(C_INT), INTENT(IN), VALUE :: lda, ldb, ldc
+            REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
+            INTEGER(C_INT), INTENT(IN), VALUE :: prefetch
           END FUNCTION
 
           ! Non-pure function returning the current clock tick
@@ -275,169 +244,261 @@
         END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_mnk(m, n, k, flags)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_mnk
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_mnk(      &
+     &  m, n, k, flags)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch0(m, n, k, 0, 0, 0,                     &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)))
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_mnk%fn0)
+          fn = libxsmm_sdispatch0(                                      &
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, 0, 0, 0, real_null, real_null)
+          CALL C_F_PROCPOINTER(fn, fn0)
+          libxsmm_sfunction_mnk%fn0 => fn0
         END FUNCTION
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_mnk(m, n, k, flags)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_mnk
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_mnk(      &
+     &  m, n, k, flags)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch0(m, n, k, 0, 0, 0,                     &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)))
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_mnk%fn0)
+          fn = libxsmm_ddispatch0(                                      &
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, 0, 0, 0, real_null, real_null)
+          CALL C_F_PROCPOINTER(fn, fn0)
+          libxsmm_dfunction_mnk%fn0 => fn0
         END FUNCTION
 
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_ldx(                              &
-     &  m, n, k, lda, ldb, ldc, flags)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_ldx
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_ldx(      &
+     &  flags, m, n, k, lda, ldb, ldc)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch0(m, n, k, lda, ldb, ldc,               &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)))
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_ldx%fn0)
+          fn = libxsmm_sdispatch0(                                      &
+     &      flags, m, n, k, 0, 0, 0, real_null, real_null)
+          CALL C_F_PROCPOINTER(fn, fn0)
+          libxsmm_sfunction_ldx%fn0 => fn0
         END FUNCTION
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_ldx(                              &
-     &  m, n, k, lda, ldb, ldc, flags)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_ldx
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_ldx(      &
+     &  flags, m, n, k, lda, ldb, ldc)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch0(m, n, k, lda, ldb, ldc,               &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)))
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_ldx%fn0)
+          fn = libxsmm_ddispatch0(                                      &
+     &      flags, m, n, k, 0, 0, 0, real_null, real_null)
+          CALL C_F_PROCPOINTER(fn, fn0)
+          libxsmm_dfunction_ldx%fn0 => fn0
         END FUNCTION
 
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_prf(m, n, k, flags, prefetch)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_prf
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_prf(      &
+     &  flags, m, n, k, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, prefetch
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: prefetch
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch1(m, n, k, 0, 0, 0, flags, prefetch)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_prf%fn1)
+          IF (LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_sdispatch1(flags, m, n, k, 0, 0, 0,            &
+     &        real_null, real_null, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_sfunction_prf%fn1 => fn1
+          ELSE
+            fn = libxsmm_sdispatch0(flags, m, n, k, 0, 0, 0,            &
+     &        real_null, real_null)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_sfunction_prf%fn0 => fn0
+          ENDIF
         END FUNCTION
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_prf(m, n, k, flags, prefetch)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_prf
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_prf(      &
+     &  flags, m, n, k, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, prefetch
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: prefetch
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch1(m, n, k, 0, 0, 0, flags, prefetch)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_prf%fn1)
+          IF (LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_ddispatch1(flags, m, n, k, 0, 0, 0,            &
+     &        real_null, real_null, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_dfunction_prf%fn1 => fn1
+          ELSE
+            fn = libxsmm_ddispatch0(flags, m, n, k, 0, 0, 0,            &
+     &        real_null, real_null)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_dfunction_prf%fn0 => fn0
+          ENDIF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_function_ldf
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_ldf(                              &
-     &  m, n, k, lda, ldb, ldc, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_ldp
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_ldp(      &
+     &  flags, m, n, k, lda, ldb, ldc, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, prefetch
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sdispatch1(m, n, k, lda, ldb, ldc,               &
-     &      flags, prefetch)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_ldf%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_sdispatch1(flags, m, n, k, lda, ldb, ldc,      &
+     &        real_null, real_null, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_sfunction_ldp%fn1 => fn1
+          ELSE
+            fn = libxsmm_sdispatch0(flags, m, n, k, lda, ldb, ldc,      &
+     &        real_null, real_null)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_sfunction_ldp%fn0 => fn0
+          ENDIF
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_function_ldf
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_ldf(                              &
-     &  m, n, k, lda, ldb, ldc, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_ldp
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_ldp(      &
+     &  flags, m, n, k, lda, ldb, ldc, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, prefetch
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_ddispatch1(m, n, k, lda, ldb, ldc,               &
-     &      flags, prefetch)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_ldf%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_ddispatch1(flags, m, n, k, lda, ldb, ldc,      &
+     &        real_null, real_null, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_dfunction_ldp%fn1 => fn1
+          ELSE
+            fn = libxsmm_ddispatch0(flags, m, n, k, lda, ldb, ldc,      &
+     &        real_null, real_null)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_dfunction_ldp%fn0 => fn0
+          ENDIF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_function_abf
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_abf(                              &
-     &  m, n, k, alpha, beta, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_abp
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_abp(      &
+     &  flags, m, n, k, alpha, beta, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sxdispatch(m, n, k, 0, 0, 0,                     &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
-     &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
-     &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_abf%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_sdispatch1(                                    &
+     &        flags, m, n, k, 0, 0, 0, alpha, beta, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_sfunction_abp%fn1 => fn1
+          ELSE
+            fn = libxsmm_sdispatch0(                                    &
+     &        flags, m, n, k, 0, 0, 0, alpha, beta)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_sfunction_abp%fn0 => fn0
+          ENDIF
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_function_abf
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_abf(                              &
-     &  m, n, k, alpha, beta, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_abp
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_abp(      &
+     &  flags, m, n, k, alpha, beta, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_dxdispatch(m, n, k, 0, 0, 0,                     &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
-     &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
-     &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_abf%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_ddispatch1(                                    &
+     &        flags, m, n, k, 0, 0, 0, alpha, beta, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_dfunction_abp%fn1 => fn1
+          ELSE
+            fn = libxsmm_ddispatch0(                                    &
+     &        flags, m, n, k, 0, 0, 0, alpha, beta)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_dfunction_abp%fn0 => fn0
+          ENDIF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_function_all
-        TYPE(LIBXSMM_SMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_smm_function_all(                              &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sfunction_all
+        TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction_all(      &
+     &  flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
           REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLS_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_SXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_SFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_sxdispatch(m, n, k, lda, ldb, ldc,               &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
-     &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
-     &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_smm_function_all%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_sdispatch1(                                    &
+     &        flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_sfunction_all%fn1 => fn1
+          ELSE
+            fn = libxsmm_sdispatch0(                                    &
+     &        flags, m, n, k, lda, ldb, ldc, alpha, beta)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_sfunction_all%fn0 => fn0
+          ENDIF
         END FUNCTION
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_function_all
-        TYPE(LIBXSMM_DMM_FUNCTION)                                      &
-     &  FUNCTION libxsmm_dmm_function_all(                              &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dfunction_all
+        TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction_all(      &
+     &  flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
           REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLD_KIND), POINTER :: real_null => NULL()
+          PROCEDURE(LIBXSMM_DXFUNCTION), POINTER :: fn1
+          PROCEDURE(LIBXSMM_DFUNCTION), POINTER :: fn0
           TYPE(C_FUNPTR) :: fn
-          fn = libxsmm_dxdispatch(m, n, k, lda, ldb, ldc,               &
-     &      MERGE(0, flags, .NOT.PRESENT(flags)),                       &
-     &      MERGE(0, prefetch, .NOT.PRESENT(prefetch)),                 &
-     &      alpha, beta)
-          CALL C_F_PROCPOINTER(fn, libxsmm_dmm_function_all%fn1)
+          IF (PRESENT(prefetch).AND.                                    &
+     &    LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
+            fn = libxsmm_ddispatch1(                                    &
+     &        flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
+            CALL C_F_PROCPOINTER(fn, fn1)
+            libxsmm_dfunction_all%fn1 => fn1
+          ELSE
+            fn = libxsmm_ddispatch0(                                    &
+     &        flags, m, n, k, lda, ldb, ldc, alpha, beta)
+            CALL C_F_PROCPOINTER(fn, fn0)
+            libxsmm_dfunction_all%fn0 => fn0
+          ENDIF
         END FUNCTION
-        
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_savailable
         LOGICAL PURE FUNCTION libxsmm_savailable(fn)
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           libxsmm_savailable =                                          &
-     &      ASSOCIATED(fn%fn0).OR.                                      &
-     &      ASSOCIATED(fn%fn1).OR.                                      &
-     &      ASSOCIATED(fn%fn1)
+     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
         END FUNCTION
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_davailable
         LOGICAL PURE FUNCTION libxsmm_davailable(fn)
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           libxsmm_davailable =                                          &
-     &      ASSOCIATED(fn%fn0).OR.                                      &
-     &      ASSOCIATED(fn%fn1).OR.                                      &
-     &      ASSOCIATED(fn%fn1)
+     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc
@@ -472,27 +533,6 @@
           CALL fn%fn1(a, b, c, pa, pb, pc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_all
-        PURE SUBROUTINE libxsmm_scall_all(                              &
-     &  fn, a, b, c, pa, pb, pc, alpha, beta)
-          TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
-          REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(:,:)
-          TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-          REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-          CALL fn%fn1(a, b, c, pa, pb, pc, alpha, beta)
-        END SUBROUTINE
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_all
-        PURE SUBROUTINE libxsmm_dcall_all(                              &
-     &  fn, a, b, c, pa, pb, pc, alpha, beta)
-          TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
-          REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(:,:)
-          TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-          REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-          CALL fn%fn1(a, b, c, pa, pb, pc, alpha, beta)
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_align_value
         INTEGER(LIBXSMM_INT_KIND) PURE FUNCTION libxsmm_align_value(    &
      &    n, typesize, alignment)
@@ -510,6 +550,19 @@
           REAL(T), INTENT(IN) :: a(:,:), b(:,:)
           REAL(T), INTENT(INOUT) :: c(:,:)
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm
+          INTERFACE
+            SUBROUTINE sgemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLS_KIND
+              CHARACTER(1), INTENT(IN) :: transa, transb
+              INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+              INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
+              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(ldc,*)
+            END SUBROUTINE
+          END INTERFACE
           IF (0.NE.LIBXSMM_COL_MAJOR) THEN
             CALL sgemm(                                                 &
      &        MERGE('N', 'T',                                           &
@@ -543,6 +596,19 @@
           REAL(T), INTENT(IN) :: a(:,:), b(:,:)
           REAL(T), INTENT(INOUT) :: c(:,:)
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: dgemm
+          INTERFACE
+            SUBROUTINE dgemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLD_KIND
+              CHARACTER(1), INTENT(IN) :: transa, transb
+              INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+              INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
+              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(ldc,*)
+            END SUBROUTINE
+          END INTERFACE
           IF (0.NE.LIBXSMM_COL_MAJOR) THEN
             CALL dgemm(                                                 &
      &        MERGE('N', 'T',                                           &
@@ -579,19 +645,12 @@
           TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           TYPE(LIBXSMM_SMM_FUNCTION) :: xmm
-          INTEGER(LIBXSMM_INT_KIND) :: mn
           IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-            IF (.NOT.(PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc))) THEN
-              xmm = libxsmm_smm_function_mnk(m, n, k, flags)
-              IF (libxsmm_savailable(xmm)) THEN
-                CALL libxsmm_scall_abc(xmm, a, b, c)
-              ELSE
-                CALL libxsmm_sblasmm(                                   &
-     &            flags, m, n, k, a, b, c, alpha, beta)
-              ENDIF
-            ELSE IF (.NOT.(PRESENT(alpha).OR.PRESENT(beta))) THEN
-              xmm = libxsmm_smm_function_prf(m, n, k, flags,            &
-     &          LIBXSMM_PREFETCH)
+            IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
+              xmm = libxsmm_sfunction_all(                              &
+     &          flags, m, n, k, 0, 0, 0, alpha, beta,                   &
+     &          MERGE(LIBXSMM_PREFETCH, LIBXSMM_PREFETCH_SIGNATURE,     &
+     &              LIBXSMM_PREFETCH_NONE.NE.LIBXSMM_PREFETCH))
               IF (libxsmm_savailable(xmm)) THEN
                 CALL libxsmm_scall_prf(xmm, a, b, c, pa, pb, pc)
               ELSE
@@ -599,12 +658,9 @@
      &            flags, m, n, k, a, b, c, alpha, beta)
               ENDIF
             ELSE
-              xmm = libxsmm_smm_function_abf(                           &
-     &          m, n, k, alpha, beta, flags,                            &
-     &          LIBXSMM_PREFETCH)
+              xmm = libxsmm_sfunction_ldx(flags, m, n, k, 0, 0, 0)
               IF (libxsmm_savailable(xmm)) THEN
-                CALL libxsmm_scall_all(                                 &
-     &            xmm, a, b, c, pa, pb, pc, alpha, beta)
+                CALL libxsmm_scall_abc(xmm, a, b, c)
               ELSE
                 CALL libxsmm_sblasmm(                                   &
      &            flags, m, n, k, a, b, c, alpha, beta)
@@ -626,19 +682,12 @@
           TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           TYPE(LIBXSMM_DMM_FUNCTION) :: xmm
-          INTEGER(LIBXSMM_INT_KIND) :: mn
           IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
-            IF (.NOT.(PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc))) THEN
-              xmm = libxsmm_dmm_function_mnk(m, n, k, flags)
-              IF (libxsmm_davailable(xmm)) THEN
-                CALL libxsmm_dcall_abc(xmm, a, b, c)
-              ELSE
-                CALL libxsmm_dblasmm(                                   &
-     &            flags, m, n, k, a, b, c, alpha, beta)
-              ENDIF
-            ELSE IF (.NOT.(PRESENT(alpha).OR.PRESENT(beta))) THEN
-              xmm = libxsmm_dmm_function_prf(m, n, k, flags,            &
-     &          LIBXSMM_PREFETCH)
+            IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
+              xmm = libxsmm_dfunction_all(                              &
+     &          flags, m, n, k, 0, 0, 0, alpha, beta,                   &
+     &          MERGE(LIBXSMM_PREFETCH, LIBXSMM_PREFETCH_SIGNATURE,     &
+     &              LIBXSMM_PREFETCH_NONE.NE.LIBXSMM_PREFETCH))
               IF (libxsmm_davailable(xmm)) THEN
                 CALL libxsmm_dcall_prf(xmm, a, b, c, pa, pb, pc)
               ELSE
@@ -646,12 +695,9 @@
      &            flags, m, n, k, a, b, c, alpha, beta)
               ENDIF
             ELSE
-              xmm = libxsmm_dmm_function_abf(                           &
-     &          m, n, k, alpha, beta, flags,                            &
-     &          LIBXSMM_PREFETCH)
+              xmm = libxsmm_dfunction_ldx(flags, m, n, k, 0, 0, 0)
               IF (libxsmm_davailable(xmm)) THEN
-                CALL libxsmm_dcall_all(                                 &
-     &            xmm, a, b, c, pa, pb, pc, alpha, beta)
+                CALL libxsmm_dcall_abc(xmm, a, b, c)
               ELSE
                 CALL libxsmm_dblasmm(                                   &
      &            flags, m, n, k, a, b, c, alpha, beta)
