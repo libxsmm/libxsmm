@@ -174,12 +174,12 @@ int main(int argc, char* argv[])
 
     const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
     const int ldcsize = ldc * LIBXSMM_LD(n, m);
-    if ((CP2K_MAX_SIZE) < csize) {
+    if ((CP2K_MAX_SIZE) < ldcsize) {
       throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
     }
 
     const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
+    const int csize = m * n, s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
     const double gflops = 2.0 * s * m * n * k * 1E-9;
