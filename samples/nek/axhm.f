@@ -131,11 +131,11 @@ PROGRAM stpm
     tm1 = 0; tm2 = 0; tm3 = 0
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      call libxsmm_blasmm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
-      do j = 1, k
-          call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
-      enddo
-      call libxsmm_blasmm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
+      CALL libxsmm_blasmm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
+      DO j = 1, k
+          CALL libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
+      END DO
+      CALL libxsmm_blasmm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
       !DEC$ vector aligned nontemporal
       d(:,:,:,i) = h1*(g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*RESHAPE(tm3, (/m,n,k/))) &
                  + h2*b(:,:,:,i)*a(:,:,:,i)
@@ -156,11 +156,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_blasmm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
-    do j = 1, k
-        call libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
-    enddo
-    call libxsmm_blasmm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
+    CALL libxsmm_blasmm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
+    DO j = 1, k
+        CALL libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
+    END DO
+    CALL libxsmm_blasmm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
     CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                   tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
                                   a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
@@ -174,8 +174,8 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
+  CALL performance(duration, m, n, k, s)
+  IF (check.NE.0) CALL validate(d, c)
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (mxm)"
@@ -189,9 +189,9 @@ PROGRAM stpm
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
     CALL mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
-    do j = 1, k
+    DO j = 1, k
         CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
-    enddo
+    END DO
     CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
     CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                   tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
@@ -206,8 +206,8 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
+  CALL performance(duration, m, n, k, s)
+  IF (check.NE.0) CALL validate(d, c)
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
@@ -221,9 +221,9 @@ PROGRAM stpm
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
     CALL libxsmm_mm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
-    do j = 1, k
+    DO j = 1, k
         CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
-    enddo
+    END DO
     CALL libxsmm_mm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
     CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                   tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
@@ -238,8 +238,8 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
+  CALL performance(duration, m, n, k, s)
+  IF (check.NE.0) CALL validate(d, c)
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (specialized)"
@@ -255,11 +255,11 @@ PROGRAM stpm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      !CALL libxsmm_call(xmm1, dx, a(1,1,1,i), tm1)
+      CALL libxsmm_call(xmm1, C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1))
       DO j = 1, k
-          !CALL libxsmm_call(xmm2, a(1,1,j,i), dy, tm2(1,1,j))
+          CALL libxsmm_call(xmm2, C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(tm2(1,1,j)))
       END DO
-      !CALL libxsmm_call(xmm3, a(1,1,1,i), dz, tm3)
+      CALL libxsmm_call(xmm3, C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(tm3))
       CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                     tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
                                     a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &
@@ -271,13 +271,13 @@ PROGRAM stpm
     ! Deallocate thread-local arrays
     DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
+
+    ! Print Performance Summary and check results
+    CALL performance(duration, m, n, k, s)
+    IF (check.NE.0) CALL validate(d, c)
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"
   END IF
-
-  ! Print Performance Summary and check results
-  call performance(duration, m, n, k, s)
-  if (check.NE.0) call validate(d, c)
 
   ! Deallocate global arrays
   DEALLOCATE(a)
