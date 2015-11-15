@@ -24,7 +24,7 @@
     <ClInclude Include="..\src\libxsmm.template.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_fallback.h">
+    <ClInclude Include="..\include\libxsmm_frontend.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_generator.h">

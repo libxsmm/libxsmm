@@ -83,27 +83,26 @@ int main(int argc, char* argv[])
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 
-    const int csize = m * n;
-    if ((MAX_SIZE) < csize) {
+    const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
+    const int ldcsize = ldc * LIBXSMM_LD(n, m);
+    if ((MAX_SIZE) < ldcsize) {
       throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
     }
 
-    const int asize = m * k, bsize = k * n, aspace = (LIBXSMM_ALIGNED_MAX) / sizeof(T);
-    const int ldc = LIBXSMM_ALIGN_STORES(LIBXSMM_LD(m, n), sizeof(T));
-    const int csize_act = ldc*n;
-    const int s = (2ULL << 30) / ((asize + bsize + csize_act) * sizeof(T)); // 2 GByte
-    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2*csize_act /*RFO*/) * sizeof(T); // batched
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, we skip C as this just in cache
+    const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const int csize = m * n, s = (2ULL << 30) / ((asize + bsize + ldcsize) * sizeof(T)); // 2 GByte
+    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
+    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize, int bsize, int csize_act): a(new T[asize]), b(new T[bsize]), c(new T[csize_act]) {}
+      raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
-    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize_act + aspace - 1);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNED_MAX);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNED_MAX);
-    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNED_MAX);
+    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * ldcsize + aspace - 1);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
+    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -111,11 +110,11 @@ int main(int argc, char* argv[])
     for (int i = 0; i < s; ++i) {
       init<42>(a + i * asize, m, k, i);
       init<24>(b + i * bsize, k, n, i);
-      init<22>(c + i * csize_act, ldc, n, i);
+      init<22>(c + i * ldcsize, ldc, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize_act))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * ldcsize))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512_MIC)
@@ -125,15 +124,15 @@ int main(int argc, char* argv[])
       libxsmm_init();
 
       fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != (LIBXSMM_ROW_MAJOR) ? "row-major" : "column-major",
-        s, 1.0 * (s * (asize + bsize + csize_act) * sizeof(T)) / (1 << 20));
+        m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major",
+        s, 1.0 * (s * (asize + bsize + ldcsize) * sizeof(T)) / (1 << 20));
 
       { // warm-up for BLAS Lib
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
+          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * ldcsize);
         }
       }
 
@@ -144,7 +143,7 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * csize_act);
+          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * ldcsize);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -161,8 +160,8 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          // make sure that stacksize is covering the problem size
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, tmp);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -180,8 +179,8 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          // make sure that stacksize is covering the problem size; tmp is zero-initialized by lang. rules
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNED_MAX);
+          // make sure that stacksize is covering the problem size
+          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
           libxsmm_blasmm(m, n, k, a, b, tmp);
         }
@@ -192,6 +191,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
+      // finalize LIBXSMM
+      libxsmm_finalize();
       fprintf(stdout, "Finished\n");
     }
   }

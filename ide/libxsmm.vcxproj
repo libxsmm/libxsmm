@@ -29,7 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
-    <ClInclude Include="..\include\libxsmm_fallback.h" />
+    <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_prefetch.h" />

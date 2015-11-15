@@ -16,10 +16,10 @@ endif
 CUT ?= cut
 
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
-SRCDIR = $(ROOTDIR)
-INCDIR = $(ROOTDIR)
-BLDDIR = build
 DEPDIR = ../..
+SRCDIR = $(ROOTDIR)
+INCDIR = $(DEPDIR)/include
+BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
@@ -71,6 +71,10 @@ endif
 
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(INCDIR)/*.hh  2> /dev/null | tr "\n" " ") \
+           $(shell ls -1 $(SRCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
@@ -104,97 +108,6 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
-
-ifeq (1,$(MKL_DIRECT))
-	MKL_STATIC = 1
-	DFLAGS += -DMKL_DIRECT_CALL_SEQ
-endif
-
-ifeq (1,$(MKL)) # sequential
-	DFLAGS += -D__MKL
-	IFLAGS +=-I$(MKLROOT)/include
-	ifeq (0,$(MKL_STATIC)) # shared
-		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
-		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"
-		endif
-	else # static
-		LDFLAGS += -Wl,--start-group \
-			$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-			$(MKLROOT)/lib/intel64/libmkl_core.a \
-			$(MKLROOT)/lib/intel64/libmkl_sequential.a \
-		-Wl,--end-group
-		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"--start-group \
-				$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/mic/libmkl_core.a \
-				$(MKLROOT)/lib/mic/libmkl_sequential.a \
-			--end-group"
-		endif
-	endif
-	LDFLAGS += -lpthread -lm
-	ifneq (0,$(OFFLOAD))
-		LDFLAGS += -offload-option,mic,ld,"-lm"
-	endif
-else ifneq (0,$(MKL)) # multi-threaded
-	DFLAGS += -D__MKL
-	IFLAGS +=-I$(MKLROOT)/include
-	ifeq (0,$(MKL_STATIC)) # shared
-		ifneq (0,$(INTEL))
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread"
-			endif
-		else # assuming GNU toolchain
-			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread
-		endif
-	else # static
-		ifneq (0,$(INTEL))
-			LDFLAGS += -Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/intel64/libmkl_core.a \
-				$(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
-			-Wl,--end-group
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"--start-group \
-					$(MKLROOT)/lib/mic/libmkl_intel_lp64.a \
-					$(MKLROOT)/lib/mic/libmkl_core.a \
-					$(MKLROOT)/lib/mic/libmkl_intel_thread.a \
-				--end-group"
-			endif
-		else # assuming GNU toolchain
-			LDFLAGS += -Wl,--start-group \
-				$(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
-				$(MKLROOT)/lib/intel64/libmkl_core.a \
-				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
-			-Wl,--end-group -ldl
-		endif
-	endif
-	ifneq (0,$(INTEL))
-		ifeq (0,$(OMP))
-			LDFLAGS += -liomp5
-			ifneq (0,$(OFFLOAD))
-				LDFLAGS += -offload-option,mic,ld,"-liomp5"
-			endif
-		endif
-		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
-		endif
-	endif
-	LDFLAGS += -lpthread -lm
-else ifneq (0,$(BLAS)) # generic
-	ifneq (Windows_NT,$(OS))
-		LDFLAGS += -lblas
-	else
-		LDFLAGS += -lblas.dll
-	endif
-	CLDFLAGS += -lgfortran
-	ifeq (,$(VERSION))
-		LDFLAGS += -lquadmath
-	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
-		CLDFLAGS += -lquadmath
-	endif
-endif
 
 .PHONY: all
 all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized

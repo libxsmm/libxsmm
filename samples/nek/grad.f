@@ -45,15 +45,12 @@ PROGRAM grad
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, cx, cy, cz
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: rx, ry, rz
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm1, xmm2, xmm3
-  TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
+  TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
   CHARACTER(32) :: argv
-  TYPE(C_FUNPTR) :: f1, f2, f3
   REAL(8) :: duration
 
-  xargs = LIBXSMM_DGEMM_XARGS_CTOR(alpha, beta)
   duration = 0
 
   argc = COMMAND_ARGUMENT_COUNT()
@@ -139,17 +136,17 @@ PROGRAM grad
 
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, cx, cy, cz, m, n, k)
+  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k)
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call mxmf2(dx, m, a(:,:,:,i), m, cx(:,:,:,i), n*k, xargs)
+    call mxmf2(dx, m, a(:,:,:,i), m, cx(:,:,:,i), n*k)
     do j = 1, k
-        call mxmf2(a(:,:,j,i), m, dy, n, cy(:,:,j,i), n, xargs)
+        call mxmf2(a(:,:,j,i), m, dy, n, cy(:,:,j,i), n)
     enddo
-    call mxmf2(a(:,:,:,i), m*n, dz, k, cz(:,:,:,i), k, xargs)
+    call mxmf2(a(:,:,:,i), m*n, dz, k, cz(:,:,:,i), k)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -162,17 +159,17 @@ PROGRAM grad
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, xargs, a, dx, dy, dz, cx, cy, cz, m, n, k)
+  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k)
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), xargs)
+    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), alpha, beta)
     do j = 1, k
-        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, cy(:,:,j,i), xargs)
+        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, cy(:,:,j,i), alpha, beta)
     enddo
-    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), xargs)
+    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), alpha, beta)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -184,35 +181,21 @@ PROGRAM grad
   if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  f1 = libxsmm_dispatch(m, n*k, m, alpha, beta)
-  f2 = libxsmm_dispatch(m, n, n, alpha, beta)
-  f3 = libxsmm_dispatch(m*n, k, k, alpha, beta)
-  if (C_ASSOCIATED(f1)) then
-    CALL C_F_PROCPOINTER(f1, xmm1)
-  else
-    write(*,*) "f1 not built"
-  endif
-  if (C_ASSOCIATED(f2)) then
-    CALL C_F_PROCPOINTER(f2, xmm2)
-  else
-    write(*,*) "f2 not built"
-  endif
-  if (C_ASSOCIATED(f3)) then
-    CALL C_F_PROCPOINTER(f3, xmm3)
-  else
-    write(*,*) "f3 not built"
-  endif
-  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, xargs, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3)
+  CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha, beta)
+  CALL libxsmm_dispatch(xmm2, m, n, n, alpha, beta)
+  CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha, beta)
+  IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3)
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL xmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), xargs)
+    CALL xmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), alpha, beta)
     do j = 1, k
-        call xmm2(a(:,:,j,i), dy, cy(:,:,j,i), xargs)
+        call xmm2(a(:,:,j,i), dy, cy(:,:,j,i), alpha, beta)
     enddo
-    CALL xmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), xargs)
+    CALL xmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), alpha, beta)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -222,6 +205,9 @@ PROGRAM grad
   ! Print Performance Summary and check results
   call performance(duration, m, n, k, s)
   if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
+  ELSE
+    WRITE(*,*) "Could not build specialized function(s)!"
+  END IF
 
   ! Deallocate global arrays
   DEALLOCATE(a)

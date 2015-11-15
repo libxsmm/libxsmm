@@ -35,57 +35,53 @@ import math, sys
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (5 == argc):
+    if (6 == argc):
         row_major = int(sys.argv[1])
         m, n, k = int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])
+        prefetch = int(sys.argv[5])
+
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
         if (0 != row_major):
-            signature = "b, a, c LIBXSMM_PREFETCH_ANEXT(xargs, b) LIBXSMM_PREFETCH_BNEXT(xargs, a) LIBXSMM_PREFETCH_CNEXT(xargs, c)"
+            signature = "b, a, c, pb, pa, pc" if (0 != prefetch) else "b, a, c"
         else: # ColMajor
-            signature = "a, b, c LIBXSMM_PREFETCH_ANEXT(xargs, a) LIBXSMM_PREFETCH_BNEXT(xargs, b) LIBXSMM_PREFETCH_CNEXT(xargs, c)"
+            signature = "a, b, c, pa, pb, pc" if (0 != prefetch) else "a, b, c"
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c, const libxsmm_sgemm_xargs* xargs)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "("
+        print "  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
+           + (",\n  const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")")
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");"
         print "#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_sp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_smm_" + mnkstr + "_hsw(" + signature + ");"
         print "#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_sp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_smm_" + mnkstr + "_snb(" + signature + ");"
         print "#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_sp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_smm_" + mnkstr + "_wsm(" + signature + ");"
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
-        print "  LIBXSMM_IMM(float, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, xargs);"
+        print "  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
         print "#endif"
         print "}"
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c, const libxsmm_dgemm_xargs* xargs)"
+        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "("
+        print "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
+           + (",\n  const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")")
         print "{"
         print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");"
         print "#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_dp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_dmm_" + mnkstr + "_hsw(" + signature + ");"
         print "#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_dp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_dmm_" + mnkstr + "_snb(" + signature + ");"
         print "#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_dp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_dmm_" + mnkstr + "_wsm(" + signature + ");"
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
-        print "  LIBXSMM_UNUSED(xargs); /* TODO: remove this line when alpha/beta are fully supported by the backend */"
         print "  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
-        print "  LIBXSMM_IMM(double, int, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, xargs);"
+        print "  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c" + (", pa, pb, pc);" if (0 != prefetch) else ");")
         print "#endif"
         print "}"
     else:

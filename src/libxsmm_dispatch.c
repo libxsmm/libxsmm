@@ -53,7 +53,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_DISPATCH_CACHESIZE ((LIBXSMM_MAX_MNK) * 8)
+#define LIBXSMM_DISPATCH_CACHESIZE (LIBXSMM_MAX_MNK * 8)
 #if !defined(_WIN32)
 #define LIBXSMM_DISPATCH_PAGESIZE sysconf(_SC_PAGESIZE)
 #else
@@ -62,13 +62,15 @@
 #define LIBXSMM_DISPATCH_SEED 0
 
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_cache_entry {
+typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
   libxsmm_sfunction smm;
   libxsmm_dfunction dmm;
+  libxsmm_sxfunction sxmm;
+  libxsmm_dxfunction dxmm;
   const void* pv;
-} libxsmm_cache_entry;
+} libxsmm_dispatch_entry;
 /** Filled with zeros due to C language rule. */
-LIBXSMM_RETARGETABLE libxsmm_cache_entry libxsmm_cache[(LIBXSMM_DISPATCH_CACHESIZE)];
+LIBXSMM_RETARGETABLE libxsmm_dispatch_entry libxsmm_dispatch_cache[(LIBXSMM_DISPATCH_CACHESIZE)];
 LIBXSMM_RETARGETABLE int libxsmm_init_check = 0;
 
 #if !defined(_OPENMP)
@@ -116,9 +118,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  libxsmm_cache_entry result;
+  /* TODO: issue #44 */
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
+{
+  libxsmm_dispatch_entry result;
   unsigned int hash, indx;
   assert(0 != desc);
 
@@ -132,9 +140,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const lib
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED);
 
   indx = hash % (LIBXSMM_DISPATCH_CACHESIZE);
-  result = libxsmm_cache[indx]; /* TODO: handle collision */
+  result = libxsmm_dispatch_cache[indx]; /* TODO: handle collision */
 
-#if (0 != (LIBXSMM_JIT))
+#if (0 != LIBXSMM_JIT)
   if (0 == result.pv) {
 # if !defined(_WIN32) && !defined(__CYGWIN__)
 # if !defined(_OPENMP)
@@ -144,7 +152,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const lib
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-      result = libxsmm_cache[indx];
+      result = libxsmm_dispatch_cache[indx];
 
       if (0 == result.pv) {
         char l_arch[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* empty initial arch string */
@@ -244,7 +252,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const lib
         free(l_generated_code.generated_code);
 
         /* make function pointer available for dispatch */
-        libxsmm_cache[indx].pv = l_code;
+        libxsmm_dispatch_cache[indx].pv = l_code;
         
         /* prepare return value */
         result.pv = l_code;
@@ -264,31 +272,41 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry internal_build(const lib
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
-  float alpha, float beta, int lda, int ldb, int ldc, int flags, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const float* alpha, const float* beta)
 {
-  const int mn = LIBXSMM_LD(m, n);
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
-    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? mn :
-      LIBXSMM_ALIGN_VALUE(mn, sizeof(float), LIBXSMM_ALIGNED_LOADS)) : LIBXSMM_MAX(lda, mn),
-    0 == ldb ? k : LIBXSMM_MAX(ldb, k),
-    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? mn :
-      LIBXSMM_ALIGN_VALUE(mn, sizeof(float), LIBXSMM_ALIGNED_STORES)) : LIBXSMM_MAX(ldc, mn),
-    flags | LIBXSMM_GEMM_FLAG_F32PREC, prefetch);
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_FLAG_F32PREC, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, LIBXSMM_PREFETCH);
   return internal_build(&desc).smm;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
-  double alpha, double beta, int lda, int ldb, int ldc, int flags, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const double* alpha, const double* beta)
 {
-  const int mn = LIBXSMM_LD(m, n);
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, m, n, k, alpha, beta,
-    0 == lda ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & flags) ? mn :
-      LIBXSMM_ALIGN_VALUE(mn, sizeof(double), LIBXSMM_ALIGNED_LOADS)) : LIBXSMM_MAX(lda, mn),
-    0 == ldb ? k : LIBXSMM_MAX(ldb, k),
-    0 == ldc ? (0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & flags) ? mn :
-      LIBXSMM_ALIGN_VALUE(mn, sizeof(double), LIBXSMM_ALIGNED_STORES)) : LIBXSMM_MAX(ldc, mn),
-    flags, prefetch);
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, LIBXSMM_PREFETCH);
   return internal_build(&desc).dmm;
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sxfunction libxsmm_sxdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const float* alpha, const float* beta, int prefetch)
+{
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_FLAG_F32PREC, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, prefetch);
+  return internal_build(&desc).sxmm;
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dxfunction libxsmm_dxdispatch(
+  int flags, int m, int n, int k, int lda, int ldb, int ldc,
+  const double* alpha, const double* beta, int prefetch)
+{
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, flags, m, n, k, lda, ldb, ldc,
+    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta, prefetch);
+  return internal_build(&desc).dxmm;
 }
