@@ -66,6 +66,15 @@ MODULE STREAM_UPDATE_KERNELS
       REAL(KIND=C_DOUBLE), VALUE,        INTENT(IN)    :: i_h1
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
+
+    SUBROUTINE stream_vector_compscale( i_a, i_b, io_c, i_length ) & 
+                                            BIND(C, name='stream_vector_compscale')
+      IMPORT :: C_DOUBLE, C_INT
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_a
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_b
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(INOUT) :: io_c
+      INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
+    END SUBROUTINE
   END INTERFACE
 END MODULE
 
