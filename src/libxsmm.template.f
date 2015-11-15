@@ -158,6 +158,8 @@
         INTERFACE libxsmm_dispatch
           MODULE PROCEDURE                                              &
      &      libxsmm_sdispatch_mnk, libxsmm_ddispatch_mnk,               &
+     &      libxsmm_sdispatch_ldx, libxsmm_ddispatch_ldx,               &
+     &      libxsmm_sdispatch_abf, libxsmm_ddispatch_abf,               &
      &      libxsmm_sdispatch_all, libxsmm_ddispatch_all
         END INTERFACE
 
@@ -349,8 +351,8 @@
           REAL(LIBXSMM_FLS_KIND), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           function = libxsmm_sfunction0(                                &
-     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)), m, n, k,  &
-     &      alpha = alpha, beta = beta)
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, alpha = alpha, beta = beta)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_mnk
@@ -361,8 +363,56 @@
           REAL(LIBXSMM_FLD_KIND), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           function = libxsmm_dfunction0(                                &
-     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)), m, n, k,  &
-     &      alpha = alpha, beta = beta)
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, alpha = alpha, beta = beta)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch_ldx
+        SUBROUTINE libxsmm_sdispatch_ldx(function,                      &
+     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
+          TYPE(LIBXSMM_SMM_FUNCTION), INTENT(OUT) :: function
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(LIBXSMM_FLS_KIND), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          function = libxsmm_sfunction0(                                &
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, lda, ldb, ldc, alpha, beta)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_ldx
+        SUBROUTINE libxsmm_ddispatch_ldx(function,                      &
+     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
+          TYPE(LIBXSMM_DMM_FUNCTION), INTENT(OUT) :: function
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(LIBXSMM_FLD_KIND), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
+          function = libxsmm_dfunction0(                                &
+     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
+     &      m, n, k, lda, ldb, ldc, alpha, beta)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch_abf
+        SUBROUTINE libxsmm_sdispatch_abf(function,                      &
+     &  flags, m, n, k, lda, ldb, ldc, ralpha, rbeta)
+          TYPE(LIBXSMM_SMM_FUNCTION), INTENT(OUT) :: function
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: ralpha, rbeta
+          function = libxsmm_sfunction0(                                &
+     &      flags, m, n, k, lda, ldb, ldc, ralpha, rbeta)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_abf
+        SUBROUTINE libxsmm_ddispatch_abf(function,                      &
+     &  flags, m, n, k, lda, ldb, ldc, ralpha, rbeta)
+          TYPE(LIBXSMM_DMM_FUNCTION), INTENT(OUT) :: function
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
+          REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: ralpha, rbeta
+          function = libxsmm_dfunction0(                                &
+     &      flags, m, n, k, lda, ldb, ldc, ralpha, rbeta)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch_all
@@ -371,8 +421,10 @@
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(OUT) :: function
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          REAL(LIBXSMM_FLS_KIND), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: prefetch
+          function = libxsmm_sfunction1(                                &
+     &      flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_all
@@ -381,8 +433,10 @@
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(OUT) :: function
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-          REAL(LIBXSMM_FLD_KIND), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: prefetch
+          REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
+          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: prefetch
+          function = libxsmm_dfunction1(                                &
+     &      flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_savailable
