@@ -42,7 +42,7 @@ PROGRAM smm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm
-  INTEGER :: argc, m, n, k, mn, nm, ldc, check
+  INTEGER :: argc, m, n, k, mn, nm, ldc
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
   REAL(8) :: duration
@@ -74,9 +74,6 @@ PROGRAM smm
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
-
-  CALL GETENV("CHECK", argv)
-  READ(argv, "(I32)") check
 
   s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
   mn = libxsmm_ld(m, n); nm = libxsmm_ld(n, m)
@@ -136,9 +133,7 @@ PROGRAM smm
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
   CALL performance(duration, m, n, k, s)
-  IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-  END IF
+  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
@@ -161,9 +156,7 @@ PROGRAM smm
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
   CALL performance(duration, m, n, k, s)
-  IF (0.NE.check) THEN
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-  END IF
+  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
 
   CALL libxsmm_dispatch(xmm, m, n, k)
   IF (libxsmm_available(xmm)) THEN
@@ -188,9 +181,7 @@ PROGRAM smm
     DEALLOCATE(tmp)
     !$OMP END PARALLEL
     CALL performance(duration, m, n, k, s)
-    IF (0.NE.check) THEN
-      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-    END IF
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
   END IF
 
   ! Deallocate global arrays
