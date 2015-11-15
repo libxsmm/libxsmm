@@ -111,9 +111,9 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 include $(ROOTDIR)/Makefile.inc
 
 .PHONY: all
-all: $(OUTDIR)/stpm $(OUTDIR)/rstr $(OUTDIR)/axhm $(LIBDIR)/libstream_update_kernels.a
+all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(LIBDIR)/libstream_update_kernels.a
 
-$(OUTDIR)/stpm: $(BLDDIR)/stpm-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/grad: $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
@@ -197,10 +197,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/stpm $(OUTDIR)/axhm $(OUTDIR)/rstr
+	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 else
-	@rm -f $(OUTDIR)/stpm $(OUTDIR)/axhm $(OUTDIR)/rstr
+	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f $(LIBDIR)/libstream_update_kernels.a
@@ -213,8 +213,8 @@ ifneq (0,$(MIC))
 	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
 endif
 endif
-	@cp $(ROOTDIR)/stpm-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/stpm.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/grad-perf.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/grad.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/rstr.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
 
