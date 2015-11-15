@@ -258,7 +258,7 @@
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
-            libxsmm_sdispatch0(flags, m, n, k,                          &
+     &      libxsmm_sdispatch0(flags, m, n, k,                          &
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
@@ -282,7 +282,7 @@
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
-            libxsmm_ddispatch0(flags, m, n, k,                          &
+     &      libxsmm_ddispatch0(flags, m, n, k,                          &
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
