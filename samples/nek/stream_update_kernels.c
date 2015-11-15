@@ -40,13 +40,13 @@ __attribute__((always_inline)) static inline void stream_init( int    i_length,
                                                                int*   o_trip_prolog,
                                                                int*   o_trip_stream    ) {
   /* let's calculate the prolog until C is cachline aligned */ 
-  /* @TODO check for shifts by the compiler */
+  /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {
     *o_trip_prolog = (64 - (i_start_address % 64))/sizeof(double);
   }
   
   /* let's calculate the end of the streaming part */
-  /* @TODO check for shifts by the compiler */
+  /* @TODO we need to add shifts */
   *o_trip_stream = (((i_length-(*o_trip_prolog))/sizeof(double))*sizeof(double))+(*o_trip_prolog);
 
   /* some bound checks */
