@@ -482,7 +482,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc
-        PURE SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -491,7 +491,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abc
-        PURE SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -500,7 +500,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prf
-        PURE SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -511,7 +511,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_prf
-        PURE SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
