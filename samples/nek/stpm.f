@@ -45,12 +45,10 @@ PROGRAM stpm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
-  PROCEDURE(LIBXSMM_DMM_FUNCTION), POINTER :: xmm1, xmm2, xmm3
-  TYPE(LIBXSMM_DGEMM_XARGS) :: xargs
+  TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
   CHARACTER(32) :: argv
-  TYPE(C_FUNPTR) :: f1, f2, f3
   REAL(8) :: duration
 
   xargs = LIBXSMM_DGEMM_XARGS_CTOR(alpha, beta)
