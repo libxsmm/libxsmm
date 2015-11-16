@@ -31,7 +31,7 @@
 !*****************************************************************************!
 
 
-PROGRAM stpm
+PROGRAM grad
   USE :: LIBXSMM
 
   !$ USE omp_lib
@@ -40,11 +40,11 @@ PROGRAM stpm
   INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, d
+  REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz
+  REAL(T), allocatable, dimension(:,:,:,:), target :: rx, ry, rz
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
-  REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
-  !$OMP THREADPRIVATE(tm1, tm2, tm3)
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, cx, cy, cz
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
@@ -80,40 +80,40 @@ PROGRAM stpm
   END IF
   s = ISHFT(MAX(i, 0_8), 30) / ((m * n * k) * T * 5)
 
-  ALLOCATE(c(m,n,k,s))
+  ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
-  ALLOCATE(g1(m,n,k,s), g2(m,n,k,s), g3(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
 
   ! Initialize 
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, c, m, n, k, s)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, cx, cy, cz, m, n, k, s)
   DO i = 1, s
     DO ix = 1, m
       DO iy = 1, n
         DO iz = 1, k
           a(ix,iy,iz,i) = ix + iy*m + iz*m*n
-          g1(ix,iy,iz,i) = 1.
-          g2(ix,iy,iz,i) = 1.
-          g3(ix,iy,iz,i) = 1.
-          c(ix,iy,iz,i) = 0.
+          cx(ix,iy,iz,i) = 0.
+          cy(ix,iy,iz,i) = 0.
+          cz(ix,iy,iz,i) = 0.
         END DO
       END DO
     END DO
   END DO 
-  dx = 1.; dy = 1.; dz = 1.
+  dx = 1.; dy = 2.; dz = 3.
 
   WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4) 
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
   IF (0.NE.check) THEN
-    ALLOCATE(d(m,n,k,s))
-    !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(d, m, n, k, s)
+    ALLOCATE(rx(m,n,k,s), ry(m,n,k,s), rz(m,n,k,s))
+    !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(rx, ry, rz, m, n, k, s)
     DO i = 1, s
       DO ix = 1, m
         DO iy = 1, n
           DO iz = 1, k
-            d(ix,iy,iz,i) = 0.
+            rx(ix,iy,iz,i) = 0.
+            ry(ix,iy,iz,i) = 0.
+            rz(ix,iy,iz,i) = 0.
           END DO
         END DO
       END DO
@@ -121,131 +121,113 @@ PROGRAM stpm
 
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) &
-    !$OMP   SHARED(duration, a, dx, dy, dz, g1, g2, g3, d, m, n, k)
-    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-    tm1 = 0; tm2 = 0; tm3 = 0
+    !$OMP   SHARED(duration, a, dx, dy, dz, rx, ry, rz, m, n, k)
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      tm1 = reshape( matmul(dx, reshape(a(:,:,:,i), (/m,n*k/))), (/m,n,k/))
-      DO j = 1, k
-          tm2(:,:,j) = matmul(a(:,:,j,i), dy)
-      END DO
-      tm3 = reshape( matmul(reshape(a(:,:,:,i), (/m*n,k/)), dz), (/m,n,k/))
-      !DEC$ vector aligned nontemporal
-      d(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+      rx(:,:,:,i) = reshape( matmul(dx, reshape(a(:,:,:,i), (/m,n*k/))), (/m,n,k/))
+      do j = 1, k
+          ry(:,:,j,i) = matmul(a(:,:,j,i), dy)
+      enddo
+      rz(:,:,:,i) = reshape( matmul(reshape(a(:,:,:,i), (/m*n,k/)), dz), (/m,n,k/))
     END DO
     ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
   END IF
 
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3 = 0
+  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k)
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL mxmf2(dx, m, a(:,:,:,i), m, tm1, n*k)
-    DO j = 1, k
-        CALL mxmf2(a(:,:,j,i), m, dy, n, tm2(:,:,j), n)
-    END DO
-    CALL mxmf2(a(:,:,:,i), m*n, dz, k, tm3, k)
-    !DEC$ vector aligned nontemporal
-    c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+    call mxmf2(dx, m, a(:,:,:,i), m, cx(:,:,:,i), n*k)
+    do j = 1, k
+        call mxmf2(a(:,:,j,i), m, dy, n, cy(:,:,j,i), n)
+    enddo
+    call mxmf2(a(:,:,:,i), m*n, dz, k, cz(:,:,:,i), k)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  CALL performance(duration, m, n, k, s)
-  IF (check.NE.0) CALL validate(d, c)
+  call performance(duration, m, n, k, s)
+  if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k)
-  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-  tm1 = 0; tm2 = 0; tm3 = 0
+  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k)
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
-    DO j = 1, k
-        CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
-    END DO
-    CALL libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
-    !DEC$ vector aligned nontemporal
-    c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
+    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), alpha, beta)
+    do j = 1, k
+        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, cy(:,:,j,i), alpha, beta)
+    enddo
+    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), alpha, beta)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  CALL performance(duration, m, n, k, s)
-  IF (check.NE.0) CALL validate(d, c)
+  call performance(duration, m, n, k, s)
+  if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
   CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha, beta)
   CALL libxsmm_dispatch(xmm2, m, n, n, alpha, beta)
   CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha, beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
-    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, c, m, n, k, xmm1, xmm2, xmm3)
-    ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
-    tm1 = 0; tm2 = 0; tm3 = 0
-    !$OMP MASTER
-    start = libxsmm_timer_tick()
-    !$OMP END MASTER
-    !$OMP DO
-    DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_call(xmm1, C_LOC(dx), C_LOC(a(:,:,:,i)), C_LOC(tm1(:,:,1)))
-      DO j = 1, k
-          CALL libxsmm_call(xmm2, C_LOC(a(:,:,j,i)), C_LOC(dy), C_LOC(tm2(:,:,j)))
-      END DO
-      CALL libxsmm_call(xmm3, C_LOC(a(:,:,:,i)), C_LOC(dz), C_LOC(tm3(:,:,1)))
-      !DEC$ vector aligned nontemporal
-      c(:,:,:,i) = g1(:,:,:,i)*tm1 + g2(:,:,:,i)*tm2 + g3(:,:,:,i)*tm3
-    END DO
-    !$OMP MASTER
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-    !$OMP END MASTER
-    ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2, tm3)
-    !$OMP END PARALLEL
+  !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3)
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  !$OMP DO
+  DO i = LBOUND(a, 4), UBOUND(a, 4)
+    CALL libxsmm_call(xmm1,  C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(cx(1,1,1,i)))
+    do j = 1, k
+        call libxsmm_call(xmm2, C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(cy(1,1,j,i)))
+    enddo
+    CALL libxsmm_call(xmm3, C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(cz(1,1,1,i)))
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  !$OMP END PARALLEL
 
-    ! Print Performance Summary and check results
-    CALL performance(duration, m, n, k, s)
-    IF (check.NE.0) CALL validate(d, c)
+  ! Print Performance Summary and check results
+  call performance(duration, m, n, k, s)
+  if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"
   END IF
 
   ! Deallocate global arrays
   DEALLOCATE(a)
-  deallocate(g1, g2, g3)
   deallocate(dx, dy, dz)
-  DEALLOCATE(c)
+  DEALLOCATE(cx, cy, cz)
   IF (0.NE.check) THEN
-    DEALLOCATE(d)
+    DEALLOCATE(rx, ry, rz)
   END IF
 
 contains
-  SUBROUTINE validate(ref, test)
-    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
+  SUBROUTINE validate(refx, refy, refz, testx, testy, testz)
+    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: refx, refy, refz
+    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: testx, testy, testz
+    real(T) :: diff
 
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
+    diff = MAXVAL((refx - testx) * (refx - testx))
+    diff = MAX(MAXVAL((refy - testy) * (refy - testy)), diff)
+    diff = MAX(MAXVAL((refz - testz) * (refz - testz)), diff)
+
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff 
   END SUBROUTINE validate
 
   SUBROUTINE performance(duration, m, n, k, s)
@@ -255,10 +237,10 @@ contains
 
     IF (0.LT.duration) THEN
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-        (s * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
+        (s * m * n * k * (2*(m+n+k) - 3) * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (s * m * n * k * (5) * T / (duration * ISHFT(1_8, 30))), " GB/s"
-    END IF
+        (s * m * n * k * (4) * T / (duration * ISHFT(1_8, 30))), " GB/s"
+    ENDIF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   END SUBROUTINE
 END PROGRAM
