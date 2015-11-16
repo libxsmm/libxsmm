@@ -74,6 +74,14 @@
 # endif
 #endif /*LIBXSMM_PRAGMA*/
 
+#if defined(_MSC_VER)
+# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
+#elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
+#else
+# define LIBXSMM_MESSAGE(MSG)
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))

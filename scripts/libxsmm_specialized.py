@@ -61,6 +61,7 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
         print "  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
+        print "  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")"
         if (0 != prefetch):
             print "  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);"
         print "  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);"
@@ -83,6 +84,8 @@ if __name__ == "__main__":
         print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
         print "  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");"
         print "#else"
+        print "  /** Generate below message once per translation unit (already emitted for single-precision; see above)"
+        print "  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/"
         if (0 != prefetch):
             print "  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);"
         print "  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);"
