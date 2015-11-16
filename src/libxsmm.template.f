@@ -30,7 +30,9 @@
 !*****************************************************************************!
 
       MODULE LIBXSMM
-        USE, INTRINSIC :: ISO_C_BINDING
+        USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
+     &                      C_F_PROCPOINTER, C_FUNPTR, C_LOC, C_PTR,    &
+     &                      C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG
         IMPLICIT NONE
 
         ! Kind of types used to parameterize the implementation.
