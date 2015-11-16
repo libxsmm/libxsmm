@@ -28,17 +28,18 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include <libxsmm_macros.h>
 #include <stddef.h>
 
 #if defined(__SSE3__)
 #include <immintrin.h>
 #endif
 
-__attribute__((always_inline)) static inline void stream_init( int    i_length,
-                                                               size_t i_start_address,
-                                                               int*   o_trip_prolog,
-                                                               int*   o_trip_stream    ) {
+LIBXSMM_INLINE_ALWAYS LIBXSMM_RETARGETABLE
+void stream_init( int    i_length,
+                  size_t i_start_address,
+                  int*   o_trip_prolog,
+                  int*   o_trip_stream    ) {
   /* let's calculate the prolog until C is cachline aligned */ 
   /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {
@@ -54,6 +55,7 @@ __attribute__((always_inline)) static inline void stream_init( int    i_length,
   *o_trip_stream = ((*o_trip_stream) > i_length) ? (*o_trip_prolog) : (*o_trip_stream);
 }
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 void stream_vector_compscale( const double* i_a,
                               const double* i_b,
                               double*       io_c,
@@ -109,6 +111,7 @@ void stream_vector_compscale( const double* i_a,
   }
 }
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 void stream_update_helmholtz( const double* i_g1,
                               const double* i_g2,
                               const double* i_g3, 
@@ -226,6 +229,7 @@ void stream_update_helmholtz( const double* i_g1,
   }
 }
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 void stream_update_helmholtz_no_h2( const double* i_g1,
                                     const double* i_g2,
                                     const double* i_g3, 
