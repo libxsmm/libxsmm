@@ -13,16 +13,16 @@ compiler:
 
 script:
   - make -e realclean &&
-    bash make.sh -ci -j &&
+    bash make.sh -ci-cm -j &&
     make -e samples &&
     make -e test &&
     bash samples/cp2k/cp2k-test.sh
 
-  - make -e realclean &&
-    bash make.sh -cif -j &&
+  - true || (make -e realclean &&
+    bash make.sh -ci-rm -j &&
     make -e samples &&
     make -e testf &&
-    bash samples/smm/smm-test.sh
+    bash samples/smm/smm-test.sh)
 
   - make -e realclean &&
     make -e PEDANTIC=1 ALIGNED_STORES=1 JIT=1 &&
@@ -34,7 +34,7 @@ script:
   - make -e realclean &&
     make -e PEDANTIC=1 JIT=1 &&
     rm -f samples/smm/smmf-perf.sh &&
-    bash make.sh -cif drytest &&
+    bash make.sh -ci drytest &&
     bash samples/smm/smmf-perf.sh &&
     bash samples/smm/smm-test.sh
 

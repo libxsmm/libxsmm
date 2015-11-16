@@ -26,12 +26,15 @@ ifneq (0,$(INTEL))
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 		FCFLAGS += -free
+		FMFLAGS += -e03
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
 		FCFLAGS += -e03
 	else
 		FCFLAGS += -free
 	endif
+	# flag specifying output directory must be last
+	FMFLAGS += -module
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -97,7 +100,6 @@ ifneq (0,$(INTEL))
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
-	FCMODDIRFLAG = -module
 else # GCC assumed
 	ifeq (,$(CXX_CHECK))
 		CXX = $(GPP)
@@ -108,10 +110,15 @@ else # GCC assumed
 	ifeq (,$(FC_CHECK))
 		FC = $(GFC)
 	endif
-	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
+	GCC_VERSION_STRING = $(shell $(CC) --version | grep "gcc (.\+) " | sed "s/gcc (.\+) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f1)
+	GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f2)
+	GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f3)
+	ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
+		GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
+	else
+		GCC_VERSION = 0
+	endif
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
@@ -125,12 +132,21 @@ else # GCC assumed
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -ffree-form
+		FMFLAGS += -std=f2003 -pedantic -Wunused-variable
+		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+			FMFLAGS += -Wuse-without-only
+		endif
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-		FCFLAGS += -std=f2003 -Werror=c-binding-type
+		FCFLAGS += -std=f2003 -pedantic -Wunused-variable
+		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+			FMFLAGS += -Wuse-without-only
+		endif
 	else
 		FCFLAGS += -ffree-form
 	endif
+	# flag specifying output directory must be last
+	FMFLAGS += -J
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
@@ -189,7 +205,6 @@ else # GCC assumed
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
-	FCMODDIRFLAG = -J
 endif
 
 ifneq (,$(CXX))
@@ -326,9 +341,9 @@ else ifneq (0,$(BLAS)) # generic
 		LDFLAGS += -lblas$(BLAS_BITS).dll
 	endif
 	CLDFLAGS += -lgfortran
-	ifeq (,$(VERSION))
+	ifeq (,$(GCC_VERSION_STRING))
 		LDFLAGS += -lquadmath
-	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
+	else ifneq (0,$(shell echo "$$((40500 <= $(GCC_VERSION)))"))
 		CLDFLAGS += -lquadmath
 	endif
 endif

@@ -30,7 +30,9 @@
 !*****************************************************************************!
 
       MODULE LIBXSMM
-        USE, INTRINSIC :: ISO_C_BINDING
+        USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
+     &                      C_F_PROCPOINTER, C_FUNPTR, C_LOC, C_PTR,    &
+     &                      C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG
         IMPLICIT NONE
 
         ! Kind of types used to parameterize the implementation.
@@ -258,7 +260,7 @@
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
-            libxsmm_sdispatch0(flags, m, n, k,                          &
+     &      libxsmm_sdispatch0(flags, m, n, k,                          &
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
@@ -282,7 +284,7 @@
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
-            libxsmm_ddispatch0(flags, m, n, k,                          &
+     &      libxsmm_ddispatch0(flags, m, n, k,                          &
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
@@ -482,7 +484,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc
-        PURE SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -491,7 +493,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abc
-        PURE SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -500,7 +502,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prf
-        PURE SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -511,7 +513,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_prf
-        PURE SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(T), INTENT(IN), TARGET :: a(*), b(*)
@@ -753,7 +755,6 @@
           REAL(T), INTENT(IN) :: pa(*), pb(*), pc(*)
           REAL(T), INTENT(IN) :: ralpha, rbeta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          TYPE(LIBXSMM_SMM_FUNCTION) :: function
           CALL libxsmm_smm(m, n, k, a, b, c, pa, pb, pc,                &
      &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
      &      ralpha, rbeta)
@@ -770,7 +771,6 @@
           REAL(T), INTENT(IN) :: pa(*), pb(*), pc(*)
           REAL(T), INTENT(IN) :: ralpha, rbeta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          TYPE(LIBXSMM_DMM_FUNCTION) :: function
           CALL libxsmm_dmm(m, n, k, a, b, c, pa, pb, pc,                &
      &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
      &      ralpha, rbeta)

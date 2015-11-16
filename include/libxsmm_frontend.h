@@ -32,13 +32,36 @@
 #define LIBXSMM_FRONTEND_H
 
 #include "libxsmm.h"
+#include <assert.h>
 
+/** Helper macro for GEMM argument permutation depending on storage scheme. */
 #if (0 != LIBXSMM_ROW_MAJOR)
 # define LIBXSMM_LD(M, N) (N)
 #else
 # define LIBXSMM_LD(M, N) (M)
 #endif
 
+/** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
+#if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
+# define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
+#endif
+#if 0 != ((LIBXSMM_PREFETCH) & 8)
+# define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
+#endif
+#if 0/*no scheme yet using C*/
+# define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
+#endif
+#if !defined(LIBXSMM_PREFETCH_A)
+# define LIBXSMM_PREFETCH_A(EXPR) 0
+#endif
+#if !defined(LIBXSMM_PREFETCH_B)
+# define LIBXSMM_PREFETCH_B(EXPR) 0
+#endif
+#if !defined(LIBXSMM_PREFETCH_C)
+# define LIBXSMM_PREFETCH_C(EXPR) 0
+#endif
+
+/** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # if defined(LIBXSMM_OFFLOAD_BUILD)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -48,6 +71,7 @@
 #   include <mkl.h>
 # endif
 #else
+/** Fallback prototype functions served by any compliant BLAS. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
@@ -82,8 +106,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 #else
 # define LIBXSMM_IMM(REAL, UINT, FLAGS, M, N, K, A, B, C, ALPHA, BETA) { \
   const REAL *const libxsmm_a_ = LIBXSMM_LD(B, A), *const libxsmm_b_ = LIBXSMM_LD(A, B); \
-  const REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : (((REAL)1) == *(ALPHA) ? ((REAL)1) : (((REAL)-1) == *(ALPHA) ? ((REAL)-1) : *(ALPHA))); \
-  const REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : (((REAL)1) == *(BETA)  ? ((REAL)1) : (((REAL) 0) == *(BETA)  ? ((REAL) 0) : *(BETA))); \
+  const REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : (((REAL)1) == *((const REAL*)(ALPHA)) ? ((REAL)1) : (((REAL)-1) == *((const REAL*)(ALPHA)) ? ((REAL)-1) : *((const REAL*)(ALPHA)))); \
+  const REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : (((REAL)1) == *((const REAL*)(BETA))  ? ((REAL)1) : (((REAL) 0) == *((const REAL*)(BETA))  ? ((REAL) 0) : *((const REAL*)(BETA)))); \
   const UINT libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M); \
   const UINT libxsmm_lda_ = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) ? libxsmm_m_ : \
     LIBXSMM_ALIGN_VALUE(libxsmm_m_, sizeof(REAL), LIBXSMM_ALIGNMENT); \

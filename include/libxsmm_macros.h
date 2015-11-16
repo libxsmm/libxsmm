@@ -49,6 +49,8 @@
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE static inline
+# elif defined(_MSC_VER)
+#   define LIBXSMM_INLINE static __inline
 # else
 #   define LIBXSMM_INLINE static
 # endif /*C99*/
@@ -71,6 +73,14 @@
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
 #endif /*LIBXSMM_PRAGMA*/
+
+#if defined(_MSC_VER)
+# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
+#elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
+#else
+# define LIBXSMM_MESSAGE(MSG)
+#endif
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
@@ -135,14 +145,21 @@
 
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
+# if defined(__cplusplus)
+#   define LIBXSMM_INLINE_ALWAYS __forceinline
+# else
+#   define LIBXSMM_INLINE_ALWAYS static __forceinline
+# endif
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
 # define LIBXSMM_CDECL __cdecl
 #elif defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
 # define LIBXSMM_ATTRIBUTE(A)
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N)
 # define LIBXSMM_CDECL
 #endif

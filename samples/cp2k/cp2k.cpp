@@ -313,7 +313,10 @@ int main(int argc, char* argv[])
 #endif
             const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            libxsmm_mm(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp, aij + asize, bij + bsize, tmp);
+            libxsmm_mm(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp,
+              LIBXSMM_PREFETCH_A(aij + asize),
+              LIBXSMM_PREFETCH_B(bij + bsize),
+              LIBXSMM_PREFETCH_C(tmp));
 #else
             libxsmm_mm(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp);
 #endif
@@ -349,7 +352,10 @@ int main(int argc, char* argv[])
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            xmm(ai, bi, tmp, aij + asize, bij + bsize, tmp);
+            xmm(ai, bi, tmp,
+              LIBXSMM_PREFETCH_A(aij + asize),
+              LIBXSMM_PREFETCH_B(bij + bsize),
+              LIBXSMM_PREFETCH_C(tmp));
 #else
             xmm(ai, bi, tmp);
 #endif
