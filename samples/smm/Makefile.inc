@@ -110,7 +110,7 @@ else # GCC assumed
 	ifeq (,$(FC_CHECK))
 		FC = $(GFC)
 	endif
-	GCC_VERSION_STRING = $(shell $(CC) --version | grep " (.\+) " | sed "s/.\+ (.\+) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	GCC_VERSION_STRING = $(shell $(CC) --version | grep " (..\+) " | sed "s/.\+ (..\+) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
 	ifneq (,$(GCC_VERSION_STRING))
 		GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f1)
 		GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f2)
