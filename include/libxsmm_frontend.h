@@ -33,12 +33,34 @@
 
 #include "libxsmm.h"
 
+/** Helper macro for GEMM argument permutation depending on storage scheme. */
 #if (0 != LIBXSMM_ROW_MAJOR)
 # define LIBXSMM_LD(M, N) (N)
 #else
 # define LIBXSMM_LD(M, N) (M)
 #endif
 
+/** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
+#if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
+# define LIBXSMM_PREFETCH_A(EXPR) (EXPR),
+#endif
+#if 0 != ((LIBXSMM_PREFETCH) & 8)
+# define LIBXSMM_PREFETCH_B(EXPR) (EXPR),
+#endif
+#if 0/*no scheme yet using C*/
+# define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
+#endif
+#if !defined(LIBXSMM_PREFETCH_A)
+# define LIBXSMM_PREFETCH_A(EXPR) 0
+#endif
+#if !defined(LIBXSMM_PREFETCH_B)
+# define LIBXSMM_PREFETCH_B(EXPR) 0
+#endif
+#if !defined(LIBXSMM_PREFETCH_C)
+# define LIBXSMM_PREFETCH_C(EXPR) 0
+#endif
+
+/** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # if defined(LIBXSMM_OFFLOAD_BUILD)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -48,6 +70,7 @@
 #   include <mkl.h>
 # endif
 #else
+/** Fallback prototype functions served by any compliant BLAS. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
