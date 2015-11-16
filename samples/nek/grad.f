@@ -43,8 +43,8 @@ PROGRAM grad
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz
   REAL(T), allocatable, dimension(:,:,:,:), target :: rx, ry, rz
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: a, cx, cy, cz
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNED_MAX :: rx, ry, rz
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, cx, cy, cz
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
@@ -191,11 +191,11 @@ PROGRAM grad
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL xmm1(dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), alpha, beta)
+    CALL libxsmm_call(xmm1,  C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(cx(1,1,1,i)))
     do j = 1, k
-        call xmm2(a(:,:,j,i), dy, cy(:,:,j,i), alpha, beta)
+        call libxsmm_call(xmm2, C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(cy(1,1,j,i)))
     enddo
-    CALL xmm3(reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), alpha, beta)
+    CALL libxsmm_call(xmm3, C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(cz(1,1,1,i)))
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
