@@ -110,10 +110,11 @@ else # GCC assumed
 	ifeq (,$(FC_CHECK))
 		FC = $(GFC)
 	endif
-	VERSION = $(shell $(CC) --version | grep "gcc (GCC)" | sed "s/gcc (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	VERSION_MAJOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f1)
-	VERSION_MINOR = $(shell echo "$(VERSION)" | $(CUT) -d"." -f2)
-	VERSION_PATCH = $(shell echo "$(VERSION)" | $(CUT) -d"." -f3)
+	GCC_VERSION_STRING = $(shell $(CC) --version | grep " (GCC) " | sed "s/.\+ (GCC) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
+	GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f1)
+	GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f2)
+	GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f3)
+	GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
@@ -127,10 +128,16 @@ else # GCC assumed
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -ffree-form
-		FMFLAGS += -std=f2003
+		FMFLAGS += -std=f2003 -pedantic -Wunused-variable
+		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+			FMFLAGS += -Wuse-without-only
+		endif
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-		FCFLAGS += -std=f2003
+		FCFLAGS += -std=f2003 -pedantic -Wunused-variable
+		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+			FMFLAGS += -Wuse-without-only
+		endif
 	else
 		FCFLAGS += -ffree-form
 	endif
@@ -330,9 +337,9 @@ else ifneq (0,$(BLAS)) # generic
 		LDFLAGS += -lblas$(BLAS_BITS).dll
 	endif
 	CLDFLAGS += -lgfortran
-	ifeq (,$(VERSION))
+	ifeq (,$(GCC_VERSION_STRING))
 		LDFLAGS += -lquadmath
-	else ifneq (0,$(shell echo "$$((40500 <= $(VERSION_MAJOR) * 10000 + $(VERSION_MINOR) * 100 + $(VERSION_PATCH)))"))
+	else ifneq (0,$(shell echo "$$((40500 <= $(GCC_VERSION)))"))
 		CLDFLAGS += -lquadmath
 	endif
 endif
