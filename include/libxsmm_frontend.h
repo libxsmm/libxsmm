@@ -32,6 +32,7 @@
 #define LIBXSMM_FRONTEND_H
 
 #include "libxsmm.h"
+#include <assert.h>
 
 /** Helper macro for GEMM argument permutation depending on storage scheme. */
 #if (0 != LIBXSMM_ROW_MAJOR)
@@ -105,8 +106,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 #else
 # define LIBXSMM_IMM(REAL, UINT, FLAGS, M, N, K, A, B, C, ALPHA, BETA) { \
   const REAL *const libxsmm_a_ = LIBXSMM_LD(B, A), *const libxsmm_b_ = LIBXSMM_LD(A, B); \
-  const REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : (((REAL)1) == *(ALPHA) ? ((REAL)1) : (((REAL)-1) == *(ALPHA) ? ((REAL)-1) : *(ALPHA))); \
-  const REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : (((REAL)1) == *(BETA)  ? ((REAL)1) : (((REAL) 0) == *(BETA)  ? ((REAL) 0) : *(BETA))); \
+  const REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : (((REAL)1) == *((const REAL*)(ALPHA)) ? ((REAL)1) : (((REAL)-1) == *((const REAL*)(ALPHA)) ? ((REAL)-1) : *((const REAL*)(ALPHA)))); \
+  const REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : (((REAL)1) == *((const REAL*)(BETA))  ? ((REAL)1) : (((REAL) 0) == *((const REAL*)(BETA))  ? ((REAL) 0) : *((const REAL*)(BETA)))); \
   const UINT libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M); \
   const UINT libxsmm_lda_ = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) ? libxsmm_m_ : \
     LIBXSMM_ALIGN_VALUE(libxsmm_m_, sizeof(REAL), LIBXSMM_ALIGNMENT); \
