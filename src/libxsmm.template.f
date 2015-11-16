@@ -753,7 +753,6 @@
           REAL(T), INTENT(IN) :: pa(*), pb(*), pc(*)
           REAL(T), INTENT(IN) :: ralpha, rbeta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          TYPE(LIBXSMM_SMM_FUNCTION) :: function
           CALL libxsmm_smm(m, n, k, a, b, c, pa, pb, pc,                &
      &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
      &      ralpha, rbeta)
@@ -770,7 +769,6 @@
           REAL(T), INTENT(IN) :: pa(*), pb(*), pc(*)
           REAL(T), INTENT(IN) :: ralpha, rbeta
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          TYPE(LIBXSMM_DMM_FUNCTION) :: function
           CALL libxsmm_dmm(m, n, k, a, b, c, pa, pb, pc,                &
      &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
      &      ralpha, rbeta)
