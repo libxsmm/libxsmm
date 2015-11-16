@@ -36,13 +36,13 @@
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) { \
   (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) \
-    ? (0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX(LDA, (DESCRIPTOR).m)) \
-    : LIBXSMM_ALIGN_VALUE(0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX(LDA, (DESCRIPTOR).m), \
+    ? (0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDA), (DESCRIPTOR).m)) \
+    : LIBXSMM_ALIGN_VALUE(0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDA), (DESCRIPTOR).m), \
        0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float), VECTOR_WIDTH)); \
-  (DESCRIPTOR).ldb = (unsigned int)LIBXSMM_MAX(LDB, K); \
+  (DESCRIPTOR).ldb = (unsigned int)LIBXSMM_MAX((unsigned int)(LDB), (unsigned int)(K)); \
   (DESCRIPTOR).ldc = (unsigned int)(0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & (FLAGS)) \
-    ? (0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX(LDC, (DESCRIPTOR).m)) \
-    : LIBXSMM_ALIGN_VALUE(0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX(LDC, (DESCRIPTOR).m), \
+    ? (0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDC), (DESCRIPTOR).m)) \
+    : LIBXSMM_ALIGN_VALUE(0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDC), (DESCRIPTOR).m), \
        0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float), VECTOR_WIDTH)); \
   (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
   (DESCRIPTOR).alpha = (signed char)((0 < (ALPHA) || 0 > (ALPHA)) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
