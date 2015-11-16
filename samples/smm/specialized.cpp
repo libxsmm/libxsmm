@@ -142,7 +142,10 @@ int main(int argc, char* argv[])
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
           T* ci = c + i * ldcsize;
 #if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, ci, ai + asize, bi + bsize, ci + ldcsize);
+          xmm(ai, bi, ci,
+            LIBXSMM_PREFETCH_A(ai + asize),
+            LIBXSMM_PREFETCH_B(bi + bsize),
+            LIBXSMM_PREFETCH_C(ci + ldcsize));
 #else
           xmm(ai, bi, ci);
 #endif
@@ -166,7 +169,10 @@ int main(int argc, char* argv[])
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
 #if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, tmp, ai + asize, bi + bsize, tmp);
+          xmm(ai, bi, tmp,
+            LIBXSMM_PREFETCH_A(ai + asize),
+            LIBXSMM_PREFETCH_B(bi + bsize),
+            LIBXSMM_PREFETCH_C(tmp));
 #else
           xmm(ai, bi, tmp);
 #endif
