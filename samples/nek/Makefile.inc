@@ -26,12 +26,15 @@ ifneq (0,$(INTEL))
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 		FCFLAGS += -free
+		FMFLAGS += -e03
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
 		FCFLAGS += -e03
 	else
 		FCFLAGS += -free
 	endif
+	# flag specifying output directory must be last
+	FMFLAGS += -module
 	ifeq (0,$(DBG))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
@@ -97,7 +100,6 @@ ifneq (0,$(INTEL))
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
-	FCMODDIRFLAG = -module
 else # GCC assumed
 	ifeq (,$(CXX_CHECK))
 		CXX = $(GPP)
@@ -125,12 +127,15 @@ else # GCC assumed
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -ffree-form
+		FMFLAGS += -std=f2003
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-		FCFLAGS += -std=f2003 -Werror=c-binding-type
+		FCFLAGS += -std=f2003
 	else
 		FCFLAGS += -ffree-form
 	endif
+	# flag specifying output directory must be last
+	FMFLAGS += -J
 	ifeq (0,$(DBG))
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
@@ -189,7 +194,6 @@ else # GCC assumed
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
-	FCMODDIRFLAG = -J
 endif
 
 ifneq (,$(CXX))
