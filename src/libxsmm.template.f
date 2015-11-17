@@ -152,13 +152,27 @@
           MODULE PROCEDURE libxsmm_savailable, libxsmm_davailable
         END INTERFACE
 
+        ! Call a specialized function (single-precision).
+        INTERFACE libxsmm_scall
+          MODULE PROCEDURE                                              &
+     &      libxsmm_scall_abx, libxsmm_scall_abc,                       &
+     &      libxsmm_scall_prx, libxsmm_scall_prf
+        END INTERFACE
+
+        ! Call a specialized function (double-precision).
+        INTERFACE libxsmm_dcall
+          MODULE PROCEDURE                                              &
+     &      libxsmm_dcall_abx, libxsmm_dcall_abc,                       &
+     &      libxsmm_dcall_prx, libxsmm_dcall_prf
+        END INTERFACE
+
         ! Call a specialized function.
         INTERFACE libxsmm_call
           MODULE PROCEDURE                                              &
-     &      libxsmm_scall_abx, libxsmm_dcall_abx,                       &
-     &      libxsmm_scall_prx, libxsmm_dcall_prx,                       &
-     &      libxsmm_scall_abc, libxsmm_dcall_abc,                       &
-     &      libxsmm_scall_prf, libxsmm_dcall_prf
+     &      libxsmm_scall_abx, libxsmm_scall_abc,                       &
+     &      libxsmm_scall_prx, libxsmm_scall_prf,                       &
+     &      libxsmm_dcall_abx, libxsmm_dcall_abc,                       &
+     &      libxsmm_dcall_prx, libxsmm_dcall_prf
         END INTERFACE
 
         ! Overloaded auto-dispatch routines (single/double precision).
