@@ -18,8 +18,8 @@ INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC)))
 
 ifneq (0,$(INTEL))
 	AR = xiar
-	CXXFLAGS += -fPIC -Wall
-	CFLAGS += -fPIC -Wall
+	CXXFLAGS += -fPIC -Wall -diag-disable 3415
+	CFLAGS += -fPIC -Wall -diag-disable 3415
 	FCFLAGS += -fPIC
 	LDFLAGS += -fPIC -lrt
 	FCMTFLAGS += -threads
