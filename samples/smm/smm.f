@@ -170,7 +170,6 @@ PROGRAM smm
     !$OMP END MASTER
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
-      !CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), tmp) ! gfortran issue
       CALL libxsmm_dcall_abc(xmm, a(:,:,i), b(:,:,i), tmp)
     END DO
     !$OMP MASTER
