@@ -220,11 +220,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_mm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), alpha, beta)
+    CALL libxsmm_mm(m, n*k, m, dx, RESHAPE(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
     DO j = 1, k
-        CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), alpha, beta)
+        CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
     END DO
-    CALL libxsmm_mm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), alpha, beta)
+    CALL libxsmm_mm(m*n, k, k, RESHAPE(a(:,:,:,i), (/m*n,k/)), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
     CALL stream_update_helmholtz( g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i), &
                                   tm1(1,1,1), tm2(1,1,1), tm3(1,1,1), &
                                   a(1,1,1,i), b(1,1,1,i), c(1,1,1,i), &

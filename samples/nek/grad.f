@@ -165,11 +165,11 @@ PROGRAM grad
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), alpha, beta)
+    call libxsmm_mm(m, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), cx(:,:,1,i), LIBXSMM_FLAGS, alpha, beta)
     do j = 1, k
-        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, cy(:,:,j,i), alpha, beta)
+        call libxsmm_mm(m, n, n, a(:,:,j,i), dy, cy(:,:,j,i), LIBXSMM_FLAGS, alpha, beta)
     enddo
-    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), alpha, beta)
+    call libxsmm_mm(m*n, k, k, reshape(a(:,:,:,i), (/m*n,k/)), dz, cz(:,:,1,i), LIBXSMM_FLAGS, alpha, beta)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
