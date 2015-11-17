@@ -194,9 +194,7 @@
 
         ! Overloaded BLAS routines (single/double precision).
         INTERFACE libxsmm_blasmm
-          MODULE PROCEDURE                                              &
-     &      libxsmm_sblasmm, libxsmm_dblasmm,                           &
-     &      libxsmm_sblasmm_abf, libxsmm_dblasmm_abf
+          MODULE PROCEDURE libxsmm_sblasmm, libxsmm_dblasmm
         END INTERFACE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init
@@ -276,6 +274,8 @@
         TYPE(LIBXSMM_SMM_FUNCTION) FUNCTION libxsmm_sfunction0(         &
      &  flags, m, n, k, lda, ldb, ldc, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
+          REAL(T), PARAMETER :: default_alpha = REAL(LIBXSMM_ALPHA, T)
+          REAL(T), PARAMETER :: default_beta = REAL(LIBXSMM_BETA, T)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: ldb
@@ -287,10 +287,8 @@
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
-     &          MERGE(REAL(LIBXSMM_ALPHA, T), alpha,                    &
-     &            .NOT.PRESENT(alpha)),                                 &
-     &          MERGE(REAL(LIBXSMM_BETA, T), beta,                      &
-     &            .NOT.PRESENT(beta))),                                 &
+     &          MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),       &
+     &          MERGE(default_beta, beta, .NOT.PRESENT(beta))),         &
      &      function)
           libxsmm_sfunction0%fn0 => function
           libxsmm_sfunction0%fn1 => NULL()
@@ -300,6 +298,8 @@
         TYPE(LIBXSMM_DMM_FUNCTION) FUNCTION libxsmm_dfunction0(         &
      &  flags, m, n, k, lda, ldb, ldc, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
+          REAL(T), PARAMETER :: default_alpha = REAL(LIBXSMM_ALPHA, T)
+          REAL(T), PARAMETER :: default_beta = REAL(LIBXSMM_BETA, T)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: flags, m, n, k
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: ldb
@@ -311,10 +311,8 @@
      &          MERGE(0, lda, .NOT.PRESENT(lda)),                       &
      &          MERGE(0, ldb, .NOT.PRESENT(ldb)),                       &
      &          MERGE(0, ldc, .NOT.PRESENT(ldc)),                       &
-     &          MERGE(REAL(LIBXSMM_ALPHA, T), alpha,                    &
-     &            .NOT.PRESENT(alpha)),                                 &
-     &          MERGE(REAL(LIBXSMM_BETA, T), beta,                      &
-     &            .NOT.PRESENT(beta))),                                 &
+     &          MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),       &
+     &          MERGE(default_beta, beta, .NOT.PRESENT(beta))),         &
      &      function)
           libxsmm_dfunction0%fn0 => function
           libxsmm_dfunction0%fn1 => NULL()
@@ -565,48 +563,58 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm
         SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c, flags, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
+          REAL(T), PARAMETER :: default_alpha = REAL(LIBXSMM_ALPHA, T)
+          REAL(T), PARAMETER :: default_beta = REAL(LIBXSMM_BETA, T)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
           REAL(T), INTENT(IN) :: a(:,:), b(:,:)
           REAL(T), INTENT(INOUT) :: c(:,:)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND) :: f
+          INTEGER(LIBXSMM_INT_KIND) :: iflags
+          INTEGER(LIBXSMM_INT_KIND), PARAMETER :: S = MERGE(8, 4,       &
+     &      14.LE.PRECISION(alpha))
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm
           INTERFACE
             SUBROUTINE sgemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
-              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLS_KIND
+              IMPORT LIBXSMM_INT_KIND, T
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
-              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(ldc,*)
+              REAL(T), INTENT(IN) :: alpha, beta
+              REAL(T), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(T), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
-          f = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
+          iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           IF (0.NE.LIBXSMM_COL_MAJOR) THEN
             CALL sgemm(                                                 &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, iflags)),        &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, iflags)),        &
      &        m, n, k,                                                  &
-     &        MERGE(REAL(LIBXSMM_ALPHA, T), alpha, .NOT.PRESENT(alpha)),&
-     &        a, MAX(SIZE(a, 1), m), b, MAX(SIZE(b, 1), k),             &
-     &        MERGE(REAL(LIBXSMM_BETA, T), beta, .NOT.PRESENT(beta)),   &
-     &        c, MAX(SIZE(c, 1), m))
+     &        MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),         &
+     &        a, MERGE(m, libxsmm_align_value(m, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_A, iflags)),        &
+     &        b, k,                                                     &
+     &        MERGE(default_beta, beta, .NOT.PRESENT(beta)),            &
+     &        c, MERGE(m, libxsmm_align_value(m, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_C, iflags)))
           ELSE
             CALL sgemm(                                                 &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, iflags)),        &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, iflags)),        &
      &        n, m, k,                                                  &
-     &        MERGE(REAL(LIBXSMM_ALPHA, T), alpha, .NOT.PRESENT(alpha)),&
-     &        b, MAX(SIZE(b, 2), n), a, MAX(SIZE(a, 2), k),             &
-     &        MERGE(REAL(LIBXSMM_BETA, T), beta, .NOT.PRESENT(beta)),   &
-     &        c, MAX(SIZE(c, 1), n))
+     &        MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),         &
+     &        b, MERGE(n, libxsmm_align_value(n, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_A, iflags)),        &
+     &        a, k,                                                     &
+     &        MERGE(default_beta, beta, .NOT.PRESENT(beta)),            &
+     &        c, MERGE(n, libxsmm_align_value(n, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_C, iflags)))
           END IF
         END SUBROUTINE
 
@@ -614,79 +622,59 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm
         SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c, flags, alpha, beta)
           INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
+          REAL(T), PARAMETER :: default_alpha = REAL(LIBXSMM_ALPHA, T)
+          REAL(T), PARAMETER :: default_beta = REAL(LIBXSMM_BETA, T)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
           REAL(T), INTENT(IN) :: a(:,:), b(:,:)
           REAL(T), INTENT(INOUT) :: c(:,:)
           INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
           REAL(T), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(LIBXSMM_INT_KIND) :: f
+          INTEGER(LIBXSMM_INT_KIND) :: iflags
+          INTEGER(LIBXSMM_INT_KIND), PARAMETER :: S = MERGE(8, 4,       &
+     &      14.LE.PRECISION(alpha))
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: dgemm
           INTERFACE
             SUBROUTINE dgemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
-              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLD_KIND
+              IMPORT LIBXSMM_INT_KIND, T
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
-              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(ldc,*)
+              REAL(T), INTENT(IN) :: alpha, beta
+              REAL(T), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(T), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
-          f = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
+          iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           IF (0.NE.LIBXSMM_COL_MAJOR) THEN
             CALL dgemm(                                                 &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, iflags)),        &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, iflags)),        &
      &        m, n, k,                                                  &
-     &        MERGE(REAL(LIBXSMM_ALPHA, T), alpha, .NOT.PRESENT(alpha)),&
-     &        a, MAX(SIZE(a, 1), m), b, MAX(SIZE(b, 1), k),             &
-     &        MERGE(REAL(LIBXSMM_BETA, T), beta, .NOT.PRESENT(beta)),   &
-     &        c, MAX(SIZE(c, 1), m))
+     &        MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),         &
+     &        a, MERGE(m, libxsmm_align_value(m, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_A, iflags)),        &
+     &        b, k,                                                     &
+     &        MERGE(default_beta, beta, .NOT.PRESENT(beta)),            &
+     &        c, MERGE(m, libxsmm_align_value(m, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_C, iflags)))
           ELSE
             CALL dgemm(                                                 &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_A, iflags)),        &
      &        MERGE('N', 'T',                                           &
-     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, f)),             &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_TRANS_B, iflags)),        &
      &        n, m, k,                                                  &
-     &        MERGE(REAL(LIBXSMM_ALPHA, T), alpha, .NOT.PRESENT(alpha)),&
-     &        b, MAX(SIZE(b, 2), n), a, MAX(SIZE(a, 2), k),             &
-     &        MERGE(REAL(LIBXSMM_BETA, T), beta, .NOT.PRESENT(beta)),   &
-     &        c, MAX(SIZE(c, 1), n))
+     &        MERGE(default_alpha, alpha, .NOT.PRESENT(alpha)),         &
+     &        b, MERGE(n, libxsmm_align_value(n, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_A, iflags)),        &
+     &        a, k,                                                     &
+     &        MERGE(default_beta, beta, .NOT.PRESENT(beta)),            &
+     &        c, MERGE(n, libxsmm_align_value(n, S, LIBXSMM_ALIGNMENT), &
+     &            0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_C, iflags)))
           END IF
-        END SUBROUTINE
-
-        ! Non-dispatched matrix multiplication using BLAS (single-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm_abf
-        SUBROUTINE libxsmm_sblasmm_abf(                                 &
-     &  m, n, k, a, b, c, salpha, sbeta, flags)
-          INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLS_KIND
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-          REAL(T), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(T), INTENT(INOUT) :: c(:,:)
-          REAL(T), INTENT(IN) :: salpha, sbeta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          CALL libxsmm_sblasmm(m, n, k, a, b, c,                        &
-     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
-     &      salpha, sbeta)
-        END SUBROUTINE
-
-        ! Non-dispatched matrix multiplication using BLAS (single-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm_abf
-        SUBROUTINE libxsmm_dblasmm_abf(                                 &
-     &  m, n, k, a, b, c, dalpha, dbeta, flags)
-          INTEGER(LIBXSMM_INT_KIND), PARAMETER :: T = LIBXSMM_FLD_KIND
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
-          REAL(T), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(T), INTENT(INOUT) :: c(:,:)
-          REAL(T), INTENT(IN) :: dalpha, dbeta
-          INTEGER(LIBXSMM_INT_KIND), INTENT(IN), OPTIONAL :: flags
-          CALL libxsmm_dblasmm(m, n, k, a, b, c,                        &
-     &      MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags)),           &
-     &      dalpha, dbeta)
         END SUBROUTINE
 
         ! Dispatched matrix multiplication (single-precision).
