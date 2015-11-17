@@ -120,8 +120,8 @@ else # GCC assumed
 		GCC_VERSION = 0
 	endif
 	MIC = 0
-	CXXFLAGS += -Wall -Wno-unused-function -Wattributes
-	CFLAGS += -Wall -Wno-unused-function -Wattributes
+	CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
+	CFLAGS += -Wall -Wno-unused-function -Wno-attributes
 	LDFLAGS += -lrt
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
