@@ -577,7 +577,7 @@
           INTERFACE
             SUBROUTINE sgemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
-              IMPORT LIBXSMM_INT_KIND, T
+              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLS_KIND
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -636,7 +636,7 @@
           INTERFACE
             SUBROUTINE dgemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
-              IMPORT LIBXSMM_INT_KIND, T
+              IMPORT LIBXSMM_INT_KIND, LIBXSMM_FLD_KIND
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
