@@ -84,20 +84,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 
 /** BLAS based implementation with simplified interface. */
 #define LIBXSMM_BLASMM(REAL, FLAGS, M, N, K, A, B, C, ALPHA, BETA) { \
-  /*const*/char libxsmm_transa_ = 0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'; \
-  /*const*/char libxsmm_transb_ = 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'; \
+  /*const*/char libxsmm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
+  /*const*/char libxsmm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
   /*const*/int libxsmm_m_ = LIBXSMM_LD(M, N), libxsmm_n_ = LIBXSMM_LD(N, M), libxsmm_k_ = (K); \
   /*const*/int libxsmm_lda_ = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) ? libxsmm_m_ : \
     LIBXSMM_ALIGN_VALUE(libxsmm_m_, sizeof(REAL), LIBXSMM_ALIGNMENT); \
   /*const*/int libxsmm_ldc_ = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & (FLAGS)) ? libxsmm_m_ : \
     LIBXSMM_ALIGN_VALUE(libxsmm_m_, sizeof(REAL), LIBXSMM_ALIGNMENT); \
-  /*const*/REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : *(ALPHA); \
-  /*const*/REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : *(BETA); \
+  /*const*/REAL libxsmm_alpha_ = 0 == (ALPHA) ? ((REAL)LIBXSMM_ALPHA) : *((const REAL*)(ALPHA)); \
+  /*const*/REAL libxsmm_beta_  = 0 == (BETA)  ? ((REAL)LIBXSMM_BETA)  : *((const REAL*)(BETA)); \
   LIBXSMM_FSYMBOL(LIBXSMM_BLASPREC(REAL, gemm))(&libxsmm_transa_, &libxsmm_transb_, \
     &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, &libxsmm_alpha_, \
     (REAL*)LIBXSMM_LD(A, B), &libxsmm_lda_, \
     (REAL*)LIBXSMM_LD(B, A), &libxsmm_k_, \
-    &libxsmm_beta_, (C), &libxsmm_ldc_); \
+    &libxsmm_beta_, C, &libxsmm_ldc_); \
 }
 
 /** Inlinable implementation exercising the compiler's code generation (template). */
