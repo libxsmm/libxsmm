@@ -107,16 +107,20 @@ if __name__ == "__main__":
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + (", pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + \
+                        (",                 &\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
                         "            IMPORT :: C_FLOAT\n" \
-                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)" + (", pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "\n") + \
-                        "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" \
+                        "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" + \
+                        ("            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "") + \
                         "          END SUBROUTINE" \
                         "\n" \
-                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + (", pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + \
+                        (",                 &\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
                         "            IMPORT :: C_DOUBLE\n" \
-                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)" + (", pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "\n") + \
-                        "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" \
+                        "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
+                        "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" + \
+                        ("            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "") + \
                         "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             print template.safe_substitute(substitute)
