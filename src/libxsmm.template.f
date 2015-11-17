@@ -581,9 +581,9 @@
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(T), INTENT(IN) :: alpha, beta
-              REAL(T), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(T), INTENT(INOUT) :: c(ldc,*)
+              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: alpha, beta
+              REAL(LIBXSMM_FLS_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(LIBXSMM_FLS_KIND), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
@@ -640,9 +640,9 @@
               CHARACTER(1), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_INT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(T), INTENT(IN) :: alpha, beta
-              REAL(T), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(T), INTENT(INOUT) :: c(ldc,*)
+              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: alpha, beta
+              REAL(LIBXSMM_FLD_KIND), INTENT(IN) :: a(lda,*), b(ldb,*)
+              REAL(LIBXSMM_FLD_KIND), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
