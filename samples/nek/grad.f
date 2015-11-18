@@ -37,7 +37,7 @@ PROGRAM grad
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
+  INTEGER, PARAMETER :: T = KIND(0.D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz

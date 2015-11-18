@@ -37,7 +37,7 @@ PROGRAM stpm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
+  INTEGER, PARAMETER :: T = KIND(0.D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, d
@@ -180,11 +180,11 @@ PROGRAM stpm
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_mm(mm, n*k, m, dx, reshape(a(:,:,:,i), (/m,n*k/)), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+    CALL libxsmm_mm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
     DO j = 1, k
         CALL libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
     END DO
-    CALL libxsmm_mm(mm*nn, kk, k, reshape(tm2, (/mm*nn,k/)), dz, c(:,:,1,i), LIBXSMM_FLAGS, alpha, beta)
+    CALL libxsmm_mm(mm*nn, kk, k, tm2(:,:,1), dz, c(:,:,1,i), LIBXSMM_FLAGS, alpha, beta)
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())

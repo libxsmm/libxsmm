@@ -34,7 +34,7 @@ PROGRAM smm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = LIBXSMM_FLD_KIND
+  INTEGER, PARAMETER :: T = KIND(0.D0)
 
   REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
   REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
