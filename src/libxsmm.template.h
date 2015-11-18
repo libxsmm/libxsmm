@@ -44,6 +44,7 @@
 #define LIBXSMM_AVG_N $AVG_N
 #define LIBXSMM_AVG_K $AVG_K
 #define LIBXSMM_FLAGS $FLAGS
+#define LIBXSMM_ILP64 $ILP64
 #define LIBXSMM_ALPHA $ALPHA
 #define LIBXSMM_BETA $BETA
 #define LIBXSMM_JIT $JIT
@@ -51,6 +52,13 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_frontend.h"
 
+
+/** Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit). */
+#if (0 != LIBXSMM_ILP64)
+typedef long long libxsmm_blasint;
+#else
+typedef int libxsmm_blasint;
+#endif
 
 /** Specialized function with fused alpha and beta arguments (single-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c);
@@ -104,7 +112,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_sblasmm(int flags, int m, int n
   const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
   const float* alpha, const float* beta)
 {
-  LIBXSMM_BLASMM(float, flags, m, n, k, a, b, c, alpha, beta);
+  LIBXSMM_BLASMM(float, libxsmm_blasint, flags, m, n, k, a, b, c, alpha, beta);
 }
 
 /** Non-dispatched matrix multiplication using BLAS (double-precision). */
@@ -112,7 +120,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_dblasmm(int flags, int m, int n
   const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
   const double* alpha, const double* beta)
 {
-  LIBXSMM_BLASMM(double, flags, m, n, k, a, b, c, alpha, beta);
+  LIBXSMM_BLASMM(double, libxsmm_blasint, flags, m, n, k, a, b, c, alpha, beta);
 }
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)

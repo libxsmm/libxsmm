@@ -78,14 +78,14 @@ if __name__ == "__main__":
             "AVG_N":      avgn, \
             "AVG_K":      avgk, \
             "FLAGS":      flags, \
+            "ILP64":      1 if (0 != ilp64) else 0, \
             "ALPHA":      alpha, \
             "BETA":       beta, \
-            "JIT":        jit, \
+            "JIT":        1 if (0 != jit) else 0, \
             "MNK_INTERFACE_LIST": "" \
         }
 
         if (fnmatch.fnmatch(filename, "*.h*")):
-            substitute["INTEGER_TYPE"] = "int" if (0 == ilp64) else "long long"
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
@@ -97,7 +97,6 @@ if __name__ == "__main__":
                       (",\n  const double* pa, const double* pb, const double* pc);\n" if (0 != prefetch) else ");\n")
             print template.substitute(substitute)
         else:
-            substitute["INTEGER_TYPE"] = "SELECTED_INT_KIND(9)" if (0 == ilp64) else "SELECTED_INT_KIND(18)"
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
