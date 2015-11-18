@@ -100,6 +100,11 @@ ifneq (0,$(INTEL))
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
 	endif
+	ifneq (,$(R8))
+		ifneq (0,$(R8))
+			FCFLAGS += -autodouble
+		endif
+	endif
 else # GCC assumed
 	ifeq (,$(CXX_CHECK))
 		CXX = $(GPP)
@@ -204,6 +209,11 @@ else # GCC assumed
 	endif
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
+	endif
+	ifneq (,$(R8))
+		ifneq (0,$(R8))
+			FCFLAGS += -fdefault-real-8 -fdefault-double-8
+		endif
 	endif
 endif
 
