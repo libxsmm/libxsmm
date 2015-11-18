@@ -108,7 +108,7 @@ if __name__ == "__main__":
                     mnkstr = "_".join(map(str, mnk))
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + \
-                        (",                 &\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        ("," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
                         "            IMPORT :: C_FLOAT\n" \
                         "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                         "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" + \
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                         "          END SUBROUTINE" \
                         "\n" \
                         "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + \
-                        (",                 &\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                        ("," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
                         "            IMPORT :: C_DOUBLE\n" \
                         "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                         "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" + \
