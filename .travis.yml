@@ -18,11 +18,11 @@ script:
     make -e test &&
     bash samples/cp2k/cp2k-test.sh
 
-  - true || (make -e realclean &&
+  - make -e realclean &&
     bash make.sh -ci-rm -j &&
     make -e samples &&
     make -e testf &&
-    bash samples/smm/smm-test.sh)
+    bash samples/smm/smm-test.sh
 
   - make -e realclean &&
     make -e PEDANTIC=1 ALIGNED_STORES=1 JIT=1 &&

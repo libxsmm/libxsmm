@@ -45,15 +45,14 @@ if __name__ == "__main__":
         print "unsigned int indx;"
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
-            mn, nm = "LIBXSMM_LD(" + mstr + ", " + nstr + ")", "LIBXSMM_LD(" + nstr + ", " + mstr + ")"
             print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,"
-            print "  " + mn + ", " + nm + ", " + kstr + ", " + mn + ", " + kstr + ", " + mn + ","
+            print "  " + mstr + ", " + nstr + ", " + kstr + ", " + mstr + ", " + kstr + ", " + mstr + ","
             print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
             print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
             print "libxsmm_dispatch_cache[indx].s" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_smm_" + mnkstr + ";"
             print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,"
-            print "  " + mn + ", " + nm + ", " + kstr + ", " + mn + ", " + kstr + ", " + mn + ","
+            print "  " + mstr + ", " + nstr + ", " + kstr + ", " + mstr + ", " + kstr + ", " + mstr + ","
             print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
             print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
