@@ -39,7 +39,7 @@ if __name__ == "__main__":
     if (3 < argc):
         prefetch = int(sys.argv[1])
         threshold = int(sys.argv[2])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0, threshold)
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
 
         print "libxsmm_gemm_descriptor desc;"
         print "unsigned int indx;"

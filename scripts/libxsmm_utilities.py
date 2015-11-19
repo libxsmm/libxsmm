@@ -36,47 +36,27 @@ import sys
 
 
 def upper_list(lists, level):
-    upper = [level, level + len(lists)][1>level] - 1
+    nlist = len(lists)
+    upper = [level, level + nlist][1>level] - 1
     above = lists[upper]
     if above:
         return above
-    else:
+    elif (-nlist <= level):
         return upper_list(lists, level - 1)
+    else:
+        return []
 
 
-def load_mlist(argv):
-    begin = 3; end = begin + int(argv[1])
-    if (begin > end or end > len(argv)):
-        sys.tracebacklimit = 0
-        raise ValueError("load_mlist: wrong number of elements!")
-    return map(int, argv[begin:end])
-
-
-def load_nlist(argv):
-    begin = 3 + int(argv[1]); end = begin + int(argv[2])
-    if (begin > end or end > len(argv)):
-        sys.tracebacklimit = 0
-        raise ValueError("load_nlist: wrong number of elements!")
-    return map(int, argv[begin:end])
-
-
-def load_klist(argv):
-    begin = 3 + int(argv[1]) + int(argv[2])
-    if (begin > len(argv)):
-        sys.tracebacklimit = 0
-        raise ValueError("load_klist: wrong number of elements!")
-    return map(int, argv[begin:])
-
-
-def load_mnklist(argv, format, threshold):
-    resultset = set()
+def load_mnklist(argv, threshold, format = 0, resultset = set()):
     if (0 == format): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == format): # new input format
         groups = map(lambda group: [int(i) for i in group.split()], argv.split(","))
         resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
-        mlist, nlist, klist = load_mlist(argv), load_nlist(argv), load_klist(argv)
+        mlist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2:2+int(argv[0])]))
+        nlist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0]):2+int(argv[0])+int(argv[1])]))
+        klist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0])+int(argv[1]):]))
         mnk = [mlist, nlist, klist]
         top = [ \
           [mlist, upper_list(mnk, 0)][0==len(mlist)], \
@@ -93,7 +73,7 @@ def load_mnklist(argv, format, threshold):
     else:
         sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
-    return sorted(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
+    return set(sorted(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset)))
 
 
 def max_mnk(mnklist, init = 0, index = None):
@@ -144,14 +124,15 @@ def align_value(n, typesize, alignment):
 if __name__ == "__main__":
     argc = len(sys.argv)
     arg1 = int(sys.argv[1])
-    if (3 < argc and -1 == arg1): # new input format
-        dims = load_mnklist(str(*sys.argv[3:]), arg1, int(sys.argv[2]))
-        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
-    elif (5 < argc and -2 == arg1): # legacy format
-        dims = load_mnklist(sys.argv[2:], arg1, int(sys.argv[2]))
+    if (5 < argc and -1 == arg1):
+        threshold = int(sys.argv[2])
+        mnk_size = int(sys.argv[3])
+        dims = load_mnklist(str(*sys.argv[4:4+mnk_size]), threshold, -1)
+        dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
     elif (4 == argc and 0 < arg1):
         print align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3])))
     else:
         sys.tracebacklimit = 0
-        raise ValueError(sys.argv[0] + ": wrong number of arguments!")
+        raise ValueError(sys.argv[0] + ": wrong (" + str(argc - 1) + ") number of arguments (\"" + \
+          " ".join(sys.argv[1:]) + "\") given!")
