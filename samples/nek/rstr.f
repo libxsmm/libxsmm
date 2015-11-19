@@ -33,6 +33,7 @@
 
 PROGRAM stpm
   USE :: LIBXSMM
+  USE :: STREAM_UPDATE_KERNELS
 
   !$ USE omp_lib
   IMPLICIT NONE
@@ -93,12 +94,6 @@ PROGRAM stpm
   END IF
   IF (7 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(7, argv)
-    READ(argv, "(I32)") routine
-  ELSE
-    routine = -1
-  END IF
-  IF (8 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(8, argv)
     READ(argv, "(I32)") i
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
@@ -170,37 +165,11 @@ PROGRAM stpm
     !$OMP END PARALLEL
   END IF
 
-  WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
-  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-  tm1 = 0; tm2 = 0;
-  !$OMP MASTER
-  start = libxsmm_timer_tick()
-  !$OMP END MASTER
-  !$OMP DO
-  DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_mm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
-    DO j = 1, k
-        CALL libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
-    END DO
-    CALL libxsmm_mm(mm*nn, kk, k, tm2(:,:,1), dz, c(:,:,1,i), LIBXSMM_FLAGS, alpha, beta)
-  END DO
-  !$OMP MASTER
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
-  !$OMP END MASTER
-  ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2)
-  !$OMP END PARALLEL
-
-  CALL performance(duration, m, n, k, mm, nn, kk, s)
-  IF (check.NE.0) CALL validate(c, d)
-
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
   !$OMP   SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
-  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-  tm1 = 0; tm2 = 0;
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
+  tm1 = 0; tm2 = 0; tm3 = 3
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
@@ -210,13 +179,41 @@ PROGRAM stpm
     DO j = 1, k
         CALL mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
     END DO
-    CALL mxmf2(tm2, mm*nn, dz, k, c(:,:,:,i), kk)
+    CALL mxmf2(tm2, mm*nn, dz, k, tm3, kk)
+    CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
   ! Deallocate thread-local arrays
-  DEALLOCATE(tm1, tm2)
+  DEALLOCATE(tm1, tm2, tm3)
+  !$OMP END PARALLEL
+
+  CALL performance(duration, m, n, k, mm, nn, kk, s)
+  IF (check.NE.0) CALL validate(c, d)
+
+  WRITE(*, "(A)") "Streamed... (auto-dispatched)"
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk)
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
+  tm1 = 0; tm2 = 0; tm3 = 3
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  !$OMP DO
+  DO i = LBOUND(a, 4), UBOUND(a, 4)
+    CALL libxsmm_mm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+    DO j = 1, k
+        CALL libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+    END DO
+    CALL libxsmm_mm(mm*nn, kk, k, tm2(:,:,1), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+    CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
   CALL performance(duration, m, n, k, mm, nn, kk, s)
@@ -228,8 +225,8 @@ PROGRAM stpm
   CALL libxsmm_dispatch(xmm3, mm*nn, kk, k, alpha, beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
     !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, xmm1, xmm2, xmm3)
-    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
-    tm1 = 0; tm2 = 0
+    ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
+    tm1 = 0; tm2 = 0; tm3 = 3
     !$OMP MASTER
     start = libxsmm_timer_tick()
     !$OMP END MASTER
@@ -239,13 +236,14 @@ PROGRAM stpm
       DO j = 1, k
           CALL libxsmm_call(xmm2, C_LOC(tm1(1,1,j)), C_LOC(dy), C_LOC(tm2(1,1,j)))
       END DO
-      CALL libxsmm_call(xmm3, C_LOC(tm2), C_LOC(dz), C_LOC(c(1,1,1,i)))
+      CALL libxsmm_call(xmm3, C_LOC(tm2), C_LOC(dz), C_LOC(tm3(1,1,1)))
+      CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
     !$OMP MASTER
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
     !$OMP END MASTER
     ! Deallocate thread-local arrays
-    DEALLOCATE(tm1, tm2)
+    DEALLOCATE(tm1, tm2, tm3)
     !$OMP END PARALLEL
 
     CALL performance(duration, m, n, k, mm, nn, kk, s)
@@ -275,7 +273,7 @@ contains
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
         (s * ((2*m-1)*mm*n*k + mm*(2*n-1)*nn*k + mm*nn*(2*k-1)*kk) * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (s * (m * n * k + mm*nn*kk) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
+        (s * ((m*n*k) + (mm*nn*kk)) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
     END IF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   end subroutine performance
