@@ -266,6 +266,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: function
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
      &      libxsmm_sdispatch0(flags, m, n, k,                          &
@@ -289,6 +290,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: function
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: function
           CALL C_F_PROCPOINTER(                                         &
      &      libxsmm_ddispatch0(flags, m, n, k,                          &
@@ -309,6 +311,7 @@
           INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN) :: alpha, beta
           INTEGER(C_INT), INTENT(IN) :: prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0, fn1
           PROCEDURE(LIBXSMM_XFUNCTION), POINTER :: fn1
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: fn0
           IF (LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
@@ -335,6 +338,7 @@
           INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
           INTEGER(C_INT), INTENT(IN) :: prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0, fn1
           PROCEDURE(LIBXSMM_XFUNCTION), POINTER :: fn1
           PROCEDURE(LIBXSMM_FUNCTION), POINTER :: fn0
           IF (LIBXSMM_PREFETCH_NONE.NE.prefetch) THEN
@@ -618,9 +622,9 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT) :: iflags
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: sgemm
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: dgemm
           INTERFACE
-            SUBROUTINE sgemm(transa, transb, m, n, k,                   &
+            SUBROUTINE dgemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
               IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
               CHARACTER(1), INTENT(IN) :: transa, transb
