@@ -103,7 +103,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #endif
     libxsmm_dispatch_cache = buffer;
     /* setup the dispatch table for the statically generated code */
-#   include <libxsmm_dispatch.h>
+    {
+#     include <libxsmm_dispatch.h>
+    }
     /* acquire and release remaining locks to shortcut any lazy initialization later on */
     for (i = 1; i < nlocks; ++i) {
       LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
