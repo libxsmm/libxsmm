@@ -1,10 +1,16 @@
-# export all variables to sub-make processes
+# Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
-# Set MAKE_PARALLEL=0 for issues with parallel make (older GNU Make)
+
+# Automatically disable parallel builds
+# depending on the version of GNU Make.
+# MAKE_PARALLEL=0: disable explcitly
+# MAKE_PARALLEL=1: enable explicitly
 ifeq (0,$(MAKE_PARALLEL))
 .NOTPARALLEL:
-else ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
+else ifeq (,$(MAKE_PARALLEL))
+ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
+endif
 endif
 
 # Linux cut has features we use that do not work elsewhere
