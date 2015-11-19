@@ -51,7 +51,8 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
     if (0 == format): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == format): # new input format
-        groups = map(lambda group: [int(i) for i in group.split()], argv.split(","))
+        #sys.stderr.write("DEBUG: " + str(" ".join(argv[0:]).split(",")) + "\n")
+        groups = map(lambda group: [int(i) for i in group.split()], " ".join(argv[0:]).split(","))
         resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
         mlist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2:2+int(argv[0])]))
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     if (5 < argc and -1 == arg1):
         threshold = int(sys.argv[2])
         mnk_size = int(sys.argv[3])
-        dims = load_mnklist(str(*sys.argv[4:4+mnk_size]), threshold, -1)
+        dims = load_mnklist(sys.argv[4:4+mnk_size], threshold, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
         print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
     elif (4 == argc and 0 < arg1):
