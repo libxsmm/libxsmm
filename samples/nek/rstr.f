@@ -53,8 +53,6 @@ PROGRAM stpm
   CHARACTER(32) :: argv
   REAL(8) :: duration
 
-  duration = 0
-
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(1, argv)
@@ -98,6 +96,11 @@ PROGRAM stpm
   ELSE
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
+
+  ! Initialize LIBXSMM
+  CALL libxsmm_init()
+
+  duration = 0
   s = ISHFT(MAX(i, 0_8), 29) / (((m * n * k) + (nn * mm * kk)) * T)
 
   ALLOCATE(a(m,n,k,s))
@@ -256,6 +259,9 @@ PROGRAM stpm
   DEALLOCATE(a)
   DEALLOCATE(dx, dy, dz)
   DEALLOCATE(c)
+
+  ! finalize LIBXSMM
+  CALL libxsmm_finalize()
 
 contains
   subroutine validate(ref, test)

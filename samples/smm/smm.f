@@ -47,8 +47,6 @@ PROGRAM smm
   CHARACTER(32) :: argv
   REAL(8) :: duration
 
-  duration = 0
-
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(1, argv)
@@ -75,6 +73,10 @@ PROGRAM smm
     i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
   END IF
 
+  ! Initialize LIBXSMM
+  CALL libxsmm_init()
+
+  duration = 0
   s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
   mn = libxsmm_ld(m, n); nm = libxsmm_ld(n, m)
   ldc = MERGE(mn, libxsmm_align_value(mn, 8, LIBXSMM_ALIGNMENT), &
@@ -92,9 +94,6 @@ PROGRAM smm
   END DO
 
   WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
-
-  ! Initialize LIBXSMM
-  CALL libxsmm_init()
 
   ! compute reference solution and warmup BLAS library
   ALLOCATE(d(m,n))
@@ -188,6 +187,9 @@ PROGRAM smm
   DEALLOCATE(b)
   DEALLOCATE(c)
   DEALLOCATE(d)
+
+  ! finalize LIBXSMM
+  CALL libxsmm_finalize()
 
 CONTAINS
   PURE SUBROUTINE init(seed, matrix, n)
