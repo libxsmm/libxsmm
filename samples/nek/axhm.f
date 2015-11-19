@@ -45,6 +45,7 @@ PROGRAM stpm
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check

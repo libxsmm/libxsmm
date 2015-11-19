@@ -33,6 +33,7 @@
 
 PROGRAM grad
   USE :: LIBXSMM
+  USE :: STREAM_UPDATE_KERNELS
 
   !$ USE omp_lib
   IMPLICIT NONE
@@ -43,8 +44,11 @@ PROGRAM grad
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz
   REAL(T), allocatable, dimension(:,:,:,:), target :: rx, ry, rz
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
+  REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, cx, cy, cz
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
+  !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start
@@ -186,20 +190,27 @@ PROGRAM grad
   CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha, beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
   !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3)
+  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+  tm1 = 0; tm2 = 0; tm3 = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP DO
   DO i = LBOUND(a, 4), UBOUND(a, 4)
-    CALL libxsmm_call(xmm1,  C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(cx(1,1,1,i)))
+    CALL libxsmm_call(xmm1,  C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1(1,1,1)))
+    CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
     do j = 1, k
-        call libxsmm_call(xmm2, C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(cy(1,1,j,i)))
+        call libxsmm_call(xmm2, C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(tm2(1,1,j)))
     enddo
-    CALL libxsmm_call(xmm3, C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(cz(1,1,1,i)))
+    CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
+    CALL libxsmm_call(xmm3, C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(tm3(1,1,1)))
+    CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
   END DO
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2, tm3)
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results

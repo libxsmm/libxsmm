@@ -118,23 +118,31 @@ include $(ROOTDIR)/Makefile.inc
 .PHONY: all
 all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(LIBDIR)/libstream_update_kernels.a
 
-$(OUTDIR)/grad: $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
-
-$(OUTDIR)/rstr: $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
-
 $(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.f $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+
+$(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+
+$(OUTDIR)/grad: $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
+	@mkdir -p $(dir $@)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+
+$(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile
+	@mkdir -p $(dir $@)
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+
+$(OUTDIR)/rstr: $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
+	@mkdir -p $(dir $@)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 
 $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(BLDDIR)/stream_update_kernels-c.o $(MODULES) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
 	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
 

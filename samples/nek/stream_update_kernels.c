@@ -56,6 +56,93 @@ void stream_init( int    i_length,
 }
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+void stream_vector_copy( const double* i_a,
+                         double*       io_c,
+                         const int     i_length) {
+  int l_n = 0;
+  int l_trip_prolog = 0;
+  int l_trip_stream = 0;
+  
+  /* init the trip counts */
+  stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
+
+  /* run the prologue */
+  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    io_c[l_n] = i_a[l_n];
+  }
+  /* run the bulk, hopefully using streaming stores */
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+  {
+    /* we need manual unrolling as the compiler otherwise generates 
+       too many dependencies */
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      _mm256_stream_pd( &(io_c[l_n]),   _mm256_loadu_pd(&(i_a[l_n]))   );
+      _mm256_stream_pd( &(io_c[l_n+4]), _mm256_loadu_pd(&(i_a[l_n+4])) );
+    }
+  }
+#elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
+  {
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      _mm512_stream_pd( &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
+    }
+  }
+#else
+  for ( ; l_n < l_trip_stream;  l_n++ ) {
+    io_c[l_n] = i_a[l_n];
+  }
+#endif
+  /* run the epilogue */
+  for ( ; l_n < i_length;  l_n++ ) {
+    io_c[l_n] = i_a[l_n];
+  }
+}
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+void stream_vector_set( const double i_scalar,
+                        double*       io_c,
+                        const int     i_length) {
+  int l_n = 0;
+  int l_trip_prolog = 0;
+  int l_trip_stream = 0;
+  
+  /* init the trip counts */
+  stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
+
+  /* run the prologue */
+  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    io_c[l_n] = i_scalar;
+  }
+  /* run the bulk, hopefully using streaming stores */
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+  {
+    /* we need manual unrolling as the compiler otherwise generates 
+       too many dependencies */
+    const __m256d vec_scalar = _mm256_broadcast_sd(&i_scalar);
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      _mm256_stream_pd( &(io_c[l_n]),   vec_scalar );
+      _mm256_stream_pd( &(io_c[l_n+4]), vec_scalar );
+    }
+  }
+#elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
+  {
+    const __m512d vec_scalar = _mm512_broadcastsd_pd(_mm_load_sd(&i_scalar));
+    for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+      _mm512_stream_pd( &(io_c[l_n]), vec_scalar );
+    }
+  }
+#else
+  for ( ; l_n < l_trip_stream;  l_n++ ) {
+    io_c[l_n] = i_scalar;
+  }
+#endif
+  /* run the epilogue */
+  for ( ; l_n < i_length;  l_n++ ) {
+    io_c[l_n] = i_scalar;
+  }
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 void stream_vector_compscale( const double* i_a,
                               const double* i_b,
                               double*       io_c,
