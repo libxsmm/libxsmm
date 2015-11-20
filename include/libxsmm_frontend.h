@@ -185,9 +185,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
  */
 #define LIBXSMM_MM(REAL, FLAGS, M, N, K, A, B, C, PA, PB, PC, ALPHA, BETA) { \
   if (((unsigned long long)(LIBXSMM_MAX_MNK)) >= \
-    (((unsigned long long)(M)) * \
-     ((unsigned long long)(N)) * \
-     ((unsigned long long)(K)))) \
+     (((unsigned long long)(M)) * \
+      ((unsigned long long)(N)) * \
+      ((unsigned long long)(K)))) \
   { \
     int libxsmm_fallback_ = 0; \
     if (0 != (PA) || 0 != (PB) || 0 != (PC)) { \
