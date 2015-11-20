@@ -345,15 +345,24 @@ else ifneq (0,$(MKL)) # multi-threaded
 	endif
 	LDFLAGS += -lpthread -lm
 else ifneq (0,$(BLAS)) # generic
-	ifneq (Windows_NT,$(OS))
-		LDFLAGS += -lblas$(BLAS_BITS)
-	else
-		LDFLAGS += -lblas$(BLAS_BITS).dll
+	ifneq (1,$(BLAS))
+		BLAS_THREADS = o
 	endif
-	CLDFLAGS += -lgfortran
-	ifeq (,$(GCC_VERSION_STRING))
-		LDFLAGS += -lquadmath
-	else ifneq (0,$(shell echo "$$((40500 <= $(GCC_VERSION)))"))
-		CLDFLAGS += -lquadmath
+	OPENBLAS = $(shell $(CC) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep openblas$(BLAS_THREADS)$(BLAS_BITS) > /dev/null ; echo $$?)
+	ifeq (1,$(OPENBLAS))
+		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+	else
+		ifneq (Windows_NT,$(OS))
+			LDFLAGS += -lblas$(BLAS_BITS)
+		else
+			LDFLAGS += -lblas$(BLAS_BITS).dll
+		endif
+		CLDFLAGS += -lgfortran
+		ifeq (,$(GCC_VERSION_STRING))
+			LDFLAGS += -lquadmath
+		else ifneq (0,$(shell echo "$$((40500 <= $(GCC_VERSION)))"))
+			CLDFLAGS += -lquadmath
+		endif
 	endif
 endif
+
