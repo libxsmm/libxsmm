@@ -692,7 +692,11 @@
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           ralpha = MERGE(default_alpha, alpha, .NOT.PRESENT(alpha))
           rbeta = MERGE(default_beta, beta, .NOT.PRESENT(beta))
-          IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
+          IF (INT(LIBXSMM_MAX_MNK, C_LONG_LONG).GE.(                    &
+     &      INT(m, C_LONG_LONG) *                                       &
+     &      INT(n, C_LONG_LONG) *                                       &
+     &      INT(k, C_LONG_LONG)))                                       &
+     &    THEN
             function = libxsmm_sfunction0(                              &
      &        iflags, m, n, k, 0, 0, 0, ralpha, rbeta)
             IF (ASSOCIATED(function%fn0)) THEN
@@ -724,7 +728,11 @@
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           ralpha = MERGE(default_alpha, alpha, .NOT.PRESENT(alpha))
           rbeta = MERGE(default_beta, beta, .NOT.PRESENT(beta))
-          IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
+          IF (INT(LIBXSMM_MAX_MNK, C_LONG_LONG).GE.(                    &
+     &      INT(m, C_LONG_LONG) *                                       &
+     &      INT(n, C_LONG_LONG) *                                       &
+     &      INT(k, C_LONG_LONG)))                                       &
+     &    THEN
             function = libxsmm_dfunction0(                              &
      &        iflags, m, n, k, 0, 0, 0, ralpha, rbeta)
             IF (ASSOCIATED(function%fn0)) THEN
@@ -757,7 +765,11 @@
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           ralpha = MERGE(default_alpha, alpha, .NOT.PRESENT(alpha))
           rbeta = MERGE(default_beta, beta, .NOT.PRESENT(beta))
-          IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
+          IF (INT(LIBXSMM_MAX_MNK, C_LONG_LONG).GE.(                    &
+     &      INT(m, C_LONG_LONG) *                                       &
+     &      INT(n, C_LONG_LONG) *                                       &
+     &      INT(k, C_LONG_LONG)))                                       &
+     &    THEN
             function = libxsmm_sfunction1(                              &
      &        iflags, m, n, k, 0, 0, 0, ralpha, rbeta,                  &
      &        MERGE(LIBXSMM_PREFETCH, LIBXSMM_PREFETCH_SIGNATURE,       &
@@ -792,7 +804,11 @@
           iflags = MERGE(LIBXSMM_FLAGS, flags, .NOT.PRESENT(flags))
           ralpha = MERGE(default_alpha, alpha, .NOT.PRESENT(alpha))
           rbeta = MERGE(default_beta, beta, .NOT.PRESENT(beta))
-          IF (LIBXSMM_MAX_MNK.GE.(m * n * k)) THEN
+          IF (INT(LIBXSMM_MAX_MNK, C_LONG_LONG).GE.(                    &
+     &      INT(m, C_LONG_LONG) *                                       &
+     &      INT(n, C_LONG_LONG) *                                       &
+     &      INT(k, C_LONG_LONG)))                                       &
+     &    THEN
             function = libxsmm_dfunction1(                              &
      &        iflags, m, n, k, 0, 0, 0, ralpha, rbeta,                  &
      &        MERGE(LIBXSMM_PREFETCH, LIBXSMM_PREFETCH_SIGNATURE,       &
