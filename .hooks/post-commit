@@ -9,7 +9,8 @@ if [[ -e ${LOCKFILE} ]] ; then
   MAIN=$(${GIT} describe --tags --abbrev=0)
   REVC=$(${GIT} describe --tags | cut -d- -f2)
   ${ECHO} ${MAIN}-$((REVC+1)) > ${GIT_DIR}/../version.txt
+  # lock file must be deleted here
+  ${RM} ${LOCKFILE}
   ${GIT} add ${GIT_DIR}/../version.txt
   ${GIT} commit --amend -C HEAD --no-verify
-  ${RM} ${LOCKFILE}
 fi
