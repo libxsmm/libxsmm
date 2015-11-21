@@ -50,7 +50,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned (ignored for sparse)\n");
   printf("    0: unaligned C, otherwise aligned (ignored for sparse)\n");
-  printf("    ARCH: noarch, wsm, snb, hsw, knc, skx, knl\n");
+  printf("    ARCH: noarch, wsm, snb, hsw, knc, knl\n");
   printf("    PREFETCH: nopf (none), pfsigonly, other dense options fall-back to pfsigonly\n");
   printf("    PRECISION: SP, DP\n");
   printf("    matrix input (CSC mtx file)\n");
@@ -69,7 +69,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
-  printf("    ARCH: noarch, wsm, snb, hsw, knc, knl, skx\n");
+  printf("    ARCH: noarch, wsm, snb, hsw, knc, knl\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");
@@ -114,6 +114,12 @@ int main(int argc, char* argv []) {
   l_lda = atoi(argv[7]);
   l_ldb = atoi(argv[8]);
   l_ldc = atoi(argv[9]);
+
+  /* condense < 1 to 0 for lda and ldb */
+  if ( l_lda < 1 )
+    l_lda = 0;
+  if ( l_ldb < 1 )
+    l_ldb = 0;
 
   /* some sugar */
   l_alpha = atof(argv[10]);
@@ -214,6 +220,12 @@ int main(int argc, char* argv []) {
       | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
+
+  /* is a workaround for the broken LIBXSMM_GEMM_DESCRIPTOR macro */
+  if (l_lda == 0)
+    l_xgemm_desc.lda = 0;
+  if (l_ldb == 0)
+    l_xgemm_desc.ldb = 0;
 
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */
