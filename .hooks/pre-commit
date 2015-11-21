@@ -1,3 +1,6 @@
 #!/bin/sh
 
-touch ${GIT_DIR}/.commit
+LOCKFILE=${GIT_DIR}/.commit
+TOUCH=$(which touch)
+
+${TOUCH} ${LOCKFILE}
