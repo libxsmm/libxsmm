@@ -1,3 +1,4 @@
+.hooks/.commit
 include/libxsmm.f
 include/libxsmm.h
 include/libxsmm_generator.h

@@ -252,7 +252,7 @@ endif
 .PHONY: version
 version: $(ROOTDIR)/version.txt
 $(ROOTDIR)/version.txt: $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/.hooks/pre-commit $(ROOTDIR)/.hooks/post-commit $(ROOTDIR)/Makefile
-	$(ROOTDIR)/.hooks/install.sh
+	@$(ROOTDIR)/.hooks/install.sh
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
