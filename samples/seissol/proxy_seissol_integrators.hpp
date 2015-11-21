@@ -189,7 +189,7 @@ void computeNeighboringIntegration() {
                                                l_timeIntegrated );
 
 #ifdef ENABLE_MATRIX_PREFETCH
-#pragma message("the current prefetch structure (flux matrices and tDOFs is tuned for order 5/6 and shouldn't be harmful for other orders")
+#pragma message("the current prefetch structure (flux matrices and tDOFs is tuned for higher order and shouldn't be harmful for lower orders")
     int l_face = 1;
     l_faceNeighbors_prefetch[0] = m_cells->faceNeighbors[l_cell][l_face];
     l_fluxMatricies_prefetch[0] = l_globalData->fluxMatrices[4+(l_face*12)
