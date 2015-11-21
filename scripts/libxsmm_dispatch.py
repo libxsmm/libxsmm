@@ -49,14 +49,14 @@ if __name__ == "__main__":
             print "  " + mstr + ", " + nstr + ", " + kstr + ", " + mstr + ", " + kstr + ", " + mstr + ","
             print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
-            print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
-            print "libxsmm_dispatch_cache[indx].s" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_smm_" + mnkstr + ";"
+            print "assert(0 == buffer[indx].pv); /*TODO: handle collision*/"
+            print "buffer[indx].s" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_smm_" + mnkstr + ";"
             print "LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,"
             print "  " + mstr + ", " + nstr + ", " + kstr + ", " + mstr + ", " + kstr + ", " + mstr + ","
             print "  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);"
             print "indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);"
-            print "assert(0 == libxsmm_dispatch_cache[indx].pv); /*TODO: handle collision*/"
-            print "libxsmm_dispatch_cache[indx].d" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_dmm_" + mnkstr + ";"
+            print "assert(0 == buffer[indx].pv); /*TODO: handle collision*/"
+            print "buffer[indx].d" + ("mm" if (0 == prefetch) else "xmm") + " = libxsmm_dmm_" + mnkstr + ";"
     elif (1 < argc):
         print "/* no static code */"
     else:
