@@ -31,7 +31,7 @@
 ###############################################################################
 from string import Template
 import libxsmm_utilities
-import sys, fnmatch
+import sys, fnmatch, os
 
 
 if __name__ == "__main__":
@@ -65,7 +65,11 @@ if __name__ == "__main__":
         maxn = libxsmm_utilities.max_mnk(mnklist, avgdim, 1)
         maxk = libxsmm_utilities.max_mnk(mnklist, avgdim, 2)
 
+        with open(os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt"), "r") as versionfile:
+            version=versionfile.read().replace('\n', '')
+
         substitute = { \
+            "VERSION":    version, \
             "ALIGNMENT":  alignment, \
             "ROW_MAJOR":  1 if (0 != row_major) else 0, \
             "COL_MAJOR":  0 if (0 != row_major) else 1, \

@@ -35,6 +35,8 @@
      &                      C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG
         IMPLICIT NONE
 
+        CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
+
         ! Parameters the library and static kernels were built for.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = $ROW_MAJOR

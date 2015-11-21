@@ -166,15 +166,15 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) $(BLDDIR)/mic/libxs
 .PHONY: lib_all
 ifeq (0,$(OFFLOAD))
 ifeq (0,$(MIC))
-lib_all: fheader drytest lib_hst
+lib_all: header drytest lib_hst
 else
-lib_all: fheader drytest lib_hst lib_mic
+lib_all: header drytest lib_hst lib_mic
 endif
 else
 ifeq (0,$(MIC))
-lib_all: fheader drytest lib_hst
+lib_all: header drytest lib_hst
 else
-lib_all: fheader drytest lib_hst lib_mic
+lib_all: header drytest lib_hst lib_mic
 endif
 endif
 
@@ -249,9 +249,17 @@ ifneq (nopf,$(PREFETCH_SCHEME))
 	SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);\n
 endif
 
+.PHONY: version
+version: $(ROOTDIR)/version.txt
+$(ROOTDIR)/version.txt: $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/.hooks/pre-commit $(ROOTDIR)/.hooks/post-commit $(ROOTDIR)/Makefile
+	$(ROOTDIR)/.hooks/install.sh
+
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/include/libxsmm_macros.h $(ROOTDIR)/include/libxsmm_frontend.h
+$(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+                     $(ROOTDIR)/include/libxsmm_macros.h $(ROOTDIR)/include/libxsmm_typedefs.h $(ROOTDIR)/include/libxsmm_frontend.h \
+                     $(ROOTDIR)/include/libxsmm_generator.h $(ROOTDIR)/include/libxsmm_timer.h \
+                     $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
@@ -263,7 +271,8 @@ $(INCDIR)/libxsmm.h: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(SCRDIR)/libxs
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py $(SRCDIR)/libxsmm.template.f
+$(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@) $(BLDDIR)
 	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
@@ -462,7 +471,7 @@ cp2k_mic: lib_mic
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
-$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -490,7 +499,7 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -518,7 +527,7 @@ $(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -546,7 +555,7 @@ $(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -574,7 +583,7 @@ $(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -599,7 +608,6 @@ $(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo "  MMVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NNVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
@@ -608,7 +616,6 @@ $(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
-
 
 .PHONY: test
 test: $(SPLDIR)/cp2k/cp2k-perf.txt

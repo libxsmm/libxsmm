@@ -31,6 +31,8 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
+#define LIBXSMM_VERSION "$VERSION"
+
 /** Parameters the library and static kernels were built for. */
 #define LIBXSMM_ALIGNMENT $ALIGNMENT
 #define LIBXSMM_ROW_MAJOR $ROW_MAJOR
