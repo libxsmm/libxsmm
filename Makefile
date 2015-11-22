@@ -725,6 +725,7 @@ endif
 else
 	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm_dispatch.h $(BLDDIR)/*.mod
 endif
+	@rm -rf $(SCRDIR)/__pycache__
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 
 .PHONY: realclean
