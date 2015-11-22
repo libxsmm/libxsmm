@@ -1,16 +1,28 @@
 #!/bin/sh
 
+VERSIONFILE=${GIT_DIR}/../version.txt
 LOCKFILE=${GIT_DIR}/.commit
 
 if [[ -e ${LOCKFILE} ]] ; then
-  GIT=$(which git)
   ECHO=$(which echo)
+  GREP=$(which grep)
+  GIT=$(which git)
+  CUT=$(which cut)
   RM=$(which rm)
+
   MAIN=$(${GIT} describe --tags --abbrev=0)
-  REVC=$(${GIT} describe --tags | cut -d- -f2)
-  ${ECHO} ${MAIN}-$((REVC+1)) > ${GIT_DIR}/../version.txt
-  # lock file must be deleted here
+  REVC=$(${GIT} describe --tags | ${CUT} -d- -f2)
+  VERSION=${MAIN}-${REVC}
+
+  # update version file
+  ${ECHO} ${VERSION} > ${VERSIONFILE}
+
+  # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}
-  ${GIT} add ${GIT_DIR}/../version.txt
-  ${GIT} commit --amend -C HEAD --no-verify
+
+  UPDATE=$(${GIT} diff --name-only | ${GREP} ${VERSIONFILE} ; ${ECHO} $?)
+  if [[ "0" != "${UPDATE}" ]] ; then
+    ${GIT} add ${VERSIONFILE}
+    ${GIT} commit --amend -C HEAD --no-verify
+  fi
 fi

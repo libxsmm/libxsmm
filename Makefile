@@ -187,6 +187,9 @@ install: all clean
 .PHONY: header
 header: cheader fheader
 
+.PHONY: interface
+interface: header
+
 PREFETCH_ID = 0
 PREFETCH_SCHEME = nopf
 PREFETCH_TYPE = 0
@@ -251,8 +254,9 @@ endif
 
 .PHONY: version
 version: $(ROOTDIR)/version.txt
-$(ROOTDIR)/version.txt: $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/.hooks/pre-commit $(ROOTDIR)/.hooks/post-commit $(ROOTDIR)/Makefile
+$(ROOTDIR)/version.txt: $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/Makefile
 	@$(ROOTDIR)/.hooks/install.sh
+	@touch $@
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
