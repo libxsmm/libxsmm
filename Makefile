@@ -255,19 +255,14 @@ ifneq (nopf,$(PREFETCH_SCHEME))
 	SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);\n
 endif
 
-.PHONY: version
-version: $(ROOTDIR)/version.txt
-$(ROOTDIR)/version.txt: $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/Makefile
-	@$(ROOTDIR)/.hooks/install.sh
-	@touch $@
-
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/include/libxsmm_macros.h $(ROOTDIR)/include/libxsmm_typedefs.h $(ROOTDIR)/include/libxsmm_frontend.h \
                      $(ROOTDIR)/include/libxsmm_generator.h $(ROOTDIR)/include/libxsmm_timer.h \
                      $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
+	@$(ROOTDIR)/.hooks/install.sh
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
@@ -278,9 +273,10 @@ $(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt $(SCRDI
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/.hooks/install.sh $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@) $(BLDDIR)
+	@$(ROOTDIR)/.hooks/install.sh
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
