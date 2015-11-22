@@ -32,7 +32,7 @@
 from functools import reduce
 import itertools
 import operator
-import sys
+import sys, os
 
 
 def upper_list(lists, level):
@@ -51,7 +51,6 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
     if (0 == format): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == format): # new input format
-        #sys.stderr.write("DEBUG: " + str(" ".join(argv[0:]).split(",")) + "\n")
         groups = map(lambda group: [int(i) for i in group.split()], " ".join(argv[0:]).split(","))
         resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
@@ -120,6 +119,25 @@ def align_value(n, typesize, alignment):
     else:
         sys.tracebacklimit = 0
         raise ValueError("align_value: invalid input!")
+
+
+def version():
+    version = "1.0"
+    with open(os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt"), "r") as versionfile:
+        version=versionfile.read().replace('\n', '')
+    return version
+
+
+def version_number(version):
+    versionlist = version.split(".")
+    major = int(versionlist[0]) if (0 < len(versionlist)) else 1
+    minor = int(versionlist[1]) if (1 < len(versionlist)) else 0
+    if (2 < len(versionlist)):
+        patchlist = versionlist[2].split("-")
+        patch = (int(patchlist[0]) + int(patchlist[1])) if (1 < len(patchlist)) else int(patchlist[0])
+    else:
+        patch = 0
+    return major, minor, patch
 
 
 if __name__ == "__main__":

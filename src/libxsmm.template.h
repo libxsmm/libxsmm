@@ -32,6 +32,9 @@
 #define LIBXSMM_H
 
 #define LIBXSMM_VERSION "$VERSION"
+#define LIBXSMM_VERSION_MAJOR $MAJOR
+#define LIBXSMM_VERSION_MINOR $MINOR
+#define LIBXSMM_VERSION_PATCH $PATCH
 
 /** Parameters the library and static kernels were built for. */
 #define LIBXSMM_ALIGNMENT $ALIGNMENT
