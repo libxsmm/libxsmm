@@ -21,6 +21,9 @@ endif
 # CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
+# Python interpreter
+PYTHON ?= python
+
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise
 ROW_MAJOR ?= 0
 
@@ -148,7 +151,7 @@ else
 	GENTARGET = noarch
 endif
 
-INDICES ?= $(shell python $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
@@ -270,7 +273,7 @@ $(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt $(SCRDI
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 
 .PHONY: fheader
@@ -278,7 +281,7 @@ fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@) $(BLDDIR)
-	@python $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
@@ -327,15 +330,15 @@ else # column-major
 	$(eval NVALUE2 := $(NVALUE))
 endif
 ifneq (0,$(ALIGNED_LOADS)) # aligned loads
-	$(eval LDASP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
-	$(eval LDADP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
+	$(eval LDASP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
+	$(eval LDADP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
 else # unaligned stores
 	$(eval LDASP := $(MVALUE2))
 	$(eval LDADP := $(MVALUE2))
 endif
 ifneq (0,$(ALIGNED_STORES)) # aligned stores
-	$(eval LDCSP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
-	$(eval LDCDP := $(shell python $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
+	$(eval LDCSP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
+	$(eval LDCDP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
 else # unaligned stores
 	$(eval LDCSP := $(MVALUE2))
 	$(eval LDCDP := $(MVALUE2))
@@ -388,13 +391,13 @@ endif
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
 		$@
 	@rm -f ${TMPFILE}
-	@python $(SCRDIR)/libxsmm_specialized.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $@
+	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(ROW_MAJOR) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $@
 
 .PHONY: main
 main: $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@python $(SCRDIR)/libxsmm_dispatch.py $(PREFETCH_TYPE) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PREFETCH_TYPE) $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic
