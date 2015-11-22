@@ -57,9 +57,9 @@ if __name__ == "__main__":
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         avgdim = int(0.5 * maxdim + 0.5)
 
-        avgm = libxsmm_utilities.median(map(lambda mnk: mnk[0], mnklist), avgdim, False)
-        avgn = libxsmm_utilities.median(map(lambda mnk: mnk[1], mnklist), avgdim, False)
-        avgk = libxsmm_utilities.median(map(lambda mnk: mnk[2], mnklist), avgdim, False)
+        avgm = libxsmm_utilities.median(list(map(lambda mnk: mnk[0], mnklist)), avgdim, False)
+        avgn = libxsmm_utilities.median(list(map(lambda mnk: mnk[1], mnklist)), avgdim, False)
+        avgk = libxsmm_utilities.median(list(map(lambda mnk: mnk[2], mnklist)), avgdim, False)
 
         maxm = libxsmm_utilities.max_mnk(mnklist, avgdim, 0)
         maxn = libxsmm_utilities.max_mnk(mnklist, avgdim, 1)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                     "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(\n" + \
                       "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" + \
                       (",\n  const double* pa, const double* pb, const double* pc);\n" if (0 != prefetch) else ");\n")
-            print template.substitute(substitute)
+            print(template.substitute(substitute))
         else:
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                         ("            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "") + \
                         "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
-            print template.safe_substitute(substitute)
+            print(template.safe_substitute(substitute))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

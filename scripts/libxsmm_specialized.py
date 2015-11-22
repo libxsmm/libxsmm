@@ -46,51 +46,51 @@ if __name__ == "__main__":
         else: # ColMajor
             signature = "a, b, c, pa, pb, pc" if (0 != prefetch) else "a, b, c"
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "("
-        print "  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
-           + (",\n  const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")")
-        print "{"
-        print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)"
-        print "  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");"
-        print "#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_sp)"
-        print "  libxsmm_smm_" + mnkstr + "_hsw(" + signature + ");"
-        print "#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_sp)"
-        print "  libxsmm_smm_" + mnkstr + "_snb(" + signature + ");"
-        print "#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_sp)"
-        print "  libxsmm_smm_" + mnkstr + "_wsm(" + signature + ");"
-        print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)"
-        print "  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");"
-        print "#else"
-        print "  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")"
+        print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
+        print("  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
+           + (",\n  const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")"))
+        print("{")
+        print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)")
+        print("  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");")
+        print("#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_sp)")
+        print("  libxsmm_smm_" + mnkstr + "_hsw(" + signature + ");")
+        print("#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_sp)")
+        print("  libxsmm_smm_" + mnkstr + "_snb(" + signature + ");")
+        print("#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_sp)")
+        print("  libxsmm_smm_" + mnkstr + "_wsm(" + signature + ");")
+        print("#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)")
+        print("  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");")
+        print("#else")
+        print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
         if (0 != prefetch):
-            print "  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);"
-        print "  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);"
-        print "#endif"
-        print "}"
+            print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
+        print("  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);")
+        print("#endif")
+        print("}")
         print
         print
-        print "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "("
-        print "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
-           + (",\n  const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")")
-        print "{"
-        print "#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)"
-        print "  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");"
-        print "#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_dp)"
-        print "  libxsmm_dmm_" + mnkstr + "_hsw(" + signature + ");"
-        print "#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_dp)"
-        print "  libxsmm_dmm_" + mnkstr + "_snb(" + signature + ");"
-        print "#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_dp)"
-        print "  libxsmm_dmm_" + mnkstr + "_wsm(" + signature + ");"
-        print "#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)"
-        print "  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");"
-        print "#else"
-        print "  /** Generate below message once per translation unit (already emitted for single-precision; see above)"
-        print "  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/"
+        print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(")
+        print("  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
+           + (",\n  const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")"))
+        print("{")
+        print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)")
+        print("  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");")
+        print("#elif defined(__AVX2__) && defined(LIBXSMM_GENTARGET_hsw_dp)")
+        print("  libxsmm_dmm_" + mnkstr + "_hsw(" + signature + ");")
+        print("#elif defined(__AVX__) && defined(LIBXSMM_GENTARGET_snb_dp)")
+        print("  libxsmm_dmm_" + mnkstr + "_snb(" + signature + ");")
+        print("#elif defined(__SSE3__) && defined(LIBXSMM_GENTARGET_wsm_dp)")
+        print("  libxsmm_dmm_" + mnkstr + "_wsm(" + signature + ");")
+        print("#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_dp)")
+        print("  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");")
+        print("#else")
+        print("  /** Generate below message once per translation unit (already emitted for single-precision; see above)")
+        print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/")
         if (0 != prefetch):
-            print "  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);"
-        print "  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);"
-        print "#endif"
-        print "}"
+            print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
+        print("  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);")
+        print("#endif")
+        print("}")
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

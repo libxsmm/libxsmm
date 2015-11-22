@@ -55,9 +55,9 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
         groups = map(lambda group: [int(i) for i in group.split()], " ".join(argv[0:]).split(","))
         resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
-        mlist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2:2+int(argv[0])]))
-        nlist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0]):2+int(argv[0])+int(argv[1])]))
-        klist = map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0])+int(argv[1]):]))
+        mlist = list(map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2:2+int(argv[0])])))
+        nlist = list(map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0]):2+int(argv[0])+int(argv[1])])))
+        klist = list(map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0])+int(argv[1]):])))
         mnk = [mlist, nlist, klist]
         top = [ \
           [mlist, upper_list(mnk, 0)][0==len(mlist)], \
@@ -88,7 +88,7 @@ def median(list_of_numbers, fallback = None, average = True):
     if (0 < size):
         # TODO: use nth element
         list_of_numbers.sort()
-        size2 = size / 2
+        size2 = int(size / 2)
         if (average and 0 == (size - size2 * 2)):
             medval = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
         else:
@@ -130,9 +130,9 @@ if __name__ == "__main__":
         mnk_size = int(sys.argv[3])
         dims = load_mnklist(sys.argv[4:4+mnk_size], threshold, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
-        print " ".join(map(lambda mnk: "_".join(map(str, mnk)), dims))
+        print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), dims)))
     elif (4 == argc and 0 < arg1):
-        print align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3])))
+        print(align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3]))))
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong (" + str(argc - 1) + ") number of arguments (\"" + \
