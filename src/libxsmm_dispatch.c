@@ -214,7 +214,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 
         { /* create executable buffer */
           const int l_fd = open("/dev/zero", O_RDWR);
-          l_code = mmap(0, l_generated_code.code_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+          /* must be a superset of what mprotect populates (see below) */
+          const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
+          l_code = mmap(0, l_generated_code.code_size, perms, MAP_PRIVATE, l_fd, 0);
           close(l_fd);
         }
 
@@ -246,7 +248,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
             case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
             case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
             case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
-            default: fprintf(stderr, "LIBXSMM: protecting memory failed: Unknown Error!\n");
+            default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
           }
           { /* open new scope for variable declaration */
             const int error =
