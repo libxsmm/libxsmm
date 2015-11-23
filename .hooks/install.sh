@@ -12,6 +12,6 @@ if [[ -e ${GIT_DIR}/hooks ]] ; then
   ${CP} ${HERE}/pre-commit ${GIT_DIR}/hooks
   ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks
   #${CP} ${HERE}/post-merge ${GIT_DIR}/hooks
-  ${RM} ${GIT_DIR}/hooks/post-merge
+  ${RM} -f ${GIT_DIR}/hooks/post-merge
   ${RM} -f ${LOCKFILE}
 fi
