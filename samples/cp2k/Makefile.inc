@@ -197,6 +197,7 @@ else # GCC assumed
 			CFLAGS := -g $(CFLAGS) -fsanitize=thread -fno-omit-frame-pointer
 			FCFLAGS := -g $(FCFLAGS) -fsanitize=thread -fno-omit-frame-pointer
 			LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -fno-omit-frame-pointer
+			ELDFLAGS := -pie
 		else
 			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
 			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
