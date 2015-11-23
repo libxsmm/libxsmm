@@ -134,7 +134,7 @@ $(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/stream_update_kernels-mod90.o $(M
 
 $(OUTDIR)/grad: $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) -pie
 
 $(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@)
@@ -142,7 +142,7 @@ $(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/stream_update_kernels-mod90.o $(M
 
 $(OUTDIR)/rstr: $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) -pie
 
 $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@)
@@ -150,7 +150,7 @@ $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(M
 
 $(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) -pie
 
 $(LIBDIR)/libstream_update_kernels.a: $(BLDDIR)/stream_update_kernels-c.o
 	@mkdir -p $(dir $@)

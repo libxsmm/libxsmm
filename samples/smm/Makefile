@@ -120,23 +120,23 @@ all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined 
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -pie
 
 $(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -pie
 
 $(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -pie
 
 $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -pie
 
 $(OUTDIR)/smm: $(BLDDIR)/smm-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS)
+	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) -pie
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@)
