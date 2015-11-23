@@ -121,23 +121,27 @@ def align_value(n, typesize, alignment):
         raise ValueError("align_value: invalid input!")
 
 
-def version():
+def version_branch():
+    versionfile = os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt")
     version = "1.0"
-    with open(os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt"), "r") as versionfile:
-        version=versionfile.read().replace('\n', '')
-    return version
+    with open(versionfile, "r") as file:
+        version = file.read().replace("\n", "")
+    versionlist = version.split("-")
+    return ("-".join(map(str, versionlist[1:])), versionlist[0]) if (2 < len(versionlist)) else (version, "")
 
 
-def version_number(version):
+def version_numbers(version):
     versionlist = version.split(".")
     major = int(versionlist[0]) if (0 < len(versionlist)) else 1
     minor = int(versionlist[1]) if (1 < len(versionlist)) else 0
     if (2 < len(versionlist)):
-        patchlist = versionlist[2].split("-")
-        patch = (int(patchlist[0]) + int(patchlist[1])) if (1 < len(patchlist)) else int(patchlist[0])
+        updatelist = versionlist[2].split("-")
+        update = int(updatelist[0]) if (0 < len(updatelist)) else 0
+        patch = int(updatelist[1]) if (1 < len(updatelist)) else 0
     else:
+        update = 0
         patch = 0
-    return major, minor, patch
+    return major, minor, update, patch
 
 
 if __name__ == "__main__":

@@ -65,13 +65,15 @@ if __name__ == "__main__":
         maxn = libxsmm_utilities.max_mnk(mnklist, avgdim, 1)
         maxk = libxsmm_utilities.max_mnk(mnklist, avgdim, 2)
 
-        version = libxsmm_utilities.version()
-        major, minor, patch = libxsmm_utilities.version_number(version)
+        version, branch = libxsmm_utilities.version_branch()
+        major, minor, update, patch = libxsmm_utilities.version_numbers(version)
 
         substitute = { \
             "VERSION":    version, \
+            "BRANCH":     branch, \
             "MAJOR":      major, \
             "MINOR":      minor, \
+            "UPDATE":     update, \
             "PATCH":      patch, \
             "ALIGNMENT":  alignment, \
             "ROW_MAJOR":  1 if (0 != row_major) else 0, \

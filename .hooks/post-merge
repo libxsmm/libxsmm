@@ -1,13 +1,13 @@
 #!/bin/sh
 
-ECHO=$(which echo)
-GREP=$(which grep)
-GIT=$(which git)
-
+VERSIONSCRIPT=${GIT_DIR}/hooks/version.sh
 VERSIONFILE=${GIT_DIR}/../version.txt
 
-${ECHO} "merge" > ${VERSIONFILE}
-./pre-commit
+GIT=$(which git)
 
+# update version file
+${VERSIONSCRIPT} > ${VERSIONFILE}
+
+./pre-commit
 ${GIT} add ${VERSIONFILE}
 ${GIT} commit --amend -C HEAD --no-verify
