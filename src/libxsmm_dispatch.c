@@ -65,7 +65,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
   libxsmm_dxfunction dxmm;
   const void* pv;
 } libxsmm_dispatch_entry;
-LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* libxsmm_dispatch_cache = 0;
+LIBXSMM_RETARGETABLE volatile libxsmm_dispatch_entry *volatile libxsmm_dispatch_cache = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
@@ -132,7 +132,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #   pragma omp critical(libxsmm_dispatch_lock)
 #endif
     if (0 != libxsmm_dispatch_cache) {
-      void *const buffer = libxsmm_dispatch_cache;
+      void *const buffer = (void*)libxsmm_dispatch_cache;
       libxsmm_dispatch_cache = 0;
       free(buffer);
     }
