@@ -55,12 +55,7 @@
 
 /* rely on a "pseudo prime" number (Mersenne) to improve cache spread */
 #define LIBXSMM_DISPATCH_CACHESIZE ((2U << LIBXSMM_NBITS(LIBXSMM_MAX_MNK * (0 != LIBXSMM_JIT ? 2 : 5))) - 1)
-#if !defined(_WIN32)
-#define LIBXSMM_DISPATCH_PAGESIZE sysconf(_SC_PAGESIZE)
-#else
-#define LIBXSMM_DISPATCH_PAGESIZE 4096
-#endif
-#define LIBXSMM_DISPATCH_SEED 0
+#define LIBXSMM_DISPATCH_HASH_SEED 0
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
@@ -162,14 +157,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_SEED);
+  hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
 
   indx = hash % LIBXSMM_DISPATCH_CACHESIZE;
   result = libxsmm_dispatch_cache[indx]; /* TODO: handle collision */
 
 #if (0 != LIBXSMM_JIT)
   if (0 == result.pv) {
-# if !defined(_WIN32) && !defined(__CYGWIN__)
+# if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)
     const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
     LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
@@ -181,7 +176,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 
       if (0 == result.pv) {
         char l_arch[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* empty initial arch string */
-        int l_code_pages, l_code_page_size, l_fd;
         libxsmm_generated_code l_generated_code;
         void* l_code;
 
@@ -218,40 +212,52 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
           return result;
         }
 
-        /* create executable buffer */
-        l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/(LIBXSMM_DISPATCH_PAGESIZE))+1;
-        l_code_page_size = (LIBXSMM_DISPATCH_PAGESIZE)*l_code_pages;
-        l_fd = open("/dev/zero", O_RDWR);
-        l_code = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
-        close(l_fd);
-
-        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
-# if defined(MADV_NOHUGEPAGE)
-        madvise(l_code, l_code_page_size, MADV_NOHUGEPAGE);
-# endif /*MADV_NOHUGEPAGE*/
+        { /* create executable buffer */
+          const int l_fd = open("/dev/zero", O_RDWR);
+          l_code = mmap(0, l_generated_code.code_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+          close(l_fd);
+        }
 
         if (MAP_FAILED == l_code) {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
+          fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
 # endif /*NDEBUG*/
           free(l_generated_code.generated_code);
           return result;
         }
 
-        memcpy( l_code, l_generated_code.generated_code, l_generated_code.code_size );
-        if (-1 == mprotect(l_code, l_code_page_size, PROT_EXEC | PROT_READ)) {
-# if !defined(NDEBUG)
-          int errsv = errno;
-          if (errsv == EINVAL) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: addr is not a valid pointer, or not a multiple of the system page size!\n");
-          } else if (errsv == ENOMEM) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: Internal kernel structures could not be allocated!\n");
-          } else if (errsv == EACCES) {
-            fprintf(stderr, "LIBXSMM: mprotect failed: The memory cannot be given the specified access!\n");
-          } else {
-            fprintf(stderr, "LIBXSMM: mprotect failed: Unknown Error!\n");
+        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+# if defined(MADV_NOHUGEPAGE)
+        { /* open new scope for variable declaration */
+#   if !defined(NDEBUG)
+          const int error =
+#   endif
+          madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
+#   if !defined(NDEBUG) /* library code is usually expected to be mute */
+          if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
+#   endif
+        }
+# endif /*MADV_NOHUGEPAGE*/
+
+        memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
+        if (-1 == mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+          switch (errno) {
+            case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
+            case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
+            case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
+            default: fprintf(stderr, "LIBXSMM: protecting memory failed: Unknown Error!\n");
           }
+          { /* open new scope for variable declaration */
+            const int error =
+# else
+          {
 # endif /*NDEBUG*/
+            munmap(l_code, l_generated_code.code_size);
+#   if !defined(NDEBUG) /* library code is usually expected to be mute */
+            if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
+#   endif
+          }
           free(l_generated_code.generated_code);
           return result;
         }
