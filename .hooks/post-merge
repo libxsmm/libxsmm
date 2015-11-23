@@ -8,6 +8,6 @@ GIT=$(which git)
 # update version file
 ${VERSIONSCRIPT} > ${VERSIONFILE}
 
-./pre-commit
+${GIT_DIR}/hooks/pre-commit
 ${GIT} add ${VERSIONFILE}
 ${GIT} commit --amend -C HEAD --no-verify
