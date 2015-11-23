@@ -257,9 +257,10 @@ endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
                      $(ROOTDIR)/include/libxsmm_macros.h $(ROOTDIR)/include/libxsmm_typedefs.h $(ROOTDIR)/include/libxsmm_frontend.h \
                      $(ROOTDIR)/include/libxsmm_generator.h $(ROOTDIR)/include/libxsmm_timer.h \
+                     $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile
 	@mkdir -p $(dir $@)
 	@$(ROOTDIR)/.hooks/install.sh
@@ -273,7 +274,8 @@ $(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/.hooks/install.sh $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm.f: $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
+                     $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@mkdir -p $(dir $@) $(BLDDIR)
 	@$(ROOTDIR)/.hooks/install.sh
