@@ -51,7 +51,7 @@ ifneq (0,$(INTEL))
 		FCFLAGS += -O0
 		SYM = $(DBG)
 	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -xAVX
 		else ifeq (2,$(AVX))
@@ -169,7 +169,7 @@ else # GCC assumed
 		FCFLAGS += -O0
 		SYM = $(DBG)
 	endif
-	ifeq (1,$(shell echo $$((2 > $(DBG)))))
+	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -mavx
 		else ifeq (2,$(AVX))
