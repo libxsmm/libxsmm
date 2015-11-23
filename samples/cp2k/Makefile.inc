@@ -71,13 +71,13 @@ ifneq (0,$(INTEL))
 		endif
 	endif
 	ifneq (0,$(SYM))
-		ifneq (1,$(SYM))
-			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
-		else
+		ifeq (1,$(SYM))
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
+			FCFLAGS := -g -check -traceback $(FCFLAGS)
+		else
+			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
 			FCFLAGS := -g -check -traceback $(FCFLAGS)
 		endif
 	endif
@@ -188,14 +188,20 @@ else # GCC assumed
 		endif
 	endif
 	ifneq (0,$(SYM))
-		ifneq (1,$(SYM))
-			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g $(FCFLAGS)
-		else
+		ifeq (1,$(SYM))
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
 			FCFLAGS := -g $(FCFLAGS)
+		else ifeq (2,$(SYM))
+			CXXFLAGS := -g $(CXXFLAGS) -fsanitize=thread -fno-omit-frame-pointer
+			CFLAGS := -g $(CFLAGS) -fsanitize=thread -fno-omit-frame-pointer
+			FCFLAGS := -g $(FCFLAGS) -fsanitize=thread -fno-omit-frame-pointer
+			LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -fno-omit-frame-pointer
+			STATIC = 0
+		else
+			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
+			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+			FCFLAGS := -g -check -traceback $(FCFLAGS)
 		endif
 	endif
 	ifeq (0,$(EXP))
