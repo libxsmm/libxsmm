@@ -26,3 +26,4 @@ for TEST in $(ls -1 ${HERE}/*.c) ; do
       -e "KMP_AFFINITY=scatter,granularity=fine"
   fi
 done
+
