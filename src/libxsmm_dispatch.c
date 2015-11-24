@@ -155,11 +155,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 
       if (0 != cache) {
         void *const buffer = (void*)libxsmm_dispatch_cache;
-#if (201107 <= _OPENMP)
+#if defined(_OPENMP) && (201107 <= _OPENMP)
 #       pragma omp atomic write
 #endif
         libxsmm_dispatch_cache = 0;
-#if (201107 > _OPENMP)
+#if defined(_OPENMP) && (201107 > _OPENMP)
 #       pragma omp flush(libxsmm_dispatch_cache)
 #endif
         free(buffer);
