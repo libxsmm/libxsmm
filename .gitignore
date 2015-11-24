@@ -28,6 +28,7 @@ _*.txt
 *.obj
 *.lib
 *.mod
+*.bin
 *.o
 *.a
 *.*~
