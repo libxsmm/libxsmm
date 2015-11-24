@@ -58,7 +58,7 @@ mpirun -np 16 \
 
 For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or any workload under `cp2k/tests/QS/benchmark_single_node`. For latter set of workloads however LIBINT and LIBXC may be required. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
-* **LIBXSMM_ACC_RECONFIGURE**: environment setting for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if LIBXSMM_ACC_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured.
+* **CP2K_RECONFIGURE**: environment setting for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured.
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. For the CP2K/intel branch the MM_DRIVER is set to XSMM by default (if LIBXSMMROOT was present).
 
 ## LIBINT and LIBXC Dependencies
