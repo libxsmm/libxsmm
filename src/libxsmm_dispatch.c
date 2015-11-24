@@ -127,10 +127,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
   const volatile void* cache;
-#if (201107 <= _OPENMP)
+#if defined(_OPENMP)
+# if (201107 <= _OPENMP)
 # pragma omp atomic read
-#else
+# else
 # pragma omp flush(libxsmm_dispatch_cache)
+# endif
 #endif
   cache = libxsmm_dispatch_cache;
 
@@ -142,10 +144,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #   pragma omp critical(libxsmm_dispatch_lock)
 #endif
     {
-#if (201107 <= _OPENMP)
+#if defined(_OPENMP)
+# if (201107 <= _OPENMP)
 #     pragma omp atomic read
-#else
+# else
 #     pragma omp flush(libxsmm_dispatch_cache)
+# endif
 #endif
       cache = libxsmm_dispatch_cache;
 
