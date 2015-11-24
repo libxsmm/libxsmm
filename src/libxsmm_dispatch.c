@@ -97,6 +97,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
         /* setup the dispatch table for the statically generated code */
 #       include <libxsmm_dispatch.h>
       }
+#if !defined(_OPENMP)
       { /* acquire and release remaining locks to shortcut any lazy initialization later on */
         const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
         for (i = 1; i < nlocks; ++i) {
@@ -104,6 +105,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
           LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
         }
       }
+#endif
       libxsmm_dispatch_cache = buffer;
     }
   }
@@ -124,17 +126,40 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  if (0 != libxsmm_dispatch_cache) {
+  const volatile void* cache;
+#if (201107 <= _OPENMP)
+# pragma omp atomic read
+#else
+# pragma omp flush(libxsmm_dispatch_cache)
+#endif
+  cache = libxsmm_dispatch_cache;
+
+  if (0 != cache) {
 #if !defined(_OPENMP)
     /* acquire one of the locks as the master lock */
     LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
 #else
 #   pragma omp critical(libxsmm_dispatch_lock)
 #endif
-    if (0 != libxsmm_dispatch_cache) {
-      void *const buffer = (void*)libxsmm_dispatch_cache;
-      libxsmm_dispatch_cache = 0;
-      free(buffer);
+    {
+#if (201107 <= _OPENMP)
+#     pragma omp atomic read
+#else
+#     pragma omp flush(libxsmm_dispatch_cache)
+#endif
+      cache = libxsmm_dispatch_cache;
+
+      if (0 != cache) {
+        void *const buffer = (void*)libxsmm_dispatch_cache;
+#if (201107 <= _OPENMP)
+#       pragma omp atomic write
+#endif
+        libxsmm_dispatch_cache = 0;
+#if (201107 > _OPENMP)
+#       pragma omp flush(libxsmm_dispatch_cache)
+#endif
+        free(buffer);
+      }
     }
 #if !defined(_OPENMP)
     /* release the master lock */
