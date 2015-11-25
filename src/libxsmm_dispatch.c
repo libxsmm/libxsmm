@@ -154,7 +154,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  const volatile void* cache;
+  volatile libxsmm_dispatch_entry* cache = 0;
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
@@ -182,7 +182,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       cache = libxsmm_dispatch_cache;
 
       if (0 != cache) {
-        void *const buffer = (void*)libxsmm_dispatch_cache;
 #if defined(_OPENMP) && (201107 <= _OPENMP)
 #       pragma omp atomic write
 #endif
@@ -190,7 +189,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #if defined(_OPENMP) && (201107 > _OPENMP)
 #       pragma omp flush(libxsmm_dispatch_cache)
 #endif
-        free(buffer);
+        free((void*)cache);
       }
     }
 #if !defined(_OPENMP)
@@ -204,11 +203,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
 {
   libxsmm_dispatch_entry result;
-  const volatile void* cache;
+  volatile libxsmm_dispatch_entry* cache;
   unsigned int hash, indx;
   assert(0 != desc);
 
-  /* lazy initialization */
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
@@ -218,16 +216,24 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #endif
   cache = libxsmm_dispatch_cache;
 
+  /* lazy initialization */
   if (0 == cache) {
     internal_init();
+#if defined(_OPENMP)
+# if (201107 <= _OPENMP)
+# pragma omp atomic read
+# else
+# pragma omp flush(libxsmm_dispatch_cache)
+# endif
+#endif
+    cache = libxsmm_dispatch_cache;
   }
 
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
-
   indx = hash % LIBXSMM_DISPATCH_CACHESIZE;
-  result = libxsmm_dispatch_cache[indx]; /* TODO: handle collision */
+  result = cache[indx]; /* TODO: handle collision */
 
 #if (0 != LIBXSMM_JIT)
   if (0 == result.pv) {
@@ -239,7 +245,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-      result = libxsmm_dispatch_cache[indx];
+      result = cache[indx];
 
       if (0 == result.pv) {
         char l_arch[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* empty initial arch string */
@@ -259,7 +265,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 # else
 #       error "No instruction set extension found for JIT-code generation!"
 # endif
-
         /* allocate buffer for code */
         l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
         l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
@@ -318,7 +323,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
               result.pv = l_code;
 
               /* make function pointer available for dispatch */
-              libxsmm_dispatch_cache[indx].pv = l_code;
+              cache[indx].pv = l_code;
             }
             else { /* there was an error with mprotect */
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
