@@ -43,6 +43,7 @@
 # include <Windows.h>
 #else
 # include <fcntl.h>
+# include <errno.h>
 # include <unistd.h>
 # include <sys/mman.h>
 #endif
@@ -232,92 +233,87 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
         /* generate kernel */
         libxsmm_generator_dense_kernel(&l_generated_code, desc, l_arch);
 
-        /* handle an eventual error */
-        if (l_generated_code.last_error != 0) {
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
-# endif /*NDEBUG*/
-          free(l_generated_code.generated_code);
-          return result;
-        }
-
-        { /* create executable buffer */
+        /* handle an eventual error in the else-branch */
+        if (0 == l_generated_code.last_error) {
+          /* create executable buffer */
           const int l_fd = open("/dev/zero", O_RDWR);
           /* must be a superset of what mprotect populates (see below) */
           const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
           l_code = mmap(0, l_generated_code.code_size, perms, MAP_PRIVATE, l_fd, 0);
           close(l_fd);
-        }
 
-        if (MAP_FAILED == l_code) {
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
-# endif /*NDEBUG*/
-          free(l_generated_code.generated_code);
-          return result;
-        }
-
-        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+          if (MAP_FAILED != l_code) {
 # if defined(MADV_NOHUGEPAGE)
-        { /* open new scope for variable declaration */
 #   if !defined(NDEBUG)
-          const int error =
-#   endif
-          madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
-#   if !defined(NDEBUG) /* library code is usually expected to be mute */
-          if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
-#   endif
-        }
-# endif /*MADV_NOHUGEPAGE*/
-
-        memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
-        if (-1 == mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-          switch (errno) {
-            case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
-            case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
-            case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
-            default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
-          }
-          { /* open new scope for variable declaration */
             const int error =
-# else
-          {
-# endif /*NDEBUG*/
-            munmap(l_code, l_generated_code.code_size);
-#   if !defined(NDEBUG) /* library code is usually expected to be mute */
-            if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
 #   endif
-          }
-          free(l_generated_code.generated_code);
-          return result;
-        }
+            /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+            madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
+            /* proceed even in case of an error, we then just take what we got (THP) */
+#   if !defined(NDEBUG) /* library code is usually expected to be mute */
+            if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
+#   endif
+# endif /*MADV_NOHUGEPAGE*/
+            /* copy temporary buffer into the prepared executable buffer */
+            memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
 
+            if (-1 != mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
 # if !defined(NDEBUG)
-        { /* write buffer for manual decode as binary to a file */
-          char l_objdump_name[512];
-          FILE* l_byte_code;
-          sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
-            0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
-            desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
-            desc->prefetch);
-          l_byte_code = fopen(l_objdump_name, "wb");
-          if (l_byte_code != NULL) {
-            fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
-            fclose(l_byte_code);
+              /* write buffer for manual decode as binary to a file */
+              char l_objdump_name[512];
+              FILE* l_byte_code;
+              sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
+                0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
+                desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
+                0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
+                0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
+                desc->prefetch);
+              l_byte_code = fopen(l_objdump_name, "wb");
+              if (l_byte_code != NULL) {
+                fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
+                fclose(l_byte_code);
+              }
+# endif /*NDEBUG*/
+              /* free temporary buffer */
+              free(l_generated_code.generated_code);
+
+              /* prepare return value */
+              result.pv = l_code;
+
+              /* make function pointer available for dispatch */
+              libxsmm_dispatch_cache[indx].pv = l_code;
+            }
+            else { /* there was an error with mprotect */
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+              int error = errno;
+              switch (error) {
+                case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
+                case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
+                case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
+                default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
+              }
+              error =
+# endif /*NDEBUG*/
+              munmap(l_code, l_generated_code.code_size);
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+              if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
+# endif
+              free(l_generated_code.generated_code);
+            }
+          }
+          else {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+            fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
+# endif /*NDEBUG*/
+            free(l_generated_code.generated_code);
           }
         }
+        else {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+          fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
 # endif /*NDEBUG*/
-        /* free temporary buffer */
-        free(l_generated_code.generated_code);
-
-        /* prepare return value */
-        result.pv = l_code;
-
-        /* make function pointer available for dispatch */
-        libxsmm_dispatch_cache[indx].pv = l_code;
+          free(l_generated_code.generated_code);
+        }
       }
     }
 
