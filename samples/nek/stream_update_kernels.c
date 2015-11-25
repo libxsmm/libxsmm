@@ -219,10 +219,44 @@ void stream_update_helmholtz( const double* i_g1,
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
   /* run the prologue */
-  for ( ; l_n < l_trip_prolog;  l_n++ ) {
-    io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
-                + i_h2*(i_b[l_n]*i_a[l_n]);
+/*
+#if !defined(__SSE3__)
+*/
+  {
+    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
+                  + i_h2*(i_b[l_n]*i_a[l_n]);
+    }
   }
+/*
+#else
+  {
+    const __m128d vec_h1 = _mm_loaddup_pd(&i_h1);
+    const __m128d vec_h2 = _mm_loaddup_pd(&i_h2);
+    const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
+    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+      __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
+      vec_g1 = _mm_load_sd(&(i_g1[l_n]));
+      vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
+      vec_g1 = _mm_mul_sd(vec_g1, vec_tm1);
+      vec_g2 = _mm_load_sd(&(i_g2[l_n]));
+      vec_tm2 = _mm_load_sd(&(i_tm2[l_n]));
+      vec_g2 = _mm_mul_sd(vec_g2, vec_tm2);
+      vec_g3 = _mm_load_sd(&(i_g3[l_n]));
+      vec_tm3 = _mm_load_sd(&(i_tm3[l_n]));
+      vec_g3 = _mm_mul_sd(vec_g3, vec_tm3);
+      vec_a = _mm_load_sd(&(i_a[l_n]));
+      vec_b = _mm_load_sd(&(i_b[l_n]));
+      vec_a = _mm_mul_sd(vec_a, vec_b);
+      vec_g1 = _mm_add_sd(vec_g1, vec_g2);
+      vec_a = _mm_mul_sd(vec_a, vec_h2);
+      vec_g1 = _mm_add_sd(vec_g1, vec_g3);
+      vec_g1 = _mm_mul_sd(vec_g1, vec_h1);
+      _mm_maskmoveu_si128(_mm_castpd_si128(_mm_add_pd( vec_g1, vec_a )), mask, (char*)(&(io_c[l_n])));
+    }
+  }
+#endif
+*/
   /* run the bulk, hopefully using streaming stores */
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
@@ -310,10 +344,44 @@ void stream_update_helmholtz( const double* i_g1,
   }
 #endif
   /* run the epilogue */
-  for ( ; l_n < i_length;  l_n++ ) {
-    io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
-                + i_h2*(i_b[l_n]*i_a[l_n]);
+/*
+#if !defined(__SSE3__)
+*/
+  {
+    for ( ; l_n < i_length;  l_n++ ) {
+      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
+                  + i_h2*(i_b[l_n]*i_a[l_n]);
+    }
   }
+/*
+#else
+  {
+    const __m128d vec_h1 = _mm_loaddup_pd(&i_h1);
+    const __m128d vec_h2 = _mm_loaddup_pd(&i_h2);
+    const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
+    for ( ; l_n < i_length;  l_n++ ) {
+      __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
+      vec_g1 = _mm_load_sd(&(i_g1[l_n]));
+      vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
+      vec_g1 = _mm_mul_sd(vec_g1, vec_tm1);
+      vec_g2 = _mm_load_sd(&(i_g2[l_n]));
+      vec_tm2 = _mm_load_sd(&(i_tm2[l_n]));
+      vec_g2 = _mm_mul_sd(vec_g2, vec_tm2);
+      vec_g3 = _mm_load_sd(&(i_g3[l_n]));
+      vec_tm3 = _mm_load_sd(&(i_tm3[l_n]));
+      vec_g3 = _mm_mul_sd(vec_g3, vec_tm3);
+      vec_a = _mm_load_sd(&(i_a[l_n]));
+      vec_b = _mm_load_sd(&(i_b[l_n]));
+      vec_a = _mm_mul_sd(vec_a, vec_b);
+      vec_g1 = _mm_add_sd(vec_g1, vec_g2);
+      vec_a = _mm_mul_sd(vec_a, vec_h2);
+      vec_g1 = _mm_add_sd(vec_g1, vec_g3);
+      vec_g1 = _mm_mul_sd(vec_g1, vec_h1);
+      _mm_maskmoveu_si128(_mm_castpd_si128(_mm_add_pd( vec_g1, vec_a )), mask, (char*)(&(io_c[l_n])));
+    }
+  }
+#endif
+*/
 }
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
