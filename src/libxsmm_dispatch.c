@@ -98,7 +98,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #endif
     cache = libxsmm_dispatch_cache;
 
-    if (0 != cache) {
+    if (0 == cache) {
       libxsmm_dispatch_entry *const buffer = (libxsmm_dispatch_entry*)malloc(
         LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_dispatch_entry));
       assert(buffer);
@@ -146,7 +146,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 #endif
   cache = libxsmm_dispatch_cache;
 
-  if (0 != cache) {
+  if (0 == cache) {
     internal_init();
   }
 }
@@ -218,7 +218,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #endif
   cache = libxsmm_dispatch_cache;
 
-  if (0 != cache) {
+  if (0 == cache) {
     internal_init();
   }
 
