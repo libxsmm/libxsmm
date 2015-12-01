@@ -36,9 +36,13 @@
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
+  /** Transpose matrix A. */
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
+  /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+  /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
+  /** Aligned load/store instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 } libxsmm_gemm_flags;
 
