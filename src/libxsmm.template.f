@@ -556,7 +556,7 @@
      &      alignment) * alignment) / typesize
         END FUNCTION
 
-        ! Non-dispatched matrix multiplication using BLAS (single-precision).
+        ! Non-dispatched dense matrix multiplication using BLAS (single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sblasmm
         SUBROUTINE libxsmm_sblasmm(m, n, k, a, b, c, flags, alpha, beta)
           REAL(C_FLOAT), PARAMETER :: default_alpha = LIBXSMM_ALPHA
@@ -620,7 +620,7 @@
           END IF
         END SUBROUTINE
 
-        ! Non-dispatched matrix multiplication using BLAS (double-precision).
+        ! Non-dispatched dense matrix multiplication using BLAS (double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dblasmm
         SUBROUTINE libxsmm_dblasmm(m, n, k, a, b, c, flags, alpha, beta)
           REAL(C_DOUBLE), PARAMETER :: default_alpha = LIBXSMM_ALPHA
@@ -684,7 +684,7 @@
           END IF
         END SUBROUTINE
 
-        ! Dispatched matrix multiplication (single-precision).
+        ! Dispatched dense matrix multiplication (single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_abc
         SUBROUTINE libxsmm_smm_abc(                                     &
      &  m, n, k, a, b, c, flags, alpha, beta)
@@ -720,7 +720,7 @@
           END IF
         END SUBROUTINE
 
-        ! Dispatched matrix multiplication (double-precision).
+        ! Dispatched dense matrix multiplication (double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_abc
         SUBROUTINE libxsmm_dmm_abc(                                     &
      &  m, n, k, a, b, c, flags, alpha, beta)
@@ -756,7 +756,7 @@
           END IF
         END SUBROUTINE
 
-        ! Dispatched matrix multiplication with prefetches (single-precision).
+        ! Dispatched dense matrix multiplication with prefetches (single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smm_prf
         SUBROUTINE libxsmm_smm_prf(                                     &
      &  m, n, k, a, b, c, pa, pb, pc, flags, alpha, beta)
@@ -795,7 +795,7 @@
           END IF
         END SUBROUTINE
 
-        ! Dispatched matrix multiplication with prefetches (double-precision).
+        ! Dispatched dense matrix multiplication with prefetches (double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_prf
         SUBROUTINE libxsmm_dmm_prf(                                     &
      &  m, n, k, a, b, c, pa, pb, pc, flags, alpha, beta)
