@@ -85,7 +85,7 @@ PROGRAM stpm
     totsize = i ! -> we have 1 iteration by default
   END IF
 
-  ! 
+  ! determining how many repitions are needed
   IF (i >= totsize) THEN
     reps = 1
     totsize = i
