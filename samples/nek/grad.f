@@ -157,6 +157,38 @@ PROGRAM grad
     !$OMP END PARALLEL
   END IF
 
+  WRITE(*, "(A)") "Streamed... (BLAS)"
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, reps)
+  ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
+  tm1 = 0; tm2 = 0; tm3 = 0
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  DO r = 1, reps
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      CALL libxsmm_blasmm(m, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
+      DO j = 1, k
+        CALL libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+      END DO
+      CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
+      CALL libxsmm_blasmm(m*n, k, k, a(:,:,1,i), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
+    END DO
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2, tm3)
+  !$OMP END PARALLEL
+
+  ! Print Performance Summary and check results
+  call performance(duration, m, n, k, s, reps)
+  if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
+
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
   !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, reps)

@@ -184,6 +184,35 @@ PROGRAM stpm
     !$OMP END PARALLEL
   END IF
 
+  WRITE(*, "(A)") "Streamed... (BLAS)"
+  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
+  !$OMP   SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, reps)
+  ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
+  tm1 = 0; tm2 = 0; tm3 = 3
+  !$OMP MASTER
+  start = libxsmm_timer_tick()
+  !$OMP END MASTER
+  DO r = 1, reps
+    !$OMP DO
+    DO i = LBOUND(a, 4), UBOUND(a, 4)
+      CALL libxsmm_blasmm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      DO j = 1, k
+        CALL libxsmm_blasmm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+      END DO
+      CALL libxsmm_blasmm(mm*nn, kk, k, tm2(:,:,1), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+    END DO
+  END DO
+  !$OMP MASTER
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+  !$OMP END MASTER
+  ! Deallocate thread-local arrays
+  DEALLOCATE(tm1, tm2, tm3)
+  !$OMP END PARALLEL
+
+  CALL performance(duration, m, n, k, mm, nn, kk, s, reps)
+  IF (check.NE.0) CALL validate(c, d)
+
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
   !$OMP   SHARED(duration, a, dx, dy, dz, c, m, n, k, mm, nn, kk, reps)
