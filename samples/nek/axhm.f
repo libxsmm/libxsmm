@@ -338,6 +338,6 @@ CONTAINS
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
         (reps * s * m * n * k * (6) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     END IF
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "avg. duration:   ", (1D3 * duration)/reps, " ms"
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", (1D3 * duration)/reps, " ms"
   END SUBROUTINE
 END PROGRAM
