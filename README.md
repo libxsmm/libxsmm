@@ -1,35 +1,60 @@
 # LIBXSMM
-LIBXSMM is a library for small matrix-matrix multiplications targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel SSE3, Intel AVX, Intel AVX2, IMCI (KNCni) for Intel Xeon Phi coprocessors ("KNC"), and Intel AVX-512 as found in the Intel Xeon Phi processor family ("KNL") and future Intel Xeon processors. Historically the library was solely targeting the Intel Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just-In-Time (JIT) code generation is targeting Intel AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.0.1.zip)] [![status](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip)
+LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel SSE3, Intel AVX, Intel AVX2, IMCI (KNCni) for Intel Xeon Phi coprocessors ("KNC"), and Intel AVX-512 as found in the Intel Xeon Phi processor family ("KNL") and future Intel Xeon processors. Historically the library was solely targeting the Intel Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just-In-Time (JIT) code generation is targeting Intel AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.0.1.zip)] [![status](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip)
 
 **What is a small matrix-matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M N K)^(1/3) \<= 80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the L2 cache. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
 
 **How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against Intel MKL 11.2 (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (env MKL_VERBOSE=1 ./workload > verbose.txt). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (grep -a "MKL_VERBOSE DGEMM" verbose.txt | cut -d, -f3-5).
 
 ## Interface
-The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f). To perform the matrix-matrix multiplication *c*<sub>*m* x *n*</sub> = *c*<sub>*m* x *n*</sub> + *a*<sub>*m* x *k*</sub> \* *b*<sub>*k* x *n*</sub>, the following interfaces can be used:
+The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f).
+
+In order to initialize the dispatch-table or other internal resources, one may call an explicit initialization routine in order to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources automatically, but also provides a companion to the aforementioned initialization (finalize).
 
 ```C
-/** Initialization function to set up LIBXSMM's dispatching table. One may
-    call this routine to avoid lazy initialization overhead in the first
-    call to a LIBXSMM kernel routine */
+/** Initialize the library; pay for setup cost at a specific point. */
 void libxsmm_init();
-/** If non-zero function pointer is returned, call (*function)(M, N, K). */
-libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k);
-libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k);
-/** Automatically dispatched matrix-matrix multiplication. */
-void libxsmm_smm(int m, int n, int k, const float* a, const float* b, float* c);
-void libxsmm_dmm(int m, int n, int k, const double* a, const double* b, double* c);
-/** Non-dispatched matrix-matrix multiplication using inline code. */
-void libxsmm_simm(int m, int n, int k, const float* a, const float* b, float* c);
-void libxsmm_dimm(int m, int n, int k, const double* a, const double* b, double* c);
-/** Matrix-matrix multiplication using BLAS. */
-void libxsmm_sblasmm(int m, int n, int k, const float* a, const float* b, float* c);
-void libxsmm_dblasmm(int m, int n, int k, const double* a, const double* b, double* c);
+/** Uninitialize the library and free internal memory (optional). */
+void libxsmm_finalize();
 ```
 
-With C++ and FORTRAN function overloading, the library allows to omit the 's' and 'd' prefixes denoting the numeric type in the above C interface. Further, in C++ a type 'libxsmm_dispatch<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'.
+To perform the dense matrix-matrix multiplication *c~m\ x\ n~ = alpha &middot; a~m\ x\ k~ &middot; b~k\ x\ n~ + beta &middot; c~m\ x\ n~*, the full-blown GEMM/BLAS interface can be treated with "default arguments":
 
-Note: Function overloading in FORTRAN is only recommended when using automatically dispatched calls. When querying function pointers, using a type-specific query function avoids to rely on using C_LOC for arrays (needed by the polymorphic version) which GNU Fortran (gfortran) refuses to digest (as it is not specified in the FORTRAN standard).
+```C
+/** Calling the automatically dispatched dense matrix multiplication (single-precision, C code). */
+libxsmm_sgemm(0/*transa*/, 0/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
+  0/*alpha*/, a/*required*/, 0/*lda*/, b/*required*/, 0/*ldb*/,
+  0/*beta*/, c/*required*/, 0/*ldc*/);
+/** Calling the automatically dispatched dense matrix multiplication (C++ code). */
+libxsmm_gemm(0/*transa*/, 0/*transb*/, m/*required*/, n/*required*/, k/*required*/,
+  0/*alpha*/, a/*required*/, 0/*lda*/, b/*required*/, 0/*ldb*/,
+  0/*beta*/, c/*required*/, 0/*ldc*/);
+```
+
+For the C interface (with type prefix 's' or 'd'), all required arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface makes this requirement more clear by passing m, n, and k by-value.
+
+```Fortran
+! Calling the automatically dispatched dense matrix multiplication (single-precision).
+CALL libxsmm_sgemm(m=m, n=n, k=k, a=a, b=b, c=c)
+! Calling the automatically dispatched dense matrix multiplication (generic interface).
+CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
+```
+
+For convenience, a similar BLAS-based dense matrix multiplication is provided and simply re-exposed from the underlying GEMM/BLAS implementation (libxsmm_blas_gemm). However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism. Successively calling a certain kernel (i.e., multiple times) allows for amortizing the cost of the dispatch. Moreover in order to customize the dispatch mechanism, one can rely on the following interface.
+
+```C
+/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
+libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
+                                    int lda, int ldb, int ldc,
+                                    /* supply NULL as a default for alpha or beta */
+                                    const float* alpha, const float* beta);
+/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
+libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
+                                    int lda, int ldb, int ldc,
+                                    /* supply NULL as a default for alpha or beta */
+                                    const double* alpha, const double* beta);
+```
+
+Further, a variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?MM_FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?MM_FUNCTION.
 
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
