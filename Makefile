@@ -155,14 +155,8 @@ INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(wo
 NINDICES = $(words $(INDICES))
 
 SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c \
-generator_dense.c generator_dense_common.c generator_dense_instructions.c generator_dense_sse3_avx_avx2.c\
-generator_dense_sse3_microkernel.c generator_dense_avx_microkernel.c generator_dense_avx2_microkernel.c \
-generator_dense_avx512_microkernel.c generator_dense_imci_avx512.c generator_dense_imci_microkernel.c \
-generator_dense_noarch.c generator_sparse.c generator_sparse_csc_reader.c generator_sparse_bsparse.c \
-generator_sparse_asparse.c \
-libxsmm_timer.c )
-SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c)
+SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o
