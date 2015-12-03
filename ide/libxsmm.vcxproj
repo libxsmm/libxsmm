@@ -75,6 +75,7 @@
     <ClCompile Include="..\src\generator_sparse_asparse.c" />
     <ClCompile Include="..\src\generator_sparse_bsparse.c" />
     <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
+    <ClCompile Include="..\src\libxsmm.c" />
     <ClCompile Include="..\src\libxsmm_dispatch.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />

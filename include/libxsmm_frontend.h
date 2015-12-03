@@ -97,27 +97,29 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
+	const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+	const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
+	const float*, float*, const libxsmm_blasint*);
 #endif
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #define LIBXSMM_BXGEMM(REAL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const char libxsmm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
-  const char libxsmm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
-  const libxsmm_blasint libxsmm_m_ = (libxsmm_blasint)(M), libxsmm_n_ = (libxsmm_blasint)(N), libxsmm_k_ = (libxsmm_blasint)(K); \
-  const libxsmm_blasint libxsmm_lda_ = (libxsmm_blasint)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
+  const char libxsmm_bxgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
+  const char libxsmm_bxgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
+  const libxsmm_blasint libxsmm_bxgemm_m_ = (libxsmm_blasint)(M); \
+  const libxsmm_blasint libxsmm_bxgemm_n_ = (libxsmm_blasint)(N); \
+  const libxsmm_blasint libxsmm_bxgemm_k_ = (libxsmm_blasint)(K); \
+  const libxsmm_blasint libxsmm_bxgemm_lda_ = (libxsmm_blasint)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
     /* if the value of LDA was zero: make LDA a multiple of LIBXSMM_ALIGNMENT */ \
-    : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)), libxsmm_ldb_ = (libxsmm_blasint)(LDB); \
-  const libxsmm_blasint libxsmm_ldc_ = (libxsmm_blasint)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
+    : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)), libxsmm_bxgemm_ldb_ = (libxsmm_blasint)(LDB); \
+  const libxsmm_blasint libxsmm_bxgemm_ldc_ = (libxsmm_blasint)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
     /* if the value of LDC was zero: make LDC a multiple of LIBXSMM_ALIGNMENT */ \
     : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
-  const REAL libxsmm_alpha_ = (REAL)(ALPHA), libxsmm_beta_ = (REAL)(BETA); \
-  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&libxsmm_transa_, &libxsmm_transb_, \
-    &libxsmm_m_, &libxsmm_n_, &libxsmm_k_, &libxsmm_alpha_, \
-    A, &libxsmm_lda_, B, &libxsmm_ldb_, \
-    &libxsmm_beta_, C, &libxsmm_ldc_); \
+  const REAL libxsmm_bxgemm_alpha_ = (REAL)(ALPHA), libxsmm_bxgemm_beta_ = (REAL)(BETA); \
+  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&libxsmm_bxgemm_transa_, &libxsmm_bxgemm_transb_, \
+    &libxsmm_bxgemm_m_, &libxsmm_bxgemm_n_, &libxsmm_bxgemm_k_, \
+    &libxsmm_bxgemm_alpha_, A, &libxsmm_bxgemm_lda_, B, &libxsmm_bxgemm_ldb_, \
+    &libxsmm_bxgemm_beta_, C, &libxsmm_bxgemm_ldc_); \
 }
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (single-precision). */
@@ -146,30 +148,30 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   LIBXSMM_BXGEMM(REAL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #else
 # define LIBXSMM_IXGEMM(REAL, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const REAL *const libxsmm_a_ = (const REAL*)(B), *const libxsmm_b_ = (const REAL*)(A); \
-  const INT libxsmm_m_ = (INT)(M), libxsmm_n_ = (INT)(N); \
-  const INT libxsmm_lda_ = (INT)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
+  const REAL *const libxsmm_ixgemm_a_ = (const REAL*)(B), *const libxsmm_ixgemm_b_ = (const REAL*)(A); \
+  const INT libxsmm_ixgemm_m_ = (INT)(M), libxsmm_ixgemm_n_ = (INT)(N); \
+  const INT libxsmm_ixgemm_lda_ = (INT)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
     /* if the value of LDA was zero: make LDA a multiple of LIBXSMM_ALIGNMENT */ \
     : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
-  const INT libxsmm_ldc_ = (INT)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
+  const INT libxsmm_ixgemm_ldc_ = (INT)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
     /* if the value of LDC was zero: make LDC a multiple of LIBXSMM_ALIGNMENT */ \
     : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
-  INT libxsmm_i_, libxsmm_j_, libxsmm_k_; \
-  REAL *const libxsmm_c_ = (C); \
+  INT libxsmm_ixgemm_i_, libxsmm_ixgemm_j_, libxsmm_ixgemm_k_; \
+  REAL *const libxsmm_ixgemm_c_ = (C); \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
   LIBXSMM_PRAGMA_SIMD/*_COLLAPSE(2)*/ \
-  for (libxsmm_j_ = 0; libxsmm_j_ < libxsmm_m_; ++libxsmm_j_) { \
+  for (libxsmm_ixgemm_j_ = 0; libxsmm_ixgemm_j_ < libxsmm_ixgemm_m_; ++libxsmm_ixgemm_j_) { \
     LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_N, LIBXSMM_MAX_M), LIBXSMM_LD(LIBXSMM_AVG_N, LIBXSMM_AVG_M)) \
-    for (libxsmm_i_ = 0; libxsmm_i_ < libxsmm_n_; ++libxsmm_i_) { \
-      const INT libxsmm_index_ = libxsmm_i_ * libxsmm_ldc_ + libxsmm_j_; \
-      REAL libxsmm_r_ = libxsmm_c_[libxsmm_index_] * (BETA); \
-      LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_r_) \
+    for (libxsmm_ixgemm_i_ = 0; libxsmm_ixgemm_i_ < libxsmm_ixgemm_n_; ++libxsmm_ixgemm_i_) { \
+      const INT libxsmm_ixgemm_index_ = libxsmm_ixgemm_i_ * libxsmm_ixgemm_ldc_ + libxsmm_ixgemm_j_; \
+      REAL libxsmm_ixgemm_r_ = libxsmm_ixgemm_c_[libxsmm_ixgemm_index_] * (BETA); \
+      LIBXSMM_PRAGMA_SIMD_REDUCTION(+:libxsmm_ixgemm_r_) \
       LIBXSMM_PRAGMA_UNROLL \
-      for (libxsmm_k_ = 0; libxsmm_k_ < (K); ++libxsmm_k_) { \
-        libxsmm_r_ += libxsmm_a_[libxsmm_i_*(LDB)+libxsmm_k_] * (ALPHA) \
-                    * libxsmm_b_[libxsmm_k_*libxsmm_lda_+libxsmm_j_]; \
+      for (libxsmm_ixgemm_k_ = 0; libxsmm_ixgemm_k_ < (K); ++libxsmm_ixgemm_k_) { \
+        libxsmm_ixgemm_r_ += libxsmm_ixgemm_a_[libxsmm_ixgemm_i_*(LDB)+libxsmm_ixgemm_k_] * (ALPHA) \
+                    * libxsmm_ixgemm_b_[libxsmm_ixgemm_k_*libxsmm_ixgemm_lda_+libxsmm_ixgemm_j_]; \
       } \
-      libxsmm_c_[libxsmm_index_] = libxsmm_r_; \
+      libxsmm_ixgemm_c_[libxsmm_ixgemm_index_] = libxsmm_ixgemm_r_; \
     } \
   } \
 }
@@ -217,42 +219,46 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
       ((unsigned long long)(N)) * \
       ((unsigned long long)(K)))) \
   { \
-    const int libxsmm_flags_ = (int)(FLAGS), libxsmm_ldb_ = (int)(LDB); \
-    const int libxsmm_lda_ = (int)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
+    const int libxsmm_gemm_flags_ = (int)(FLAGS), libxsmm_gemm_ldb_ = (int)(LDB); \
+    const int libxsmm_gemm_lda_ = (int)(0 != (LDA) ? LIBXSMM_MAX/*BLAS-conformance*/(LDA, M) \
       /* if the value of LDA was zero: make LDA a multiple of LIBXSMM_ALIGNMENT */ \
       : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
-    const int libxsmm_ldc_ = (int)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
+    const int libxsmm_gemm_ldc_ = (int)(0 != (LDC) ? LIBXSMM_MAX/*BLAS-conformance*/(LDC, M) \
       /* if the value of LDC was zero: make LDC a multiple of LIBXSMM_ALIGNMENT */ \
       : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
-    const REAL libxsmm_alpha_ = (REAL)(ALPHA), libxsmm_beta_ = (REAL)(BETA); \
-    int libxsmm_fallback_ = 0; \
+    const REAL libxsmm_gemm_alpha_ = (REAL)(ALPHA), libxsmm_gemm_beta_ = (REAL)(BETA); \
+    int libxsmm_gemm_fallback_ = 0; \
     if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH) { \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_function_ = \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_gemm_function_ = \
         LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, dispatch))((int)(M), (int)(N), (int)(K), \
-          &libxsmm_lda_, &libxsmm_ldb_, &libxsmm_ldc_, &libxsmm_alpha_, &libxsmm_beta_, &libxsmm_flags_, 0); \
-      if (0 != libxsmm_function_) { \
-        libxsmm_function_(A, B, C); \
+          &libxsmm_gemm_lda_, &libxsmm_gemm_ldb_, &libxsmm_gemm_ldc_, \
+          &libxsmm_gemm_alpha_, &libxsmm_gemm_beta_, \
+          &libxsmm_gemm_flags_, 0); \
+      if (0 != libxsmm_gemm_function_) { \
+        libxsmm_gemm_function_(A, B, C); \
       } \
       else { \
-        libxsmm_fallback_ = 1; \
+        libxsmm_gemm_fallback_ = 1; \
       } \
     } \
     else { \
-      const int libxsmm_prefetch_ = (LIBXSMM_PREFETCH); \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_function_ = \
+      const int libxsmm_gemm_prefetch_ = (LIBXSMM_PREFETCH); \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_gemm_function_ = \
         LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, dispatch))((int)(M), (int)(N), (int)(K), \
-          &libxsmm_lda_, &libxsmm_ldb_, &libxsmm_ldc_, &libxsmm_alpha_, &libxsmm_beta_, &libxsmm_flags_, &libxsmm_prefetch_); \
-      if (0 != libxsmm_function_) { \
-        libxsmm_function_(A, B, C, \
-          0 != LIBXSMM_PREFETCH_A(1) ? (((const REAL*)(A)) + (libxsmm_lda_) * (K)) : ((const REAL*)(A)), \
-          0 != LIBXSMM_PREFETCH_B(1) ? (((const REAL*)(B)) + (libxsmm_ldb_) * (N)) : ((const REAL*)(B)), \
-          0 != LIBXSMM_PREFETCH_C(1) ? (((const REAL*)(C)) + (libxsmm_ldc_) * (N)) : ((const REAL*)(C))); \
+          &libxsmm_gemm_lda_, &libxsmm_gemm_ldb_, &libxsmm_gemm_ldc_, \
+          &libxsmm_gemm_alpha_, &libxsmm_gemm_beta_, \
+          &libxsmm_gemm_flags_, &libxsmm_gemm_prefetch_); \
+      if (0 != libxsmm_gemm_function_) { \
+        libxsmm_gemm_function_(A, B, C, \
+          0 != LIBXSMM_PREFETCH_A(1) ? (((const REAL*)(A)) + (libxsmm_gemm_lda_) * (K)) : ((const REAL*)(A)), \
+          0 != LIBXSMM_PREFETCH_B(1) ? (((const REAL*)(B)) + (libxsmm_gemm_ldb_) * (N)) : ((const REAL*)(B)), \
+          0 != LIBXSMM_PREFETCH_C(1) ? (((const REAL*)(C)) + (libxsmm_gemm_ldc_) * (N)) : ((const REAL*)(C))); \
       } \
       else { \
-        libxsmm_fallback_ = 1; \
+        libxsmm_gemm_fallback_ = 1; \
       } \
     } \
-    if (0 != libxsmm_fallback_) { \
+    if (0 != libxsmm_gemm_fallback_) { \
       LIBXSMM_FALLBACK0(REAL, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
     } \
   } \
