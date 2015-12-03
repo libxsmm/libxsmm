@@ -260,9 +260,10 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
-              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
-              0/*beta*/, tmp, &ldc);
+            // alternatively libxsmm_blas_gemm can be called (see above)
+            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, ai, m, bi, k,
+              LIBXSMM_BETA, tmp, ldc);
             ai = aij;
             bi = bij;
           }
@@ -290,8 +291,8 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            LIBXSMM_IGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-              LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, ai, m, bi, k,
               LIBXSMM_BETA, tmp, ldc);
             ai = aij;
             bi = bij;

@@ -169,13 +169,13 @@ PROGRAM grad
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_blasmm(m, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_blas_gemm(m=m, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
       DO j = 1, k
-        CALL libxsmm_blasmm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+        CALL libxsmm_blas_gemm(m=m, n=n, k=n, a=a(:,:,j,i), b=dy, c=tm2(:,:,j), alpha=alpha, beta=beta)
       END DO
       CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
-      CALL libxsmm_blasmm(m*n, k, k, a(:,:,1,i), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_blas_gemm(m=m*n, n=k, k=k, a=a(:,:,1,i), b=dz, c=tm3(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
     END DO
   END DO
@@ -233,13 +233,13 @@ PROGRAM grad
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_mm(m, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_gemm(m=m, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm1(1,1,1), cx(1,1,1,i), m*n*k )
       DO j = 1, k
-        CALL libxsmm_mm(m, n, n, a(:,:,j,i), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+        CALL libxsmm_gemm(m=m, n=n, k=n, a=a(:,:,j,i), b=dy, c=tm2(:,:,j), alpha=alpha, beta=beta)
       END DO
       CALL stream_vector_copy( tm2(1,1,1), cy(1,1,1,i), m*n*k )
-      CALL libxsmm_mm(m*n, k, k, a(:,:,1,i), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_gemm(m=m*n, n=k, k=k, a=a(:,:,1,i), b=dz, c=tm3(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm3(1,1,1), cz(1,1,1,i), m*n*k )
     END DO
   END DO

@@ -68,7 +68,7 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_IXGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+        print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
             "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
             "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_IXGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+        print("  LIBXSMM_INLINE_XGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
             "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
             "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")

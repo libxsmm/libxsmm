@@ -377,14 +377,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m,
 {
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags)) | LIBXSMM_GEMM_FLAG_F32PREC;
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags, m, n, k,
-    0 == lda ? m : (0 != *lda ? LIBXSMM_MAX/*BLAS-conformance*/(*lda, m)
+    0 == lda ? m : (0 != *lda ? *lda
     /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
-                 : LIBXSMM_ALIGN_VALUE(m, sizeof(float), LIBXSMM_ALIGNMENT)),
-    0 == ldb ? k : LIBXSMM_MAX/*BLAS-conformance*/(*ldb, k),
-    0 == ldc ? m : (0 != *ldc ? LIBXSMM_MAX/*BLAS-conformance*/(*ldc, m)
+                 : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)),
+    0 == ldb ? k : *ldb,
+    0 == ldc ? m : (0 != *ldc ? *ldc
     /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-                 : LIBXSMM_ALIGN_VALUE(m, sizeof(float), LIBXSMM_ALIGNMENT)),
-    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta,
+                 : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)),
+    0 == alpha ? LIBXSMM_ALPHA : *alpha,
+    0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
   return internal_build(&desc).smm;
 }
@@ -397,14 +398,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m,
 {
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags));
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags, m, n, k,
-    0 == lda ? m : (0 != *lda ? LIBXSMM_MAX/*BLAS-conformance*/(*lda, m)
+    0 == lda ? m : (0 != *lda ? *lda
     /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
-                 : LIBXSMM_ALIGN_VALUE(m, sizeof(double), LIBXSMM_ALIGNMENT)),
-    0 == ldb ? k : LIBXSMM_MAX/*BLAS-conformance*/(*ldb, k),
-    0 == ldc ? m : (0 != *ldc ? LIBXSMM_MAX/*BLAS-conformance*/(*ldc, m)
+                 : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)),
+    0 == ldb ? k : *ldb,
+    0 == ldc ? m : (0 != *ldc ? *ldc
     /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-                 : LIBXSMM_ALIGN_VALUE(m, sizeof(double), LIBXSMM_ALIGNMENT)),
-    0 == alpha ? LIBXSMM_ALPHA : *alpha, 0 == beta ? LIBXSMM_BETA : *beta,
+                 : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)),
+    0 == alpha ? LIBXSMM_ALPHA : *alpha,
+    0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
   return internal_build(&desc).dmm;
 }

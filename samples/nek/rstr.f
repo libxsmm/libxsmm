@@ -196,11 +196,11 @@ PROGRAM stpm
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_blasmm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_blas_gemm(m=mm, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
       DO j = 1, k
-        CALL libxsmm_blasmm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+        CALL libxsmm_blas_gemm(m=mm, n=nn, k=n, a=tm1(:,:,j), b=dy, c=tm2(:,:,j), alpha=alpha, beta=beta)
       END DO
-      CALL libxsmm_blasmm(mm*nn, kk, k, tm2(:,:,1), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_blas_gemm(m=mm*nn, n=kk, k=k, a=tm2(:,:,1), b=dz, c=tm3(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
   END DO
@@ -254,11 +254,11 @@ PROGRAM stpm
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
-      CALL libxsmm_mm(mm, n*k, m, dx, a(:,:,1,i), tm1(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_gemm(m=mm, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
       DO j = 1, k
-        CALL libxsmm_mm(mm, nn, n, tm1(:,:,j), dy, tm2(:,:,j), LIBXSMM_FLAGS, alpha, beta)
+        CALL libxsmm_gemm(m=mm, n=nn, k=n, a=tm1(:,:,j), b=dy, c=tm2(:,:,j), alpha=alpha, beta=beta)
       END DO
-      CALL libxsmm_mm(mm*nn, kk, k, tm2(:,:,1), dz, tm3(:,:,1), LIBXSMM_FLAGS, alpha, beta)
+      CALL libxsmm_gemm(m=mm*nn, n=kk, k=k, a=tm2(:,:,1), b=dz, c=tm3(:,:,1), alpha=alpha, beta=beta)
       CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
   END DO

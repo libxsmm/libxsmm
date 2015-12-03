@@ -134,8 +134,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, ai, m, bi, k,
             LIBXSMM_BETA, ci, ldc);
         }
       }
@@ -149,8 +149,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, ai, m, bi, k,
             LIBXSMM_BETA, ci, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -173,8 +173,8 @@ int main(int argc, char* argv[])
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, ai, m, bi, k,
             LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -196,8 +196,8 @@ int main(int argc, char* argv[])
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-            LIBXSMM_ALPHA, LIBXSMM_LD(a, b), LIBXSMM_LD(m, n), LIBXSMM_LD(b, a), k,
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, a, m, b, k,
             LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
