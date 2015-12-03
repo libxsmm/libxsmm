@@ -134,16 +134,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          const T *const ai = a + i * asize, *const bi = b + i * bsize;
-          T *const ci = c + i * ldcsize;
-#if (0 != LIBXSMM_PREFETCH)
-          libxsmm_mm(m, n, k, ai, bi, ci,
-            LIBXSMM_PREFETCH_A(ai + asize),
-            LIBXSMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_PREFETCH_C(ci + ldcsize));
-#else
-          libxsmm_mm(m, n, k, ai, bi, ci);
-#endif
+          libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+            0/*alpha*/, a + i * asize, 0/*lda*/, b + i * bsize, 0/*ldb*/,
+            0/*beta*/, c + i * ldcsize, &ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -162,15 +155,10 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
-          const T *const ai = a + i * asize, *const bi = b + i * bsize;
-#if (0 != LIBXSMM_PREFETCH)
-          libxsmm_mm(m, n, k, ai, bi, tmp,
-            LIBXSMM_PREFETCH_A(ai + asize),
-            LIBXSMM_PREFETCH_B(bi + bsize),
-            LIBXSMM_PREFETCH_C(tmp));
-#else
-          libxsmm_mm(m, n, k, ai, bi, tmp);
-#endif
+          // do nothing else with tmp; just a benchmark
+          libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+            0/*alpha*/, a + i * asize, 0/*lda*/, b + i * bsize, 0/*ldb*/,
+            0/*beta*/, tmp, &ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -190,7 +178,9 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
-          libxsmm_mm(m, n, k, a, b, tmp);
+          libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+            0/*alpha*/, a, 0/*lda*/, b, 0/*ldb*/,
+            0/*beta*/, tmp, &ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {

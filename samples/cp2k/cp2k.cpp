@@ -233,9 +233,15 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(LIBXSMM_FLAGS, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            const T *const aij = ai + asize, *const bij = bi + bsize;
+            libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
+              0/*beta*/, tmp, &ldc);
+            ai = aij;
+            bi = bij;
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -250,9 +256,15 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-            libxsmm_blasmm(LIBXSMM_FLAGS, m, n, k, a + (i + j) * asize, b + (i + j) * bsize, tmp);
+            const T *const aij = ai + asize, *const bij = bi + bsize;
+            libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
+              0/*beta*/, tmp, &ldc);
+            ai = aij;
+            bi = bij;
           }
           add(expect, tmp, m, n, ldc); // atomic
         }
@@ -278,7 +290,9 @@ int main(int argc, char* argv[])
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            LIBXSMM_XIMM(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp, 0, 0);
+            LIBXSMM_IGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+              LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+              LIBXSMM_BETA, tmp, ldc);
             ai = aij;
             bi = bij;
           }
@@ -308,18 +322,10 @@ int main(int argc, char* argv[])
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
-#if 0
-            printf("outer-iteration: %i, inner-iterations: %i, c-address: %lu, 64byte-alginment: %lu, 32byte-alignment: %lu, 16byte-alignment: %lu,\n", i, LIBXSMM_MIN(u, s - i), (size_t)tmp, ((size_t)tmp)%64, ((size_t)tmp)%32, ((size_t)tmp)%16);
-#endif
             const T *const aij = ai + asize, *const bij = bi + bsize;
-#if (0 != LIBXSMM_PREFETCH)
-            libxsmm_mm(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp,
-              LIBXSMM_PREFETCH_A(aij + asize),
-              LIBXSMM_PREFETCH_B(bij + bsize),
-              LIBXSMM_PREFETCH_C(tmp));
-#else
-            libxsmm_mm(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp);
-#endif
+            libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
+              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
+              0/*beta*/, tmp, &ldc);
             ai = aij;
             bi = bij;
           }

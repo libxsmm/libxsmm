@@ -44,7 +44,9 @@ PREFETCH ?= 0
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
 
-# Use aligned Store and/or aligned Load instructions
+# Generate code using aligned Load/Store instructions
+# !=0: enable if lda/ldc (m) is a multiple of ALIGNMENT
+# ==0: disable emitting aligned Load/Store instructions
 ALIGNED_STORES ?= 0
 ALIGNED_LOADS ?= 0
 
@@ -98,7 +100,7 @@ AVX ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
-BLAS ?= 0
+BLAS ?= 1
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -163,8 +165,8 @@ SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,generator_common.c generator_dense.c
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o $(BLDDIR)/mic/libxsmm_timer.o
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) $(BLDDIR)/intel64/libxsmm.o $(BLDDIR)/intel64/libxsmm_crc32.o $(BLDDIR)/intel64/libxsmm_dispatch.o
+OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_dispatch.o $(BLDDIR)/mic/libxsmm_timer.o
 
 .PHONY: lib_all
 ifeq (0,$(OFFLOAD))
@@ -327,21 +329,6 @@ else # column-major
 	$(eval MVALUE2 := $(MVALUE))
 	$(eval NVALUE2 := $(NVALUE))
 endif
-ifneq (0,$(ALIGNED_LOADS)) # aligned loads
-	$(eval LDASP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
-	$(eval LDADP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
-else # unaligned stores
-	$(eval LDASP := $(MVALUE2))
-	$(eval LDADP := $(MVALUE2))
-endif
-ifneq (0,$(ALIGNED_STORES)) # aligned stores
-	$(eval LDCSP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2) 16 $(ALIGNMENT)))
-	$(eval LDCDP := $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py $(MVALUE2)  8 $(ALIGNMENT)))
-else # unaligned stores
-	$(eval LDCSP := $(MVALUE2))
-	$(eval LDCDP := $(MVALUE2))
-endif
-	$(eval LDB := $(KVALUE))
 	@mkdir -p $(dir $@)
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
@@ -360,25 +347,25 @@ ifeq (noarch,$(GENTARGET))
 	@echo "#define LIBXSMM_GENTARGET_wsm_dp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDASP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDASP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) DP
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDASP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 ifneq (0,$(MIC))
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDASP) $(LDB) $(LDCSP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(LDADP) $(LDB) $(LDCDP) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) DP
 endif
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} \
@@ -395,7 +382,7 @@ endif
 main: $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@mkdir -p $(dir $@)
-	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PREFETCH_TYPE) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
 .PHONY: compile_mic
@@ -669,7 +656,7 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 		$(ROOTDIR)/README.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -698,7 +685,7 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
 		-V author-meta="Hans Pabst" \

@@ -221,12 +221,6 @@ int main(int argc, char* argv []) {
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
 
-  /* is a workaround for the broken LIBXSMM_GEMM_DESCRIPTOR macro */
-  if (l_lda == 0)
-    l_xgemm_desc.lda = 0;
-  if (l_ldb == 0)
-    l_xgemm_desc.ldb = 0;
-
   if ( strcmp(l_type, "sparse") == 0 ) {
     /* read additional paramter for CSC description */
     l_matrix_file_in = argv[17];

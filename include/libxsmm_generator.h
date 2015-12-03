@@ -33,22 +33,23 @@
 
 #include "libxsmm_typedefs.h"
 
+/**
+ * Construct a GEMM descriptor after it has been declared. The descriptor flags will sanitized to remove any
+ * alignment request which cannot be satisfied (avoids to build an unnecessary code version).
+ */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) { \
   (DESCRIPTOR).m = (unsigned int)(M); (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
-  (DESCRIPTOR).lda = (unsigned int)(0 == (LIBXSMM_GEMM_FLAG_ALIGN_A & (FLAGS)) \
-    ? (0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDA), (DESCRIPTOR).m)) \
-    : LIBXSMM_ALIGN_VALUE(0 == (LDA) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDA), (DESCRIPTOR).m), \
-       0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float), VECTOR_WIDTH)); \
-  (DESCRIPTOR).ldb = (unsigned int)LIBXSMM_MAX((unsigned int)(LDB), (unsigned int)(K)); \
-  (DESCRIPTOR).ldc = (unsigned int)(0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & (FLAGS)) \
-    ? (0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDC), (DESCRIPTOR).m)) \
-    : LIBXSMM_ALIGN_VALUE(0 == (LDC) ? (DESCRIPTOR).m : LIBXSMM_MAX((unsigned int)(LDC), (DESCRIPTOR).m), \
-       0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float), VECTOR_WIDTH)); \
-  (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).alpha = (signed char)((0 < (ALPHA) || 0 > (ALPHA)) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
   (DESCRIPTOR).beta  = (signed char)((0 < (BETA)  || 0 > (BETA))  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
+  (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  (DESCRIPTOR).flags &= ~(0 != LIBXSMM_MOD2((LDA) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
+    ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0); \
+  (DESCRIPTOR).flags &= ~(0 != LIBXSMM_MOD2((LDC) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
+    ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0); \
 }
 
+/** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)

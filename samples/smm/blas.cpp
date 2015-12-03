@@ -127,12 +127,16 @@ int main(int argc, char* argv[])
         m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major",
         s, 1.0 * (s * (asize + bsize + ldcsize) * sizeof(T)) / (1 << 20));
 
-      { // warm-up for BLAS Lib
+      { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * ldcsize);
+          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_BETA, ci, ldc);
         }
       }
 
@@ -143,7 +147,11 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, c + i * ldcsize);
+          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_BETA, ci, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -162,7 +170,12 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
-          libxsmm_blasmm(m, n, k, a + i * asize, b + i * bsize, tmp);
+          const T *const ai = a + i * asize, *const bi = b + i * bsize;
+          // do nothing else with tmp; just a benchmark
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -182,7 +195,10 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
-          libxsmm_blasmm(m, n, k, a, b, tmp);
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(a, b), LIBXSMM_LD(m, n), LIBXSMM_LD(b, a), k,
+            LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {

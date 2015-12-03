@@ -42,9 +42,13 @@ if __name__ == "__main__":
 
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
         if (0 != row_major):
-            signature = "b, a, c, pb, pa, pc" if (0 != prefetch) else "b, a, c"
+            mstr, nstr, astr, bstr = str(n), str(m), "b", "a"
         else: # ColMajor
-            signature = "a, b, c, pa, pb, pc" if (0 != prefetch) else "a, b, c"
+            mstr, nstr, astr, bstr = str(m), str(n), "a", "b"
+        print
+        signature = astr + ", " + bstr + ", c"
+        if (0 != prefetch):
+            signature += ", p" + astr + ", p" + bstr + ", pc"
         print
         print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
         print("  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
@@ -64,7 +68,9 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_IMM(float, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);")
+        print("  LIBXSMM_IXGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+            "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
+            "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")
         print("}")
         print
@@ -88,7 +94,9 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_IMM(double, int, LIBXSMM_FLAGS, " + str(m) + ", " + str(n) + ", " + str(k) + ", a, b, c, 0, 0);")
+        print("  LIBXSMM_IXGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+            "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
+            "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")
         print("}")
     else:

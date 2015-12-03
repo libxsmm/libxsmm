@@ -202,9 +202,9 @@ PROGRAM grad
   if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha, beta)
-  CALL libxsmm_dispatch(xmm2, m, n, n, alpha, beta)
-  CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha, beta)
+  CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
+  CALL libxsmm_dispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
+  CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
   !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))

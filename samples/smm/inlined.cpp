@@ -136,7 +136,9 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
           T* ci = c + i * ldcsize;
-          LIBXSMM_XIMM(LIBXSMM_FLAGS, m, n, k, ai, bi, ci, 0, 0);
+          LIBXSMM_IGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_BETA, ci, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -156,7 +158,10 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
-          LIBXSMM_XIMM(LIBXSMM_FLAGS, m, n, k, ai, bi, tmp, 0, 0);
+          // do nothing else with tmp; just a benchmark
+          LIBXSMM_IGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(ai, bi), LIBXSMM_LD(m, n), LIBXSMM_LD(bi, ai), k,
+            LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -176,7 +181,9 @@ int main(int argc, char* argv[])
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
-          LIBXSMM_XIMM(LIBXSMM_FLAGS, m, n, k, a, b, tmp, 0, 0);
+          LIBXSMM_IGEMM(LIBXSMM_FLAGS, LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+            LIBXSMM_ALPHA, LIBXSMM_LD(a, b), LIBXSMM_LD(m, n), LIBXSMM_LD(b, a), k,
+            LIBXSMM_BETA, tmp, ldc);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
