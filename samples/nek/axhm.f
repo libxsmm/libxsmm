@@ -124,7 +124,8 @@ PROGRAM stpm
   dx = 1.; dy = 1.; dz = 1.
   h1 = 1.; h2 = 1.
 
-  WRITE(*, "(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4), " total-stream-GB=", totsize, " reps=", reps
+  WRITE(*, "(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4), &
+  " total-stream-GB=", totsize, " reps=", reps
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check

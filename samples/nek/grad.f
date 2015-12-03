@@ -121,7 +121,8 @@ PROGRAM grad
   END DO 
   dx = 1.; dy = 2.; dz = 3.
 
-  WRITE(*, "(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4), " total-stream-GB=", totsize, " reps=", reps
+  WRITE(*, "(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 4), &
+  " total-stream-GB=", totsize, " reps=", reps
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
