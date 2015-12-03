@@ -35,6 +35,8 @@
 #include <immintrin.h>
 #endif
 
+/*#define DISABLE_NONTEMPORAL_STORES*/
+
 LIBXSMM_INLINE_ALWAYS LIBXSMM_RETARGETABLE
 void stream_init( int    i_length,
                   size_t i_start_address,
@@ -76,14 +78,23 @@ void stream_vector_copy( const double* i_a,
     /* we need manual unrolling as the compiler otherwise generates 
        too many dependencies */
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n]),   _mm256_loadu_pd(&(i_a[l_n]))   );
+      _mm256_store_pd(  &(io_c[l_n+4]), _mm256_loadu_pd(&(i_a[l_n+4])) );
+#else
       _mm256_stream_pd( &(io_c[l_n]),   _mm256_loadu_pd(&(i_a[l_n]))   );
       _mm256_stream_pd( &(io_c[l_n+4]), _mm256_loadu_pd(&(i_a[l_n+4])) );
+#endif
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
   {
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm512_store_pd(  &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
+#else
       _mm512_stream_pd( &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
+#endif
     }
   }
 #else
@@ -119,15 +130,24 @@ void stream_vector_set( const double i_scalar,
        too many dependencies */
     const __m256d vec_scalar = _mm256_broadcast_sd(&i_scalar);
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n]),   vec_scalar );
+      _mm256_store_pd(  &(io_c[l_n+4]), vec_scalar );
+#else
       _mm256_stream_pd( &(io_c[l_n]),   vec_scalar );
       _mm256_stream_pd( &(io_c[l_n+4]), vec_scalar );
+#endif
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
   {
     const __m512d vec_scalar = _mm512_broadcastsd_pd(_mm_load_sd(&i_scalar));
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm512_store_pd(  &(io_c[l_n]), vec_scalar );
+#else
       _mm512_stream_pd( &(io_c[l_n]), vec_scalar );
+#endif
     }
   }
 #else
@@ -172,8 +192,13 @@ void stream_vector_compscale( const double* i_a,
       vec_b_1 = _mm256_loadu_pd(&(i_b[l_n]));
       vec_b_2 = _mm256_loadu_pd(&(i_b[l_n+4]));
 
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n]),   _mm256_mul_pd( vec_a_1, vec_b_1 ) );
+      _mm256_store_pd(  &(io_c[l_n+4]), _mm256_mul_pd( vec_a_2, vec_b_2 ) );
+#else
       _mm256_stream_pd( &(io_c[l_n]),   _mm256_mul_pd( vec_a_1, vec_b_1 ) );
       _mm256_stream_pd( &(io_c[l_n+4]), _mm256_mul_pd( vec_a_2, vec_b_2 ) );
+#endif
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
@@ -184,7 +209,11 @@ void stream_vector_compscale( const double* i_a,
       vec_a = _mm512_loadu_pd(&(i_a[l_n]));
       vec_b = _mm512_loadu_pd(&(i_b[l_n]));
 
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm512_store_pd(  &(io_c[l_n]), _mm512_mul_pd( vec_a, vec_b ) );
+#else
       _mm512_stream_pd( &(io_c[l_n]), _mm512_mul_pd( vec_a, vec_b ) );
+#endif
     }
   }
 #else
@@ -305,11 +334,19 @@ void stream_update_helmholtz( const double* i_g1,
 
       vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g3_1);
       vec_g1_1 = _mm256_mul_pd(vec_g1_1, vec_h1);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n]), _mm256_add_pd( vec_g1_1, vec_a_1 ) );
+#else
       _mm256_stream_pd( &(io_c[l_n]), _mm256_add_pd( vec_g1_1, vec_a_1 ) );
+#endif
 
       vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g3_2);
       vec_g1_2 = _mm256_mul_pd(vec_g1_2, vec_h1);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n+4]), _mm256_add_pd( vec_g1_2, vec_a_2 ) );
+#else
       _mm256_stream_pd( &(io_c[l_n+4]), _mm256_add_pd( vec_g1_2, vec_a_2 ) );
+#endif
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
@@ -334,7 +371,11 @@ void stream_update_helmholtz( const double* i_g1,
       vec_a = _mm512_mul_pd(vec_a, vec_h2);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g3);
       vec_g1 = _mm512_mul_pd(vec_g1, vec_h1);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm512_store_pd(  &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
+#else
       _mm512_stream_pd( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
+#endif
     }
   }
 #else
@@ -441,9 +482,17 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
       vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g2_2);
 
       vec_g1_1 = _mm256_add_pd(vec_g1_1, vec_g3_1);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n]), _mm256_mul_pd(vec_g1_1, vec_h1) );
+#else
       _mm256_stream_pd( &(io_c[l_n]), _mm256_mul_pd(vec_g1_1, vec_h1) );
+#endif
       vec_g1_2 = _mm256_add_pd(vec_g1_2, vec_g3_2);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm256_store_pd(  &(io_c[l_n+4]), _mm256_mul_pd(vec_g1_2, vec_h1) );
+#else
       _mm256_stream_pd( &(io_c[l_n+4]), _mm256_mul_pd(vec_g1_2, vec_h1) );
+#endif
     }
   }
 #elif defined(__SSE3__) && defined(__AVX__) && defined(__AVX512F__)
@@ -462,7 +511,11 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
       vec_g3 = _mm512_mul_pd(vec_g3, vec_tm3);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g2);
       vec_g1 = _mm512_add_pd(vec_g1, vec_g3);
+#ifdef DISABLE_NONTEMPORAL_STORES
+      _mm512_store_pd(  &(io_c[l_n]), _mm512_mul_pd(vec_g1, vec_h1) );
+#else
       _mm512_stream_pd( &(io_c[l_n]), _mm512_mul_pd(vec_g1, vec_h1) );
+#endif
     }
   }
 #else
