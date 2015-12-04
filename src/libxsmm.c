@@ -48,9 +48,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, con
       : flags);
   assert(m && n && k && a && b && c);
   LIBXSMM_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? (1.f == *alpha ? 1.f : (-1.f == *alpha ? -1.f : *alpha)) : (LIBXSMM_ALPHA),
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : m), b, *(ldb ? ldb : k),
-    0 != beta  ? (1.f == *beta  ? 1.f : ( 0.f == *beta  ?  0.f : *beta))  : (LIBXSMM_BETA),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
     c, *(ldc ? ldc : m));
 }
 
@@ -72,9 +72,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, con
       : flags);
   assert(m && n && k && a && b && c);
   LIBXSMM_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? (1.0 == *alpha ? 1.0 : (-1.0 == *alpha ? -1.0 : *alpha)) : (LIBXSMM_ALPHA),
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : m), b, *(ldb ? ldb : k),
-    0 != beta  ? (1.0 == *beta  ? 1.0 : ( 0.0 == *beta  ?  0.0 : *beta))  : (LIBXSMM_BETA),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : m));
 }
 
@@ -96,9 +96,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa
       : flags);
   assert(m && n && k && a && b && c);
   LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? (1.f == *alpha ? 1.f : (-1.f == *alpha ? -1.f : *alpha)) : (LIBXSMM_ALPHA),
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : m), b, *(ldb ? ldb : k),
-    0 != beta  ? (1.f == *beta  ? 1.f : ( 0.f == *beta  ?  0.f : *beta))  : (LIBXSMM_BETA),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
     c, *(ldc ? ldc : m));
 }
 
@@ -120,8 +120,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_dgemm(const char* transa
       : flags);
   assert(m && n && k && a && b && c);
   LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? (1.0 == *alpha ? 1.0 : (-1.0 == *alpha ? -1.0 : *alpha)) : (LIBXSMM_ALPHA),
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : m), b, *(ldb ? ldb : k),
-    0 != beta  ? (1.0 == *beta  ? 1.0 : ( 0.0 == *beta  ?  0.0 : *beta))  : (LIBXSMM_BETA),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : m));
 }
