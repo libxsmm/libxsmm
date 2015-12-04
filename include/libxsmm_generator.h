@@ -43,10 +43,10 @@
   (DESCRIPTOR).alpha = (signed char)((0 < (ALPHA) || 0 > (ALPHA)) ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F) ? (ALPHA) : 0) : 0); \
   (DESCRIPTOR).beta  = (signed char)((0 < (BETA)  || 0 > (BETA))  ? (0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)  ? (BETA)  : 0) : 0); \
   (DESCRIPTOR).flags = (unsigned char)(FLAGS); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
-  (DESCRIPTOR).flags &= ~(0 != LIBXSMM_MOD2((LDA) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
-    ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0); \
-  (DESCRIPTOR).flags &= ~(0 != LIBXSMM_MOD2((LDC) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
-    ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0); \
+  (DESCRIPTOR).flags &= (unsigned char)(~(0 != LIBXSMM_MOD2((LDA) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
+    ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)); \
+  (DESCRIPTOR).flags &= (unsigned char)(~(0 != LIBXSMM_MOD2((LDC) * (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (FLAGS)) ? sizeof(double) : sizeof(float)), VECTOR_WIDTH) \
+    ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0)); \
 }
 
 /** Declare and construct a GEMM descriptor. */
