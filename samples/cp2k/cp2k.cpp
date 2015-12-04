@@ -231,7 +231,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          // make sure that stacksize is covering the problem size
+          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -254,7 +256,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          // make sure that stacksize is covering the problem size
+          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -285,7 +289,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          // make sure that stacksize is covering the problem size
+          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -318,7 +324,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          // make sure that stacksize is covering the problem size
+          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -352,7 +360,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
-          LIBXSMM_ALIGNED(T tmp[CP2K_MAX_SIZE], LIBXSMM_ALIGNMENT);
+          // make sure that stacksize is covering the problem size
+          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tmp[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {

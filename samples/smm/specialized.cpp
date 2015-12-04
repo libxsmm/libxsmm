@@ -165,7 +165,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
+          T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
           // do nothing else with tmp; just a benchmark
 #if (0 != LIBXSMM_PREFETCH)
@@ -193,7 +194,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
-          LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
+          T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
           xmm(a, b, tmp);
         }
