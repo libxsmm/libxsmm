@@ -114,9 +114,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     /* if the value of LDA was zero: make LDA a multiple of LIBXSMM_ALIGNMENT */ \
     : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
   const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (libxsmm_blasint)LIBXSMM_LD(LDB, K); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)(0 != (LDC) ? (LDC) \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)(0 != (LDC) ? LIBXSMM_LD(LDC, N) \
     /* if the value of LDC was zero: make LDC a multiple of LIBXSMM_ALIGNMENT */ \
-    : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
+    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(M, N), sizeof(REAL), LIBXSMM_ALIGNMENT)); \
   const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)LIBXSMM_LD(M, N); \
   const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)LIBXSMM_LD(N, libxsmm_blas_xgemm_lda_); \
   const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)LIBXSMM_LD(K, libxsmm_blas_xgemm_ldb_); \
@@ -154,9 +154,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const INT libxsmm_inline_xgemm_lda_ = (INT)LIBXSMM_LD(0 != (LDA) ? (LDA) \
     /* if the value of LDA was zero: make LDA a multiple of LIBXSMM_ALIGNMENT */ \
     : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT), N); \
-  const INT libxsmm_inline_xgemm_ldc_ = (INT)(0 != (LDC) ? (LDC) \
+  const INT libxsmm_inline_xgemm_ldc_ = (INT)(0 != (LDC) ? LIBXSMM_LD(LDC, N) \
     /* if the value of LDC was zero: make LDC a multiple of LIBXSMM_ALIGNMENT */ \
-    : LIBXSMM_ALIGN_VALUE(M, sizeof(REAL), LIBXSMM_ALIGNMENT)); \
+    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(M, N), sizeof(REAL), LIBXSMM_ALIGNMENT)); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
   LIBXSMM_PRAGMA_SIMD/*_COLLAPSE(2)*/ \
@@ -232,7 +232,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, 0); \
       if (0 != libxsmm_xgemm_function_) { \
-        libxsmm_xgemm_function_((const REAL*)LIBXSMM_LD(A, B), (const REAL*)LIBXSMM_LD(B, A), (REAL*)(C)); \
+        libxsmm_xgemm_function_((const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
@@ -246,13 +246,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
       if (0 != libxsmm_xgemm_function_) { \
-        const REAL *const libxsmm_xgemm_a_ = (const REAL*)LIBXSMM_LD(A, B); \
-        const REAL *const libxsmm_xgemm_b_ = (const REAL*)LIBXSMM_LD(B, A); \
-        REAL *const libxsmm_xgemm_c_ = (REAL*)(C); \
-        libxsmm_xgemm_function_(libxsmm_xgemm_a_, libxsmm_xgemm_b_, (REAL*)(C), \
-          libxsmm_xgemm_a_ + LIBXSMM_PREFETCH_A(LIBXSMM_LD(libxsmm_xgemm_lda_ * (K), libxsmm_xgemm_ldb_ * (N))), \
-          libxsmm_xgemm_b_ + LIBXSMM_PREFETCH_B(LIBXSMM_LD(libxsmm_xgemm_ldb_ * (N), libxsmm_xgemm_lda_ * (K))), \
-          libxsmm_xgemm_c_ + LIBXSMM_PREFETCH_C(libxsmm_xgemm_ldc_ * (N))); \
+        libxsmm_xgemm_function_((const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
+          ((const REAL*)(A)) + LIBXSMM_PREFETCH_A(libxsmm_xgemm_lda_ * (K)), \
+          ((const REAL*)(B)) + LIBXSMM_PREFETCH_B(libxsmm_xgemm_ldb_ * (N)), \
+          ((const REAL*)(C)) + LIBXSMM_PREFETCH_C(libxsmm_xgemm_ldc_ * (N))); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
