@@ -36,6 +36,7 @@
      &                                    C_INT, C_FLOAT, C_DOUBLE,     &
      &                                    C_LONG_LONG, C_CHAR
         IMPLICIT NONE
+        PRIVATE :: libxsmm_srealptr, libxsmm_drealptr
 
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
         CHARACTER(*), PARAMETER :: LIBXSMM_BRANCH  = "$BRANCH"
@@ -185,6 +186,20 @@
         END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_srealptr
+        FUNCTION libxsmm_srealptr(a) RESULT(p)
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
+          REAL(C_FLOAT), POINTER :: p
+          p => a(LBOUND(a,1),LBOUND(a,2))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_drealptr
+        FUNCTION libxsmm_drealptr(a) RESULT(p)
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
+          REAL(C_DOUBLE), POINTER :: p
+          p => a(LBOUND(a,1),LBOUND(a,2))
+        END FUNCTION
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ld
         INTEGER(C_INT) PURE FUNCTION libxsmm_ld(m, n)
           INTEGER(C_INT), INTENT(IN) :: m, n
@@ -337,50 +352,50 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc
-        PURE SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_scall_abc(fn, a, b, c)
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_scall_abx(fn,                                    &
-     &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))))
+     &      C_LOC(libxsmm_srealptr(a)),                                 &
+     &      C_LOC(libxsmm_srealptr(b)),                                 &
+     &      C_LOC(libxsmm_srealptr(c)))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abc
-        PURE SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
+        SUBROUTINE libxsmm_dcall_abc(fn, a, b, c)
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_dcall_abx(fn,                                    &
-     &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))))
+     &      C_LOC(libxsmm_drealptr(a)),                                 &
+     &      C_LOC(libxsmm_drealptr(b)),                                 &
+     &      C_LOC(libxsmm_drealptr(c)))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prf
-        PURE SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_scall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMM_FUNCTION), INTENT(IN) :: fn
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_scall_prx(fn,                                    &
-     &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))),                          &
+     &      C_LOC(libxsmm_srealptr(a)),                                 &
+     &      C_LOC(libxsmm_srealptr(b)),                                 &
+     &      C_LOC(libxsmm_srealptr(c)),                                 &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_prf
-        PURE SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
+        SUBROUTINE libxsmm_dcall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMM_FUNCTION), INTENT(IN) :: fn
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_dcall_prx(fn,                                    &
-     &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))),                          &
+     &      C_LOC(libxsmm_drealptr(a)),                                 &
+     &      C_LOC(libxsmm_drealptr(b)),                                 &
+     &      C_LOC(libxsmm_drealptr(c)),                                 &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
