@@ -134,7 +134,6 @@ PROGRAM smm
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
   CALL performance(duration, m, n, k, s)
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
