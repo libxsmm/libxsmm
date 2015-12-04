@@ -319,12 +319,16 @@ $(BLDDIR)/%.c: $(INCDIR)/libxsmm.h $(BINDIR)/generator $(SCRDIR)/libxsmm_utiliti
 	$(eval NVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f3))
 	$(eval KVALUE := $(shell echo $* | $(CUT) --output-delimiter=' ' -d_ -f4))
 ifneq (0,$(ROW_MAJOR)) # row-major
-	$(eval MVALUE2 := $(NVALUE))
-	$(eval NVALUE2 := $(MVALUE))
+	$(eval MNVALUE := $(NVALUE))
+	$(eval NMVALUE := $(MVALUE))
 else # column-major
-	$(eval MVALUE2 := $(MVALUE))
-	$(eval NVALUE2 := $(NVALUE))
+	$(eval MNVALUE := $(MVALUE))
+	$(eval NMVALUE := $(NVALUE))
 endif
+	$(eval ASTSP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
+	$(eval ASTDP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*8)%$(ALIGNMENT)))))
+	$(eval ALDSP := $(shell echo $$((0!=$(ALIGNED_LOADS)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
+	$(eval ALDDP := $(shell echo $$((0!=$(ALIGNED_LOADS)&&0==($(MNVALUE)*8)%$(ALIGNMENT)))))
 	@mkdir -p $(dir $@)
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
@@ -343,25 +347,25 @@ ifeq (noarch,$(GENTARGET))
 	@echo "#define LIBXSMM_GENTARGET_wsm_dp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knl $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) hsw $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) snb $(PREFETCH_SCHEME) DP
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) wsm $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) knl $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) knl $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) hsw $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) hsw $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) snb $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) snb $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) wsm $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) wsm $(PREFETCH_SCHEME) DP
 else
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
 	@echo >> $@
 	@echo >> $@
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 ifneq (0,$(MIC))
-	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) SP
-	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MVALUE2) $(NVALUE2) $(KVALUE) $(MVALUE2) $(KVALUE) $(MVALUE2) $(ALPHA) $(BETA) $(ALIGNED_LOADS) $(ALIGNED_STORES) knc $(PREFETCH_SCHEME) DP
+	$(BINDIR)/generator dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) SP
+	$(BINDIR)/generator dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) DP
 endif
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} \
