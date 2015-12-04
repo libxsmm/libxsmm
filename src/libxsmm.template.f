@@ -34,7 +34,7 @@
      &                                    C_FUNPTR, C_F_PROCPOINTER,    &
      &                                    C_PTR, C_NULL_PTR, C_LOC,     &
      &                                    C_INT, C_FLOAT, C_DOUBLE,     &
-     &                                    C_LONG_LONG
+     &                                    C_LONG_LONG, C_CHAR
         IMPLICIT NONE
 
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
@@ -436,8 +436,8 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
-              CHARACTER(1), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
               REAL(C_FLOAT), INTENT(IN) :: alpha, beta
@@ -465,8 +465,8 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
-              CHARACTER(1), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
               REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
@@ -494,8 +494,8 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
-              CHARACTER(1), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
               REAL(C_FLOAT), INTENT(IN) :: alpha, beta
@@ -523,8 +523,8 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
-              CHARACTER(1), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
               REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
