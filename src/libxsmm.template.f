@@ -343,8 +343,8 @@
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_scall_abx(fn,                                    &
      &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(a(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(a(LBOUND(c,1),LBOUND(c,2))))
+     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
+     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abc
@@ -354,8 +354,8 @@
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_dcall_abx(fn,                                    &
      &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(a(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(a(LBOUND(c,1),LBOUND(c,2))))
+     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
+     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prf
@@ -366,8 +366,8 @@
           REAL(C_FLOAT), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_scall_prx(fn,                                    &
      &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(a(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(a(LBOUND(c,1),LBOUND(c,2))),                          &
+     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
+     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))),                          &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
@@ -379,8 +379,8 @@
           REAL(C_DOUBLE), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_dcall_prx(fn,                                    &
      &      C_LOC(a(LBOUND(a,1),LBOUND(a,2))),                          &
-     &      C_LOC(a(LBOUND(b,1),LBOUND(b,2))),                          &
-     &      C_LOC(a(LBOUND(c,1),LBOUND(c,2))),                          &
+     &      C_LOC(b(LBOUND(b,1),LBOUND(b,2))),                          &
+     &      C_LOC(c(LBOUND(c,1),LBOUND(c,2))),                          &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
