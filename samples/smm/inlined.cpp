@@ -133,11 +133,9 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          const T *const ai = a + i * asize, *const bi = b + i * bsize;
-          T* ci = c + i * csize;
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, ai, m, bi, k,
-            LIBXSMM_BETA, ci, m);
+            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
+            LIBXSMM_BETA, c + i * csize, m);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -156,10 +154,9 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
           LIBXSMM_ALIGNED(T tmp[MAX_SIZE], LIBXSMM_ALIGNMENT);
-          const T *const ai = a + i * asize, *const bi = b + i * bsize;
           // do nothing else with tmp; just a benchmark
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, ai, m, bi, k,
+            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
             LIBXSMM_BETA, tmp, m);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
