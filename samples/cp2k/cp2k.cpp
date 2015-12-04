@@ -188,8 +188,8 @@ int main(int argc, char* argv[])
       raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
+    T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN2(buffer.b, LIBXSMM_ALIGNMENT);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
 #if defined(_OPENMP)
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
           T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
           T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
           T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
           T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
@@ -362,7 +362,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
           T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {

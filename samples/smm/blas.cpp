@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
       raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
-    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
+    T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN2(buffer.b, LIBXSMM_ALIGNMENT);
+    T *c = LIBXSMM_ALIGN2(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
           T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
           T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN(buffer, LIBXSMM_ALIGNMENT);
+          T *const tmp = LIBXSMM_ALIGN2(buffer, LIBXSMM_ALIGNMENT);
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
