@@ -380,9 +380,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m,
     /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
     : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
   const int ildb = (0 == ldb ? k : *ldb);
-  const int ildc = (0 == ldc ? m : (0 != *ldc ? *ldc
+  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : (0 != *ldc ? LIBXSMM_LD(*ldc, n)
     /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
+    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(*alpha), LIBXSMM_ALIGNMENT)));
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, ilda), LIBXSMM_LD(k, ildb),
@@ -405,9 +405,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m,
     /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
     : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
   const int ildb = (0 == ldb ? k : *ldb);
-  const int ildc = (0 == ldc ? m : (0 != *ldc ? *ldc
+  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : (0 != *ldc ? LIBXSMM_LD(*ldc, n)
     /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
+    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(*alpha), LIBXSMM_ALIGNMENT)));
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, ilda), LIBXSMM_LD(k, ildb),
