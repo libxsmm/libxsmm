@@ -204,13 +204,14 @@ The code generator driver program accepts the following arguments:
 7. LDA (0 when 1. is "sparse" indicates A is sparse)
 8. LDB (0 when 1. is "sparse" indicates B is sparse)
 9. LDC parameter
-10. alpha (currently only 1)
+10. alpha (-1 or 1)
 11. beta (0 or 1)
 12. Alignment override for A (1 auto, 0 no alignment)
 13. Alignment override for C (1 auto, 0 no alignment)
-14. Prefetch strategy, see below enumeration (dense/dense_asm only)
-15. single precision (SP), or double precision (DP)
-16. CSC file (just required when 1. is "sparse"). Matrix market format.
+14. Architecture (noarch, wsm, snb, hsw, knc, knl)
+15. Prefetch strategy, see below enumeration (dense/dense_asm only)
+16. single precision (SP), or double precision (DP)
+17. CSC file (just required when 1. is "sparse"). Matrix market format.
 
 The prefetch strategy can be:
 
