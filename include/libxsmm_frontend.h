@@ -41,6 +41,13 @@
 # define LIBXSMM_LD(M, N) (N)
 #endif
 
+/** Helper macro for aligning a buffer for aligned loads/store instructions. */
+#if (0 != (LIBXSMM_GEMM_FLAG_ALIGN_A & LIBXSMM_FLAGS) || 0 != (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS))
+# define LIBXSMM_ALIGN_LDST(POINTER) LIBXSMM_ALIGN2(POINTER, LIBXSMM_ALIGNMENT)
+#else
+# define LIBXSMM_ALIGN_LDST(POINTER) (POINTER)
+#endif
+
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
 #if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
 # define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
