@@ -42,7 +42,7 @@ PROGRAM smm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
   TYPE(LIBXSMM_DMM_FUNCTION) :: xmm
-  INTEGER :: argc, m, n, k, mn, nm, ldc
+  INTEGER :: argc, m, n, k
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
   REAL(8) :: duration
@@ -78,9 +78,6 @@ PROGRAM smm
 
   duration = 0
   s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
-  mn = libxsmm_ld(m, n); nm = libxsmm_ld(n, m)
-  ldc = MERGE(mn, libxsmm_align_value(mn, 8, LIBXSMM_ALIGNMENT), &
-    0.EQ.IAND(LIBXSMM_GEMM_FLAG_ALIGN_C, LIBXSMM_FLAGS))
 
   ALLOCATE(c(m,n))
   ALLOCATE(a(m,k,s))
@@ -99,14 +96,14 @@ PROGRAM smm
   ALLOCATE(d(m,n))
   d(:,:) = 0
   !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i) &
-  !$OMP   DEFAULT(NONE) SHARED(mn, nm, k, ldc, a, b)
-  ALLOCATE(tmp(ldc,nm))
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b)
+  ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blas_gemm('N', 'N', mn, nm, k, &
-      LIBXSMM_ALPHA, a(:,:,i), mn, b(:,:,i), k, &
-      LIBXSMM_BETA, tmp, ldc)
+    CALL libxsmm_blas_gemm('N', 'N', m, n, k, &
+      LIBXSMM_ALPHA, a(:,:,i), m, b(:,:,i), k, &
+      LIBXSMM_BETA, tmp, m)
   END DO
   d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
   ! Deallocate thread-local arrays
@@ -116,8 +113,8 @@ PROGRAM smm
   WRITE(*, "(A)") "Streamed... (BLAS)"
   c(:,:) = 0
   !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) &
-  !$OMP   DEFAULT(NONE) SHARED(m, n, k, ldc, nm, a, b, duration)
-  ALLOCATE(tmp(ldc,nm))
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration)
+  ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
@@ -138,8 +135,8 @@ PROGRAM smm
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
   !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) &
-  !$OMP   DEFAULT(NONE) SHARED(m, n, k, ldc, nm, a, b, duration)
-  ALLOCATE(tmp(ldc,nm))
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration)
+  ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
@@ -162,8 +159,8 @@ PROGRAM smm
   IF (libxsmm_available(xmm)) THEN
     c(:,:) = 0
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) !DEFAULT(NONE) SHARED(ldc, nm, a, b, duration, xmm)
-    ALLOCATE(tmp(ldc,nm))
+    !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) !DEFAULT(NONE) SHARED(m, n, a, b, duration, xmm)
+    ALLOCATE(tmp(m,n))
     tmp(:,:) = 0
     !$OMP MASTER
     start = libxsmm_timer_tick()

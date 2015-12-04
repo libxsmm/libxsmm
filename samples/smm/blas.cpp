@@ -83,14 +83,13 @@ int main(int argc, char* argv[])
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
 
-    const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
-    const int ldcsize = ldc * LIBXSMM_LD(n, m);
-    if ((MAX_SIZE) < ldcsize) {
+    const int csize = m * n;
+    if ((MAX_SIZE) < csize) {
       throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
     }
 
     const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int csize = m * n, s = (2ULL << 30) / ((asize + bsize + ldcsize) * sizeof(T)); // 2 GByte
+    const int s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9;
@@ -99,7 +98,7 @@ int main(int argc, char* argv[])
       T *a, *b, *c;
       raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
-    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * ldcsize + aspace - 1);
+    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
@@ -110,11 +109,11 @@ int main(int argc, char* argv[])
     for (int i = 0; i < s; ++i) {
       init<42>(a + i * asize, m, k, i);
       init<24>(b + i * bsize, k, n, i);
-      init<22>(c + i * ldcsize, ldc, n, i);
+      init<22>(c + i * csize, m, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * ldcsize))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512_MIC)
@@ -123,20 +122,20 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major",
-        s, 1.0 * (s * (asize + bsize + ldcsize) * sizeof(T)) / (1 << 20));
+      fprintf(stdout, "m=%i n=%i k=%i (%s, %s) size=%i memory=%.f MB\n\n", m, n, k,
+        0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
+        s, 1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
+          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * csize;
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, ai, m, bi, k,
-            LIBXSMM_BETA, ci, ldc);
+            LIBXSMM_BETA, ci, m);
         }
       }
 
@@ -147,11 +146,11 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (int i = 0; i < s; ++i) {
-          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * ldcsize;
+          const T *const ai = a + i * asize, *const bi = b + i * bsize, *const ci = c + i * csize;
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, ai, m, bi, k,
-            LIBXSMM_BETA, ci, ldc);
+            LIBXSMM_BETA, ci, m);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -175,7 +174,7 @@ int main(int argc, char* argv[])
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, ai, m, bi, k,
-            LIBXSMM_BETA, tmp, ldc);
+            LIBXSMM_BETA, tmp, m);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -198,7 +197,7 @@ int main(int argc, char* argv[])
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a, m, b, k,
-            LIBXSMM_BETA, tmp, ldc);
+            LIBXSMM_BETA, tmp, m);
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {

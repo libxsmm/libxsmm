@@ -172,14 +172,13 @@ int main(int argc, char* argv[])
     const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
 
-    const int ldc = 0 == (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS) ? LIBXSMM_LD(m, n) : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(T), LIBXSMM_ALIGNMENT);
-    const int ldcsize = ldc * LIBXSMM_LD(n, m);
-    if ((CP2K_MAX_SIZE) < ldcsize) {
+    const int csize = m * n;
+    if ((CP2K_MAX_SIZE) < csize) {
       throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
     }
 
     const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int csize = m * n, s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
+    const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
     const double gflops = 2.0 * s * m * n * k * 1E-9;
@@ -211,9 +210,9 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i ldc=%i (%s) size=%i batch=%i memory=%.f MB\n\n",
-        m, n, k, ldc, 0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", s, u,
-        1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
+      fprintf(stdout, "m=%i n=%i k=%i (%s, %s) size=%i memory=%.f MB\n\n", m, n, k,
+        0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
+        s, 1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
 #if defined(CP2K_CHECK)
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
@@ -239,11 +238,11 @@ int main(int argc, char* argv[])
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
               0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
-              0/*beta*/, tmp, &ldc);
+              0/*beta*/, tmp, 0/*ldc*/);
             ai = aij;
             bi = bij;
           }
-          add(expect, tmp, m, n, ldc); // atomic
+          add(expect, tmp, m, n); // atomic
         }
       }
 
@@ -263,11 +262,11 @@ int main(int argc, char* argv[])
             // alternatively libxsmm_blas_gemm can be called (see above)
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, ai, m, bi, k,
-              LIBXSMM_BETA, tmp, ldc);
+              LIBXSMM_BETA, tmp, m);
             ai = aij;
             bi = bij;
           }
-          add(expect, tmp, m, n, ldc); // atomic
+          add(expect, tmp, m, n); // atomic
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -293,11 +292,11 @@ int main(int argc, char* argv[])
             const T *const aij = ai + asize, *const bij = bi + bsize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, ai, m, bi, k,
-              LIBXSMM_BETA, tmp, ldc);
+              LIBXSMM_BETA, tmp, m);
             ai = aij;
             bi = bij;
           }
-          add(c, tmp, m, n, ldc); // atomic
+          add(c, tmp, m, n); // atomic
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -326,11 +325,11 @@ int main(int argc, char* argv[])
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
               0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
-              0/*beta*/, tmp, &ldc);
+              0/*beta*/, tmp, 0/*ldc*/);
             ai = aij;
             bi = bij;
           }
-          add(c, tmp, m, n, ldc); // atomic
+          add(c, tmp, m, n); // atomic
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -369,7 +368,7 @@ int main(int argc, char* argv[])
             ai = aij;
             bi = bij;
           }
-          add(c, tmp, m, n, ldc); // atomic
+          add(c, tmp, m, n); // atomic
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
