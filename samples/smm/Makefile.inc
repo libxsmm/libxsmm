@@ -28,7 +28,7 @@ ifneq (0,$(INTEL))
 		FCFLAGS += -free
 		FMFLAGS += -e03
 	else ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177
+		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177,2547
 		FCFLAGS += -e03
 	else
 		FCFLAGS += -free
