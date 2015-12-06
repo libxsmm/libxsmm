@@ -97,8 +97,10 @@ ifneq (0,$(INTEL))
 	endif
 	ifeq (1,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+		DFLAGS += -D__STATIC
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
+		DFLAGS += -D__STATIC
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
@@ -215,6 +217,7 @@ else # GCC assumed
 	endif
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
+		DFLAGS += -D__STATIC
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
