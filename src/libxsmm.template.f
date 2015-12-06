@@ -36,14 +36,23 @@
      &                                    C_INT, C_FLOAT, C_DOUBLE,     &
      &                                    C_LONG_LONG, C_CHAR
         IMPLICIT NONE
-        PRIVATE :: libxsmm_srealptr, libxsmm_drealptr
 
+        PRIVATE ::  libxsmm_construct_sfunction,                        &
+                    libxsmm_construct_dfunction,                        &
+                    libxsmm_srealptr, libxsmm_drealptr
+
+        ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
-        CHARACTER(*), PARAMETER :: LIBXSMM_BRANCH  = "$BRANCH"
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MAJOR  = $MAJOR
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MINOR  = $MINOR
+        ! Name of the branch of which the version is derived from.
+        CHARACTER(*), PARAMETER :: LIBXSMM_BRANCH = "$BRANCH"
+        ! Major version based on the last reachable tag under RCS.
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MAJOR = $MAJOR
+        ! Minor version based on the last reachable tag of the RCS.
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_MINOR = $MINOR
+        ! Update number based on the last reachable tag under RCS.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_UPDATE = $UPDATE
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_PATCH  = $PATCH
+        ! Patch number counting commits since the last version stamp.
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_PATCH = $PATCH
 
         ! Parameters the library and static kernels were built for.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT

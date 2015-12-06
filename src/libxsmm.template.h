@@ -31,12 +31,18 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
+/** Name of the version (stringized set of version numbers). */
 #define LIBXSMM_VERSION "$VERSION"
+/** Name of the branch of which the version is derived from. */
 #define LIBXSMM_BRANCH  "$BRANCH"
-#define LIBXSMM_VERSION_MAJOR   $MAJOR
-#define LIBXSMM_VERSION_MINOR   $MINOR
-#define LIBXSMM_VERSION_UPDATE  $UPDATE
-#define LIBXSMM_VERSION_PATCH   $PATCH
+/** Major version based on the last reachable tag under RCS. */
+#define LIBXSMM_VERSION_MAJOR $MAJOR
+/** Minor version based on the last reachable tag of the RCS. */
+#define LIBXSMM_VERSION_MINOR $MINOR
+/** Update number based on the last reachable tag under RCS. */
+#define LIBXSMM_VERSION_UPDATE $UPDATE
+/** Patch number counting commits since the last version stamp. */
+#define LIBXSMM_VERSION_PATCH $PATCH
 
 /** Parameters the library and static kernels were built for. */
 #define LIBXSMM_ALIGNMENT $ALIGNMENT
@@ -68,9 +74,9 @@ typedef int libxsmm_blasint;
 #endif
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_sfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dfunction)(const double* a, const double* b, double* c, ...);
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
@@ -91,30 +97,30 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m,
 /** Dispatched general dense matrix multiplication (single-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda,
-  const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc);
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda,
-  const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc);
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda,
-  const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc);
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda,
-  const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc);
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
@@ -154,17 +160,17 @@ public:
   operator libxsmm_sfunction() const {
     return m_function;
   }
-  void operator()(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c) const {
+  void operator()(const float* a, const float* b, float* c) const {
     m_function(a, b, c);
   }
-  void operator()(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc) const
   {
     /* TODO: transition prefetch interface to xargs */
     m_function(a, b, c, pa, pb, pc);
   }
   /* TODO: support arbitrary Alpha and Beta in the backend
-  void operator()(const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c,
+  void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc,
     float alpha, float beta) const
   {
@@ -206,17 +212,17 @@ public:
   operator libxsmm_dfunction() const {
     return m_function;
   }
-  void operator()(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c) const {
+  void operator()(const double* a, const double* b, double* c) const {
     m_function(a, b, c);
   }
-  void operator()(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  void operator()(const double* a, const double* b, double* c,
     const double* pa, const double* pb, const double* pc) const
   {
     /* TODO: transition prefetch interface to xargs */
     m_function(a, b, c, pa, pb, pc);
   }
   /* TODO: support arbitrary Alpha and Beta in the backend
-  void operator()(const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c,
+  void operator()(const double* a, const double* b, double* c,
     const double* pa, const double* pb, const double* pc,
     double alpha, double beta) const
   {
@@ -227,96 +233,96 @@ public:
 
 /** Dispatched general dense matrix multiplication (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_gemm(const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_gemm(const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_sgemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_dgemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_gemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_gemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_gemm(const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_gemm(const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_sgemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_sgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_dgemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_gemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const float* alpha, const float *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const float *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const float* beta, float *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
 LIBXSMM_RETARGETABLE inline void libxsmm_blas_gemm(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const double* alpha, const double *LIBXSMM_RESTRICT a, const libxsmm_blasint* lda, const double *LIBXSMM_RESTRICT b, const libxsmm_blasint* ldb,
-  const double* beta, double *LIBXSMM_RESTRICT c, const libxsmm_blasint* ldc)
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
