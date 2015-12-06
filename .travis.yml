@@ -25,7 +25,7 @@ script:
     bash samples/smm/smm-test.sh
 
   - make -e realclean &&
-    make -e PEDANTIC=1 ALIGNED_STORES=1 JIT=1 &&
+    make -e PEDANTIC=1 ALIGNED_LOADS=1 ALIGNED_STORES=1 JIT=1 &&
     rm -f samples/cp2k/cp2k-perf.sh &&
     bash make.sh -ci drytest &&
     bash samples/cp2k/cp2k-perf.sh &&
