@@ -41,7 +41,7 @@ PROGRAM smm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  TYPE(LIBXSMM_DMM_FUNCTION) :: xmm
+  TYPE(LIBXSMM_DFUNCTION) :: xmm
   INTEGER :: argc, m, n, k
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv

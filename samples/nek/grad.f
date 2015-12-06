@@ -49,7 +49,7 @@ PROGRAM grad
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
-  TYPE(LIBXSMM_DMM_FUNCTION) :: xmm1, xmm2, xmm3
+  TYPE(LIBXSMM_DFUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
