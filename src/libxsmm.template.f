@@ -231,7 +231,9 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
           PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn0
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
           PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTERFACE
@@ -267,7 +269,9 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
           PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn0
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
           PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTERFACE
