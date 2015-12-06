@@ -99,11 +99,11 @@ if __name__ == "__main__":
                 mnkstr = "_".join(map(str, mnk))
                 substitute["MNK_INTERFACE_LIST"] += "\n" \
                     "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(\n" + \
-                      "  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" + \
-                      (",\n  const float* pa, const float* pb, const float* pc);\n" if (0 != prefetch) else ");\n") + \
+                      "  const float* a, const float* b, float* c" + \
+                      (", const float* pa, const float* pb, const float* pc);\n" if (0 != prefetch) else ");\n") + \
                     "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(\n" + \
-                      "  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" + \
-                      (",\n  const double* pa, const double* pb, const double* pc);\n" if (0 != prefetch) else ");\n")
+                      "  const double* a, const double* b, double* c" + \
+                      (", const double* pa, const double* pb, const double* pc);\n" if (0 != prefetch) else ");\n")
             print(template.substitute(substitute))
         else:
             if (mnklist):

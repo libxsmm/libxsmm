@@ -51,8 +51,8 @@ if __name__ == "__main__":
             signature += ", p" + astr + ", p" + bstr + ", pc"
         print
         print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
-        print("  const float *LIBXSMM_RESTRICT a, const float *LIBXSMM_RESTRICT b, float *LIBXSMM_RESTRICT c" \
-           + (",\n  const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")"))
+        print("  const float* a, const float* b, float* c" \
+           + (", const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")"))
         print("{")
         print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)")
         print("  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");")
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+        print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(sgemm), LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
             "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
             "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         print
         print
         print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(")
-        print("  const double *LIBXSMM_RESTRICT a, const double *LIBXSMM_RESTRICT b, double *LIBXSMM_RESTRICT c" \
-           + (",\n  const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")"))
+        print("  const double* a, const double* b, double* c" \
+           + (", const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")"))
         print("{")
         print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)")
         print("  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");")
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_INLINE_XGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
+        print("  LIBXSMM_INLINE_XGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(dgemm), LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
             "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
             "LIBXSMM_BETA, c, " + mstr + ");")
         print("#endif")
