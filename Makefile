@@ -100,7 +100,7 @@ AVX ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
-BLAS ?= 1
+BLAS ?= 2
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
