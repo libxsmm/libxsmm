@@ -247,7 +247,9 @@
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
             END FUNCTION
           END INTERFACE
-          IF (.NOT.PRESENT(prefetch)) THEN
+          IF (.NOT.PRESENT(prefetch).OR.                                &
+     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
+     &    THEN
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
@@ -285,7 +287,9 @@
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
             END FUNCTION
           END INTERFACE
-          IF (.NOT.PRESENT(prefetch)) THEN
+          IF (.NOT.PRESENT(prefetch).OR.                                &
+     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
+     &    THEN
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
