@@ -147,7 +147,7 @@
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 
 #if defined(_WIN32) && !defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
+# define LIBXSMM_ATTRIBUTE(...) __declspec(__VA_ARGS__)
 # if defined(__cplusplus)
 #   define LIBXSMM_INLINE_ALWAYS __forceinline
 # else
@@ -156,12 +156,12 @@
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
 # define LIBXSMM_CDECL __cdecl
 #elif defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
+# define LIBXSMM_ATTRIBUTE(...) __attribute__((__VA_ARGS__))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
-# define LIBXSMM_ATTRIBUTE(A)
+# define LIBXSMM_ATTRIBUTE(...)
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N)
 # define LIBXSMM_CDECL
