@@ -166,19 +166,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(M, N), sizeof(REAL), LIBXSMM_ALIGNMENT)); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
-  LIBXSMM_PRAGMA_SIMD/*_COLLAPSE(2)*/ \
-  for (libxsmm_inline_xgemm_i_ = 0; libxsmm_inline_xgemm_i_ < ((INT)LIBXSMM_LD(N, M)); ++libxsmm_inline_xgemm_i_) { \
-    const REAL *const libxsmm_inline_xgemm_bi_ = ((const REAL*)LIBXSMM_LD(B, A)) + libxsmm_inline_xgemm_i_ * (INT)LIBXSMM_LD(LDB, K); \
-    REAL *const libxsmm_inline_xgemm_ci_ = ((REAL*)(C)) + libxsmm_inline_xgemm_i_ * libxsmm_inline_xgemm_ldc_; \
+  LIBXSMM_PRAGMA_SIMD \
+  for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)LIBXSMM_LD(M, N)); ++libxsmm_inline_xgemm_j_) { \
     LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_K, LIBXSMM_AVG_K) \
     for (libxsmm_inline_xgemm_k_ = 0; libxsmm_inline_xgemm_k_ < (K); ++libxsmm_inline_xgemm_k_) { \
-      const REAL *const libxsmm_inline_xgemm_ai_ = ((const REAL*)LIBXSMM_LD(A, B)) + \
-        libxsmm_inline_xgemm_k_ * libxsmm_inline_xgemm_lda_; \
-      const REAL libxsmm_inline_xgemm_bik_ = libxsmm_inline_xgemm_bi_[libxsmm_inline_xgemm_k_] * libxsmm_inline_xgemm_alpha_; \
       LIBXSMM_PRAGMA_UNROLL \
-      for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)LIBXSMM_LD(M, N)); ++libxsmm_inline_xgemm_j_) { \
-        libxsmm_inline_xgemm_ci_[libxsmm_inline_xgemm_j_] = libxsmm_inline_xgemm_ai_[libxsmm_inline_xgemm_j_] * libxsmm_inline_xgemm_bik_ \
-                                                          + libxsmm_inline_xgemm_ci_[libxsmm_inline_xgemm_j_] * libxsmm_inline_xgemm_beta_; \
+      for (libxsmm_inline_xgemm_i_ = 0; libxsmm_inline_xgemm_i_ < ((INT)LIBXSMM_LD(N, M)); ++libxsmm_inline_xgemm_i_) { \
+        ((REAL*)(C))[libxsmm_inline_xgemm_i_*libxsmm_inline_xgemm_ldc_+libxsmm_inline_xgemm_j_] \
+          = ((const REAL*)LIBXSMM_LD(B, A))[libxsmm_inline_xgemm_i_*(INT)LIBXSMM_LD(LDB, K)+libxsmm_inline_xgemm_k_] * \
+           (((const REAL*)LIBXSMM_LD(A, B))[libxsmm_inline_xgemm_k_*libxsmm_inline_xgemm_lda_+libxsmm_inline_xgemm_j_] * libxsmm_inline_xgemm_alpha_) \
+          + ((const REAL*)(C))[libxsmm_inline_xgemm_i_*libxsmm_inline_xgemm_ldc_+libxsmm_inline_xgemm_j_] * libxsmm_inline_xgemm_beta_; \
       } \
     } \
   } \
