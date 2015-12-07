@@ -37,8 +37,8 @@
      &                                    C_LONG_LONG, C_CHAR
         IMPLICIT NONE
 
-        PRIVATE ::  construct_sfunction_abc, construct_sfunction_prf,   &
-     &              construct_dfunction_abc, construct_dfunction_prf,   &
+        PRIVATE ::  construct_sfunction,                                &
+     &              construct_dfunction,                                &
      &              srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
@@ -141,19 +141,8 @@
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
-        INTERFACE libxsmm_sdispatch
-          MODULE PROCEDURE libxsmm_sdispatch_abc, libxsmm_sdispatch_prf
-        END INTERFACE
-
-        ! Construct procedure pointer depending on given argument set.
-        INTERFACE libxsmm_ddispatch
-          MODULE PROCEDURE libxsmm_ddispatch_abc, libxsmm_ddispatch_prf
-        END INTERFACE
-
-        ! Construct procedure pointer depending on given argument set.
         INTERFACE libxsmm_dispatch
-          MODULE PROCEDURE libxsmm_sdispatch_abc, libxsmm_sdispatch_prf
-          MODULE PROCEDURE libxsmm_ddispatch_abc, libxsmm_ddispatch_prf
+          MODULE PROCEDURE libxsmm_sdispatch, libxsmm_ddispatch
         END INTERFACE
 
         ! Check if a function (LIBXSMM_?MM_FUNCTION_TYPE) is available.
@@ -235,16 +224,17 @@
      &      alignment) * alignment) / typesize
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_sfunction_abc
-        TYPE(LIBXSMM_SFUNCTION) FUNCTION construct_sfunction_abc(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_sfunction
+        TYPE(LIBXSMM_SFUNCTION) FUNCTION construct_sfunction(           &
+     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), POINTER :: prefetch => NULL()
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn
-          PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
+          PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn0
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
+          PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTERFACE
             TYPE(C_FUNPTR) PURE FUNCTION sdispatch(                     &
@@ -257,23 +247,34 @@
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
             END FUNCTION
           END INTERFACE
-          CALL C_F_PROCPOINTER(sdispatch(m, n, k,                       &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch),               &
-     &      fn)
-          construct_sfunction_abc%fn0 => fn
-          construct_sfunction_abc%fn1 => NULL()
+          IF (.NOT.PRESENT(prefetch).OR.                                &
+     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
+     &    THEN
+            CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
+     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
+     &        fn0)
+            construct_sfunction%fn0 => fn0
+            construct_sfunction%fn1 => NULL()
+          ELSE
+            CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
+     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
+     &        fn1)
+            construct_sfunction%fn0 => NULL()
+            construct_sfunction%fn1 => fn1
+          END IF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dfunction_abc
-        TYPE(LIBXSMM_DFUNCTION) FUNCTION construct_dfunction_abc(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dfunction
+        TYPE(LIBXSMM_DFUNCTION) FUNCTION construct_dfunction(           &
+     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), POINTER :: prefetch => NULL()
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn
-          PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
+          PROCEDURE(LIBXSMM_FUNCTION0), POINTER :: fn0
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
+          PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTERFACE
             TYPE(C_FUNPTR) PURE FUNCTION ddispatch(                     &
@@ -286,118 +287,44 @@
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
             END FUNCTION
           END INTERFACE
-          CALL C_F_PROCPOINTER(ddispatch(m, n, k,                       &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch),               &
-     &      fn)
-          construct_dfunction_abc%fn0 => fn
-          construct_dfunction_abc%fn1 => NULL()
+          IF (.NOT.PRESENT(prefetch).OR.                                &
+     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
+     &    THEN
+            CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
+     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
+     &        fn0)
+            construct_dfunction%fn0 => fn0
+            construct_dfunction%fn1 => NULL()
+          ELSE
+            CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
+     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
+     &        fn1)
+            construct_dfunction%fn0 => NULL()
+            construct_dfunction%fn1 => fn1
+          END IF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_sfunction_prf
-        TYPE(LIBXSMM_SFUNCTION) FUNCTION construct_sfunction_prf(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), INTENT(IN) :: prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn
-          PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
-          INTERFACE
-            TYPE(C_FUNPTR) PURE FUNCTION sdispatch(                     &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmm_sdispatch")
-              IMPORT :: C_FUNPTR, C_INT, C_FLOAT
-              INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-              INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END FUNCTION
-          END INTERFACE
-          CALL C_F_PROCPOINTER(sdispatch(m, n, k,                       &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch),               &
-     &      fn)
-          construct_sfunction_prf%fn0 => NULL()
-          construct_sfunction_prf%fn1 => fn
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dfunction_prf
-        TYPE(LIBXSMM_DFUNCTION) FUNCTION construct_dfunction_prf(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), INTENT(IN) :: prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn
-          PROCEDURE(LIBXSMM_FUNCTION1), POINTER :: fn
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
-          INTERFACE
-            TYPE(C_FUNPTR) PURE FUNCTION ddispatch(                     &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmm_ddispatch")
-              IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
-              INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-              INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END FUNCTION
-          END INTERFACE
-          CALL C_F_PROCPOINTER(ddispatch(m, n, k,                       &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch),               &
-     &      fn)
-          construct_dfunction_prf%fn0 => NULL()
-          construct_dfunction_prf%fn1 => fn
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch_abc
-        SUBROUTINE libxsmm_sdispatch_abc(fn,                            &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
-          TYPE(LIBXSMM_SFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          fn = construct_sfunction_abc(                                 &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_abc
-        SUBROUTINE libxsmm_ddispatch_abc(fn,                            &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags)
-          TYPE(LIBXSMM_DFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          fn = construct_dfunction_abc(                                 &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch_prf
-        SUBROUTINE libxsmm_sdispatch_prf(fn,                            &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sdispatch
+        SUBROUTINE libxsmm_sdispatch(fn,                                &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_SFUNCTION), INTENT(OUT) :: fn
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), INTENT(IN) :: prefetch
-          fn = construct_sfunction_prf(                                 &
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          fn = construct_sfunction(                                     &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch_prf
-        SUBROUTINE libxsmm_ddispatch_prf(fn,                            &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ddispatch
+        SUBROUTINE libxsmm_ddispatch(fn,                                &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_DFUNCTION), INTENT(OUT) :: fn
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags
-          INTEGER(C_INT), INTENT(IN) :: prefetch
-          fn = construct_dfunction_prf(                                 &
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
+          fn = construct_dfunction(                                     &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
