@@ -37,9 +37,9 @@
      &                                    C_LONG_LONG, C_CHAR
         IMPLICIT NONE
 
-        PRIVATE ::  libxsmm_construct_sfunction,                        &
-                    libxsmm_construct_dfunction,                        &
-                    libxsmm_srealptr, libxsmm_drealptr
+        PRIVATE ::  construct_sfunction,                                &
+     &              construct_dfunction,                                &
+     &              srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
@@ -195,15 +195,15 @@
         END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_srealptr
-        FUNCTION libxsmm_srealptr(a) RESULT(p)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr
+        FUNCTION srealptr(a) RESULT(p)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
           REAL(C_FLOAT), POINTER :: p
           p => a(LBOUND(a,1),LBOUND(a,2))
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_drealptr
-        FUNCTION libxsmm_drealptr(a) RESULT(p)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: drealptr
+        FUNCTION drealptr(a) RESULT(p)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
           REAL(C_DOUBLE), POINTER :: p
           p => a(LBOUND(a,1),LBOUND(a,2))
@@ -224,8 +224,8 @@
      &      alignment) * alignment) / typesize
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_construct_sfunction
-        TYPE(LIBXSMM_SFUNCTION) FUNCTION libxsmm_construct_sfunction(   &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_sfunction
+        TYPE(LIBXSMM_SFUNCTION) FUNCTION construct_sfunction(           &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
@@ -251,19 +251,19 @@
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
-            libxsmm_construct_sfunction%fn0 => fn0
-            libxsmm_construct_sfunction%fn1 => NULL()
+            construct_sfunction%fn0 => fn0
+            construct_sfunction%fn1 => NULL()
           ELSE
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn1)
-            libxsmm_construct_sfunction%fn0 => NULL()
-            libxsmm_construct_sfunction%fn1 => fn1
+            construct_sfunction%fn0 => NULL()
+            construct_sfunction%fn1 => fn1
           END IF
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_construct_dfunction
-        TYPE(LIBXSMM_DFUNCTION) FUNCTION libxsmm_construct_dfunction(   &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dfunction
+        TYPE(LIBXSMM_DFUNCTION) FUNCTION construct_dfunction(           &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
@@ -289,14 +289,14 @@
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
-            libxsmm_construct_dfunction%fn0 => fn0
-            libxsmm_construct_dfunction%fn1 => NULL()
+            construct_dfunction%fn0 => fn0
+            construct_dfunction%fn1 => NULL()
           ELSE
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn1)
-            libxsmm_construct_dfunction%fn0 => NULL()
-            libxsmm_construct_dfunction%fn1 => fn1
+            construct_dfunction%fn0 => NULL()
+            construct_dfunction%fn1 => fn1
           END IF
         END FUNCTION
 
@@ -308,7 +308,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = libxsmm_construct_sfunction(                             &
+          fn = construct_sfunction(                                     &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
@@ -320,7 +320,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = libxsmm_construct_dfunction(                             &
+          fn = construct_dfunction(                                     &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
@@ -370,9 +370,7 @@
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_scall_abx(fn,                                    &
-     &      C_LOC(libxsmm_srealptr(a)),                                 &
-     &      C_LOC(libxsmm_srealptr(b)),                                 &
-     &      C_LOC(libxsmm_srealptr(c)))
+     &      C_LOC(srealptr(a)), C_LOC(srealptr(b)), C_LOC(srealptr(c)))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abc
@@ -381,9 +379,7 @@
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           CALL libxsmm_dcall_abx(fn,                                    &
-     &      C_LOC(libxsmm_drealptr(a)),                                 &
-     &      C_LOC(libxsmm_drealptr(b)),                                 &
-     &      C_LOC(libxsmm_drealptr(c)))
+     &      C_LOC(drealptr(a)), C_LOC(drealptr(b)), C_LOC(drealptr(c)))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prf
@@ -393,9 +389,7 @@
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_scall_prx(fn,                                    &
-     &      C_LOC(libxsmm_srealptr(a)),                                 &
-     &      C_LOC(libxsmm_srealptr(b)),                                 &
-     &      C_LOC(libxsmm_srealptr(c)),                                 &
+     &      C_LOC(srealptr(a)), C_LOC(srealptr(b)), C_LOC(srealptr(c)), &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
@@ -406,9 +400,7 @@
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
           CALL libxsmm_dcall_prx(fn,                                    &
-     &      C_LOC(libxsmm_drealptr(a)),                                 &
-     &      C_LOC(libxsmm_drealptr(b)),                                 &
-     &      C_LOC(libxsmm_drealptr(c)),                                 &
+     &      C_LOC(drealptr(a)), C_LOC(drealptr(b)), C_LOC(drealptr(c)), &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
