@@ -644,10 +644,11 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
 		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/README.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -673,10 +674,11 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
 		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
 		-V author-meta="Hans Pabst" \

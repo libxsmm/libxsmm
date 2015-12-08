@@ -29,10 +29,11 @@ sed \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
   -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   README.md | tee >( \
 pandoc \
   --latex-engine=xelatex --template=${TEMPLATE} --listings \
-  -f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
   -V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -42,7 +43,7 @@ pandoc \
   -V urlcolor=black \
   -o ${DOCDIR}/libxsmm.pdf) | \
 pandoc \
-  -f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -o ${DOCDIR}/libxsmm.docx
 
 # cleanup markup and pipe into pandoc using the template
@@ -52,10 +53,11 @@ sed \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
   -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   ${HERE}/documentation/cp2k.md | tee >( \
 pandoc \
   --latex-engine=xelatex --template=${TEMPLATE} --listings \
-  -f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="CP2K with LIBXSMM" \
   -V author-meta="Hans Pabst" \
@@ -65,7 +67,7 @@ pandoc \
   -V urlcolor=black \
   -o ${DOCDIR}/cp2k.pdf) | \
 pandoc \
-  -f markdown_github+implicit_figures+all_symbols_escapable+subscript \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -o ${DOCDIR}/cp2k.docx
 
 # remove temporary file
