@@ -27,8 +27,8 @@ sed -i \
 sed \
   -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-  -e 's/\[\[.\+\](.\+)\]//' \
-  -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   README.md | tee >( \
 pandoc \
   --latex-engine=xelatex --template=${TEMPLATE} --listings \
@@ -50,8 +50,8 @@ pandoc \
 sed \
   -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-  -e 's/\[\[.\+\](.\+)\]//' \
-  -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   ${HERE}/documentation/cp2k.md | tee >( \
 pandoc \
   --latex-engine=xelatex --template=${TEMPLATE} --listings \

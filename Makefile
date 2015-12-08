@@ -642,8 +642,8 @@ $(DOCDIR)/libxsmm.pdf: $(ROOTDIR)/README.md
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-		-e 's/\[\[.\+\](.\+)\]//' \
-		-e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		$(ROOTDIR)/README.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
@@ -671,8 +671,8 @@ $(DOCDIR)/cp2k.pdf: $(ROOTDIR)/documentation/cp2k.md
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-		-e 's/\[\[.\+\](.\+)\]//' \
-		-e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
 		--latex-engine=xelatex --template=$(TEMPLATE) --listings \

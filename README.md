@@ -17,20 +17,20 @@ void libxsmm_init();
 void libxsmm_finalize();
 ```
 
-To perform the dense matrix-matrix multiplication *c~m\ x\ n~ = alpha &middot; a~m\ x\ k~ &middot; b~k\ x\ n~ + beta &middot; c~m\ x\ n~*, the full-blown GEMM/BLAS interface can be treated with "default arguments":
+To perform the dense matrix-matrix multiplication *C<sub>m\ x\ n</sub> = alpha &middot; A<sub>m\ x\ k</sub> &middot; B<sub>k\ x\ n</sub> + beta &middot; C<sub>m\ x\ n</sub>*, the full-blown GEMM/BLAS interface can be treated with "default arguments":
 
 ```C
 /** Calling the automatically dispatched dense matrix multiplication (single-precision, C code). */
-libxsmm_sgemm(0/*transa*/, 0/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
-  0/*alpha*/, a/*required*/, 0/*lda*/, b/*required*/, 0/*ldb*/,
-  0/*beta*/, c/*required*/, 0/*ldc*/);
+libxsmm_sgemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
+  NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
+  NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 /** Calling the automatically dispatched dense matrix multiplication (C++ code). */
-libxsmm_gemm(0/*transa*/, 0/*transb*/, m/*required*/, n/*required*/, k/*required*/,
-  0/*alpha*/, a/*required*/, 0/*lda*/, b/*required*/, 0/*ldb*/,
-  0/*beta*/, c/*required*/, 0/*ldc*/);
+libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*required*/,
+  NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
+  NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-For the C interface (with type prefix 's' or 'd'), all required arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface makes this requirement more clear by passing m, n, and k by-value.
+For the C interface (with type prefix 's' or 'd'), all arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface is supplying overloaded versions which allow to passing m, n, and k by-value (which makes it more clear that m, n, and k are non-optional arguments). The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed). For convenience, a similar BLAS-based dense matrix multiplication (libxsmm_blas_gemm instead of libxsmm_gemm) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
 
 ```Fortran
 ! Calling the automatically dispatched dense matrix multiplication (single-precision).
@@ -39,7 +39,7 @@ CALL libxsmm_sgemm(m=m, n=n, k=k, a=a, b=b, c=c)
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
-For convenience, a similar BLAS-based dense matrix multiplication is provided and simply re-exposed from the underlying GEMM/BLAS implementation (libxsmm_blas_gemm). However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism. Successively calling a certain kernel (i.e., multiple times) allows for amortizing the cost of the dispatch. Moreover in order to customize the dispatch mechanism, one can rely on the following interface.
+Successively calling a particular kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover in order to customize the dispatch mechanism, one can rely on the following interface.
 
 ```C
 /** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
@@ -54,7 +54,7 @@ libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
                                     const double* alpha, const double* beta);
 ```
 
-Further, a variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?MM_FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?MM_FUNCTION.
+A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION.
 
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
