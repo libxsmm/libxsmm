@@ -209,6 +209,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 #define LIBXSMM_FALLBACK1(REAL, INT, SYMBOL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   LIBXSMM_BLAS_XGEMM(REAL, SYMBOL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
+/** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
+#define LIBXSMM_CALL_ABC(FN, A, B, C) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C)
+#define LIBXSMM_CALL_PRF(FN, A, B, C, PA, PB, PC) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C, \
+  LIBXSMM_PREFETCH_A(LIBXSMM_LD(PA, PB)), LIBXSMM_PREFETCH_B(LIBXSMM_LD(PB, PA)), LIBXSMM_PREFETCH_C(PC))
+
 /**
  * Execute a specialized function, or use a fallback code path depending on threshold (template).
  * LIBXSMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
@@ -236,7 +241,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, 0); \
       if (0 != libxsmm_xgemm_function_) { \
-        libxsmm_xgemm_function_((const REAL*)LIBXSMM_LD(A, B), (const REAL*)LIBXSMM_LD(B, A), (REAL*)(C)); \
+        LIBXSMM_CALL_ABC(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
@@ -250,10 +255,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
       if (0 != libxsmm_xgemm_function_) { \
-        libxsmm_xgemm_function_((const REAL*)LIBXSMM_LD(A, B), (const REAL*)LIBXSMM_LD(B, A), (REAL*)(C), \
-          ((const REAL*)LIBXSMM_LD(A, B)) + LIBXSMM_PREFETCH_A(LIBXSMM_LD(libxsmm_xgemm_lda_ * (K), libxsmm_xgemm_ldb_ * (N))), \
-          ((const REAL*)LIBXSMM_LD(B, A)) + LIBXSMM_PREFETCH_B(LIBXSMM_LD(libxsmm_xgemm_ldb_ * (N), libxsmm_xgemm_lda_ * (K))), \
-          ((const REAL*)(C)) + LIBXSMM_PREFETCH_C(libxsmm_xgemm_ldc_ * (N))); \
+        LIBXSMM_CALL_PRF(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
+          ((const REAL*)(A)) + libxsmm_xgemm_lda_ * (K), ((const REAL*)(B)) + libxsmm_xgemm_ldb_ * (N), \
+          ((const REAL*)(C)) + libxsmm_xgemm_ldc_ * (N)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
