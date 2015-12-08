@@ -34,7 +34,7 @@ function capturedTxtToDataFile {
     -e "^m=" -e "${VARIANT}" \
     ${HERE}/$1.txt \
   | ${SED} \
-    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=//" -e "s/ (.\+) / /" \
+    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ (.\+) / /" \
     -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GB\/s//" \
     -e "/^.\+\.\.\./Id" -e "/^$/d" -e "/--/d" \
   | ${SED} \

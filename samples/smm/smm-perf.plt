@@ -1,7 +1,7 @@
 MPARM = 1
 NPARM = 2
 KPARM = 3
-FLOPS = 7
+FLOPS = 6
 
 HIM = -1
 HIN = HIM
@@ -48,6 +48,7 @@ set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
 set yrange [0:*]
+set autoscale fix
 plot  BASENAME."-inlined.dat" using FLOPS title "Inlined", \
       BASENAME."-blas.dat" using FLOPS title "BLAS", \
       BASENAME."-dispatched.dat" using FLOPS title "Dispatched", \
