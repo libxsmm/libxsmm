@@ -121,12 +121,6 @@ $(info =====================================================================)
 ifneq (0,$(OFFLOAD))
 $(error OFFLOAD needs to be 0 for JIT support!)
 endif
-ifneq (0,$(MIC))
-$(error MIC needs to be 0 for JIT support!)
-endif
-ifneq (0,$(SSE))
-$(error SSE needs to be 0 for JIT support!)
-endif
 endif
 
 # include common Makefile artifacts
