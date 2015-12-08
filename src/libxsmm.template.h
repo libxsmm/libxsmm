@@ -161,22 +161,14 @@ public:
     return m_function;
   }
   void operator()(const float* a, const float* b, float* c) const {
-    m_function(a, b, c);
+    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c);
   }
   void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc) const
   {
-    /* TODO: transition prefetch interface to xargs */
-    m_function(a, b, c, pa, pb, pc);
+    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c,
+      LIBXSMM_LD(pa, pb), LIBXSMM_LD(pb, pa), pc);
   }
-  /* TODO: support arbitrary Alpha and Beta in the backend
-  void operator()(const float* a, const float* b, float* c,
-    const float* pa, const float* pb, const float* pc,
-    float alpha, float beta) const
-  {
-    TODO: build xargs here
-    m_function(a, b, c, xargs);
-  }*/
 };
 
 /** Construct and execute a specialized function (double-precision). */
@@ -213,22 +205,14 @@ public:
     return m_function;
   }
   void operator()(const double* a, const double* b, double* c) const {
-    m_function(a, b, c);
+    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c);
   }
   void operator()(const double* a, const double* b, double* c,
     const double* pa, const double* pb, const double* pc) const
   {
-    /* TODO: transition prefetch interface to xargs */
-    m_function(a, b, c, pa, pb, pc);
+    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c,
+      LIBXSMM_LD(pa, pb), LIBXSMM_LD(pb, pa), pc);
   }
-  /* TODO: support arbitrary Alpha and Beta in the backend
-  void operator()(const double* a, const double* b, double* c,
-    const double* pa, const double* pb, const double* pc,
-    double alpha, double beta) const
-  {
-    TODO: build xargs here
-    m_function(a, b, c, pa, pb, pc, alpha, beta);
-  }*/
 };
 
 /** Dispatched general dense matrix multiplication (single-precision). */

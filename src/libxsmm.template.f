@@ -344,28 +344,44 @@
         PURE SUBROUTINE libxsmm_scall_abx(fn, a, b, c)
           TYPE(LIBXSMM_SFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          CALL fn%fn0(a, b, c)
+          TYPE(C_PTR) :: ab, ba
+          ab = MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR)
+          ba = MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR)
+          CALL fn%fn0(ab, ba, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_abx
         PURE SUBROUTINE libxsmm_dcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_DFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          CALL fn%fn0(a, b, c)
+          TYPE(C_PTR) :: ab, ba
+          ab = MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR)
+          ba = MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR)
+          CALL fn%fn0(ab, ba, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_prx
         PURE SUBROUTINE libxsmm_scall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
-          CALL fn%fn1(a, b, c, pa, pb, pc)
+          TYPE(C_PTR) :: ab, ba, pr, pq
+          ab = MERGE( a,  b, 0.NE.LIBXSMM_COL_MAJOR)
+          ba = MERGE( b,  a, 0.NE.LIBXSMM_COL_MAJOR)
+          pr = MERGE(pa, pb, 0.NE.LIBXSMM_COL_MAJOR)
+          pq = MERGE(pb, pa, 0.NE.LIBXSMM_COL_MAJOR)
+          CALL fn%fn1(ab, ba, c, pr, pq, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dcall_prx
         PURE SUBROUTINE libxsmm_dcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
-          CALL fn%fn1(a, b, c, pa, pb, pc)
+          TYPE(C_PTR) :: ab, ba, pr, pq
+          ab = MERGE( a,  b, 0.NE.LIBXSMM_COL_MAJOR)
+          ba = MERGE( b,  a, 0.NE.LIBXSMM_COL_MAJOR)
+          pr = MERGE(pa, pb, 0.NE.LIBXSMM_COL_MAJOR)
+          pq = MERGE(pb, pa, 0.NE.LIBXSMM_COL_MAJOR)
+          CALL fn%fn1(ab, ba, c, pr, pq, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_scall_abc

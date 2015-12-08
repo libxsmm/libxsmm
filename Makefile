@@ -118,9 +118,6 @@ $(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
 $(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
 $(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
 $(info =====================================================================)
-ifneq (0,$(ROW_MAJOR))
-$(error ROW_MAJOR needs to be 0 for JIT support!)
-endif
 ifneq (0,$(OFFLOAD))
 $(error OFFLOAD needs to be 0 for JIT support!)
 endif

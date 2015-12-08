@@ -41,14 +41,8 @@ if __name__ == "__main__":
         prefetch = int(sys.argv[5])
 
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
-        if (0 != row_major):
-            mstr, nstr, astr, bstr = str(n), str(m), "b", "a"
-        else: # ColMajor
-            mstr, nstr, astr, bstr = str(m), str(n), "a", "b"
+        signature = "a, b, c" if (0 == prefetch) else "a, b, c, pa, pb, pc"
         print
-        signature = astr + ", " + bstr + ", c"
-        if (0 != prefetch):
-            signature += ", p" + astr + ", p" + bstr + ", pc"
         print
         print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
         print("  const float* a, const float* b, float* c" \
@@ -68,9 +62,10 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(sgemm), LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
-            "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
-            "LIBXSMM_BETA, c, " + mstr + ");")
+        print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(sgemm), " \
+              "LIBXSMM_FLAGS, LIBXSMM_LD(" + str(m) + ", " + str(n) + "), LIBXSMM_LD(" + str(n) + ", " + str(m) + "), " + str(k) + ", " \
+              "LIBXSMM_ALPHA, LIBXSMM_LD(a, b), LIBXSMM_LD(" + str(m) + ", " + str(n) + "), LIBXSMM_LD(b, a), " + str(k) + ", " \
+              "LIBXSMM_BETA, c, LIBXSMM_LD(" + str(m) + ", " + str(n) + "));")
         print("#endif")
         print("}")
         print
@@ -94,9 +89,10 @@ if __name__ == "__main__":
         print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")*/")
         if (0 != prefetch):
             print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
-        print("  LIBXSMM_INLINE_XGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(dgemm), LIBXSMM_FLAGS, " + mstr + ", " + nstr + ", " + str(k) + ", " \
-            "LIBXSMM_ALPHA, " + astr + ", " + mstr + ", " + bstr + ", " + str(k) + ", " \
-            "LIBXSMM_BETA, c, " + mstr + ");")
+        print("  LIBXSMM_INLINE_XGEMM(double, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(dgemm), " \
+              "LIBXSMM_FLAGS, LIBXSMM_LD(" + str(m) + ", " + str(n) + "), LIBXSMM_LD(" + str(n) + ", " + str(m) + "), " + str(k) + ", " \
+              "LIBXSMM_ALPHA, LIBXSMM_LD(a, b), LIBXSMM_LD(" + str(m) + ", " + str(n) + "), LIBXSMM_LD(b, a), " + str(k) + ", " \
+              "LIBXSMM_BETA, c, LIBXSMM_LD(" + str(m) + ", " + str(n) + "));")
         print("#endif")
         print("}")
     else:

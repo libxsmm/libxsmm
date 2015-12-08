@@ -236,7 +236,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, 0); \
       if (0 != libxsmm_xgemm_function_) { \
-        libxsmm_xgemm_function_((const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
+        libxsmm_xgemm_function_((const REAL*)LIBXSMM_LD(A, B), (const REAL*)LIBXSMM_LD(B, A), (REAL*)(C)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
@@ -250,9 +250,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
       if (0 != libxsmm_xgemm_function_) { \
-        libxsmm_xgemm_function_((const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
-          ((const REAL*)(A)) + LIBXSMM_PREFETCH_A(libxsmm_xgemm_lda_ * (K)), \
-          ((const REAL*)(B)) + LIBXSMM_PREFETCH_B(libxsmm_xgemm_ldb_ * (N)), \
+        libxsmm_xgemm_function_((const REAL*)LIBXSMM_LD(A, B), (const REAL*)LIBXSMM_LD(B, A), (REAL*)(C), \
+          ((const REAL*)LIBXSMM_LD(A, B)) + LIBXSMM_PREFETCH_A(LIBXSMM_LD(libxsmm_xgemm_lda_ * (K), libxsmm_xgemm_ldb_ * (N))), \
+          ((const REAL*)LIBXSMM_LD(B, A)) + LIBXSMM_PREFETCH_B(LIBXSMM_LD(libxsmm_xgemm_ldb_ * (N), libxsmm_xgemm_lda_ * (K))), \
           ((const REAL*)(C)) + LIBXSMM_PREFETCH_C(libxsmm_xgemm_ldc_ * (N))); \
       } \
       else { \
