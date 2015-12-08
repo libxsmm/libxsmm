@@ -201,9 +201,9 @@ else # GCC assumed
 			LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -fno-omit-frame-pointer
 			ELDFLAGS := -pie
 		else
-			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g -check -traceback $(FCFLAGS)
+			CXXFLAGS := -g3 -gdwarf-2 $(CXXFLAGS)
+			CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
+			FCFLAGS := -g $(FCFLAGS)
 		endif
 	endif
 	ifeq (0,$(EXP))
