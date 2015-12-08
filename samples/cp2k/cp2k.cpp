@@ -232,10 +232,10 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
-          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tls[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
@@ -257,10 +257,10 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
-          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tls[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             // alternatively libxsmm_blas_gemm can be called (see above)
@@ -290,10 +290,10 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
-          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tls[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
@@ -325,10 +325,10 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
-          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tls[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
@@ -361,10 +361,10 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; i += u) {
           // make sure that stacksize is covering the problem size
-          T buffer[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[CP2K_MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) buffer[j] = 0; // clear
+          for (int j = 0; j < (CP2K_MAX_SIZE); ++j) tls[j] = 0; // clear
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)

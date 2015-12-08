@@ -153,8 +153,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
-          T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           // do nothing else with tmp; just a benchmark
           libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
             0/*alpha*/, a + i * asize, 0/*lda*/, b + i * bsize, 0/*ldb*/,
@@ -176,8 +176,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           // make sure that stacksize is covering the problem size
-          T buffer[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(buffer);
+          T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
           // do nothing else with tmp; just a benchmark
           libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
             0/*alpha*/, a, 0/*lda*/, b, 0/*ldb*/,
