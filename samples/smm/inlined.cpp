@@ -159,6 +159,7 @@ int main(int argc, char* argv[])
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
             LIBXSMM_BETA, tmp, m);
+          c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -182,6 +183,7 @@ int main(int argc, char* argv[])
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a, m, b, k,
             LIBXSMM_BETA, tmp, m);
+          c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
