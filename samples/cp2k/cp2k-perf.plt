@@ -1,7 +1,7 @@
 MPARM = 1
 NPARM = 2
 KPARM = 3
-FLOPS = 8
+FLOPS = 6
 
 HIM = -1
 HIN = HIM
