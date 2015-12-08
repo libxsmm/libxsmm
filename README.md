@@ -20,8 +20,8 @@ void libxsmm_finalize();
 To perform the dense matrix-matrix multiplication *C<sub>m&thinsp;x&thinsp;n</sub> = alpha &middot; A<sub>m&thinsp;x&thinsp;k</sub> &middot; B<sub>k&thinsp;x&thinsp;n</sub> + beta &middot; C<sub>m&thinsp;x&thinsp;n</sub>*, the full-blown GEMM/BLAS interface can be treated with "default arguments":
 
 ```C
-/** Calling the automatically dispatched dense matrix multiplication (single-precision, C code). */
-libxsmm_sgemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
+/** Calling the automatically dispatched dense matrix multiplication (single/double-precision, C code). */
+libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
   NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 /** Calling the automatically dispatched dense matrix multiplication (C++ code). */
@@ -33,8 +33,8 @@ libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*re
 For the C interface (with type prefix 's' or 'd'), all arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface is supplying overloaded versions which allow to passing m, n, and k by-value (which makes it more clear that m, n, and k are non-optional arguments). The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed). For convenience, a similar BLAS-based dense matrix multiplication (libxsmm_blas_gemm instead of libxsmm_gemm) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
 
 ```Fortran
-! Calling the automatically dispatched dense matrix multiplication (single-precision).
-CALL libxsmm_sgemm(m=m, n=n, k=k, a=a, b=b, c=c)
+! Calling the automatically dispatched dense matrix multiplication (single/double-precision).
+CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ! Calling the automatically dispatched dense matrix multiplication (generic interface).
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
