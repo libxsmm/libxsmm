@@ -216,6 +216,7 @@
       <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
+      <OffloadConstructs>None</OffloadConstructs>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -300,6 +301,7 @@
       <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
+      <OffloadConstructs>None</OffloadConstructs>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
