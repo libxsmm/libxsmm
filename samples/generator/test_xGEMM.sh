@@ -79,10 +79,10 @@ do
       ldc=$m 
       rm -rf kernel_${m}_${n}_${k}_${PREC}.*
       rm -rf xgemm_${m}_${n}_${k}_${PREC}
-      ./../../bin/generator dense kernel_${m}_${n}_${k}_${PREC}.h dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+      ./../../bin/libxsmm_generator dense kernel_${m}_${n}_${k}_${PREC}.h dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       if [ $ASM -eq 1 ]
       then
-        ./../../bin/generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+        ./../../bin/libxsmm_generator dense_asm kernel_${m}_${n}_${k}_${PREC}.s dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       fi
       if [ "${ARCH}" == 'wsm' ]; then
         icc -O3 -msse3 -ansi-alias -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}

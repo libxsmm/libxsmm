@@ -1,10 +1,10 @@
 .hooks/.commit
+bin/libxsmm_generator
 include/stream_update_kernels.f
 include/libxsmm.f
 include/libxsmm.h
 build/libxsmm_dispatch.h
 build/mm_*_*_*.c
-bin/generator
 ide/_vs2015-*.bat
 ide/*.amplxeproj
 ide/build
