@@ -58,13 +58,22 @@
 #if 0/*no scheme yet using C*/
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
 #endif
-#if !defined(LIBXSMM_PREFETCH_A)
+#if defined(LIBXSMM_PREFETCH_A)
+# define LIBXSMM_NOPREFETCH_A(EXPR) 0
+#else
+# define LIBXSMM_NOPREFETCH_A(EXPR) (EXPR)
 # define LIBXSMM_PREFETCH_A(EXPR) 0
 #endif
-#if !defined(LIBXSMM_PREFETCH_B)
+#if defined(LIBXSMM_PREFETCH_B)
+# define LIBXSMM_NOPREFETCH_B(EXPR) 0
+#else
+# define LIBXSMM_NOPREFETCH_B(EXPR) (EXPR)
 # define LIBXSMM_PREFETCH_B(EXPR) 0
 #endif
-#if !defined(LIBXSMM_PREFETCH_C)
+#if defined(LIBXSMM_PREFETCH_C)
+# define LIBXSMM_NOPREFETCH_C(EXPR) 0
+#else
+# define LIBXSMM_NOPREFETCH_C(EXPR) (EXPR)
 # define LIBXSMM_PREFETCH_C(EXPR) 0
 #endif
 
@@ -211,8 +220,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_CALL_ABC(FN, A, B, C) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C)
-#define LIBXSMM_CALL_PRF(FN, A, B, C, PA, PB, PC) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C, \
-  LIBXSMM_PREFETCH_A(LIBXSMM_LD(PA, PB)), LIBXSMM_PREFETCH_B(LIBXSMM_LD(PB, PA)), LIBXSMM_PREFETCH_C(PC))
+#define LIBXSMM_CALL_PRF(FN, A, B, C, PA, PB, PC) { \
+  LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(LIBXSMM_LD(PA, PB))); \
+  LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(LIBXSMM_LD(PB, PA))); \
+  LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
+  FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C, \
+    LIBXSMM_PREFETCH_A(LIBXSMM_LD(PA, PB)), \
+    LIBXSMM_PREFETCH_B(LIBXSMM_LD(PB, PA)), \
+    LIBXSMM_PREFETCH_C(PC)); \
+}
 
 /**
  * Execute a specialized function, or use a fallback code path depending on threshold (template).
