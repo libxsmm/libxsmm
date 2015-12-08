@@ -208,6 +208,34 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
+/** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
+#if defined(__GNUC__)
+# define LIBXSMM_CPUID(FUNCTION, EAX, EBX, ECX, EDX) \
+    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION))
+#else
+# define LIBXSMM_CPUID(FUNCTION, EAX, EBX, ECX, EDX) { \
+    int libxsmm_cpuid_[4]; \
+    __cpuid(libxsmm_cpuid_, FUNCTION); \
+    EAX = libxsmm_cpuid_[0]; \
+    EBX = libxsmm_cpuid_[1]; \
+    ECX = libxsmm_cpuid_[2]; \
+    EDX = libxsmm_cpuid_[3]; \
+  }
+#endif
+
+/** Execute the XGETBV, and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
+#if defined(__GNUC__)
+# define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
+    "xgetbv" : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
+  )
+#else
+# define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+    unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
+    EAX = (int)libxsmm_xgetbv_; \
+    EDX = (int)(libxsmm_xgetbv_ >> 32); \
+  }
+#endif
+
 /**
  * Below group of preprocessor symbols are used to fixup some platform specifics.
  */

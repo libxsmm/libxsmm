@@ -198,6 +198,47 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
+{
+  unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+  const char* archid = 0;
+
+  LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
+  if (7 <= eax) {
+    LIBXSMM_CPUID(1, eax, ebx, ecx, edx);
+
+    if (0x02000000 == (0x02000000 & ecx)) { /* XGETBV */
+      LIBXSMM_XGETBV(0, eax, edx);
+
+      if (0x04000000 == (0x04000000 & ecx)) { /* XSAVE */
+        if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
+          if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
+            /* AVX512F, AVX512PF, AVX512ER, AVX512CD */
+            if (0x1C010000 == (0x1C010000 & ebx)) {
+              archid = "knl";
+            }
+            /* AVX512F, AVX512DQ, AVX512CD, AVX512BW, AVX512VL */
+            else if (0xD0030000 == (0xD0030000 & ebx)) {
+              archid = "skx";
+            }
+          }
+          else if (0x08000000 == (0x08000000 & ecx)) { /* AVX */
+            if (0x00001000 == (0x00001000 & ecx)) { /* FMA */
+              archid = "hsw";
+            }
+            else {
+              archid = "snb";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return archid;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
 {
   libxsmm_dispatch_entry result;
@@ -246,113 +287,113 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
       result = cache[indx];
 
       if (0 == result.pv) {
-        char l_arch[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* empty initial arch string */
+        const char *const archid = internal_supply_archid();
         libxsmm_generated_code l_generated_code;
         void* l_code;
 
-# if defined(__AVX512F__)
-        strcpy(l_arch, "knl");
-# elif defined(__AVX2__)
-        strcpy(l_arch, "hsw");
-# elif defined(__AVX__)
-        strcpy(l_arch, "snb");
-# elif defined(__SSE3__)
-#       error "SSE3 instruction set extension is not supported for JIT-code generation!"
-# elif defined(__MIC__)
-#       error "IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!"
-# else
-#       error "No instruction set extension found for JIT-code generation!"
-# endif
-        /* allocate buffer for code */
-        l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
-        l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
-        l_generated_code.code_size = 0;
-        l_generated_code.code_type = 2;
-        l_generated_code.last_error = 0;
+        if (0 != archid) {
+          /* allocate buffer for code */
+          l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
+          l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
+          l_generated_code.code_size = 0;
+          l_generated_code.code_type = 2;
+          l_generated_code.last_error = 0;
 
-        /* generate kernel */
-        libxsmm_generator_dense_kernel(&l_generated_code, desc, l_arch);
+          /* generate kernel */
+          libxsmm_generator_dense_kernel(&l_generated_code, desc, archid);
 
-        /* handle an eventual error in the else-branch */
-        if (0 == l_generated_code.last_error) {
-          /* create executable buffer */
-          const int l_fd = open("/dev/zero", O_RDWR);
-          /* must be a superset of what mprotect populates (see below) */
-          const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
-          l_code = mmap(0, l_generated_code.code_size, perms, MAP_PRIVATE, l_fd, 0);
-          close(l_fd);
+          /* handle an eventual error in the else-branch */
+          if (0 == l_generated_code.last_error) {
+            /* create executable buffer */
+            const int l_fd = open("/dev/zero", O_RDWR);
+            /* must be a superset of what mprotect populates (see below) */
+            const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
+            l_code = mmap(0, l_generated_code.code_size, perms, MAP_PRIVATE, l_fd, 0);
+            close(l_fd);
 
-          if (MAP_FAILED != l_code) {
+            if (MAP_FAILED != l_code) {
 # if defined(MADV_NOHUGEPAGE)
 #   if !defined(NDEBUG)
-            const int error =
+              const int error =
 #   endif
-            /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
-            madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
-            /* proceed even in case of an error, we then just take what we got (THP) */
+              /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+              madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
+              /* proceed even in case of an error, we then just take what we got (THP) */
 #   if !defined(NDEBUG) /* library code is usually expected to be mute */
-            if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
+              if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
 #   endif
 # endif /*MADV_NOHUGEPAGE*/
-            /* copy temporary buffer into the prepared executable buffer */
-            memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
+              /* copy temporary buffer into the prepared executable buffer */
+              memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
 
-            if (-1 != mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
+              if (-1 != mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
 # if !defined(NDEBUG)
-              /* write buffer for manual decode as binary to a file */
-              char l_objdump_name[512];
-              FILE* l_byte_code;
-              sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
-                0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
-                desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
-                0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
-                0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
-                desc->prefetch);
-              l_byte_code = fopen(l_objdump_name, "wb");
-              if (l_byte_code != NULL) {
-                fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
-                fclose(l_byte_code);
-              }
+                /* write buffer for manual decode as binary to a file */
+                char l_objdump_name[512];
+                FILE* l_byte_code;
+                sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
+                  0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
+                  desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
+                  0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
+                  0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
+                  desc->prefetch);
+                l_byte_code = fopen(l_objdump_name, "wb");
+                if (l_byte_code != NULL) {
+                  fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
+                  fclose(l_byte_code);
+                }
 # endif /*NDEBUG*/
-              /* free temporary buffer */
-              free(l_generated_code.generated_code);
+                /* free temporary buffer */
+                free(l_generated_code.generated_code);
 
-              /* prepare return value */
-              result.pv = l_code;
+                /* prepare return value */
+                result.pv = l_code;
 
-              /* make function pointer available for dispatch */
-              cache[indx].pv = l_code;
-            }
-            else { /* there was an error with mprotect */
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-              int error = errno;
-              switch (error) {
-                case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
-                case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
-                case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
-                default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
+                /* make function pointer available for dispatch */
+                cache[indx].pv = l_code;
               }
-              error =
-# endif /*NDEBUG*/
-              munmap(l_code, l_generated_code.code_size);
+              else { /* there was an error with mprotect */
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-              if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
+                int error = errno;
+                switch (error) {
+                  case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
+                  case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
+                  case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
+                  default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
+                }
+                error =
+# endif /*NDEBUG*/
+                munmap(l_code, l_generated_code.code_size);
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+                if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
 # endif
+                free(l_generated_code.generated_code);
+              }
+            }
+            else {
+# if !defined(NDEBUG) /* library code is usually expected to be mute */
+              fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
+# endif /*NDEBUG*/
               free(l_generated_code.generated_code);
             }
           }
           else {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-            fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
+            fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
 # endif /*NDEBUG*/
             free(l_generated_code.generated_code);
           }
         }
         else {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-          fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
-# endif /*NDEBUG*/
-          free(l_generated_code.generated_code);
+#   if defined(__SSE3__)
+          fprintf(stderr, "LIBXSMM: SSE3 instruction set extension is not supported for JIT-code generation!\n");
+#   elif defined(__MIC__)
+          fprintf(stderr, "LIBXSMM: IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!\n");
+#   else
+          fprintf(stderr, "LIBXSMM: no instruction set extension found for JIT-code generation!\n");
+#   endif
+# endif
         }
       }
     }
