@@ -30,7 +30,9 @@ libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*re
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-For the C interface (with type prefix 's' or 'd'), all arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface is supplying overloaded versions which allow to passing m, n, and k by-value (which makes it more clear that m, n, and k are non-optional arguments). The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed). For convenience, a similar BLAS-based dense matrix multiplication (libxsmm_blas_gemm instead of libxsmm_gemm) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
+For the C interface (with type prefix 's' or 'd'), all arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. In contrast, the C++ interface is supplying overloaded versions which allow to passing m, n, and k by-value (which makes it more clear that m, n, and k are non-optional arguments).
+
+The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed). For convenience, a similar BLAS-based dense matrix multiplication (libxsmm_blas_gemm instead of libxsmm_gemm) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
 
 ```Fortran
 ! Calling the automatically dispatched dense matrix multiplication (single/double-precision).
@@ -54,7 +56,7 @@ libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
                                     const double* alpha, const double* beta);
 ```
 
-A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION.
+A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
@@ -113,7 +115,7 @@ Each group of the above indexes is combined into all possible triplets generatin
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Testing the generated cases can be accomplished by capturing the console output of the [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) code sample:
+Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Testing the generated cases can be accomplished by capturing the console output of the [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) code sample:
 
 ```
 make MNK="2 3, 23" test
@@ -133,34 +135,23 @@ By default all supported host code paths are generated (with the compiler pickin
 make AVX=3
 ```
 
-The library supports generating code using an "implicitly aligned leading dimension" for the destination matrix of a multiplication. The latter is enabling aligned store instructions, and also hints the inlinable C/C++ code accordingly. The client code may be arranged accordingly by checking the build parameters of the library (at compile-time using the preprocessor). Aligned store instructions imply a leading dimension which is a multiple of the default alignment:
-
-```
-make ALIGNED_STORES=1
-```
-
-The general alignment (ALIGNMENT=64) as well as an alignment specific for the store instructions (ALIGNED_STORES=n) can be specified when invoking 'make' (by default ALIGNED_STORES inherits ALIGNMENT when "enabled" using ALIGNED_STORES=1). The "implicitly aligned leading dimension" optimization is not expected to have a big impact due to the relatively low amount of store instructions in the mix. In contrast, supporting an "implicitly aligned leading dimension" for loading the input matrices is supposed to make a bigger impact, however this is not exposed by the build system because: (1) aligning a batch of input matrices implies usually larger code changes for the client code whereas accumulating into a local temporary destination matrix is a relatively minor change, and (2) today's Advanced Vector Extensions including the AVX-512 capable hardware supports unaligned load/store instructions.
-
 An extended interface can generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Directly invoking the generator backend](#directly-invoking-the-generator-backend) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
 
 ```
 make PREFETCH=8
 ```
 
-The interface which is supporting software prefetches extends the signature of all kernels by three arguments (pa, pb, and pc) allowing the call-side to specify where to prefetch the operands of the "next" multiplication from (a, b, and c). There are [macros](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_prefetch.h) available (C/C++ only) allowing to call the matrix multiplication functions in a prefetch-agnostic fashion (see [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) or [smm](https://github.com/hfp/libxsmm/tree/master/samples/smm samples) code samples).
-
-Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
+The interface which is supporting software prefetches extends the signature of all kernels by three arguments (pa, pb, and pc) allowing the call-side to specify where to prefetch the operands of the "next" multiplication from (a, b, and c). There are [macros](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_prefetch.h) available (C/C++ only) allowing to call the matrix multiplication functions in a prefetch-agnostic fashion (see [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) or [smm](https://github.com/hfp/libxsmm/tree/master/samples/smm samples) code samples). Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
 ### Auto-dispatch
-The function 'libxsmm_?dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. In contrast, the automatic code dispatch is orchestrating three levels:
+The function 'libxsmm_?dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
 
 1. Specialized routine (implemented in assembly code),
-2. Inlinable C/C++ code or optimized FORTRAN code, and
-3. BLAS library call.
+3. LAPACK/BLAS library call (fallback).
 
-All three levels are accessible directly (see [Interface](#interface)) allowing to customize the code dispatch. The level 2 and 3 may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. Beside of the generic interface, one can also call a specific kernel e.g., 'libxsmm_dmm_4_4_4'. For statically generated kernels, the interface includes prototypes of the specialized functions.
+Both levels are accessible directly (see [Interface](#interface)) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. 
 
-Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*) that belongs to level (1) and (2), and therefore determines if a matrix multiplication falls back to level (3) calling into the LAPACK/BLAS library alongside of LIBXSMM. The problem size threshold can be configured by using for example:
+Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*) that belongs to the first level, and therefore determines if a matrix multiplication falls back to calling into the LAPACK/BLAS library alongside of LIBXSMM. The problem size threshold can be configured by using for example:
 
 ```
 make THRESHOLD=$((60 * 60 * 60))
@@ -169,7 +160,7 @@ make THRESHOLD=$((60 * 60 * 60))
 The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size is below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
 
 ### JIT Backend
-There might be situations in which it is up-front not clear which problem sizes will be needed when running an application. In order to leverage LIBXSMM's high-performance kernels, the library offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is accomplished by emitting the corresponding byte-code directly into an executable buffer. As the JIT backend is still experimental, some limitations are in place:
+There might be situations in which it is up-front not clear which problem sizes will be needed when running an application. In order to leverage LIBXSMM's high-performance kernels, the library offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated according to the CPUID flags, and therefore does not rely on the code path selected when building the library. As the JIT backend is still experimental, some limitations are in place:
 
 1. There is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
 2. LIBXSMM uses Pthread mutexes to guard updates of the JITted code cache (link line with -lpthread is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
@@ -181,7 +172,7 @@ The JIT backend support in LIBXSMM can be enabled using:
 make JIT=1
 ```
 
-One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used to accompanying statically generated code.
+One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used for accompanying statically generated code.
 
 Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 
@@ -252,13 +243,7 @@ The library does not claim to be "optimal" or "best-performing", and the present
 
 ## Implementation
 ### Limitations
-Beside of the inlinable C code or the optimized FORTRAN code path, the library is currently limited to a single code path which is selected at build time of the library (also true for JITted code). Without a specific flag (SSE=1, AVX=1|2|3), the static code generation emits code for all supported instruction set extensions. However, the compiler is picking only one of the generated code paths according to its code generation flags (or according to what is native with respect to the compiler-host). A future version of the library may be including all code paths at build time and allow for runtime-dynamic dispatch of the most suitable code path.
-
-### Roadmap
-Although the library is under development, the published interface is rather stable and may only be extended in future revisions. The following issues are being addressed in upcoming revisions:
-
-* Full xGEMM interface, and extended code dispatcher
-* API supporting sparse matrices and other cases
+The statically generated code is depending on a single code path which is selected at build time of the library whereas the JITted code depends on the actual CPUID flags of the target system executing the library. For the statically generated code and without a specific flag (SSE=1, AVX=1|2|3), the code generator emits code for all supported instruction set extensions. However, the compiler is picking only one of the generated code paths according to its code generation flags (or according to what is native with respect to the compiler-host).
 
 ## Applications and References
 **\[1] [http://cp2k.org/](http://cp2k.org/)**: Open Source Molecular Dynamics with its DBCSR component generating batches of small matrix multiplications ("matrix stacks") out of a problem-specific distributed block-sparse matrix. The idea and the interface of LIBXSMM is sharing some origin with CP2K's "libsmm" library which can be optionally substituted by LIBXSMM (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
