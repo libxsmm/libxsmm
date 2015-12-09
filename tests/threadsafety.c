@@ -19,21 +19,18 @@ int main()
 # pragma omp parallel for
 #endif
   for (i = 0; i < 1000; ++i) {
-    LIBXSMM_ALIGNED(float c[LIBXSMM_ALIGN_VALUE(23,sizeof(float),LIBXSMM_ALIGNMENT)*23], LIBXSMM_ALIGNMENT);
-    const libxsmm_smmfunction f = libxsmm_smmdispatch(
-      LIBXSMM_FLAGS, 23, 23, 23,
-      0/*lda*/, 0/*ldb*/, 0/*ldc*/,
-      0/*alpha*/, 0/*beta*/);
-    if (0 != f) {
-      f(a, b, c);
+    float c[23*23];
+    const libxsmm_smmfunction f = libxsmm_smmdispatch(23, 23, 23,
+      NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
+      NULL/*flags*/, NULL/*prefetch*/);
+    if (NULL != f) {
+      LIBXSMM_MMCALL_ABC(f, a, b, c);
     }
     else {
-      libxsmm_smm(LIBXSMM_FLAGS,
-        23, 23, 23, a, b, c,
-        LIBXSMM_PREFETCH_A(a),
-        LIBXSMM_PREFETCH_B(b),
-        LIBXSMM_PREFETCH_C(c),
-        0/*alpha*/, 0/*beta*/);
+      const libxsmm_blasint m = 23, n = 23, k = 23;
+      libxsmm_sgemm(NULL/*transa*/, NULL/*transb*/, &m, &n, &k,
+        NULL/*alpha*/, a, NULL/*lda*/, b, NULL/*ldb*/, 
+        NULL/*beta*/, c, NULL/*ldc*/);
     }
   }
 
