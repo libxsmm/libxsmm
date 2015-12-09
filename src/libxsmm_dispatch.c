@@ -64,7 +64,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
   libxsmm_dmmfunction dmm;
   const void* pv;
 } libxsmm_dispatch_entry;
-LIBXSMM_RETARGETABLE volatile libxsmm_dispatch_entry* libxsmm_dispatch_cache = 0;
+LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* libxsmm_dispatch_cache = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
@@ -86,7 +86,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 # pragma omp critical(libxsmm_dispatch_lock)
 #endif
   {
-    const volatile void* cache;
+    /*const*/void* cache;
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 #   pragma omp atomic read
@@ -95,7 +95,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 # endif
     cache = libxsmm_dispatch_cache;
 #elif defined(__GNUC__)
-    __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
+    __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
     cache = libxsmm_dispatch_cache;
 #endif
@@ -120,7 +120,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
           }
         }
 # if defined(__GNUC__)
-        __atomic_store(&libxsmm_dispatch_cache, &buffer, __ATOMIC_RELAXED);
+        __atomic_store(&libxsmm_dispatch_cache, (libxsmm_dispatch_entry**)&buffer, __ATOMIC_RELAXED);
 # else
         libxsmm_dispatch_cache = buffer;
 # endif
@@ -145,7 +145,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
-  const volatile void* cache;
+  /*const*/void* cache;
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
@@ -154,7 +154,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 # endif
   cache = libxsmm_dispatch_cache;
 #elif defined(__GNUC__)
-  __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
+  __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
   cache = libxsmm_dispatch_cache;
 #endif
@@ -167,7 +167,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  volatile libxsmm_dispatch_entry* cache = 0;
+  libxsmm_dispatch_entry* cache = 0;
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
@@ -212,7 +212,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #       pragma omp flush(libxsmm_dispatch_cache)
 # endif
 #elif defined(__GNUC__)
-        const volatile libxsmm_dispatch_entry *const zero = 0;
+        /*const*/libxsmm_dispatch_entry* /*const*/zero = 0;
         __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_RELAXED);
 #else
         libxsmm_dispatch_cache = 0;
@@ -271,8 +271,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_dispatch_entry result;
-  volatile libxsmm_dispatch_entry* cache;
+  libxsmm_dispatch_entry result, *cache;
   unsigned int hash, indx;
   assert(0 != desc);
 
