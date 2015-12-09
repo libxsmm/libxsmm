@@ -42,10 +42,10 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
-# include <fcntl.h>
-# include <errno.h>
-# include <unistd.h>
 # include <sys/mman.h>
+# include <stdlib.h>
+# include <unistd.h>
+# include <fcntl.h>
 #endif
 #if !defined(NDEBUG)
 #include <errno.h>
@@ -309,7 +309,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
   indx = hash % LIBXSMM_DISPATCH_CACHESIZE;
-  result = cache[indx]; /* TODO: handle collision */
+  cache += indx;
+  result = *cache; /* TODO: handle collision */
 
 #if (0 != LIBXSMM_JIT)
   if (0 == result.pv) {
@@ -321,7 +322,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-      result = cache[indx];
+      result = *cache;
 
       if (0 == result.pv) {
         const char *const archid = internal_supply_archid();
@@ -387,7 +388,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
                 result.pv = l_code;
 
                 /* make function pointer available for dispatch */
-                cache[indx].pv = l_code;
+                cache->pv = l_code;
               }
               else { /* there was an error with mprotect */
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
