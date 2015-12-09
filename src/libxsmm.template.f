@@ -260,7 +260,7 @@
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
-        TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(         &
+        TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
@@ -300,7 +300,7 @@
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dmmfunction
-        TYPE(LIBXSMM_DMMFUNCTION) FUNCTION construct_dmmfunction(         &
+        TYPE(LIBXSMM_DMMFUNCTION) FUNCTION construct_dmmfunction(       &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INT), INTENT(IN) :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
@@ -347,7 +347,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = construct_smmfunction(                                     &
+          fn = construct_smmfunction(                                   &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
@@ -359,20 +359,22 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = construct_dmmfunction(                                     &
+          fn = construct_dmmfunction(                                   &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL PURE FUNCTION libxsmm_smmavailable(fn)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_smmavailable = ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
+          libxsmm_smmavailable =                                        &
+     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL PURE FUNCTION libxsmm_dmmavailable(fn)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_dmmavailable = ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
+          libxsmm_dmmavailable =                                        &
+     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abx
