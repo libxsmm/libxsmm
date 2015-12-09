@@ -148,7 +148,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+  libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
@@ -198,7 +198,7 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
   }
 
   /* add signature to code string */
-  libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+  libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );

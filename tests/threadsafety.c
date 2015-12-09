@@ -20,7 +20,7 @@ int main()
 #endif
   for (i = 0; i < 1000; ++i) {
     LIBXSMM_ALIGNED(float c[LIBXSMM_ALIGN_VALUE(23,sizeof(float),LIBXSMM_ALIGNMENT)*23], LIBXSMM_ALIGNMENT);
-    const libxsmm_sfunction f = libxsmm_sdispatch(
+    const libxsmm_smmfunction f = libxsmm_smmdispatch(
       LIBXSMM_FLAGS, 23, 23, 23,
       0/*lda*/, 0/*ldb*/, 0/*ldc*/,
       0/*alpha*/, 0/*beta*/);

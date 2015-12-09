@@ -49,7 +49,7 @@ PROGRAM grad
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
-  TYPE(LIBXSMM_DFUNCTION) :: xmm1, xmm2, xmm3
+  TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
@@ -255,9 +255,9 @@ PROGRAM grad
   if (check.NE.0) call validate(rx, ry, rz, cx, cy, cz)
 
   WRITE(*, "(A)") "Streamed... (specialized)"
-  CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
-  CALL libxsmm_dispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
-  CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
+  CALL libxsmm_mmdispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
+  CALL libxsmm_mmdispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
+  CALL libxsmm_mmdispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
   !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3, reps)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))

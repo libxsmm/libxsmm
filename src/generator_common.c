@@ -589,7 +589,7 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
   io_loop_label_tracker->label_count = 0;
 }
 
-void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
+void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];

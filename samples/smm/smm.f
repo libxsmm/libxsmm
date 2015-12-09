@@ -41,7 +41,7 @@ PROGRAM smm
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
-  TYPE(LIBXSMM_DFUNCTION) :: xmm
+  TYPE(LIBXSMM_DMMFUNCTION) :: xmm
   INTEGER :: argc, m, n, k
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
@@ -155,7 +155,7 @@ PROGRAM smm
   CALL performance(duration, m, n, k, s)
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
 
-  CALL libxsmm_dispatch(xmm, m, n, k)
+  CALL libxsmm_mmdispatch(xmm, m, n, k)
   IF (libxsmm_available(xmm)) THEN
     c(:,:) = 0
     WRITE(*, "(A)") "Streamed... (specialized)"

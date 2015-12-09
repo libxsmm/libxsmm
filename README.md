@@ -45,18 +45,18 @@ Successively calling a particular kernel (i.e., multiple times) allows for amort
 
 ```C
 /** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
-libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
+libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
                                     int lda, int ldb, int ldc,
                                     /* supply NULL as a default for alpha or beta */
                                     const float* alpha, const float* beta);
 /** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
-libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
+libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
                                     int lda, int ldb, int ldc,
                                     /* supply NULL as a default for alpha or beta */
                                     const double* alpha, const double* beta);
 ```
 
-A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_function<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?dispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_dispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
+A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_mmfunction<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mmdispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_mmdispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
 To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
@@ -144,7 +144,7 @@ make PREFETCH=8
 The interface which is supporting software prefetches extends the signature of all kernels by three arguments (pa, pb, and pc) allowing the call-side to specify where to prefetch the operands of the "next" multiplication from (a, b, and c). There are [macros](https://github.com/hfp/libxsmm/blob/master/src/libxsmm_prefetch.h) available (C/C++ only) allowing to call the matrix multiplication functions in a prefetch-agnostic fashion (see [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) or [smm](https://github.com/hfp/libxsmm/tree/master/samples/smm samples) code samples). Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
 ### Auto-dispatch
-The function 'libxsmm_?dispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
+The function 'libxsmm_?mmdispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
 
 1. Specialized routine (implemented in assembly code),
 3. LAPACK/BLAS library call (fallback).
@@ -172,7 +172,7 @@ The JIT backend support in LIBXSMM can be enabled using:
 make JIT=1
 ```
 
-One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?dispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used for accompanying statically generated code.
+One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?mmdispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used for accompanying statically generated code.
 
 Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 

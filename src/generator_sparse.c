@@ -101,7 +101,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  libxsmm_function_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+  libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* read CSC file and consturct CSC datastructure */
   libxsmm_sparse_csc_reader( &l_generated_code, i_csc_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );

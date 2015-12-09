@@ -219,8 +219,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   LIBXSMM_BLAS_XGEMM(REAL, SYMBOL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
-#define LIBXSMM_CALL_ABC(FN, A, B, C) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C)
-#define LIBXSMM_CALL_PRF(FN, A, B, C, PA, PB, PC) { \
+#define LIBXSMM_MMCALL_ABC(FN, A, B, C) FN(LIBXSMM_LD(A, B), LIBXSMM_LD(B, A), C)
+#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(LIBXSMM_LD(PA, PB))); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(LIBXSMM_LD(PB, PA))); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
@@ -251,13 +251,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
     int libxsmm_xgemm_fallback_ = 0; \
     if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH) { \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_xgemm_function_ = \
-        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, dispatch))((int)(M), (int)(N), (int)(K), \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction)) libxsmm_xgemm_function_ = \
+        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))((int)(M), (int)(N), (int)(K), \
           &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, 0); \
       if (0 != libxsmm_xgemm_function_) { \
-        LIBXSMM_CALL_ABC(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
+        LIBXSMM_MMCALL_ABC(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
@@ -265,13 +265,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     } \
     else { \
       const int libxsmm_xgemm_prefetch_ = (LIBXSMM_PREFETCH); \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, function)) libxsmm_xgemm_function_ = \
-        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, dispatch))((int)(M), (int)(N), (int)(K), \
+      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction)) libxsmm_xgemm_function_ = \
+        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))((int)(M), (int)(N), (int)(K), \
           &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
       if (0 != libxsmm_xgemm_function_) { \
-        LIBXSMM_CALL_PRF(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
+        LIBXSMM_MMCALL_PRF(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
           ((const REAL*)(A)) + libxsmm_xgemm_lda_ * (K), ((const REAL*)(B)) + libxsmm_xgemm_ldb_ * (N), \
           ((const REAL*)(C)) + libxsmm_xgemm_ldc_ * (N)); \
       } \

@@ -270,7 +270,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
-void libxsmm_function_signature( libxsmm_generated_code*         io_generated_code,
+void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 

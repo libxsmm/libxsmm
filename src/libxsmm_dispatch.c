@@ -59,15 +59,15 @@
 #define LIBXSMM_DISPATCH_HASH_SEED 0
 
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
-  libxsmm_sfunction smm;
-  libxsmm_dfunction dmm;
+typedef union LIBXSMM_RETARGETABLE libxsmm_mmdispatch_entry {
+  libxsmm_smmfunction smm;
+  libxsmm_dmmfunction dmm;
   const void* pv;
-} libxsmm_dispatch_entry;
-LIBXSMM_RETARGETABLE volatile libxsmm_dispatch_entry *volatile libxsmm_dispatch_cache = 0;
+} libxsmm_mmdispatch_entry;
+LIBXSMM_RETARGETABLE volatile libxsmm_mmdispatch_entry *volatile libxsmm_mmdispatch_cache = 0;
 
 #if !defined(_OPENMP)
-LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
+LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_mmdispatch_lock[] = {
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -81,9 +81,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 {
 #if !defined(_OPENMP)
   /* acquire one of the locks as the master lock */
-  LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+  LIBXSMM_LOCK_ACQUIRE(libxsmm_mmdispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
 #else
-# pragma omp critical(libxsmm_dispatch_lock)
+# pragma omp critical(libxsmm_mmdispatch_lock)
 #endif
   {
     const volatile void* cache;
@@ -91,14 +91,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 # if (201107 <= _OPENMP)
 #   pragma omp atomic read
 # else
-#   pragma omp flush(libxsmm_dispatch_cache)
+#   pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-    cache = libxsmm_dispatch_cache;
+    cache = libxsmm_mmdispatch_cache;
 
     if (0 == cache) {
-      libxsmm_dispatch_entry *const buffer = (libxsmm_dispatch_entry*)malloc(
-        LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_dispatch_entry));
+      libxsmm_mmdispatch_entry *const buffer = (libxsmm_mmdispatch_entry*)malloc(
+        LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_mmdispatch_entry));
       assert(buffer);
       if (buffer) {
         int i;
@@ -109,25 +109,25 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
         }
 #if !defined(_OPENMP)
         { /* acquire and release remaining locks to shortcut any lazy initialization later on */
-          const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
+          const int nlocks = sizeof(libxsmm_mmdispatch_lock) / sizeof(*libxsmm_mmdispatch_lock);
           for (i = 1; i < nlocks; ++i) {
-            LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
-            LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
+            LIBXSMM_LOCK_ACQUIRE(libxsmm_mmdispatch_lock[i]);
+            LIBXSMM_LOCK_RELEASE(libxsmm_mmdispatch_lock[i]);
           }
         }
 #elif (201107 <= _OPENMP)
 #       pragma omp atomic write
 #endif
-        libxsmm_dispatch_cache = buffer;
+        libxsmm_mmdispatch_cache = buffer;
 #if defined(_OPENMP) && (201107 > _OPENMP)
-#       pragma omp flush(libxsmm_dispatch_cache)
+#       pragma omp flush(libxsmm_mmdispatch_cache)
 #endif
       }
     }
   }
 #if !defined(_OPENMP)
   /* release the master lock */
-  LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+  LIBXSMM_LOCK_RELEASE(libxsmm_mmdispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
 #endif
 }
 
@@ -139,10 +139,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
 # else
-# pragma omp flush(libxsmm_dispatch_cache)
+# pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-  cache = libxsmm_dispatch_cache;
+  cache = libxsmm_mmdispatch_cache;
 
   if (0 == cache) {
     internal_init();
@@ -152,47 +152,47 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  volatile libxsmm_dispatch_entry* cache = 0;
+  volatile libxsmm_mmdispatch_entry* cache = 0;
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
 # else
-# pragma omp flush(libxsmm_dispatch_cache)
+# pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-  cache = libxsmm_dispatch_cache;
+  cache = libxsmm_mmdispatch_cache;
 
   if (0 != cache) {
 #if !defined(_OPENMP)
     /* acquire one of the locks as the master lock */
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+    LIBXSMM_LOCK_ACQUIRE(libxsmm_mmdispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
 #else
-#   pragma omp critical(libxsmm_dispatch_lock)
+#   pragma omp critical(libxsmm_mmdispatch_lock)
 #endif
     {
 #if defined(_OPENMP)
 # if (201107 <= _OPENMP)
 #     pragma omp atomic read
 # else
-#     pragma omp flush(libxsmm_dispatch_cache)
+#     pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-      cache = libxsmm_dispatch_cache;
+      cache = libxsmm_mmdispatch_cache;
 
       if (0 != cache) {
 #if defined(_OPENMP) && (201107 <= _OPENMP)
 #       pragma omp atomic write
 #endif
-        libxsmm_dispatch_cache = 0;
+        libxsmm_mmdispatch_cache = 0;
 #if defined(_OPENMP) && (201107 > _OPENMP)
-#       pragma omp flush(libxsmm_dispatch_cache)
+#       pragma omp flush(libxsmm_mmdispatch_cache)
 #endif
         free((void*)cache);
       }
     }
 #if !defined(_OPENMP)
     /* release the master lock */
-    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+    LIBXSMM_LOCK_RELEASE(libxsmm_mmdispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
 #endif
   }
 }
@@ -239,10 +239,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_mmdispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_dispatch_entry result;
-  volatile libxsmm_dispatch_entry* cache;
+  libxsmm_mmdispatch_entry result;
+  volatile libxsmm_mmdispatch_entry* cache;
   unsigned int hash, indx;
   assert(0 != desc);
 
@@ -250,10 +250,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
 # else
-# pragma omp flush(libxsmm_dispatch_cache)
+# pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-  cache = libxsmm_dispatch_cache;
+  cache = libxsmm_mmdispatch_cache;
 
   /* lazy initialization */
   if (0 == cache) {
@@ -262,10 +262,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 # if (201107 <= _OPENMP)
 # pragma omp atomic read
 # else
-# pragma omp flush(libxsmm_dispatch_cache)
+# pragma omp flush(libxsmm_mmdispatch_cache)
 # endif
 #endif
-    cache = libxsmm_dispatch_cache;
+    cache = libxsmm_mmdispatch_cache;
   }
 
   /* check if the requested xGEMM is already JITted */
@@ -278,10 +278,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   if (0 == result.pv) {
 # if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)
-    const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
+    const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_mmdispatch_lock) / sizeof(*libxsmm_mmdispatch_lock));
+    LIBXSMM_LOCK_ACQUIRE(libxsmm_mmdispatch_lock[lock]);
 # else
-#   pragma omp critical(libxsmm_dispatch_lock)
+#   pragma omp critical(libxsmm_mmdispatch_lock)
 # endif
     {
       result = cache[indx];
@@ -399,7 +399,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
     }
 
 # if !defined(_OPENMP)
-    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
+    LIBXSMM_LOCK_RELEASE(libxsmm_mmdispatch_lock[lock]);
 # endif
 # else
 #   error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
@@ -411,7 +411,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
@@ -436,7 +436,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_sfunction libxsmm_sdispatch(int m,
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dfunction libxsmm_ddispatch(int m, int n, int k,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
