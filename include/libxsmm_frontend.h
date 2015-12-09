@@ -59,22 +59,22 @@
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
 #endif
 #if defined(LIBXSMM_PREFETCH_A)
-# define LIBXSMM_NOPREFETCH_A(EXPR) 0
+# define LIBXSMM_NOPREFETCH_A(EXPR) NULL
 #else
 # define LIBXSMM_NOPREFETCH_A(EXPR) (EXPR)
-# define LIBXSMM_PREFETCH_A(EXPR) 0
+# define LIBXSMM_PREFETCH_A(EXPR) NULL
 #endif
 #if defined(LIBXSMM_PREFETCH_B)
-# define LIBXSMM_NOPREFETCH_B(EXPR) 0
+# define LIBXSMM_NOPREFETCH_B(EXPR) NULL
 #else
 # define LIBXSMM_NOPREFETCH_B(EXPR) (EXPR)
-# define LIBXSMM_PREFETCH_B(EXPR) 0
+# define LIBXSMM_PREFETCH_B(EXPR) NULL
 #endif
 #if defined(LIBXSMM_PREFETCH_C)
-# define LIBXSMM_NOPREFETCH_C(EXPR) 0
+# define LIBXSMM_NOPREFETCH_C(EXPR) NULL
 #else
 # define LIBXSMM_NOPREFETCH_C(EXPR) (EXPR)
-# define LIBXSMM_PREFETCH_C(EXPR) 0
+# define LIBXSMM_PREFETCH_C(EXPR) NULL
 #endif
 
 /** Helper macro for GEMM function names (and similar functions). */
