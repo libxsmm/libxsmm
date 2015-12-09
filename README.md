@@ -137,9 +137,10 @@ Assuming the library is already built, one can install LIBXSMM into a certain lo
 
 ```
 make install PREFIX=/path/to/libxsmm-install
+make clean
 ```
 
-The `make install` is already a shortcut for `make; make clean` (no extra `make clean` needed).
+Performing `make install-all` is also installing the documentation under `PREFIX/share/libxsmm`.
 
 ## Performance
 ### Tuning

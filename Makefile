@@ -162,9 +162,6 @@ endif
 .PHONY: all
 all: lib_all samples
 
-.PHONY: install
-install: all clean
-
 .PHONY: header
 header: cheader fheader
 
@@ -734,4 +731,23 @@ endif
 	@rm -f $(INCDIR)/libxsmm.f
 	@rm -f $(INCDIR)/libxsmm.h
 
-install: all clean
+.PHONY: install
+install: lib_all
+ifneq ($(abspath $(PREFIX)),$(abspath .))
+	@mkdir -p $(PREFIX)
+	cp -r $(OUTDIR) $(PREFIX)
+	cp -r $(BINDIR) $(PREFIX)
+	@mkdir -p $(PREFIX)/$(INCDIR)
+	cp $(INCDIR)/libxsmm*.h $(PREFIX)/$(INCDIR)
+	cp $(INCDIR)/libxsmm.f $(PREFIX)/$(INCDIR)
+	cp $(INCDIR)/*.mod* $(PREFIX)/$(INCDIR)
+endif
+
+.PHONY: install-all
+install-all: install
+	@mkdir -p $(PREFIX)/share/libxsmm
+	cp $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/share/libxsmm
+	cp $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/share/libxsmm
+	cp $(ROOTDIR)/version.txt $(PREFIX)/share/libxsmm
+	cp $(ROOTDIR)/README.md $(PREFIX)/share/libxsmm
+	cp $(ROOTDIR)/LICENSE $(PREFIX)/share/libxsmm
