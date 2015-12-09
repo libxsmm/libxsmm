@@ -54,6 +54,11 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_DISPATCH_STDATOMIC) && defined(__GNUC__) && \
+  (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# define LIBXSMM_DISPATCH_STDATOMIC
+#endif
+
 /* rely on a "pseudo prime" number (Mersenne) to improve cache spread */
 #define LIBXSMM_DISPATCH_CACHESIZE ((2 << LIBXSMM_NBITS(LIBXSMM_MAX_MNK * (0 != LIBXSMM_JIT ? 2 : 5))) - 1)
 #define LIBXSMM_DISPATCH_HASH_SEED 0
@@ -94,7 +99,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #   pragma omp flush(libxsmm_dispatch_cache)
 # endif
     cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
     __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
     cache = libxsmm_dispatch_cache;
@@ -119,7 +124,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
             LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
           }
         }
-# if defined(__GNUC__)
+# if defined(LIBXSMM_DISPATCH_STDATOMIC)
         __atomic_store(&libxsmm_dispatch_cache, (libxsmm_dispatch_entry**)&buffer, __ATOMIC_RELAXED);
 # else
         libxsmm_dispatch_cache = buffer;
@@ -153,7 +158,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 # pragma omp flush(libxsmm_dispatch_cache)
 # endif
   cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
   __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
   cache = libxsmm_dispatch_cache;
@@ -175,7 +180,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 # pragma omp flush(libxsmm_dispatch_cache)
 # endif
   cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
   __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
   cache = libxsmm_dispatch_cache;
@@ -196,7 +201,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #     pragma omp flush(libxsmm_dispatch_cache)
 # endif
       cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
       __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
       cache = libxsmm_dispatch_cache;
@@ -211,7 +216,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 # if (201107 > _OPENMP)
 #       pragma omp flush(libxsmm_dispatch_cache)
 # endif
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
         /*const*/libxsmm_dispatch_entry* /*const*/zero = 0;
         __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_RELAXED);
 #else
@@ -282,7 +287,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 # pragma omp flush(libxsmm_dispatch_cache)
 # endif
   cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
   __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
   cache = libxsmm_dispatch_cache;
@@ -298,7 +303,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp flush(libxsmm_dispatch_cache)
 # endif
     cache = libxsmm_dispatch_cache;
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_DISPATCH_STDATOMIC)
     __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
 #else
     cache = libxsmm_dispatch_cache;
