@@ -270,9 +270,9 @@ PROGRAM stpm
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (specialized)"
-  CALL libxsmm_mmdispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
-  CALL libxsmm_mmdispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
-  CALL libxsmm_mmdispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
+  CALL libxsmm_dispatch(xmm1, m, n*k, m, alpha=alpha, beta=beta)
+  CALL libxsmm_dispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
+  CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
     !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, g1, g2, g3, b, c, m, n, k, xmm1, xmm2, xmm3, h1, h2, reps)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
