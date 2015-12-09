@@ -296,22 +296,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
   indx = hash % LIBXSMM_DISPATCH_CACHESIZE;
-#if 0
   cache += indx;
 
   /* read cached code (TODO: handle collision) */
 #if !defined(_OPENMP) || (201107 > _OPENMP)
 # if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(&result, cache, __ATOMIC_RELAXED);
+  __atomic_load(cache, &result, __ATOMIC_RELAXED);
 # else
   result = *cache;
 # endif
 #else
 # pragma omp atomic read
   result = *cache;
-#endif
-#else
-  result = cache[indx];
 #endif
 
 #if (0 != LIBXSMM_JIT)
@@ -324,19 +320,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-#if 0
 #if !defined(_OPENMP) || (201107 > _OPENMP)
 # if defined(LIBXSMM_DISPATCH_STDATOMIC)
-      __atomic_load(&result, cache, __ATOMIC_RELAXED);
+      __atomic_load(cache, &result, __ATOMIC_RELAXED);
 # else
       result = *cache;
 # endif
 #else
 #     pragma omp atomic read
       result = *cache;
-#endif
-#else
-      result = cache[indx];
 #endif
 
       if (0 == result.pv) {
@@ -403,7 +395,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
                 result.pv = l_code;
 
                 /* make function pointer available for dispatch */
-#if 0
 #if !defined(_OPENMP) || (201107 > _OPENMP)
 # if defined(LIBXSMM_DISPATCH_STDATOMIC)
                 __atomic_store(&cache->pv, (const void**)&l_code, __ATOMIC_RELAXED);
@@ -413,9 +404,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #else
 #               pragma omp atomic write
                 cache->pv = l_code;
-#endif
-#else
-                cache[indx].pv = l_code;
 #endif
               }
               else { /* there was an error with mprotect */
