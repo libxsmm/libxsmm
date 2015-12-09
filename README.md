@@ -20,11 +20,11 @@ void libxsmm_finalize();
 To perform the dense matrix-matrix multiplication *C<sub>m&thinsp;x&thinsp;n</sub> = alpha &middot; A<sub>m&thinsp;x&thinsp;k</sub> &middot; B<sub>k&thinsp;x&thinsp;n</sub> + beta &middot; C<sub>m&thinsp;x&thinsp;n</sub>*, the full-blown GEMM/BLAS interface can be treated with "default arguments":
 
 ```C
-/** Calling the automatically dispatched dense matrix multiplication (single/double-precision, C code). */
+/** Call automatically dispatched dense matrix multiplication (single/double-precision, C code). */
 libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
   NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
-/** Calling the automatically dispatched dense matrix multiplication (C++ code). */
+/** Call automatically dispatched dense matrix multiplication (C++ code). */
 libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*required*/,
   NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
@@ -35,9 +35,9 @@ For the C interface (with type prefix 's' or 'd'), all arguments and in particul
 The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed). For convenience, a similar BLAS-based dense matrix multiplication (libxsmm_blas_gemm instead of libxsmm_gemm) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions perform argument twiddling to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
 
 ```Fortran
-! Calling the automatically dispatched dense matrix multiplication (single/double-precision).
+! Call automatically dispatched dense matrix multiplication (single/double-precision).
 CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
-! Calling the automatically dispatched dense matrix multiplication (generic interface).
+! Call automatically dispatched dense matrix multiplication (generic interface).
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
@@ -59,21 +59,18 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_mmfunction<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mmdispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_mmdispatch) the given LIBXSMM_?FUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?FUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
-To generate the interface inside of the 'include' directory and to build the library, run one of the following commands (by default OFFLOAD=1 implies MIC=1):
+To generate the interface inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated), simply run the following command:
 
 ```
 make
-make MIC=1
-make OFFLOAD=1
 ```
 
-By default, only the non-coprocessor target is built (OFFLOAD=0 and MIC=0). In general, the subfolders of the 'lib' directory are separating the build targets where the 'mic' folder is containing the native library (MIC=1) targeting the Intel Xeon Phi coprocessor ("KNC"), and the 'intel64' folder is storing either the hybrid archive made of CPU and coprocessor code (OFFLOAD=1), or an archive which is only containing the CPU code. By default, all libraries are built statically (STATIC=1).
+By default, only the non-coprocessor targets are built (OFFLOAD=0 and MIC=0). In general, the subfolders of the 'lib' directory are separating the build targets where the 'mic' folder is containing the native library (MIC=1) targeting the Intel Xeon Phi coprocessor ("KNC"), and the 'intel64' folder is storing either the hybrid archive made of CPU and coprocessor code (OFFLOAD=1), or an archive which is only containing the CPU code. By default, an OFFLOAD=1 implies MIC=1.
 
-To remove intermediate files (`make install` is a shortcut for `make; make clean`) or to remove all generated files and folders (including the interface and the library archives), run one of the following commands:
+To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the following commands:
 
 ```
 make clean
-make install
 make realclean
 ```
 
@@ -83,13 +80,13 @@ The library can be configured to accept row-major or column-major (default) orde
 make ROW_MAJOR=1
 ```
 
-By default, LIBXSMM is not optimized for particular matrix sizes (M, N, and K values). Specializing the library for certain matrix sizes (and therefore optimizing the performance) can be achieved in the following way:
+By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically optimize for particular matrix sizes (M, N, and K values). Statically specializing the library for certain matrix sizes can be achieved in the following way:
 
 ```
 make M="2 4" N="1" K="$(echo $(seq 2 5))"
 ```
 
-The above example is generating the following set of (M,N,K) values:
+The above example is generating the following set of (M,N,K) triplets:
 
 ```
 (2,1,2), (2,1,3), (2,1,4), (2,1,5),
@@ -115,7 +112,7 @@ Each group of the above indexes is combined into all possible triplets generatin
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Testing the generated cases can be accomplished by capturing the console output of the [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) code sample:
+Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend). Testing the generated cases can be accomplished by capturing the console output of the [cp2k](https://github.com/hfp/libxsmm/blob/master/samples/cp2k/cp2k.cpp) code sample:
 
 ```
 make MNK="2 3, 23" test
@@ -126,6 +123,23 @@ The recorded output file can be further evaluated (see also [cp2k-test.sh](https
 ```
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
+
+## Installation
+Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) has been enabled (default), because a statically specialized library is more application-specific as well as system-specific. Remember that statically specialized functions can not be retargeted to a different instruction set extension! However, even a JIT-enabled library (in particular within a heterogeneous system environment) should be built using an applicable baseline code path: SSE=3, AVX=1, AVX=2, or AVX=3. Remember, LIBXSMM is by default built using an "arch-native" approach where the system running the compiler is determining the baseline architecture. There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
+
+```
+cd libxsmm-install
+make -f /path/to/libxsmm/Makefile
+make clean
+```
+
+Assuming the library is already built, one can install LIBXSMM into a certain location:
+
+```
+make install PREFIX=/path/to/libxsmm-install
+```
+
+The `make install` is already a shortcut for `make; make clean` (no extra `make clean` needed).
 
 ## Performance
 ### Tuning

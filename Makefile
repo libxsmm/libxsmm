@@ -109,19 +109,8 @@ else
 	MIC ?= 0
 endif
 
-# PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE
-# IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!
-JIT ?= 0
-ifneq (0,$(JIT))
-$(info =====================================================================)
-$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
-$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
-$(info =====================================================================)
-ifneq (0,$(OFFLOAD))
-$(error OFFLOAD needs to be 0 for JIT support!)
-endif
-endif
+# JIT backend is enabled by default
+JIT ?= 1
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
@@ -260,6 +249,18 @@ $(INCDIR)/libxsmm.h: $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
+ifneq (0,$(JIT))
+	$(info =========================================================================)
+	$(info The JIT BACKEND is still EXPERIMENTAL, and a PREVIEW of a future release.)
+	$(info Currently there is no cleanup; memory is only free'd at program exit!    )
+	$(info =========================================================================)
+ifneq (0,$(OFFLOAD))
+	$(error OFFLOAD cannot be combined with JIT support! Please use JIT=0.)
+endif
+ifneq (0,$(MIC))
+	$(error MIC cannot be combined with JIT support! Please use JIT=0.)
+endif
+endif
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
@@ -417,11 +418,10 @@ else
 	$(AR) -rs $@ $^
 endif
 ifneq (0,$(JIT))
-	$(info =====================================================================)
-	$(info YOU ARE USING AN EXPERIMENTAL VERSION OF LIBXSMM WITH JIT SUPPORT)
-	$(info PLEASE NOTE THIS IS A PREVIEW OF OUR JITTING FEATURE, CURRENTLY THERE)
-	$(info IS NO CLEAN-UP ROUTINE, JITTED MEMORY IS FREED AT PROGRAM EXIT ONLY!)
-	$(info =====================================================================)
+	$(info =========================================================================)
+	$(info The JIT BACKEND is still EXPERIMENTAL, and a PREVIEW of a future release.)
+	$(info Currently there is no cleanup; memory is only free'd at program exit!    )
+	$(info =========================================================================)
 endif
 
 .PHONY: samples
