@@ -281,8 +281,8 @@ compile_generator_lib: $(OBJFILES_GEN_LIB)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.mkdir $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
-build_generator_lib: $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/intel64/libxsmmgen.$(LIBEXT): $(OUTDIR)/intel64/.mkdir $(OBJFILES_GEN_LIB)
+build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.mkdir $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
@@ -295,8 +295,8 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.mkdir $(INCDIR)/libxsmm.h $(ROOTDIR)/Mak
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/libxsmm_generator
-$(BINDIR)/libxsmm_generator: $(BINDIR)/.mkdir $(OBJFILES_GEN_BIN) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR)/intel64 -lxsmmgen -o $@
+$(BINDIR)/libxsmm_generator: $(BINDIR)/.mkdir $(OBJFILES_GEN_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+	$(CC) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS) $(OBJFILES_GEN_BIN) -L$(OUTDIR) -lxsmmgen -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)
@@ -398,8 +398,8 @@ endif
 endif
 
 .PHONY: lib_hst
-lib_hst: $(OUTDIR)/intel64/libxsmm.$(LIBEXT)
-$(OUTDIR)/intel64/libxsmm.$(LIBEXT): $(OUTDIR)/intel64/.mkdir $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+lib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.mkdir $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
@@ -694,10 +694,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
 else
-	@rm -f $(OUTDIR)/intel64/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/intel64/libxsmmgen.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
 ifneq ($(abspath $(BINDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BINDIR)),$(abspath .))
@@ -722,8 +722,10 @@ install-minimal: lib_all
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR)
-	@cp -uv $(OUTDIR)/intel64/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/intel64/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmmgen.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmmgen.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@if [[ -e $(OUTDIR)/mic/libxsmm.so ]] ; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.so $(PREFIX)/$(POUTDIR)/mic ; \
