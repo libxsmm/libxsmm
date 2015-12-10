@@ -58,11 +58,11 @@ else
 endif
 
 ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
+	LIBNAME = $(DEPDIR)/lib/libxsmm
 else ifeq (0,$(OFFLOAD))
 	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
 else
-	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
+	LIBNAME = $(DEPDIR)/lib/libxsmm
 endif
 
 ifneq (,$(wildcard $(LIBNAME).a))
@@ -174,7 +174,7 @@ endif
 	@rm -f $(OUTDIR)/.mkdir
 
 install: all clean
-	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/libxsmm.so $(OUTDIR) 2> /dev/null || true
 ifeq (0,$(OFFLOAD))
 ifneq (0,$(MIC))
 	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
