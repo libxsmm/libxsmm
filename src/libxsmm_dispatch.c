@@ -92,14 +92,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #endif
   {
     /*const*/void* cache;
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-    __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
-    cache = libxsmm_dispatch_cache;
-# endif
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+    __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_SEQ_CST);
 #else
-#   pragma omp atomic read
     cache = libxsmm_dispatch_cache;
 #endif
 
@@ -123,14 +118,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
           }
         }
 #endif
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-        __atomic_store(&libxsmm_dispatch_cache, (libxsmm_dispatch_entry**)&buffer, __ATOMIC_RELAXED);
-# else
-        libxsmm_dispatch_cache = buffer;
-# endif
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+        __atomic_store(&libxsmm_dispatch_cache, (libxsmm_dispatch_entry**)&buffer, __ATOMIC_SEQ_CST);
 #else
-#       pragma omp atomic write
         libxsmm_dispatch_cache = buffer;
 #endif
       }
@@ -146,14 +136,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
   /*const*/void* cache;
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
   __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
-  cache = libxsmm_dispatch_cache;
-# endif
 #else
-# pragma omp atomic read
   cache = libxsmm_dispatch_cache;
 #endif
 
@@ -166,14 +151,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
   libxsmm_dispatch_entry* cache = 0;
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
-  cache = libxsmm_dispatch_cache;
-# endif
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+  __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_SEQ_CST);
 #else
-# pragma omp atomic read
   cache = libxsmm_dispatch_cache;
 #endif
 
@@ -185,27 +165,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #   pragma omp critical(libxsmm_dispatch_lock)
 #endif
     {
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-      __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
       cache = libxsmm_dispatch_cache;
-# endif
-#else
-#     pragma omp atomic read
-      cache = libxsmm_dispatch_cache;
-#endif
 
       if (0 != cache) {
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
         /*const*/libxsmm_dispatch_entry* /*const*/zero = 0;
-        __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_RELAXED);
-# else
-        libxsmm_dispatch_cache = 0;
-# endif
+        __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_SEQ_CST);
 #else
-#       pragma omp atomic write
         libxsmm_dispatch_cache = 0;
 #endif
         free((void*)cache);
@@ -266,28 +232,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   unsigned int hash, indx;
   assert(0 != desc);
 
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
   __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
-  cache = libxsmm_dispatch_cache;
-# endif
 #else
-# pragma omp atomic read
   cache = libxsmm_dispatch_cache;
 #endif
 
   /* lazy initialization */
   if (0 == cache) {
     internal_init();
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
     __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
-# else
-    cache = libxsmm_dispatch_cache;
-# endif
 #else
-#   pragma omp atomic read
     cache = libxsmm_dispatch_cache;
 #endif
   }
@@ -299,20 +255,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   cache += indx;
 
   /* read cached code (TODO: handle collision) */
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(cache, &result, __ATOMIC_RELAXED);
-# else
-  result = *cache;
-# endif
+#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+  __atomic_load(cache, &result, __ATOMIC_SEQ_CST);
 #else
-# pragma omp atomic read
   result = *cache;
 #endif
 
 #if (0 != LIBXSMM_JIT)
   if (0 == result.pv) {
-# if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
+#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)
     const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
     LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
@@ -320,16 +271,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-#if !defined(_OPENMP) || (201107 > _OPENMP)
-# if defined(LIBXSMM_DISPATCH_STDATOMIC)
-      __atomic_load(cache, &result, __ATOMIC_RELAXED);
-# else
       result = *cache;
-# endif
-#else
-#     pragma omp atomic read
-      result = *cache;
-#endif
 
       if (0 == result.pv) {
         const char *const archid = internal_supply_archid();
@@ -395,16 +337,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
                 result.pv = l_code;
 
                 /* make function pointer available for dispatch */
-#if !defined(_OPENMP) || (201107 > _OPENMP)
 # if defined(LIBXSMM_DISPATCH_STDATOMIC)
-                __atomic_store(&cache->pv, (const void**)&l_code, __ATOMIC_RELAXED);
+                __atomic_store(&cache->pv, (const void**)&l_code, __ATOMIC_SEQ_CST);
 # else
                 cache->pv = l_code;
 # endif
-#else
-#               pragma omp atomic write
-                cache->pv = l_code;
-#endif
               }
               else { /* there was an error with mprotect */
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
@@ -455,9 +392,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 # if !defined(_OPENMP)
     LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
 # endif
-# else
+#else
 #   error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
-# endif /*_WIN32*/
+#endif /*_WIN32*/
   }
 #endif /*LIBXSMM_JIT*/
 
