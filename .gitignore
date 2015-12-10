@@ -9,6 +9,7 @@ ide/_vs2015-*.bat
 ide/*.amplxeproj
 ide/build
 tmp
+.mkdir
 notes.txt
 err*.txt
 out*.txt

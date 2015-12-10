@@ -13,12 +13,10 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-# Linux cut has features we use that do not work elsewhere
-# Mac, etc. users should install GNU coreutils and use cut from there.
-#
-# For example, if you use Homebrew, run "brew install coreutils" once
-# and then invoke the LIBXSMM make command with
-# CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+# Linux cut has features we use that do not work elsewhere. Mac, etc. users
+# should install GNU coreutils and use "cut" from there.
+# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
+# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
@@ -26,12 +24,6 @@ DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
 INCDIR = $(DEPDIR)/include
 BLDDIR = build
-ifeq (0,$(MIC))
-	LIBDIR = ../../lib/mic
-else
- 	LIBDIR = ../../lib/intel64
-endif
-DEPDIR = ../..
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
@@ -118,95 +110,73 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
-# include common Makefile artifacts
-include $(ROOTDIR)/Makefile.inc
-
 .PHONY: all
-all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(LIBDIR)/libstream_update_kernels.a
+all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(OUTDIR)/libstream_update_kernels.a
 
-$(BLDDIR)/stream_update_kernels-mod90.o: $(SRCDIR)/stream_update_kernels.f $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
-	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+$(BLDDIR)/stream_update_kernels-mod.o: $(SRCDIR)/stream_update_kernels.f $(BLDDIR)/.mkdir $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(OUTDIR)
 
-$(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(OUTDIR)/libstream_update_kernels.a: $(OUTDIR)/.mkdir $(BLDDIR)/stream_update_kernels-c.o
+	$(AR) -rs $@ $(BLDDIR)/stream_update_kernels-c.o
+
+$(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/.mkdir $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/grad: $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
+$(OUTDIR)/grad: $(OUTDIR)/.mkdir $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
 
-$(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/.mkdir $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/rstr: $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
+$(OUTDIR)/rstr: $(OUTDIR)/.mkdir $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
 
-$(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/stream_update_kernels-mod90.o $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/.mkdir $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/axhm: $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(LIBDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(FC) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
+$(OUTDIR)/axhm: $(OUTDIR)/.mkdir $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(FCMTFLAGS) $(ELDFLAGS)
 
-$(LIBDIR)/libstream_update_kernels.a: $(BLDDIR)/stream_update_kernels-c.o
-	@mkdir -p $(dir $@)
-	$(AR) -rs $@ $^
-	@cp stream_update_kernels.f $(DEPDIR)/include/
-
-$(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.mkdir $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(BLDDIR)/.mkdir $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.F90 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.F90 $(BLDDIR)/.mkdir $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(BLDDIR)/.mkdir $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.mkdir $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(BLDDIR)/.mkdir $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(BLDDIR)/.mkdir $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(BLDDIR)/.mkdir $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.mkdir $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.mkdir $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: clean
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR) *.mod
+	@rm -rf $(BLDDIR) *.mod *.modmic
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
+	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
 endif
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
+	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
 endif
 	@rm -f fit.log *.dat
 
@@ -221,9 +191,9 @@ endif
 else
 	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
+	@rm -f $(OUTDIR)/libstream_update_kernels.a
 	@rm -f $(OUTDIR)/libxsmm.so
-	@rm -f $(LIBDIR)/libstream_update_kernels.a
-	@rm -f $(DEPDIR)/include/stream_update_kernels.f
+	@rm -f $(OUTDIR)/.mkdir
 
 install: all clean
 	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
@@ -236,4 +206,7 @@ endif
 	@cp $(ROOTDIR)/grad.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/rstr.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
+
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
 
