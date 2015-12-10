@@ -126,6 +126,7 @@ else # GCC assumed
 	else
 		GCC_VERSION = 0
 	endif
+	OFFLOAD = 0
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
 	CFLAGS += -Wall -Wno-unused-function -Wno-attributes
