@@ -106,15 +106,20 @@ AVX ?= 0
 ILP64 ?= 0
 BLAS ?= 2
 
+# JIT backend is enabled by default
+JIT ?= 1
+
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
 	MIC ?= 1
+	JIT ?= 0
 else
 	MIC ?= 0
 endif
 
-# JIT backend is enabled by default
-JIT ?= 1
+ifneq (0,$(MIC))
+	JIT ?= 0
+endif
 
 ifneq (0,$(STATIC))
 	LIBEXT = a
