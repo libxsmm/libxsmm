@@ -137,7 +137,7 @@ endif
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
-SRCFILES = $(addprefix $(BLDDIR)/,$(patsubst %,mm_%.c,$(INDICES)))
+SRCFILES = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c)
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
@@ -302,9 +302,9 @@ $(BINDIR)/libxsmm_generator: $(BINDIR)/.mkdir $(OBJFILES_GEN_BIN) $(OUTDIR)/inte
 sources: $(SRCFILES)
 $(BLDDIR)/%.c: $(BLDDIR)/.mkdir $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(SRCFILES))
-	$(eval MVALUE := $(shell echo $@ | $(CUT) --output-delimiter=' ' -d_ -f2))
-	$(eval NVALUE := $(shell echo $@ | $(CUT) --output-delimiter=' ' -d_ -f3))
-	$(eval KVALUE := $(shell echo $@ | $(CUT) --output-delimiter=' ' -d_ -f4))
+	$(eval MVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f2))
+	$(eval NVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f3))
+	$(eval KVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f4))
 ifneq (0,$(ROW_MAJOR)) # row-major
 	$(eval MNVALUE := $(NVALUE))
 	$(eval NMVALUE := $(MVALUE))
@@ -375,11 +375,15 @@ ifneq (0,$(MIC))
 compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.mkdir $(INCDIR)/libxsmm.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.mkdir $(INCDIR)/libxsmm.h
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 
 .PHONY: compile_hst
 compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.mkdir $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.mkdir $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
