@@ -80,7 +80,7 @@ The library can be configured to accept row-major or column-major (default) orde
 make ROW_MAJOR=1
 ```
 
-By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically optimize for particular matrix sizes (M, N, and K values). Statically specializing the library for certain matrix sizes can be achieved in the following way:
+By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically specialize for particular matrix sizes (M, N, and K values):
 
 ```
 make M="2 4" N="1" K="$(echo $(seq 2 5))"
@@ -125,7 +125,7 @@ grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
 ## Installation
-Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) has been enabled (default), because a statically specialized library is more application-specific as well as system-specific. Remember that statically specialized functions cannot be retargeted to a different instruction set extension! However, even a JIT-enabled library (in particular within a heterogeneous system environment) should be built using an applicable baseline code path: SSE=3, AVX=1, AVX=2, or AVX=3. Remember, LIBXSMM is by default built using an "arch-native" approach where the system running the compiler is determining the baseline architecture. There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
+Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) has been enabled (default), because a statically specialized library is more application-specific as well as system-specific. Remember that statically specialized functions cannot be retargeted to a different instruction set extension! However, even a JIT-enabled library (in particular within a heterogeneous system environment) should be built using an applicable baseline code path: SSE=1, AVX=1|2|3. Remember, LIBXSMM is by default built using an "arch-native" approach where the system running the compiler is determining the baseline architecture. There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
 
 ```
 cd libxsmm-install
