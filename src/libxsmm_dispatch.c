@@ -29,12 +29,14 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_crc32.h"
-#include <libxsmm_generator.h>
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+/* mute warning about target attribute; KNC/native plus JIT is disabled below! */
+#include <libxsmm_generator.h>
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -261,7 +263,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   result = *cache;
 #endif
 
-#if (0 != LIBXSMM_JIT)
+#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
   if (0 == result.pv) {
 #if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)

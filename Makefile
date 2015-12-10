@@ -252,12 +252,6 @@ ifneq (0,$(JIT))
 	$(info The JIT BACKEND is still EXPERIMENTAL, and a PREVIEW of a future release.)
 	$(info Currently there is no cleanup; memory is only free'd at program exit!    )
 	$(info =========================================================================)
-ifneq (0,$(OFFLOAD))
-	$(error OFFLOAD cannot be combined with JIT support! Please use JIT=0.)
-endif
-ifneq (0,$(MIC))
-	$(error MIC cannot be combined with JIT support! Please use JIT=0.)
-endif
 endif
 
 .PHONY: fheader
