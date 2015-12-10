@@ -377,7 +377,7 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 %/.mkdir:
-	@$(foreach d,$(subst /, ,$(patsubst $(ROOTDIR)/%,%,$*)),mkdir -p $d && cd $d &&):
+	@mkdir -p $(basename $@)
 	@touch $@
 
 .mkdir:
