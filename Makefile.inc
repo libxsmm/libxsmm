@@ -376,10 +376,10 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
-%/.mkdir:
+%/.make:
 	@mkdir -p $(basename $@)
 	@touch $@
 
-.mkdir:
+.make:
 	@touch $@
 
