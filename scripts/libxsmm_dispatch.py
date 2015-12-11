@@ -49,13 +49,13 @@ if __name__ == "__main__":
             print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
             print("  " + mnksig + ", " + ldxsig + ", LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
             print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
-            print("assert(0 == buffer[indx].pv); /*TODO: handle collision*/")
-            print("buffer[indx].smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
+            print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
+            print("buffer[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
             print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
             print("  " + mnksig + ", " + ldxsig + ", LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
             print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
-            print("assert(0 == buffer[indx].pv); /*TODO: handle collision*/")
-            print("buffer[indx].dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
+            print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
+            print("buffer[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
     elif (1 < argc):
         print("/* no static code */")
     else:

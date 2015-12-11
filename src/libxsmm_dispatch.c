@@ -66,10 +66,18 @@
 #define LIBXSMM_DISPATCH_HASH_SEED 0
 
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
+typedef union LIBXSMM_RETARGETABLE libxsmm_dispatch_code {
   libxsmm_smmfunction smm;
   libxsmm_dmmfunction dmm;
-  const void* pv;
+  /*const*/void* xmm;
+} libxsmm_dispatch_code;
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dispatch_entry {
+#if 0 /* TODO: collision handling */
+  libxsmm_gemm_descriptor descriptor;
+#endif
+  libxsmm_dispatch_code code;
+  /* needed to distinct statically generated code and for munmap */
+  unsigned int code_size;
 } libxsmm_dispatch_entry;
 LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* libxsmm_dispatch_cache = 0;
 
@@ -106,7 +114,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
       assert(buffer);
       if (buffer) {
         int i;
-        for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) buffer[i].pv = 0;
+        for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) {
+          buffer[i].code.xmm = 0;
+          buffer[i].code_size = 0;
+        }
         { /* open scope for variable declarations */
           /* setup the dispatch table for the statically generated code */
 #         include <libxsmm_dispatch.h>
@@ -170,12 +181,30 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       cache = libxsmm_dispatch_cache;
 
       if (0 != cache) {
+        int i;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
         /*const*/libxsmm_dispatch_entry* /*const*/zero = 0;
         __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_SEQ_CST);
 #else
         libxsmm_dispatch_cache = 0;
 #endif
+#if defined(_WIN32)
+        /* TODO: to be implemented */
+#else
+        for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) {
+          const unsigned int code_size = cache[i].code_size;
+          void *const code = cache[i].code.xmm;
+          if (0 != code/*allocated*/ && 0 != code_size/*JIT*/) {
+# if defined(NDEBUG)
+            munmap(code, cache[i].code_size);
+# else /* library code is usually expected to be mute */
+            if (0 != munmap(code, code_size)) {
+              fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
+            }
+# endif
+          }
+        }
+#endif /*defined(__GNUC__)*/
         free((void*)cache);
       }
     }
@@ -228,25 +257,26 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_build(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_dispatch_entry result, *cache;
+  libxsmm_dispatch_entry *cache_entry;
+  libxsmm_dispatch_code result;
   unsigned int hash, indx;
   assert(0 != desc);
 
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
+  __atomic_load(&libxsmm_dispatch_cache, &cache_entry, __ATOMIC_RELAXED);
 #else
-  cache = libxsmm_dispatch_cache;
+  cache_entry = libxsmm_dispatch_cache;
 #endif
 
   /* lazy initialization */
-  if (0 == cache) {
+  if (0 == cache_entry) {
     internal_init();
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-    __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
+    __atomic_load(&libxsmm_dispatch_cache, &cache_entry, __ATOMIC_RELAXED);
 #else
-    cache = libxsmm_dispatch_cache;
+    cache_entry = libxsmm_dispatch_cache;
 #endif
   }
 
@@ -254,17 +284,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
   indx = hash % LIBXSMM_DISPATCH_CACHESIZE;
-  cache += indx;
+  cache_entry += indx; /* actual entry */
 
-  /* read cached code (TODO: handle collision) */
+  /* read cached code */
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(cache, &result, __ATOMIC_SEQ_CST);
+  __atomic_load(&cache_entry->code, &result, __ATOMIC_SEQ_CST);
 #else
-  result = *cache;
+  result = cache_entry->code;
 #endif
 
 #if (0 != LIBXSMM_JIT) && !defined(__MIC__)
-  if (0 == result.pv) {
+  if (0 == result.xmm) {
 #if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)
     const unsigned int lock = LIBXSMM_MOD2(indx, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
@@ -273,108 +303,104 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry internal_build(const 
 #   pragma omp critical(libxsmm_dispatch_lock)
 # endif
     {
-      result = *cache;
+      result = cache_entry->code;
 
-      if (0 == result.pv) {
+      if (0 == result.xmm) {
         const char *const archid = internal_supply_archid();
-        libxsmm_generated_code l_generated_code;
-        void* l_code;
+        libxsmm_generated_code generated_code;
+        void* code;
 
         if (0 != archid) {
           /* allocate buffer for code */
-          l_generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
-          l_generated_code.buffer_size = 0 != l_generated_code.generated_code ? 131072 : 0;
-          l_generated_code.code_size = 0;
-          l_generated_code.code_type = 2;
-          l_generated_code.last_error = 0;
+          generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
+          generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+          generated_code.code_size = 0;
+          generated_code.code_type = 2;
+          generated_code.last_error = 0;
 
           /* generate kernel */
-          libxsmm_generator_dense_kernel(&l_generated_code, desc, archid);
+          libxsmm_generator_dense_kernel(&generated_code, desc, archid);
 
           /* handle an eventual error in the else-branch */
-          if (0 == l_generated_code.last_error) {
+          if (0 == generated_code.last_error) {
             /* create executable buffer */
-            const int l_fd = open("/dev/zero", O_RDWR);
+            const int fd = open("/dev/zero", O_RDWR);
             /* must be a superset of what mprotect populates (see below) */
             const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
-            l_code = mmap(0, l_generated_code.code_size, perms, MAP_PRIVATE, l_fd, 0);
-            close(l_fd);
+            code = mmap(0, generated_code.code_size, perms, MAP_PRIVATE, fd, 0);
+            close(fd);
 
-            if (MAP_FAILED != l_code) {
-# if defined(MADV_NOHUGEPAGE)
-#   if !defined(NDEBUG)
-              const int error =
-#   endif
+            if (MAP_FAILED != code) {
               /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
-              madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE);
+# if defined(MADV_NOHUGEPAGE)
+#   if defined(NDEBUG)
+              madvise(code, generated_code.code_size, MADV_NOHUGEPAGE);
+#   else /* library code is usually expected to be mute */
               /* proceed even in case of an error, we then just take what we got (THP) */
-#   if !defined(NDEBUG) /* library code is usually expected to be mute */
-              if (-1 == error) fprintf(stderr, "LIBXSMM: failed to advise page size!\n");
-#   endif
+              if (0 != madvise(code, generated_code.code_size, MADV_NOHUGEPAGE)) {
+                fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
+              }
+#   endif /*defined(NDEBUG)*/
 # endif /*MADV_NOHUGEPAGE*/
               /* copy temporary buffer into the prepared executable buffer */
-              memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
+              memcpy(code, generated_code.generated_code, generated_code.code_size);
 
-              if (-1 != mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
+              if (0/*ok*/ == mprotect(code, generated_code.code_size, PROT_EXEC | PROT_READ)) {
 # if !defined(NDEBUG)
                 /* write buffer for manual decode as binary to a file */
-                char l_objdump_name[512];
-                FILE* l_byte_code;
-                sprintf(l_objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
+                char objdump_name[512];
+                FILE* byte_code;
+                sprintf(objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
                   0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
                   desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
                   0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
                   0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
                   desc->prefetch);
-                l_byte_code = fopen(l_objdump_name, "wb");
-                if (l_byte_code != NULL) {
-                  fwrite(l_generated_code.generated_code, 1, l_generated_code.code_size, l_byte_code);
-                  fclose(l_byte_code);
+                byte_code = fopen(objdump_name, "wb");
+                if (byte_code != NULL) {
+                  fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
+                  fclose(byte_code);
                 }
 # endif /*NDEBUG*/
-                /* free temporary buffer */
-                free(l_generated_code.generated_code);
+                /* free temporary/initial code buffer */
+                free(generated_code.generated_code);
 
-                /* prepare return value */
-                result.pv = l_code;
+                /* prepare result and cache entry (but omit touching code/sync entry!) */
+                /* TODO: cache_entry->descriptor = *desc; */
+                result.xmm = code;
+                cache_entry->code_size = generated_code.code_size;
 
-                /* make function pointer available for dispatch */
+                /* make function pointer available for dispatch (synchronization) */
 # if defined(LIBXSMM_DISPATCH_STDATOMIC)
-                __atomic_store(&cache->pv, (const void**)&l_code, __ATOMIC_SEQ_CST);
+                __atomic_store(&cache_entry->code.xmm, (const void**)&code, __ATOMIC_SEQ_CST);
 # else
-                cache->pv = l_code;
+                cache_entry->code.xmm = code;
 # endif
               }
               else { /* there was an error with mprotect */
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-                int error = errno;
-                switch (error) {
-                  case EINVAL: fprintf(stderr, "LIBXSMM: protecting memory failed (invalid pointer)!\n"); break;
-                  case ENOMEM: fprintf(stderr, "LIBXSMM: protecting memory failed (kernel out of memory)\n"); break;
-                  case EACCES: fprintf(stderr, "LIBXSMM: protecting memory failed (permission denied)!\n"); break;
-                  default: fprintf(stderr, "LIBXSMM: protecting memory failed (unknown error)!\n");
+# if defined(NDEBUG)
+                munmap(code, generated_code.code_size);
+# else /* library code is usually expected to be mute */
+                fprintf(stderr, "LIBXSMM: %s (mprotect)!\n", strerror(errno));
+                if (0 != munmap(code, generated_code.code_size)) {
+                  fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
                 }
-                error =
-# endif /*NDEBUG*/
-                munmap(l_code, l_generated_code.code_size);
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-                if (-1 == error) fprintf(stderr, "LIBXSMM: failed to unmap memory!\n");
 # endif
-                free(l_generated_code.generated_code);
+                free(generated_code.generated_code);
               }
             }
             else {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-              fprintf(stderr, "LIBXSMM: mapping memory failed!\n");
-# endif /*NDEBUG*/
-              free(l_generated_code.generated_code);
+              fprintf(stderr, "LIBXSMM: %s (mmap)!\n", strerror(errno));
+# endif
+              free(generated_code.generated_code);
             }
           }
           else {
 # if !defined(NDEBUG) /* library code is usually expected to be mute */
-            fprintf(stderr, "%s\n", libxsmm_strerror(l_generated_code.last_error));
-# endif /*NDEBUG*/
-            free(l_generated_code.generated_code);
+            fprintf(stderr, "%s\n", libxsmm_strerror(generated_code.last_error));
+# endif
+            free(generated_code.generated_code);
           }
         }
         else {
