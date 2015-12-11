@@ -135,8 +135,8 @@
 #define LIBXSMM_NBITS08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4 + LIBXSMM_NBITS04((N) >> 4)) : LIBXSMM_NBITS04(N))
 #define LIBXSMM_NBITS16(N) (0 != ((N) & 0xFF00) ? (8 + LIBXSMM_NBITS08((N) >> 8)) : LIBXSMM_NBITS08(N))
 #define LIBXSMM_NBITS32(N) (0 != ((N) & 0xFFFF0000) ? (16 + LIBXSMM_NBITS16((N) >> 16)) : LIBXSMM_NBITS16(N))
-#define LIBXSMM_NBITS64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 + LIBXSMM_NBITS32((uint64_t)(N) >> 32)) : LIBXSMM_NBITS32(N))
-#define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64(N) + 1) : 1)
+#define LIBXSMM_NBITS64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 + LIBXSMM_NBITS32((N) >> 32)) : LIBXSMM_NBITS32(N))
+#define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64((uint64_t)(N)) + 1) : 1)
 
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
