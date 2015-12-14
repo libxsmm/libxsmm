@@ -31,8 +31,6 @@
 #ifndef LIBXSMM_TYPEDEFS_H
 #define LIBXSMM_TYPEDEFS_H
 
-#include "libxsmm_macros.h"
-
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {

@@ -31,6 +31,8 @@
 #ifndef LIBXSMM_FRONTEND_H
 #define LIBXSMM_FRONTEND_H
 
+#include "libxsmm_typedefs.h"
+#include "libxsmm_macros.h"
 #include "libxsmm.h"
 #include <assert.h>
 
@@ -42,7 +44,7 @@
 #endif
 
 /** Helper macro for aligning a buffer for aligned loads/store instructions. */
-#if (0 != (LIBXSMM_GEMM_FLAG_ALIGN_A & LIBXSMM_FLAGS) || 0 != (LIBXSMM_GEMM_FLAG_ALIGN_C & LIBXSMM_FLAGS))
+#if (0 != (4/*LIBXSMM_GEMM_FLAG_ALIGN_A*/ & LIBXSMM_FLAGS) || 0 != (8/*LIBXSMM_GEMM_FLAG_ALIGN_C*/ & LIBXSMM_FLAGS))
 # define LIBXSMM_ALIGN_LDST(POINTER) LIBXSMM_ALIGN2(POINTER, LIBXSMM_ALIGNMENT)
 #else
 # define LIBXSMM_ALIGN_LDST(POINTER) (POINTER)

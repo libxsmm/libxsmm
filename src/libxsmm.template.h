@@ -62,7 +62,6 @@
 #define LIBXSMM_BETA $BETA
 #define LIBXSMM_JIT $JIT
 
-#include "libxsmm_typedefs.h"
 #include "libxsmm_frontend.h"
 
 

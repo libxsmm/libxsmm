@@ -330,12 +330,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
   const unsigned *const ia = (const unsigned int*)a, *const ib = (const unsigned int*)b;
-  unsigned int result;
-  int i;
-  assert(0 != a && 0 != b && 0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(int)));
+  unsigned int result, i;
+  assert(0 != a && 0 != b && 0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 
   result = ia[0] ^ ib[0];
-  for (i = 1; i < LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(int)); ++i) {
+  for (i = 1; i < LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)); ++i) {
     result |= (ia[i] ^ ib[i]);
   }
 
@@ -480,7 +479,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 
             if (0 == diff0) {
               /* flag existing entry as collision */
-              const void *const code = (const void*)(cache_entry->code.imm | LIBXSMM_DISPATCH_HASH_COLLISION);
+              /*const*/ void * /*const*/ code = (void*)(cache_entry->code.imm | LIBXSMM_DISPATCH_HASH_COLLISION);
 
               /* find new slot to store the code version */
               const unsigned int index = LIBXSMM_HASH_VALUE(hash) % LIBXSMM_DISPATCH_CACHESIZE;
