@@ -36,7 +36,7 @@ import os
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (2 < argc):
+    if (3 < argc):
         precision = int(sys.argv[1])
         threshold = int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
