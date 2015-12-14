@@ -2,13 +2,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(__MKL)
+# include <mkl.h>
+#endif
+
 #define REAL float
 
 
 int main()
 {
   const libxsmm_blasint m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  REAL a[lda*k], b[ldb*n], c[ldc*n], d[ldc*n];
+  REAL alpha = 1, beta = 1, a[lda*k], b[ldb*n], c[ldc*n], d[ldc*n];
   const char notrans = 'N';
   int i, j;
 
@@ -32,10 +36,15 @@ int main()
   }
 
   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
-    NULL/*alpha*/, a, &lda, b, &ldb, NULL/*beta*/, c, &ldc);
+    &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
+#if defined(__MKL)
+  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL, gemm))(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
+    alpha, a, lda, b, ldb, beta, d, ldc);
+#else
   LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
-    NULL/*alpha*/, a, &lda, b, &ldb, NULL/*beta*/, d, &ldc);
+    &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+#endif
 
   double d2 = 0;
   for (i = 0; i < m; ++i) {
