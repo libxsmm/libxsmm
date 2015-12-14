@@ -33,6 +33,12 @@ ROW_MAJOR ?= 0
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0
 
+# Preferred precision for statically generated code versions
+# 0: SP and DP code versions to be generated
+# 1: SP only
+# 2: DP only
+PRECISION ?= 0
+
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
@@ -324,35 +330,55 @@ ifneq (0,$(MIC))
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
 endif
 ifeq (noarch,$(GENTARGET))
+ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
-	@echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >> $@
-	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_snb_sp" >> $@
-	@echo "#define LIBXSMM_GENTARGET_snb_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_wsm_sp" >> $@
+endif
+ifneq (1,$(PRECISION))
+	@echo "#define LIBXSMM_GENTARGET_knl_dp" >> $@
+	@echo "#define LIBXSMM_GENTARGET_hsw_dp" >> $@
+	@echo "#define LIBXSMM_GENTARGET_snb_dp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_wsm_dp" >> $@
+endif
 	@echo >> $@
 	@echo >> $@
+ifneq (2,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) knl $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) knl $(PREFETCH_SCHEME) DP
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) hsw $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) hsw $(PREFETCH_SCHEME) DP
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) snb $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) snb $(PREFETCH_SCHEME) DP
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) wsm $(PREFETCH_SCHEME) SP
+endif
+ifneq (1,$(PRECISION))
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) knl $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) hsw $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) snb $(PREFETCH_SCHEME) DP
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) wsm $(PREFETCH_SCHEME) DP
+endif
 else
+ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
+endif
+ifneq (1,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_dp" >> $@
+endif
 	@echo >> $@
 	@echo >> $@
+ifneq (2,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) $(GENTARGET) $(PREFETCH_SCHEME) SP
+endif
+ifneq (1,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
+endif
 ifneq (0,$(MIC))
+ifneq (2,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) SP
+endif
+ifneq (1,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) DP
+endif
 endif
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} \
