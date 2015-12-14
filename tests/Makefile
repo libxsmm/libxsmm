@@ -111,10 +111,13 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
 .PHONY: all
-all: $(OUTDIR)/threadsafety
+all: $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
 
 $(OUTDIR)/threadsafety: $(OUTDIR)/.make $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
+
+$(OUTDIR)/rowmajor: $(OUTDIR)/.make $(BLDDIR)/rowmajor-c.o $(LIBNAME).$(LIBEXT)
+	$(LD) -o $@ $(BLDDIR)/rowmajor-c.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
