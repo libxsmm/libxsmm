@@ -190,8 +190,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       if (0 != cache) {
         int i;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-        /*const*/libxsmm_dispatch_entry* /*const*/zero = 0;
-        __atomic_store(&libxsmm_dispatch_cache, &zero, __ATOMIC_SEQ_CST);
+        __atomic_store_n(&libxsmm_dispatch_cache, 0, __ATOMIC_SEQ_CST);
 #else
         libxsmm_dispatch_cache = 0;
 #endif
@@ -468,7 +467,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
             if (0 != result.xmm) { /* synchronize cache entry */
               entry->descriptor = *desc;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-              __atomic_store(&entry->code.xmm, (const void**)&result.xmm, __ATOMIC_SEQ_CST);
+              __atomic_store_n(&entry->code.xmm, result.xmm, __ATOMIC_SEQ_CST);
 #else
               entry->code.xmm = result.xmm;
 #endif
@@ -487,7 +486,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 
               /* fixup existing entry */
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-              __atomic_store(&entry->code.xmm, &code, __ATOMIC_SEQ_CST);
+              __atomic_store_n(&entry->code.xmm, code, __ATOMIC_SEQ_CST);
 #else
               entry->code.xmm = code;
 #endif
