@@ -51,11 +51,15 @@ if __name__ == "__main__":
             print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
             print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
             print("buffer[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
+            print("buffer[indx].code_size = 0; /* statically generated code */")
+            print("buffer[indx].descriptor = desc;")
             print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
             print("  " + mnksig + ", " + ldxsig + ", LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
             print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
             print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
             print("buffer[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
+            print("buffer[indx].code_size = 0; /* statically generated code */")
+            print("buffer[indx].descriptor = desc;")
     elif (1 < argc):
         print("/* no static code */")
     else:
