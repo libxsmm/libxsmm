@@ -2,7 +2,10 @@
 
 if [[ "-cp2k" == "$1" ]] ; then
   shift
-  make -e $* ALIGNED_LOADS=1 ALIGNED_STORES=1 MNK=" \
+  make -e $* \
+  ALIGNED_LOADS=1 ALIGNED_STORES=1 \
+  PRECISION=2 \
+  MNK=" \
     23, \
     6, \
     14 16 29, \
