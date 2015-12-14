@@ -111,7 +111,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
 #endif
   {
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-    __atomic_load(&libxsmm_dispatch_cache, &result, __ATOMIC_SEQ_CST);
+    result = __atomic_load_n(&libxsmm_dispatch_cache, __ATOMIC_SEQ_CST);
 #else
     result = libxsmm_dispatch_cache;
 #endif
@@ -137,7 +137,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
         }
 #endif
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-        __atomic_store(&libxsmm_dispatch_cache, (libxsmm_dispatch_entry**)&buffer, __ATOMIC_SEQ_CST);
+        __atomic_store_n(&libxsmm_dispatch_cache, buffer, __ATOMIC_SEQ_CST);
 #else
         libxsmm_dispatch_cache = buffer;
 #endif
@@ -157,7 +157,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
   /*const*/void* cache;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load((void**)&libxsmm_dispatch_cache, &cache, __ATOMIC_RELAXED);
+  cache = __atomic_load_n(&libxsmm_dispatch_cache, __ATOMIC_RELAXED);
 #else
   cache = libxsmm_dispatch_cache;
 #endif
@@ -172,7 +172,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
   libxsmm_dispatch_entry* cache = 0;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(&libxsmm_dispatch_cache, &cache, __ATOMIC_SEQ_CST);
+  cache = __atomic_load_n(&libxsmm_dispatch_cache, __ATOMIC_SEQ_CST);
 #else
   cache = libxsmm_dispatch_cache;
 #endif
@@ -385,42 +385,42 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_dispatch_entry *cache_entry;
+  libxsmm_dispatch_entry *entry;
   libxsmm_dispatch_code result;
   unsigned int hash, i, diff0 = 0, diff = 0;
   assert(0 != desc);
 
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-  __atomic_load(&libxsmm_dispatch_cache, &cache_entry, __ATOMIC_RELAXED);
+  entry = __atomic_load_n(&libxsmm_dispatch_cache, __ATOMIC_RELAXED);
 #else
-  cache_entry = libxsmm_dispatch_cache;
+  entry = libxsmm_dispatch_cache;
 #endif
 
   /* lazy initialization */
-  if (0 == cache_entry) {
+  if (0 == entry) {
     /* use init's return value to refresh local representation */
-    cache_entry = internal_init();
+    entry = internal_init();
   }
 
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
   i = hash % LIBXSMM_DISPATCH_CACHESIZE;
-  cache_entry += i; /* actual entry */
+  entry += i; /* actual entry */
 
   do {
     /* read cached code */
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-    __atomic_load(&cache_entry->code, &result, __ATOMIC_SEQ_CST);
+    result.xmm = __atomic_load_n(&entry->code.xmm, __ATOMIC_SEQ_CST);
 #else
-    result = cache_entry->code;
+    result = entry->code;
 #endif
 
     if (0 != result.xmm) {
       if (0 == diff0) {
         if (0 == (LIBXSMM_DISPATCH_HASH_COLLISION & result.imm)) { /* check for no collision */
           /* calculate bitwise difference (deep check) */
-          diff = internal_gemmdiff(desc, &cache_entry->descriptor);
+          diff = internal_gemmdiff(desc, &entry->descriptor);
           if (0 != diff) { /* new collision discovered (but no code version yet) */
             /* allow to fixup current entry */
             result.xmm = 0;
@@ -428,12 +428,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
         }
         else { /* collision discovered but code version exists */
           const unsigned int index = LIBXSMM_HASH_VALUE(hash) % LIBXSMM_DISPATCH_CACHESIZE;
-          libxsmm_dispatch_entry *const cache = cache_entry - i; /* recalculate base address */
+          libxsmm_dispatch_entry *const cache = entry - i; /* recalculate base address */
           for (i = (index != i ? index : (index + 1));
-            0 != internal_gemmdiff(desc, &(cache_entry = cache + i % LIBXSMM_DISPATCH_CACHESIZE)->descriptor);
+            0 != internal_gemmdiff(desc, &(entry = cache + i % LIBXSMM_DISPATCH_CACHESIZE)->descriptor);
             ++i);
           /* found exact code version */
-          result = cache_entry->code;
+          result = entry->code;
           /* clear the uppermost bit of the address */
           result.imm &= ~LIBXSMM_DISPATCH_HASH_COLLISION;
         }
@@ -458,19 +458,19 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 # endif
       {
         /* re-read cache entry after acquiring the lock */
-        if (0 == diff) result = cache_entry->code;
+        if (0 == diff) result = entry->code;
 
         if (0 == result.xmm) { /* double-check after acquiring the lock */
           if (0 == diff) {
             /* found a conflict-free cache-slot, and attempt to build the kernel */
-            internal_build(desc, internal_supply_archid(), &result.xmm, &cache_entry->code_size);
+            internal_build(desc, internal_supply_archid(), &result.xmm, &entry->code_size);
 
             if (0 != result.xmm) { /* synchronize cache entry */
-              cache_entry->descriptor = *desc;
+              entry->descriptor = *desc;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-              __atomic_store(&cache_entry->code.xmm, (const void**)&result.xmm, __ATOMIC_SEQ_CST);
+              __atomic_store(&entry->code.xmm, (const void**)&result.xmm, __ATOMIC_SEQ_CST);
 #else
-              cache_entry->code.xmm = result.xmm;
+              entry->code.xmm = result.xmm;
 #endif
             }
           }
@@ -479,7 +479,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 
             if (0 == diff0) {
               /* flag existing entry as collision */
-              /*const*/ void * /*const*/ code = (void*)(cache_entry->code.imm | LIBXSMM_DISPATCH_HASH_COLLISION);
+              /*const*/ void * /*const*/ code = (void*)(entry->code.imm | LIBXSMM_DISPATCH_HASH_COLLISION);
 
               /* find new slot to store the code version */
               const unsigned int index = LIBXSMM_HASH_VALUE(hash) % LIBXSMM_DISPATCH_CACHESIZE;
@@ -487,9 +487,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 
               /* fixup existing entry */
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-              __atomic_store(&cache_entry->code.xmm, &code, __ATOMIC_SEQ_CST);
+              __atomic_store(&entry->code.xmm, &code, __ATOMIC_SEQ_CST);
 #else
-              cache_entry->code.xmm = code;
+              entry->code.xmm = code;
 #endif
               diff0 = diff; /* no more fixup */
             }
@@ -497,8 +497,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
               i = (i + 1) % LIBXSMM_DISPATCH_CACHESIZE;
             }
 
-            cache_entry -= base; /* recalculate base address */
-            cache_entry += i;
+            entry -= base; /* recalculate base address */
+            entry += i;
           }
         }
       }
