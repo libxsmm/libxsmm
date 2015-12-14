@@ -13,12 +13,10 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-# Linux cut has features we use that do not work elsewhere
-# Mac, etc. users should install GNU coreutils and use cut from there.
-#
-# For example, if you use Homebrew, run "brew install coreutils" once
-# and then invoke the LIBXSMM make command with
-# CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+# Linux cut has features we use that do not work elsewhere. Mac, etc. users
+# should install GNU coreutils and use "cut" from there.
+# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
+# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
 ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
@@ -60,11 +58,11 @@ else
 endif
 
 ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
+	LIBNAME = $(DEPDIR)/lib/libxsmm
 else ifeq (0,$(OFFLOAD))
 	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
 else
-	LIBNAME = $(DEPDIR)/lib/intel64/libxsmm
+	LIBNAME = $(DEPDIR)/lib/libxsmm
 endif
 
 ifneq (,$(wildcard $(LIBNAME).a))
@@ -112,66 +110,52 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
-# include common Makefile artifacts
-include $(ROOTDIR)/Makefile.inc
-
 .PHONY: all
 all: $(OUTDIR)/threadsafety
 
-$(OUTDIR)/threadsafety: $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT)
-	@mkdir -p $(dir $@)
-	$(LD) -o $@ $^ $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/threadsafety: $(OUTDIR)/.make $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT)
+	$(LD) -o $@ $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 
-$(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.F90 $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(HEADERS) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(HEADERS) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(MODULES) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@mkdir -p $(dir $@)
+$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: clean
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR) *.mod
+	@rm -rf $(BLDDIR) *.mod *.modmic
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
+	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
 endif
 else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod
+	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
 endif
 	@rm -f fit.log *.dat
 
@@ -187,12 +171,17 @@ else
 	@rm -f $(OUTDIR)/threadsafety
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/.make
 
 install: all clean
-	@cp $(DEPDIR)/lib/intel64/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/libxsmm.so $(OUTDIR) 2> /dev/null || true
 ifeq (0,$(OFFLOAD))
 ifneq (0,$(MIC))
 	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
 endif
 endif
 	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
+
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
+
