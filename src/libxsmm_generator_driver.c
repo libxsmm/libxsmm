@@ -29,6 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_generator.h>
+#include <libxsmm_macros.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
