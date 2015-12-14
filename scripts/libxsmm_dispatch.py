@@ -37,8 +37,9 @@ import os
 if __name__ == "__main__":
     argc = len(sys.argv)
     if (2 < argc):
-        threshold = int(sys.argv[1])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[2:], threshold)
+        precision = int(sys.argv[1])
+        threshold = int(sys.argv[2])
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
 
         print("libxsmm_gemm_descriptor desc;")
         print("unsigned int indx;")
@@ -46,20 +47,26 @@ if __name__ == "__main__":
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
             mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
             ldxsig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), " + kstr + ", LIBXSMM_LD(" + mstr + ", " + nstr + ")"
-            print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
-            print("  " + mnksig + ", " + ldxsig + ", LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
-            print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
-            print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
-            print("buffer[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
-            print("buffer[indx].code_size = 0; /* statically generated code */")
-            print("buffer[indx].descriptor = desc;")
-            print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
-            print("  " + mnksig + ", " + ldxsig + ", LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
-            print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
-            print("assert(0 == buffer[indx].code.xmm); /*TODO: handle collision*/")
-            print("buffer[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
-            print("buffer[indx].code_size = 0; /* statically generated code */")
-            print("buffer[indx].descriptor = desc;")
+            if (2 != precision): # only double-precision
+                print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
+                print("  " + mnksig + ", " + ldxsig + ",")
+                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
+                print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
+                print("if (0 == buffer[indx].code.xmm) { /* no further effort to handle collision */")
+                print("  buffer[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
+                print("  buffer[indx].code_size = 0; /* statically generated code */")
+                print("  buffer[indx].descriptor = desc;")
+                print("}")
+            if (1 != precision): # only single-precision
+                print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
+                print("  " + mnksig + ", " + ldxsig + ",")
+                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
+                print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED) % (LIBXSMM_DISPATCH_CACHESIZE);")
+                print("if (0 == buffer[indx].code.xmm) { /* no further effort to handle collision */")
+                print("  buffer[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
+                print("  buffer[indx].code_size = 0; /* statically generated code */")
+                print("  buffer[indx].descriptor = desc;")
+                print("}")
     elif (1 < argc):
         print("/* no static code */")
     else:

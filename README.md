@@ -184,7 +184,7 @@ In order to minimize the probability of key collisions (code cache), the preferr
 make PRECISION=2
 ```
 
-The default preference is to generate both single-precision and double-precision, and hence to not save any space in the cache (PRECISION=0), whereas PRECISION=1 denotes to generate only single-precision code versions and PRECISION=2 denotes the preference for double precision.
+The default preference is to register both single and double-precision code in the cache, and therefore no space is saved (PRECISION=0), whereas PRECISION=1 is only registering single-precision code, and PRECISION=2 denotes the preference for double-precision. Please note that prototypes and implementations are still generated for both kinds of precisions however one kind of precision may be unreachable by the dispatch mechanism.
 
 ### JIT Backend
 There might be situations in which it is up-front not clear which problem sizes will be needed when running an application. In order to leverage LIBXSMM's high-performance kernels, the library offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated according to the CPUID flags, and therefore does not rely on the code path selected when building the library. As the JIT backend is still experimental, some limitations are in place:
