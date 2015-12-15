@@ -521,17 +521,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
   const int* flags, const int* prefetch)
 {
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags)) | LIBXSMM_GEMM_FLAG_F32PREC;
-  const int ilda = (0 == lda ? m : (0 != *lda ? *lda
-    /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
-  const int ildb = (0 == ldb ? k : *ldb);
-  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : (0 != *ldc ? LIBXSMM_LD(*ldc, n)
-    /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(*alpha), LIBXSMM_ALIGNMENT)));
+  const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
+  const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
+  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
-    LIBXSMM_LD(m, n), LIBXSMM_LD(n, ilda), LIBXSMM_LD(k, ildb),
-    LIBXSMM_LD(ilda, n), LIBXSMM_LD(ildb, k), ildc,
+    LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+    LIBXSMM_LD(ilda, ildb), LIBXSMM_LD(ildb, ilda), ildc,
     0 == alpha ? LIBXSMM_ALPHA : *alpha,
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
@@ -546,17 +542,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   const int* flags, const int* prefetch)
 {
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags));
-  const int ilda = (0 == lda ? m : (0 != *lda ? *lda
-    /* if the value of lda was zero: make lda a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(m, sizeof(*alpha), LIBXSMM_ALIGNMENT)));
-  const int ildb = (0 == ldb ? k : *ldb);
-  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : (0 != *ldc ? LIBXSMM_LD(*ldc, n)
-    /* if the value of ldc was zero: make ldc a multiple of LIBXSMM_ALIGNMENT */
-    : LIBXSMM_ALIGN_VALUE(LIBXSMM_LD(m, n), sizeof(*alpha), LIBXSMM_ALIGNMENT)));
+  const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
+  const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
+  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
-    LIBXSMM_LD(m, n), LIBXSMM_LD(n, ilda), LIBXSMM_LD(k, ildb),
-    LIBXSMM_LD(ilda, n), LIBXSMM_LD(ildb, k), ildc,
+    LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
+    LIBXSMM_LD(ilda, ildb), LIBXSMM_LD(ildb, ilda), ildc,
     0 == alpha ? LIBXSMM_ALPHA : *alpha,
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
