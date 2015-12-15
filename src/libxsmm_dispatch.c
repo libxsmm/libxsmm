@@ -271,103 +271,103 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* desc,
   void** code, unsigned int* code_size)
 {
+#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+  libxsmm_generated_code generated_code;
   assert(0 != desc && 0 != code && 0 != code_size);
   assert(0 != libxsmm_dispatch_archid);
   assert(0 == *code);
 
-#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
-    /* allocate buffer for code */
-    libxsmm_generated_code generated_code;
-    generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
-    generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-    generated_code.code_size = 0;
-    generated_code.code_type = 2;
-    generated_code.last_error = 0;
+  /* allocate temporary buffer which is large enough to cover the generated code */
+  generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
+  generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+  generated_code.code_size = 0;
+  generated_code.code_type = 2;
+  generated_code.last_error = 0;
 
-    /* generate kernel */
-    libxsmm_generator_dense_kernel(&generated_code, desc, libxsmm_dispatch_archid);
+  /* generate kernel */
+  libxsmm_generator_dense_kernel(&generated_code, desc, libxsmm_dispatch_archid);
 
-    /* handle an eventual error in the else-branch */
-    if (0 == generated_code.last_error) {
-      /* create executable buffer */
-      const int fd = open("/dev/zero", O_RDWR);
-      /* must be a superset of what mprotect populates (see below) */
-      const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
-      *code = mmap(0, generated_code.code_size, perms, MAP_PRIVATE, fd, 0);
-      close(fd);
+  /* handle an eventual error in the else-branch */
+  if (0 == generated_code.last_error) {
+    /* create executable buffer */
+    const int fd = open("/dev/zero", O_RDWR);
+    /* must be a superset of what mprotect populates (see below) */
+    const int perms = PROT_READ | PROT_WRITE | PROT_EXEC;
+    *code = mmap(0, generated_code.code_size, perms, MAP_PRIVATE, fd, 0);
+    close(fd);
 
-      if (MAP_FAILED != *code) {
-        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+    if (MAP_FAILED != *code) {
+      /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 #if defined(MADV_NOHUGEPAGE)
 # if defined(NDEBUG)
-        madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE);
+      madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE);
 # else /* library code is usually expected to be mute */
-        /* proceed even in case of an error, we then just take what we got (THP) */
-        if (0 != madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE)) {
-          fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
-        }
+      /* proceed even in case of an error, we then just take what we got (THP) */
+      if (0 != madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE)) {
+        fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
+      }
 # endif /*defined(NDEBUG)*/
 #else
-        LIBXSMM_MESSAGE("====================================================================")
-        LIBXSMM_MESSAGE("Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
-        LIBXSMM_MESSAGE("====================================================================")
+      LIBXSMM_MESSAGE("====================================================================")
+      LIBXSMM_MESSAGE("Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
+      LIBXSMM_MESSAGE("====================================================================")
 #endif /*MADV_NOHUGEPAGE*/
-        /* copy temporary buffer into the prepared executable buffer */
-        memcpy(*code, generated_code.generated_code, generated_code.code_size);
+      /* copy temporary buffer into the prepared executable buffer */
+      memcpy(*code, generated_code.generated_code, generated_code.code_size);
 
-        if (0/*ok*/ == mprotect(*code, generated_code.code_size, PROT_EXEC | PROT_READ)) {
+      if (0/*ok*/ == mprotect(*code, generated_code.code_size, PROT_EXEC | PROT_READ)) {
 #if !defined(NDEBUG)
-          /* write buffer for manual decode as binary to a file */
-          char objdump_name[512];
-          FILE* byte_code;
-          sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin",
-            libxsmm_dispatch_archid /* best available/supported code path */,
-            0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
-            desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
-            desc->alpha, desc->beta, desc->prefetch);
-          byte_code = fopen(objdump_name, "wb");
-          if (byte_code != NULL) {
-            fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
-            fclose(byte_code);
-          }
+        /* write buffer for manual decode as binary to a file */
+        char objdump_name[512];
+        FILE* byte_code;
+        sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin",
+          libxsmm_dispatch_archid /* best available/supported code path */,
+          0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
+          0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
+          0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
+          desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
+          desc->alpha, desc->beta, desc->prefetch);
+        byte_code = fopen(objdump_name, "wb");
+        if (byte_code != NULL) {
+          fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
+          fclose(byte_code);
+        }
 #endif /*NDEBUG*/
-          /* free temporary/initial code buffer */
-          free(generated_code.generated_code);
-          /* finalize code generation */
-          *code_size = generated_code.code_size;
-        }
-        else { /* there was an error with mprotect */
-#if defined(NDEBUG)
-          munmap(*code, generated_code.code_size);
-#else /* library code is usually expected to be mute */
-          fprintf(stderr, "LIBXSMM: %s (mprotect)!\n", strerror(errno));
-          if (0 != munmap(*code, generated_code.code_size)) {
-            fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
-          }
-#endif
-          free(generated_code.generated_code);
-        }
+        /* free temporary/initial code buffer */
+        free(generated_code.generated_code);
+        /* finalize code generation */
+        *code_size = generated_code.code_size;
       }
-      else {
-#if !defined(NDEBUG) /* library code is usually expected to be mute */
-        fprintf(stderr, "LIBXSMM: %s (mmap)!\n", strerror(errno));
+      else { /* there was an error with mprotect */
+#if defined(NDEBUG)
+        munmap(*code, generated_code.code_size);
+#else /* library code is usually expected to be mute */
+        fprintf(stderr, "LIBXSMM: %s (mprotect)!\n", strerror(errno));
+        if (0 != munmap(*code, generated_code.code_size)) {
+          fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
+        }
 #endif
         free(generated_code.generated_code);
       }
     }
     else {
 #if !defined(NDEBUG) /* library code is usually expected to be mute */
-      fprintf(stderr, "%s\n", libxsmm_strerror(generated_code.last_error));
+      fprintf(stderr, "LIBXSMM: %s (mmap)!\n", strerror(errno));
 #endif
       free(generated_code.generated_code);
     }
+  }
+  else {
+#if !defined(NDEBUG) /* library code is usually expected to be mute */
+    fprintf(stderr, "%s\n", libxsmm_strerror(generated_code.last_error));
+#endif
+    free(generated_code.generated_code);
+  }
 #else
-    LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
-    LIBXSMM_MESSAGE("======================================================")
-    LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
-    LIBXSMM_MESSAGE("======================================================")
+  LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
+  LIBXSMM_MESSAGE("======================================================")
+  LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
+  LIBXSMM_MESSAGE("======================================================")
 #endif /*_WIN32*/
 }
 
