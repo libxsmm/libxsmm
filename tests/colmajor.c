@@ -64,7 +64,7 @@ int main()
 
   return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
-  fprintf(stderr, "Please rebuild LIBXSMM with ROW_MAJOR=0");
+  fprintf(stderr, "Please rebuild LIBXSMM with ROW_MAJOR=0\n");
   return EXIT_SUCCESS;
 #endif
 }
