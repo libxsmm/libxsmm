@@ -101,9 +101,7 @@ PROGRAM smm
   tmp(:,:) = 0
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blas_gemm('N', 'N', m, n, k, &
-      LIBXSMM_ALPHA, a(:,:,i), m, b(:,:,i), k, &
-      LIBXSMM_BETA, tmp, m)
+    CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
   END DO
   d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
   ! Deallocate thread-local arrays
