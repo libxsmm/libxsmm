@@ -109,15 +109,15 @@ F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
+XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
 
 .PHONY: all
-all: $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
+all: $(XFILES)
 
-$(OUTDIR)/threadsafety: $(OUTDIR)/.make $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/threadsafety-c.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
+.SUFFIXES:
 
-$(OUTDIR)/rowmajor: $(OUTDIR)/.make $(BLDDIR)/rowmajor-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/rowmajor-c.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/%: $(BLDDIR)/%-c.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
+	$(LD) -o $@ $< $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
@@ -168,10 +168,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
+	@rm -f $(XFILES)
 endif
 else
-	@rm -f $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
+	@rm -f $(XFILES)
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f $(OUTDIR)/.make
