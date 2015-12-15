@@ -13,6 +13,7 @@
 
 int main()
 {
+#if 0 != LIBXSMM_COL_MAJOR
   const libxsmm_blasint m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
   REAL a[k*lda], b[n*ldb], c[n*ldc], d[n*ldc];
   const REAL alpha = 1, beta = 1;
@@ -48,7 +49,7 @@ int main()
   LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #else
-  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &n, &m, &k,
+  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
 
@@ -62,5 +63,9 @@ int main()
   }
 
   return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
+#else
+  fprintf(stderr, "Please rebuild LIBXSMM with ROW_MAJOR=0");
+  return EXIT_SUCCESS;
+#endif
 }
 
