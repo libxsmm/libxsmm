@@ -274,12 +274,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
           /* write buffer for manual decode as binary to a file */
           char objdump_name[512];
           FILE* byte_code;
-          sprintf(objdump_name, "kernel_prec%i_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_ta%c_tb%c_pf%i.bin",
-            0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1,
-            desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc, desc->alpha, desc->beta,
+          sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin", archid,
+            0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
-            desc->prefetch);
+            desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
+            desc->alpha, desc->beta, desc->prefetch);
           byte_code = fopen(objdump_name, "wb");
           if (byte_code != NULL) {
             fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
