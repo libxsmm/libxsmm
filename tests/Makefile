@@ -168,10 +168,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/threadsafety
+	@rm -f $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
 endif
 else
-	@rm -f $(OUTDIR)/threadsafety
+	@rm -f $(OUTDIR)/threadsafety $(OUTDIR)/rowmajor
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f $(OUTDIR)/.make
