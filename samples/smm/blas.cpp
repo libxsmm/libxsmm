@@ -133,8 +133,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
-            LIBXSMM_BETA, c + i * csize, m);
+            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
         }
       }
 
@@ -147,8 +147,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
-            LIBXSMM_BETA, c + i * csize, m);
+            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -171,8 +171,8 @@ int main(int argc, char* argv[])
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
-            LIBXSMM_BETA, tmp, m);
+            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -195,8 +195,8 @@ int main(int argc, char* argv[])
           // do nothing else with tmp; just a benchmark
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a, m, b, k,
-            LIBXSMM_BETA, tmp, m);
+            LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
