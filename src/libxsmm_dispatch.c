@@ -358,31 +358,34 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_supply_archid(void)
   const char* archid = 0;
 
   LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
-  if (7 <= eax) {
+  if (1 <= eax) { /* CPUID */
     LIBXSMM_CPUID(1, eax, ebx, ecx, edx);
 
-    if (0x02000000 == (0x02000000 & ecx)) { /* XGETBV */
+    /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
+    if (0x0C000000 == (0x0C000000 & ecx)) {
       LIBXSMM_XGETBV(0, eax, edx);
 
-      if (0x04000000 == (0x04000000 & ecx)) { /* XSAVE */
-        if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
-          if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
-            /* AVX512F, AVX512PF, AVX512ER, AVX512CD */
-            if (0x1C010000 == (0x1C010000 & ebx)) {
-              archid = "knl";
-            }
-            /* AVX512F, AVX512DQ, AVX512CD, AVX512BW, AVX512VL */
-            else if (0xD0030000 == (0xD0030000 & ebx)) {
-              archid = "skx";
-            }
+      if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
+        if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
+          LIBXSMM_CPUID(7, eax, ebx, ecx, edx);
+
+          /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
+             AVX512ER(0x08000000) */
+          if (0x1C010000 == (0x1C010000 & ebx)) {
+            archid = "knl";
           }
-          else if (0x08000000 == (0x08000000 & ecx)) { /* AVX */
-            if (0x00001000 == (0x00001000 & ecx)) { /* FMA */
-              archid = "hsw";
-            }
-            else {
-              archid = "snb";
-            }
+          /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
+             AVX512BW(0x40000000), AVX512VL(0x80000000) */
+          else if (0xD0030000 == (0xD0030000 & ebx)) {
+            archid = "skx";
+          }
+        }
+        else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
+          if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
+            archid = "hsw";
+          }
+          else {
+            archid = "snb";
           }
         }
       }
