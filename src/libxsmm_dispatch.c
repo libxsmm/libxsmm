@@ -261,6 +261,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
           fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
         }
 # endif /*defined(NDEBUG)*/
+#else
+        LIBXSMM_MESSAGE("====================================================================")
+        LIBXSMM_MESSAGE("Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
+        LIBXSMM_MESSAGE("====================================================================")
 #endif /*MADV_NOHUGEPAGE*/
         /* copy temporary buffer into the prepared executable buffer */
         memcpy(*code, generated_code.generated_code, generated_code.code_size);
