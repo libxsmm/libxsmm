@@ -195,6 +195,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #endif
 #if defined(_WIN32)
         /* TODO: to be implemented */
+        LIBXSMM_UNUSED(i);
 #else
         for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) {
           const unsigned int code_size = cache[i].code_size;
@@ -228,6 +229,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   assert(0 == *code);
 
   if (0 != archid) {
+#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
     /* allocate buffer for code */
     libxsmm_generated_code generated_code;
     generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
@@ -310,6 +312,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #endif
       free(generated_code.generated_code);
     }
+#else
+    LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
+    LIBXSMM_MESSAGE("======================================================")
+    LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
+    LIBXSMM_MESSAGE("======================================================")
+#endif /*_WIN32*/
   }
   else {
 #if !defined(NDEBUG) /* library code is usually expected to be mute */
@@ -413,7 +421,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 #else
     result = entry->code;
 #endif
-
     if (0 != result.xmm) {
       if (0 == diff0) {
         if (0 == (LIBXSMM_DISPATCH_HASH_COLLISION & result.imm)) { /* check for no collision */
@@ -447,7 +454,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 #if (0 != LIBXSMM_JIT) && !defined(__MIC__)
     if (0 == result.xmm) { /* check if code generation or fixup is needed */
       /* attempt to lock the cache entry */
-#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*allow code coverage with Cygwin; fails at runtime!*/)
 # if !defined(_OPENMP)
       const unsigned int lock = LIBXSMM_MOD2(i, sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock));
       LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[lock]);
@@ -503,9 +509,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 # if !defined(_OPENMP)
       LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
 # endif
-#else
-#     error "LIBXSMM ERROR: JITTING IS NOT SUPPORTED ON WINDOWS RIGHT NOW!"
-#endif /*_WIN32*/
     }
 #endif /*LIBXSMM_JIT*/
   }
