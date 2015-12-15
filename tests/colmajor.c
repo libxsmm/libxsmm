@@ -42,14 +42,14 @@ int main()
     &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
 #if defined(__MKL) || defined(USE_CBLAS)
-  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL, gemm))(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
+  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL, gemm))(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k,
     alpha, a, lda, b, ldb, beta, d, ldc);
 #elif defined(USE_LIBXSMM_BLAS)
   LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #else
   LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &n, &m, &k,
-    &alpha, b, &ldb, a, &lda, &beta, d, &ldc);
+    &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
 
   double d2 = 0;
