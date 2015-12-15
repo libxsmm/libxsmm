@@ -117,12 +117,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
 #endif
 
     if (0 == result) {
-      libxsmm_dispatch_entry *const buffer = (libxsmm_dispatch_entry*)malloc(
-        LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_dispatch_entry));
-      assert(buffer);
-      if (buffer) {
+      result = (libxsmm_dispatch_entry*)malloc(LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_dispatch_entry));
+      assert(result);
+      if (result) {
         int i;
-        for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) buffer[i].code.xmm = 0;
+        for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) result[i].code.xmm = 0;
         { /* open scope for variable declarations */
           /* setup the dispatch table for the statically generated code */
 #         include <libxsmm_dispatch.h>
@@ -137,9 +136,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
         }
 #endif
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
-        __atomic_store_n(&libxsmm_dispatch_cache, buffer, __ATOMIC_SEQ_CST);
+        __atomic_store_n(&libxsmm_dispatch_cache, result, __ATOMIC_SEQ_CST);
 #else
-        libxsmm_dispatch_cache = buffer;
+        libxsmm_dispatch_cache = result;
 #endif
       }
     }
