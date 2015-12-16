@@ -415,7 +415,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 {
   libxsmm_dispatch_entry *entry;
   libxsmm_dispatch_code result;
-  unsigned int hash, i, diff0 = 0, diff = 0;
+  unsigned int hash, i, diff = 0;
+#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
+  unsigned int diff0 = 0;
+#endif
   assert(0 != desc);
 
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
