@@ -299,7 +299,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* desc,
   void** code, unsigned int* code_size)
 {
-#if !defined(_WIN32) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+#if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   libxsmm_generated_code generated_code;
   assert(0 != desc && 0 != code && 0 != code_size);
   assert(0 != libxsmm_dispatch_archid);
