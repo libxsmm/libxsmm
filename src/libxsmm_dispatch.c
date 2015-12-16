@@ -130,15 +130,33 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(void)
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
+#if defined(__AVX512F__)
+            assert(!"Failed to detect Intel AVX-512 extensions!");
+#endif
             archid = "hsw";
           }
           else {
+#if defined(__AVX2__)
+            assert(!"Failed to detect Intel AVX2 extensions!");
+#endif
             archid = "snb";
           }
         }
       }
     }
   }
+
+#if !defined(NDEBUG) /* library code is usually expected to be mute */
+  if (0 == archid) {
+# if defined(__SSE3__)
+    fprintf(stderr, "LIBXSMM: SSE3 instruction set extension is not supported for JIT-code generation!\n");
+# elif defined(__MIC__)
+    fprintf(stderr, "LIBXSMM: IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!\n");
+# else
+    fprintf(stderr, "LIBXSMM: no instruction set extension found for JIT-code generation!\n");
+# endif
+  }
+#endif
 
   return archid;
 }
@@ -167,6 +185,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
       if (result) {
         int i;
         for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) result[i].code.xmm = 0;
+        libxsmm_dispatch_archid = internal_archid();
+        /* omit registering SSE code if JIT is enabled and an AVX-based ISA is available
+         * any kind of AVX code is registered even when a higher ISA is found!
+         */
+#if (0 != LIBXSMM_JIT) && !(defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__))
+        if (0 == libxsmm_dispatch_archid)
+#endif
         { /* open scope for variable declarations */
           /* setup the dispatch table for the statically generated code */
 #         include <libxsmm_dispatch.h>
@@ -180,7 +205,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
           }
         }
 #endif
-        libxsmm_dispatch_archid = internal_archid();
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
         __atomic_store_n(&libxsmm_dispatch_cache, result, __ATOMIC_SEQ_CST);
 #else
@@ -511,17 +535,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
       LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
 # endif
     }
-# if !defined(NDEBUG) /* library code is usually expected to be mute */
-    else if (0 == libxsmm_dispatch_archid) {
-#   if defined(__SSE3__)
-      fprintf(stderr, "LIBXSMM: SSE3 instruction set extension is not supported for JIT-code generation!\n");
-#   elif defined(__MIC__)
-      fprintf(stderr, "LIBXSMM: IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!\n");
-#   else
-      fprintf(stderr, "LIBXSMM: no instruction set extension found for JIT-code generation!\n");
-#   endif
-    }
-# endif
 #endif /*LIBXSMM_JIT*/
   }
   while (0 != diff);
