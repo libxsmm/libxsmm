@@ -127,7 +127,9 @@ grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
 ## Installation
-Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) has been enabled (default), because a statically specialized library is more application-specific as well as system-specific. Remember that statically specialized functions cannot be retargeted to a different instruction set extension! However, even a JIT-enabled library (in particular within a heterogeneous system environment) should be built using an applicable baseline code path: SSE=1, AVX=1|2|3. Remember, LIBXSMM is by default built using an "arch-native" approach where the system running the compiler is determining the baseline architecture. There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
+Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) (default) and the static SSE3 code path has been enabled (default is "arch-native" rather than SSE=1, or AVX=1|2|3!), because an only statically specialized library is more application-specific as well as system-specific. Statically specialized functions cannot be retargeted to a different instruction set extension. However, in particular the Intel SSE3 code path receives special treatment when the JIT backend is not disabled: SSE-code is only registered for dispatch if the CPUID is not showing support for any kind of Intel AVX. This way a reasonable compromise is possible when deploying into an unknown or heterogeneous system environment.
+
+There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
 
 ```
 cd libxsmm-install
@@ -135,14 +137,14 @@ make -f /path/to/libxsmm/Makefile
 make clean
 ```
 
-Assuming the library is already built, one can install LIBXSMM into a certain location:
+For example, installing the library into a specific location (including some selection of statically generated Intel SSE3 kernels) looks like:
 
 ```
-make install PREFIX=/path/to/libxsmm-install
+make SSE=1 MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
 make clean
 ```
 
-Performing `make install-minimal` omits to install the documentation under (`PREFIX/share/libxsmm`).
+Performing `make install-minimal` omits the documentation (`PREFIX/share/libxsmm`).
 
 ## Performance
 ### Tuning
@@ -187,13 +189,13 @@ make PRECISION=2
 The default preference is to register both single and double-precision code in the cache, and therefore no space is saved (PRECISION=0), whereas PRECISION=1 is only registering single-precision code, and PRECISION=2 denotes the preference for double-precision. Please note that prototypes and implementations are still generated for both kinds of precisions however one kind of precision may be unreachable by the dispatch mechanism.
 
 ### JIT Backend
-There might be situations in which it is up-front not clear which problem sizes will be needed when running an application. In order to leverage LIBXSMM's high-performance kernels, the library offers an experimental JIT (just-in-time) backend which generates the requested kernels on the fly. This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated according to the CPUID flags, and therefore does not rely on the code path selected when building the library. As the JIT backend is still experimental, some limitations are in place:
+There might be situations in which it is up-front not clear which problem sizes will be needed when running an application. In order to leverage LIBXSMM's high-performance kernels, the library implements a JIT (Just-In-Time) code generation backend which generates the requested kernels on the fly (in-memory). This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated according to the CPUID flags, and therefore does not rely on the code path selected when building the library. In the current implementation, some limitations apply to the JIT backend specifically:
 
-1. There is no support for SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions
-2. LIBXSMM uses Pthread mutexes to guard updates of the JITted code cache (link line with -lpthread is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
+1. In order to stay agnostic to any threading model used, Pthread mutexes are guarding the updates of the JITted code cache (link line with -lpthread is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
+2. There is no support for the Intel SSE3 (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions. However, statically generated SSE3-kernels can be leveraged when building with SSE.
 3. There is no support for the Windows calling convention.
 
-The JIT backend in LIBXSMM can also be disabled (`make JIT=0`).
+The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_JIT=0`). The latter is an environment variable which also allows it to set a code path independent of the CPUID (LIBXSMM_JIT=0|1|snb|hsw|knl|skx). Please note that LIBXSMM_JIT=1 is only supported for symmetry, and this environment setup cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
 One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling libxsmm_?mmdispatch) are not subject to a problem size threshold. In any case, JIT code generation can be used for accompanying statically generated code.
 
