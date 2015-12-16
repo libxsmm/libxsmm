@@ -160,7 +160,6 @@ endif
 else
 	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
 endif
-	@rm -f fit.log *.dat
 
 .PHONY: realclean
 realclean: clean
@@ -174,6 +173,7 @@ else
 	@rm -f $(XFILES)
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
 install: all clean

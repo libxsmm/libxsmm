@@ -183,6 +183,7 @@ else
 	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 endif
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
 install: all clean

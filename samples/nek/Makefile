@@ -193,6 +193,7 @@ else
 endif
 	@rm -f $(OUTDIR)/libstream_update_kernels.a
 	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
 install: all clean
