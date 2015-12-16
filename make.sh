@@ -33,7 +33,7 @@ elif [[ "-ci-cm" == "$1" || "-ci" == "$1" ]] ; then
     23 24 42"
 elif [[ "-ci-rm" == "$1" ]] ; then
   shift
-  make -e $* PEDANTIC=1 ROW_MAJOR=1 MNK=" \
+  make -e $* SSE=3 ROW_MAJOR=1 MNK=" \
     0 8 15, \
     23 24 42"
 elif [[ "-cinek" == "$1" ]] ; then

@@ -19,8 +19,7 @@ script:
     bash samples/cp2k/cp2k-test.sh
 
   - make -e realclean &&
-    bash make.sh -ci-rm JIT=0 -j &&
-    make -e samples &&
+    bash make.sh -ci-rm -j &&
     make -e testf &&
     bash samples/smm/smm-test.sh
 
