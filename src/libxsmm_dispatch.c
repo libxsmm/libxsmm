@@ -451,15 +451,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
     result = entry->code;
 #endif
 
-# if (0 != LIBXSMM_JIT) && !defined(__MIC__)
+#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
     /* entire block is conditional wrt LIBXSMM_JIT; static code currently does not have collisions */
-    if (0 != result.xmm) {
+    if (0 != result.xmm && 0 != libxsmm_dispatch_archid/*check whether JIT is supported (CPUID)*/) {
       if (0 == diff0) {
         if (0 == (LIBXSMM_DISPATCH_HASH_COLLISION & result.imm)) { /* check for no collision */
           /* calculate bitwise difference (deep check) */
           diff = internal_gemmdiff(desc, &entry->descriptor);
           if (0 != diff) { /* new collision discovered (but no code version yet) */
-            /* allow to fixup current entry */
+            /* allow to fixup current entry inside of the guarded/locked region */
             result.xmm = 0;
           }
         }
@@ -514,14 +514,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
 
             if (0 != result.xmm) { /* synchronize cache entry */
               entry->descriptor = *desc;
-#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+# if defined(LIBXSMM_DISPATCH_STDATOMIC)
               __atomic_store_n(&entry->code.xmm, result.xmm, __ATOMIC_SEQ_CST);
-#else
+# else
               entry->code.xmm = result.xmm;
-#endif
+# endif
             }
           }
-          else {
+          else { /* 0 != diff */
             const unsigned int base = i;
 
             if (0 == diff0) {
@@ -534,11 +534,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
               i0 = i; /* keep starting point of free-slot-search in mind */
 
               /* fixup existing entry */
-#if defined(LIBXSMM_DISPATCH_STDATOMIC)
+# if defined(LIBXSMM_DISPATCH_STDATOMIC)
               __atomic_store_n(&entry->code.xmm, code, __ATOMIC_SEQ_CST);
-#else
+# else
               entry->code.xmm = code;
-#endif
+# endif
               diff0 = diff; /* no more fixup */
             }
             else {
