@@ -188,10 +188,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
         { /* omit registering SSE code if JIT is enabled and an AVX-based ISA is available
            * any kind of AVX code is registered even when a higher ISA is found!
            */
-#if (0 != LIBXSMM_JIT) && !(defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__))
+#if (0 != LIBXSMM_JIT)
           const char *const env = getenv("LIBXSMM_JIT");
           libxsmm_dispatch_archid = (0 == env || 0 == *env || '1' == *env) ? internal_archid() : ('0' != *env ? env : 0);
+# if !(defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__))
           if (0 == libxsmm_dispatch_archid)
+# endif
 #endif
           { /* open scope for variable declarations */
             /* setup the dispatch table for the statically generated code */
