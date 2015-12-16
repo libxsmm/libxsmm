@@ -127,9 +127,9 @@ grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
 ## Installation
-Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) (default) and the static SSE3 code path has been enabled (default is "arch-native" rather than SSE=1, or AVX=1|2|3!), because an only statically specialized library is more application-specific as well as system-specific. Statically specialized functions cannot be retargeted to a different instruction set extension. However, in particular the Intel SSE3 code path receives special treatment when the JIT backend is not disabled: SSE-code is only registered for dispatch if the CPUID is not showing support for any kind of Intel AVX. This way a reasonable compromise is possible when deploying into an unknown or heterogeneous system environment.
+Installing LIBXSMM makes the most sense if the [JIT backend](#jit-backend) (enabled by default) and the static SSE3 (default is "arch-native" rather than SSE=1, or AVX=1|2|3!) code path have been enabled, because an only statically specialized library is more application-specific as well as system-specific. Statically specialized functions cannot be retargeted to a different instruction set extension. However, in particular the Intel SSE3 code path receives special treatment when the JIT backend is not disabled: SSE-code is only registered for dispatch if the CPUID is not showing support for any kind of Intel AVX. This way a reasonable compromise is possible when deploying into an unknown or heterogeneous system environment.
 
-There are two main mechanisms to install LIBXSMM: (1) building the library in an out-of-tree fashion, and (2) installing the library into a certain location (both mechanisms can be combined). Building in an out-of-tree fashion looks like:
+There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1) building the library in an out-of-tree fashion, and (2) installing into a certain location. Building in an out-of-tree fashion looks like:
 
 ```
 cd libxsmm-install
