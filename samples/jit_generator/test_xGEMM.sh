@@ -69,13 +69,13 @@ do
       ldc=$m 
       rm -rf xgemm
       if [ "${ARCH}" == 'snb' ]; then
-        icc -O3 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib/intel64 -lxsmmgen -lrt -o xgemm
+        icc -O3 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
         ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       elif [ "${ARCH}" == 'hsw' ]; then
-        icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib/intel64 -lxsmmgen -lrt -o xgemm
+        icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
         ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       elif [ "${ARCH}" == 'knl' ]; then
-        icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib/intel64 -lxsmmgen -lrt -o xgemm
+        icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
         ${SDE} ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       else
         echo "unsupported architecture!"
