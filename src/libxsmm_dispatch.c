@@ -146,7 +146,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(void)
     }
   }
 
-#if !defined(NDEBUG) /* library code is usually expected to be mute */
+#if !defined(NDEBUG)/* library code is usually expected to be mute */ && (0 != LIBXSMM_JIT)
   if (0 == archid) {
 # if defined(__SSE3__)
     fprintf(stderr, "LIBXSMM: SSE3 instruction set extension is not supported for JIT-code generation!\n");
