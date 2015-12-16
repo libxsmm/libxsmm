@@ -461,13 +461,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
             result.xmm = 0;
           }
         }
-        else { /* collision discovered but code version exists */
+        /* collision discovered but code version exists; perform intial deep check */
+        else if (0 != internal_gemmdiff(desc, &entry->descriptor)) {
+          /* continue linearly searching code starting at re-hashed index position */
           const unsigned int index = LIBXSMM_HASH_VALUE(hash) % LIBXSMM_DISPATCH_CACHESIZE;
           libxsmm_dispatch_entry *const cache = entry - i; /* recalculate base address */
           for (i = (index != i ? index : (index + 1));
-            0 != internal_gemmdiff(desc, &(entry = cache + i % LIBXSMM_DISPATCH_CACHESIZE)->descriptor);
+            /* skip any (still invalid) descriptor which corresponds to no code */
+            0 == (entry = cache + i % LIBXSMM_DISPATCH_CACHESIZE)->code.xmm ||
+            0 != internal_gemmdiff(desc, &entry->descriptor);
             ++i);
           /* found exact code version */
+          assert(0 != entry->code.xmm);
           result = entry->code;
           /* clear the uppermost bit of the address */
           result.imm &= ~LIBXSMM_DISPATCH_HASH_COLLISION;
