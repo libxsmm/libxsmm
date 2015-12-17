@@ -440,7 +440,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
   /* check if the requested xGEMM is already JITted */
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_DISPATCH_HASH_SEED);
-  i = hash % LIBXSMM_DISPATCH_CACHESIZE;
+  i = i0 = hash % LIBXSMM_DISPATCH_CACHESIZE;
   entry += i; /* actual entry */
 
   do {
