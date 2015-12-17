@@ -66,9 +66,9 @@
  * can be also much smaller if never requesting many code versions
  */
 #define LIBXSMM_DISPATCH_CACHESIZE_BASE (LIBXSMM_MAX_MNK * 2/*SP+DP*/)
-#define LIBXSMM_DISPATCH_CACHESIZE_FACTOR 2 /* oversize factor of cache size */
+#define LIBXSMM_DISPATCH_CACHESIZE_FACTOR 0.125 /* scale factor for the cache size */
 /* size arranged to be (pseudo-)prime number (Mersenne) in order to improve cache spread */
-#define LIBXSMM_DISPATCH_CACHESIZE ((2 << LIBXSMM_NBITS(LIBXSMM_DISPATCH_CACHESIZE_BASE * LIBXSMM_DISPATCH_CACHESIZE_FACTOR)) - 1)
+#define LIBXSMM_DISPATCH_CACHESIZE LIBXSMM_MAX(1023, (2 << LIBXSMM_NBITS(LIBXSMM_DISPATCH_CACHESIZE_BASE * LIBXSMM_DISPATCH_CACHESIZE_FACTOR)) - 1)
 /* flag fused into the memory address of a code version in case of collision */
 #define LIBXSMM_DISPATCH_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
 #define LIBXSMM_DISPATCH_HASH_SEED 0 /* CRC32 seed */
