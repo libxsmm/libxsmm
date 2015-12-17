@@ -281,17 +281,17 @@ ifeq (0,$(OFFLOAD))
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
 endif
-	$(FC) $(FCFLAGS) $(FCMTFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $@ -o $(BLDDIR)/libxsmm-mod.o $(FMFLAGS) $(dir $@)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $@ -o $(BLDDIR)/libxsmm-mod.o $(FMFLAGS) $(dir $@)
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(OBJFILES_GEN_LIB)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 else
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
@@ -299,11 +299,11 @@ endif
 .PHONY: compile_generator
 compile_generator: $(OBJFILES_GEN_BIN)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/libxsmm_generator
 $(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(OBJFILES_GEN_BIN) -L$(OUTDIR) -lxsmmgen $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS) -o $@
+	$(CC) $(OBJFILES_GEN_BIN) -L$(OUTDIR) -lxsmmgen $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS) -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)
@@ -405,24 +405,24 @@ ifneq (0,$(MIC))
 .PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 
 .PHONY: compile_hst
 compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 else
 	$(AR) -rs $@ $(OBJFILES_MIC)
 endif
@@ -432,7 +432,7 @@ endif
 lib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 else
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 endif
