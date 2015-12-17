@@ -19,6 +19,7 @@ _*.txt
 *.docx
 *.user
 *.tlog
+*.gcno
 *.log
 *.suo
 *.exe

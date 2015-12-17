@@ -11,6 +11,10 @@ compiler:
   - clang
   - gcc
 
+env:
+  global:
+  - EFLAGS="-fprofile-arcs -ftest-coverage" ELDFLAGS="-fprofile-arcs -ftest-coverage"
+
 script:
   - make -e realclean &&
     bash make.sh -ci-cm JIT=0 -j &&
@@ -48,4 +52,10 @@ script:
     bash samples/nek/axhm-perf.sh &&
     bash samples/nek/rstr-perf.sh &&
     bash samples/nek/nek-test.sh
+
+before_install:
+  - pip install --user codecov
+
+after_success:
+  - codecov
 
