@@ -11,12 +11,9 @@ compiler:
   - clang
   - gcc
 
-env:
-  global:
-  - EFLAGS="--coverage" ELDFLAGS="--coverage"
-
 script:
-  - make -e realclean &&
+  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+    make -e realclean &&
     bash make.sh -ci-cm JIT=0 -j &&
     make -e samples &&
     make -e test &&
