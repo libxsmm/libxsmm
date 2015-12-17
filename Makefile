@@ -495,7 +495,7 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
-	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
@@ -522,7 +522,7 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
-	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
@@ -549,7 +549,7 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
-	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
@@ -576,7 +576,7 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
-	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
 	@chmod +x $@
@@ -596,7 +596,9 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w)" >> $@
+	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w)" >> $@
+	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
@@ -608,7 +610,7 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
-	@echo "  NRUN=\$$((NRUN + 1))" >> $@
+	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -637,7 +639,7 @@ $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 	@$(SPLDIR)/smm/smmf-perf.sh $@
 
 .PHONY: test-nek
-test-nek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt $(SPLDIR)/nek/rstr-perf.txt
+test-nek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt
 $(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \

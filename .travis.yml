@@ -32,6 +32,6 @@ script:
 
   - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
     make -e realclean &&
-    bash make.sh -cinek -j test-nek &&
+    bash make.sh -ci-nek -j test-nek &&
     bash samples/nek/nek-test.sh
 
