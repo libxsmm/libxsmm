@@ -26,10 +26,11 @@ ifneq (0,$(INTEL))
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 		FCFLAGS += -free
-		FMFLAGS += -e03
+		FMFLAGS += -std03 -warn all,notruncated_source -diag-disable 7373,10382
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
-		FCFLAGS += -e03 -diag-disable 7373
+		FCFLAGS += -std03 -warn all,notruncated_source -diag-disable 7373,10382
+		FMFLAGS += -fixed
 	else
 		FCFLAGS += -free
 	endif
