@@ -125,7 +125,7 @@ $(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT)
 $(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 
-$(OUTDIR)/smm: $(OUTDIR)/.make $(BLDDIR)/smm-f.o $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/smm: $(OUTDIR)/.make $(BLDDIR)/smm-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/smm-f.o $(MODULES) $(LIBNAME).$(LIBEXT) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
