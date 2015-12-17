@@ -13,7 +13,7 @@ compiler:
 
 env:
   global:
-  - EFLAGS="-fprofile-arcs -ftest-coverage" ELDFLAGS="-fprofile-arcs -ftest-coverage"
+  - EFLAGS="--coverage" ELDFLAGS="--coverage"
 
 script:
   - make -e realclean &&
