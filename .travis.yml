@@ -1,11 +1,19 @@
 language: cpp
 
+sudo: false
+
 addons:
   apt:
     packages:
     - gfortran
     - libblas-dev
     - liblapack-dev
+
+before_install:
+  - pip install --user codecov
+
+after_success:
+  - codecov
 
 compiler:
   - clang
@@ -14,45 +22,16 @@ compiler:
 script:
   - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
     make -e realclean &&
-    bash make.sh -ci-cm JIT=0 -j &&
-    make -e samples &&
-    make -e test &&
+    bash make.sh -ci-cm -j test-cp2k &&
     bash samples/cp2k/cp2k-test.sh
 
-  - make -e realclean &&
-    bash make.sh -ci-rm -j &&
-    make -e testf &&
+  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+    make -e realclean &&
+    bash make.sh -ci-rm -j test-smm &&
     bash samples/smm/smm-test.sh
 
-  - make -e realclean &&
-    make -e PEDANTIC=1 ALIGNED_LOADS=1 ALIGNED_STORES=1 &&
-    rm -f samples/cp2k/cp2k-perf.sh &&
-    bash make.sh -ci drytest &&
-    bash samples/cp2k/cp2k-perf.sh &&
-    bash samples/cp2k/cp2k-test.sh
-
-  - make -e realclean &&
-    make -e PEDANTIC=1 &&
-    rm -f samples/smm/smmf-perf.sh &&
-    bash make.sh -ci drytest JIT=0 &&
-    bash samples/smm/smmf-perf.sh &&
-    bash samples/smm/smm-test.sh
-
-  - make -e realclean &&
-    make -e PEDANTIC=1 BETA=0 &&
-    rm -f samples/nek/grad-perf.sh &&
-    rm -f samples/nek/axhm-perf.sh &&
-    rm -f samples/nek/rstr-perf.sh &&
-    bash make.sh -cinek JIT=0 drytest &&
-    make -e samples &&
-    bash samples/nek/grad-perf.sh &&
-    bash samples/nek/axhm-perf.sh &&
-    bash samples/nek/rstr-perf.sh &&
+  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+    make -e realclean &&
+    bash make.sh -cinek -j test-nek &&
     bash samples/nek/nek-test.sh
-
-before_install:
-  - pip install --user codecov
-
-after_success:
-  - codecov
 

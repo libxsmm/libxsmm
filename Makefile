@@ -614,34 +614,45 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+.PHONY: tests
+tests: test-cp2k test-smm test-nek
+
 .PHONY: test
-test: $(SPLDIR)/cp2k/cp2k-perf.txt
+test: test-cp2k
+
+.PHONY: test-cp2k
+test-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 	@cd $(SPLDIR)/cp2k && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
-.PHONY: testf
-testf: $(SPLDIR)/smm/smmf-perf.txt
+.PHONY: test-smm
+test-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 	@cd $(SPLDIR)/smm && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@
 
-.PHONY: testnek
-testnek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt
+.PHONY: test-nek
+test-nek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt $(SPLDIR)/nek/rstr-perf.txt
 $(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) grad
 	@$(SPLDIR)/nek/grad-perf.sh $@
 $(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO)
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) axhm
 	@$(SPLDIR)/nek/axhm-perf.sh $@
+$(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_all
+	@cd $(SPLDIR)/nek && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) rstr
+	@$(SPLDIR)/nek/rstr-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
