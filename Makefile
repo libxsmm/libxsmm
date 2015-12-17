@@ -473,6 +473,8 @@ cp2k_mic: lib_mic
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/cp2k/.make $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
+
+.PHONY: $(SPLDIR)/cp2k/cp2k-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -500,6 +502,7 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+.PHONY: $(SPLDIR)/smm/smmf-perf.sh
 $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -527,6 +530,7 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+.PHONY: $(SPLDIR)/nek/grad-perf.sh
 $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -554,6 +558,7 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+.PHONY: $(SPLDIR)/nek/axhm-perf.sh
 $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -581,6 +586,7 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
+.PHONY: $(SPLDIR)/nek/rstr-perf.sh
 $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
