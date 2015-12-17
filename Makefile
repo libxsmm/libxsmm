@@ -632,7 +632,7 @@ test: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 	@cd $(SPLDIR)/cp2k && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
@@ -640,7 +640,7 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
 test-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 	@cd $(SPLDIR)/smm && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@
 
@@ -648,17 +648,17 @@ $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
 test-nek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt
 $(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) grad
 	@$(SPLDIR)/nek/grad-perf.sh $@
 $(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) axhm
 	@$(SPLDIR)/nek/axhm-perf.sh $@
 $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_all
 	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) realclean && \
+		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
 		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) rstr
 	@$(SPLDIR)/nek/rstr-perf.sh $@
 

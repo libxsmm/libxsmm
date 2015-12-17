@@ -21,17 +21,17 @@ compiler:
 
 script:
   - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
-    make -e realclean &&
+    make -e clean &&
     bash make.sh -ci-cm -j test-cp2k &&
     bash samples/cp2k/cp2k-test.sh
 
   - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
-    make -e realclean &&
+    make -e clean &&
     bash make.sh -ci-rm -j test-smm &&
     bash samples/smm/smm-test.sh
 
   - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
-    make -e realclean &&
+    make -e clean &&
     bash make.sh -ci-nek -j test-nek &&
     bash samples/nek/nek-test.sh
 

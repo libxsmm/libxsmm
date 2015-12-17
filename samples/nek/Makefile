@@ -169,15 +169,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile 
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR) *.mod *.modmic
-else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
-endif
-else
-	@rm -f $(OBJECTS) $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
-endif
+	@rm -f $(OBJECTS)
 	@rm -f fit.log *.dat
 
 .PHONY: realclean
