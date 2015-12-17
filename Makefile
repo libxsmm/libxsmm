@@ -474,7 +474,6 @@ cp2k_mic: lib_mic
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/cp2k/.make $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
 
-.PHONY: $(SPLDIR)/cp2k/cp2k-perf.sh
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -502,7 +501,6 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-.PHONY: $(SPLDIR)/smm/smmf-perf.sh
 $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -530,7 +528,6 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-.PHONY: $(SPLDIR)/nek/grad-perf.sh
 $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -558,7 +555,6 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-.PHONY: $(SPLDIR)/nek/axhm-perf.sh
 $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -586,7 +582,6 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@chmod +x $@
 
-.PHONY: $(SPLDIR)/nek/rstr-perf.sh
 $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
@@ -726,20 +721,21 @@ documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
 
 .PHONY: clean
 clean:
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR)
-else
-	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm_dispatch.h $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
-endif
-else
-	@rm -f $(OBJECTS) $(BLDDIR)/libxsmm_dispatch.h $(BLDDIR)/*.mod $(BLDDIR)/*.modmic
-endif
-	@rm -rf $(SCRDIR)/__pycache__
+	@rm -f $(OBJECTS) $(SRCFILES) $(BLDDIR)/libxsmm_dispatch.h
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
+	@rm -rf $(SCRDIR)/__pycache__
+	@touch $(SPLDIR)/cp2k/.make
+	@touch $(SPLDIR)/smm/.make
+	@touch $(SPLDIR)/nek/.make
+	@touch $(INCDIR)/.make
 
 .PHONY: realclean
 realclean: clean
+ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
+ifneq ($(abspath $(BLDDIR)),$(abspath .))
+	@rm -rf $(BLDDIR)
+endif
+endif
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
@@ -761,6 +757,8 @@ endif
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(SPLDIR)/smm/smmf-perf.sh
 	@rm -f $(SPLDIR)/nek/grad-perf.sh
+	@rm -f $(SPLDIR)/nek/axhm-perf.sh
+	@rm -f $(SPLDIR)/nek/rstr-perf.sh
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
