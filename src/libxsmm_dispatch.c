@@ -391,7 +391,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #endif
     free(generated_code.generated_code);
   }
-#else
+#elif !defined(__MIC__)
   LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
   LIBXSMM_MESSAGE("======================================================")
   LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
@@ -420,9 +420,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
   libxsmm_dispatch_entry *entry;
   libxsmm_dispatch_code result;
   unsigned int hash, i, diff = 0;
-#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
   unsigned int diff0 = 0, i0;
-#endif
   assert(0 != desc);
 
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
@@ -451,9 +449,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
     result = entry->code;
 #endif
 
-#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
     /* entire block is conditional wrt LIBXSMM_JIT; static code currently does not have collisions */
-    if (0 != result.xmm && 0 != libxsmm_dispatch_archid/*check whether JIT is supported (CPUID)*/) {
+    if (0 != result.xmm) {
       if (0 == diff0) {
         if (0 == (LIBXSMM_DISPATCH_HASH_COLLISION & result.imm)) { /* check for no collision */
           /* calculate bitwise difference (deep check) */
@@ -489,9 +486,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
       else { /* new collision discovered (but no code version yet) */
         result.xmm = 0;
       }
-    }
-    else {
-      diff = 0;
     }
 
     /* check if code generation or fixup is needed, also check whether JIT is supported (CPUID) */
@@ -560,7 +554,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
       LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[lock]);
 # endif
     }
-#endif /*LIBXSMM_JIT*/
+    else {
+      diff = 0;
+    }
   }
   while (0 != diff);
 
