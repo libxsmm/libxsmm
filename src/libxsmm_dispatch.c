@@ -564,7 +564,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_code internal_find_code(con
   }
   while (0 != diff);
 
-  assert(0 == result.xmm || 0 == internal_gemmdiff(desc, &entry->descriptor);
+  assert(0 == result.xmm || 0 == internal_gemmdiff(desc, &entry->descriptor));
   return result;
 }
 
