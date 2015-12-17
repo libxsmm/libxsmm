@@ -396,6 +396,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   LIBXSMM_MESSAGE("======================================================")
   LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
   LIBXSMM_MESSAGE("======================================================")
+#else
+  LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
 #endif /*_WIN32*/
 }
 
