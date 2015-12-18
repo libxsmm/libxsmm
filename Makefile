@@ -260,12 +260,6 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(PRECISION) $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
-ifneq (0,$(JIT))
-	$(info =========================================================================)
-	$(info The JIT BACKEND is still EXPERIMENTAL, and a PREVIEW of a future release.)
-	$(info Currently there is no cleanup; memory is only free'd at program exit!    )
-	$(info =========================================================================)
-endif
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
@@ -435,12 +429,6 @@ ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 else
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
-endif
-ifneq (0,$(JIT))
-	$(info =========================================================================)
-	$(info The JIT BACKEND is still EXPERIMENTAL, and a PREVIEW of a future release.)
-	$(info Currently there is no cleanup; memory is only free'd at program exit!    )
-	$(info =========================================================================)
 endif
 
 .PHONY: samples
