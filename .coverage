@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#
+# This script is supposed to be source'd prior to building the library and samples using GNU GCC.
+# Executing LIBXSMM_COVERAGE (after building/running a case) yields code coverage information.
+#
+
+if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
+  TRAVIS_BUILD_DIR=.
+fi
+
+if [[ "${CXX}" == "g++" ]]; then
+  export EFLAGS="--coverage" ELDFLAGS="--coverage" \
+    LIBXSMM_COVERAGE="find ${TRAVIS_BUILD_DIR} -type f -name '*.gcno' -exec gcov -pb {} +"
+fi
+

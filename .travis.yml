@@ -13,25 +13,28 @@ before_install:
   - pip install --user codecov
 
 after_success:
-  - codecov
+  - bash <(curl -s https://codecov.io/bash)
 
 compiler:
   - clang
   - gcc
 
 script:
-  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+  - source .coverage &&
     make -e clean &&
     bash make.sh -ci-cm -j test-cp2k &&
-    bash samples/cp2k/cp2k-test.sh
+    bash samples/cp2k/cp2k-test.sh &&
+    ${LIBXSMM_COVERAGE}
 
-  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+  - source .coverage &&
     make -e clean &&
     bash make.sh -ci-rm -j test-smm &&
-    bash samples/smm/smm-test.sh
+    bash samples/smm/smm-test.sh &&
+    ${LIBXSMM_COVERAGE}
 
-  - if [ "${CXX}" == "g++" ]; then export EFLAGS="--coverage" ELDFLAGS="--coverage" ; fi &&
+  - source .coverage &&
     make -e clean &&
     bash make.sh -ci-nek -j test-nek &&
-    bash samples/nek/nek-test.sh
+    bash samples/nek/nek-test.sh &&
+    ${LIBXSMM_COVERAGE}
 
