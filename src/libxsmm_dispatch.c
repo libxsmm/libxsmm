@@ -203,6 +203,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
           }
         }
 #endif
+        atexit(libxsmm_finalize);
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
         __atomic_store_n(&libxsmm_dispatch_cache, result, __ATOMIC_SEQ_CST);
 #else
