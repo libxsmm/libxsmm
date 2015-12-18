@@ -13,7 +13,7 @@ before_install:
   - pip install --user codecov
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - source .coverage && ${LIBXSMM_CODECOV}
 
 compiler:
   - clang
@@ -24,17 +24,17 @@ script:
     make -e clean &&
     bash make.sh -ci-cm -j test-cp2k &&
     bash samples/cp2k/cp2k-test.sh &&
-    ${LIBXSMM_COVERAGE}
+    ${LIBXSMM_RUNGCOV}
 
   - source .coverage &&
     make -e clean &&
     bash make.sh -ci-rm -j test-smm &&
     bash samples/smm/smm-test.sh &&
-    ${LIBXSMM_COVERAGE}
+    ${LIBXSMM_RUNGCOV}
 
   - source .coverage &&
     make -e clean &&
     bash make.sh -ci-nek -j test-nek &&
     bash samples/nek/nek-test.sh &&
-    ${LIBXSMM_COVERAGE}
+    ${LIBXSMM_RUNGCOV}
 

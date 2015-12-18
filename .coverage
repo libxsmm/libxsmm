@@ -5,12 +5,16 @@
 # Executing LIBXSMM_COVERAGE (after building/running a case) yields code coverage information.
 #
 
-if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
-  TRAVIS_BUILD_DIR=.
-fi
-
 if [[ "${CXX}" == "g++" ]]; then
+  if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
+    TRAVIS_BUILD_DIR=.
+  fi
   export EFLAGS="--coverage" ELDFLAGS="--coverage" \
-    LIBXSMM_COVERAGE="find ${TRAVIS_BUILD_DIR} -type f -name '*.gcno' -exec gcov -pb {} +"
+    LIBXSMM_RUNGCOV="find ${TRAVIS_BUILD_DIR} -type f -name '*.gcno' -exec gcov -pb {} +" \
+    LIBXSMM_CODECOV="codecov"
+else
+  unset EFLAGS ELDFLAGS
+  export LIBXSMM_RUNGCOV=true
+  export LIBXSMM_CODECOV=true
 fi
 
