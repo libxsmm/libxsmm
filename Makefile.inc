@@ -10,11 +10,20 @@ CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
 FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
 
 # prefer Intel Compiler (if available)
-CXX = $(ICPC)
-FC = $(IFORT)
-CC = $(ICC)
+ifneq (,$(ICPC))
+	CXX = $(ICPC)
+endif
+ifneq (,$(IFORT))
+	FC = $(IFORT)
+endif
+ifneq (,$(ICC))
+	CC = $(ICC)
+endif
 
-INTEL = $(shell echo $$((3==$(words $(filter icc icpc ifort,$(CC) $(CXX) $(FC))))))
+CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+INTEL = $(shell echo $$((3==$(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
 
 ifneq (0,$(INTEL))
 	AR = xiar
