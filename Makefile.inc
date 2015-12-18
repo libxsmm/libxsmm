@@ -23,6 +23,18 @@ endif
 CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+
+CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
+CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
+CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f2)
+CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f3)
+
+ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
+  CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100 + $(CC_VERSION_PATCH)))")
+else
+  CC_VERSION = 0
+endif
+
 INTEL = $(shell echo $$((3==$(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
 
 ifneq (0,$(INTEL))
@@ -127,15 +139,6 @@ else # GCC assumed
 	ifeq (,$(FC_CHECK))
 		FC = $(GFC)
 	endif
-	GCC_VERSION_STRING = $(shell $(CC) --version | grep "gcc (.\+) " | sed "s/gcc (.\+) \([0-9]\+\.[0-9]\+\.[0-9]\+\).*$$/\1/")
-	GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f1)
-	GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f2)
-	GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | $(CUT) -d"." -f3)
-	ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
-		GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
-	else
-		GCC_VERSION = 0
-	endif
 	OFFLOAD = 0
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
@@ -151,13 +154,13 @@ else # GCC assumed
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -ffree-form
 		FMFLAGS += -std=f2003 -pedantic -Wunused-variable
-		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -std=f2003 -pedantic -Wunused-variable
-		ifneq (0,$(shell echo "$$((50000 <= $(GCC_VERSION)))"))
+		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
 	else
@@ -378,9 +381,9 @@ else ifneq (0,$(BLAS)) # generic
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
 		CLDFLAGS += -lgfortran
-		ifeq (,$(GCC_VERSION_STRING))
+		ifeq (,$(CC_VERSION_STRING))
 			LDFLAGS += -lquadmath
-		else ifneq (0,$(shell echo "$$((40500 <= $(GCC_VERSION)))"))
+		else ifneq (0,$(shell echo "$$((40500 <= $(CC_VERSION)))"))
 			CLDFLAGS += -lquadmath
 		endif
 	endif
