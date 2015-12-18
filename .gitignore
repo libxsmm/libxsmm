@@ -21,6 +21,7 @@ _*.txt
 *.tlog
 *.gcno
 *.gcda
+*.gcov
 *.log
 *.suo
 *.exe
