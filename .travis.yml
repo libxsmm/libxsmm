@@ -24,17 +24,20 @@ script:
     make -e clean &&
     bash make.sh -ci-cm -j test-cp2k &&
     bash samples/cp2k/cp2k-test.sh &&
-    ${LIBXSMM_RUNGCOV}
+    echo ${LIBXSMM_RUNGCOV} &&
+    bash ${LIBXSMM_RUNGCOV}
 
   - source .codecov &&
     make -e clean &&
     bash make.sh -ci-rm -j test-smm &&
     bash samples/smm/smm-test.sh &&
-    ${LIBXSMM_RUNGCOV}
+    echo ${LIBXSMM_RUNGCOV} &&
+    bash ${LIBXSMM_RUNGCOV}
 
   - source .codecov &&
     make -e clean &&
     bash make.sh -ci-nek -j test-nek &&
     bash samples/nek/nek-test.sh &&
-    ${LIBXSMM_RUNGCOV}
+    echo ${LIBXSMM_RUNGCOV} &&
+    bash ${LIBXSMM_RUNGCOV}
 
