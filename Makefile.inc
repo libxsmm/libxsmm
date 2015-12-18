@@ -84,10 +84,8 @@ ifneq (0,$(INTEL))
 			else
 				TARGET = -xMIC-AVX512
 			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -xSSE$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -xSSE3
+		else ifneq (0,$(SSE))
+			TARGET = -xSSE4.2
 		else
 			TARGET = -xHost
 		endif
@@ -195,10 +193,8 @@ else # GCC assumed
 			ifneq (0,$(MIC))
 				TARGET += -mavx512er -mavx512pf
 			endif
-		else ifeq (1,$(shell echo $$((2 <= $(SSE)))))
-			TARGET = -msse$(SSE)
-		else ifeq (1,$(SSE))
-			TARGET = -msse3
+		else ifneq (0,$(SSE))
+			TARGET = -msse4.2
 		else
 			TARGET = -march=native
 		endif
