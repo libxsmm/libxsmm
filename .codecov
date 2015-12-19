@@ -13,8 +13,11 @@ if [[ "${CXX}" == "g++" ]]; then
   GCOV=$(which gcov)
   export EFLAGS="--coverage" ELDFLAGS="--coverage"
   export LIBXSMM_RUNGCOV="CWD=\${PWD}; for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno') ; do \
-    cd \$(dirname \${FILE}); \
-    ${GCOV} -pb \$(basename \${FILE}) ; \
+    FILENAME=\$(basename -s.gcno \${FILE}).o; \
+    FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
+    BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
+    cd \${CWD}; cd \${FILEPATH}; \
+    ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
     done; cd \${CWD}"
   export LIBXSMM_CODECOV="codecov"
 else
