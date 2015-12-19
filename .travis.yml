@@ -13,7 +13,9 @@ before_install:
   - pip install --user codecov
 
 after_success:
-  - source .codecov && eval ${LIBXSMM_CODECOV}
+  - source .codecov && 
+    eval ${LIBXSMM_RUNGCOV} &&
+    eval ${LIBXSMM_CODECOV}
 
 compiler:
   - clang
@@ -27,18 +29,15 @@ script:
   - source .codecov &&
     make -e clean &&
     bash make.sh -ci-cm -j test-cp2k &&
-    bash samples/cp2k/cp2k-test.sh &&
-    eval ${LIBXSMM_RUNGCOV}
+    bash samples/cp2k/cp2k-test.sh
 
   - source .codecov &&
     make -e clean &&
     env ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" bash make.sh -ci-rm -j test-smm &&
-    bash samples/smm/smm-test.sh &&
-    eval ${LIBXSMM_RUNGCOV}
+    bash samples/smm/smm-test.sh
 
   - source .codecov &&
     make -e clean &&
     bash make.sh -ci-nek -j test-nek &&
-    bash samples/nek/nek-test.sh &&
-    eval ${LIBXSMM_RUNGCOV}
+    bash samples/nek/nek-test.sh
 
