@@ -42,10 +42,6 @@ PEDANTIC ?= 0
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
 
-# Select certain code path
-SSE ?= 0
-AVX ?= 0
-
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
 BLAS ?= 1

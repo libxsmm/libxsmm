@@ -35,10 +35,24 @@ else
   CC_VERSION = 0
 endif
 
-INTEL = $(shell echo $$((3==$(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
+CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
+
+# Select code path (if not selected otherwise)
+ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
+	AVX ?= 3
+else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
+	AVX ?= 2
+else ifeq (1,$(words $(filter avx,$(CPUFLAGS))))
+	AVX ?= 1
+else ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
+	SSE ?= 1
+endif
+
+# check if the Intel Development Tools are available
+INTEL ?= $(shell echo $$((3==$(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
 
 ifneq (0,$(INTEL))
-	AR = xiar
+	AR ?= xiar
 	CXXFLAGS += -fPIC -Wall -diag-disable 3415
 	CFLAGS += -fPIC -Wall -diag-disable 3415
 	FCFLAGS += -fPIC
