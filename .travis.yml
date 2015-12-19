@@ -32,7 +32,7 @@ script:
 
   - source .codecov &&
     make -e clean &&
-    bash make.sh -ci-rm -j test-smm &&
+    env ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" bash make.sh -ci-rm -j test-smm &&
     bash samples/smm/smm-test.sh &&
     eval ${LIBXSMM_RUNGCOV}
 

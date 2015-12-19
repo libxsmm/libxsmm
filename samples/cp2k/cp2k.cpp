@@ -55,8 +55,10 @@
 # pragma offload_attribute(pop)
 #endif
 
-// aheineck: @TODO This line is broken -> 10% less performance, going back to static buffer size
-//#define CP2K_MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_MAX(LIBXSMM_MAX(LIBXSMM_AVG_M, LIBXSMM_AVG_N), LIBXSMM_AVG_K))
+#if !defined(REAL_TYPE)
+# define REAL_TYPE double
+#endif
+
 #define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
@@ -160,7 +162,7 @@ LIBXSMM_RETARGETABLE double max_diff(const T *LIBXSMM_RESTRICT result, const T *
 int main(int argc, char* argv[])
 {
   try {
-    typedef double T;
+    typedef REAL_TYPE T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
     const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
