@@ -18,8 +18,9 @@ if [[ "${CXX}" == "g++" ]]; then
     BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
     cd \${CWD}; cd \${FILEPATH}; \
     ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
-    done; cd \${CWD}; mkdir codecov${TRAVIS_BUILD_NUMBER} && \
-    ${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcov' -exec mv {} codecov${TRAVIS_BUILD_NUMBER} \;"
+    done; cd \${CWD}; mkdir -p codecov/${TRAVIS_BUILD_NUMBER} && \
+    ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
+      -exec mv {} codecov/${TRAVIS_BUILD_NUMBER} \;"
   export LIBXSMM_CODECOV="codecov"
 else
   unset EFLAGS ELDFLAGS LIBXSMM_RUNGCOV LIBXSMM_CODECOV
