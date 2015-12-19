@@ -8,28 +8,28 @@
 
 /*#define USE_LIBXSMM_BLAS*/
 /*#define USE_CBLAS*/
-#define REAL float
+#define REAL_TYPE float
 
 
 int main()
 {
 #if 0 != LIBXSMM_ROW_MAJOR
   const libxsmm_blasint m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  REAL a[k*lda], b[n*ldb], c[n*ldc], d[n*ldc];
-  const REAL alpha = 1, beta = 1;
+  REAL_TYPE a[k*lda], b[n*ldb], c[n*ldc], d[n*ldc];
+  const REAL_TYPE alpha = 1, beta = 1;
   const char notrans = 'N';
   int i, j;
 
   for (i = 0; i < m; ++i) {
     for (j = 0; j < k; ++j) {
       const int index = i * lda + j;
-      a[index] = ((REAL)1) / (index + 1);
+      a[index] = ((REAL_TYPE)1) / (index + 1);
     }
   }
   for (i = 0; i < k; ++i) {
     for (j = 0; j < n; ++j) {
       const int index = i * ldb + j;
-      b[index] = ((REAL)2) / (index + 1);
+      b[index] = ((REAL_TYPE)2) / (index + 1);
     }
   }
   for (i = 0; i < m; ++i) {
@@ -39,17 +39,17 @@ int main()
     }
   }
 
-  LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
+  LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
 #if defined(__MKL) || defined(USE_CBLAS)
-  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL, gemm))(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
+  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
     alpha, a, lda, b, ldb, beta, d, ldc);
 #elif defined(USE_LIBXSMM_BLAS)
-  LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &m, &n, &k,
+  LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #else
-  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))(&notrans, &notrans, &n, &m, &k,
+  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &n, &m, &k,
     &alpha, b, &ldb, a, &lda, &beta, d, &ldc);
 #endif
 
