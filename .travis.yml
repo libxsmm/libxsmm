@@ -33,7 +33,12 @@ script:
 
   - source .codecov &&
     make -e clean &&
-    env ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" bash make.sh -ci-rm -j test-smm &&
+    env ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" bash make.sh -ci-rm -j test-cp2k &&
+    bash samples/cp2k/cp2k-test.sh
+
+  - source .codecov &&
+    make -e clean &&
+    bash make.sh -ci-cm -j test-smm &&
     bash samples/smm/smm-test.sh
 
   - source .codecov &&
