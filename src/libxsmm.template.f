@@ -469,11 +469,26 @@
           REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pa(*)
           REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pb(*)
           REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pc(*)
+          TYPE(C_PTR) :: cpa, cpb, cpc
           IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
-            CALL libxsmm_smmcall_prx(fn, C_LOC(a), C_LOC(b), C_LOC(c),  &
-     &        MERGE(C_NULL_PTR, C_LOC(pa), .NOT.PRESENT(pa)),           &
-     &        MERGE(C_NULL_PTR, C_LOC(pb), .NOT.PRESENT(pb)),           &
-     &        MERGE(C_NULL_PTR, C_LOC(pc), .NOT.PRESENT(pc)))
+            IF (PRESENT(pa)) THEN
+              cpa = C_LOC(pa)
+            ELSE
+              cpa = C_NULL_PTR
+            END IF
+            IF (PRESENT(pb)) THEN
+              cpb = C_LOC(pb)
+            ELSE
+              cpb = C_NULL_PTR
+            END IF
+            IF (PRESENT(pc)) THEN
+              cpc = C_LOC(pc)
+            ELSE
+              cpc = C_NULL_PTR
+            END IF
+            CALL libxsmm_smmcall_prx(fn,                                &
+     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
+     &        cpa, cpb, cpc)
           ELSE
             CALL libxsmm_smmcall_abx(fn, C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
@@ -487,11 +502,26 @@
           REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pa(*)
           REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pb(*)
           REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pc(*)
+          TYPE(C_PTR) :: cpa, cpb, cpc
           IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
-            CALL libxsmm_dmmcall_prx(fn, C_LOC(a), C_LOC(b), C_LOC(c),  &
-     &        MERGE(C_NULL_PTR, C_LOC(pa), .NOT.PRESENT(pa)),           &
-     &        MERGE(C_NULL_PTR, C_LOC(pb), .NOT.PRESENT(pb)),           &
-     &        MERGE(C_NULL_PTR, C_LOC(pc), .NOT.PRESENT(pc)))
+            IF (PRESENT(pa)) THEN
+              cpa = C_LOC(pa)
+            ELSE
+              cpa = C_NULL_PTR
+            END IF
+            IF (PRESENT(pb)) THEN
+              cpb = C_LOC(pb)
+            ELSE
+              cpb = C_NULL_PTR
+            END IF
+            IF (PRESENT(pc)) THEN
+              cpc = C_LOC(pc)
+            ELSE
+              cpc = C_NULL_PTR
+            END IF
+            CALL libxsmm_dmmcall_prx(fn,                                &
+     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
+     &        cpa, cpb, cpc)
           ELSE
             CALL libxsmm_dmmcall_abx(fn, C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
