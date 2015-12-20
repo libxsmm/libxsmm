@@ -289,19 +289,12 @@ endif
 ifneq (,$(MKLROOT))
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
-	ifneq (0,$(MKL_DIRECT))
-		MKL_STATIC ?= 1
-	else ifneq (0,$(STATIC))
-		MKL_STATIC ?= 1
-	else
-		MKL_STATIC ?= 0
-	endif
+	MKL_STATIC ?= 1
 else
 	MKL = 0
 endif
 
 ifeq (1,$(MKL_DIRECT))
-	MKL_STATIC = 1
 	DFLAGS += -DMKL_DIRECT_CALL_SEQ
 endif
 
