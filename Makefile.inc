@@ -392,6 +392,8 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
+.SUFFIXES:
+
 %/.make:
 	@mkdir -p $(basename $@)
 	@touch $@
