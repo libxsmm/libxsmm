@@ -409,7 +409,7 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
 
 ifneq (0,$(MIC))
 .PHONY: lib_mic
-lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(INCDIR)/libxsmm.f
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
@@ -419,7 +419,7 @@ endif
 endif
 
 .PHONY: lib_hst
-lib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
+lib_hst: $(OUTDIR)/libxsmm.$(LIBEXT) $(INCDIR)/libxsmm.f
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
