@@ -163,6 +163,7 @@ endif
 else
 	@rm -f $(OUTDIR)/$(OUTNAME)
 endif
+	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make

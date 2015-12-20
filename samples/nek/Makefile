@@ -185,6 +185,7 @@ else
 	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
 	@rm -f $(OUTDIR)/libstream_update_kernels.a
+	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.so
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make

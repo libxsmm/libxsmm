@@ -432,32 +432,38 @@ samples: cp2k smm nek
 
 .PHONY: cp2k
 cp2k: lib_hst
-	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && \
+	$(MAKE) -e SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && \
+	$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: smm
 smm: lib_hst
-	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+	@cd $(SPLDIR)/smm && $(MAKE) clean && \
+	$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
+	@cd $(SPLDIR)/smm && $(MAKE) clean && \
+	$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: nek
 nek: lib_hst
-	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+	@cd $(SPLDIR)/nek && $(MAKE) clean && \
+	$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: nek_mic
 nek_mic: lib_mic
-	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
+	@cd $(SPLDIR)/nek && $(MAKE) clean && \
+	$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: drytest
@@ -614,36 +620,31 @@ test: test-cp2k
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
-$(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_all
-	@cd $(SPLDIR)/cp2k && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) cp2k
+$(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 .PHONY: test-smm
 test-smm: $(SPLDIR)/smm/smmf-perf.txt
-$(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_all
-	@cd $(SPLDIR)/smm && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) smm
+$(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
+	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@
 
 .PHONY: test-nek
 test-nek: $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/axhm-perf.txt
-$(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_all
-	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) grad
+$(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_hst
+	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) grad
 	@$(SPLDIR)/nek/grad-perf.sh $@
-$(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_all
-	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) axhm
+$(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_hst
+	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) axhm
 	@$(SPLDIR)/nek/axhm-perf.sh $@
-$(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_all
-	@cd $(SPLDIR)/nek && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) clean && \
-		$(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) rstr
+$(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
+	@cd $(SPLDIR)/nek && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) rstr
 	@$(SPLDIR)/nek/rstr-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
@@ -743,6 +744,7 @@ endif
 else
 	@rm -f $(BINDIR)/libxsmm_generator
 endif
+	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
 	@rm -f $(SPLDIR)/smm/smmf-perf.sh
 	@rm -f $(SPLDIR)/nek/grad-perf.sh
