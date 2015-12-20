@@ -327,9 +327,9 @@ ifeq (1,$(MKL)) # sequential
 			--end-group"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm
+	LDFLAGS += -lpthread -lm -ldl
 	ifneq (0,$(OFFLOAD))
-		LDFLAGS += -offload-option,mic,ld,"-lm"
+		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL
@@ -373,10 +373,10 @@ else ifneq (0,$(MKL)) # multi-threaded
 			endif
 		endif
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm"
+			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm -ldl"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm
+	LDFLAGS += -lpthread -lm -ldl
 else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
