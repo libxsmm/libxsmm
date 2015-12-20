@@ -110,8 +110,6 @@ XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
 .PHONY: all
 all: $(XFILES)
 
-.SUFFIXES:
-
 $(OUTDIR)/%: $(BLDDIR)/%-c.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $< $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
 
