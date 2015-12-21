@@ -79,6 +79,11 @@
 // enable result validation
 #define CP2K_CHECK
 
+#if CP2K_SINGLE_PRECISION(REAL_TYPE) && defined(CP2K_SYNCHRONIZATION) && 0 == (CP2K_SYNCHRONIZATION)
+# undef  CP2K_SYNCHRONIZATION
+# define CP2K_SYNCHRONIZATION 1
+#endif
+
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
 LIBXSMM_RETARGETABLE class LIBXSMM_RETARGETABLE lock_type {
@@ -143,10 +148,7 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
         // The following block executes only in single-precision to allow general validation.
         // However, this code is not representative anymore for the benchmark aspect.
 #if CP2K_SINGLE_PRECISION(REAL_TYPE)
-# if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
-#       pragma omp atomic
-# endif
-        dst[i*LIBXSMM_LD(ncols, nrows) + j] *= T(0.5);
+        dst[i*LIBXSMM_LD(ncols,nrows)+j] *= T(0.5);
 #endif
       }
     }

@@ -32,7 +32,7 @@ script:
 
   - source .codecov &&
     make -e clean &&
-    env ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" bash make.sh -ci-rm -j test-cp2k
+    env ECXXFLAGS="-DXREAL_TYPE=float ${ECXXFLAGS}" bash make.sh -ci-rm -j test-cp2k
 
   - source .codecov &&
     make -e clean &&
