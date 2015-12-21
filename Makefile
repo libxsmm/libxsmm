@@ -469,7 +469,7 @@ nek_mic: lib_mic
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/cp2k/.make $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
 
-$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
+$(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/bash" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
