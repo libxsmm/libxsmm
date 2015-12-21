@@ -101,7 +101,7 @@ private:
 template<int Seed>
 struct LIBXSMM_RETARGETABLE init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? ncols : ld;
+    const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
     const int maxval = std::max(std::abs(minval), addval);
     const double norm = 0 != maxval ? (1.0 / maxval) : 1.0;
@@ -118,7 +118,7 @@ struct LIBXSMM_RETARGETABLE init {
 template<typename T>
 LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
 {
-  const int ld = 0 == ld_src ? ncols : ld_src;
+  const int ld = 0 == ld_src ? LIBXSMM_LD(ncols, nrows) : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
 # pragma omp critical(smmadd)
@@ -134,7 +134,7 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 #if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
 #endif
-        dst[i*ncols+j] += value;
+        dst[i*LIBXSMM_LD(ncols,nrows)+j] += value;
       }
     }
   }
@@ -147,7 +147,7 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 template<typename T>
 LIBXSMM_RETARGETABLE double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int nrows, int ncols, int ld = 0)
 {
-  const int ldx = 0 == ld ? ncols : ld;
+  const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
   double diff = 0;
   for (int i = 0; i < nrows; ++i) {
     for (int j = 0; j < ncols; ++j) {

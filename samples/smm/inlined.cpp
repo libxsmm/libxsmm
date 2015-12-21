@@ -61,7 +61,7 @@
 template<int Seed>
 struct LIBXSMM_RETARGETABLE init {
   template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? ncols : ld;
+    const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
     const int maxval = std::max(std::abs(minval), addval);
     const double norm = 0 != maxval ? (1.0 / maxval) : 1.0;
