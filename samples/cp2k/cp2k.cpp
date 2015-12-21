@@ -56,7 +56,7 @@
 #endif
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE double
+# define REAL_TYPE float
 #endif
 
 #define CP2K_MAX_SIZE (80 * 80)
@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
-      std::fill_n(expect, csize, 0);
+      std::fill_n(expect, csize, T(0));
 #else
       T *const expect = c;
 #endif
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
       { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(expect, csize, 0);
+        std::fill_n(expect, csize, T(0));
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
 
       { // inline an optimized implementation
         fprintf(stdout, "Inlined...\n");
-        std::fill_n(c, csize, 0);
+        std::fill_n(c, csize, T(0));
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
 
       { // auto-dispatched
         fprintf(stdout, "Dispatched...\n");
-        std::fill_n(c, csize, 0);
+        std::fill_n(c, csize, T(0));
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -356,7 +356,7 @@ int main(int argc, char* argv[])
       const libxsmm_mmfunction<T> xmm(m, n, k);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
-        std::fill_n(c, csize, 0);
+        std::fill_n(c, csize, T(0));
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
