@@ -111,37 +111,37 @@ XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
 all: $(XFILES)
 
 $(OUTDIR)/%: $(BLDDIR)/%-c.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $< $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(ELDFLAGS)
+	$(LD) -o $@ $< $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
 $(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.f90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
 $(BLDDIR)/%-mod90.o: $(DEPDIR)/include/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
 $(BLDDIR)/%-mod77.o: $(DEPDIR)/include/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CXX) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(ECFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-f.o: $(SRCDIR)/%.f $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: clean
 clean:

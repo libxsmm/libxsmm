@@ -392,6 +392,15 @@ else ifneq (0,$(BLAS)) # generic
 	endif
 endif
 
+# append extra flags
+CXXFLAGS  += $(ECXXFLAGS)
+CXXFLAGS  += $(EFLAGS)
+FCFLAGS   += $(EFCFLAGS)
+FCFLAGS   += $(EFLAGS)
+CFLAGS    += $(ECFLAGS)
+CFLAGS    += $(EFLAGS)
+LDFLAGS   += $(ELDFLAGS)
+
 .SUFFIXES:
 
 %/.make:
