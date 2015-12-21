@@ -28,13 +28,11 @@ env:
 script:
   - source .codecov &&
     make -e clean &&
-    bash make.sh -ci-cm -j test-cp2k &&
-    bash samples/cp2k/cp2k-test.sh
+    bash make.sh -ci-cm -j test-cp2k
 
   - source .codecov &&
     make -e clean &&
-    env ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" bash make.sh -ci-rm -j test-cp2k &&
-    bash samples/cp2k/cp2k-test.sh
+    env ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" bash make.sh -ci-rm -j test-cp2k
 
   - source .codecov &&
     make -e clean &&

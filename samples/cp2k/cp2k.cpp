@@ -56,8 +56,12 @@
 #endif
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE float
+# define REAL_TYPE double
 #endif
+#define CP2K_SINGLE_PRECISION_AUX(REAL) CP2K_SINGLE_##REAL
+#define CP2K_SINGLE_PRECISION(REAL) CP2K_SINGLE_PRECISION_AUX(REAL)
+#define CP2K_SINGLE_double 0
+#define CP2K_SINGLE_float 1
 
 #define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
@@ -135,6 +139,15 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 #       pragma omp atomic
 #endif
         dst[i*LIBXSMM_LD(ncols,nrows)+j] += value;
+
+        // The following block executes only in single-precision to allow general validation.
+        // However, this code is not representative anymore for the benchmark aspect.
+#if CP2K_SINGLE_PRECISION(REAL_TYPE)
+# if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
+#       pragma omp atomic
+# endif
+        dst[i*LIBXSMM_LD(ncols, nrows) + j] *= T(0.5);
+#endif
       }
     }
   }
@@ -224,6 +237,7 @@ int main(int argc, char* argv[])
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
       std::fill_n(expect, csize, T(0));
+      double diff = 0;
 #else
       T *const expect = c;
 #endif
@@ -314,7 +328,9 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
+        const double d = max_diff(c, expect, m, n);
+        fprintf(stdout, "\tdiff=%f\n", d);
+        diff = std::max(diff, d);
 #endif
       }
 
@@ -349,7 +365,9 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
+        const double d = max_diff(c, expect, m, n);
+        fprintf(stdout, "\tdiff=%f\n", d);
+        diff = std::max(diff, d);
 #endif
       }
 
@@ -390,13 +408,19 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK)
-        fprintf(stdout, "\tdiff=%f\n", max_diff(c, expect, m, n));
+        const double d = max_diff(c, expect, m, n);
+        fprintf(stdout, "\tdiff=%f\n", d);
+        diff = std::max(diff, d);
 #endif
       }
 
       // finalize LIBXSMM
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
+
+#if defined(CP2K_CHECK)
+      if (1.0 < diff) return EXIT_FAILURE;
+#endif
     }
   }
   catch(const std::exception& e) {

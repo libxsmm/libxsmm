@@ -490,6 +490,9 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/Makefile
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
+	@echo "    exit 1"  >> $@
+	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
@@ -517,6 +520,9 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
+	@echo "    exit 1"  >> $@
+	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
@@ -544,6 +550,9 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
+	@echo "    exit 1"  >> $@
+	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
@@ -571,6 +580,9 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
+	@echo "    exit 1"  >> $@
+	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
@@ -605,6 +617,9 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
 	@echo "  CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}" >> $@
+	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
+	@echo "    exit 1"  >> $@
+	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
