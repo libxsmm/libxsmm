@@ -32,10 +32,6 @@ script:
 
   - source .codecov &&
     make -e clean &&
-    env ECXXFLAGS="-DXREAL_TYPE=float ${ECXXFLAGS}" bash make.sh -ci-rm -j test-cp2k
-
-  - source .codecov &&
-    make -e clean &&
     bash make.sh -ci-cm -j test-smm
 
   - source .codecov &&
