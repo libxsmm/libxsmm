@@ -34,8 +34,7 @@ elif [[ "-ci-cm" == "$1" || "-ci" == "$1" ]] ; then
 elif [[ "-ci-rm" == "$1" ]] ; then
   shift
   make -e $* SYM=1 SSE=3 PEDANTIC=1 ROW_MAJOR=1 MNK=" \
-    0 8 15, \
-    23 24 42"
+    9 7 3, 23"
 elif [[ "-ci-nek" == "$1" ]] ; then
   shift
   make -e $* SYM=1 PEDANTIC=1 M="4 8" N="4 8" K="4 8" 
