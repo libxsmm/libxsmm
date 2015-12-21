@@ -36,11 +36,9 @@ script:
 
   - source .codecov &&
     make -e clean &&
-    bash make.sh -ci-cm -j test-smm &&
-    bash samples/smm/smm-test.sh
+    bash make.sh -ci-cm -j test-smm
 
   - source .codecov &&
     make -e clean &&
-    bash make.sh -ci-nek -j test-nek &&
-    bash samples/nek/nek-test.sh
+    bash make.sh -ci-nek -j test-nek
 

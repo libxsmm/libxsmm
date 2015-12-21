@@ -51,7 +51,7 @@ PROGRAM stpm
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
-  REAL(8) :: duration, h1, h2
+  REAL(8) :: duration, max_diff, h1, h2
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -198,7 +198,7 @@ PROGRAM stpm
 
   ! Print Performance Summary and check results
   CALL performance(duration, m, n, k, s, reps)
-  IF (check.NE.0) CALL validate(d, c)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (mxm)"
@@ -232,7 +232,7 @@ PROGRAM stpm
 
   ! Print Performance Summary and check results
   CALL performance(duration, m, n, k, s, reps)
-  IF (check.NE.0) CALL validate(d, c)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
@@ -266,7 +266,7 @@ PROGRAM stpm
 
   ! Print Performance Summary and check results
   CALL performance(duration, m, n, k, s, reps)
-  IF (check.NE.0) CALL validate(d, c)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
   WRITE(*, "(A)") "Streamed... (specialized)"
@@ -303,7 +303,7 @@ PROGRAM stpm
 
     ! Print Performance Summary and check results
     CALL performance(duration, m, n, k, s, reps)
-    IF (check.NE.0) CALL validate(d, c)
+    IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"
   END IF
@@ -321,12 +321,15 @@ PROGRAM stpm
   ! finalize LIBXSMM
   CALL libxsmm_finalize()
 
-CONTAINS
-  SUBROUTINE validate(ref, test)
-    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
+  IF ((0.NE.check).AND.(1.LT.max_diff)) STOP 1
 
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
-  END SUBROUTINE validate
+CONTAINS
+  FUNCTION validate(ref, test) RESULT(diff)
+    REAL(T), DIMENSION(:,:,:,:), INTENT(IN) :: ref, test
+    REAL(T) :: diff
+    diff = MAXVAL((ref - test) * (ref - test))
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
+  END FUNCTION
 
   SUBROUTINE performance(duration, m, n, k, s, reps)
     REAL(8), INTENT(IN)    :: duration

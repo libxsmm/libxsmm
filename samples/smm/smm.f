@@ -45,7 +45,7 @@ PROGRAM smm
   INTEGER :: argc, m, n, k
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
-  REAL(8) :: duration
+  REAL(8) :: duration, max_diff, diff
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -76,7 +76,7 @@ PROGRAM smm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  duration = 0
+  duration = 0; max_diff = 0
   s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
 
   ALLOCATE(c(m,n))
@@ -151,7 +151,9 @@ PROGRAM smm
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
   CALL performance(duration, m, n, k, s)
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+  diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
+  max_diff = MAX(diff, max_diff)
 
   CALL libxsmm_dispatch(xmm, m, n, k)
   IF (libxsmm_available(xmm)) THEN
@@ -175,7 +177,9 @@ PROGRAM smm
     DEALLOCATE(tmp)
     !$OMP END PARALLEL
     CALL performance(duration, m, n, k, s)
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+    diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
+    max_diff = MAX(diff, max_diff)
   END IF
 
   ! Deallocate global arrays
@@ -186,6 +190,8 @@ PROGRAM smm
 
   ! finalize LIBXSMM
   CALL libxsmm_finalize()
+
+  IF (1.LT.max_diff) STOP 1
 
 CONTAINS
   PURE SUBROUTINE init(seed, matrix, n)

@@ -51,7 +51,7 @@ PROGRAM stpm
   integer :: mm, nn, kk
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
-  REAL(8) :: duration
+  REAL(8) :: duration, max_diff
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -114,7 +114,7 @@ PROGRAM stpm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  duration = 0
+  duration = 0; max_diff = 0
   s = ISHFT(MAX(i, 0_8), 29) / (((m * n * k) + (nn * mm * kk)) * T)
 
   ALLOCATE(a(m,n,k,s))
@@ -212,7 +212,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   CALL performance(duration, m, n, k, mm, nn, kk, s, reps)
-  IF (check.NE.0) CALL validate(c, d)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(c, d))
 
   WRITE(*, "(A)") "Streamed... (mxm)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
@@ -241,7 +241,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   CALL performance(duration, m, n, k, mm, nn, kk, s, reps)
-  IF (check.NE.0) CALL validate(c, d)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(c, d))
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
@@ -270,7 +270,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   CALL performance(duration, m, n, k, mm, nn, kk, s, reps)
-  IF (check.NE.0) CALL validate(c, d)
+  IF (check.NE.0) max_diff = MAX(max_diff, validate(c, d))
 
   WRITE(*, "(A)") "Streamed... (specialized)"
   CALL libxsmm_dispatch(xmm1, mm, n*k, m, alpha=alpha, beta=beta)
@@ -302,7 +302,7 @@ PROGRAM stpm
     !$OMP END PARALLEL
 
     CALL performance(duration, m, n, k, mm, nn, kk, s, reps)
-    IF (check.NE.0) CALL validate(c, d)
+    IF (check.NE.0) max_diff = MAX(max_diff, validate(c, d))
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"
   END IF
@@ -315,14 +315,17 @@ PROGRAM stpm
   ! finalize LIBXSMM
   CALL libxsmm_finalize()
 
-contains
-  subroutine validate(ref, test)
-    real(T), dimension(:,:,:,:), intent(in) :: ref, test
+  IF ((0.NE.check).AND.(1.LT.max_diff)) STOP 1
 
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", MAXVAL((ref - test) * (ref - test))
-  end subroutine validate
+CONTAINS
+  FUNCTION validate(ref, test) RESULT(diff)
+    REAL(T), dimension(:,:,:,:), intent(in) :: ref, test
+    REAL(T) :: diff
+    diff = MAXVAL((ref - test) * (ref - test))
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
+  END FUNCTION
 
-  subroutine performance(duration, m, n, k, mm, nn, kk, s, reps)
+  SUBROUTINE performance(duration, m, n, k, mm, nn, kk, s, reps)
     real(8), intent(in) :: duration
     integer, intent(in) :: m, n, k, mm, nn, kk
     integer(8), intent(in) :: s, reps
@@ -334,6 +337,5 @@ contains
         (reps * s * ((m*n*k) + (mm*nn*kk)) * T / (duration * LSHIFT(1_8, 30))), " GB/s"
     END IF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", (1D3 * duration)/reps, " ms"
-  end subroutine performance
-
+  END SUBROUTINE
 END PROGRAM
