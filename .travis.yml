@@ -26,23 +26,30 @@ env:
   - LIBXSMM_JIT=1
 
 script:
-  - source .codecov &&
-    make -e clean &&
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean && make -e &&
+    cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS=-DREAL_TYPE=float test
 
-  - source .codecov &&
-    make -e clean &&
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean && make -e &&
+    cd ${TRAVIS_BUILD_DIR}/tests &&
     make test
 
-  - source .codecov &&
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
     make -e clean &&
     bash make.sh -ci-cm -j test-cp2k
 
-  - source .codecov &&
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
     make -e clean &&
     bash make.sh -ci-cm -j test-smm
 
-  - source .codecov &&
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
     make -e clean &&
     bash make.sh -ci-nek -j test-nek
 
