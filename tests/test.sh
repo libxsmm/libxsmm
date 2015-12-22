@@ -6,7 +6,7 @@ echo "============="
 echo "Running tests"
 echo "============="
 for TEST in $(ls -1 ${HERE}/*.c) ; do
-  NAME=$(basename -s.c ${TEST})
+  NAME=$(basename ${TEST} .c)
   echo -n "${NAME}... "
 
   if [[ "-mic" != "$1" ]] ; then
