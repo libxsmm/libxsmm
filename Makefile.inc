@@ -49,7 +49,14 @@ else ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
 endif
 
 # check if the Intel Development Tools are available
-INTEL ?= $(shell echo $$((3==$(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
+NUM_INTEL_COMPILER = $(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME)))
+ifeq (1,$(shell echo $$((0<$(NUM_INTEL_COMPILER)&&3>$(NUM_INTEL_COMPILER)))))
+$(info =============================================)
+$(info Incomplete Intel Compiler toolchain detected!)
+$(info =============================================)
+endif
+
+INTEL ?= $(shell echo $$((3==$(NUM_INTEL_COMPILER))))
 
 ifneq (0,$(INTEL))
 	AR ?= xiar
