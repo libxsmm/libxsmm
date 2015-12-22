@@ -30,7 +30,7 @@ script:
     source .codecov &&
     make -e clean && make -e &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make ECFLAGS=-DREAL_TYPE=float test
+    make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" test
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
@@ -41,15 +41,20 @@ script:
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    bash make.sh -ci-cm -j test-cp2k
+    ./make.sh -ci-cm -j test-cp2k
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    bash make.sh -ci-cm -j test-smm
+    ./make.sh -ci-rm -j ECXXFLAGS="-DXREAL_TYPE=float ${ECXXFLAGS}" test-cp2k
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    bash make.sh -ci-nek -j test-nek
+    ./make.sh -ci-cm -j test-smm
+
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean &&
+    ./make.sh -ci-nek -j test-nek
 
