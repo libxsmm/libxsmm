@@ -34,7 +34,7 @@ PROGRAM smm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = KIND(0.D0)
+  INTEGER, PARAMETER :: T = KIND(0D0)
 
   REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
   REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
@@ -45,7 +45,7 @@ PROGRAM smm
   INTEGER :: argc, m, n, k
   INTEGER(8) :: i, s, start
   CHARACTER(32) :: argv
-  REAL(8) :: duration, max_diff, diff
+  DOUBLE PRECISION :: duration, scale, max_diff, diff
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -76,18 +76,18 @@ PROGRAM smm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  duration = 0; max_diff = 0
   s = ISHFT(MAX(i, 0_8), 30) / ((m * k + k * n + m * n) * T)
+  duration = 0; scale = (1D0 / s); max_diff = 0
 
   ALLOCATE(c(m,n))
   ALLOCATE(a(m,k,s))
   ALLOCATE(b(k,n,s))
 
   ! Initialize a, b
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b, s)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b, scale)
   DO i = 1, s
-    CALL init(42, a(:,:,i), i - 1)
-    CALL init(24, b(:,:,i), i - 1)
+    CALL init(42, a(:,:,i), scale, i - 1)
+    CALL init(24, b(:,:,i), scale, i - 1)
   END DO
 
   WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
@@ -194,9 +194,10 @@ PROGRAM smm
   IF (1.LT.max_diff) STOP 1
 
 CONTAINS
-  PURE SUBROUTINE init(seed, matrix, n)
+  PURE SUBROUTINE init(seed, matrix, scale, n)
     INTEGER, INTENT(IN) :: seed
     REAL(T), INTENT(OUT) :: matrix(:,:)
+    REAL(8), INTENT(IN) :: scale
     INTEGER(8), INTENT(IN), OPTIONAL :: n
     INTEGER(8) :: minval, addval, maxval
     INTEGER :: ld, i, j
@@ -205,7 +206,7 @@ CONTAINS
     minval = MERGE(n, 0_8, PRESENT(n)) + seed
     addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
     maxval = MAX(ABS(minval), addval)
-    norm = MERGE(1D0 / maxval, 1D0, 0.NE.maxval)
+    norm = MERGE(scale / maxval, scale, 0.NE.maxval)
     DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
       DO i = LBOUND(matrix, 1), LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
         value = (i - LBOUND(matrix, 1)) * ld + (j - LBOUND(matrix, 2)) + minval

@@ -34,7 +34,6 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>
@@ -42,15 +41,12 @@
 #include <cassert>
 #include <cstdio>
 #include <cmath>
-
 #if defined(USE_MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
 #endif
-
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
@@ -60,11 +56,11 @@
 
 template<int Seed>
 struct LIBXSMM_RETARGETABLE init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, double scale, int nrows, int ncols, int n = 0, int ld = 0) {
+    const int ldx = 0 == ld ? ncols : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
     const int maxval = std::max(std::abs(minval), addval);
-    const double norm = 0 != maxval ? (1.0 / maxval) : 1.0;
+    const double norm = 0 != maxval ? (scale / maxval) : scale;
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < ncols; ++j) {
         const double value = static_cast<double>(i * ldx + j + minval);
@@ -92,7 +88,7 @@ int main(int argc, char* argv[])
     const int s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
-    const double gflops = 2.0 * s * m * n * k * 1E-9;
+    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
@@ -107,9 +103,9 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (int i = 0; i < s; ++i) {
-      init<42>(a + i * asize, m, k, i);
-      init<24>(b + i * bsize, k, n, i);
-      init<22>(c + i * csize, m, n, i);
+      init<42>(a + i * asize, scale, m, k, i);
+      init<24>(b + i * bsize, scale, k, n, i);
+      init<22>(c + i * csize, scale, m, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)

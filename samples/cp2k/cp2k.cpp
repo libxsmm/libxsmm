@@ -34,7 +34,6 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-
 #include <algorithm>
 #include <stdexcept>
 #include <cstdlib>
@@ -42,15 +41,12 @@
 #include <cassert>
 #include <cstdio>
 #include <cmath>
-
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
 #endif
-
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
@@ -58,10 +54,6 @@
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
-#define CP2K_SINGLE_PRECISION_AUX(REAL) CP2K_SINGLE_##REAL
-#define CP2K_SINGLE_PRECISION(REAL) CP2K_SINGLE_PRECISION_AUX(REAL)
-#define CP2K_SINGLE_double 0
-#define CP2K_SINGLE_float 1
 
 #define CP2K_MAX_SIZE (80 * 80)
 /** >1: number of locks, =1: omp critical, =0: atomic */
@@ -76,13 +68,8 @@
 #else
 # define CP2K_SCHEDULE
 #endif
-// enable result validation
-#define CP2K_CHECK
-
-#if CP2K_SINGLE_PRECISION(REAL_TYPE) && defined(CP2K_SYNCHRONIZATION) && 0 == (CP2K_SYNCHRONIZATION)
-# undef  CP2K_SYNCHRONIZATION
-# define CP2K_SYNCHRONIZATION 1
-#endif
+// enable result validation: sequential (1), parallel (2)
+#define CP2K_CHECK 1
 
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
@@ -109,11 +96,11 @@ private:
 
 template<int Seed>
 struct LIBXSMM_RETARGETABLE init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
+  template<typename T> init(T *LIBXSMM_RESTRICT dst, double scale, int nrows, int ncols, int n = 0, int ld = 0) {
+    const int ldx = 0 == ld ? ncols : ld;
     const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
     const int maxval = std::max(std::abs(minval), addval);
-    const double norm = 0 != maxval ? (1.0 / maxval) : 1.0;
+    const double norm = 0 != maxval ? (scale / maxval) : scale;
     for (int i = 0; i < nrows; ++i) {
       for (int j = 0; j < ncols; ++j) {
         const double value = static_cast<double>(i * ldx + j + minval);
@@ -127,7 +114,7 @@ struct LIBXSMM_RETARGETABLE init {
 template<typename T>
 LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
 {
-  const int ld = 0 == ld_src ? LIBXSMM_LD(ncols, nrows) : ld_src;
+  const int ld = 0 == ld_src ? ncols : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
 # pragma omp critical(smmadd)
@@ -144,12 +131,6 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 #       pragma omp atomic
 #endif
         dst[i*LIBXSMM_LD(ncols,nrows)+j] += value;
-
-        // The following block executes only in single-precision to allow general validation.
-        // However, this code is not representative anymore for the benchmark aspect.
-#if CP2K_SINGLE_PRECISION(REAL_TYPE)
-        dst[i*LIBXSMM_LD(ncols,nrows)+j] *= T(0.5);
-#endif
       }
     }
   }
@@ -160,14 +141,15 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 
 
 template<typename T>
-LIBXSMM_RETARGETABLE double max_diff(const T *LIBXSMM_RESTRICT result, const T *LIBXSMM_RESTRICT expect, int nrows, int ncols, int ld = 0)
+LIBXSMM_RETARGETABLE double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *LIBXSMM_RESTRICT result, int nrows, int ncols, int ld = 0)
 {
-  const int ldx = 0 == ld ? LIBXSMM_LD(ncols, nrows) : ld;
+  const int ldx = 0 == ld ? ncols : ld;
   double diff = 0;
   for (int i = 0; i < nrows; ++i) {
     for (int j = 0; j < ncols; ++j) {
       const int k = i * ldx + j;
-      diff = std::max(diff, std::abs(static_cast<double>(result[k]) - static_cast<double>(expect[k])));
+      const double d = static_cast<double>(expect[k] - result[k]);
+      diff = std::max(diff, d * d);
     }
   }
   return diff;
@@ -198,7 +180,7 @@ int main(int argc, char* argv[])
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
-    const double gflops = 2.0 * s * m * n * k * 1E-9;
+    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
@@ -213,8 +195,8 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for CP2K_SCHEDULE
 #endif
     for (int i = 0; i < s; ++i) {
-      init<42>(a + i * asize, m, k, i);
-      init<24>(b + i * bsize, k, n, i);
+      init<42>(a + i * asize, scale, m, k, i);
+      init<24>(b + i * bsize, scale, k, n, i);
     }
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -231,7 +213,7 @@ int main(int argc, char* argv[])
         0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
         s, 1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20));
 
-#if defined(CP2K_CHECK)
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
         explicit raii(int size): expect(new T[size]) {}
@@ -245,7 +227,8 @@ int main(int argc, char* argv[])
 #endif
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
-#if defined(_OPENMP)
+        std::fill_n(expect, csize, T(0));
+#if defined(_OPENMP) && (!defined(CP2K_CHECK) || 1 < (CP2K_CHECK))
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -268,7 +251,7 @@ int main(int argc, char* argv[])
 
       { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(expect, csize, T(0));
+        std::fill_n(c, csize, T(0));
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -288,7 +271,7 @@ int main(int argc, char* argv[])
             ai = aij;
             bi = bij;
           }
-          add(expect, tmp, m, n); // atomic
+          add(c, tmp, m, n); // atomic
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
@@ -297,6 +280,11 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
+        const double d = norm_l2(expect, c, m, n);
+        fprintf(stdout, "\tdiff=%f\n", d);
+        diff = std::max(diff, d);
+#endif
       }
 
       { // inline an optimized implementation
@@ -329,8 +317,8 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK)
-        const double d = max_diff(c, expect, m, n);
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
+        const double d = norm_l2(expect, c, m, n);
         fprintf(stdout, "\tdiff=%f\n", d);
         diff = std::max(diff, d);
 #endif
@@ -366,8 +354,8 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK)
-        const double d = max_diff(c, expect, m, n);
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
+        const double d = norm_l2(expect, c, m, n);
         fprintf(stdout, "\tdiff=%f\n", d);
         diff = std::max(diff, d);
 #endif
@@ -409,8 +397,8 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK)
-        const double d = max_diff(c, expect, m, n);
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
+        const double d = norm_l2(expect, c, m, n);
         fprintf(stdout, "\tdiff=%f\n", d);
         diff = std::max(diff, d);
 #endif
@@ -420,7 +408,7 @@ int main(int argc, char* argv[])
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
 
-#if defined(CP2K_CHECK)
+#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
       if (1.0 < diff) return EXIT_FAILURE;
 #endif
     }
