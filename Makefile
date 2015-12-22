@@ -474,11 +474,21 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=cp2k-perf.txt" >> $@
-	@echo "RUNS='$(INDICES)'" >> $@
+ifneq (,$(INDICES))
+	@echo "RUNS=$(INDICES)" >> $@
+else
+	@echo "RUNS=23_23_23" >> $@
+endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  SIZE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "else" >> $@
+	@echo "  SIZE=0" >> $@
 	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
@@ -489,7 +499,7 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} 0 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
 	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
 	@echo "    exit 1"  >> $@
 	@echo "  fi" >> $@
@@ -504,11 +514,21 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
-	@echo "RUNS='$(INDICES)'" >> $@
+ifneq (,$(INDICES))
+	@echo "RUNS=$(INDICES)" >> $@
+else
+	@echo "RUNS=23_23_23" >> $@
+endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
+	@echo "fi" >> $@
+	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "  SIZE=\$$1" >> $@
+	@echo "  shift" >> $@
+	@echo "else" >> $@
+	@echo "  SIZE=0" >> $@
 	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
@@ -519,7 +539,7 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
 	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
+	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}" >> $@
 	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
 	@echo "    exit 1"  >> $@
 	@echo "  fi" >> $@
@@ -534,7 +554,11 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/grad-perf.txt" >> $@
-	@echo "RUNS='$(INDICES)'" >> $@
+ifneq (,$(INDICES))
+	@echo "RUNS=$(INDICES)" >> $@
+else
+	@echo "RUNS=23_23_23" >> $@
+endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
 	@echo "  FILE=\$$1" >> $@
@@ -564,7 +588,11 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
-	@echo "RUNS='$(INDICES)'" >> $@
+ifneq (,$(INDICES))
+	@echo "RUNS=$(INDICES)" >> $@
+else
+	@echo "RUNS=23_23_23" >> $@
+endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
 	@echo "  FILE=\$$1" >> $@
@@ -594,8 +622,13 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
-	@echo "RUNS='$(INDICES)'" >> $@
-	@echo "RUNT='$(INDICES)'" >> $@
+ifneq (,$(INDICES))
+	@echo "RUNS=$(INDICES)" >> $@
+	@echo "RUNT=$(INDICES)" >> $@
+else
+	@echo "RUNS=4_4_4" >> $@
+	@echo "RUNT=8_8_8" >> $@
+endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
 	@echo "  FILE=\$$1" >> $@
@@ -634,14 +667,28 @@ tests: test-cp2k test-smm test-nek
 test: test-cp2k
 
 .PHONY: test-cp2k
-test-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
+test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
+$(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
+	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
+	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ 1000
+
+.PHONY: perf-cp2k
+perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 .PHONY: test-smm
-test-smm: $(SPLDIR)/smm/smmf-perf.txt
+test-smm: $(SPLDIR)/smm/smm-test.txt
+$(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
+	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
+	@$(SPLDIR)/smm/smmf-perf.sh $@ 1000
+
+.PHONY: perf-smm
+perf-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
