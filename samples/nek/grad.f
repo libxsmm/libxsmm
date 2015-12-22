@@ -38,7 +38,7 @@ PROGRAM grad
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = KIND(0.D0)
+  INTEGER, PARAMETER :: T = KIND(0D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz
@@ -53,7 +53,7 @@ PROGRAM grad
   INTEGER :: argc, m, n, k, routine, check
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
-  REAL(8) :: duration, max_diff
+  DOUBLE PRECISION :: duration, max_diff
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -98,8 +98,8 @@ PROGRAM grad
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  duration = 0; max_diff = 0
   s = ISHFT(MAX(i, 0_8), 30) / ((m * n * k) * T * 5)
+  duration = 0; max_diff = 0
 
   ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
@@ -319,7 +319,7 @@ CONTAINS
   END FUNCTION
 
   SUBROUTINE performance(duration, m, n, k, s, reps)
-    REAL(8), INTENT(IN)    :: duration
+    DOUBLE PRECISION, INTENT(IN)    :: duration
     INTEGER, INTENT(IN)    :: m, n, k
     INTEGER(8), INTENT(IN) :: s, reps
 

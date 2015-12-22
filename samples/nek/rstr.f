@@ -38,7 +38,7 @@ PROGRAM stpm
   !$ USE omp_lib
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = KIND(0.D0)
+  INTEGER, PARAMETER :: T = KIND(0D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
   REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, d
@@ -51,7 +51,7 @@ PROGRAM stpm
   integer :: mm, nn, kk
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
-  REAL(8) :: duration, max_diff
+  DOUBLE PRECISION :: duration, max_diff
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -114,8 +114,8 @@ PROGRAM stpm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  duration = 0; max_diff = 0
   s = ISHFT(MAX(i, 0_8), 29) / (((m * n * k) + (nn * mm * kk)) * T)
+  duration = 0; max_diff = 0
 
   ALLOCATE(a(m,n,k,s))
   ALLOCATE(c(mm,nn,kk,s))

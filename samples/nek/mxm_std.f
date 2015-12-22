@@ -1196,7 +1196,7 @@ end subroutine mxmf2
 
 !---------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     N0=N1*N3
     DO 10 I=1,N0
@@ -1219,7 +1219,7 @@ end subroutine mxmf2
 
 !---------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     N0=N1*N3
     DO 10 I=1,N0
@@ -1264,7 +1264,7 @@ end subroutine mxmf2
 
 !---------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     if (n2 <= 8) then
         if (n2 == 1) then
@@ -1638,7 +1638,7 @@ end subroutine mxmf2
 
 !---------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     N0=N1*N3
     DO 10 I=1,N0
@@ -2162,8 +2162,8 @@ end subroutine mxmf2
 
 !---------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
-    REAL(8) :: ONE,ZERO,EPS
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: ONE,ZERO,EPS
 
 
 
@@ -2181,7 +2181,7 @@ end subroutine mxmf2
 
 !----------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     integer :: wdsize
     save    wdsize
@@ -2860,7 +2860,7 @@ end subroutine mxmf2
 
 !----------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     integer :: wdsize
     save    wdsize
@@ -3557,7 +3557,7 @@ end subroutine mxmf2
 
 !----------------------------------------------------------------------
    ! use kinds,, only : DP
-    REAL(8) :: A(N1,N2),B(N2,N3),C(N1,N3)
+    DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
     if (n2 == 1) then
         call mxm44_2_t(a,n1,b,2,c,n3)
