@@ -143,6 +143,10 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefil
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
+.PHONY: test
+test: $(XFILES) $(OUTDIR)/.make $(OUTDIR)/test.sh
+	@$(OUTDIR)/test.sh
+
 .PHONY: clean
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
