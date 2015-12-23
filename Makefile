@@ -475,9 +475,9 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=cp2k-perf.txt" >> $@
 ifneq (,$(INDICES))
-	@echo "RUNS=$(INDICES)" >> $@
+	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=23_23_23" >> $@
+	@echo "RUNS=\"23_23_23\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -515,9 +515,9 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
 ifneq (,$(INDICES))
-	@echo "RUNS=$(INDICES)" >> $@
+	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=23_23_23" >> $@
+	@echo "RUNS=\"23_23_23\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -555,9 +555,9 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/grad-perf.txt" >> $@
 ifneq (,$(INDICES))
-	@echo "RUNS=$(INDICES)" >> $@
+	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=23_23_23" >> $@
+	@echo "RUNS=\"23_23_23\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -589,9 +589,9 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
 ifneq (,$(INDICES))
-	@echo "RUNS=$(INDICES)" >> $@
+	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=23_23_23" >> $@
+	@echo "RUNS=\"23_23_23\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -623,11 +623,11 @@ $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
 ifneq (,$(INDICES))
-	@echo "RUNS=$(INDICES)" >> $@
-	@echo "RUNT=$(INDICES)" >> $@
+	@echo "RUNS=\"$(INDICES)\"" >> $@
+	@echo "RUNT=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=4_4_4" >> $@
-	@echo "RUNT=8_8_8" >> $@
+	@echo "RUNS=\"4_4_4\"" >> $@
+	@echo "RUNT=\"8_8_8\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
