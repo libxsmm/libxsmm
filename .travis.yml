@@ -14,7 +14,6 @@ before_install:
 
 after_success:
   - source .codecov && 
-    eval ${LIBXSMM_RUNGCOV} &&
     eval ${LIBXSMM_CODECOV}
 
 compiler:
@@ -30,31 +29,37 @@ script:
     source .codecov &&
     make -e clean && make -e &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" test
+    make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" test &&
+    eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean && make -e &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make test
+    make test &&
+    eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    ./make.sh -ci-cm -j test-cp2k
+    ./make.sh -ci-cm -j test-cp2k &&
+    eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    ./make.sh -ci-rm -j ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" test-cp2k
+    ./make.sh -ci-rm -j ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" test-cp2k &&
+    eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    ./make.sh -ci-cm -j test-smm
+    ./make.sh -ci-cm -j test-smm &&
+    eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
-    ./make.sh -ci-nek -j test-nek
+    ./make.sh -ci-nek -j test-nek &&
+    eval ${LIBXSMM_RUNGCOV}
 
