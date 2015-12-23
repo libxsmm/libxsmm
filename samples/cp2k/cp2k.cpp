@@ -68,8 +68,10 @@
 #else
 # define CP2K_SCHEDULE
 #endif
-// enable result validation: sequential (1), parallel (2)
-#define CP2K_CHECK 1
+// enable result validation
+// sequential (1), parallel (2)
+// (2) enables proper warmup
+#define CP2K_CHECK 2
 
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
@@ -124,13 +126,13 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 #endif
   {
     for (int i = 0; i < nrows; ++i) {
-      LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_LD(LIBXSMM_MAX_M, LIBXSMM_MAX_N), LIBXSMM_LD(LIBXSMM_AVG_M, LIBXSMM_AVG_N))
+      LIBXSMM_PRAGMA_UNROLL
       for (int j = 0; j < ncols; ++j) {
         const T value = src[i*ld+j];
 #if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
 #endif
-        dst[i*LIBXSMM_LD(ncols,nrows)+j] += value;
+        dst[i*ncols+j] += value;
       }
     }
   }

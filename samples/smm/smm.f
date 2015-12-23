@@ -96,14 +96,18 @@ PROGRAM smm
   ! compute reference solution and warmup BLAS library
   ALLOCATE(d(m,n))
   d(:,:) = 0
+  !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i) &
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b)
   ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
+  !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
     CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
   END DO
   d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
   ! Deallocate thread-local arrays
   DEALLOCATE(tmp)
+  !$OMP END PARALLEL
 
   WRITE(*, "(A)") "Streamed... (BLAS)"
   c(:,:) = 0
@@ -126,9 +130,6 @@ PROGRAM smm
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
   CALL performance(duration, m, n, k, s)
-  diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-  WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
-  max_diff = MAX(diff, max_diff)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
