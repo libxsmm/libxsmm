@@ -33,6 +33,7 @@ from functools import reduce
 import itertools
 import operator
 import sys, os
+import re
 
 
 def upper_list(lists, level):
@@ -131,16 +132,11 @@ def version_branch():
 
 
 def version_numbers(version):
-    versionlist = version.split(".")
+    versionlist = re.split("\.|-", version)
     major = int(versionlist[0]) if (0 < len(versionlist)) else 1
     minor = int(versionlist[1]) if (1 < len(versionlist)) else 0
-    if (2 < len(versionlist)):
-        updatelist = versionlist[2].split("-")
-        update = int(updatelist[0]) if (0 < len(updatelist)) else 0
-        patch = int(updatelist[1]) if (1 < len(updatelist)) else 0
-    else:
-        update = 0
-        patch = 0
+    update = int(versionlist[2]) if (2 < len(versionlist)) else 0
+    patch = int(versionlist[3]) if (3 < len(versionlist)) else 0
     return major, minor, update, patch
 
 
