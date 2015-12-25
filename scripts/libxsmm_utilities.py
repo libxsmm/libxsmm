@@ -128,7 +128,7 @@ def version_branch():
     with open(versionfile, "r") as file:
         version = file.read().replace("\n", "")
     versionlist = version.split("-")
-    return ("-".join(map(str, versionlist[1:])), versionlist[0]) if (2 < len(versionlist)) else (version, "")
+    return ("-".join(map(str, versionlist[1:])), versionlist[0]) if (1 < len(versionlist)) else (version, "")
 
 
 def version_numbers(version):
