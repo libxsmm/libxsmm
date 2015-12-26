@@ -16,7 +16,7 @@ if [[ -e ${LOCKFILE} ]] ; then
   ${GIT} diff --name-only | ${GREP} -q ${VERSIONFILE}
   if [[ "0" != "$?" ]] ; then
     # update version file
-    #${VERSIONSCRIPT} > ${VERSIONFILE}
+    ${VERSIONSCRIPT} > ${VERSIONFILE}
     ${GIT} add ${VERSIONFILE}
     ${GIT} commit --amend -C HEAD --no-verify
   fi
