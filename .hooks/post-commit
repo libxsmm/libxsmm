@@ -13,10 +13,10 @@ if [[ -e ${LOCKFILE} ]] ; then
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}
 
-  COMMIT=$(${GIT} diff --name-only | ${GREP} -q ${VERSIONFILE} ; ${ECHO} $?)
-  if [[ "0" != "${COMMIT}" ]] ; then
+  ${GIT} diff --name-only | ${GREP} -q ${VERSIONFILE}
+  if [[ "0" != "$?" ]] ; then
     # update version file
-    ${VERSIONSCRIPT} > ${VERSIONFILE}
+    #${VERSIONSCRIPT} > ${VERSIONFILE}
     ${GIT} add ${VERSIONFILE}
     ${GIT} commit --amend -C HEAD --no-verify
   fi
