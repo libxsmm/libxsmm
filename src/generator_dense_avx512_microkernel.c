@@ -209,6 +209,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
   }
 }
 
+#if 0
 void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
                                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -385,6 +386,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                  i_k_blocking * i_micro_kernel_config->datatype_size );
   }
 }
+#endif
 
 void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generated_code*             io_generated_code,
                                                                 const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
