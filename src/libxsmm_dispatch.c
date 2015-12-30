@@ -94,10 +94,13 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
 {
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
   const char* archid = 0;
+
+  assert(is_static);
+  *is_static = 0;
 
   LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
@@ -121,17 +124,27 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(void)
           else if (0xD0030000 == (0xD0030000 & ebx)) {
             archid = "skx";
           }
+
+#if defined(__AVX512F__)
+          *is_static = 1;
+#endif
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
 #if defined(__AVX512F__)
             assert(!"Failed to detect Intel AVX-512 extensions!");
 #endif
+#if defined(__AVX2__)
+            *is_static = 1;
+#endif
             archid = "hsw";
           }
           else {
 #if defined(__AVX2__)
             assert(!"Failed to detect Intel AVX2 extensions!");
+#endif
+#if defined(__AVX__)
+            *is_static = 1;
 #endif
             archid = "snb";
           }
@@ -184,10 +197,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
            */
 #if (0 != LIBXSMM_JIT)
           const char *const env = getenv("LIBXSMM_JIT");
-          libxsmm_dispatch_archid = (0 == env || 0 == *env || '1' == *env) ? internal_archid() : ('0' != *env ? env : 0);
-# if !(defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__))
-          if (0 == libxsmm_dispatch_archid)
-# endif
+          int is_static = 0;
+          libxsmm_dispatch_archid = (0 == env || 0 == *env || '1' == *env) ? internal_archid(&is_static) : ('0' != *env ? env : 0);
+          if (0 == libxsmm_dispatch_archid || 0 != is_static)
 #endif
           { /* open scope for variable declarations */
             /* setup the dispatch table for the statically generated code */
