@@ -109,7 +109,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 .PHONY: all
 all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(OUTDIR)/libstream_update_kernels.a
 
-$(BLDDIR)/stream_update_kernels-mod.o: $(SRCDIR)/stream_update_kernels.f $(BLDDIR)/.make $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/stream_update_kernels-mod.o: $(SRCDIR)/stream_update_kernels.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(OUTDIR)
 
 $(OUTDIR)/libstream_update_kernels.a: $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o
