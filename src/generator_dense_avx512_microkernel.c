@@ -255,7 +255,9 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
             l_b_reg = i_gp_reg_mapping->gp_reg_b; /* large displacement for now */
             l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
             l_scale = 0;
-            l_disp = (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n); 
+            l_disp = (l_k * i_micro_kernel_config->datatype_size)
+                     +(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n)
+                     -(128*l_k_updates);
           }
         } else {
           if ( l_n > 17 ) {
