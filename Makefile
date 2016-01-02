@@ -271,7 +271,9 @@ ifeq (0,$(OFFLOAD))
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
 endif
+ifneq (,$(FC))
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $@ -o $(BLDDIR)/libxsmm-mod.o $(FMFLAGS) $(dir $@)
+endif
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(OBJFILES_GEN_LIB)
