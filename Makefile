@@ -94,9 +94,17 @@ DFLAGS = -D__extern_always_inline=inline
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
 STATIC ?= 1
-OMP ?= 0
 SYM ?= 0
 DBG ?= 0
+
+OMP ?= 0
+ifneq (0,$(OMP))
+$(info ==========================================================)
+$(info LIBXSMM is agnostic with respect to the threading runtime!)
+$(info Using OpenMP instead of OS primitives to protect shared
+$(info data is possible but not a default option.)
+$(info ==========================================================)
+endif
 
 # Request strongest code conformance
 PEDANTIC ?= 0
@@ -121,6 +129,16 @@ endif
 
 ifneq (0,$(MIC))
 	JIT ?= 0
+endif
+
+ifneq (0,$(JIT))
+ifneq (2,$(BLAS))
+$(info =========================================================)
+$(info LIBXSMM implements a THRESHOLD which is avoiding to call)
+$(info BLAS for small matrix multiplications. Using a sequential)
+$(info BLAS library is superfluous with respect to this library!)
+$(info =========================================================)
+endif
 endif
 
 ifneq (0,$(STATIC))
