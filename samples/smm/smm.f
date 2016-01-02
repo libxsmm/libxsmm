@@ -85,7 +85,7 @@ PROGRAM smm
   ALLOCATE(b(k,n,s))
 
   ! Initialize a, b
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b, scale)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(s, a, b, scale)
   DO i = 1, s
     CALL init(42, a(:,:,i), scale, i - 1)
     CALL init(24, b(:,:,i), scale, i - 1)
