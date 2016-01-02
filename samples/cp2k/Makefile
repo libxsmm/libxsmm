@@ -110,7 +110,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 all: $(OUTDIR)/$(OUTNAME)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(OBJECTS) $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif

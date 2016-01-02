@@ -119,7 +119,7 @@ $(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/.make $(BLDDIR)/stream_update_ker
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(OUTDIR)/grad: $(OUTDIR)/.make $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
@@ -128,7 +128,7 @@ $(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/.make $(BLDDIR)/stream_update_ker
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(OUTDIR)/rstr: $(OUTDIR)/.make $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
@@ -137,7 +137,7 @@ $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/.make $(BLDDIR)/stream_update_ker
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 $(OUTDIR)/axhm: $(OUTDIR)/.make $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(LIBNAME).$(LIBEXT) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
