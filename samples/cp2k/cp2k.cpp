@@ -160,6 +160,7 @@ LIBXSMM_RETARGETABLE double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *L
 
 int main(int argc, char* argv[])
 {
+  int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
@@ -411,18 +412,18 @@ int main(int argc, char* argv[])
       fprintf(stdout, "Finished\n");
 
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-      if (1.0 < diff) return EXIT_FAILURE;
+      if (1.0 < diff) result = EXIT_FAILURE;
 #endif
     }
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
   catch(...) {
     fprintf(stderr, "Error: unknown exception caught!\n");
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
 
-  return EXIT_SUCCESS;
+  return result;
 }
