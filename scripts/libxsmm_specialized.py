@@ -1,6 +1,6 @@
 ﻿#! /usr/bin/env python
 ###############################################################################
-## Copyright (c) 2013-2015, Intel Corporation                                ##
+## Copyright (c) 2014-2016, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
 ##                                                                           ##
 ## Redistribution and use in source and binary forms, with or without        ##
