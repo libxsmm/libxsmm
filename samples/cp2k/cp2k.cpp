@@ -228,6 +228,8 @@ int main(int argc, char* argv[])
 #else
       T *const expect = c;
 #endif
+      // eventually JIT-compile the requested kernel
+      const libxsmm_mmfunction<T> xmm(m, n, k);
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, T(0));
@@ -364,7 +366,6 @@ int main(int argc, char* argv[])
 #endif
       }
 
-      const libxsmm_mmfunction<T> xmm(m, n, k);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, T(0));

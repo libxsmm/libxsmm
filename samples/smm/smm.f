@@ -76,6 +76,9 @@ PROGRAM smm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
+  ! Eventually JIT-compile the requested kernel
+  CALL libxsmm_dispatch(xmm, m, n, k)
+
   ! 2 GByte by default for A and B (and C, but this is currently not used)
   s = MERGE(ISHFT(2_8, 30) / ((m * k + k * n + m * n) * T), MAX(i, 0_8), 0.EQ.i)
   duration = 0; scale = (1D0 / s); max_diff = 0
@@ -156,7 +159,6 @@ PROGRAM smm
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   max_diff = MAX(diff, max_diff)
 
-  CALL libxsmm_dispatch(xmm, m, n, k)
   IF (libxsmm_available(xmm)) THEN
     c(:,:) = 0
     WRITE(*, "(A)") "Streamed... (specialized)"
