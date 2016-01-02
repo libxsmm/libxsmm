@@ -9,6 +9,11 @@ CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
 CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
 FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
 
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE = 0
+
 # prefer Intel Compiler (if available)
 ifneq (,$(ICPC))
 	CXX = $(ICPC)
@@ -164,9 +169,13 @@ else # GCC assumed
 	endif
 	OFFLOAD = 0
 	MIC = 0
-	CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-	CFLAGS += -Wall -Wno-unused-function -Wno-attributes
+	CXXFLAGS += -Wall -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	LDFLAGS += -lrt
+	ifeq (0,$(COMPATIBLE))
+		CXXFLAGS += -Wno-attributes
+		CFLAGS += -Wno-attributes
+	endif
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -186,15 +195,24 @@ else # GCC assumed
 		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
-	else
+	else ifeq (0,$(COMPATIBLE))
 		FCFLAGS += -ffree-form
 	endif
-	# flag specifying output directory must be last
-	FMFLAGS += -J
+	ifeq (0,$(COMPATIBLE))
+		# flag specifying output directory must be last
+		FMFLAGS += -J
+	else # fallback
+		FMFLAGS += -I
+	endif
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
+		CXXFLAGS += -O2 -ffast-math -funroll-loops
+		CFLAGS += -O2 -ffast-math -funroll-loops
+		FCFLAGS += -O2 -ffast-math -funroll-loops
+		ifeq (0,$(COMPATIBLE))
+			CXXFLAGS += -ftree-vectorize
+			CFLAGS += -ftree-vectorize
+			FCFLAGS += -ftree-vectorize
+		endif
 		ifeq (0,$(SYM))
 			DFLAGS += -DNDEBUG
 		endif
