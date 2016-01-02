@@ -10,14 +10,16 @@ fi
 if [[ "" == "${MICCORES}" ]] ; then
   MICCORES=61
 fi
+MICTPERC=3
 
 if [[ "-mic" != "$1" ]] ; then
   if [[ "" != "$(ldd ${HERE}/${NAME} | grep libiomp5\.so)" ]] ; then
-    env OFFLOAD_INIT=on_start \
+    env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
-      MIC_KMP_PLACE_THREADS=$((MICCORES-1))c3t \
+      MIC_KMP_PLACE_THREADS=$((MICCORES-1))c${MICTPERC}t \
       MIC_ENV_PREFIX=MIC \
+      OFFLOAD_INIT=on_start \
     ${HERE}/${NAME} $*
   else
     env \
@@ -27,10 +29,10 @@ if [[ "-mic" != "$1" ]] ; then
 else
   shift
   env \
-    SINK_LD_LIBRARY_PATH=$MIC_LD_LIBRARY_PATH \
+    SINK_LD_LIBRARY_PATH=${SINK_LD_LIBRARY_PATH}:${MIC_LD_LIBRARY_PATH}:${HERE} \
   micnativeloadex \
     ${HERE}/${NAME} -a "$*" \
     -e "KMP_AFFINITY=scatter,granularity=fine" \
-    -e "MIC_KMP_PLACE_THREADS=$((MICCORES-1))3t"
+    -e "MIC_KMP_PLACE_THREADS=$((MICCORES-1))${MICTPERC}t"
 fi
 
