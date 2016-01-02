@@ -84,7 +84,9 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
 		FCFLAGS += -O2
-		DFLAGS += -DNDEBUG
+		ifeq (0,$(SYM))
+			DFLAGS += -DNDEBUG
+		endif
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
@@ -193,7 +195,9 @@ else # GCC assumed
 		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
 		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		DFLAGS += -DNDEBUG
+		ifeq (0,$(SYM))
+			DFLAGS += -DNDEBUG
+		endif
 		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
