@@ -11,10 +11,20 @@ ifneq (,$(FC)) # allow FC to be optional
 	FC_CHECK = $(notdir $(shell which $(FC) 2> /dev/null))
 endif
 
+# Optimization level
+OPT ?= 2
+
+# Optimization flag derived from OPT flag
+ifeq (0,$(shell echo $(OPT) | grep -q "^[0-9]\+$$"; echo $$?))
+	OPTFLAG = -O$(OPT)
+else
+	OPTFLAG = -$(OPT)
+endif
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
-COMPATIBLE = 0
+COMPATIBLE ?= 0
 
 # prefer Intel Compiler (if available)
 ifneq (,$(ICPC))
@@ -101,9 +111,9 @@ ifneq (0,$(INTEL))
 	# flag specifying output directory must be last
 	FMFLAGS += -module
 	ifeq (0,$(DBG))
-		CXXFLAGS += -fno-alias -ansi-alias -O2
-		CFLAGS += -fno-alias -ansi-alias -O2
-		FCFLAGS += -O2
+		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
+		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
+		FCFLAGS += $(OPTFLAG)
 		ifeq (0,$(SYM))
 			DFLAGS += -DNDEBUG
 		endif
@@ -220,9 +230,9 @@ else # GCC assumed
 		FMFLAGS += -I
 	endif
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -funroll-loops
-		CFLAGS += -O2 -funroll-loops
-		FCFLAGS += -O2 -funroll-loops
+		CXXFLAGS += $(OPTFLAG) -funroll-loops
+		CFLAGS += $(OPTFLAG) -funroll-loops
+		FCFLAGS += $(OPTFLAG) -funroll-loops
 		ifeq (0,$(COMPATIBLE))
 			CXXFLAGS += -ftree-vectorize -ffast-math
 			CFLAGS += -ftree-vectorize -ffast-math
@@ -288,7 +298,9 @@ else # GCC assumed
 		else ifneq (,$(OMP)) # clang: OMP=libomp
 			CXXFLAGS += -fopenmp=$(OMP)
 			CFLAGS += -fopenmp=$(OMP)
-			FCFLAGS += -fopenmp=$(OMP)
+			# omit passing special OMP into Fortran compiler
+			FCFLAGS += -fopenmp
+			# issue with using gfortran as linker-driver
 			LDFLAGS += -fopenmp=$(OMP)
 		endif
 	endif
