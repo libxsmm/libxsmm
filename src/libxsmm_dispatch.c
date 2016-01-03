@@ -90,7 +90,6 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_dispatch_lock[] = {
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT
 };
-#define LIBXSMM_DISPATCH_LOCKMASTER 0
 #endif
 
 
@@ -172,10 +171,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
 {
   /*const*/libxsmm_dispatch_entry* result;
+  int i;
 
 #if !defined(_OPENMP)
-  /* acquire one of the locks as the master lock */
-  LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+  /* acquire locks and thereby shortcut lazy initialization later on */
+  const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
 #else
 # pragma omp critical(libxsmm_dispatch_lock)
 #endif
@@ -190,7 +191,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
       result = (libxsmm_dispatch_entry*)malloc(LIBXSMM_DISPATCH_CACHESIZE * sizeof(libxsmm_dispatch_entry));
       assert(result);
       if (result) {
-        int i;
         for (i = 0; i < LIBXSMM_DISPATCH_CACHESIZE; ++i) result[i].code.xmm = 0;
         { /* omit registering SSE code if JIT is enabled and an AVX-based ISA is available
            * any kind of AVX code is registered even when a higher ISA is found!
@@ -206,15 +206,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
 #           include <libxsmm_dispatch.h>
           }
         }
-#if !defined(_OPENMP)
-        { /* acquire and release remaining locks to shortcut any lazy initialization later on */
-          const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
-          for (i = 1; i < nlocks; ++i) {
-            LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
-            LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
-          }
-        }
-#endif
         atexit(libxsmm_finalize);
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
         __atomic_store_n(&libxsmm_dispatch_cache, result, __ATOMIC_SEQ_CST);
@@ -224,9 +215,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dispatch_entry* internal_init(void)
       }
     }
   }
-#if !defined(_OPENMP)
-  /* release the master lock */
-  LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+#if !defined(_OPENMP) /* release locks */
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
 #endif
 
   return result;
@@ -258,9 +248,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #endif
 
   if (0 != cache) {
+    int i;
 #if !defined(_OPENMP)
-    /* acquire one of the locks as the master lock */
-    LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+    /* acquire locks and thereby shortcut lazy initialization later on */
+    const int nlocks = sizeof(libxsmm_dispatch_lock) / sizeof(*libxsmm_dispatch_lock);
+    for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(libxsmm_dispatch_lock[i]);
 #else
 #   pragma omp critical(libxsmm_dispatch_lock)
 #endif
@@ -268,7 +260,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       cache = libxsmm_dispatch_cache;
 
       if (0 != cache) {
-        int i;
 #if defined(LIBXSMM_DISPATCH_STDATOMIC)
         __atomic_store_n(&libxsmm_dispatch_cache, 0, __ATOMIC_SEQ_CST);
 #else
@@ -295,9 +286,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         free((void*)cache);
       }
     }
-#if !defined(_OPENMP)
-    /* release the master lock */
-    LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[LIBXSMM_DISPATCH_LOCKMASTER]);
+#if !defined(_OPENMP) /* release locks */
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(libxsmm_dispatch_lock[i]);
 #endif
   }
 }
