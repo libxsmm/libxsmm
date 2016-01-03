@@ -682,6 +682,9 @@ tests: test-cp2k test-smm test-nek
 .PHONY: test
 test: test-cp2k
 
+.PHONY: perf
+perf: perf-cp2k
+
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
 $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
