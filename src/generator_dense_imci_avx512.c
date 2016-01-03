@@ -58,18 +58,18 @@ LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_initialize_mask( 
   l_mask = l_mask >> ( i_micro_kernel_config->vector_length - (i_xgemm_desc->m - i_m_done) );
 
   /* move mask to GP register */
-  libxsmm_instruction_alu_imm( io_generated_code,
+  libxsmm_x86_instruction_alu_imm( io_generated_code,
                                i_micro_kernel_config->alu_mov_instruction,
                                i_gp_reg_mapping->gp_reg_help_5,
                                l_mask );
 
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI ) {
-    libxsmm_instruction_mask_move( io_generated_code,
+    libxsmm_x86_instruction_mask_move( io_generated_code,
                                    LIBXSMM_X86_INSTR_KMOV,
                                    i_gp_reg_mapping->gp_reg_help_5,
                                    LIBXSMM_X86_IMCI_AVX512_MASK );
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512 ) {
-    libxsmm_instruction_mask_move( io_generated_code,
+    libxsmm_x86_instruction_mask_move( io_generated_code,
                                    LIBXSMM_X86_INSTR_KMOVW,
                                    i_gp_reg_mapping->gp_reg_help_5,
                                    LIBXSMM_X86_IMCI_AVX512_MASK );
@@ -163,18 +163,18 @@ LIBXSMM_INLINE void libxsmm_generator_dense_imci_avx512_kernel_mloop( libxsmm_ge
 
     /* adjust pointers as we don't have a m-loop body */
     /* C */
-    libxsmm_instruction_alu_imm( io_generated_code,
+    libxsmm_x86_instruction_alu_imm( io_generated_code,
                                  l_micro_kernel_config_mask.alu_add_instruction,
                                  i_gp_reg_mapping->gp_reg_c,
                                  (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
     /* A */
     if (l_k_unrolled == 0) {
-      libxsmm_instruction_alu_imm( io_generated_code,
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    l_micro_kernel_config_mask.alu_sub_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
                                    (i_xgemm_desc->k * l_micro_kernel_config_mask.datatype_size * i_xgemm_desc->lda) - ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
     } else {
-      libxsmm_instruction_alu_imm( io_generated_code,
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    l_micro_kernel_config_mask.alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
                                    ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
@@ -233,7 +233,7 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   /* printf("N splitting of DP AVX512 Kernel: %i %i %i %i\n", l_N1, l_N2, l_n1, l_n2); */
 
   /* open asm */
-  libxsmm_generator_dense_x86_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   if (l_number_of_chunks == 1) {
     libxsmm_generator_dense_imci_avx512_kernel_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
@@ -258,6 +258,6 @@ void libxsmm_generator_dense_imci_avx512_kernel( libxsmm_generated_code*        
   }
 
   /* close asm */
-  libxsmm_generator_dense_x86_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }
 

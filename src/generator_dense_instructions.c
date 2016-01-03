@@ -64,17 +64,17 @@ LIBXSMM_INLINE int add_offset (const unsigned int i_place1,
    }
 }
 
-void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
-                                   const unsigned int      i_instruction_set,
-                                   const unsigned int      i_vmove_instr,
-                                   const unsigned int      i_gp_reg_base,
-                                   const unsigned int      i_gp_reg_idx,
-                                   const unsigned int      i_scale,
-                                   const int               i_displacement,
-                                   const char              i_vector_name,
-                                   const unsigned int      i_vec_reg_number_0,
-                                   const unsigned int      i_use_masking,
-                                   const unsigned int      i_is_store ) {
+void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
+                                       const unsigned int      i_instruction_set,
+                                       const unsigned int      i_vmove_instr,
+                                       const unsigned int      i_gp_reg_base,
+                                       const unsigned int      i_gp_reg_idx,
+                                       const unsigned int      i_scale,
+                                       const int               i_displacement,
+                                       const char              i_vector_name,
+                                       const unsigned int      i_vec_reg_number_0,
+                                       const unsigned int      i_use_masking,
+                                       const unsigned int      i_is_store ) {
 #ifndef NDEBUG
   if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
@@ -367,13 +367,13 @@ void libxsmm_instruction_vec_move( libxsmm_generated_code* io_generated_code,
 }
 
 
-void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
-                                          const unsigned int      i_instruction_set,
-                                          const unsigned int      i_vec_instr,
-                                          const char              i_vector_name,
-                                          const unsigned int      i_vec_reg_number_0,
-                                          const unsigned int      i_vec_reg_number_1,
-                                          const unsigned int      i_vec_reg_number_2 )
+void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1,
+                                              const unsigned int      i_vec_reg_number_2 )
 {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
@@ -772,17 +772,17 @@ void libxsmm_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
-void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code,
-                                          const unsigned int      i_instruction_set,
-                                          const unsigned int      i_vec_instr,
-                                          const unsigned int      i_use_broadcast,
-                                          const unsigned int      i_gp_reg_base,
-                                          const unsigned int      i_gp_reg_idx,
-                                          const unsigned int      i_scale,
-                                          const int               i_displacement,
-                                          const char              i_vector_name,
-                                          const unsigned int      i_vec_reg_number_0,
-                                          const unsigned int      i_vec_reg_number_1 ) {
+void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const unsigned int      i_use_broadcast,
+                                              const unsigned int      i_gp_reg_base,
+                                              const unsigned int      i_gp_reg_idx,
+                                              const unsigned int      i_scale,
+                                              const int               i_displacement,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1 ) {
   /* @TODO add checks in debug mode */
   if ( (i_instruction_set != LIBXSMM_X86_IMCI)   &&
        (i_instruction_set != LIBXSMM_X86_AVX512) &&
@@ -1392,14 +1392,14 @@ void libxsmm_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_c
 }
 
 
-void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
-                                          const unsigned int      i_instruction_set,
-                                          const unsigned int      i_vec_instr,
-                                          const char              i_vector_name,
-                                          const unsigned int      i_vec_reg_number_0,
-                                          const unsigned int      i_vec_reg_number_1,
-                                          const unsigned int      i_vec_reg_number_2,
-                                          const unsigned int      i_shuffle_operand ) {
+void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
+                                              const unsigned int      i_instruction_set,
+                                              const unsigned int      i_vec_instr,
+                                              const char              i_vector_name,
+                                              const unsigned int      i_vec_reg_number_0,
+                                              const unsigned int      i_vec_reg_number_1,
+                                              const unsigned int      i_vec_reg_number_2,
+                                              const unsigned int      i_shuffle_operand ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
@@ -1427,12 +1427,12 @@ void libxsmm_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_c
   }
 }
 
-void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
-                                   const unsigned int      i_prefetch_instr,
-                                   const unsigned int      i_gp_reg_base,
-                                   const unsigned int      i_gp_reg_idx,
-                                   const unsigned int      i_scale,
-                                   const int               i_displacement ) {
+void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code,
+                                       const unsigned int      i_prefetch_instr,
+                                       const unsigned int      i_gp_reg_base,
+                                       const unsigned int      i_gp_reg_idx,
+                                       const unsigned int      i_scale,
+                                       const int               i_displacement ) {
 #ifndef NDEBUG
   if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
@@ -1590,11 +1590,10 @@ void libxsmm_instruction_prefetch( libxsmm_generated_code* io_generated_code,
   }
 }
 
-/* Note that i_immediate should be const int! Immediates can be negative */
-void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
-                                  const unsigned int      i_alu_instr,
-                                  const unsigned int      i_gp_reg_number,
-                                  const int               i_immediate ) {
+void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_alu_instr,
+                                      const unsigned int      i_gp_reg_number,
+                                      const int               i_immediate ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -1681,10 +1680,10 @@ void libxsmm_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
-void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
-                                  const unsigned int      i_alu_instr,
-                                  const unsigned int      i_gp_reg_number_src,
-                                  const unsigned int      i_gp_reg_number_dest) {
+void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_alu_instr,
+                                      const unsigned int      i_gp_reg_number_src,
+                                      const unsigned int      i_gp_reg_number_dest) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -1755,10 +1754,10 @@ void libxsmm_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
   }
 }
 
-void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
-                                    const unsigned int      i_mask_instr,
-                                    const unsigned int      i_gp_reg_number,
-                                    const unsigned int      i_mask_reg_number ) {
+void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
+                                        const unsigned int      i_mask_instr,
+                                        const unsigned int      i_gp_reg_number,
+                                        const unsigned int      i_mask_reg_number ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -1833,8 +1832,8 @@ void libxsmm_instruction_mask_move( libxsmm_generated_code* io_generated_code,
   }
 }
 
-void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
-                                              libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                                  libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check if we still have lable we can jump to */
   if ( io_loop_label_tracker->label_count == 32 ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
@@ -1864,9 +1863,9 @@ void libxsmm_instruction_register_jump_label( libxsmm_generated_code*     io_gen
   }
 }
 
-void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
-                                             const unsigned int          i_jmp_instr,
-                                             libxsmm_loop_label_tracker* io_loop_label_tracker ) {
+void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
+                                                 const unsigned int          i_jmp_instr,
+                                                 libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check that we just handle jl */
   if ( i_jmp_instr != LIBXSMM_X86_INSTR_JL) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
@@ -1939,10 +1938,10 @@ void libxsmm_instruction_jump_back_to_label( libxsmm_generated_code*     io_gene
   }
 }
 
-void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code*       io_generated_code,
-                                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                           const char*                   i_arch,
-                                                           unsigned int                  i_prefetch) {
+void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
+                                          const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                          const char*                   i_arch,
+                                          unsigned int                  i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO this is currently System V AMD64 RTL(C) ABI only */
@@ -2154,15 +2153,15 @@ void libxsmm_generator_dense_x86_open_instruction_stream( libxsmm_generated_code
   }
 
   /* reset loop counters */
-  libxsmm_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_mloop, 0 );
-  libxsmm_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_nloop, 0 );
-  libxsmm_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_kloop, 0 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_mloop, 0 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_nloop, 0 );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_kloop, 0 );
 }
 
-void libxsmm_generator_dense_x86_close_instruction_stream( libxsmm_generated_code*       io_generated_code,
-                                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                                           const char*                   i_arch,
-                                                           unsigned int                  i_prefetch) {
+void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
+                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
+                                           const char*                   i_arch,
+                                           unsigned int                  i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO this is a very simple System V ABI 64 interfacce */

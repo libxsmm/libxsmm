@@ -65,7 +65,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
 
   if (l_m_blocking == 1) {
     /* load column vectors of A */
-    libxsmm_instruction_vec_move( io_generated_code,
+    libxsmm_x86_instruction_vec_move( io_generated_code,
                                   i_micro_kernel_config->instruction_set,
                                   i_micro_kernel_config->a_vmove_instruction,
                                   i_gp_reg_mapping->gp_reg_a,
@@ -77,14 +77,14 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
       if ( l_n == 0 ) {
-        libxsmm_instruction_alu_imm( io_generated_code,
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
                                      (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
       }
       /* different ways of using B */
       if ( i_offset != (-1) ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -94,7 +94,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_instruction_vec_shuffle_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -104,7 +104,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                0 );
         }
       } else {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -114,7 +114,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_instruction_vec_shuffle_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -124,21 +124,21 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                0 );
         }
         if ( l_n == (i_n_blocking -1) ) {
-          libxsmm_instruction_alu_imm( io_generated_code,
+          libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_b,
                                        i_micro_kernel_config->datatype_size );
         }
       }
       /* issue mul-add */
-      libxsmm_instruction_vec_compute_reg( io_generated_code,
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            i_micro_kernel_config->vmul_instruction,
                                            i_micro_kernel_config->vector_name,
                                            i_n_blocking,
                                            l_n,
                                            LIBXSMM_X86_VEC_REG_UNDEF );
-      libxsmm_instruction_vec_compute_reg( io_generated_code,
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            i_micro_kernel_config->vadd_instruction,
                                            i_micro_kernel_config->vector_name,
@@ -150,7 +150,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
     /* broadcast from B -> into vec registers 0 to i_n_blocking */
     if ( i_offset != (-1) ) {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -160,7 +160,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
-          libxsmm_instruction_vec_shuffle_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -172,7 +172,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
       }
     } else {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -182,7 +182,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
         if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
-          libxsmm_instruction_vec_shuffle_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -192,7 +192,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                0 );
         }
      }
-     libxsmm_instruction_alu_imm( io_generated_code,
+     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_add_instruction,
                                   i_gp_reg_mapping->gp_reg_b,
                                   i_micro_kernel_config->datatype_size );
@@ -201,7 +201,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
     if (l_m_blocking == 3) {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
       for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
@@ -213,14 +213,14 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-            libxsmm_instruction_alu_imm( io_generated_code,
+            libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
           }
           if (l_n < i_n_blocking - 1) {
             /* issed vmove to save loads from A */
-            libxsmm_instruction_vec_compute_reg( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_micro_kernel_config->instruction_set,
                                                  i_micro_kernel_config->a_vmove_instruction,
                                                  i_micro_kernel_config->vector_name,
@@ -229,14 +229,14 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
           }
           /* issue mul+add */
-          libxsmm_instruction_vec_compute_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
                                                i_micro_kernel_config->vector_name,
                                                l_n,
                                                i_n_blocking + l_n,
                                                LIBXSMM_X86_VEC_REG_UNDEF );
-          libxsmm_instruction_vec_compute_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vadd_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -248,7 +248,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
     } else {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
       for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
@@ -261,7 +261,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-            libxsmm_instruction_alu_imm( io_generated_code,
+            libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
@@ -269,7 +269,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
           if (l_n < i_n_blocking - 1) {
             /* issed vmove to save loads from A */
             if (l_n == 0 ) {
-              libxsmm_instruction_vec_compute_reg( io_generated_code,
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
                                                    i_micro_kernel_config->a_vmove_instruction,
                                                    i_micro_kernel_config->vector_name,
@@ -277,7 +277,7 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                    i_n_blocking + l_m_blocking + l_n,
                                                    LIBXSMM_X86_VEC_REG_UNDEF );
             } else {
-              libxsmm_instruction_vec_compute_reg( io_generated_code,
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
                                                    i_micro_kernel_config->a_vmove_instruction,
                                                    i_micro_kernel_config->vector_name,
@@ -288,14 +288,14 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
           }
           /* issue mul/add */
           if (l_n == 0 ) {
-            libxsmm_instruction_vec_compute_reg( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_micro_kernel_config->instruction_set,
                                                  i_micro_kernel_config->vmul_instruction,
                                                  i_micro_kernel_config->vector_name,
                                                  l_n,
                                                  i_n_blocking + l_m + l_n,
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
-            libxsmm_instruction_vec_compute_reg( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_micro_kernel_config->instruction_set,
                                                  i_micro_kernel_config->vadd_instruction,
                                                  i_micro_kernel_config->vector_name,
@@ -303,14 +303,14 @@ void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*          
                                                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) ,
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
           } else {
-            libxsmm_instruction_vec_compute_reg( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_micro_kernel_config->instruction_set,
                                                  i_micro_kernel_config->vmul_instruction,
                                                  i_micro_kernel_config->vector_name,
                                                  l_n,
                                                  i_n_blocking + l_m_blocking + l_n - 1,
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
-            libxsmm_instruction_vec_compute_reg( io_generated_code,
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_micro_kernel_config->instruction_set,
                                                  i_micro_kernel_config->vadd_instruction,
                                                  i_micro_kernel_config->vector_name,

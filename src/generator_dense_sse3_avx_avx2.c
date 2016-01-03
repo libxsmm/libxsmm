@@ -90,7 +90,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   libxsmm_generator_dense_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   /* open asm */
-  libxsmm_generator_dense_x86_open_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   /* apply n_blocking */
   while (l_n_done != i_xgemm_desc->n) {
@@ -167,7 +167,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
                                                       i_xgemm_desc, l_m_blocking, l_max_blocked_k, 0 );
               }
               if (l_max_blocked_k > 0 ) {
-                libxsmm_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
+                libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
                                              l_gp_reg_mapping.gp_reg_b, l_max_blocked_k * l_micro_kernel_config.datatype_size );
               }
               for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
@@ -198,7 +198,7 @@ void libxsmm_generator_dense_sse3_avx_avx2_kernel( libxsmm_generated_code*      
   }
 
   /* close asm */
-  libxsmm_generator_dense_x86_close_instruction_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }
 
 unsigned int libxsmm_generator_dense_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,

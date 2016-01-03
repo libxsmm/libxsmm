@@ -65,7 +65,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
 
   if (l_m_blocking == 1) {
     /* load column vectors of A */
-    libxsmm_instruction_vec_move( io_generated_code,
+    libxsmm_x86_instruction_vec_move( io_generated_code,
                                   i_micro_kernel_config->instruction_set,
                                   i_micro_kernel_config->a_vmove_instruction,
                                   i_gp_reg_mapping->gp_reg_a,
@@ -77,14 +77,14 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
       if ( l_n == 0 ) {
-        libxsmm_instruction_alu_imm( io_generated_code,
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a,
                                      (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
       }
       /* different ways of using B */
       if ( i_offset != (-1) ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -93,7 +93,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
       } else {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -102,14 +102,14 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         if ( l_n == (i_n_blocking -1) ) {
-          libxsmm_instruction_alu_imm( io_generated_code,
+          libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_b,
                                        i_micro_kernel_config->datatype_size );
         }
       }
       /* issue fma */
-      libxsmm_instruction_vec_compute_reg( io_generated_code,
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                            i_micro_kernel_config->instruction_set,
                                            i_micro_kernel_config->vmul_instruction,
                                            i_micro_kernel_config->vector_name,
@@ -121,7 +121,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
     /* broadcast from B -> into vec registers 0 to i_n_blocking */
     if ( i_offset != (-1) ) {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -132,7 +132,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
       }
     } else {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->b_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_b,
@@ -141,7 +141,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
      }
-     libxsmm_instruction_alu_imm( io_generated_code,
+     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_add_instruction,
                                   i_gp_reg_mapping->gp_reg_b,
                                   i_micro_kernel_config->datatype_size );
@@ -150,7 +150,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
     if (l_m_blocking == 4) {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
       for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
@@ -162,13 +162,13 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-            libxsmm_instruction_alu_imm( io_generated_code,
+            libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
           }
           /* issue fma */
-          libxsmm_instruction_vec_compute_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
                                                i_micro_kernel_config->vector_name,
@@ -180,7 +180,7 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
     } else {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
       for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
-        libxsmm_instruction_vec_move( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
                                       i_gp_reg_mapping->gp_reg_a,
@@ -193,13 +193,13 @@ void libxsmm_generator_dense_avx2_microkernel( libxsmm_generated_code*          
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
-            libxsmm_instruction_alu_imm( io_generated_code,
+            libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a,
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
           }
           /* issue fma */
-          libxsmm_instruction_vec_compute_reg( io_generated_code,
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
                                                i_micro_kernel_config->vector_name,
