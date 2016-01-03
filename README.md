@@ -137,14 +137,14 @@ make -f /path/to/libxsmm/Makefile
 make clean
 ```
 
-For example, installing the library into a specific location (including some selection of statically generated Intel SSE kernels) looks like:
+For example, installing into a specific location (incl. a selection of statically generated Intel SSE kernels) looks like:
 
 ```
 make MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
 make clean
 ```
 
-Performing `make install-minimal` omits the documentation (`PREFIX/share/libxsmm`). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR (`share/libxsmm`) allow to customize the locations underneath of the PREFIX location.
+Performing `make install-minimal` omits the documentation (default: `PREFIX/share/libxsmm`). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR allow to customize the locations underneath of the PREFIX location.
 
 ## Performance
 ### Tuning
@@ -271,7 +271,7 @@ The library does not claim to be "optimal" or "best-performing", and the present
 Please note that comparing performance results depends on whether or not streaming the operands of the matrix multiplication. For example, running a matrix multiplication code many time with all operands covered by the L1 cache may have an emphasis towards an implementation which actually performs worse for the real workload (if this real workload needs to stream some or all operands from the main memory).
 
 ## Applications
-**\[1] [https://cp2k.org/](https://cp2k.org/)**: Open Source Molecular Dynamics with its DBCSR component processing batches of small matrix multiplications ("matrix stacks") out of a problem-specific distributed block-sparse matrix. Starting with [CP2K 3.0](https://www.cp2k.org/version_history), LIBXSMM can be used to substitute CP2K's "libsmm" library. Prior to version 3.0, only the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) allows using LIBXSMM (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
+**\[1] [https://cp2k.org/](https://cp2k.org/)**: Open Source Molecular Dynamics with its DBCSR component processing batches of small matrix multiplications ("matrix stacks") out of a problem-specific distributed block-sparse matrix. Starting with [CP2K 3.0](https://www.cp2k.org/version_history), LIBXSMM can be used to substitute CP2K's "libsmm" library. Prior to CP2K 3.0, only the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) was integrating LIBXSMM (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
 
 **\[2] [https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/)**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/).
 
