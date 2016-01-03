@@ -108,27 +108,17 @@ IPO ?= 0
 ILP64 ?= 0
 BLAS ?= 2
 
-# JIT backend is enabled by default
-JIT ?= 1
-
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
 	MIC ?= 1
-	JIT ?= 0
 else
 	MIC ?= 0
 endif
 
-ifneq (0,$(MIC))
-	JIT ?= 0
-endif
-
-ifneq (0,$(STATIC))
-	GENERATOR = $(BINDIR)/libxsmm_generator
-	LIBEXT = a
-else
-	GENERATOR = env LD_LIBRARY_PATH=$(OUTDIR):$(LD_LIBRARY_PATH) $(BINDIR)/libxsmm_generator
-	LIBEXT = so
+# JIT backend is enabled by default
+JIT ?= 1
+ifneq (0,$(JIT))
+	SSE ?= 1
 endif
 
 ifeq (1,$(AVX))
@@ -141,6 +131,14 @@ else ifneq (0,$(SSE))
 	GENTARGET = wsm
 else
 	GENTARGET = noarch
+endif
+
+ifneq (0,$(STATIC))
+	GENERATOR = $(BINDIR)/libxsmm_generator
+	LIBEXT = a
+else
+	GENERATOR = env LD_LIBRARY_PATH=$(OUTDIR):$(LD_LIBRARY_PATH) $(BINDIR)/libxsmm_generator
+	LIBEXT = so
 endif
 
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))

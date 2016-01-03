@@ -1,5 +1,5 @@
 # CP2K Open Source Molecular Dynamics
-This document is intended to be a recipe for building and running CP2K's "intel" branch which uses the Intel Development Tools and the Intel runtime environment. Differences compared to CP2K/trunk may be incorporated into the mainline version of CP2K at any time (and subsequently released).
+This document is intended to be a recipe for building and running the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) which uses the Intel Development Tools and the Intel runtime environment. Differences compared to CP2K/trunk may be incorporated into the mainline version of CP2K at any time (and subsequently released). For example, starting with [CP2K 3.0](https://www.cp2k.org/version_history) an LIBXSMM integration is available which is (optionally) substituting CP2K's "libsmm" library.
 
 ## Getting the Source Code
 The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub.
@@ -29,7 +29,7 @@ For product suites, the compiler and the MPI library can be sourced in one step.
 source /opt/intel/compilers_and_libraries_2016.0.109/linux/bin/compilervars.sh intel64
 ```
 
-To build the CP2K application, building LIBXSMM separately is not required since with the CP2K/intel branch it will be build in an out-of-tree fashion (as log as the LIBXSMMROOT path is supplied).
+To build the CP2K application, building LIBXSMM separately is not required (it will be build in an out-of-tree fashion as long as the LIBXSMMROOT path is supplied). Since [CP2K 3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) is also supporting the LIBXSMM however the library needs to be built separately.
 
 ```
 cd cp2k/makefiles
@@ -38,10 +38,11 @@ make ARCH=Linux-x86-64-intel VERSION=psmp LIBXSMMROOT=/path/to/libxsmm -j
 
 To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (similar to `ARCH=Linux-x86-64-intel` and `VERSION=psmp`).
 
+* **LIBXSMM_PREFETCH**: set `LIBXSMM_PREFETCH=1` to unconditionally enable software prefetches.
+* **LIBXSMM_MNK, LIBXSMM_M, LIBXSMM_N, LIBXSMM_K**: see [LIBXSMM documentation](https://github.com/hfp/libxsmm/#build-instructions).
 * **JIT**: set `JIT=0` to disable JIT code generation (enabled by default), and to statically specialize LIBXSMM.
-* **LIBXSMM_MNK**: e.g. `LIBXSMM_MNK="23"` for static specialization (also with JIT, see LIBXSMM's MNK-key).
 * **MPI**: set `MPI=3` to experiment with more recent MPI features e.g., with remote memory access.
-* **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful for performance profiling.
+* **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful with performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
 Please note that the arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "x"-configuration (Linux-x86-64-intel.x) by using even more of the above key-value pairs (`OMP`, `ACC`, etc.).
@@ -58,12 +59,12 @@ mpirun -np 16 \
 
 For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or any workload under `cp2k/tests/QS/benchmark_single_node`. For latter set of workloads however LIBINT and LIBXC may be required. The CP2K/intel branch aims to enable a performance advantage by default. However, there are some options allowing to re-enable default behavior (compared to CP2K/trunk).
 
-* **CP2K_RECONFIGURE**: environment setting for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured.
+* **CP2K_RECONFIGURE**: environment setting for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K 3.0](https://www.cp2k.org/version_history) (and later).
 * **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. For the CP2K/intel branch the MM_DRIVER is set to XSMM by default (if LIBXSMMROOT was present).
 
 ## LIBINT and LIBXC Dependencies
 
-To configure, build, and install LIBINT (Version 1.1.5 has been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). Finally, in order to make use of LIBINT, the key `LIBINTROOT=$(HOME)/libint` needs to be supplied when building the CP2K application (make).
+To configure, build, and install LIBINT (Version 1.1.5 and 1.1.6 has been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). Finally, in order to make use of LIBINT, the key `LIBINTROOT=$(HOME)/libint` needs to be supplied when building the CP2K application (make).
 
 ```
 env \

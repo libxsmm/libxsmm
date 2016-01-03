@@ -17,7 +17,7 @@ void libxsmm_init();
 void libxsmm_finalize();
 ```
 
-To perform the dense matrix-matrix multiplication *C<sub>m&thinsp;x&thinsp;n</sub> = alpha &middot; A<sub>m&thinsp;x&thinsp;k</sub> &middot; B<sub>k&thinsp;x&thinsp;n</sub> + beta &middot; C<sub>m&thinsp;x&thinsp;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from LAPACK/BLAS standard however without compromising the binary compatibility).
+To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from LAPACK/BLAS standard however without compromising the binary compatibility).
 
 ```C
 /** Call automatically dispatched dense matrix multiplication (single/double-precision, C code). */
@@ -127,7 +127,7 @@ grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
 ## Installation
-Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels. Remember, the library builds with an "arch-native" code path if not specified otherwise (SSE=1, or AVX=1|2|3)! If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags are not supporting a more specific instruction set extension (code path). However the JIT backend does not support or generate SSE code. Please note that SSE=1 actually selects an SSE 4.2 code path in order to accelerate code dispatch using CRC32 instructions.
+Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels. If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags are not supporting a more specific instruction set extension (code path). The JIT backend does not support or generate SSE code by itself, and therefore the library is built using SSE code if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE allows not only to include statically generated SSE kernels (if specified by M, N, K, or MNK) but also to run on any system supporting at least SSE 4.2 code (accelerating code-dispatch using CRC32 instructions).
 
 There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1) building the library in an out-of-tree fashion, and (2) installing into a certain location. Building in an out-of-tree fashion looks like:
 
@@ -140,27 +140,29 @@ make clean
 For example, installing the library into a specific location (including some selection of statically generated Intel SSE kernels) looks like:
 
 ```
-make SSE=1 MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
+make MNK="1 2 3 4 5" PREFIX=/path/to/libxsmm-install install
 make clean
 ```
 
-Performing `make install-minimal` omits the documentation (`PREFIX/share/libxsmm`).
+Performing `make install-minimal` omits the documentation (`PREFIX/share/libxsmm`). Moreover, PINCDIR, POUTDIR, PBINDIR, and PDOCDIR (`share/libxsmm`) allow to customize the locations underneath of the PREFIX location.
 
 ## Performance
 ### Tuning
-By default all supported host code paths are generated (with the compiler picking the one according to the feature bits of the host). Specifying a particular code path will not only save some time when generating the static code ("printing"), but also enable cross-compilation for a target that is different from the compiler's host. The build system allows to conveniently select the target system when invoking 'make': SSE=3 (in fact SSE!=0), AVX=1, AVX=2 (with FMA), and AVX=3 are supported. The latter is targeting the Intel Knights Landing processor family ("KNL") and future Intel Xeon processors using foundational Intel AVX-512 instructions (AVX-512F):
+Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
 ```
-make AVX=3
+make JIT=0 AVX=3 MNK="1 2 3 4 5"
 ```
 
-An extended interface can generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Generator driver](#generator-driver) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
+The above example builds a library which cannot be deployed to anything else but the Intel Knights Landing processor family ("KNL") or future Intel Xeon processors supporting foundational Intel AVX-512 instructions (AVX-512F). Similarly, SSE=0 (or JIT=0 without SSE or AVX build flag) employs an "arch-native" approach whereas AVX=1, AVX=2 (with FMA), and AVX=3 are specifically selecting the kind of Intel AVX code.
+
+An extended interface can be generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Generator driver](#generator-driver) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
 
 ```
 make PREFETCH=8
 ```
 
-The prefetch interface is extending the signature of all kernels by three arguments (pa, pb, and pc). These additional three arguments are specifying the locations of the operands of the next multiplication (the next a, b, and c).
+The prefetch interface is extending the signature of all kernels by three arguments (pa, pb, and pc). These additional arguments are specifying the locations of the operands of the next multiplication (the next a, b, and c matrices).
 
 Further, the generated interface of the library also encodes the parameters the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro in order to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
@@ -269,7 +271,7 @@ The library does not claim to be "optimal" or "best-performing", and the present
 Please note that comparing performance results depends on whether or not streaming the operands of the matrix multiplication. For example, running a matrix multiplication code many time with all operands covered by the L1 cache may have an emphasis towards an implementation which actually performs worse for the real workload (if this real workload needs to stream some or all operands from the main memory).
 
 ## Applications
-**\[1] [http://cp2k.org/](http://cp2k.org/)**: Open Source Molecular Dynamics with its DBCSR component generating batches of small matrix multiplications ("matrix stacks") out of a problem-specific distributed block-sparse matrix. The idea and the interface of LIBXSMM is sharing some origin with CP2K's "libsmm" library which can be substituted by LIBXSMM (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
+**\[1] [https://cp2k.org/](https://cp2k.org/)**: Open Source Molecular Dynamics with its DBCSR component processing batches of small matrix multiplications ("matrix stacks") out of a problem-specific distributed block-sparse matrix. Starting with [CP2K 3.0](https://www.cp2k.org/version_history), LIBXSMM can be used to substitute CP2K's "libsmm" library. Prior to version 3.0, only the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) allows using LIBXSMM (see https://github.com/hfp/libxsmm/raw/master/documentation/cp2k.pdf).
 
 **\[2] [https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/)**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/).
 
