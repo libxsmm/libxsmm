@@ -295,7 +295,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
             l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
             l_scale = 8;
           } else {
-            // shouldn't happen....
+            /* shouldn't happen.... */
           }
         }
 
