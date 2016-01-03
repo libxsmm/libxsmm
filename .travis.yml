@@ -54,7 +54,19 @@ script:
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
+    ./make.sh -ci-cm -j test-smm &&
+    eval ${LIBXSMM_RUNGCOV}
+
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean &&
     ./make.sh -ci-cm -j SSE=0 test-smm &&
+    eval ${LIBXSMM_RUNGCOV}
+
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean &&
+    ./make.sh -ci-cm -j SSE=0 AVX=0 test-smm &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&

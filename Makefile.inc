@@ -131,7 +131,7 @@ ifneq (0,$(INTEL))
 			endif
 		else ifneq (0,$(SSE))
 			TARGET = -xSSE4.2
-		else
+		else ifneq (0,$(AVX))
 			TARGET = -xHost
 		endif
 	endif
@@ -255,7 +255,7 @@ else # GCC assumed
 			endif
 		else ifneq (0,$(SSE))
 			TARGET = -msse4.2
-		else
+		else ifneq (0,$(AVX))
 			TARGET = -march=native
 		endif
 	endif
