@@ -29,11 +29,12 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "generator_dense_sse3_microkernel.h"
+#include "generator_x86_instructions.h"
 
 void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
                                                const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
