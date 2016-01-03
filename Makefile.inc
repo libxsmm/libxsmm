@@ -280,10 +280,17 @@ else # GCC assumed
 		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
-		CXXFLAGS += -fopenmp
-		CFLAGS += -fopenmp
-		FCFLAGS += -fopenmp
-		LDFLAGS += -fopenmp
+		ifeq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?))
+			CXXFLAGS += -fopenmp
+			CFLAGS += -fopenmp
+			FCFLAGS += -fopenmp
+			LDFLAGS += -fopenmp
+		else ifneq (,$(OMP)) # clang: OMP=libomp
+			CXXFLAGS += -fopenmp=$(OMP)
+			CFLAGS += -fopenmp=$(OMP)
+			FCFLAGS += -fopenmp=$(OMP)
+			LDFLAGS += -fopenmp=$(OMP)
+		endif
 	endif
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
@@ -420,7 +427,7 @@ else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
 	endif
-	OPENBLAS = $(shell $(CC) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep openblas$(BLAS_THREADS)$(BLAS_BITS) > /dev/null ; echo $$?)
+	OPENBLAS = $(shell $(CC) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
 	ifeq (1,$(OPENBLAS))
 		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	else
