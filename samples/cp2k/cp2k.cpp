@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2013-2015, Intel Corporation                                **
+** Copyright (c) 2015-2016, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -160,6 +160,7 @@ LIBXSMM_RETARGETABLE double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *L
 
 int main(int argc, char* argv[])
 {
+  int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
@@ -227,6 +228,8 @@ int main(int argc, char* argv[])
 #else
       T *const expect = c;
 #endif
+      // eventually JIT-compile the requested kernel
+      const libxsmm_mmfunction<T> xmm(m, n, k);
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, T(0));
@@ -363,7 +366,6 @@ int main(int argc, char* argv[])
 #endif
       }
 
-      const libxsmm_mmfunction<T> xmm(m, n, k);
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
         std::fill_n(c, csize, T(0));
@@ -411,18 +413,18 @@ int main(int argc, char* argv[])
       fprintf(stdout, "Finished\n");
 
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-      if (1.0 < diff) return EXIT_FAILURE;
+      if (1.0 < diff) result = EXIT_FAILURE;
 #endif
     }
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
   catch(...) {
     fprintf(stderr, "Error: unknown exception caught!\n");
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
 
-  return EXIT_SUCCESS;
+  return result;
 }

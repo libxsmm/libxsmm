@@ -249,13 +249,29 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile
 	@$(ROOTDIR)/.hooks/install.sh
-	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
+	@cp -u $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
+	@cp -u $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
+	@cp -u $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
+	@cp -u $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
+	@cp -u $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(PRECISION) $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
+ifneq (0,$(OMP))
+	$(info ==========================================================)
+	$(info LIBXSMM is agnostic with respect to the threading runtime!)
+	$(info Using OpenMP instead of OS primitives to protect shared
+	$(info data is possible but not a default option.)
+	$(info ==========================================================)
+endif
+ifneq (0,$(JIT))
+ifneq (2,$(BLAS))
+	$(info =========================================================)
+	$(info LIBXSMM implements a THRESHOLD which is avoiding to call)
+	$(info BLAS for small matrix multiplications. Using a sequential)
+	$(info BLAS library is superfluous with respect to this library!)
+	$(info =========================================================)
+endif
+endif
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
@@ -271,11 +287,13 @@ ifeq (0,$(OFFLOAD))
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
 endif
+ifneq (,$(FC))
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $@ -o $(BLDDIR)/libxsmm-mod.o $(FMFLAGS) $(dir $@)
+endif
 
 .PHONY: compile_generator_lib
 compile_generator_lib: $(OBJFILES_GEN_LIB)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)

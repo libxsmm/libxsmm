@@ -110,19 +110,34 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F
 all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (0,$(STATIC))
+	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
+endif
 
 $(OUTDIR)/dispatched: $(OUTDIR)/.make $(BLDDIR)/dispatched-cpp.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (0,$(STATIC))
+	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
+endif
 
 $(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (0,$(STATIC))
+	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
+endif
 
 $(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (0,$(STATIC))
+	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
+endif
 
 $(OUTDIR)/smm: $(OUTDIR)/.make $(BLDDIR)/smm-f.o $(MODULES) $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/smm-f.o $(MODULES) $(LIBNAME).$(LIBEXT) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) -o $@ $(BLDDIR)/smm-f.o $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+ifeq (0,$(STATIC))
+	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
+endif
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)

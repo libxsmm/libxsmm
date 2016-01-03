@@ -7,7 +7,14 @@ GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
 CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
 CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
-FC_CHECK  = $(notdir $(shell which $(FC)  2> /dev/null))
+ifneq (,$(FC)) # allow FC to be optional
+	FC_CHECK = $(notdir $(shell which $(FC) 2> /dev/null))
+endif
+
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE = 0
 
 # prefer Intel Compiler (if available)
 ifneq (,$(ICPC))
@@ -22,7 +29,9 @@ endif
 
 CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
-FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+ifneq (,$(FC)) # allow FC to be optional
+	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+endif
 
 CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
@@ -56,6 +65,11 @@ ifeq (1,$(shell echo $$((0<$(NUM_INTEL_COMPILER)&&3>$(NUM_INTEL_COMPILER)))))
 $(info =============================================)
 $(info Incomplete Intel Compiler toolchain detected!)
 $(info =============================================)
+	ifeq (0,$(OFFLOAD))
+		CXXFLAGS += -no-offload
+		CFLAGS += -no-offload
+		FCFLAGS += -no-offload
+	endif
 endif
 
 INTEL ?= $(shell echo $$((3==$(NUM_INTEL_COMPILER))))
@@ -84,7 +98,9 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += -fno-alias -ansi-alias -O2
 		CFLAGS += -fno-alias -ansi-alias -O2
 		FCFLAGS += -O2
-		DFLAGS += -DNDEBUG
+		ifeq (0,$(SYM))
+			DFLAGS += -DNDEBUG
+		endif
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
@@ -162,9 +178,13 @@ else # GCC assumed
 	endif
 	OFFLOAD = 0
 	MIC = 0
-	CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-	CFLAGS += -Wall -Wno-unused-function -Wno-attributes
+	CXXFLAGS += -Wall -Wno-unused-function
+	CFLAGS += -Wall -Wno-unused-function
 	LDFLAGS += -lrt
+	ifeq (0,$(COMPATIBLE))
+		CXXFLAGS += -Wno-attributes
+		CFLAGS += -Wno-attributes
+	endif
 	ifneq (Windows_NT,$(OS))
 		CXXFLAGS += -fPIC
 		CFLAGS += -fPIC
@@ -184,16 +204,27 @@ else # GCC assumed
 		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
-	else
+	else ifeq (0,$(COMPATIBLE))
 		FCFLAGS += -ffree-form
 	endif
-	# flag specifying output directory must be last
-	FMFLAGS += -J
+	ifeq (0,$(COMPATIBLE))
+		# flag specifying output directory must be last
+		FMFLAGS += -J
+	else # fallback
+		FMFLAGS += -I
+	endif
 	ifeq (0,$(DBG))
-		CXXFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		CFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		FCFLAGS += -O2 -ftree-vectorize -ffast-math -funroll-loops
-		DFLAGS += -DNDEBUG
+		CXXFLAGS += -O2 -funroll-loops
+		CFLAGS += -O2 -funroll-loops
+		FCFLAGS += -O2 -funroll-loops
+		ifeq (0,$(COMPATIBLE))
+			CXXFLAGS += -ftree-vectorize -ffast-math
+			CFLAGS += -ftree-vectorize -ffast-math
+			FCFLAGS += -ftree-vectorize -ffast-math
+		endif
+		ifeq (0,$(SYM))
+			DFLAGS += -DNDEBUG
+		endif
 		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects

@@ -5,7 +5,7 @@ include/libxsmm.f
 include/libxsmm.h
 build/libxsmm_dispatch.h
 build/mm_*_*_*.c
-ide/_vs2015-*.bat
+ide/_vs*-*.bat
 ide/*.amplxeproj
 ide/build
 tmp

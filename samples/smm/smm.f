@@ -1,5 +1,5 @@
 !*****************************************************************************!
-!* Copyright (c) 2013-2015, Intel Corporation                                *!
+!* Copyright (c) 2015-2016, Intel Corporation                                *!
 !* All rights reserved.                                                      *!
 !*                                                                           *!
 !* Redistribution and use in source and binary forms, with or without        *!
@@ -76,6 +76,9 @@ PROGRAM smm
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
+  ! Eventually JIT-compile the requested kernel
+  CALL libxsmm_dispatch(xmm, m, n, k)
+
   ! 2 GByte by default for A and B (and C, but this is currently not used)
   s = MERGE(ISHFT(2_8, 30) / ((m * k + k * n + m * n) * T), MAX(i, 0_8), 0.EQ.i)
   duration = 0; scale = (1D0 / s); max_diff = 0
@@ -85,7 +88,7 @@ PROGRAM smm
   ALLOCATE(b(k,n,s))
 
   ! Initialize a, b
-  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, b, scale)
+  !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(s, a, b, scale)
   DO i = 1, s
     CALL init(42, a(:,:,i), scale, i - 1)
     CALL init(24, b(:,:,i), scale, i - 1)
@@ -156,7 +159,6 @@ PROGRAM smm
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   max_diff = MAX(diff, max_diff)
 
-  CALL libxsmm_dispatch(xmm, m, n, k)
   IF (libxsmm_available(xmm)) THEN
     c(:,:) = 0
     WRITE(*, "(A)") "Streamed... (specialized)"

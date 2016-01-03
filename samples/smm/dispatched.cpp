@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2013-2015, Intel Corporation                                **
+** Copyright (c) 2015-2016, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -73,6 +73,7 @@ struct LIBXSMM_RETARGETABLE init {
 
 int main(int argc, char* argv[])
 {
+  int result = EXIT_SUCCESS;
   try {
     typedef double T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
@@ -117,6 +118,9 @@ int main(int argc, char* argv[])
 #endif
       // initialize LIBXSMM
       libxsmm_init();
+
+      // eventually JIT-compile the requested kernel
+      libxsmm_mmfunction<T>(m, n, k);
 
       fprintf(stdout, "m=%i n=%i k=%i (%s, %s) size=%i memory=%.f MB\n\n", m, n, k,
         0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
@@ -193,12 +197,12 @@ int main(int argc, char* argv[])
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
   catch(...) {
     fprintf(stderr, "Error: unknown exception caught!\n");
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
 
-  return EXIT_SUCCESS;
+  return result;
 }
