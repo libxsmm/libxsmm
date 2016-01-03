@@ -106,7 +106,7 @@ IPO ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
-BLAS ?= 2
+BLAS ?= 0
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -257,18 +257,18 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
 ifneq (0,$(OMP))
 	$(info ==========================================================)
 	$(info LIBXSMM is agnostic with respect to the threading runtime!)
-	$(info Using OpenMP instead of OS primitives to protect shared
-	$(info data is possible but not a default option.)
+	$(info Enabling OpenMP suppresses using OS primitives.)
 	$(info ==========================================================)
 endif
-ifneq (0,$(JIT))
-ifneq (2,$(BLAS))
+ifneq (0,$(BLAS))
 	$(info =========================================================)
-	$(info LIBXSMM implements a THRESHOLD which is avoiding to call)
-	$(info BLAS for small matrix multiplications. Using a sequential)
-	$(info BLAS library is superfluous with respect to this library!)
-	$(info =========================================================)
+	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!)
+	$(info Linking it now may prevent users to make an own decision.)
+ifeq (1,$(BLAS))
+	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
+	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
 endif
+	$(info =========================================================)
 endif
 
 .PHONY: fheader
