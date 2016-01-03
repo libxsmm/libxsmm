@@ -42,13 +42,13 @@
     <ClInclude Include="..\src\generator_dense_common.h" />
     <ClInclude Include="..\src\generator_dense_imci_avx512.h" />
     <ClInclude Include="..\src\generator_dense_imci_microkernel.h" />
-    <ClInclude Include="..\src\generator_dense_instructions.h" />
     <ClInclude Include="..\src\generator_dense_noarch.h" />
     <ClInclude Include="..\src\generator_dense_sse3_avx_avx2.h" />
     <ClInclude Include="..\src\generator_dense_sse3_microkernel.h" />
     <ClInclude Include="..\src\generator_sparse_asparse.h" />
     <ClInclude Include="..\src\generator_sparse_bsparse.h" />
     <ClInclude Include="..\src\generator_sparse_csc_reader.h" />
+    <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
   </ItemGroup>
@@ -67,7 +67,6 @@
     <ClCompile Include="..\src\generator_dense_common.c" />
     <ClCompile Include="..\src\generator_dense_imci_avx512.c" />
     <ClCompile Include="..\src\generator_dense_imci_microkernel.c" />
-    <ClCompile Include="..\src\generator_dense_instructions.c" />
     <ClCompile Include="..\src\generator_dense_noarch.c" />
     <ClCompile Include="..\src\generator_dense_sse3_avx_avx2.c" />
     <ClCompile Include="..\src\generator_dense_sse3_microkernel.c" />
@@ -75,6 +74,7 @@
     <ClCompile Include="..\src\generator_sparse_asparse.c" />
     <ClCompile Include="..\src\generator_sparse_bsparse.c" />
     <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
+    <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm.c" />
     <ClCompile Include="..\src\libxsmm_dispatch.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />

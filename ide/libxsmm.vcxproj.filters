@@ -66,9 +66,6 @@
     <ClInclude Include="..\src\generator_dense_imci_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_dense_instructions.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_sparse_asparse.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -82,6 +79,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\build\libxsmm_dispatch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -143,9 +143,6 @@
     <ClCompile Include="..\src\generator_dense_imci_microkernel.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_dense_instructions.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_dense_noarch.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -162,6 +159,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_x86_instructions.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
