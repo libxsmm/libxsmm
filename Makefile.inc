@@ -66,9 +66,15 @@ $(info =============================================)
 $(info Incomplete Intel Compiler toolchain detected!)
 $(info =============================================)
 	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
-		CFLAGS += -no-offload
-		FCFLAGS += -no-offload
+		ifeq (icpc,$(CXX_NAME))
+			CXXFLAGS += -no-offload
+		endif
+		ifeq (icc,$(CC_NAME))
+			CFLAGS += -no-offload
+		endif
+		ifeq (ifort,$(FC_NAME))
+			FCFLAGS += -no-offload
+		endif
 	endif
 endif
 
