@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015, Intel Corporation                                     **
+** Copyright (c) 2015-2016, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,11 +28,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
 #include "generator_dense_imci_avx512.h"
 #include "generator_dense_imci_microkernel.h"
 #include "generator_dense_avx512_microkernel.h"
-#include "generator_dense_instructions.h"
 #include "generator_dense_common.h"
+#include "generator_x86_instructions.h"
 #include "generator_common.h"
 
 #include <libxsmm_macros.h>

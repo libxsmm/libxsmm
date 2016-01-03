@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015, Intel Corporation                                     **
+** Copyright (c) 2015-2016, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -29,11 +29,13 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+#include "generator_dense_avx_microkernel.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_dense_avx_microkernel.h"
+#include "generator_x86_instructions.h"
 
 void libxsmm_generator_dense_avx_microkernel( libxsmm_generated_code*             io_generated_code,
                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,

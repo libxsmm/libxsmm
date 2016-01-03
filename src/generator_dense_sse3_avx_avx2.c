@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015, Intel Corporation                                     **
+** Copyright (c) 2015-2016, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -34,8 +34,8 @@
 #include <string.h>
 
 #include "generator_common.h"
+#include "generator_x86_instructions.h"
 #include "generator_dense_common.h"
-#include "generator_dense_instructions.h"
 #include "generator_dense_sse3_avx_avx2.h"
 #include "generator_dense_sse3_microkernel.h"
 #include "generator_dense_avx_microkernel.h"
