@@ -4,7 +4,7 @@ if [[ "-cp2k" == "$1" ]] ; then
   shift
   make -e $* \
   ALIGNED_LOADS=1 ALIGNED_STORES=1 \
-  PRECISION=2 SYM=1 \
+  PRECISION=2 \
   MNK=" \
     23, \
     6, \
@@ -21,11 +21,11 @@ if [[ "-cp2k" == "$1" ]] ; then
 elif [[ "-nek" == "$1" ]] ; then
   shift
   make -e $* M="4 8 10 12 16 64 100 144" N="4 8 10 12 16 64 100 144" K="4 8 10 12" \
-    SYM=1 BETA=0 THRESHOLD=$((144*144*12))
+    BETA=0 THRESHOLD=$((144*144*12))
 elif [[ "-nekbone" == "$1" ]] ; then
   shift
   make -e $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
-    SYM=1 BETA=0 THRESHOLD=$((324*324*18)) 
+    BETA=0 THRESHOLD=$((324*324*18)) 
 elif [[ "-ci-cm" == "$1" || "-ci" == "$1" ]] ; then
   shift
   make -e $* SYM=1 PEDANTIC=1 MNK=" \
