@@ -53,6 +53,9 @@ else
 	MIC ?= 0
 endif
 
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
+
 ifeq (0,$(MIC))
 	LIBNAME = $(DEPDIR)/lib/libxsmm
 else ifeq (0,$(OFFLOAD))
@@ -184,7 +187,4 @@ endif
 	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/$(OUTNAME)-plot.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/$(OUTNAME)-test.sh $(OUTDIR) 2> /dev/null || true
-
-# include common Makefile artifacts
-include $(DEPDIR)/Makefile.inc
 

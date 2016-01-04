@@ -57,14 +57,16 @@ endif
 CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
 
 # Select code path (if not selected otherwise)
-ifeq (,$(AVX)$(SSE))
+ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
 	else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
 		AVX ?= 2
 	else ifeq (1,$(words $(filter avx,$(CPUFLAGS))))
 		AVX ?= 1
-	else ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
+	endif
+else ifneq (0,$(SSE))
+	ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
 		SSE ?= 1
 	endif
 endif

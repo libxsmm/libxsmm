@@ -121,6 +121,9 @@ ifneq (0,$(JIT))
 	SSE ?= 1
 endif
 
+# include common Makefile artifacts
+include $(ROOTDIR)/Makefile.inc
+
 ifeq (1,$(AVX))
 	GENTARGET = snb
 else ifeq (2,$(AVX))
@@ -872,7 +875,4 @@ install: install-minimal
 	@cp -uv $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
 	@cp -uv $(ROOTDIR)/README.md $(PREFIX)/$(PDOCDIR)
 	@cp -uv $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
-
-# include common Makefile artifacts
-include $(ROOTDIR)/Makefile.inc
 

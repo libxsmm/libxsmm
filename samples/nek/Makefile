@@ -53,6 +53,9 @@ else
 	MIC ?= 0
 endif
 
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
+
 ifeq (0,$(MIC))
 	LIBNAME = $(DEPDIR)/lib/libxsmm
 else ifeq (0,$(OFFLOAD))
@@ -210,7 +213,4 @@ endif
 	@cp $(ROOTDIR)/grad.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/rstr.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
-
-# include common Makefile artifacts
-include $(DEPDIR)/Makefile.inc
 
