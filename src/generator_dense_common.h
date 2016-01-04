@@ -49,12 +49,6 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
                                                               const char*                     i_arch,
                                                               const unsigned int              i_use_masking_a_c );
 
-void libxsmm_generator_dense_add_isa_check_header( libxsmm_generated_code*  io_generated_code,
-                                                   const char*              i_arch );
-
-void libxsmm_generator_dense_add_isa_check_footer( libxsmm_generated_code*  io_generated_code,
-                                                   const char*              i_arch );
-
 void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor* i_xgemm_desc );
 

@@ -49,7 +49,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   unsigned int l_vector_length = 1;
 
   /* add instruction set mismatch check to code, header */
-  libxsmm_generator_dense_add_isa_check_header( io_generated_code, i_arch );
+  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
@@ -129,7 +129,7 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   }
 
   /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_dense_add_isa_check_footer( io_generated_code, i_arch );
+  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 
   /* add flop counter for debug compilation */
   libxsmm_generator_dense_add_flop_counter( io_generated_code, i_xgemm_desc );

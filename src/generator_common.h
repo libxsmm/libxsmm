@@ -274,6 +274,12 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
+void libxsmm_generator_isa_check_header( libxsmm_generated_code*  io_generated_code,
+                                         const char*              i_arch );
+
+void libxsmm_generator_isa_check_footer( libxsmm_generated_code*  io_generated_code,
+                                         const char*              i_arch );
+
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code );
 
