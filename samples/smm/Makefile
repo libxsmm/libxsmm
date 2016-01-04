@@ -19,7 +19,7 @@ endif
 # $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
-ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
 INCDIR = $(DEPDIR)/include

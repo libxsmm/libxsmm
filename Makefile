@@ -72,7 +72,7 @@ $(error BETA needs to be eiter 0 or 1)
 endif
 endif
 
-ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 SRCDIR = $(ROOTDIR)/src
