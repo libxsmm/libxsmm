@@ -21,6 +21,9 @@ else
 	OPTFLAG = -$(OPT)
 endif
 
+# Trace level
+TRACE ?= 0
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -116,19 +119,24 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		FCFLAGS += $(OPTFLAG)
-		ifeq (0,$(SYM))
-			DFLAGS += -DNDEBUG
-		endif
+		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
+		SYM = $(TRACE)
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifneq (0,$(TRACE))
+		CXXFLAGS += -finstrument-functions -pthread
+		CFLAGS += -finstrument-functions -pthread
+		FCFLAGS += -finstrument-functions
+		LDFLAGS += -pthread -rdynamic
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -240,20 +248,29 @@ else # GCC assumed
 			CFLAGS += -ftree-vectorize -ffast-math
 			FCFLAGS += -ftree-vectorize -ffast-math
 		endif
-		ifeq (0,$(SYM))
-			DFLAGS += -DNDEBUG
-		endif
+		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
+		SYM = $(TRACE)
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifneq (0,$(TRACE))
+		CXXFLAGS += -finstrument-functions -pthread
+		CFLAGS += -finstrument-functions -pthread
+		FCFLAGS += -finstrument-functions
+		ifneq (Windows_NT,$(OS))
+			LDFLAGS += -pthread -rdynamic
+		else
+			LDFLAGS += -ldbghelp
+		endif
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
