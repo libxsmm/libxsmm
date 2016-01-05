@@ -34,11 +34,11 @@
 #include <libxsmm_macros.h>
 
 
-/** Initializes the trace facility. */
+/** Initializes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void);
-/** Finalizes the trace facility. */
+/** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void);
-/** Returns the name of the function where libxsmm_trace is called from. */
+/** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth);
 
 #endif /*LIBXSMM_TRACE_H*/

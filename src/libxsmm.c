@@ -168,6 +168,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
 }
 
 
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 {
   /*const*/libxsmm_cache_entry* result;
@@ -230,6 +233,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 }
 
 
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(constructor)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
   /*const*/void* cache;
@@ -245,6 +252,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 }
 
 
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(destructor)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
   libxsmm_cache_entry* cache = 0;
@@ -267,6 +278,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       cache = libxsmm_cache;
 
       if (0 != cache) {
+        i = libxsmm_trace_finalize();
+# if !defined(NDEBUG) /* library code is expected to be mute */
+        if (EXIT_SUCCESS != i) {
+          fprintf(stderr, "LIBXSMM: failed to finalize trace (%i)!\n", i);
+        }
+# endif
 #if defined(LIBXSMM_STDATOMIC)
         __atomic_store_n(&libxsmm_cache, 0, __ATOMIC_SEQ_CST);
 #else
@@ -291,13 +308,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         }
 #endif /*defined(__GNUC__)*/
         free((void*)cache);
-
-        i = libxsmm_trace_finalize();
-# if !defined(NDEBUG) /* library code is expected to be mute */
-        if (EXIT_SUCCESS != i) {
-          fprintf(stderr, "LIBXSMM: failed to finalize trace (%i)!\n", i);
-        }
-# endif
       }
     }
 #if !defined(_OPENMP) /* release locks */

@@ -63,6 +63,10 @@
 # undef LIBXSMM_TRACE_SYMBOLSIZE
 # define LIBXSMM_TRACE_SYMBOLSIZE 256
 #endif
+#if !defined(LIBXSMM_TRACE_STDATOMIC) && defined(__GNUC__) && \
+  (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# define LIBXSMM_TRACE_STDATOMIC
+#endif
 
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -98,6 +102,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 #endif
 }
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
+LIBXSMM_RETARGETABLE int libxsmm_trace_initialized = 0;
 
 
 #if defined(__GNUC__)
@@ -114,6 +119,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void)
 #else
   result = pthread_key_create(&libxsmm_trace_key, internal_delete);
 #endif
+#if defined(LIBXSMM_TRACE_STDATOMIC)
+  __atomic_store_n(&libxsmm_trace_initialized, 1, __ATOMIC_SEQ_CST);
+#else
+  libxsmm_trace_initialized = 1;
+#endif
   return result;
 }
 
@@ -124,6 +134,11 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 {
   int result;
+#if defined(LIBXSMM_TRACE_STDATOMIC)
+  __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
+#else
+  libxsmm_trace_initialized = 0;
+#endif
 #if defined(_WIN32) || defined(__CYGWIN__)
   result = FALSE != SymCleanup(GetCurrentProcess())
     ? EXIT_SUCCESS
@@ -147,111 +162,120 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
   const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
   void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? (*depth + 1) : 1, max_n - 1);
   const char *fname = NULL;
-  int n;
+  int i;
 
 #if defined(__GNUC__)
   __asm__("");
 #endif
+#if defined(LIBXSMM_TRACE_STDATOMIC)
+  i = __atomic_load_n(&libxsmm_trace_initialized, __ATOMIC_RELAXED);
+#else
+  i = libxsmm_trace_initialized;
+#endif
+
+  if (0 != i) { /* do nothing if not yet initialized */
 #if defined(_WIN32) || defined(__CYGWIN__)
-  n = CaptureStackBackTrace(0, max_n, stack, NULL);
-  if (min_n <= n) {
+    i = CaptureStackBackTrace(0, max_n, stack, NULL);
+    if (min_n <= i) {
 # if defined(__GNUC__)
-    static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
+      static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
 # else
-    static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
+      static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
 # endif
-    PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
-    value->SizeOfStruct = sizeof(SYMBOL_INFO);
-    value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
-    if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
-      && 0 < value->NameLen)
-    {
-      /* next two lines are causing an ICE if interchanged (Cygwin GCC 4.9.3) */
-      fname = value->Name;
-      if (depth) *depth = n - min_n;
+      PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
+      value->SizeOfStruct = sizeof(SYMBOL_INFO);
+      value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
+      if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
+        && 0 < value->NameLen)
+      {
+        /* next two lines are causing an ICE if interchanged (Cygwin GCC 4.9.3) */
+        fname = value->Name;
+        if (depth) *depth = i - min_n;
+      }
+# if !defined(NDEBUG)/* library code is expected to be mute */
+      else {
+        fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
+      }
+# endif
     }
 # if !defined(NDEBUG)/* library code is expected to be mute */
     else {
-      fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
+      fprintf(stderr, "LIBXSMM: failed to capture stack trace\n");
     }
-# endif
-  }
-# if !defined(NDEBUG)/* library code is expected to be mute */
-  else {
-    fprintf(stderr, "LIBXSMM: failed to capture stack trace\n");
-  }
 # endif
 #else
-  n = backtrace(stack, max_n);
-  if (min_n <= n) {
-    char* value = (char*)pthread_getspecific(libxsmm_trace_key);
-    int fd;
+    i = backtrace(stack, max_n);
+    if (min_n <= i) {
+      char* value = (char*)pthread_getspecific(libxsmm_trace_key);
+      int fd;
 
-    if (value) {
-      const int *const ivalue = (int*)value;
-      fd = ivalue[0];
+      if (value) {
+        const int *const ivalue = (int*)value;
+        fd = ivalue[0];
 
-      if (0 <= fd && sizeof(int) == lseek(fd, sizeof(int), SEEK_SET)) {
-        value += sizeof(int);
-      }
-# if !defined(NDEBUG)/* library code is expected to be mute */
-      else {
-        fprintf(stderr, "LIBXSMM: failed to get buffer\n");
-      }
-# endif
-    }
-    else {
-      char filename[] = "/tmp/fileXXXXXX";
-      fd = mkstemp(filename);
-
-      if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
-        char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-        if (MAP_FAILED != buffer) {
-          int *const ivalue = (int*)buffer, check = -1;
-          ivalue[0] = fd;
-
-          if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
-            && sizeof(int) == read(fd, &check, sizeof(int))
-            && check == fd)
-          {
-            value = buffer + sizeof(int);
-          }
-          else {
-# if !defined(NDEBUG)/* library code is expected to be mute */
-            fprintf(stderr, "LIBXSMM: failed to setup buffer\n");
-# endif
-            internal_delete(buffer);
-          }
+        if (0 <= fd && sizeof(int) == lseek(fd, sizeof(int), SEEK_SET)) {
+          value += sizeof(int);
         }
-# if !defined(NDEBUG)
+# if !defined(NDEBUG)/* library code is expected to be mute */
         else {
-          fprintf(stderr, "LIBXSMM: %s (mmap)\n", strerror(errno));
+          fprintf(stderr, "LIBXSMM: failed to get buffer\n");
         }
 # endif
-
       }
-# if !defined(NDEBUG)/* library code is expected to be mute */
       else {
-        fprintf(stderr, "LIBXSMM: failed to setup file descriptor (%i)\n", fd);
-      }
-# endif
-    }
+        char filename[] = "/tmp/fileXXXXXX";
+        fd = mkstemp(filename);
 
-    if (value) {
-      backtrace_symbols_fd(symbol, 1, fd);
-      if (1 == sscanf(value, "%*[^(](%s0x", value)) {
-        char* c;
-        for (c = value; '+' != *c && 0 != *c; ++c);
-        if ('+' == *c) {
-          if (depth) *depth = n - min_n;
-          fname = value;
-          *c = 0;
+        if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
+          char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+          if (MAP_FAILED != buffer) {
+            int *const ivalue = (int*)buffer, check = -1;
+            ivalue[0] = fd;
+
+            if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
+              && sizeof(int) == read(fd, &check, sizeof(int))
+              && check == fd)
+            {
+              value = buffer + sizeof(int);
+            }
+            else {
+# if !defined(NDEBUG)/* library code is expected to be mute */
+              fprintf(stderr, "LIBXSMM: failed to setup buffer\n");
+# endif
+              internal_delete(buffer);
+            }
+          }
+# if !defined(NDEBUG)
+          else {
+            fprintf(stderr, "LIBXSMM: %s (mmap)\n", strerror(errno));
+          }
+# endif
+
+        }
+# if !defined(NDEBUG)/* library code is expected to be mute */
+        else {
+          fprintf(stderr, "LIBXSMM: failed to setup file descriptor (%i)\n", fd);
+        }
+# endif
+      }
+
+      if (value) {
+        backtrace_symbols_fd(symbol, 1, fd);
+        if (1 == sscanf(value, "%*[^(](%s0x", value)) {
+          char* c;
+          for (c = value; '+' != *c && 0 != *c; ++c);
+          if ('+' == *c) {
+            if (depth) *depth = i - min_n;
+            fname = value;
+            *c = 0;
+          }
         }
       }
     }
-  }
 #endif
+  }
+
   return fname;
 }
 
