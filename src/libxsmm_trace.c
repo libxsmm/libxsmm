@@ -224,7 +224,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
             internal_delete(buffer);
           }
         }
-# if defined(NDEBUG)
+# if !defined(NDEBUG)
         else {
           fprintf(stderr, "LIBXSMM: %s (mmap)\n", strerror(errno));
         }
