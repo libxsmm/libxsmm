@@ -143,9 +143,9 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth)
 {
-  void* stack[LIBXSMM_TRACE_MAXDEPTH];
-  const int max_n = depth ? LIBXSMM_TRACE_MAXDEPTH : 2;
-  const int min_n = depth ? LIBXSMM_TRACE_MINDEPTH : 2;
+  const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
+  const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
+  void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? (*depth + 1) : 1, max_n - 1);
   const char *fname = NULL;
   int n;
 
@@ -163,7 +163,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
     PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
     value->SizeOfStruct = sizeof(SYMBOL_INFO);
     value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
-    if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)stack[1], NULL, value)
+    if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
       && 0 < value->NameLen)
     {
       /* next two lines are causing an ICE if interchanged (Cygwin GCC 4.9.3) */
@@ -172,7 +172,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
     }
 # if !defined(NDEBUG)/* library code is expected to be mute */
     else {
-      fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", stack[1]);
+      fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
     }
 # endif
   }
@@ -239,7 +239,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
     }
 
     if (value) {
-      backtrace_symbols_fd(stack + 1, 1, fd);
+      backtrace_symbols_fd(symbol, 1, fd);
       if (1 == sscanf(value, "%*[^(](%s0x", value)) {
         char* c;
         for (c = value; '+' != *c && 0 != *c; ++c);
@@ -256,15 +256,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void *this_fn, void *call_site)
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
-  unsigned int depth;
+  unsigned int depth = 1; /* no need for parent (0) but parent of parent (1) */
   const char *const name = libxsmm_trace(&depth);
-  if (name && *name) printf("%s@%i", name, depth);
+  if (name && *name) printf("%i: %s\n", depth, name);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_exit(void *this_fn, void *call_site)
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   /* no action */
 }
