@@ -168,9 +168,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
 }
 
 
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 {
   /*const*/libxsmm_cache_entry* result;
@@ -235,7 +232,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(constructor)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
@@ -254,7 +250,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(destructor)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {

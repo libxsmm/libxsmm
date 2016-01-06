@@ -224,12 +224,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
     i = backtrace(stack, max_n);
     if (min_n <= i) {
       char* value = (char*)pthread_getspecific(libxsmm_trace_key);
-      int fd;
+      int* ivalue = 0, fd = -1;
 
       if (value) {
-        const int *const ivalue = (int*)value;
         int filter = -1;
 
+        ivalue = (int*)value;
         if (0 != thread) filter = *thread;
         if (0 > filter || filter == ivalue[1]) {
           fd = ivalue[0];
@@ -251,7 +251,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
           char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
           if (MAP_FAILED != buffer) {
-            int *const ivalue = (int*)buffer, check = -1;
+            int check = -1;
+            ivalue = (int*)buffer;
             ivalue[0] = fd; /* valid fd for internal_delete */
 
             if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
@@ -293,6 +294,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
           char* c;
           for (c = value; '+' != *c && 0 != *c; ++c);
           if ('+' == *c) {
+            assert(ivalue);
             if (depth) *depth = i - min_n;
             if (thread) *thread = ivalue[1];
             fname = value;
