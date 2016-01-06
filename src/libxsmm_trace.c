@@ -71,8 +71,10 @@
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
+LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG libxsmm_trace_initialized, 32) = -2;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
+LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int libxsmm_trace_initialized, 32) = -2;
 LIBXSMM_RETARGETABLE pthread_key_t libxsmm_trace_key = 0;
 
 #if defined(__GNUC__)
@@ -102,7 +104,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 #endif
 }
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
-LIBXSMM_RETARGETABLE int libxsmm_trace_initialized = 0;
 
 
 #if defined(__GNUC__)
@@ -120,9 +121,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void)
   result = pthread_key_create(&libxsmm_trace_key, internal_delete);
 #endif
 #if defined(LIBXSMM_TRACE_STDATOMIC)
-  __atomic_store_n(&libxsmm_trace_initialized, 1, __ATOMIC_SEQ_CST);
+  __atomic_store_n(&libxsmm_trace_initialized, -1, __ATOMIC_SEQ_CST);
 #else
-  libxsmm_trace_initialized = 1;
+  libxsmm_trace_initialized = -1;
 #endif
   return result;
 }
@@ -135,9 +136,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE_STDATOMIC)
-  __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
+  __atomic_store_n(&libxsmm_trace_initialized, -2, __ATOMIC_SEQ_CST);
 #else
-  libxsmm_trace_initialized = 0;
+  libxsmm_trace_initialized = -2;
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__)
   result = FALSE != SymCleanup(GetCurrentProcess())
@@ -156,11 +157,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 LIBXSMM_ATTRIBUTE(noinline)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth, unsigned int* thread)
 {
   const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
   const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
-  void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? (*depth + 1) : 1, max_n - 1);
+  void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? ((int)(*depth + 1)) : 1, max_n - 1);
   const char *fname = NULL;
   int i;
 
@@ -173,18 +174,30 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
   i = libxsmm_trace_initialized;
 #endif
 
-  if (0 != i) { /* do nothing if not yet initialized */
+  if (-1 <= i) { /* do nothing if not yet initialized */
 #if defined(_WIN32) || defined(__CYGWIN__)
     i = CaptureStackBackTrace(0, max_n, stack, NULL);
     if (min_n <= i) {
-# if defined(__GNUC__)
       static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
-# else
-      static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
-# endif
+      static LIBXSMM_TLS int tid = -1;
       PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
       value->SizeOfStruct = sizeof(SYMBOL_INFO);
       value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
+
+      if (0 != thread) {
+        if (0 > tid) {
+#if defined(_WIN32)
+          const int counter = _InterlockedIncrement(&libxsmm_trace_initialized);
+#elif defined(LIBXSMM_TRACE_STDATOMIC)
+          const int counter = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
+#else
+          const int counter = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
+#endif
+          tid = counter;
+        }
+        *thread = tid;
+      }
+
       if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
         && 0 < value->NameLen)
       {
@@ -213,8 +226,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
         const int *const ivalue = (int*)value;
         fd = ivalue[0];
 
-        if (0 <= fd && sizeof(int) == lseek(fd, sizeof(int), SEEK_SET)) {
-          value += sizeof(int);
+        if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
+          if (0 != thread) *thread = ivalue[1];
+          value += sizeof(int) * 2;
         }
 # if !defined(NDEBUG)/* library code is expected to be mute */
         else {
@@ -235,9 +249,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
 
             if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
               && sizeof(int) == read(fd, &check, sizeof(int))
+              && sizeof(int) == read(fd, &i, sizeof(int))
               && check == fd)
             {
-              value = buffer + sizeof(int);
+#if defined(LIBXSMM_TRACE_STDATOMIC)
+              const int counter = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
+#else
+              const int counter = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
+#endif
+              value = buffer + sizeof(int) * 2;
+              ivalue[1] = counter;
             }
             else {
 # if !defined(NDEBUG)/* library code is expected to be mute */
@@ -251,7 +272,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
             fprintf(stderr, "LIBXSMM: %s (mmap)\n", strerror(errno));
           }
 # endif
-
         }
 # if !defined(NDEBUG)/* library code is expected to be mute */
         else {
@@ -285,9 +305,10 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
-  unsigned int depth = 1; /* no need for parent (0) but parent of parent (1) */
-  const char *const name = libxsmm_trace(&depth);
-  if (name && *name) printf("%i: %s\n", depth, name);
+  unsigned int depth = 1/* no need for parent (0) but parent of parent (1) */, thread;
+  const char *const name = libxsmm_trace(&depth, &thread);
+  if (name && *name) fprintf(stderr, "%*s%s@%i\n", depth, "", name, thread);
+  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
 
 
@@ -296,6 +317,6 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
-  /* no action */
+  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
 

@@ -51,6 +51,7 @@
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
+    <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_1_1_1.c" />
@@ -76,9 +77,10 @@
     <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm.c" />
-    <ClCompile Include="..\src\libxsmm_dispatch.c" />
     <ClCompile Include="..\src\libxsmm_crc32.c" />
+    <ClCompile Include="..\src\libxsmm_gemm.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
+    <ClCompile Include="..\src\libxsmm_trace.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.gitignore" />
@@ -234,6 +236,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -276,6 +279,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -318,6 +322,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -361,6 +366,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -396,6 +402,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -433,6 +440,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>

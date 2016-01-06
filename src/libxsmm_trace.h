@@ -39,6 +39,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void);
 /** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void);
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(
+  /* Inputs depth-th symbol above this call. Outputs abs. call position in stack trace. */
+  unsigned int* depth,
+  /* Outputs thread id. */
+  unsigned int* thread);
 
 #endif /*LIBXSMM_TRACE_H*/
