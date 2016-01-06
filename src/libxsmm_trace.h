@@ -51,6 +51,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   /* Optional (NULL): inputs depth-th symbol above this call.
      Outputs abs. call position in stack trace. */
   unsigned int* depth,
+  /* Specifiy maximum depth relative to given depth to filter for (-1 for all). */
+  int maxdepth_filter,
   /* Optional (NULL): inputs thread id to filter for (-1 for all).
      Outputs thread id if not filtered. */
   int* thread);
@@ -59,7 +61,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream,
   /* Specify position of where to capture the trace (depth-th symbol above this call). */
   unsigned int depth,
+  /* Specifiy maximum depth relative to given depth to filter for (-1 for all). */
+  int maxdepth_filter,
   /* Specifiy thread id to filter for (-1 for all); prints thread id if not filtered. */
-  int thread);
+  int threadid_filter);
 
 #endif /*LIBXSMM_TRACE_H*/
