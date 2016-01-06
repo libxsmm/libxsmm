@@ -97,7 +97,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
   if (0 <= fd) {
     close(fd);
   }
-#if !defined(NDEBUG)/* library code is expected to be mute */
+#if !defined(NDEBUG) /* library code is expected to be mute */
   else {
     fprintf(stderr, "LIBXSMM: invalid file descriptor (%i)\n", fd);
   }
@@ -157,7 +157,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 LIBXSMM_ATTRIBUTE(noinline)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* depth, unsigned int* thread)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned int* depth, int* thread)
 {
   const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
   const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
@@ -180,6 +180,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
     if (min_n <= i) {
       static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
       static LIBXSMM_TLS int tid = -1;
+      int filter = -1;
+
       PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
       value->SizeOfStruct = sizeof(SYMBOL_INFO);
       value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
@@ -195,23 +197,25 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
 #endif
           tid = counter;
         }
-        *thread = tid;
+        filter = *thread;
       }
 
-      if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
-        && 0 < value->NameLen)
-      {
-        /* next two lines are causing an ICE if interchanged (Cygwin GCC 4.9.3) */
-        fname = value->Name;
-        if (depth) *depth = i - min_n;
-      }
-# if !defined(NDEBUG)/* library code is expected to be mute */
-      else {
-        fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
-      }
+      if (0 > filter || filter == tid) {
+        if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
+          && 0 < value->NameLen)
+        {
+          fname = value->Name;
+          if (depth) *depth = i - min_n;
+          if (thread) *thread = tid;
+        }
+# if !defined(NDEBUG) /* library code is expected to be mute */
+        else {
+          fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
+        }
 # endif
+      }
     }
-# if !defined(NDEBUG)/* library code is expected to be mute */
+# if !defined(NDEBUG) /* library code is expected to be mute */
     else {
       fprintf(stderr, "LIBXSMM: failed to capture stack trace\n");
     }
@@ -220,32 +224,34 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
     i = backtrace(stack, max_n);
     if (min_n <= i) {
       char* value = (char*)pthread_getspecific(libxsmm_trace_key);
-      int fd;
 
       if (value) {
         const int *const ivalue = (int*)value;
-        fd = ivalue[0];
+        int filter = -1;
 
-        if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
-          if (0 != thread) *thread = ivalue[1];
-          value += sizeof(int) * 2;
-        }
-# if !defined(NDEBUG)/* library code is expected to be mute */
-        else {
-          fprintf(stderr, "LIBXSMM: failed to get buffer\n");
-        }
+        if (0 != thread) filter = *thread;
+        if (0 > filter || filter == ivalue[1]) {
+          const int fd = ivalue[0];
+          if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
+            value += sizeof(int) * 2;
+          }
+# if !defined(NDEBUG) /* library code is expected to be mute */
+          else {
+            fprintf(stderr, "LIBXSMM: failed to get buffer\n");
+          }
 # endif
+        }
       }
       else {
         char filename[] = "/tmp/fileXXXXXX";
-        fd = mkstemp(filename);
+        const int fd = mkstemp(filename);
 
         if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
           char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
           if (MAP_FAILED != buffer) {
             int *const ivalue = (int*)buffer, check = -1;
-            ivalue[0] = fd;
+            ivalue[0] = fd; /* valid fd for internal_delete */
 
             if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
               && sizeof(int) == read(fd, &check, sizeof(int))
@@ -261,7 +267,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
               ivalue[1] = counter;
             }
             else {
-# if !defined(NDEBUG)/* library code is expected to be mute */
+# if !defined(NDEBUG) /* library code is expected to be mute */
               fprintf(stderr, "LIBXSMM: failed to setup buffer\n");
 # endif
               internal_delete(buffer);
@@ -273,7 +279,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
           }
 # endif
         }
-# if !defined(NDEBUG)/* library code is expected to be mute */
+# if !defined(NDEBUG) /* library code is expected to be mute */
         else {
           fprintf(stderr, "LIBXSMM: failed to setup file descriptor (%i)\n", fd);
         }
@@ -287,6 +293,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
           for (c = value; '+' != *c && 0 != *c; ++c);
           if ('+' == *c) {
             if (depth) *depth = i - min_n;
+            if (thread) *thread = ivalue[1];
             fname = value;
             *c = 0;
           }
@@ -303,20 +310,30 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(unsigned int* de
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned int depth, int thread)
 {
-  unsigned int depth = 1/* no need for parent (0) but parent of parent (1) */, thread;
-  const char *const name = libxsmm_trace(&depth, &thread);
-  if (name && *name) fprintf(stderr, "%*s%s@%i\n", depth, "", name, thread);
-  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
+  unsigned int depth1 = depth + 1;
+  const char *const name = libxsmm_trace_info(&depth1, &thread);
+  if (name && *name) {
+    assert(0 != stream/*otherwise fprintf handle the error*/);
+    fprintf(stream, "%*s%s@%i\n", depth, "", name, thread);
+  }
 }
 
 
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
+{
+  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
+  libxsmm_trace(stderr, 1/*no need for parent (0) but parent of parent (1)*/, -1);
+}
+
+
+LIBXSMM_ATTRIBUTE(no_instrument_function)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
+#endif /*defined(__GNUC__)*/
 

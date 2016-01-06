@@ -32,17 +32,34 @@
 #define LIBXSMM_TRACE_H
 
 #include <libxsmm_macros.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
 
 
 /** Initializes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void);
 /** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void);
+
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace(
-  /* Inputs depth-th symbol above this call. Outputs abs. call position in stack trace. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
+  /* Optional (NULL): inputs depth-th symbol above this call.
+     Outputs abs. call position in stack trace. */
   unsigned int* depth,
-  /* Outputs thread id. */
-  unsigned int* thread);
+  /* Optional (NULL): inputs thread id to filter for (-1 for all).
+     Outputs thread id if not filtered. */
+  int* thread);
+
+/** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream,
+  /* Specify position of where to capture the trace (depth-th symbol above this call). */
+  unsigned int depth,
+  /* Specifiy thread id to filter for (-1 for all); prints thread id if not filtered. */
+  int thread);
 
 #endif /*LIBXSMM_TRACE_H*/
