@@ -42,28 +42,33 @@
 
 
 /** Initializes the trace facility; NOT thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(void);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
+  /* Specify max. depth of call trace (-1: all). */
+  int filter_maxdepth,
+  /* Filter for thread id (-1: all). */
+  int filter_threadid);
+
 /** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void);
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
-  /* Optional (NULL): inputs depth-th symbol above this call.
-     Outputs abs. call position in stack trace. */
+  /* Specify relative/above pos. in stack (NULL/0: default); output: location in trace. */
   unsigned int* depth,
-  /* Specifiy maximum depth relative to given depth to filter for (-1 for all). */
-  int maxdepth_filter,
-  /* Optional (NULL): inputs thread id to filter for (-1 for all).
-     Outputs thread id if not filtered. */
-  int* thread);
+  /* Query the thread id. */
+  unsigned int* threadid,
+  /* Specify max. depth relative to given depth (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_maxdepth,
+  /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_threadid);
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream,
-  /* Specify position of where to capture the trace (depth-th symbol above this call). */
+  /* Specify relative position in stack (above this call). */
   unsigned int depth,
-  /* Specifiy maximum depth relative to given depth to filter for (-1 for all). */
-  int maxdepth_filter,
-  /* Specifiy thread id to filter for (-1 for all); prints thread id if not filtered. */
-  int threadid_filter);
+  /* Specify max. depth relative to given depth (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_maxdepth,
+  /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_threadid);
 
 #endif /*LIBXSMM_TRACE_H*/
