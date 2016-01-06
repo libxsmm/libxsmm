@@ -252,13 +252,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
             char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
             if (MAP_FAILED != buffer) {
-              int check = -1;
+              int check = -1, dummy;
               ivalue = (int*)buffer;
               ivalue[0] = fd; /* valid fd for internal_delete */
 
               if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
                 && sizeof(int) == read(fd, &check, sizeof(int))
-                && sizeof(int) == lseek(fd, sizeof(int), SEEK_CUR)
+                && sizeof(int) == read(fd, &dummy, sizeof(int))
                 && check == fd)
               {
 # if defined(LIBXSMM_TRACE_STDATOMIC)

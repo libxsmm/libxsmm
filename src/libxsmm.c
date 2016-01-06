@@ -191,8 +191,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 #endif
     if (0 == result) {
 #if defined(__TRACE)
-      const char *const env_trace_thread = getenv("LIBXSMM_TRACE");
-      i = (0 == env_trace_thread || 0 == *env_trace_thread) ? EXIT_SUCCESS : libxsmm_trace_init(-1, atoi(env_trace_thread));
+      const char *const env_trace_threadid = getenv("LIBXSMM_TRACE");
+      const int filter = (0 == env_trace_threadid || 0 == *env_trace_threadid) ? 0 : atoi(env_trace_threadid);
+      i = (0 == filter) ? EXIT_SUCCESS : libxsmm_trace_init(-1, filter - 1);
 #else
       i = EXIT_SUCCESS;
 #endif
