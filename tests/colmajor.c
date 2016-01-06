@@ -6,18 +6,28 @@
 # include <mkl.h>
 #endif
 
+#if !defined(REAL_TYPE)
+# define REAL_TYPE float
+#endif
+
 /*#define USE_LIBXSMM_BLAS*/
 /*#define USE_CBLAS*/
-#define REAL_TYPE float
+#define M 64
+#define N 239
+#define K 64
+#define LDA 64
+#define LDB 240
+#define LDC 240
 
 
 int main()
 {
 #if 0 != LIBXSMM_COL_MAJOR
-  const libxsmm_blasint m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  REAL_TYPE a[k*lda], b[n*ldb], c[n*ldc], d[n*ldc];
+  const libxsmm_blasint m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
+  REAL_TYPE a[K*LDA], b[N*LDB], c[N*LDC], d[N*LDC];
   const REAL_TYPE alpha = 1, beta = 1;
   const char notrans = 'N';
+  double d2 = 0;
   int i, j;
 
   for (i = 0; i < m; ++i) {
@@ -53,7 +63,6 @@ int main()
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
 
-  double d2 = 0;
   for (i = 0; i < m; ++i) {
     for (j = 0; j < n; ++j) {
       const int index = i * ldc + j;
