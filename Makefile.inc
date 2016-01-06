@@ -137,6 +137,7 @@ ifneq (0,$(INTEL))
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
 		LDFLAGS += -pthread -rdynamic
+		DFLAGS += -D__TRACE
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -271,6 +272,7 @@ else # GCC assumed
 		else
 			LDFLAGS += -ldbghelp
 		endif
+		DFLAGS += -D__TRACE
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))

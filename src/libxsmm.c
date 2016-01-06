@@ -29,8 +29,11 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_crc32.h"
-#include "libxsmm_trace.h"
 #include <libxsmm.h>
+
+#if defined(__TRACE)
+# include "libxsmm_trace.h"
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -187,7 +190,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
     result = libxsmm_cache;
 #endif
     if (0 == result) {
+#if defined(__TRACE)
       i = libxsmm_trace_init();
+#else
+      i = EXIT_SUCCESS;
+#endif
       if (EXIT_SUCCESS == i) {
         result = (libxsmm_cache_entry*)malloc(LIBXSMM_CACHESIZE * sizeof(libxsmm_cache_entry));
 
@@ -215,7 +222,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 #endif
         }
       }
-#if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
       else {
         fprintf(stderr, "LIBXSMM: failed to initialize trace (%i)!\n", i);
       }
@@ -273,12 +280,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       cache = libxsmm_cache;
 
       if (0 != cache) {
+#if defined(__TRACE)
         i = libxsmm_trace_finalize();
 # if !defined(NDEBUG) /* library code is expected to be mute */
         if (EXIT_SUCCESS != i) {
           fprintf(stderr, "LIBXSMM: failed to finalize trace (%i)!\n", i);
         }
 # endif
+#endif
 #if defined(LIBXSMM_STDATOMIC)
         __atomic_store_n(&libxsmm_cache, 0, __ATOMIC_SEQ_CST);
 #else
