@@ -137,7 +137,7 @@ ifneq (0,$(INTEL))
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
 		LDFLAGS += -pthread -rdynamic
-		DFLAGS += -D__TRACE
+		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -183,10 +183,10 @@ ifneq (0,$(INTEL))
 	endif
 	ifeq (1,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=1
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=$(STATIC)
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
@@ -272,7 +272,7 @@ else # GCC assumed
 		else
 			LDFLAGS += -ldbghelp
 		endif
-		DFLAGS += -D__TRACE
+		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -327,7 +327,7 @@ else # GCC assumed
 	endif
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=$(STATIC)
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
@@ -385,7 +385,7 @@ ifeq (1,$(MKL_DIRECT))
 endif
 
 ifeq (1,$(MKL)) # sequential
-	DFLAGS += -D__MKL
+	DFLAGS += -D__MKL=1
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -411,7 +411,7 @@ ifeq (1,$(MKL)) # sequential
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
-	DFLAGS += -D__MKL
+	DFLAGS += -D__MKL=$(MKL)
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		ifneq (0,$(INTEL))
