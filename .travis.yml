@@ -36,7 +36,7 @@ script:
     source .codecov &&
     make -e clean && make -e &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make test &&
+    make ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" test &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
