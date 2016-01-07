@@ -182,6 +182,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
 
   if (-1 <= i) { /* do nothing if not yet initialized */
     const int maxdepth = filter_maxdepth ? *filter_maxdepth : libxsmm_trace_maxdepth;
+    static LIBXSMM_TLS int fallback = 1;
 #if defined(_WIN32) || defined(__CYGWIN__)
     i = CaptureStackBackTrace(0, max_n, stack, NULL);
 #else
@@ -215,8 +216,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
             && 0 < value->NameLen)
           {
             fname = value->Name;
+            fallback = 0;
           }
-          else {
+          else if (0 != fallback) {
             sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
             fname = buffer;
           }
@@ -297,12 +299,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
             for (c = value; '+' != *c && *c; ++c);
             if ('+' == *c) {
               fname = value;
+              fallback = 0;
               *c = 0;
             }
           }
 
           /* fallback to symbol address */
-          if (0 == fname) {
+          if (0 != fallback && 0 == fname) {
             sprintf(value, "0x%llx", (unsigned long long)*symbol);
             fname = value;
           }
