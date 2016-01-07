@@ -268,7 +268,7 @@ else # GCC assumed
 		CXXFLAGS += -finstrument-functions -pthread
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
-		ifneq (gcc,$(CC_NAME)) # e.g. clang does not need/understand below flag
+		ifeq (gcc,$(CC_NAME)) # e.g. clang does not need/understand below flag
 			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
