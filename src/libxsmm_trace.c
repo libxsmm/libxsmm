@@ -273,10 +273,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
 # else
                 abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
 # endif
-                value = buffer + sizeof(int) * 2;
                 assert(0 <= abs_tid);
                 /* use sign bit to flag enabled fallback for symbol resolution */
                 ivalue[1] = -abs_tid;
+
+                if (0 > filter || filter == abs_tid) {
+                  value = buffer + sizeof(int) * 2;
+                }
               }
               else {
 # if !defined(NDEBUG) /* library code is expected to be mute */
