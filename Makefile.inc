@@ -45,6 +45,11 @@ CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 ifneq (,$(FC)) # allow FC to be optional
 	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 endif
+ifeq (g++,$(CXX_NAME))
+	GNU = 1
+else
+	GNU = 0
+endif
 
 CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
@@ -268,7 +273,7 @@ else # GCC assumed
 		CXXFLAGS += -finstrument-functions -pthread
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
-		ifeq (gcc,$(CC_NAME)) # e.g. clang does not need/understand below flag
+		ifneq (0,$(GNU)) # e.g. clang does not need/understand below flag
 			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
