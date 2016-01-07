@@ -136,7 +136,8 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += -finstrument-functions -pthread
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
-		LDFLAGS += -pthread -rdynamic
+		CLDFLAGS += -pthread
+		LDFLAGS += -rdynamic
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
@@ -268,7 +269,8 @@ else # GCC assumed
 		CFLAGS += -finstrument-functions -pthread
 		FCFLAGS += -finstrument-functions
 		ifneq (Windows_NT,$(OS))
-			LDFLAGS += -pthread -rdynamic
+			CLDFLAGS += -pthread
+			LDFLAGS += -rdynamic
 		else
 			LDFLAGS += -ldbghelp
 		endif
@@ -321,8 +323,7 @@ else # GCC assumed
 			CFLAGS += -fopenmp=$(OMP)
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
-			# issue with using gfortran as linker-driver
-			LDFLAGS += -fopenmp=$(OMP)
+			CLDFLAGS += -fopenmp=$(OMP)
 		endif
 	endif
 	ifneq (0,$(STATIC))
