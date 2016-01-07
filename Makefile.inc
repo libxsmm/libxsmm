@@ -265,9 +265,14 @@ else # GCC assumed
 		SYM = $(DBG)
 	endif
 	ifneq (0,$(TRACE))
-		CXXFLAGS += -finstrument-functions -finstrument-functions-exclude-function-list=_mm_ -pthread
-		CFLAGS += -finstrument-functions -finstrument-functions-exclude-function-list=_mm_ -pthread
-		FCFLAGS += -finstrument-functions -finstrument-functions-exclude-function-list=_mm_
+		CXXFLAGS += -finstrument-functions -pthread
+		CFLAGS += -finstrument-functions -pthread
+		FCFLAGS += -finstrument-functions
+		ifneq (gcc,$(CC_NAME)) # e.g. clang does not need/understand below flag
+			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
+			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
+			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		endif
 		ifneq (Windows_NT,$(OS))
 			CLDFLAGS += -pthread
 			LDFLAGS += -rdynamic
