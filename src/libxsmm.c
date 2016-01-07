@@ -259,6 +259,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(destructor)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
