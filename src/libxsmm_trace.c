@@ -352,18 +352,18 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned 
   if (name && *name) { /* implies actual other results to be valid */
     assert(0 != stream/*otherwise fprintf handle the error*/);
     if ((0 == filter_threadid && 0 > libxsmm_trace_threadid) || (filter_threadid && 0 > *filter_threadid)) {
-      fprintf(stream, "%*s%s@%u\n", depth1, "", name, threadid);
+      fprintf(stream, "%*s%s@%u\n", (int)depth1, "", name, threadid);
     }
     else {
-      fprintf(stream, "%*s%s\n", depth1, "", name);
+      fprintf(stream, "%*s%s\n", (int)depth1, "", name);
     }
   }
 }
 
 
 #if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if 1
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
@@ -390,9 +390,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_f
 #endif
 }
 
-
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
