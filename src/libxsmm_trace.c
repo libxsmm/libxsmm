@@ -35,6 +35,7 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <assert.h>
 #include <stdio.h>
 #if !defined(NDEBUG)
@@ -182,7 +183,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
 
   if (-1 <= i) { /* do nothing if not yet initialized */
     const int maxdepth = filter_maxdepth ? *filter_maxdepth : libxsmm_trace_maxdepth;
-    static LIBXSMM_TLS int fallback = 1;
 #if defined(_WIN32) || defined(__CYGWIN__)
     i = CaptureStackBackTrace(0, max_n, stack, NULL);
 #else
@@ -190,50 +190,56 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
 #endif
     if (0 > maxdepth || i <= maxdepth + min_n) { /* filter against filter_maxdepth */
       if (min_n <= i) { /* check against min. depth */
-#if defined(_WIN32) || defined(__CYGWIN__)
         const int filter = filter_threadid ? *filter_threadid : libxsmm_trace_threadid;
+        int abs_tid = INT_MAX;
+#if defined(_WIN32) || defined(__CYGWIN__)
         static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
-        static LIBXSMM_TLS int tid = -1;
+        static LIBXSMM_TLS int tid = INT_MAX;
 
         PSYMBOL_INFO value = (PSYMBOL_INFO)buffer;
         value->SizeOfStruct = sizeof(SYMBOL_INFO);
         value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
 
-        if (0 > tid) {
+        if (INT_MAX != tid) {
+          abs_tid = (0 <= tid ? tid : -tid);
+        }
+        else {
 #if defined(_WIN32)
-          const int counter = _InterlockedIncrement(&libxsmm_trace_initialized);
+          abs_tid = _InterlockedIncrement(&libxsmm_trace_initialized);
 #elif defined(LIBXSMM_TRACE_STDATOMIC)
-          const int counter = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
+          abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
 #else
-          const int counter = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
+          abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
 #endif
-          assert(0 <= counter);
-          tid = counter;
+          assert(0 <= abs_tid);
+          /* use sign bit to flag enabled fallback for symbol resolution */
+          tid = -abs_tid;
         }
 
-        if (0 > filter || filter == tid) {
+        if (0 > filter || filter == abs_tid) {
           if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
             && 0 < value->NameLen)
           {
+            /* disable fallback allowing unresolved symbol names */
+            tid = abs_tid; /* make unsigned */
             fname = value->Name;
-            fallback = 0;
           }
-          else if (0 != fallback) {
+          else if (0 > tid) { /* fallback allowing unresolved symbol names */
             sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
             fname = buffer;
           }
           if (depth) *depth = i - min_n;
-          if (threadid) *threadid = tid;
+          if (threadid) *threadid = abs_tid;
         }
 #else
         char* value = (char*)pthread_getspecific(libxsmm_trace_key);
         int* ivalue = 0, fd = -1;
 
         if (value) {
-          const int filter = filter_threadid ? *filter_threadid : libxsmm_trace_threadid;
           ivalue = (int*)value;
+          abs_tid = (0 <= ivalue[1] ? ivalue[1] : -ivalue[1]);
 
-          if (0 > filter || filter == ivalue[1]/*tid*/) {
+          if (0 > filter || filter == abs_tid) {
             fd = ivalue[0];
             if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
               value += sizeof(int) * 2;
@@ -263,12 +269,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
                 && check == fd)
               {
 # if defined(LIBXSMM_TRACE_STDATOMIC)
-                const int counter = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
+                abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
 # else
-                const int counter = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
+                abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
 # endif
                 value = buffer + sizeof(int) * 2;
-                ivalue[1] = counter;
+                assert(0 <= abs_tid);
+                /* use sign bit to flag enabled fallback for symbol resolution */
+                ivalue[1] = -abs_tid;
               }
               else {
 # if !defined(NDEBUG) /* library code is expected to be mute */
@@ -298,20 +306,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
             char* c;
             for (c = value; '+' != *c && *c; ++c);
             if ('+' == *c) {
+              /* disable fallback allowing unresolved symbol names */
+              ivalue[1] = abs_tid; /* make unsigned */
               fname = value;
-              fallback = 0;
               *c = 0;
             }
           }
 
           /* fallback to symbol address */
-          if (0 != fallback && 0 == fname) {
+          if (0 > ivalue[1] && 0 == fname) {
             sprintf(value, "0x%llx", (unsigned long long)*symbol);
             fname = value;
           }
 
           if (depth) *depth = i - min_n;
-          if (threadid) *threadid = ivalue[1];
+          if (threadid) *threadid = abs_tid;
         }
 #endif
       }
