@@ -27,16 +27,18 @@ env:
 script:
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
-    make -e clean && make -e &&
+    make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" test &&
+    make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" TRACE=1 test &&
+    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null ; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
-    make -e clean && make -e &&
+    make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
-    make test &&
+    make ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" TRACE=1 test &&
+    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null ; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&

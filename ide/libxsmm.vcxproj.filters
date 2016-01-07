@@ -84,6 +84,9 @@
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_trace.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">
@@ -105,9 +108,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_crc32.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dispatch.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_timer.c">
@@ -162,6 +162,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_x86_instructions.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_gemm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_trace.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

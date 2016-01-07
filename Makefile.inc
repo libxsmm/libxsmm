@@ -21,6 +21,9 @@ else
 	OPTFLAG = -$(OPT)
 endif
 
+# Trace level
+TRACE ?= 0
+
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
@@ -41,6 +44,11 @@ CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 ifneq (,$(FC)) # allow FC to be optional
 	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+endif
+ifeq (g++,$(CXX_NAME))
+	GNU = 1
+else
+	GNU = 0
 endif
 
 CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
@@ -116,19 +124,26 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		FCFLAGS += $(OPTFLAG)
-		ifeq (0,$(SYM))
-			DFLAGS += -DNDEBUG
-		endif
+		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
+		SYM = $(TRACE)
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifneq (0,$(TRACE))
+		CXXFLAGS += -finstrument-functions -pthread
+		CFLAGS += -finstrument-functions -pthread
+		FCFLAGS += -finstrument-functions
+		CLDFLAGS += -pthread
+		LDFLAGS += -rdynamic
+		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -174,10 +189,10 @@ ifneq (0,$(INTEL))
 	endif
 	ifeq (1,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=1
 	else ifneq (0,$(STATIC))
 		SLDFLAGS += -static
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=$(STATIC)
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
@@ -240,20 +255,36 @@ else # GCC assumed
 			CFLAGS += -ftree-vectorize -ffast-math
 			FCFLAGS += -ftree-vectorize -ffast-math
 		endif
-		ifeq (0,$(SYM))
-			DFLAGS += -DNDEBUG
-		endif
+		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
+		SYM = $(TRACE)
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
 		SYM = $(DBG)
+	endif
+	ifneq (0,$(TRACE))
+		CXXFLAGS += -finstrument-functions -pthread
+		CFLAGS += -finstrument-functions -pthread
+		FCFLAGS += -finstrument-functions
+		ifneq (0,$(GNU)) # e.g. clang does not need/understand below flag
+			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
+			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
+			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		endif
+		ifneq (Windows_NT,$(OS))
+			CLDFLAGS += -pthread
+			LDFLAGS += -rdynamic
+		else
+			LDFLAGS += -ldbghelp
+		endif
+		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
@@ -302,13 +333,12 @@ else # GCC assumed
 			CFLAGS += -fopenmp=$(OMP)
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
-			# issue with using gfortran as linker-driver
-			LDFLAGS += -fopenmp=$(OMP)
+			CLDFLAGS += -fopenmp=$(OMP)
 		endif
 	endif
 	ifneq (0,$(STATIC))
 		SLDFLAGS += -static
-		DFLAGS += -D__STATIC
+		DFLAGS += -D__STATIC=$(STATIC)
 	endif
 	ifneq (,$(R8))
 		ifneq (0,$(R8))
@@ -366,7 +396,7 @@ ifeq (1,$(MKL_DIRECT))
 endif
 
 ifeq (1,$(MKL)) # sequential
-	DFLAGS += -D__MKL
+	DFLAGS += -D__MKL=1
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -392,7 +422,7 @@ ifeq (1,$(MKL)) # sequential
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
-	DFLAGS += -D__MKL
+	DFLAGS += -D__MKL=$(MKL)
 	IFLAGS +=-I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		ifneq (0,$(INTEL))
