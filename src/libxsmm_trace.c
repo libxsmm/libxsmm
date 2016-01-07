@@ -232,17 +232,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
           if (threadid) *threadid = abs_tid;
         }
 #else
-        char* value = (char*)pthread_getspecific(libxsmm_trace_key);
+        char *const raw_value = (char*)pthread_getspecific(libxsmm_trace_key), *value = 0;
         int* ivalue = 0, fd = -1;
 
-        if (value) {
-          ivalue = (int*)value;
+        if (raw_value) {
+          ivalue = (int*)raw_value;
           abs_tid = (0 <= ivalue[1] ? ivalue[1] : -ivalue[1]);
 
           if (0 > filter || filter == abs_tid) {
             fd = ivalue[0];
             if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
-              value += sizeof(int) * 2;
+              value = raw_value + sizeof(int) * 2;
             }
 # if !defined(NDEBUG) /* library code is expected to be mute */
             else {
@@ -264,8 +264,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
               ivalue[0] = fd; /* valid fd for internal_delete */
 
               if (0 == pthread_setspecific(libxsmm_trace_key, buffer)
-                && sizeof(int)*1 == read(fd, &check, sizeof(int))
-                && sizeof(int)*2 == lseek(fd, sizeof(int), SEEK_CUR)
+                && (sizeof(int) * 1) == read(fd, &check, sizeof(int))
+                && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                 && check == fd)
               {
 # if defined(LIBXSMM_TRACE_STDATOMIC)
