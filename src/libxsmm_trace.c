@@ -215,14 +215,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
             && 0 < value->NameLen)
           {
             fname = value->Name;
-            if (depth) *depth = i - min_n;
-            if (threadid) *threadid = tid;
           }
-# if !defined(NDEBUG) /* library code is expected to be mute */
           else {
-            fprintf(stderr, "LIBXSMM: failed to translate symbol (%p)\n", *symbol);
+            sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
+            fname = buffer;
           }
-# endif
+          if (depth) *depth = i - min_n;
+          if (threadid) *threadid = tid;
         }
 #else
         char* value = (char*)pthread_getspecific(libxsmm_trace_key);
@@ -291,17 +290,25 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(unsigned in
 
         if (value) {
           backtrace_symbols_fd(symbol, 1, fd);
+
+          /* attempt to parse symbol name */
           if (1 == sscanf(value, "%*[^(](%s0x", value)) {
             char* c;
             for (c = value; '+' != *c && *c; ++c);
             if ('+' == *c) {
-              assert(ivalue);
-              if (depth) *depth = i - min_n;
-              if (threadid) *threadid = ivalue[1];
               fname = value;
               *c = 0;
             }
           }
+
+          /* fallback to symbol address */
+          if (0 == fname) {
+            sprintf(value, "0x%llx", (unsigned long long)*symbol);
+            fname = value;
+          }
+
+          if (depth) *depth = i - min_n;
+          if (threadid) *threadid = ivalue[1];
         }
 #endif
       }
@@ -343,10 +350,29 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned 
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
+#if 1
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
   libxsmm_trace(stderr, 1/*no need for parent (0) but parent of parent (1)*/,
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL);
+#else
+  struct {
+      const char *dli_fname;
+      void       *dli_fbase;  /* Address at which shared object
+                                 is loaded */
+      const char *dli_sname;  /* Name of nearest symbol with address
+                                 lower than addr */
+      void       *dli_saddr;
+  } info;
+  if (dladdr(this_fn, &info)) {
+    if (info.dli_sname) {
+      fprintf(stderr, "%s\n", info.dli_sname);
+    }
+    else if (info.dli_saddr) {
+      fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
+    }
+  }
+#endif
 }
 
 
