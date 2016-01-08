@@ -194,15 +194,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
       const char *const env_trace_init = getenv("LIBXSMM_TRACE");
       if (env_trace_init) {
         int match[] = { 0, 0 }, filter_threadid = 0, filter_mindepth = 1, filter_maxdepth = -1;
-        char buffer[96];
+        char buffer[32];
 
-        if (1 == sscanf(env_trace_init, "%[^,],%*[^,],%*s", buffer)) {
+        if (1 == sscanf(env_trace_init, "%32[^,],", buffer)) {
           sscanf(buffer, "%i", &filter_threadid);
         }
-        if (1 == sscanf(env_trace_init, "%*[^,],%[^,],%*s", buffer)) {
+        if (1 == sscanf(env_trace_init, "%*[^,],%32[^,],", buffer)) {
           match[0] = sscanf(buffer, "%i", &filter_mindepth);
         }
-        if (1 == sscanf(env_trace_init, "%*[^,],%*[^,],%s", buffer)) {
+        if (1 == sscanf(env_trace_init, "%*[^,],%*[^,],%32s", buffer)) {
           match[1] = sscanf(buffer, "%i", &filter_maxdepth);
         }
         i = (0 == filter_threadid && 0 == match[0] && 0 == match[1]) ? EXIT_SUCCESS

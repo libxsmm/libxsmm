@@ -45,10 +45,10 @@
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
   /* Filter for thread id (-1: all). */
   int filter_threadid,
-  /* Specify min. depth of call trace (0: all). */
+  /* Specify min. depth of stack trace (0: all). */
   int filter_mindepth,
-  /* Specify max. depth of call trace (-1: all). */
-  int filter_maxdepth);
+  /* Specify max. depth of stack trace (-1: all). */
+  int filter_maxnsyms);
 
 /** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void);
@@ -63,8 +63,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   const int* filter_threadid,
   /* Specify min. absolute pos. in stack trace (0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
-  /* Specify max. absolute pos. in stack trace (-1: all, NULL: libxsmm_trace_init). */
-  const int* filter_maxdepth);
+  /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_maxnsyms);
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned int depth,
@@ -72,7 +72,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned 
   const int* filter_threadid,
   /* Specify min. absolute pos. in stack trace (0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
-  /* Specify max. absolute pos. in stack trace (-1: all, NULL: libxsmm_trace_init). */
-  const int* filter_maxdepth);
+  /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
+  const int* filter_maxnsyms);
 
 #endif /*LIBXSMM_TRACE_H*/

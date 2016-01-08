@@ -107,14 +107,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 
 LIBXSMM_RETARGETABLE int libxsmm_trace_threadid = -1/*all*/;
 LIBXSMM_RETARGETABLE int libxsmm_trace_mindepth =  0/*all*/;
-LIBXSMM_RETARGETABLE int libxsmm_trace_maxdepth = -1/*all*/;
+LIBXSMM_RETARGETABLE int libxsmm_trace_maxnsyms = -1/*all*/;
 
 
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
-  int filter_threadid, int filter_mindepth, int filter_maxdepth)
+  int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result;
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -127,7 +127,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
 #endif
   libxsmm_trace_threadid = filter_threadid;
   libxsmm_trace_mindepth = filter_mindepth;
-  libxsmm_trace_maxdepth = filter_maxdepth;
+  libxsmm_trace_maxnsyms = filter_maxnsyms;
 #if defined(LIBXSMM_TRACE_STDATOMIC)
   __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
 #else
@@ -169,7 +169,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   unsigned int* depth, unsigned int* threadid,
   const int* filter_threadid,
   const int* filter_mindepth,
-  const int* filter_maxdepth)
+  const int* filter_maxnsyms)
 {
   const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
   const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
@@ -188,14 +188,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 
   if (0 <= i) { /* do nothing if not yet initialized */
     const int mindepth = filter_mindepth ? *filter_mindepth : libxsmm_trace_mindepth;
-    const int maxdepth = filter_maxdepth ? *filter_maxdepth : libxsmm_trace_maxdepth;
+    const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : libxsmm_trace_maxnsyms;
 #if defined(_WIN32) || defined(__CYGWIN__)
     i = CaptureStackBackTrace(0, max_n, stack, NULL);
 #else
     i = backtrace(stack, max_n);
 #endif
-    /* filter depth against filter_mindepth and filter_maxdepth */
-    if ((0 >= mindepth || (mindepth + min_n) <= i) && (0 > maxdepth || i <= (maxdepth + min_n))) {
+    /* filter depth against filter_mindepth and filter_maxnsyms */
+    if ((0 >= mindepth || (mindepth + min_n) <= i) &&
+        (0 >  maxnsyms || i <= (mindepth + maxnsyms + min_n)))
+    {
       if (min_n <= i) { /* check against min. depth */
         const int filter = (filter_threadid ? *filter_threadid : libxsmm_trace_threadid);
         int abs_tid = 0;
@@ -354,19 +356,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(
   FILE* stream, unsigned int depth,
   const int* filter_threadid,
   const int* filter_mindepth,
-  const int* filter_maxdepth)
+  const int* filter_maxnsyms)
 {
   unsigned int depth1 = depth + 1, threadid;
   const char *const name = libxsmm_trace_info(&depth1, &threadid,
-    filter_threadid, filter_mindepth, filter_maxdepth);
+    filter_threadid, filter_mindepth, filter_maxnsyms);
 
   if (name && *name) { /* implies actual other results to be valid */
+    const int depth0 = LIBXSMM_MAX(filter_mindepth ? *filter_mindepth : libxsmm_trace_mindepth, 0);
     assert(0 != stream/*otherwise fprintf handle the error*/);
     if ((0 == filter_threadid && 0 > libxsmm_trace_threadid) || (filter_threadid && 0 > *filter_threadid)) {
-      fprintf(stream, "%*s%s@%u\n", (int)depth1, "", name, threadid);
+      fprintf(stream, "%*s%s@%u\n", (int)(depth1 - depth0), "", name, threadid);
     }
     else {
-      fprintf(stream, "%*s%s\n", (int)depth1, "", name);
+      fprintf(stream, "%*s%s\n", (int)(depth1 - depth0), "", name);
     }
   }
 }
