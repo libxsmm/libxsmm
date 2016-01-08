@@ -195,8 +195,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
     i = backtrace(stack, max_n);
 #endif
     /* filter depth against filter_mindepth and filter_maxnsyms */
-    if ((0 >= mindepth || (mindepth + min_n) <= i) &&
-        (0 >  maxnsyms || i <= (mindepth + maxnsyms + min_n)))
+    if ((0 >= mindepth ||      (min_n + mindepth) <= i) &&
+        (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
     {
       if (min_n <= i) { /* check against min. depth */
         const int filter = (filter_threadid ? *filter_threadid : libxsmm_trace_threadid);
