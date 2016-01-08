@@ -191,9 +191,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 #endif
     if (0 == result) {
 #if defined(__TRACE)
-      const char *const env_trace_threadid = getenv("LIBXSMM_TRACE");
-      const int filter = (0 == env_trace_threadid || 0 == *env_trace_threadid) ? 0 : atoi(env_trace_threadid);
-      i = (0 == filter) ? EXIT_SUCCESS : libxsmm_trace_init(-1, filter - 1);
+      char* env_trace_init = getenv("LIBXSMM_TRACE");
+      int match[2], filter_threadid = 0, filter_mindepth = 0, filter_maxdepth = -1;
+      sscanf(env_trace_init, "%[^,]", env_trace_init);
+      sscanf(env_trace_init, "%i", filter_threadid);
+      env_trace_init = getenv("LIBXSMM_TRACE");
+      sscanf(env_trace_init, "%*[^,],%[^,]", env_trace_init);
+      match[0] = sscanf(env_trace_init, "%i", filter_mindepth);
+      env_trace_init = getenv("LIBXSMM_TRACE");
+      sscanf(env_trace_init, "%*[^,],%*[^,],%s", env_trace_init);
+      match[1] = sscanf(env_trace_init, "%i", filter_maxdepth);
+      i = (0 == filter_threadid && 0 == match[0] && 0 == match[1]) ? EXIT_SUCCESS
+        : libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxdepth);
 #else
       i = EXIT_SUCCESS;
 #endif
