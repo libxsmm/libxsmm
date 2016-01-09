@@ -77,10 +77,11 @@ LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG libxsmm_trace_initialized, 32
 LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int libxsmm_trace_initialized, 32) = -1;
 LIBXSMM_RETARGETABLE pthread_key_t libxsmm_trace_key = 0;
 
+LIBXSMM_INLINE
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
+LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {
   int fd;
   assert(value);
@@ -110,10 +111,11 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_mindepth =  0/*all*/;
 LIBXSMM_RETARGETABLE int libxsmm_trace_maxnsyms = -1/*all*/;
 
 
+LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
+LIBXSMM_RETARGETABLE int libxsmm_trace_init(
   int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result;
@@ -137,10 +139,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_init(
 }
 
 
+LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
+LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE_STDATOMIC)
@@ -159,13 +162,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 }
 
 
+LIBXSMM_EXTERN_C
 #if defined(_WIN32)
 /*TODO: no inline*/
 #elif defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(noinline)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
+LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   unsigned int* depth, unsigned int* threadid,
   const int* filter_threadid,
   const int* filter_mindepth,
@@ -349,10 +353,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 }
 
 
+LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(
+LIBXSMM_RETARGETABLE void libxsmm_trace(
   FILE* stream, unsigned int depth,
   const int* filter_threadid,
   const int* filter_mindepth,

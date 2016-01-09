@@ -255,10 +255,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 }
 
 
+LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(constructor)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
+LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
   /*const*/void* cache;
 #if defined(LIBXSMM_STDATOMIC)
@@ -273,11 +274,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void)
 }
 
 
+LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(destructor)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
+LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
   libxsmm_cache_entry* cache = 0;
 #if defined(LIBXSMM_STDATOMIC)
