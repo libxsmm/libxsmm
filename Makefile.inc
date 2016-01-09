@@ -105,7 +105,7 @@ ifneq (0,$(INTEL))
 	CXXFLAGS += -fPIC -Wall -diag-disable 3415
 	CFLAGS += -fPIC -Wall -diag-disable 3415
 	FCFLAGS += -fPIC
-	LDFLAGS += -fPIC -lrt
+	LDFLAGS += -fPIC -lrt -ldl
 	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
@@ -213,7 +213,7 @@ else # GCC assumed
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
-	LDFLAGS += -lrt
+	LDFLAGS += -lrt -ldl
 	ifeq (0,$(COMPATIBLE))
 		CXXFLAGS += -Wno-attributes
 		CFLAGS += -Wno-attributes
