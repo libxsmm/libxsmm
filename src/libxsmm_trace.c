@@ -119,7 +119,9 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
   int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result;
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if !defined(__TRACE)
+  result = EXIT_FAILURE;
+#elif defined(_WIN32) || defined(__CYGWIN__)
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
   result = FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE)
     ? EXIT_SUCCESS
@@ -127,14 +129,16 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
 #else
   result = pthread_key_create(&libxsmm_trace_key, internal_delete);
 #endif
-  libxsmm_trace_threadid = filter_threadid;
-  libxsmm_trace_mindepth = filter_mindepth;
-  libxsmm_trace_maxnsyms = filter_maxnsyms;
+  if (EXIT_SUCCESS == result) {
+    libxsmm_trace_threadid = filter_threadid;
+    libxsmm_trace_mindepth = filter_mindepth;
+    libxsmm_trace_maxnsyms = filter_maxnsyms;
 #if defined(LIBXSMM_TRACE_STDATOMIC)
-  __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
 #else
-  libxsmm_trace_initialized = 0;
+    libxsmm_trace_initialized = 0;
 #endif
+  }
   return result;
 }
 
@@ -146,17 +150,21 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 {
   int result;
-#if defined(LIBXSMM_TRACE_STDATOMIC)
-  __atomic_store_n(&libxsmm_trace_initialized, -1, __ATOMIC_SEQ_CST);
+#if !defined(__TRACE)
+  result = EXIT_FAILURE;
 #else
-  libxsmm_trace_initialized = -1;
-#endif
-#if defined(_WIN32) || defined(__CYGWIN__)
-  result = FALSE != SymCleanup(GetCurrentProcess())
-    ? EXIT_SUCCESS
-    : GetLastError();
-#else
-  result = pthread_key_delete(libxsmm_trace_key);
+# if defined(LIBXSMM_TRACE_STDATOMIC)
+    __atomic_store_n(&libxsmm_trace_initialized, -1, __ATOMIC_SEQ_CST);
+# else
+    libxsmm_trace_initialized = -1;
+# endif
+# if defined(_WIN32) || defined(__CYGWIN__)
+    result = FALSE != SymCleanup(GetCurrentProcess())
+      ? EXIT_SUCCESS
+      : GetLastError();
+# else
+    result = pthread_key_delete(libxsmm_trace_key);
+# endif
 #endif
   return result;
 }
@@ -175,29 +183,29 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   const int* filter_mindepth,
   const int* filter_maxnsyms)
 {
+  const char *fname = NULL;
+#if defined(__TRACE)
   const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
   const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
   void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? ((int)(*depth + 1)) : 1, max_n - 1);
-  const char *fname = NULL;
   int i;
-
-#if defined(__GNUC__)
+# if defined(__GNUC__)
   __asm__("");
-#endif
-#if defined(LIBXSMM_TRACE_STDATOMIC)
+# endif
+# if defined(LIBXSMM_TRACE_STDATOMIC)
   i = __atomic_load_n(&libxsmm_trace_initialized, __ATOMIC_RELAXED);
-#else
+# else
   i = libxsmm_trace_initialized;
-#endif
+# endif
 
   if (0 <= i) { /* do nothing if not yet initialized */
     const int mindepth = filter_mindepth ? *filter_mindepth : libxsmm_trace_mindepth;
     const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : libxsmm_trace_maxnsyms;
-#if defined(_WIN32) || defined(__CYGWIN__)
+# if defined(_WIN32) || defined(__CYGWIN__)
     i = CaptureStackBackTrace(0, max_n, stack, NULL);
-#else
+# else
     i = backtrace(stack, max_n);
-#endif
+# endif
     /* filter depth against filter_mindepth and filter_maxnsyms */
     if ((0 >= mindepth ||      (min_n + mindepth) <= i) &&
         (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
@@ -205,7 +213,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
       if (min_n <= i) { /* check against min. depth */
         const int filter = (filter_threadid ? *filter_threadid : libxsmm_trace_threadid);
         int abs_tid = 0;
-#if defined(_WIN32) || defined(__CYGWIN__)
+# if defined(_WIN32) || defined(__CYGWIN__)
         static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
         static LIBXSMM_TLS int tid = 0;
 
@@ -217,13 +225,13 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           abs_tid = (0 <= tid ? tid : -tid);
         }
         else {
-#if defined(_WIN32)
+# if defined(_WIN32)
           abs_tid = _InterlockedIncrement(&libxsmm_trace_initialized);
-#elif defined(LIBXSMM_TRACE_STDATOMIC)
+# elif defined(LIBXSMM_TRACE_STDATOMIC)
           abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
-#else
+# else
           abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
-#endif
+# endif
           /* use sign bit to flag enabled fallback for symbol resolution */
           tid = -abs_tid;
         }
@@ -244,7 +252,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           if (depth) *depth = i - min_n;
           if (threadid) *threadid = abs_tid - 1;
         }
-#else
+# else
         char *const raw_value = (char*)pthread_getspecific(libxsmm_trace_key), *value = 0;
         int* ivalue = 0, fd = -1;
 
@@ -257,11 +265,11 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             if (0 <= fd && (sizeof(int) * 2) == lseek(fd, sizeof(int) * 2, SEEK_SET)) {
               value = raw_value + sizeof(int) * 2;
             }
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#   if !defined(NDEBUG) /* library code is expected to be mute */
             else {
               fprintf(stderr, "LIBXSMM: failed to get buffer\n");
             }
-# endif
+#   endif
           }
         }
         else {
@@ -282,11 +290,11 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                 && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                 && check == fd)
               {
-# if defined(LIBXSMM_TRACE_STDATOMIC)
+#   if defined(LIBXSMM_TRACE_STDATOMIC)
                 abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
-# else
+#   else
                 abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
-# endif
+#   endif
                 assert(0 < abs_tid);
                 /* use sign bit to flag enabled fallback for symbol resolution */
                 ivalue[1] = -abs_tid;
@@ -296,23 +304,23 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                 }
               }
               else {
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#   if !defined(NDEBUG) /* library code is expected to be mute */
                 fprintf(stderr, "LIBXSMM: failed to setup buffer\n");
-# endif
+#   endif
                 internal_delete(buffer);
               }
             }
-# if !defined(NDEBUG)
+#   if !defined(NDEBUG)
             else {
               fprintf(stderr, "LIBXSMM: %s (mmap)\n", strerror(errno));
             }
-# endif
+#   endif
           }
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#   if !defined(NDEBUG) /* library code is expected to be mute */
           else {
             fprintf(stderr, "LIBXSMM: failed to setup file descriptor (%i)\n", fd);
           }
-# endif
+#   endif
         }
 
         if (value) {
@@ -339,7 +347,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           if (depth) *depth = i - min_n;
           if (threadid) *threadid = abs_tid - 1;
         }
-#endif
+# endif
       }
 # if !defined(NDEBUG) /* library code is expected to be mute */
       else {
@@ -348,7 +356,12 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # endif
     }
   }
-
+#else
+  LIBXSMM_UNUSED(depth); LIBXSMM_UNUSED(threadid);
+  LIBXSMM_UNUSED(filter_threadid);
+  LIBXSMM_UNUSED(filter_mindepth);
+  LIBXSMM_UNUSED(filter_maxnsyms);
+#endif /*defined(__TRACE)*/
   return fname;
 }
 
@@ -363,6 +376,7 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
   const int* filter_mindepth,
   const int* filter_maxnsyms)
 {
+#if defined(__TRACE)
   unsigned int depth1 = depth + 1, threadid;
   const char *const name = libxsmm_trace_info(&depth1, &threadid,
     filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -377,6 +391,12 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
       fprintf(stream, "%*s%s\n", (int)(depth1 - depth0), "", name);
     }
   }
+#else /* suppress warning */
+  LIBXSMM_UNUSED(stream); LIBXSMM_UNUSED(depth);
+  LIBXSMM_UNUSED(filter_threadid);
+  LIBXSMM_UNUSED(filter_mindepth);
+  LIBXSMM_UNUSED(filter_maxnsyms);
+#endif
 }
 
 
@@ -384,12 +404,13 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
-#if 1
+#if defined(__TRACE)
+# if 1
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
   libxsmm_trace(stderr, 1/*no need for parent (0) but parent of parent (1)*/,
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
-#else
+# else
   struct {
       const char *dli_fname;
       void       *dli_fbase;  /* Address at which shared object
@@ -406,6 +427,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) 
       fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
     }
   }
+# endif
+#else
+  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 #endif
 }
 
