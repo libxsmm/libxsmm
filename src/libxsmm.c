@@ -267,7 +267,6 @@ LIBXSMM_RETARGETABLE void libxsmm_init(void)
 #else
   cache = libxsmm_cache;
 #endif
-
   if (0 == cache) {
     internal_init();
   }
