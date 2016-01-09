@@ -154,6 +154,12 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
   result = EXIT_FAILURE;
 #else
 # if defined(LIBXSMM_TRACE_STDATOMIC)
+  const int initialized = __atomic_load_n(&libxsmm_trace_initialized, __ATOMIC_RELAXED);
+# else
+  const int initialized = libxsmm_trace_initialized;
+# endif
+  if (0 == initialized) {
+# if defined(LIBXSMM_TRACE_STDATOMIC)
     __atomic_store_n(&libxsmm_trace_initialized, -1, __ATOMIC_SEQ_CST);
 # else
     libxsmm_trace_initialized = -1;
@@ -165,6 +171,10 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 # else
     result = pthread_key_delete(libxsmm_trace_key);
 # endif
+  }
+  else {
+    result = EXIT_SUCCESS;
+  }
 #endif
   return result;
 }
