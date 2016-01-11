@@ -13,12 +13,6 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-# Linux cut has features we use that do not work elsewhere. Mac, etc. users
-# should install GNU coreutils and use "cut" from there.
-# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
-# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
-CUT ?= cut
-
 # Python interpreter
 PYTHON ?= python
 
@@ -93,27 +87,8 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
+PTHREAD ?= 1
 STATIC ?= 1
-OMP ?= 0
-SYM ?= 0
-DBG ?= 0
-
-# Request strongest code conformance
-PEDANTIC ?= 0
-
-# Embed InterProcedural Optimization information into libraries
-IPO ?= 0
-
-# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
-ILP64 ?= 0
-BLAS ?= 0
-
-OFFLOAD ?= 0
-ifneq (0,$(OFFLOAD))
-	MIC ?= 1
-else
-	MIC ?= 0
-endif
 
 # JIT backend is enabled by default
 JIT ?= 1

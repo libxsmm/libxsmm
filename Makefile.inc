@@ -1,3 +1,9 @@
+# Linux cut has features we use that do not work elsewhere. Mac, etc. users
+# should install GNU coreutils and use "cut" from there.
+# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
+# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
+CUT ?= cut
+
 ICPC    = $(notdir $(shell which icpc     2> /dev/null))
 ICC     = $(notdir $(shell which icc      2> /dev/null))
 IFORT   = $(notdir $(shell which ifort    2> /dev/null))
@@ -28,6 +34,34 @@ TRACE ?= 0
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
+
+# Static or shared binary
+STATIC ?= 0
+
+# Debugging and symbols (e.g., when profiling)
+SYM ?= 0
+DBG ?= 0
+
+# Threading runtime
+PTHREAD ?= 0
+OMP ?= 0
+
+# Code conformance (beyond -Wall)
+PEDANTIC ?= 0
+
+# Embed InterProcedural Optimization information into libraries
+IPO ?= 0
+
+# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
+ILP64 ?= 0
+BLAS ?= 0
+
+OFFLOAD ?= 0
+ifneq (0,$(OFFLOAD))
+	MIC ?= 1
+else
+	MIC ?= 0
+endif
 
 # prefer Intel Compiler (if available)
 ifneq (,$(ICPC))
@@ -138,10 +172,9 @@ ifneq (0,$(INTEL))
 		SYM = $(DBG)
 	endif
 	ifneq (0,$(TRACE))
-		CXXFLAGS += -finstrument-functions -pthread
-		CFLAGS += -finstrument-functions -pthread
+		CXXFLAGS += -finstrument-functions
+		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
-		CLDFLAGS += -pthread
 		LDFLAGS += -rdynamic
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
@@ -186,6 +219,14 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
 		FCFLAGS += -no-offload
+	endif
+	ifneq (0,$(PTHREAD))
+		DFLAGS += -D_REENTRANT
+		CXXFLAGS += -pthread
+		CFLAGS += -pthread
+		ifneq (Windows_NT,$(OS))
+			CLDFLAGS += -pthread
+		endif
 	endif
 	ifeq (1,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
@@ -270,8 +311,8 @@ else # GCC assumed
 		SYM = $(DBG)
 	endif
 	ifneq (0,$(TRACE))
-		CXXFLAGS += -finstrument-functions -pthread
-		CFLAGS += -finstrument-functions -pthread
+		CXXFLAGS += -finstrument-functions
+		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
 		ifneq (0,$(GNU)) # e.g. clang does not need/understand below flag
 			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
@@ -279,7 +320,6 @@ else # GCC assumed
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
 		endif
 		ifneq (Windows_NT,$(OS))
-			CLDFLAGS += -pthread
 			LDFLAGS += -rdynamic
 		else
 			LDFLAGS += -ldbghelp
@@ -337,6 +377,14 @@ else # GCC assumed
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
 			CLDFLAGS += -fopenmp=$(OMP)
+		endif
+	endif
+	ifneq (0,$(PTHREAD))
+		DFLAGS += -D_REENTRANT
+		CXXFLAGS += -pthread
+		CFLAGS += -pthread
+		ifneq (Windows_NT,$(OS))
+			CLDFLAGS += -pthread
 		endif
 	endif
 	ifneq (0,$(STATIC))
