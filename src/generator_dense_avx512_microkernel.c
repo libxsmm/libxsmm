@@ -145,7 +145,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
     /* apply k blocking */
     for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
       /* advance b pointer if needed */
-      if ( (l_k > 0) && (l_k%(128/i_micro_kernel_config->datatype_size) == 0) ) {
+      if ( (l_k > 0) && ((l_k%128) == 0) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, 128 );
         /* advance the second base pointer only if it's needed */
         if ( i_n_blocking > 8 ) {
@@ -334,13 +334,13 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_b,
-                                   (i_k_blocking * i_micro_kernel_config->datatype_size) - (128*l_k_updates) );
+                                   (i_k_blocking * i_micro_kernel_config->datatype_size) - (128*(i_micro_kernel_config->datatype_size)*l_k_updates) );
     } else {
       /* we have to make sure that we are reseting the pointer to its original value in case a full unroll */
       if ( l_k_updates > 0 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, 
                                      i_micro_kernel_config->alu_sub_instruction, 
-                                     i_gp_reg_mapping->gp_reg_b, 128*l_k_updates );
+                                     i_gp_reg_mapping->gp_reg_b, 128*(i_micro_kernel_config->datatype_size)*l_k_updates );
       }
     }
   }
