@@ -562,7 +562,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
     unsigned int l_vcompute = 0;
     unsigned int l_register_offset = 0;
 
-    if ( (l_k > 0) && (l_k%(128/i_micro_kernel_config->datatype_size) == 0) ) {
+    if ( (l_k > 0) && ((l_k%128) == 0) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, 128 );
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_2, 128 );
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_1, 128 );
@@ -842,7 +842,8 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   }
 
   if (l_k_updates > 0) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_b, 128*l_k_updates );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_b, 
+                                     128*(i_micro_kernel_config->datatype_size)*l_k_updates );
   }
 
   /* add C buffers */
