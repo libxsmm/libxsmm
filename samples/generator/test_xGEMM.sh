@@ -118,12 +118,12 @@ do
         scp ./xgemm_${m}_${n}_${k}_${PREC} mic0:
         ssh mic0 "./xgemm_${m}_${n}_${k}_${PREC}"
       elif [ "${ARCH}" == 'knl' ]; then
-        icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        icc -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
         ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}
         if [ $ASM -eq 1 ]
         then
           as kernel_${m}_${n}_${k}_${PREC}.s -o kernel_${m}_${n}_${k}_${PREC}.o
-          icc -O2 -ansi-alias -xMIC_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
+          icc -O2 -ansi-alias -xCOMMON_AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DUSE_ASM_DIRECT validation.c kernel_${m}_${n}_${k}_${PREC}.o -o xgemm_${m}_${n}_${k}_${PREC}_asm
           ${SDE} ./xgemm_${m}_${n}_${k}_${PREC}_asm
         fi
       elif [ "${ARCH}" == 'noarch' ]; then
