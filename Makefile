@@ -152,9 +152,9 @@ SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) 
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_BIN))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/mm_%.o,$(INDICES)) \
-               $(BLDDIR)/libxsmm.o $(BLDDIR)/libxsmm_gemm.o \
-               $(BLDDIR)/libxsmm_crc32.o
+OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) \
+               $(BLDDIR)/intel64/libxsmm.o $(BLDDIR)/intel64/libxsmm_gemm.o \
+               $(BLDDIR)/intel64/libxsmm_crc32.o
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
                $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_gemm.o \
                $(BLDDIR)/mic/libxsmm_crc32.o $(BLDDIR)/mic/libxsmm_trace.o \
@@ -420,17 +420,17 @@ $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SCRDIR)/libx
 ifneq (0,$(MIC))
 .PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
-$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
+$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 
 .PHONY: compile_hst
 compile_hst: $(OBJFILES_HST)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-$(BLDDIR)/%.o: $(BLDDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
+$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
@@ -812,8 +812,8 @@ clean-minimal:
 
 .PHONY: clean
 clean: clean-minimal
+	@rm -f $(BLDDIR)/intel64/*.o
 	@rm -f $(BLDDIR)/mic/*.o
-	@rm -f $(BLDDIR)/*.o
 
 .PHONY: realclean
 realclean: clean
