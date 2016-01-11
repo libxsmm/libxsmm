@@ -277,6 +277,8 @@ else # GCC assumed
 			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		else
+			DFLAGS += -D__extern_always_inline=inline
 		endif
 		ifneq (Windows_NT,$(OS))
 			CLDFLAGS += -pthread

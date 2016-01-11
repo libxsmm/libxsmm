@@ -28,7 +28,7 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -D__extern_always_inline=inline
+DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
 STATIC ?= 0
