@@ -34,6 +34,12 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+# if (!defined(_BSD_SOURCE) || 0 == _BSD_SOURCE) && (!defined(_SVID_SOURCE) || 0 == _SVID_SOURCE) && \
+     (!defined(_XOPEN_SOURCE) || !defined(_XOPEN_SOURCE_EXTENDED) || 500 > _XOPEN_SOURCE) && \
+     (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+/* C89: avoid warning about mkstemp declared implicitly */
+int mkstemp(char* filename_template);
+# endif
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -50,6 +56,11 @@
 # include <pthread.h>
 # include <unistd.h>
 # include <fcntl.h>
+# if (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
+     (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+/* C89: avoid warning about posix_fallocate declared implicitly */
+int posix_fallocate(int, off_t, off_t);
+# endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
