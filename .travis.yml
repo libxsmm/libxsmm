@@ -50,6 +50,12 @@ script:
   - cd ${TRAVIS_BUILD_DIR} &&
     source .codecov &&
     make -e clean &&
+    ./make.sh -ci-cm -j STATIC=0 test-cp2k &&
+    eval ${LIBXSMM_RUNGCOV}
+
+  - cd ${TRAVIS_BUILD_DIR} &&
+    source .codecov &&
+    make -e clean &&
     ./make.sh -ci-rm -j ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" test-cp2k &&
     eval ${LIBXSMM_RUNGCOV}
 
