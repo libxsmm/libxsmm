@@ -28,11 +28,20 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 
-#if !defined(LIBXSMM_WRAP_XGEMM) && defined(__STATIC) && defined(__GNUC__) && !defined(__CYGWIN__)
-# define LIBXSMM_WRAP_XGEMM
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
+# if !defined(_GNU_SOURCE)
+#   define _GNU_SOURCE
+# endif
+# include <dlfcn.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
+#include <libxsmm.h>
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
@@ -131,7 +140,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_dgemm(const char* transa
 }
 
 
-#if defined(LIBXSMM_WRAP_XGEMM)
+/**
+ * Neither the wrap mechanism (static library) nor the cygwin_internal "dlsym" based
+ * approach (shared library) will work with GCC (Cygwin, MinGW) under Windows (not
+ * even talking about the real platform-native compiler at this point).
+ * There is considerably more work needed in order to intercept calls on Windows.
+ * A cross-OS based approach could be based on http://www.pintool.org/ and might
+ * also help instrumenting and tracing calls (TRACE).
+ */
+#if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
+#if defined(__STATIC)
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
@@ -206,4 +225,78 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
-#endif /*defined(LIBXSMM_WRAP_XGEMM)*/
+
+#else /*!defined(__STATIC)*/
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(sgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  typedef void (*function_type)(
+    const char*, const char*,
+    const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+    const float*, const float*, const libxsmm_blasint*,
+    const float*, const libxsmm_blasint*,
+    const float*, float*, const libxsmm_blasint*);
+  static LIBXSMM_RETARGETABLE function_type original = 0;
+  int flags = LIBXSMM_FLAGS;
+  flags = (0 != transa
+      ? (('N' == *transa || 'n' == *transa) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_A)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_A))
+      : flags);
+  flags = (0 != transb
+      ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
+      : flags);
+  if (0 == original) {
+    original = (function_type)dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+  }
+  assert(m && n && k && a && b && c && original);
+  LIBXSMM_XGEMM(float, libxsmm_blasint, original, flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(dgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  typedef void (*function_type)(
+    const char*, const char*,
+    const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+    const double*, const double*, const libxsmm_blasint*,
+    const double*, const libxsmm_blasint*,
+    const double*, double*, const libxsmm_blasint*);
+  static LIBXSMM_RETARGETABLE function_type original = 0;
+  int flags = LIBXSMM_FLAGS;
+  flags = (0 != transa
+      ? (('N' == *transa || 'n' == *transa) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_A)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_A))
+      : flags);
+  flags = (0 != transb
+      ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
+      : flags);
+  if (0 == original) {
+    original = (function_type)dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+  }
+  assert(m && n && k && a && b && c && original);
+  LIBXSMM_XGEMM(double, libxsmm_blasint, original, flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+#endif /*defined(__STATIC)*/
+#endif /*defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)*/
+
