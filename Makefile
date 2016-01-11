@@ -319,7 +319,7 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Make
 .PHONY: generator
 generator: $(BINDIR)/libxsmm_generator
 $(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(OBJFILES_GEN_BIN) -L$(OUTDIR) -lxsmmgen $(LDFLAGS) $(CLDFLAGS) -o $@
+	$(CC) $(OBJFILES_GEN_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(LDFLAGS) $(CLDFLAGS) -o $@
 
 .PHONY: sources
 sources: $(SRCFILES)
