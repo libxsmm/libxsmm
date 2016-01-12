@@ -232,7 +232,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       : flags);
   assert(m && n && k && a && b && c);
 #if !defined(NDEBUG) /* library code is expected to be mute */
-  if (0 == LIBXSMM_FSYMBOL(__real_sgemm)) {
+  if (0 == LIBXSMM_FSYMBOL(__real_dgemm)) {
     fprintf(stderr, "LIBXSMM: application is required to link against LAPACK/BLAS!\n");
   }
   else
