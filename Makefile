@@ -96,6 +96,15 @@ ifneq (0,$(JIT))
 	SSE ?= 1
 endif
 
+ifeq (Windows_NT,$(OS))
+	ifeq (0,$(STATIC))
+$(info =========================================================)
+$(info Windows DLLs req. to link against BLAS since there is no)
+$(info runtime resolution/search for weak symbols implemented.)
+		BLAS ?= 2
+	endif
+endif
+
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
@@ -246,9 +255,11 @@ ifneq (0,$(OMP))
 	$(info ==========================================================)
 endif
 ifneq (0,$(BLAS))
+ifneq (Windows_NT,$(OS))
 	$(info =========================================================)
 	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!)
 	$(info Linking it now may prevent users to make an own decision.)
+endif
 ifeq (1,$(BLAS))
 	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
 	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
