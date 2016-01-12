@@ -299,6 +299,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
           }
         }
 
+#if 1
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
                                              i_micro_kernel_config->vmul_instruction,
@@ -311,7 +312,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                              l_k%2,
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
 
-#if 0
+#else
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
                                              i_micro_kernel_config->vmul_instruction,
