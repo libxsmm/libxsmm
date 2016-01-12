@@ -257,7 +257,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMB
   if (0 == original.pv) {
     original.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
   }
-  assert(m && n && k && a && b && c && original.pv);
+  assert(m && n && k && a && b && c);
   LIBXSMM_XGEMM(float, libxsmm_blasint, original.fn, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -295,7 +295,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMB
   if (0 == original.pv) {
     original.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
   }
-  assert(m && n && k && a && b && c && original.pv);
+  assert(m && n && k && a && b && c);
   LIBXSMM_XGEMM(double, libxsmm_blasint, original.fn, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
