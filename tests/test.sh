@@ -17,6 +17,7 @@ for TEST in $(ls -1 ${HERE}/*.c) ; do
   NAME=$(basename ${TEST} .c)
   echo -n "${NAME}... "
 
+  ERROR=$({
   if [[ "-mic" != "$1" ]] ; then
     if [[ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]] ; then
       env OFFLOAD_INIT=on_start \
@@ -36,9 +37,9 @@ for TEST in $(ls -1 ${HERE}/*.c) ; do
     micnativeloadex \
       ${HERE}/${NAME} -a "$*" \
       -e "KMP_AFFINITY=scatter,granularity=fine"
-  fi
+  fi > outfile; } 2>&1)
   if [[ 0 != $? ]] ; then
-    echo "FAILED"
+    echo "FAILED $ERROR"
     exit 1
   else
     echo "OK"
