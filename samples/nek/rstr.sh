@@ -4,7 +4,7 @@ HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0 .sh)
 GREP=$(which grep)
 
-if [[ "Windows_NT" != "${OS}" ]] ; then
+if [[ "Windows_NT" == "${OS}" ]] ; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
 else
