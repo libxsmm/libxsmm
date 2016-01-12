@@ -2,6 +2,14 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0 .sh)
+GREP=$(which grep)
+
+if [[ "Windows_NT" != "${OS}" ]] ; then
+  # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
+  LDD=$(which cygcheck)
+else
+  LDD=$(which ldd)
+fi
 
 MICINFO=$(which micinfo 2> /dev/null)
 if [[ "" != "${MICINFO}" ]] ; then
@@ -13,7 +21,7 @@ fi
 MICTPERC=3
 
 if [[ "-mic" != "$1" ]] ; then
-  if [[ "" != "$(ldd ${HERE}/${NAME} | grep libiomp5\.so)" ]] ; then
+  if [[ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]] ; then
     env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
