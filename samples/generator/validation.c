@@ -278,6 +278,7 @@ void run_test() {
 #endif
 
   gettimeofday(&l_start, NULL);
+  size_t l_cyc_start = _rdtsc();
 
   for ( l_t = 0; l_t < REPS; l_t++ ) {
 #ifdef STREAM_A_B
@@ -299,7 +300,7 @@ void run_test() {
     }
 #endif
   }
-    
+  size_t l_cyc_end = _rdtsc();  
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
 
@@ -308,6 +309,7 @@ void run_test() {
   printf("%f GFLOPS for assembly\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0 * ((double)STREAM_A_B_SIZE)) / (l_total * 1.0e9));
 #else
   printf("%f GFLOPS for assembly\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (l_total * 1.0e9));
+  printf("%f FLOPS/cycle for assembly (using _rdtsc())\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / ((double)(l_cyc_end - l_cyc_start)));
 #endif
 
   /* check result */
