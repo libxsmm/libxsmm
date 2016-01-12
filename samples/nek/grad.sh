@@ -3,10 +3,13 @@
 HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0 .sh)
 GREP=$(which grep)
+ENV=$(which env)
 
 if [[ "Windows_NT" == "${OS}" ]] ; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
+  # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
+  export PATH=${PATH}:${HERE}
 else
   LDD=$(which ldd)
 fi
@@ -22,7 +25,7 @@ MICTPERC=3
 
 if [[ "-mic" != "$1" ]] ; then
   if [[ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]] ; then
-    env LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
+    ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
       MIC_KMP_PLACE_THREADS=$((MICCORES-1))c${MICTPERC}t \
@@ -30,13 +33,13 @@ if [[ "-mic" != "$1" ]] ; then
       OFFLOAD_INIT=on_start \
     ${HERE}/${NAME} $*
   else
-    env \
+    ${ENV} \
       OMP_PROC_BIND=TRUE \
     ${HERE}/${NAME} $*
   fi
 else
   shift
-  env \
+  ${ENV} \
     SINK_LD_LIBRARY_PATH=${SINK_LD_LIBRARY_PATH}:${MIC_LD_LIBRARY_PATH}:${HERE} \
   micnativeloadex \
     ${HERE}/${NAME} -a "$*" \
