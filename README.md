@@ -160,9 +160,9 @@ gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a
 gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a
 ```
 
-Relinking the application is often done by copying, pasting, and modifying the linker command as shown when running the existing "make" (or similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS.
+Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS.
 
-If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime):
+If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
 
 ```
 LD_PRELOAD=/path/to/libxsmm.so ./myapplication
@@ -174,16 +174,16 @@ This case obviously requires to build a shared library of LIBXSMM:
 make STATIC=0
 ```
 
-Please note that calling SGEMM is more sensitive to dispatch overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the LIBXSMM API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (without using the LIBXSMM API).
+Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
 
 ### Call Trace
-During the initial steps of employing the API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well:
+During the initial steps of employing the LIBXSMM API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error (`stderr`) output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well:
 
 ```
 make TRACE=1
 ```
 
-Actually tracing calls without running in a debugger can be accomplished by using an environment variable called LIBXSMM_TRACE.
+Actually tracing calls (without debugger) can be accomplished by an environment variable called LIBXSMM_TRACE.
 
 ```
 LIBXSMM_TRACE=1 ./myapplication
