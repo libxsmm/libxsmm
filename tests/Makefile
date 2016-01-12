@@ -13,13 +13,7 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-# Linux cut has features we use that do not work elsewhere. Mac, etc. users
-# should install GNU coreutils and use "cut" from there.
-# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
-# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
-CUT ?= cut
-
-ROOTDIR = $(abspath $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ..
 SRCDIR = $(ROOTDIR)
 INCDIR = $(DEPDIR)/include
@@ -28,30 +22,15 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -D__extern_always_inline=inline
+DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
 
-STATIC ?= 0
+BLAS ?= 1
 OMP ?= 1
 SYM ?= 1
-DBG ?= 0
 
-# Request strongest code conformance
-PEDANTIC ?= 0
-
-# Embed InterProcedural Optimization information into libraries
-IPO ?= 0
-
-# ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
-ILP64 ?= 0
-BLAS ?= 1
-
-OFFLOAD ?= 0
-ifneq (0,$(OFFLOAD))
-	MIC ?= 1
-else
-	MIC ?= 0
-endif
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
 
 ifeq (0,$(MIC))
 	LIBNAME = $(DEPDIR)/lib/libxsmm
@@ -183,7 +162,4 @@ ifneq (0,$(MIC))
 endif
 endif
 	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
-
-# include common Makefile artifacts
-include $(DEPDIR)/Makefile.inc
 
