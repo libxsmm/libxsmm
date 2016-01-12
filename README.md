@@ -148,6 +148,51 @@ Performing `make install-minimal` omits the documentation (default: `PREFIX/shar
 
 **NOTE**: the library is agnostic with respect to the threading-runtime, and enabling OpenMP (OMP=1) when building the library is a non-default option (untested). The library is also agnostic with respect to the selected LAPACK/BLAS library, and linking GEMM routines (BLAS=1|2) when building the library may prevent a user to decide at the time of linking the actual application.
 
+## Running
+### Call Wrapper
+Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
+
+There are two cases to consider: (1) an application which is linking statically against LAPACK/BLAS, and (2) an application which is dynamically linked against LAPACK/BLAS. The first case requires making `-Wl,--wrap=xgemm_ /path/to/libxsmm.a` part of the link-line and then relinking the application:
+
+```
+gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a
+gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a
+gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a
+```
+
+Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS.
+
+If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
+
+```
+LD_PRELOAD=/path/to/libxsmm.so ./myapplication
+```
+
+This case obviously requires to build a shared library of LIBXSMM:
+
+```
+make STATIC=0
+```
+
+Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
+
+### Call Trace
+During the initial steps of employing the LIBXSMM API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error (`stderr`) output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well:
+
+```
+make TRACE=1
+```
+
+Actually tracing calls (without debugger) can be accomplished by an environment variable called LIBXSMM_TRACE.
+
+```
+LIBXSMM_TRACE=1 ./myapplication
+```
+
+Syntactically up to three arguments separated by commas (which allows to omit arguments) are taken (`tid,i,n`): *tid* signifies the ID of the thread to be traced with 1...NTHREADS being valid and where LIBXSMM_TRACE=1 is filtering for the "main thread" (in fact the first thread running into the trace facility); grabbing all threads (no filter) can be achieved by supplying a negative id (which is also the default when omitted). The second argument is pruning higher levels of the call-tree with *i=1* being the default (level zero is the highest at the same level as the main function). The last argument is taking the number of inclusive call levels with *n=-1* being the default (signifying no filter).
+
+Please note, that debug symbols without the trace facility and without any eventual console output can be enabled separately (`make SYM=1`) which might be useful when profiling an application. No facililty of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible or non-private I/O.
+
 ## Performance
 ### Tuning
 Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
@@ -205,7 +250,7 @@ One can use the aforementioned THRESHOLD parameter to control the matrix sizes f
 
 Note: Modern Linux kernels are supporting transparent huge pages (THP). LIBXSMM is sanitizing this feature when setting the permissions for pages holding the executable code. However, we measured up to 30% slowdown when running JITted code in cases where THP decided to deliver a huge page. For systems with Linux kernel 2.6.38 (or later) THP will be automatically disabled for the mmap'ed regions (using madvise).
 
-### Generator driver
+### Generator Driver
 In rare situations it might be useful to directly incorporate generated C code (with inline assembly regions). This is accomplished by invoking a driver program (with certain command line arguments). The driver program is built as part of LIBXSMM's build process (when requesting static code generation), but also available via a separate build target:
 
 ```
