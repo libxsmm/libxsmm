@@ -158,13 +158,16 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
 		FCFLAGS += $(OPTFLAG)
-		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
 			FCFLAGS += -ipo
 		endif
-		SYM = $(TRACE)
+		ifneq (0,$(TRACE))
+			SYM = $(TRACE)
+		else
+			DFLAGS += -DNDEBUG
+		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
@@ -296,14 +299,17 @@ else # GCC assumed
 			CFLAGS += -ftree-vectorize -ffast-math
 			FCFLAGS += -ftree-vectorize -ffast-math
 		endif
-		DFLAGS += -DNDEBUG
 		ifneq (0,$(IPO))
 			CXXFLAGS += -flto -ffat-lto-objects
 			CFLAGS += -flto -ffat-lto-objects
 			FCFLAGS += -flto -ffat-lto-objects
 			LDFLAGS += -flto
 		endif
-		SYM = $(TRACE)
+		ifneq (0,$(TRACE))
+			SYM = $(TRACE)
+		else
+			DFLAGS += -DNDEBUG
+		endif
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
