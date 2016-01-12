@@ -181,11 +181,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_sgemm)(
                                             : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
       : flags);
   assert(m && n && k && a && b && c);
-  LIBXSMM_XGEMM(float, libxsmm_blasint, LIBXSMM_FSYMBOL(__real_sgemm), flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == LIBXSMM_FSYMBOL(__real_sgemm)) {
+    fprintf(stderr, "LIBXSMM: application is required to link against LAPACK/BLAS!\n");
+  }
+  else
+#endif
+  {
+    LIBXSMM_XGEMM(float, libxsmm_blasint, LIBXSMM_FSYMBOL(__real_sgemm), flags, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
 }
 
 
@@ -219,11 +227,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
                                             : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
       : flags);
   assert(m && n && k && a && b && c);
-  LIBXSMM_XGEMM(double, libxsmm_blasint, LIBXSMM_FSYMBOL(__real_dgemm), flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == LIBXSMM_FSYMBOL(__real_sgemm)) {
+    fprintf(stderr, "LIBXSMM: application is required to link against LAPACK/BLAS!\n");
+  }
+  else
+#endif
+  {
+    LIBXSMM_XGEMM(double, libxsmm_blasint, LIBXSMM_FSYMBOL(__real_dgemm), flags, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
 }
 
 #else /*!defined(__STATIC)*/
