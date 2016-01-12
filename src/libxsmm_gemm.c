@@ -32,11 +32,15 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+/* must be include first! */
 #if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
 # endif
 # include <dlfcn.h>
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+# include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
