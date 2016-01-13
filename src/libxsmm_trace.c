@@ -74,9 +74,14 @@ int posix_fallocate(int, off_t, off_t);
 # undef LIBXSMM_TRACE_SYMBOLSIZE
 # define LIBXSMM_TRACE_SYMBOLSIZE 256
 #endif
-#if !defined(LIBXSMM_TRACE_STDATOMIC) && defined(__GNUC__) && \
-  (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# define LIBXSMM_TRACE_STDATOMIC
+#if defined(__GNUC__)
+# if !defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#     define LIBXSMM_TRACE_GCCATOMICS 1
+#   else
+#     define LIBXSMM_TRACE_GCCATOMICS 0
+#   endif
+# endif
 #endif
 
 
@@ -144,8 +149,13 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
     libxsmm_trace_threadid = filter_threadid;
     libxsmm_trace_mindepth = filter_mindepth;
     libxsmm_trace_maxnsyms = filter_maxnsyms;
-#if defined(LIBXSMM_TRACE_STDATOMIC)
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+# if (0 != LIBXSMM_TRACE_GCCATOMICS)
     __atomic_store_n(&libxsmm_trace_initialized, 0, __ATOMIC_SEQ_CST);
+# else
+    __sync_and_and_fetch(&libxsmm_trace_initialized, 0);
+# endif
+/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
 #else
     libxsmm_trace_initialized = 0;
 #endif
@@ -164,14 +174,24 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #if !defined(__TRACE)
   result = EXIT_FAILURE;
 #else
-# if defined(LIBXSMM_TRACE_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
   const int initialized = __atomic_load_n(&libxsmm_trace_initialized, __ATOMIC_RELAXED);
+#   else
+  const int initialized = __sync_or_and_fetch(&libxsmm_trace_initialized, 0);
+#   endif
+/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
 # else
   const int initialized = libxsmm_trace_initialized;
 # endif
   if (0 == initialized) {
-# if defined(LIBXSMM_TRACE_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
     __atomic_store_n(&libxsmm_trace_initialized, -1, __ATOMIC_SEQ_CST);
+#   else
+    __sync_or_and_fetch(&libxsmm_trace_initialized, -1);
+#   endif
+/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
 # else
     libxsmm_trace_initialized = -1;
 # endif
@@ -213,12 +233,16 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # if defined(__GNUC__)
   __asm__("");
 # endif
-# if defined(LIBXSMM_TRACE_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
   i = __atomic_load_n(&libxsmm_trace_initialized, __ATOMIC_RELAXED);
+#   else
+  i = __sync_or_and_fetch(&libxsmm_trace_initialized, 0);
+#   endif
+/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
 # else
   i = libxsmm_trace_initialized;
 # endif
-
   if (0 <= i) { /* do nothing if not yet initialized */
     const int mindepth = filter_mindepth ? *filter_mindepth : libxsmm_trace_mindepth;
     const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : libxsmm_trace_maxnsyms;
@@ -246,12 +270,16 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           abs_tid = (0 <= tid ? tid : -tid);
         }
         else {
-# if defined(_WIN32)
-          abs_tid = _InterlockedIncrement(&libxsmm_trace_initialized);
-# elif defined(LIBXSMM_TRACE_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
           abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
-# else
+#   else
           abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
+#   endif
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+          abs_tid = _InterlockedIncrement(&libxsmm_trace_initialized);
+# else
+          abs_tid = ++libxsmm_trace_initialized;
 # endif
           /* use sign bit to flag enabled fallback for symbol resolution */
           tid = -abs_tid;
@@ -311,11 +339,15 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                 && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                 && check == fd)
               {
-#   if defined(LIBXSMM_TRACE_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
+#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
                 abs_tid = __atomic_add_fetch(&libxsmm_trace_initialized, 1, __ATOMIC_RELAXED);
 #   else
                 abs_tid = __sync_add_and_fetch(&libxsmm_trace_initialized, 1);
 #   endif
+# else
+                abs_tid = ++libxsmm_trace_initialized;
+# endif
                 assert(0 < abs_tid);
                 /* use sign bit to flag enabled fallback for symbol resolution */
                 ivalue[1] = -abs_tid;
