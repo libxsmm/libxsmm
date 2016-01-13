@@ -44,7 +44,7 @@ int mkstemp(char* filename_template);
 #include <assert.h>
 #include <stdio.h>
 #if !defined(NDEBUG)
-#include <errno.h>
+# include <errno.h>
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 # include <Windows.h>
@@ -53,9 +53,11 @@ int mkstemp(char* filename_template);
 # include <execinfo.h>
 # include <sys/stat.h>
 # include <sys/mman.h>
-# include <pthread.h>
 # include <unistd.h>
 # include <fcntl.h>
+# if defined(_REENTRANT)
+#   include <pthread.h>
+# endif
 # if (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
      (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
