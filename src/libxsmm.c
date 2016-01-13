@@ -615,8 +615,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
               __atomic_store_n(&entry->code.xmm, result.xmm, __ATOMIC_SEQ_CST);
 #   else
               {
-                /*const*/void* old = result.xmm;
-                while (!__sync_bool_compare_and_swap(&entry->code.xmm, old, result.xmm)) old = result.xmm;
+                /*const*/void* old = entry->code.xmm;
+                while (!__sync_bool_compare_and_swap(&entry->code.xmm, old, result.xmm)) old = entry->code.xmm;
               }
 #   endif
 # elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
@@ -644,7 +644,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
               __atomic_store_n(&entry->code.xmm, code, __ATOMIC_SEQ_CST);
 #   else
               {
-                /*const*/void* old = code;
+                /*const*/void* old = entry->code.xmm;
                 while (!__sync_bool_compare_and_swap(&entry->code.xmm, old, code)) old = entry->code.xmm;
               }
 #   endif
