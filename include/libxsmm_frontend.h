@@ -124,6 +124,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const float*, float*, const int*);
 #endif
 
+/** Construct symbol name from a given real type name (float or double). */
+#define LIBXSMM_BLAS_GEMM_SYMBOL(REAL)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))
+#define LIBXSMM_CBLAS_GEMM_SYMBOL(REAL) LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL, gemm))
+#define LIBXSMM_XBLAS_GEMM_SYMBOL(REAL) LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))
+#define LIBXSMM_MMFUNCTION_TYPE(REAL)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction))
+#define LIBXSMM_MMDISPATCH_SYMBOL(REAL) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))
+#define LIBXSMM_XGEMM_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, gemm))
+
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #define LIBXSMM_BLAS_XGEMM(REAL, SYMBOL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
@@ -246,13 +254,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
     int libxsmm_xgemm_fallback_ = 0; \
     if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH) { \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction)) libxsmm_xgemm_function_ = \
-        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))((int)(M), (int)(N), (int)(K), \
+      const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = \
+        LIBXSMM_MMDISPATCH_SYMBOL(REAL)((int)(M), (int)(N), (int)(K), \
           &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, 0); \
-      if (0 != libxsmm_xgemm_function_) { \
-        LIBXSMM_MMCALL_ABC(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
+      if (0 != libxsmm_mmfunction_) { \
+        LIBXSMM_MMCALL_ABC(libxsmm_mmfunction_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
       } \
       else { \
         libxsmm_xgemm_fallback_ = 1; \
@@ -260,13 +268,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
     } \
     else { \
       const int libxsmm_xgemm_prefetch_ = (LIBXSMM_PREFETCH); \
-      const LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction)) libxsmm_xgemm_function_ = \
-        LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))((int)(M), (int)(N), (int)(K), \
+      const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = \
+        LIBXSMM_MMDISPATCH_SYMBOL(REAL)((int)(M), (int)(N), (int)(K), \
           &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
           &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
           &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
-      if (0 != libxsmm_xgemm_function_) { \
-        LIBXSMM_MMCALL_PRF(libxsmm_xgemm_function_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
+      if (0 != libxsmm_mmfunction_) { \
+        LIBXSMM_MMCALL_PRF(libxsmm_mmfunction_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
           ((const REAL*)(A)) + libxsmm_xgemm_lda_ * (K), ((const REAL*)(B)) + libxsmm_xgemm_ldb_ * (N), \
           ((const REAL*)(C)) + libxsmm_xgemm_ldc_ * (N)); \
       } \

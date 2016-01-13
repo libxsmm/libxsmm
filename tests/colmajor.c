@@ -49,17 +49,17 @@ int main()
     }
   }
 
-  LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &m, &n, &k,
+  LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
 #if defined(__MKL) || defined(USE_CBLAS)
-  LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k,
+  LIBXSMM_CBLAS_GEMM_SYMBOL(REAL_TYPE)(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k,
     alpha, a, lda, b, ldb, beta, d, ldc);
 #elif defined(USE_LIBXSMM_BLAS)
-  LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &m, &n, &k,
+  LIBXSMM_XBLAS_GEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #else
-  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, gemm))(&notrans, &notrans, &m, &n, &k,
+  LIBXSMM_BLAS_GEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
 
