@@ -74,7 +74,7 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
     else:
         sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
-    return set(sorted(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset)))
+    return set(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
 
 
 def max_mnk(mnklist, init = 0, index = None):
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         mnk_size = int(sys.argv[3])
         dims = load_mnklist(sys.argv[4:4+mnk_size], threshold, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
-        print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), dims)))
+        print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))))
     elif (4 == argc and 0 < arg1):
         print(align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3]))))
     else:
