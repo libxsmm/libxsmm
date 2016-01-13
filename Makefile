@@ -510,10 +510,14 @@ endif
 	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
-	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
-	@echo "    exit 1"  >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  RESULT=\$$?" >> $@
+	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    exit 1" >> $@
+	@echo "  else" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
@@ -550,10 +554,14 @@ endif
 	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/smm \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}" >> $@
-	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
-	@echo "    exit 1"  >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  RESULT=\$$?" >> $@
+	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    exit 1" >> $@
+	@echo "  else" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
@@ -584,10 +592,14 @@ endif
 	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/grad \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
-	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
-	@echo "    exit 1"  >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  RESULT=\$$?" >> $@
+	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    exit 1" >> $@
+	@echo "  else" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
@@ -618,10 +630,14 @@ endif
 	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/axhm \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}" >> $@
-	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
-	@echo "    exit 1"  >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  RESULT=\$$?" >> $@
+	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    exit 1" >> $@
+	@echo "  else" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
@@ -660,10 +676,14 @@ endif
 	@echo "  MMVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
 	@echo "  NNVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  >&2 echo \"Test \$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})\"" >> $@
-	@echo "  CHECK=1 \$${HERE}/rstr \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}" >> $@
-	@echo "  if [[ "0" != "\$$?" ]] ; then"  >> $@
-	@echo "    exit 1"  >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  RESULT=\$$?" >> $@
+	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    exit 1" >> $@
+	@echo "  else" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
 	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@

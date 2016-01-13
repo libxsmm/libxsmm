@@ -16,9 +16,12 @@ fi
 echo "============="
 echo "Running tests"
 echo "============="
-for TEST in $(ls -1 ${HERE}/*.c) ; do
+TESTS=$(ls -1 ${HERE}/*.c)
+NTEST=1
+NMAX=$(echo ${TESTS} | wc -w)
+for TEST in ${TESTS} ; do
   NAME=$(basename ${TEST} .c)
-  echo -n "${NAME}... "
+  echo -n "${NTEST} of ${NMAX} (${NAME})... "
 
   ERROR=$({
   if [[ "-mic" != "$1" ]] ; then
@@ -49,5 +52,6 @@ for TEST in $(ls -1 ${HERE}/*.c) ; do
   else
     echo "OK ${ERROR}"
   fi
+  NTEST=$((NTEST+1))
 done
 
