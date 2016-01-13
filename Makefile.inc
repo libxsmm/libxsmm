@@ -42,7 +42,7 @@ STATIC ?= 0
 SYM ?= 0
 DBG ?= 0
 
-# Threading runtime
+# Threading runtime (PTHREAD refers to foundational TRT and not necessarily Posix Threads)
 PTHREAD ?= 0
 OMP ?= 0
 
