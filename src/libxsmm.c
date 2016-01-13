@@ -58,10 +58,14 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
-
-#if !defined(LIBXSMM_STDATOMIC) && defined(__GNUC__) && \
-  (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# define LIBXSMM_STDATOMIC
+#if defined(__GNUC__)
+# if !defined(LIBXSMM_GCCATOMICS)
+#   if (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#     define LIBXSMM_GCCATOMICS 1
+#   else
+#     define LIBXSMM_GCCATOMICS 0
+#   endif
+# endif
 #endif
 
 /* larger cache capacity lowers the probability of key collisions; should be a prime number */
@@ -184,8 +188,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 # pragma omp critical(libxsmm_cache_lock)
 #endif
   {
-#if defined(LIBXSMM_STDATOMIC)
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
     result = __atomic_load_n(&libxsmm_cache, __ATOMIC_SEQ_CST);
+# else
+    result = __sync_or_and_fetch(&libxsmm_cache, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+    result = libxsmm_cache; /*TODO*/
 #else
     result = libxsmm_cache;
 #endif
@@ -233,8 +243,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
             }
           }
           atexit(libxsmm_finalize);
-#if defined(LIBXSMM_STDATOMIC)
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
           __atomic_store_n(&libxsmm_cache, result, __ATOMIC_SEQ_CST);
+# else
+          {
+            libxsmm_cache_entry* old = libxsmm_cache;
+            while (!__sync_bool_compare_and_swap(&libxsmm_cache, old, result)) old = libxsmm_cache;
+          }
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+          libxsmm_cache = result; /*TODO*/
 #else
           libxsmm_cache = result;
 #endif
@@ -261,11 +280,16 @@ LIBXSMM_ATTRIBUTE(constructor)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
-  /*const*/void* cache;
-#if defined(LIBXSMM_STDATOMIC)
-  cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
+  const void *const cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+# else
+  const void *const cache = __sync_or_and_fetch(&libxsmm_cache, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+  const void *const cache = libxsmm_cache; /*TODO*/
 #else
-  cache = libxsmm_cache;
+  const void *const cache = libxsmm_cache;
 #endif
   if (0 == cache) {
     internal_init();
@@ -280,11 +304,16 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-  libxsmm_cache_entry* cache = 0;
-#if defined(LIBXSMM_STDATOMIC)
-  cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_SEQ_CST);
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
+  libxsmm_cache_entry* cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_SEQ_CST);
+# else
+  libxsmm_cache_entry* cache = __sync_or_and_fetch(&libxsmm_cache, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+  libxsmm_cache_entry* cache = libxsmm_cache; /*TODO*/
 #else
-  cache = libxsmm_cache;
+  libxsmm_cache_entry* cache = libxsmm_cache;
 #endif
 
   if (0 != cache) {
@@ -308,8 +337,14 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         }
 # endif
 #endif
-#if defined(LIBXSMM_STDATOMIC)
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
         __atomic_store_n(&libxsmm_cache, 0, __ATOMIC_SEQ_CST);
+# else
+        __sync_and_and_fetch(&libxsmm_cache, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+        libxsmm_cache = 0; /*TODO*/
 #else
         libxsmm_cache = 0;
 #endif
@@ -473,17 +508,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(const libxsmm
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_cache_entry *entry;
   libxsmm_code result;
   unsigned int hash, i, diff = 0;
   unsigned int diff0 = 0, i0;
-  assert(0 != desc);
 
-#if defined(LIBXSMM_STDATOMIC)
-  entry = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
+  libxsmm_cache_entry* entry = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+# else
+  libxsmm_cache_entry* entry = __sync_or_and_fetch(&libxsmm_cache, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+  libxsmm_cache_entry* entry = libxsmm_cache; /*TODO*/
 #else
-  entry = libxsmm_cache;
+  libxsmm_cache_entry* entry = libxsmm_cache;
 #endif
+  assert(0 != desc);
 
   /* lazy initialization */
   if (0 == entry) {
@@ -499,8 +539,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
 
   do {
     /* read cached code */
-#if defined(LIBXSMM_STDATOMIC)
+#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
     result.xmm = __atomic_load_n(&entry->code.xmm, __ATOMIC_SEQ_CST);
+# else
+    result.xmm = __sync_or_and_fetch(&entry->code.xmm, 0);
+# endif
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+    result = entry->code; /*TODO*/
 #else
     result = entry->code;
 #endif
@@ -564,8 +610,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
 
             if (0 != result.xmm) { /* synchronize cache entry */
               entry->descriptor = *desc;
-# if defined(LIBXSMM_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#   if (0 != LIBXSMM_GCCATOMICS)
               __atomic_store_n(&entry->code.xmm, result.xmm, __ATOMIC_SEQ_CST);
+#   else
+              {
+                const void* old = result.xmm;
+                while (!__sync_bool_compare_and_swap(&entry->code.xmm, old, result.xmm)) old = result.xmm;
+              }
+#   endif
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+              entry->code.xmm = result.xmm; /*TODO*/
 # else
               entry->code.xmm = result.xmm;
 # endif
@@ -584,8 +639,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
               i0 = i; /* keep starting point of free-slot-search in mind */
 
               /* fixup existing entry */
-# if defined(LIBXSMM_STDATOMIC)
+# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#   if (0 != LIBXSMM_GCCATOMICS)
               __atomic_store_n(&entry->code.xmm, code, __ATOMIC_SEQ_CST);
+#   else
+              {
+                const void* old = code;
+                while (!__sync_bool_compare_and_swap(&entry->code.xmm, old, code)) old = entry->code.xmm;
+              }
+#   endif
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+              entry->code.xmm = code; /*TODO*/
 # else
               entry->code.xmm = code;
 # endif
