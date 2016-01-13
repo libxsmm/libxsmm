@@ -42,11 +42,12 @@ for TEST in $(ls -1 ${HERE}/*.c) ; do
       ${HERE}/${NAME} -a "$*" \
       -e "KMP_AFFINITY=scatter,granularity=fine"
   fi > /dev/null; } 2>&1)
-  if [[ 0 != $? ]] ; then
-    echo "FAILED $ERROR"
+  RESULT=$?
+  if [[ 0 != ${RESULT} ]] ; then
+    echo "FAILED(${RESULT}) ${ERROR}"
     exit 1
   else
-    echo "OK"
+    echo "OK ${ERROR}"
   fi
 done
 
