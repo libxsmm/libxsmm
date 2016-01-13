@@ -155,7 +155,8 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
 # else
     __sync_and_and_fetch(&libxsmm_trace_initialized, 0);
 # endif
-/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
+#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+    libxsmm_trace_initialized = 0; /*TODO*/
 #else
     libxsmm_trace_initialized = 0;
 #endif
@@ -180,7 +181,8 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #   else
   const int initialized = __sync_or_and_fetch(&libxsmm_trace_initialized, 0);
 #   endif
-/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+  const int initialized = libxsmm_trace_initialized; /*TODO*/
 # else
   const int initialized = libxsmm_trace_initialized;
 # endif
@@ -191,7 +193,8 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #   else
     __sync_or_and_fetch(&libxsmm_trace_initialized, -1);
 #   endif
-/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+    libxsmm_trace_initialized = -1; /*TODO*/
 # else
     libxsmm_trace_initialized = -1;
 # endif
@@ -239,7 +242,8 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 #   else
   i = __sync_or_and_fetch(&libxsmm_trace_initialized, 0);
 #   endif
-/*TODO: #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)*/
+# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+  i = libxsmm_trace_initialized; /*TODO*/
 # else
   i = libxsmm_trace_initialized;
 # endif
