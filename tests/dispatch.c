@@ -32,8 +32,9 @@ int main()
   if (size != nerrors) {
     return size == i ? EXIT_SUCCESS : (i + 1)/*EXIT_FAILURE*/;
   }
-  else {
-    fprintf(stderr, "Platform has potentially no JIT support\n");
+  else { /* potentially unsupported platforms (due to calling convention)
+          * or environment variable LIBXSMM_JIT is set to zero */
+    fprintf(stderr, "JIT support is potentially unavailable\n");
     return EXIT_SUCCESS;
   }
 #else
