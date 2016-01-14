@@ -58,8 +58,10 @@ BLAS ?= 0
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
+	MPSS ?= 1
 	MIC ?= 1
 else
+	MPSS ?= 0
 	MIC ?= 0
 endif
 
@@ -111,6 +113,8 @@ else ifneq (0,$(SSE))
 	ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
 		SSE ?= 1
 	endif
+else ifneq (0,$(MIC))
+	MPSS = 1
 endif
 
 # check if the Intel Development Tools are available

@@ -404,12 +404,14 @@ $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SCRDIR)/libx
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
 .PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+endif
 endif
 
 .PHONY: compile_hst
@@ -420,6 +422,7 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
 .PHONY: lib_mic
 lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(INCDIR)/libxsmm.f
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
@@ -427,6 +430,7 @@ ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
 else
 	$(AR) -rs $@ $(OBJFILES_MIC)
+endif
 endif
 endif
 
