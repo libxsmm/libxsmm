@@ -34,10 +34,10 @@
 #include <libxsmm_macros.h>
 
 
-/**
- * Calculate the CRC32 for a given quantity (size) of raw data
- * according to the seed (init. value).
- */
+/** Function type representing the CRC32 functionality. */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_crc32_function)(const void*, unsigned int, unsigned int);
+
+/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
   const void* data, unsigned int size, unsigned int init);
 
