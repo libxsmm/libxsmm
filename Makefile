@@ -147,12 +147,8 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_BIN) $(OBJFILES_HST) $(OBJFILES_MIC)
 
 .PHONY: lib_all
-ifeq (0,$(OFFLOAD))
-ifeq (0,$(MIC))
+ifeq (0,$(MPSS))
 lib_all: header drytest lib_hst
-else
-lib_all: header drytest lib_hst lib_mic
-endif
 else
 ifeq (0,$(MIC))
 lib_all: header drytest lib_hst
@@ -328,11 +324,13 @@ endif
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
 ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@
 endif
 ifneq (1,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
+endif
 endif
 endif
 ifeq (noarch,$(GENTARGET))
@@ -379,11 +377,13 @@ ifneq (1,$(PRECISION))
 endif
 endif
 ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) DP
+endif
 endif
 endif
 	@TMPFILE=`mktemp`
