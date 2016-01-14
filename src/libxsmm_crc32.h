@@ -35,7 +35,7 @@
 
 
 /** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_crc32_function)(const void*, unsigned int, unsigned int);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_crc32_function)(const void*, unsigned int, unsigned int);
 
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
