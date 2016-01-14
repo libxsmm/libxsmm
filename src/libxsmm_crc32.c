@@ -42,7 +42,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <limits.h>
-#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
+#if !defined(LIBXSMM_CRC32_FORCESW)
 # include <nmmintrin.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -326,101 +326,115 @@ LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
     0xE54C35A1, 0xAC704886, 0x7734CFEF, 0x3E08B2C8, 0xC451B7CC, 0x8D6DCAEB, 0x56294D82, 0x1F1530A5
   }
 };
-#endif /*__SSE4_2__*/
+#endif /*!defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)*/
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned char value, unsigned int init)
-{
-#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
-  init = _mm_crc32_u8(init, value);
+#define LIBXSMM_CRC32_U64(FN, INIT, BEGIN, END) { \
+  for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { \
+    INIT = (uint32_t)FN(INIT, *(const uint64_t*)(BEGIN)); \
+  } \
+}
+#define LIBXSMM_CRC32_U32(FN, INIT, BEGIN, END) { \
+  const unsigned char *const next = (BEGIN) + 4; \
+  if (next <= (END)) { \
+    INIT = FN(INIT, *(const uint32_t*)(BEGIN)); \
+    BEGIN = next; \
+  } \
+}
+#define LIBXSMM_CRC32_U16(FN, INIT, BEGIN, END) { \
+  const unsigned char *const next = (BEGIN) + 2; \
+  if (next <= (END)) { \
+    INIT = FN(INIT, *(const uint16_t*)(BEGIN)); \
+    BEGIN = next; \
+  } \
+}
+#define LIBXSMM_CRC32_U8(FN, INIT, BEGIN, END) { \
+  if ((BEGIN) < (END)) { \
+    INIT = FN(INIT, *(BEGIN)); \
+    ++(BEGIN); \
+  } \
+}
+
+#if defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
+# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
+    const unsigned char *begin = (const unsigned char*)(DATA); \
+    const unsigned char *const endb = begin + (SIZE); \
+    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    if ((SIZE) > (unsigned int)(endb - enda)) { \
+      LIBXSMM_CRC32_U64(FN64, INIT, begin, enda); \
+      LIBXSMM_CRC32_U32(FN32, INIT, begin, enda); \
+      LIBXSMM_CRC32_U16(FN16, INIT, begin, enda); \
+      LIBXSMM_CRC32_U8(FN8, INIT, begin, enda); \
+    } \
+    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
+    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
+    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
+    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+  }
 #else
-  init = libxsmm_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
+# define LIBXSMM_CRC32(DATA, SIZE, INIT) { \
+    const unsigned char *begin = (const unsigned char*)(DATA); \
+    const unsigned char *const endb = begin + (SIZE); \
+    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
+    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
+    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
+    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+  }
+#endif /*defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)*/
+
+
+LIBXSMM_EXTERN_C
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(target("sse4.2"))
 #endif
-  return init;
+LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
+{
+  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned short value, unsigned int init)
+#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned int init, unsigned char value)
 {
-#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
-  init = _mm_crc32_u16(init, value);
-#else
+  return libxsmm_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned int init, unsigned short value)
+{
   union { uint16_t value; uint8_t half[2]; } split; split.value = value;
-  init = libxsmm_crc32_u8(split.half[0], init);
-  init = libxsmm_crc32_u8(split.half[1], init);
-#endif
+  init = libxsmm_crc32_u8(init, split.half[0]);
+  init = libxsmm_crc32_u8(init, split.half[1]);
   return init;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int value, unsigned int init)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int init, unsigned int value)
 {
-#if defined(__SSE4_2__) && !defined(LIBXSMM_CRC32_FORCESW)
-  init = _mm_crc32_u32(init, value);
-#else
   init ^= value;
   init = (libxsmm_crc32_table[0][(init>>24)&0xFF] ^ libxsmm_crc32_table[1][(init>>16)&0xFF])
-       ^ (libxsmm_crc32_table[2][(init>>8)&0xFF] ^ libxsmm_crc32_table[3][init&0xFF]);
-#endif
+       ^ (libxsmm_crc32_table[2][(init>>8)&0xFF]  ^ libxsmm_crc32_table[3][init&0xFF]);
   return init;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned long long value, unsigned int init)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned int init, unsigned long long value)
 {
-#if defined(__SSE4_2__) && (64 == __WORDSIZE) && !defined(LIBXSMM_CRC32_FORCESW)
-  init = _mm_crc32_u64(init, value);
-#else
   union { uint64_t value; uint32_t half[2]; } split; split.value = value;
-  init = libxsmm_crc32_u32(split.half[0], init);
-  init = libxsmm_crc32_u32(split.half[1], init);
-#endif
+  init = libxsmm_crc32_u32(init, split.half[0]);
+  init = libxsmm_crc32_u32(init, split.half[1]);
   return init;
 }
+#endif /*!defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
 {
-  const unsigned char *begin = (const unsigned char*)data, *next;
-  const unsigned char *const endb = begin + size;
-
-#if defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
-  const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT);
-  if (size > (unsigned int)(endb - enda)) {
-    for (; begin < (enda - 7); begin += 8) {
-      init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
-    }
-    next = begin + 4;
-    if (next <= enda) {
-      init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
-      begin = next;
-    }
-    next = begin + 2;
-    if (next <= enda) {
-      init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
-      begin = next;
-    }
-    if (begin < enda) {
-      init = libxsmm_crc32_u8(*begin, init);
-      ++begin;
-    }
-  }
-  LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT);
-#endif /*LIBXSMM_CRC32_ALIGNMENT*/
-
-  for (; begin < (endb - 7); begin += 8) {
-    init = libxsmm_crc32_u64(*(const uint64_t*)begin, init);
-  }
-  next = begin + 4;
-  if (next <= endb) {
-    init = libxsmm_crc32_u32(*(const uint32_t*)begin, init);
-    begin = next;
-  }
-  next = begin + 2;
-  if (next <= endb) {
-    init = libxsmm_crc32_u16(*(const uint16_t*)begin, init);
-    begin = next;
-  }
-
-  return begin == endb ? init : libxsmm_crc32_u8(*begin, init);
+#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
+  LIBXSMM_CRC32(libxsmm_crc32_u64, libxsmm_crc32_u32, libxsmm_crc32_u16, libxsmm_crc32_u8, data, size, init);
+#else
+  return libxsmm_crc32_sse42(data, size, init);
+#endif
 }
+

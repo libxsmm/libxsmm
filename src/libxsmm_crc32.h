@@ -34,6 +34,7 @@
 #include <libxsmm_macros.h>
 
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init);
 
 #endif /*LIBXSMM_CRC32_H*/
