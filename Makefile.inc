@@ -110,7 +110,7 @@ ifneq (0,$(AVX))
 		AVX ?= 1
 	endif
 else ifneq (0,$(SSE))
-	ifeq (1,$(words $(filter sse4_2,$(CPUFLAGS))))
+	ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
 		SSE ?= 1
 	endif
 else ifneq (0,$(MIC))
@@ -197,7 +197,7 @@ ifneq (0,$(INTEL))
 				TARGET = -xMIC-AVX512
 			endif
 		else ifneq (0,$(SSE))
-			TARGET = -xSSE4.2
+			TARGET = -xSSE3
 		else ifneq (0,$(AVX))
 			TARGET = -xHost
 		endif
@@ -350,7 +350,7 @@ else # GCC assumed
 				TARGET += -mavx512er -mavx512pf
 			endif
 		else ifneq (0,$(SSE))
-			TARGET = -msse4.2
+			TARGET = -msse3
 		else ifneq (0,$(AVX))
 			TARGET = -march=native
 		endif

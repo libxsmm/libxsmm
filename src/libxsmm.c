@@ -74,6 +74,9 @@
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
 #define LIBXSMM_HASH_SEED 0 /* CRC32 seed */
 
+#if !defined(__SSE4_2__)
+LIBXSMM_RETARGETABLE libxsmm_crc32_function libxsmm_crc32_cpuid = 0;
+#endif
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code {
   libxsmm_smmfunction smm;
@@ -88,7 +91,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_cache_entry {
   unsigned int code_size;
 } libxsmm_cache_entry;
 LIBXSMM_RETARGETABLE libxsmm_cache_entry* libxsmm_cache = 0;
-LIBXSMM_RETARGETABLE const char* libxsmm_archid = 0;
+LIBXSMM_RETARGETABLE const char* libxsmm_jit = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_cache_lock[] = {
@@ -227,21 +230,25 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
         result = (libxsmm_cache_entry*)malloc(LIBXSMM_CACHESIZE * sizeof(libxsmm_cache_entry));
 
         if (result) {
+          int is_static = 0;
+          const char *const archid = internal_archid(&is_static);
           for (i = 0; i < LIBXSMM_CACHESIZE; ++i) result[i].code.xmm = 0;
-          { /* omit registering SSE code if JIT is enabled and an AVX-based ISA is available
-             * any kind of AVX code is registered even when a higher ISA is found!
+          { /* omit registering code if JIT is enabled and if an ISA extension is found
+             * which is beyond the static code path used to compile the library
              */
 #if (0 != LIBXSMM_JIT)
             const char *const env_jit = getenv("LIBXSMM_JIT");
-            int is_static = 0;
-            libxsmm_archid = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? internal_archid(&is_static) : ('0' != *env_jit ? env_jit : 0);
-            if (0 == libxsmm_archid || 0 != is_static)
+            libxsmm_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? archid : ('0' != *env_jit ? env_jit : 0);
+            if (0 == libxsmm_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
               /* setup the dispatch table for the statically generated code */
 #             include <libxsmm_dispatch.h>
             }
           }
+#if !defined(__SSE4_2__)
+          libxsmm_crc32_cpuid = libxsmm_crc32; /*TODO*/
+#endif
           atexit(libxsmm_finalize);
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
@@ -382,7 +389,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   libxsmm_generated_code generated_code;
   assert(0 != desc && 0 != code && 0 != code_size);
-  assert(0 != libxsmm_archid);
+  assert(0 != libxsmm_jit);
   assert(0 == *code);
 
   /* allocate temporary buffer which is large enough to cover the generated code */
@@ -393,7 +400,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   generated_code.last_error = 0;
 
   /* generate kernel */
-  libxsmm_generator_dense_kernel(&generated_code, desc, libxsmm_archid);
+  libxsmm_generator_dense_kernel(&generated_code, desc, libxsmm_jit);
 
   /* handle an eventual error in the else-branch */
   if (0 == generated_code.last_error) {
@@ -432,14 +439,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
           char objdump_name[512];
           FILE* byte_code;
           sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin",
-            libxsmm_archid /* best available/supported code path */,
+            libxsmm_jit /* best available/supported code path */,
             0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
             desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
             desc->alpha, desc->beta, desc->prefetch);
           byte_code = fopen(objdump_name, "wb");
-          if (byte_code != NULL) {
+          if (0 != byte_code) {
             fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
             fclose(byte_code);
           }
@@ -532,8 +539,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
   }
 
   /* check if the requested xGEMM is already JITted */
+#if defined(__SSE4_2__)
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+  hash = libxsmm_crc32_sse42(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+#else
+  assert(libxsmm_crc32_cpuid);
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  hash = libxsmm_crc32_cpuid(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+#endif
   i = i0 = hash % LIBXSMM_CACHESIZE;
   entry += i; /* actual entry */
 
@@ -591,7 +604,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
     }
 
     /* check if code generation or fixup is needed, also check whether JIT is supported (CPUID) */
-    if (0 == result.xmm && 0 != libxsmm_archid) {
+    if (0 == result.xmm && 0 != libxsmm_jit) {
       /* attempt to lock the cache entry */
 # if !defined(_OPENMP)
       const unsigned int lock = LIBXSMM_MOD2(i, sizeof(libxsmm_cache_lock) / sizeof(*libxsmm_cache_lock));
