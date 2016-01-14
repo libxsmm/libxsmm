@@ -42,9 +42,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <limits.h>
-#if !defined(LIBXSMM_CRC32_FORCESW)
-# include <nmmintrin.h>
-#endif
+#include <nmmintrin.h>
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif
@@ -373,7 +371,7 @@ LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
     return begin == endb ? (INIT) : FN8(INIT, *begin); \
   }
 #else
-# define LIBXSMM_CRC32(DATA, SIZE, INIT) { \
+# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
     LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
