@@ -34,7 +34,15 @@
 #include <libxsmm_macros.h>
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init);
+/**
+ * Calculate the CRC32 for a given quantity (size) of raw data
+ * according to the seed (init. value).
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
+  const void* data, unsigned int size, unsigned int init);
+
+/** Similar to libxsmm_crc32 (uses CRC32 instructions available since SSE4.2). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
+  const void* data, unsigned int size, unsigned int init);
 
 #endif /*LIBXSMM_CRC32_H*/
