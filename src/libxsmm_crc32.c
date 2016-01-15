@@ -373,27 +373,6 @@ LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
 #endif /*defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)*/
 
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-
-#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# pragma GCC push_options
-# pragma GCC target("sse4.2")
-#include <nmmintrin.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(pop)
-#endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
-{
-  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
-}
-#if defined(__GNUC__)
-# pragma GCC pop_options
-#endif
-
-
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned int init, unsigned char value)
 {
@@ -438,3 +417,33 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 #endif
 }
 
+
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# pragma GCC push_options
+# pragma GCC target("sse4.2")
+# include <nmmintrin.h>
+# if !defined(LIBXSMM_CRC32_FORCEHW)
+#   define LIBXSMM_CRC32_FORCEHW
+# endif
+#elif defined(_WIN32)
+# if !defined(LIBXSMM_CRC32_FORCEHW)
+#   define LIBXSMM_CRC32_FORCEHW
+# endif
+#endif
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
+{
+#if defined(LIBXSMM_CRC32_FORCEHW)
+  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
+#else
+  LIBXSMM_CRC32(libxsmm_crc32_u64, libxsmm_crc32_u32, libxsmm_crc32_u16, libxsmm_crc32_u8, data, size, init);
+#endif
+}
+#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# pragma GCC pop_options
+#endif
