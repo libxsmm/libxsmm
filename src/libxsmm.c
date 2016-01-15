@@ -74,10 +74,6 @@
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
 #define LIBXSMM_HASH_SEED 0 /* CRC32 seed */
 
-#if !defined(__SSE4_2__)
-LIBXSMM_RETARGETABLE libxsmm_crc32_function libxsmm_crc32_cpuid = 0;
-#endif
-
 typedef union LIBXSMM_RETARGETABLE libxsmm_code {
   libxsmm_smmfunction smm;
   libxsmm_dmmfunction dmm;
@@ -92,6 +88,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_cache_entry {
 } libxsmm_cache_entry;
 LIBXSMM_RETARGETABLE libxsmm_cache_entry* libxsmm_cache = 0;
 LIBXSMM_RETARGETABLE const char* libxsmm_jit = 0;
+LIBXSMM_RETARGETABLE int libxsmm_has_crc32 = 0;
 
 #if !defined(_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_cache_lock[] = {
@@ -103,13 +100,12 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_cache_lock[] = {
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_arch_name(int* is_static, int* has_crc32)
 {
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-  const char* archid = 0;
+  const char* name = 0;
 
-  assert(is_static);
-  *is_static = 0;
+  if (is_static) *is_static = 0;
 
   LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
@@ -117,6 +113,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
 
     /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
     if (0x0C000000 == (0x0C000000 & ecx)) {
+      /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
+      if (has_crc32) {
+        *has_crc32 = (0x00100000 == (0x00100000 & ecx) ? 1 : 0);
+#if defined(__SSE4_2__)
+        assert(0 != *has_crc32); /* failed to detect CRC32 instruction */
+#endif
+      }
       LIBXSMM_XGETBV(0, eax, edx);
 
       if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
@@ -126,16 +129,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
              AVX512ER(0x08000000) */
           if (0x1C010000 == (0x1C010000 & ebx)) {
-            archid = "knl";
+            name = "knl";
           }
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
              AVX512BW(0x40000000), AVX512VL(0x80000000) */
           else if (0xD0030000 == (0xD0030000 & ebx)) {
-            archid = "skx";
+            name = "skx";
           }
 
 #if defined(__AVX512F__)
-          *is_static = 1;
+          if (is_static) *is_static = 1;
 #endif
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
@@ -144,26 +147,29 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
             assert(!"Failed to detect Intel AVX-512 extensions!");
 #endif
 #if defined(__AVX2__)
-            *is_static = 1;
+            if (is_static) *is_static = 1;
 #endif
-            archid = "hsw";
+            name = "hsw";
           }
           else {
 #if defined(__AVX2__)
             assert(!"Failed to detect Intel AVX2 extensions!");
 #endif
 #if defined(__AVX__)
-            *is_static = 1;
+            if (is_static) *is_static = 1;
 #endif
-            archid = "snb";
+            name = "snb";
           }
         }
       }
     }
   }
+  else if (has_crc32) {
+    *has_crc32 = 0;
+  }
 
 #if !defined(NDEBUG)/* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
-  if (0 == archid) {
+  if (0 == name) {
 # if defined(__SSE3__)
     fprintf(stderr, "LIBXSMM: SSE3 instruction set extension is not supported for JIT-code generation!\n");
 # elif defined(__MIC__)
@@ -174,7 +180,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_archid(int* is_static)
   }
 #endif
 
-  return archid;
+  return name;
 }
 
 
@@ -231,14 +237,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 
         if (result) {
           int is_static = 0;
-          const char *const archid = internal_archid(&is_static);
+          /* decide using libxsmm_has_crc32 instead of relying on a libxsmm_crc32_function pointer
+           * to be able to inline the call instead of using an indirection (via fn. pointer)
+           */
+          const char *const arch_name = internal_arch_name(&is_static, &libxsmm_has_crc32);
           for (i = 0; i < LIBXSMM_CACHESIZE; ++i) result[i].code.xmm = 0;
           { /* omit registering code if JIT is enabled and if an ISA extension is found
              * which is beyond the static code path used to compile the library
              */
 #if (0 != LIBXSMM_JIT)
             const char *const env_jit = getenv("LIBXSMM_JIT");
-            libxsmm_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? archid : ('0' != *env_jit ? env_jit : 0);
+            libxsmm_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? arch_name : ('0' != *env_jit ? env_jit : 0);
             if (0 == libxsmm_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
@@ -246,9 +255,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
 #             include <libxsmm_dispatch.h>
             }
           }
-#if !defined(__SSE4_2__)
-          libxsmm_crc32_cpuid = libxsmm_crc32; /*TODO*/
-#endif
           atexit(libxsmm_finalize);
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
@@ -543,9 +549,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32_sse42(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
 #else
-  assert(libxsmm_crc32_cpuid);
-  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
-  hash = libxsmm_crc32_cpuid(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+  if (0 != libxsmm_has_crc32) {
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+    hash = libxsmm_crc32_sse42(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+  }
+  else {
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+    hash = libxsmm_crc32(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+  }
 #endif
   i = i0 = hash % LIBXSMM_CACHESIZE;
   entry += i; /* actual entry */
