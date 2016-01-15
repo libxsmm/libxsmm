@@ -140,18 +140,18 @@ INTEL ?= $(shell echo $$((3==$(NUM_INTEL_COMPILER))))
 
 ifneq (0,$(INTEL))
 	AR ?= xiar
-	CXXFLAGS += -fPIC -Wall -diag-disable 3415
-	CFLAGS += -fPIC -Wall -diag-disable 3415
-	FCFLAGS += -fPIC
+	CXXFLAGS += -fPIC -Wall -diag-disable 3415,10010
+	CFLAGS += -fPIC -Wall -diag-disable 3415,10010
+	FCFLAGS += -fPIC -diag-disable 10010
 	LDFLAGS += -fPIC -lrt -ldl
 	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
 		FCFLAGS += -free
-		FMFLAGS += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
+		FMFLAGS += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10010,10237,10342,10382
 	else ifneq (0,$(PEDANTIC))
-		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
-		FCFLAGS += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
+		CFLAGS += -std=c89 -Wcheck -Wremarks -diag-disable 177,1419,2547,10010,10382
+		FCFLAGS += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10010,10237,10342,10382
 		FMFLAGS += -fixed
 	else
 		FCFLAGS += -free
