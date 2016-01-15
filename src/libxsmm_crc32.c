@@ -449,6 +449,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
   LIBXSMM_CRC32(libxsmm_crc32_u64, libxsmm_crc32_u32, libxsmm_crc32_u16, libxsmm_crc32_u8, data, size, init);
 #endif
 }
-#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#if !defined(__SSE4_2__) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 # pragma GCC pop_options
 #endif
