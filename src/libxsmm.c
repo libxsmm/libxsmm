@@ -354,7 +354,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 # if (0 != LIBXSMM_GCCATOMICS)
         __atomic_store_n(&libxsmm_cache, 0, __ATOMIC_SEQ_CST);
 # else
-        __sync_and_and_fetch(&libxsmm_cache, 0);
+        /* use store side-effect of built-in (dummy assignment to mute warning) */
+        cache = __sync_and_and_fetch(&libxsmm_cache, 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
         libxsmm_cache = 0; /*TODO*/
