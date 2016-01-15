@@ -38,15 +38,6 @@
 # define LIBXSMM_CRC32_ALIGNMENT LIBXSMM_ALIGNMENT
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <limits.h>
-#include <nmmintrin.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(pop)
-#endif
-
 
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
 /* table-based implementation taken from http://dpdk.org/. */
@@ -382,14 +373,25 @@ LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
 #endif /*defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)*/
 
 
-LIBXSMM_EXTERN_C
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(target("sse4.2"))
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
+
+#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# pragma GCC push_options
+# pragma GCC target("sse4.2")
+#include <nmmintrin.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
 {
   LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
 }
+#if defined(__GNUC__)
+# pragma GCC pop_options
+#endif
 
 
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
