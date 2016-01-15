@@ -186,20 +186,37 @@ ifneq (0,$(INTEL))
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
-		ifeq (1,$(AVX))
-			TARGET = -xAVX
-		else ifeq (2,$(AVX))
-			TARGET = -xCORE-AVX2
-		else ifeq (3,$(AVX))
-			ifeq (0,$(MIC))
-				TARGET = -xCOMMON-AVX512
-			else
-				TARGET = -xMIC-AVX512
+		ifeq (0,$(COMPATIBLE))
+			ifeq (1,$(AVX))
+				TARGET = -xAVX
+			else ifeq (2,$(AVX))
+				TARGET = -xCORE-AVX2
+			else ifeq (3,$(AVX))
+				ifeq (0,$(MIC))
+					TARGET = -xCOMMON-AVX512
+				else
+					TARGET = -xMIC-AVX512
+				endif
+			else ifneq (0,$(SSE))
+				TARGET = -xSSE3
+			else ifneq (0,$(AVX))
+				TARGET = -xHost
 			endif
-		else ifneq (0,$(SSE))
-			TARGET = -xSSE3
-		else ifneq (0,$(AVX))
-			TARGET = -xHost
+		else
+			ifeq (1,$(AVX))
+				TARGET = -mavx
+			else ifeq (2,$(AVX))
+				TARGET = -mavx2
+			else ifeq (3,$(AVX))
+				TARGET = -mavx512f -mavx512cd
+				ifneq (0,$(MIC))
+					TARGET += -mavx512er -mavx512pf
+				endif
+			else ifneq (0,$(SSE))
+				TARGET = -msse3
+			else ifneq (0,$(AVX))
+				TARGET = -march=native
+			endif
 		endif
 	endif
 	ifneq (0,$(SYM))
