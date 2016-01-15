@@ -12,9 +12,9 @@ In order to initialize the dispatch-table or other internal resources, one may c
 
 ```C
 /** Initialize the library; pay for setup cost at a specific point. */
-void libxsmm_init();
+void libxsmm_init(void);
 /** Uninitialize the library and free internal memory (optional). */
-void libxsmm_finalize();
+void libxsmm_finalize(void);
 ```
 
 To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from LAPACK/BLAS standard however without compromising the binary compatibility).
@@ -46,14 +46,14 @@ Successively calling a particular kernel (i.e., multiple times) allows for amort
 ```C
 /** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
 libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
-                                    int lda, int ldb, int ldc,
-                                    /* supply NULL as a default for alpha or beta */
-                                    const float* alpha, const float* beta);
+  const int* lda, const int* ldb, const int* ldc,
+  const float* alpha, const float* beta,
+  const int* flags, const int* prefetch);
 /** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
 libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
-                                    int lda, int ldb, int ldc,
-                                    /* supply NULL as a default for alpha or beta */
-                                    const double* alpha, const double* beta);
+  const int* lda, const int* ldb, const int* ldc,
+  const double* alpha, const double* beta,
+  const int* flags, const int* prefetch);
 ```
 
 A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_mmfunction<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mmdispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_mmdispatch) the given LIBXSMM_?MMFUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?MMFUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
