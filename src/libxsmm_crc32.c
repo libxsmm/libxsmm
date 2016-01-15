@@ -421,7 +421,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#if defined(__SSE4_2__)
+# include <nmmintrin.h>
+# if !defined(LIBXSMM_CRC32_FORCEHW)
+#   define LIBXSMM_CRC32_FORCEHW
+# endif
+#elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 # pragma GCC push_options
 # pragma GCC target("sse4.2")
 # include <nmmintrin.h>
