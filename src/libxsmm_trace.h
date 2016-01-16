@@ -66,7 +66,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
   /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_maxnsyms);
 
-/** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
+/** Prints an entry of the function where libxsmm_trace is called from (indented/hierarchical). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_trace(FILE* stream, unsigned int depth,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
