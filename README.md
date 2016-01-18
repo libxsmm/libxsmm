@@ -128,6 +128,8 @@ The recorded output file can be further evaluated (see also [cp2k-test.sh](https
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
+**NOTE**: by default, a combination of a C/C++ and a Fortran compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran`), the need for a Fortran compiler can be relaxed (`make FC=`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). Fortran code can make use of LIBXSMM by relying on the module file (and linking against 'libxsmmf'), or by including the interface (and linking against 'libxsmm').
+
 ## Installation
 Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels. If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags are not supporting a more specific instruction set extension (code path). The JIT backend does not support or generate SSE code by itself, and therefore the library is built using SSE code if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE allows not only to include statically generated SSE kernels (if specified by M, N, K, or MNK) but also to run on any system supporting at least SSE 4.2 code (needed when accelerating code-dispatch using CRC32 instructions).
 
@@ -148,7 +150,7 @@ make clean
 
 Performing `make install-minimal` omits the documentation (default: `PREFIX/share/libxsmm`). Moreover, `PINCDIR`, `POUTDIR`, `PBINDIR`, and `PDOCDIR` allow to customize the locations underneath of the `PREFIX` location.
 
-**NOTE**: the library is agnostic with respect to the threading-runtime, and enabling OpenMP (OMP=1) when building the library is a non-default option (untested). The library is also agnostic with respect to the selected LAPACK/BLAS library, and linking GEMM routines (BLAS=1|2) when building the library may prevent a user to decide at the time of linking the actual application.
+**NOTE**: the library is agnostic with respect to the threading-runtime, and enabling OpenMP (OMP=1) when building the library is a non-default option (untested). The library is also agnostic with respect to the selected LAPACK/BLAS library, and linking GEMM routines (BLAS=1|2) when building the library may prevent a user to decide at the time of linking the actual application. Also, building the library with SSE=0 and AVX=0 omits any target specification (see also the TARGET flag in the [Performance Tuning](#tuning) section).
 
 ## Running
 ### Call Wrapper
@@ -179,7 +181,7 @@ make STATIC=0
 Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
 
 ### Call Trace
-During the initial steps of employing the LIBXSMM API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error (`stderr`) output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well:
+During the initial steps of employing the LIBXSMM API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error (`stderr`) output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well (can be combined with DBG=1 or OPT=0):
 
 ```
 make TRACE=1
@@ -193,7 +195,7 @@ LIBXSMM_TRACE=1 ./myapplication
 
 Syntactically up to three arguments separated by commas (which allows to omit arguments) are taken (`tid,i,n`): *tid* signifies the ID of the thread to be traced with 1...NTHREADS being valid and where LIBXSMM_TRACE=1 is filtering for the "main thread" (in fact the first thread running into the trace facility); grabbing all threads (no filter) can be achieved by supplying a negative id (which is also the default when omitted). The second argument is pruning higher levels of the call-tree with *i=1* being the default (level zero is the highest at the same level as the main function). The last argument is taking the number of inclusive call levels with *n=-1* being the default (signifying no filter).
 
-Please note, that debug symbols without the trace facility and without any eventual console output can be enabled separately (`make SYM=1`) which might be useful when profiling an application. No facililty of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible or non-private I/O.
+Please note, that debug symbols without the trace facility and without any eventual console output can be enabled separately (`make SYM=1`; implied by TRACE=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible or non-private I/O.
 
 ## Performance
 ### Tuning
@@ -203,9 +205,13 @@ Specifying a particular code path is not really necessary if the JIT backend is 
 make JIT=0 AVX=3 MNK="1 2 3 4 5"
 ```
 
-The above example builds a library which cannot be deployed to anything else but the Intel Knights Landing processor family ("KNL") or future Intel Xeon processors supporting foundational Intel AVX-512 instructions (AVX-512F). Similarly, SSE=0 (or JIT=0 without SSE or AVX build flag) employs an "arch-native" approach whereas AVX=1, AVX=2 (with FMA), and AVX=3 are specifically selecting the kind of Intel AVX code.
+The above example builds a library which cannot be deployed to anything else but the Intel Knights Landing processor family ("KNL") or future Intel Xeon processors supporting foundational Intel AVX-512 instructions (AVX-512F). The latter might be even more adjusted by supplying MIC=1 (along with AVX=3), however this does not matter since critical code is in inline assembly (and not affected). Similarly, SSE=0 (or JIT=0 without SSE or AVX build flag) employs an "arch-native" approach whereas AVX=1, AVX=2 (with FMA), and AVX=3 are specifically selecting the kind of Intel AVX code. Moreover, controlling the target flags manually or adjusting the code optimizations is also possible. The following example is GCC-specific and corresponds to OPT=3, AVX=3, and MIC=1:
 
-An extended interface can be generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Generator driver](#generator-driver) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
+```
+make OPT=3 TARGET="-mavx512f -mavx512cd -mavx512er -mavx512pf".
+```
+
+An extended interface can be generated which allows to perform software prefetches. Prefetching data might be helpful when processing batches of matrix multiplications where the next operands are farther away or otherwise unpredictable in their memory location. The prefetch strategy can be specified similar as shown in the section [Generator Driver](#generator-driver) i.e., by either using the number of the shown enumeration, or by exactly using the name of the prefetch strategy. The only exception is PREFETCH=1 which is enabling a default strategy ("AL2_BL2viaC" rather than "nopf"). The following example is requesting the "AL2jpst" strategy:
 
 ```
 make PREFETCH=8
@@ -221,7 +227,7 @@ The function 'libxsmm_?mmdispatch' helps amortizing the cost of the dispatch whe
 1. Specialized routine (implemented in assembly code),
 3. LAPACK/BLAS library call (fallback).
 
-Both levels are accessible directly (see [Interface](#interface)) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. 
+Both levels are accessible directly (see [Interface](#interface) section) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL) 11.2 DIRECT CALL feature. 
 
 Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*) that belongs to the first level, and therefore determines if a matrix multiplication falls back to calling into the LAPACK/BLAS library alongside of LIBXSMM. The problem size threshold can be configured by using for example:
 
@@ -229,7 +235,7 @@ Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*
 make THRESHOLD=$((60 * 60 * 60))
 ```
 
-The maximum of the given threshold and the largest requested specialization refines the value of the threshold. If a problem size is below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
+The maximum of the given threshold and the largest requested specialization refines the value of the threshold. Please note that explicitly JITting and executing a kernel is possible and independent of the threshold. If a problem size is below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
 
 In order to minimize the probability of key collisions (code cache), the preferred precision of the statically generated code can be selected:
 
