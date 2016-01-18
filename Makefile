@@ -120,12 +120,12 @@ else
 	GENTARGET = noarch
 endif
 
-ifneq (0,$(STATIC))
-	GENERATOR = $(BINDIR)/libxsmm_generator
-	LIBEXT = a
-else
+ifeq (0,$(STATIC))
 	GENERATOR = env LD_LIBRARY_PATH=$(OUTDIR):$(LD_LIBRARY_PATH) $(BINDIR)/libxsmm_generator
 	LIBEXT = so
+else
+	GENERATOR = $(BINDIR)/libxsmm_generator
+	LIBEXT = a
 endif
 
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -146,25 +146,23 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_BIN) $(OBJFILES_HST) $(OBJFILES_MIC)
 
-.PHONY: lib_all
-ifeq (0,$(MPSS))
-lib_all: header drytest lib_hst
-else
-ifeq (0,$(MIC))
-lib_all: header drytest lib_hst
-else
-lib_all: header drytest lib_hst lib_mic
-endif
-endif
+.PHONY: lib
+lib: header drytest lib_hst lib_mic
 
 .PHONY: all
-all: lib_all samples
+all: lib samples
 
 .PHONY: header
 header: cheader fheader
 
 .PHONY: interface
 interface: header
+
+.PHONY: lib_mic
+lib_mic: clib_mic
+
+.PHONY: lib_hst
+lib_hst: clib_hst flib_hst
 
 PREFETCH_ID = 0
 PREFETCH_SCHEME = nopf
@@ -276,9 +274,6 @@ ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
-endif
-ifneq (,$(FC))
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $@ -o $(BLDDIR)/libxsmm-mod.o $(FMFLAGS) $(dir $@)
 endif
 
 .PHONY: compile_generator_lib
@@ -403,13 +398,11 @@ main: $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
+.PHONY: compile_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-.PHONY: compile_mic
 compile_mic: $(OBJFILES_MIC)
 $(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
-$(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 endif
@@ -418,29 +411,70 @@ endif
 compile_hst: $(OBJFILES_HST)
 $(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
-$(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
+.PHONY: clib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-.PHONY: lib_mic
-lib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(INCDIR)/libxsmm.f
+clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+ifneq (,$(FC))
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(INCDIR)/mic/.make $(OBJFILES_MIC)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/mic/libxsmm-mod.o $(FMFLAGS) $(INCDIR)/mic
+else
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
+endif
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+else
+ifneq (,$(FC))
+	$(AR) -rs $@ $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm-mod.o
 else
 	$(AR) -rs $@ $(OBJFILES_MIC)
 endif
 endif
 endif
+endif
 
-.PHONY: lib_hst
-lib_hst: $(OUTDIR)/libxsmm.$(LIBEXT) $(INCDIR)/libxsmm.f
+.PHONY: flib_mic
+ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
+ifneq (,$(FC))
+flib_hst: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
+$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(OUTDIR)/mic/.make $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+ifeq (0,$(STATIC))
+	$(FC) -o $@ $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(BLDDIR)/mic/libxsmm-mod.o -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+	$(AR) -rs $@ $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+endif
+endif
+endif
+endif
+
+.PHONY: clib_hst
+clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+ifneq (,$(FC))
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/intel64/libxsmm-mod.o $(FMFLAGS) $(INCDIR)
+endif
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
+ifneq (,$(FC))
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm-mod.o
+else
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+endif
+endif
+
+
+.PHONY: flib_hst
+ifneq (,$(FC))
+flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(OUTDIR)/.make $(OUTDIR)/libxsmm.$(LIBEXT)
+ifeq (0,$(STATIC))
+	$(FC) -o $@ $(OUTDIR)/libxsmm.$(LIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+	$(AR) -rs $@ $(OUTDIR)/libxsmm.$(LIBEXT)
+endif
 endif
 
 .PHONY: samples
@@ -863,7 +897,7 @@ endif
 
 .PHONY: install-minimal
 ifneq ($(abspath $(PREFIX)),$(abspath .))
-install-minimal: lib_all
+install-minimal: lib generator
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR)
@@ -871,6 +905,8 @@ install-minimal: lib_all
 	@cp -uv $(OUTDIR)/libxsmmgen.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@cp -uv $(OUTDIR)/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@cp -uv $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmmf.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -uv $(OUTDIR)/libxsmmf.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@if [[ -e $(OUTDIR)/mic/libxsmm.so ]] ; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.so $(PREFIX)/$(POUTDIR)/mic ; \
@@ -879,12 +915,20 @@ install-minimal: lib_all
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.a $(PREFIX)/$(POUTDIR)/mic ; \
 	fi
+	@if [[ -e $(OUTDIR)/mic/libxsmmf.so ]] ; then \
+		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmmf.so $(PREFIX)/$(POUTDIR)/mic ; \
+	fi
+	@if [[ -e $(OUTDIR)/mic/libxsmmf.a ]] ; then \
+		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmmf.a $(PREFIX)/$(POUTDIR)/mic ; \
+	fi
 	@cp -uv $(BINDIR)/libxsmm_generator $(PREFIX)/$(PBINDIR) 2> /dev/null || true
 	@cp -uv $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR)
 	@cp -uv $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
 	@cp -uv $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
 else
-install-minimal: lib_all
+install-minimal: lib
 endif
 
 .PHONY: install
