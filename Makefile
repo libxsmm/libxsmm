@@ -121,7 +121,7 @@ else
 endif
 
 ifeq (0,$(STATIC))
-	GENERATOR = $(ENV) \
+	GENERATOR = @$(ENV) \
 		LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
 		PATH="$(OUTDIR):$(PATH)" \
 	$(BINDIR)/libxsmm_generator
