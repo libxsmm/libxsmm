@@ -80,17 +80,12 @@ $(info ======================================)
 $(info The Intel Fortran Compiler is missing.)
 $(info Building without Fortran support!)
 $(info ======================================)
+	else ifeq (0,$(OFFLOAD))
+		FCFLAGS += -no-offload
 	endif
 	ifeq (0,$(OFFLOAD))
-		ifeq (icpc,$(ICXX_NAME))
-			CXXFLAGS += -no-offload
-		endif
-		ifeq (icc,$(ICC_NAME))
-			CFLAGS += -no-offload
-		endif
-		ifeq (ifort,$(IFC_NAME))
-			FCFLAGS += -no-offload
-		endif
+		CXXFLAGS += -no-offload
+		CFLAGS += -no-offload
 	endif
 else
 	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
@@ -144,11 +139,33 @@ endif
 ifneq (,$(strip $(FC)))
 	ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
 		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+			ifneq (gfortran,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+				FC = gfortran
+				ifneq (,$(notdir $(shell which $(FC) 2> /dev/null)))
+					FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
+					FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
+					FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
+					FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
+				endif
+				ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+					FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+					ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+						FC = $(NULL)
+					endif
+				else
+					FC_VERSION_STRING = $(NULL)
+					FC_VERSION = 0
+					FC = $(NULL)
+				endif
+			else
+				FC = $(NULL)
+			endif
+			ifeq (,$(strip $(FC)))
 $(info ====================================)
 $(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
 $(info Building without Fortran support!)
 $(info ====================================)
-			FC = $(NULL)
+			endif
 		endif
 	endif
 endif
