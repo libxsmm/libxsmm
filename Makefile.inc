@@ -82,7 +82,15 @@ ifneq (,$(FC)) # allow FC to be optional
 	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 endif
 ifeq (g++,$(CXX_NAME))
-	GNU = 1
+	ifeq (gcc,$(CC_NAME))
+		ifeq (GNU,$(FC_NAME))
+			GNU = 1
+		else
+			GNU = 0
+		endif
+	else
+		GNU = 0
+	endif
 else
 	GNU = 0
 endif
@@ -277,6 +285,25 @@ else # GCC assumed
 	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/"))
 		FC = $(GFC)
 	endif
+	FC_VERSION_STRING = $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
+	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
+	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
+	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
+	ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+		FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+	else
+		FC_VERSION_STRING = $(NULL)
+		FC_VERSION = 0
+	endif
+	ifeq (GNU,$(FC_NAME))
+		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+$(info ====================================)
+$(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
+$(info Building without Fortran support!)
+$(info ====================================)
+			FC = $(NULL)
+		endif
+	endif
 	OFFLOAD = 0
 	MIC = 0
 	CXXFLAGS += -Wall -Wno-unused-function
@@ -296,13 +323,13 @@ else # GCC assumed
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -ffree-form
 		FMFLAGS += -std=f2003 -pedantic -Wunused-variable
-		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
+		ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
 	else ifneq (0,$(PEDANTIC))
 		CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
 		FCFLAGS += -std=f2003 -pedantic -Wunused-variable
-		ifneq (0,$(shell echo "$$((50000 <= $(CC_VERSION)))"))
+		ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
 			FMFLAGS += -Wuse-without-only
 		endif
 	else ifeq (0,$(COMPATIBLE))
@@ -562,9 +589,9 @@ else ifneq (0,$(BLAS)) # generic
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
 		CLDFLAGS += -lgfortran
-		ifeq (,$(CC_VERSION_STRING))
+		ifeq (,$(FC_VERSION_STRING))
 			LDFLAGS += -lquadmath
-		else ifneq (0,$(shell echo "$$((40500 <= $(CC_VERSION)))"))
+		else ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
 			CLDFLAGS += -lquadmath
 		endif
 	endif
