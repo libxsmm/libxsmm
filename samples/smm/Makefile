@@ -7,7 +7,7 @@
 # MAKE_PARALLEL=1: enable explicitly
 ifeq (0,$(MAKE_PARALLEL))
 .NOTPARALLEL:
-else ifeq (,$(MAKE_PARALLEL))
+else ifeq (,$(strip $(MAKE_PARALLEL)))
 ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 .NOTPARALLEL:
 endif
@@ -39,7 +39,7 @@ else
 	LIBNAME = $(DEPDIR)/lib/libxsmm
 endif
 
-ifneq (,$(wildcard $(LIBNAME).a))
+ifneq (,$(strip $(wildcard $(LIBNAME).a)))
 	STATIC ?= 1
 	LIBEXT = a
 else

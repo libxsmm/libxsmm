@@ -13,7 +13,7 @@ GFC     = $(notdir $(shell which gfortran 2> /dev/null))
 
 CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
 CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
-ifneq (,$(FC)) # allow FC to be optional
+ifneq (,$(strip $(FC))) # allow FC to be optional
 	FC_CHECK = $(notdir $(shell which $(FC) 2> /dev/null))
 endif
 
@@ -66,19 +66,19 @@ else
 endif
 
 # Automatically pickup the Intel Compiler (if available)
-ifneq (,$(ICPC))
+ifneq (,$(strip $(ICPC)))
 	CXX = $(ICPC)
 endif
-ifneq (,$(IFORT))
+ifneq (,$(strip $(IFORT)))
 	FC = $(IFORT)
 endif
-ifneq (,$(ICC))
+ifneq (,$(strip $(ICC)))
 	CC = $(ICC)
 endif
 
 CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
-ifneq (,$(FC)) # allow FC to be optional
+ifneq (,$(strip $(FC))) # allow FC to be optional
 	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
 endif
 ifeq (g++,$(CXX_NAME))
@@ -95,7 +95,7 @@ else
 	GNU = 0
 endif
 
-CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
+CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f3)
@@ -268,24 +268,24 @@ ifneq (0,$(INTEL))
 		SLDFLAGS += -static
 		DFLAGS += -D__STATIC=$(STATIC)
 	endif
-	ifneq (,$(R8))
+	ifneq (,$(strip $(R8)))
 		ifneq (0,$(R8))
 			FCFLAGS += -autodouble
 		endif
 	endif
 else # GCC assumed
-	ifeq (,$(CXX_CHECK))
+	ifeq (,$(strip $(CXX_CHECK)))
 		CXX = $(GPP)
 	endif
-	ifeq (,$(CC_CHECK))
+	ifeq (,$(strip $(CC_CHECK)))
 		CC = $(GCC)
 	endif
-	ifeq (,$(FC_CHECK))
+	ifeq (,$(strip $(FC_CHECK)))
 		FC = $(GFC)
-	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/"))
+	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/"))
 		FC = $(GFC)
 	endif
-	FC_VERSION_STRING = $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/")
+	FC_VERSION_STRING = $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
 	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
 	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
 	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
@@ -428,7 +428,7 @@ $(info ====================================)
 			CFLAGS += -fopenmp
 			FCFLAGS += -fopenmp
 			LDFLAGS += -fopenmp
-		else ifneq (,$(OMP)) # clang: OMP=libomp
+		else ifneq (,$(strip $(OMP))) # clang: OMP=libomp
 			CXXFLAGS += -fopenmp=$(OMP)
 			CFLAGS += -fopenmp=$(OMP)
 			# omit passing special OMP into Fortran compiler
@@ -448,38 +448,38 @@ $(info ====================================)
 		SLDFLAGS += -static
 		DFLAGS += -D__STATIC=$(STATIC)
 	endif
-	ifneq (,$(R8))
+	ifneq (,$(strip $(R8)))
 		ifneq (0,$(R8))
 			FCFLAGS += -fdefault-real-8 -fdefault-double-8
 		endif
 	endif
 endif
 
-ifneq (,$(CXX))
+ifneq (,$(strip $(CXX)))
 	LD = $(CXX)
 endif
-ifeq (,$(LD))
+ifeq (,$(strip $(LD)))
 	LD = $(CC)
 endif
-ifeq (,$(LD))
+ifeq (,$(strip $(LD)))
 	LD = $(FC)
 endif
 
-ifeq (,$(CXXFLAGS))
+ifeq (,$(strip $(CXXFLAGS)))
 	CXXFLAGS = $(CFLAGS)
 endif
-ifeq (,$(CFLAGS))
+ifeq (,$(strip $(CFLAGS)))
 	CFLAGS = $(CXXFLAGS)
 endif
-ifeq (,$(FCFLAGS))
+ifeq (,$(strip $(FCFLAGS)))
 	FCFLAGS = $(CFLAGS)
 endif
-ifeq (,$(LDFLAGS))
+ifeq (,$(strip $(LDFLAGS)))
 	LDFLAGS = $(CFLAGS)
 endif
 
 MAKE_ILP64 = 0
-ifneq (,$(ILP64))
+ifneq (,$(strip $(ILP64)))
 	ifneq (0,$(ILP64))
 		MAKE_ILP64 = $(ILP64)
 	endif
@@ -491,7 +491,7 @@ else
 	MKL_BITS = lp64
 endif
 
-ifneq (,$(MKLROOT))
+ifneq (,$(strip $(MKLROOT)))
 	MKL ?= $(BLAS)
 	MKL_DIRECT ?= 0
 	MKL_STATIC ?= 1
@@ -589,7 +589,7 @@ else ifneq (0,$(BLAS)) # generic
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
 		CLDFLAGS += -lgfortran
-		ifeq (,$(FC_VERSION_STRING))
+		ifeq (,$(strip $(FC_VERSION_STRING)))
 			LDFLAGS += -lquadmath
 		else ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
 			CLDFLAGS += -lquadmath
