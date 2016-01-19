@@ -126,16 +126,6 @@ else
 	FC_VERSION = 0
 endif
 
-# keep in mind if tool chain is GNU GCC
-GCC = 0
-ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-		ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-			GCC = 1
-		endif
-	endif
-endif
-
 ifneq (,$(strip $(FC)))
 	ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
 		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
@@ -166,6 +156,23 @@ $(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
 $(info Building without Fortran support!)
 $(info ====================================)
 			endif
+		endif
+	endif
+endif
+
+# compiler names
+CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+ifneq (,$(strip $(FC)))
+	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+endif
+
+# native GCC
+GCC ?= $(shell echo $$((3==$(words $(filter g++ gcc gfortran,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
+ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+		ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+			GCC = 1
 		endif
 	endif
 endif
