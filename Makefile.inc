@@ -65,7 +65,7 @@ else
 	MIC ?= 0
 endif
 
-# prefer Intel Compiler (if available)
+# Automatically pickup the Intel Compiler (if available)
 ifneq (,$(ICPC))
 	CXX = $(ICPC)
 endif
@@ -93,9 +93,10 @@ CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f3)
 
 ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
-  CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100 + $(CC_VERSION_PATCH)))")
+	CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100 + $(CC_VERSION_PATCH)))")
 else
-  CC_VERSION = 0
+	CC_VERSION_STRING = $(NULL)
+	CC_VERSION = 0
 endif
 
 CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
@@ -272,6 +273,8 @@ else # GCC assumed
 		CC = $(GCC)
 	endif
 	ifeq (,$(FC_CHECK))
+		FC = $(GFC)
+	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\) .*/\1/"))
 		FC = $(GFC)
 	endif
 	OFFLOAD = 0
