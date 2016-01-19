@@ -99,7 +99,7 @@ LIBXSMM_INLINE
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_HIDDEN void internal_delete(void* value)
+LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {
   int fd;
   assert(value);
