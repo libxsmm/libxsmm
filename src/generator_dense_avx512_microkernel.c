@@ -51,8 +51,8 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
   unsigned int l_b_idx;
   unsigned int l_scale;
   unsigned int l_disp;
-  unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
+  unsigned int l_displacement_k_b = 0;
+  unsigned int l_k_b_updates = 0;
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
@@ -141,7 +141,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                    i_gp_reg_mapping->gp_reg_help_5, 18 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
     }
 
-    l_displacement_k = 0;
+    l_displacement_k_b = 0;
     /* apply k blocking */
     for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
       /* advance b pointer if needed */
@@ -156,8 +156,8 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
           libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_5, 128 );
         }
 
-        l_displacement_k = 0;
-        l_k_updates++;
+        l_displacement_k_b = 0;
+        l_k_b_updates++;
       }
 
       if ( l_k == 0 ) {
@@ -239,7 +239,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
         l_b_reg = i_gp_reg_mapping->gp_reg_b;
         l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
         l_scale = 0;
-        l_disp = l_displacement_k*i_micro_kernel_config->datatype_size;
+        l_disp = l_displacement_k_b*i_micro_kernel_config->datatype_size;
         /* select the base register */
         /* first: special cases for l_n > 26 */
         if ( l_n > 26 ) {
@@ -257,7 +257,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
             l_scale = 0;
             l_disp = (l_k * i_micro_kernel_config->datatype_size)
                      +(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n)
-                     -(128*l_k_updates);
+                     -(128*l_k_b_updates);
           }
         } else {
           if ( l_n > 17 ) {
@@ -326,7 +326,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                              i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
 #endif
       }
-      l_displacement_k++;
+      l_displacement_k_b++;
     }
 
     /* advance pointers of B only when we are not fully unrolling K and taking care of intermediate advances */
@@ -335,13 +335,13 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_b,
-                                   (i_k_blocking * i_micro_kernel_config->datatype_size) - (128*(i_micro_kernel_config->datatype_size)*l_k_updates) );
+                                   (i_k_blocking * i_micro_kernel_config->datatype_size) - (128*(i_micro_kernel_config->datatype_size)*l_k_b_updates) );
     } else {
       /* we have to make sure that we are reseting the pointer to its original value in case a full unroll */
-      if ( l_k_updates > 0 ) {
+      if ( l_k_b_updates > 0 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, 
                                      i_micro_kernel_config->alu_sub_instruction, 
-                                     i_gp_reg_mapping->gp_reg_b, 128*(i_micro_kernel_config->datatype_size)*l_k_updates );
+                                     i_gp_reg_mapping->gp_reg_b, 128*(i_micro_kernel_config->datatype_size)*l_k_b_updates );
       }
     }
   }
