@@ -538,7 +538,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   unsigned int l_displacement_k_b = 0;
   unsigned int l_k_b_updates = 0;
   unsigned int l_displacement_k_a = 0;
-  unsigned int l_k_a_updates = 0;
+  unsigned int l_k_a_update = 0;
   unsigned int l_k_a_advance_threshold = 0;
 
 #if !defined(NDEBUG)
@@ -567,7 +567,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
      we can execute and stay within the 8K window. */
   l_k_a_advance_threshold = 8192/(i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
   l_displacement_k_a = 0;
-  l_k_a_updates = 0;
+  l_k_a_update = 0;
 
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
@@ -606,7 +606,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -633,7 +633,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -661,7 +661,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -688,7 +688,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -716,7 +716,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -743,7 +743,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -771,7 +771,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -798,7 +798,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -826,7 +826,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
       /* handle large displacements */
       if ( ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) >= 8192 ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_a, ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size) );
-        l_k_a_updates += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
+        l_k_a_update += ((l_displacement_k_a+1)*i_xgemm_desc->lda*i_micro_kernel_config->datatype_size);
         l_displacement_k_a = 0;
       } else {
         l_displacement_k_a++;
@@ -1005,9 +1005,9 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
                                      128*(i_micro_kernel_config->datatype_size)*l_k_b_updates );
   }
 
-  if (l_k_a_updates > 0) {
+  if (l_k_a_update > 0) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_a, 
-                                     l_k_a_updates );
+                                     l_k_a_update );
   }
 
   /* add C buffers */
