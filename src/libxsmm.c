@@ -100,7 +100,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_cach
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_arch_name(int* is_static, int* has_crc32)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_arch_name(int* is_static, int* has_crc32)
 {
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
   const char* name = 0;
@@ -184,7 +184,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* inte
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_cache_entry* internal_init(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_cache_entry* internal_init(void)
 {
   /*const*/internal_cache_entry* result;
   int i;
@@ -392,7 +392,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL void internal_build(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* desc,
   void** code, unsigned int* code_size)
 {
 #if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
@@ -507,7 +507,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL void internal_bu
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_gemmdiff(
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
   const unsigned *const ia = (const unsigned int*)a, *const ib = (const unsigned int*)b;
@@ -523,7 +523,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int int
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code internal_find_code(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code internal_find_code(const libxsmm_gemm_descriptor* desc)
 {
   internal_code result;
   unsigned int hash, i, diff = 0;

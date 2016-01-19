@@ -126,20 +126,10 @@ else
 	FC_VERSION = 0
 endif
 
-# keep in mind if tool chain is GNU GCC
-GCC = 0
-ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-		ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-			GCC = 1
-		endif
-	endif
-endif
-
 ifneq (,$(strip $(FC)))
 	ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
 		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-			ifneq (gfortran,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+			ifneq (gfortran,$(notdir $(FC)))
 				FC = gfortran
 				ifneq (,$(notdir $(shell which $(FC) 2> /dev/null)))
 					FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
@@ -170,6 +160,25 @@ $(info ====================================)
 	endif
 endif
 
+# compiler names
+CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
+ifneq (,$(strip $(FC)))
+	FC_NAME = $(notdir $(FC))
+endif
+
+# native GCC
+GCC ?= $(shell echo $$((3==$(words $(filter g++ gcc gfortran,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
+ifneq (,$(strip $(FC)))
+	ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+		ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+			ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+				GCC = 1
+			endif
+		endif
+	endif
+endif
+
 # Select code path (if not selected otherwise)
 CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
 ifneq (0,$(AVX))
@@ -187,6 +196,22 @@ else ifneq (0,$(SSE))
 else ifneq (0,$(MIC))
 	MPSS = 1
 endif
+
+ifneq (0,$(INTEL))
+	COMPILERS = Intel Compiler suite
+else ifneq (0,$(GCC))
+	COMPILERS = GNU Compiler Collection
+else
+	COMPILERS = non-GNU compilers
+endif
+
+$(info =======================================================================)
+ifneq (,$(strip $(FC)))
+$(info Using $(COMPILERS): $(CXX_NAME) $(CC_VERSION_STRING), $(CC_NAME) $(CC_VERSION_STRING), and $(FC_NAME) $(FC_VERSION_STRING))
+else
+$(info Using $(COMPILERS): $(CXX_NAME) $(CC_VERSION_STRING), and $(CC_NAME) $(CC_VERSION_STRING))
+endif
+$(info =======================================================================)
 
 ifneq (0,$(INTEL))
 	AR ?= xiar
