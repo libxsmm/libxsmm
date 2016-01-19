@@ -285,7 +285,9 @@ else # GCC assumed
 	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/"))
 		FC = $(GFC)
 	endif
-	FC_VERSION_STRING = $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
+	ifneq (,$(strip $(FC)))
+		FC_VERSION_STRING = $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
+	endif
 	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
 	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
 	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
