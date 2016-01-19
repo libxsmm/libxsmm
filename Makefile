@@ -447,7 +447,7 @@ $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(OUTDIR)/mic/.make $(OUTDIR)/mic/libxsmm.$(LI
 ifeq (0,$(STATIC))
 	$(FC) -o $@ $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(BLDDIR)/mic/libxsmm-mod.o -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-	$(AR) -rs $@ $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+	$(AR) -rs $@ $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm-mod.o
 endif
 endif
 endif
@@ -477,7 +477,7 @@ $(OUTDIR)/libxsmmf.$(LIBEXT): $(OUTDIR)/.make $(OUTDIR)/libxsmm.$(LIBEXT)
 ifeq (0,$(STATIC))
 	$(FC) -o $@ $(OUTDIR)/libxsmm.$(LIBEXT) $(BLDDIR)/intel64/libxsmm-mod.o -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-	$(AR) -rs $@ $(OUTDIR)/libxsmm.$(LIBEXT)
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 endif
 
