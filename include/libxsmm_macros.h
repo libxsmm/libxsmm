@@ -197,6 +197,14 @@
 # define LIBXSMM_TLS thread_local
 #endif
 
+#if defined(__GNUC__)
+# define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
+# define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
+#else
+# define LIBXSMM_VISIBILITY_HIDDEN
+# define LIBXSMM_VISIBILITY_INTERNAL
+#endif
+
 #if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD_BUILD 1
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))

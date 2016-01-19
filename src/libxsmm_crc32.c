@@ -41,7 +41,7 @@
 
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
 /* table-based implementation taken from http://dpdk.org/. */
-LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_table[][256] = {
   { /*table0*/
     0x00000000, 0xF26B8303, 0xE13B70F7, 0x1350F3F4, 0xC79A971F, 0x35F1141C, 0x26A1E7E8, 0xD4CA64EB,
     0x8AD958CF, 0x78B2DBCC, 0x6BE22838, 0x9989AB3B, 0x4D43CFD0, 0xBF284CD3, 0xAC78BF27, 0x5E133C24,
@@ -374,35 +374,35 @@ LIBXSMM_RETARGETABLE const uint32_t libxsmm_crc32_table[][256] = {
 
 
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u8(unsigned int init, unsigned char value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_crc32_u8(unsigned int init, unsigned char value)
 {
-  return libxsmm_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
+  return internal_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u16(unsigned int init, unsigned short value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_crc32_u16(unsigned int init, unsigned short value)
 {
   union { uint16_t value; uint8_t half[2]; } split; split.value = value;
-  init = libxsmm_crc32_u8(init, split.half[0]);
-  init = libxsmm_crc32_u8(init, split.half[1]);
+  init = internal_crc32_u8(init, split.half[0]);
+  init = internal_crc32_u8(init, split.half[1]);
   return init;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u32(unsigned int init, unsigned int value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_crc32_u32(unsigned int init, unsigned int value)
 {
   init ^= value;
-  init = (libxsmm_crc32_table[0][(init>>24)&0xFF] ^ libxsmm_crc32_table[1][(init>>16)&0xFF])
-       ^ (libxsmm_crc32_table[2][(init>>8)&0xFF]  ^ libxsmm_crc32_table[3][init&0xFF]);
+  init = (internal_crc32_table[0][(init>>24)&0xFF] ^ internal_crc32_table[1][(init>>16)&0xFF])
+       ^ (internal_crc32_table[2][(init>>8)&0xFF]  ^ internal_crc32_table[3][init&0xFF]);
   return init;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned int init, unsigned long long value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_crc32_u64(unsigned int init, unsigned long long value)
 {
   union { uint64_t value; uint32_t half[2]; } split; split.value = value;
-  init = libxsmm_crc32_u32(init, split.half[0]);
-  init = libxsmm_crc32_u32(init, split.half[1]);
+  init = internal_crc32_u32(init, split.half[0]);
+  init = internal_crc32_u32(init, split.half[1]);
   return init;
 }
 #endif /*!defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)*/
@@ -411,7 +411,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_u64(unsigned int 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
 {
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
-  LIBXSMM_CRC32(libxsmm_crc32_u64, libxsmm_crc32_u32, libxsmm_crc32_u16, libxsmm_crc32_u8, data, size, init);
+  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #else
   return libxsmm_crc32_sse42(data, size, init);
 #endif
@@ -446,7 +446,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
 #if defined(LIBXSMM_CRC32_FORCEHW)
   LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
 #else
-  LIBXSMM_CRC32(libxsmm_crc32_u64, libxsmm_crc32_u32, libxsmm_crc32_u16, libxsmm_crc32_u8, data, size, init);
+  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
 }
 #if !defined(__SSE4_2__) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))

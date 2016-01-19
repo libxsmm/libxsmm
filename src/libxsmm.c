@@ -74,24 +74,24 @@
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
 #define LIBXSMM_HASH_SEED 0 /* CRC32 seed */
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_code {
+typedef union LIBXSMM_RETARGETABLE internal_code {
   libxsmm_smmfunction smm;
   libxsmm_dmmfunction dmm;
   /*const*/void* xmm;
   uintptr_t imm;
-} libxsmm_code;
-typedef struct LIBXSMM_RETARGETABLE libxsmm_cache_entry {
+} internal_code;
+typedef struct LIBXSMM_RETARGETABLE internal_cache_entry {
   libxsmm_gemm_descriptor descriptor;
-  libxsmm_code code;
+  internal_code code;
   /* needed to distinct statically generated code and for munmap */
   unsigned int code_size;
-} libxsmm_cache_entry;
-LIBXSMM_RETARGETABLE libxsmm_cache_entry* libxsmm_cache = 0;
-LIBXSMM_RETARGETABLE const char* libxsmm_jit = 0;
-LIBXSMM_RETARGETABLE int libxsmm_has_crc32 = 0;
+} internal_cache_entry;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_cache_entry* internal_cache = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_jit = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_has_crc32 = 0;
 
 #if !defined(_OPENMP)
-LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_cache_lock[] = {
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_cache_lock[] = {
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -100,7 +100,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_cache_lock[] = {
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_arch_name(int* is_static, int* has_crc32)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_arch_name(int* is_static, int* has_crc32)
 {
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
   const char* name = 0;
@@ -184,29 +184,29 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_arch_name(int* is_stati
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_cache_entry* internal_init(void)
 {
-  /*const*/libxsmm_cache_entry* result;
+  /*const*/internal_cache_entry* result;
   int i;
 
 #if !defined(_OPENMP)
   /* acquire locks and thereby shortcut lazy initialization later on */
-  const int nlocks = sizeof(libxsmm_cache_lock) / sizeof(*libxsmm_cache_lock);
-  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(libxsmm_cache_lock[i]);
+  const int nlocks = sizeof(internal_cache_lock) / sizeof(*internal_cache_lock);
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(internal_cache_lock[i]);
 #else
-# pragma omp critical(libxsmm_cache_lock)
+# pragma omp critical(internal_cache_lock)
 #endif
   {
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-    result = __atomic_load_n(&libxsmm_cache, __ATOMIC_SEQ_CST);
+    result = __atomic_load_n(&internal_cache, __ATOMIC_SEQ_CST);
 # else
-    result = __sync_or_and_fetch(&libxsmm_cache, 0);
+    result = __sync_or_and_fetch(&internal_cache, 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    result = libxsmm_cache; /*TODO*/
+    result = internal_cache; /*TODO*/
 #else
-    result = libxsmm_cache;
+    result = internal_cache;
 #endif
     if (0 == result) {
 #if defined(__TRACE)
@@ -233,22 +233,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
         i = EXIT_SUCCESS;
       }
       if (EXIT_SUCCESS == i) {
-        result = (libxsmm_cache_entry*)malloc(LIBXSMM_CACHESIZE * sizeof(libxsmm_cache_entry));
+        result = (internal_cache_entry*)malloc(LIBXSMM_CACHESIZE * sizeof(internal_cache_entry));
 
         if (result) {
           int is_static = 0;
-          /* decide using libxsmm_has_crc32 instead of relying on a libxsmm_crc32_function pointer
+          /* decide using internal_has_crc32 instead of relying on a libxsmm_crc32_function pointer
            * to be able to inline the call instead of using an indirection (via fn. pointer)
            */
-          const char *const arch_name = internal_arch_name(&is_static, &libxsmm_has_crc32);
+          const char *const arch_name = internal_arch_name(&is_static, &internal_has_crc32);
           for (i = 0; i < LIBXSMM_CACHESIZE; ++i) result[i].code.xmm = 0;
           { /* omit registering code if JIT is enabled and if an ISA extension is found
              * which is beyond the static code path used to compile the library
              */
 #if (0 != LIBXSMM_JIT)
             const char *const env_jit = getenv("LIBXSMM_JIT");
-            libxsmm_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? arch_name : ('0' != *env_jit ? env_jit : 0);
-            if (0 == libxsmm_jit || 0 != is_static)
+            internal_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? arch_name : ('0' != *env_jit ? env_jit : 0);
+            if (0 == internal_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
               /* setup the dispatch table for the statically generated code */
@@ -258,17 +258,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
           atexit(libxsmm_finalize);
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-          __atomic_store_n(&libxsmm_cache, result, __ATOMIC_SEQ_CST);
+          __atomic_store_n(&internal_cache, result, __ATOMIC_SEQ_CST);
 # else
           {
-            libxsmm_cache_entry* old = libxsmm_cache;
-            while (!__sync_bool_compare_and_swap(&libxsmm_cache, old, result)) old = libxsmm_cache;
+            internal_cache_entry* old = internal_cache;
+            while (!__sync_bool_compare_and_swap(&internal_cache, old, result)) old = internal_cache;
           }
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-          libxsmm_cache = result; /*TODO*/
+          internal_cache = result; /*TODO*/
 #else
-          libxsmm_cache = result;
+          internal_cache = result;
 #endif
         }
       }
@@ -280,7 +280,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_cache_entry* internal_init(void)
     }
   }
 #if !defined(_OPENMP) /* release locks */
-  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(libxsmm_cache_lock[i]);
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(internal_cache_lock[i]);
 #endif
   assert(result);
   return result;
@@ -295,14 +295,14 @@ LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-  const void *const cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+  const void *const cache = __atomic_load_n(&internal_cache, __ATOMIC_RELAXED);
 # else
-  const void *const cache = __sync_or_and_fetch(&libxsmm_cache, 0);
+  const void *const cache = __sync_or_and_fetch(&internal_cache, 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-  const void *const cache = libxsmm_cache; /*TODO*/
+  const void *const cache = internal_cache; /*TODO*/
 #else
-  const void *const cache = libxsmm_cache;
+  const void *const cache = internal_cache;
 #endif
   if (0 == cache) {
     internal_init();
@@ -319,27 +319,27 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-  libxsmm_cache_entry* cache = __atomic_load_n(&libxsmm_cache, __ATOMIC_SEQ_CST);
+  internal_cache_entry* cache = __atomic_load_n(&internal_cache, __ATOMIC_SEQ_CST);
 # else
-  libxsmm_cache_entry* cache = __sync_or_and_fetch(&libxsmm_cache, 0);
+  internal_cache_entry* cache = __sync_or_and_fetch(&internal_cache, 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-  libxsmm_cache_entry* cache = libxsmm_cache; /*TODO*/
+  internal_cache_entry* cache = internal_cache; /*TODO*/
 #else
-  libxsmm_cache_entry* cache = libxsmm_cache;
+  internal_cache_entry* cache = internal_cache;
 #endif
 
   if (0 != cache) {
     int i;
 #if !defined(_OPENMP)
     /* acquire locks and thereby shortcut lazy initialization later on */
-    const int nlocks = sizeof(libxsmm_cache_lock) / sizeof(*libxsmm_cache_lock);
-    for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(libxsmm_cache_lock[i]);
+    const int nlocks = sizeof(internal_cache_lock) / sizeof(*internal_cache_lock);
+    for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(internal_cache_lock[i]);
 #else
-#   pragma omp critical(libxsmm_cache_lock)
+#   pragma omp critical(internal_cache_lock)
 #endif
     {
-      cache = libxsmm_cache;
+      cache = internal_cache;
 
       if (0 != cache) {
 #if defined(__TRACE)
@@ -352,17 +352,17 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #endif
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-        __atomic_store_n(&libxsmm_cache, 0, __ATOMIC_SEQ_CST);
+        __atomic_store_n(&internal_cache, 0, __ATOMIC_SEQ_CST);
 # else
         { /* use store side-effect of built-in (dummy assignment to mute warning) */
-          libxsmm_cache_entry *const dummy = __sync_and_and_fetch(&libxsmm_cache, 0);
+          internal_cache_entry *const dummy = __sync_and_and_fetch(&internal_cache, 0);
           LIBXSMM_UNUSED(dummy);
         }
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-        libxsmm_cache = 0; /*TODO*/
+        internal_cache = 0; /*TODO*/
 #else
-        libxsmm_cache = 0;
+        internal_cache = 0;
 #endif
 #if defined(_WIN32)
         /* TODO: to be implemented */
@@ -386,19 +386,19 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       }
     }
 #if !defined(_OPENMP) /* release locks */
-  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(libxsmm_cache_lock[i]);
+  for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(internal_cache_lock[i]);
 #endif
   }
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL void internal_build(const libxsmm_gemm_descriptor* desc,
   void** code, unsigned int* code_size)
 {
 #if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   libxsmm_generated_code generated_code;
   assert(0 != desc && 0 != code && 0 != code_size);
-  assert(0 != libxsmm_jit);
+  assert(0 != internal_jit);
   assert(0 == *code);
 
   /* allocate temporary buffer which is large enough to cover the generated code */
@@ -409,7 +409,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   generated_code.last_error = 0;
 
   /* generate kernel */
-  libxsmm_generator_dense_kernel(&generated_code, desc, libxsmm_jit);
+  libxsmm_generator_dense_kernel(&generated_code, desc, internal_jit);
 
   /* handle an eventual error in the else-branch */
   if (0 == generated_code.last_error) {
@@ -448,7 +448,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
           char objdump_name[512];
           FILE* byte_code;
           sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin",
-            libxsmm_jit /* best available/supported code path */,
+            internal_jit /* best available/supported code path */,
             0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
@@ -507,7 +507,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_gemmdiff(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
   const unsigned *const ia = (const unsigned int*)a, *const ib = (const unsigned int*)b;
   unsigned int result, i;
@@ -522,22 +523,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(const libxsmm
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsmm_gemm_descriptor* desc)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code internal_find_code(const libxsmm_gemm_descriptor* desc)
 {
-  libxsmm_code result;
+  internal_code result;
   unsigned int hash, i, diff = 0;
   unsigned int diff0 = 0, i0;
 
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
-  libxsmm_cache_entry* entry = __atomic_load_n(&libxsmm_cache, __ATOMIC_RELAXED);
+  internal_cache_entry* entry = __atomic_load_n(&internal_cache, __ATOMIC_RELAXED);
 # else
-  libxsmm_cache_entry* entry = __sync_or_and_fetch(&libxsmm_cache, 0);
+  internal_cache_entry* entry = __sync_or_and_fetch(&internal_cache, 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-  libxsmm_cache_entry* entry = libxsmm_cache; /*TODO*/
+  internal_cache_entry* entry = internal_cache; /*TODO*/
 #else
-  libxsmm_cache_entry* entry = libxsmm_cache;
+  internal_cache_entry* entry = internal_cache;
 #endif
   assert(0 != desc);
 
@@ -552,7 +553,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
   hash = libxsmm_crc32_sse42(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
 #else
-  if (0 != libxsmm_has_crc32) {
+  if (0 != internal_has_crc32) {
     LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
     hash = libxsmm_crc32_sse42(desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
   }
@@ -594,7 +595,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
           /* continue linearly searching code starting at re-hashed index position */
           const unsigned int index = LIBXSMM_HASH_VALUE(hash) % LIBXSMM_CACHESIZE;
           unsigned int next;
-          libxsmm_cache_entry *const cache = entry - i; /* recalculate base address */
+          internal_cache_entry *const cache = entry - i; /* recalculate base address */
           for (i0 = (index != i ? index : ((index + 1) % LIBXSMM_CACHESIZE)),
             i = i0, next = (i0 + 1) % LIBXSMM_CACHESIZE; next != i0/*no code found*/ &&
             /* skip any (still invalid) descriptor which corresponds to no code, or continue on diff */
@@ -618,13 +619,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
     }
 
     /* check if code generation or fixup is needed, also check whether JIT is supported (CPUID) */
-    if (0 == result.xmm && 0 != libxsmm_jit) {
+    if (0 == result.xmm && 0 != internal_jit) {
       /* attempt to lock the cache entry */
 # if !defined(_OPENMP)
-      const unsigned int lock = LIBXSMM_MOD2(i, sizeof(libxsmm_cache_lock) / sizeof(*libxsmm_cache_lock));
-      LIBXSMM_LOCK_ACQUIRE(libxsmm_cache_lock[lock]);
+      const unsigned int lock = LIBXSMM_MOD2(i, sizeof(internal_cache_lock) / sizeof(*internal_cache_lock));
+      LIBXSMM_LOCK_ACQUIRE(internal_cache_lock[lock]);
 # else
-#     pragma omp critical(libxsmm_cache_lock)
+#     pragma omp critical(internal_cache_lock)
 # endif
       {
         /* re-read cache entry after acquiring the lock */
@@ -698,7 +699,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code internal_find_code(const libxsm
         }
       }
 # if !defined(_OPENMP)
-      LIBXSMM_LOCK_RELEASE(libxsmm_cache_lock[lock]);
+      LIBXSMM_LOCK_RELEASE(internal_cache_lock[lock]);
 # endif
     }
     else {
