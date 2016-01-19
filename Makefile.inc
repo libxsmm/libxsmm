@@ -4,17 +4,10 @@
 # $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
-ICPC    = $(notdir $(shell which icpc     2> /dev/null))
-ICC     = $(notdir $(shell which icc      2> /dev/null))
-IFORT   = $(notdir $(shell which ifort    2> /dev/null))
-GPP     = $(notdir $(shell which g++      2> /dev/null))
-GCC     = $(notdir $(shell which gcc      2> /dev/null))
-GFC     = $(notdir $(shell which gfortran 2> /dev/null))
-
-CXX_CHECK = $(notdir $(shell which $(CXX) 2> /dev/null))
-CC_CHECK  = $(notdir $(shell which $(CC)  2> /dev/null))
-ifneq (,$(strip $(FC))) # allow FC to be optional
-	FC_CHECK = $(notdir $(shell which $(FC) 2> /dev/null))
+ifeq (Windows_NT,$(OS))
+	ENV = $(NULL)
+else
+	ENV = env
 endif
 
 # Optimization level
@@ -66,40 +59,58 @@ else
 endif
 
 # Automatically pickup the Intel Compiler (if available)
-ifneq (,$(strip $(ICPC)))
-	CXX = $(ICPC)
+ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
+	CXX = icpc
 endif
-ifneq (,$(strip $(IFORT)))
-	FC = $(IFORT)
+ifneq (,$(notdir $(shell which icc 2> /dev/null)))
+	CC = icc
 endif
-ifneq (,$(strip $(ICC)))
-	CC = $(ICC)
+ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
+	FC = ifort
 endif
 
-CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
-CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
-ifneq (,$(strip $(FC))) # allow FC to be optional
-	FC_NAME = $(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1)
-endif
-ifeq (g++,$(CXX_NAME))
-	ifeq (gcc,$(CC_NAME))
-		ifeq (GNU,$(FC_NAME))
-			GNU = 1
-		else
-			GNU = 0
+# check if the Intel Development Tools are available
+INTEL ?= $(shell echo $$((2==$(words $(filter icpc icc, \
+  $(shell $(CXX) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1) \
+  $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))))))
+
+ifneq (0,$(INTEL))
+	ifneq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+$(info ======================================)
+$(info The Intel Fortran Compiler is missing.)
+$(info Building without Fortran support!)
+$(info ======================================)
+	endif
+	ifeq (0,$(OFFLOAD))
+		ifeq (icpc,$(ICXX_NAME))
+			CXXFLAGS += -no-offload
 		endif
-	else
-		GNU = 0
+		ifeq (icc,$(ICC_NAME))
+			CFLAGS += -no-offload
+		endif
+		ifeq (ifort,$(IFC_NAME))
+			FCFLAGS += -no-offload
+		endif
 	endif
 else
-	GNU = 0
+	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
+		CXX = g++
+	endif
+	ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
+		CC = gcc
+	endif
+	ifeq (,$(notdir $(shell which $(FC) 2> /dev/null)))
+		FC = $(shell which gfortran 2> /dev/null)
+	endif
 endif
+
+# linker setup
+LD = $(CC)
 
 CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f3)
-
 ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
 	CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100 + $(CC_VERSION_PATCH)))")
 else
@@ -107,9 +118,43 @@ else
 	CC_VERSION = 0
 endif
 
-CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
+ifneq (,$(notdir $(shell which $(FC) 2> /dev/null)))
+	FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
+	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
+	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
+	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
+endif
+ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+	FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+else
+	FC_VERSION_STRING = $(NULL)
+	FC_VERSION = 0
+endif
+
+# keep in mind if tool chain is GNU GCC
+GCC = 0
+ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+		ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+			GCC = 1
+		endif
+	endif
+endif
+
+ifneq (,$(strip $(FC)))
+	ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+$(info ====================================)
+$(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
+$(info Building without Fortran support!)
+$(info ====================================)
+			FC = $(NULL)
+		endif
+	endif
+endif
 
 # Select code path (if not selected otherwise)
+CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
 ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
@@ -126,33 +171,16 @@ else ifneq (0,$(MIC))
 	MPSS = 1
 endif
 
-# check if the Intel Development Tools are available
-NUM_INTEL_COMPILER = $(words $(filter icpc icc ifort,$(CXX_NAME) $(CC_NAME) $(FC_NAME)))
-ifeq (1,$(shell echo $$((0<$(NUM_INTEL_COMPILER)&&3>$(NUM_INTEL_COMPILER)))))
-$(info =============================================)
-$(info Incomplete Intel Compiler toolchain detected!)
-$(info =============================================)
-	ifeq (0,$(OFFLOAD))
-		ifeq (icpc,$(CXX_NAME))
-			CXXFLAGS += -no-offload
-		endif
-		ifeq (icc,$(CC_NAME))
-			CFLAGS += -no-offload
-		endif
-		ifeq (ifort,$(FC_NAME))
-			FCFLAGS += -no-offload
-		endif
-	endif
-endif
-
-INTEL ?= $(shell echo $$((3==$(NUM_INTEL_COMPILER))))
-
 ifneq (0,$(INTEL))
 	AR ?= xiar
+	CXXLDFLAGS += -Wl,--as-needed -lc -Wl,--no-as-needed
+	FCLDFLAGS += -Wl,--as-needed -lc -lstdc++ -Wl,--no-as-needed
+	CLDFLAGS += -Wl,--as-needed -lstdc++ -Wl,--no-as-needed
+	LDFLAGS += -Wl,--as-needed -lrt -ldl -Wl,--no-as-needed
 	CXXFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	CFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	FCFLAGS += -fPIC -diag-disable 10010
-	LDFLAGS += -fPIC -lrt -ldl
+	LDFLAGS += -fPIC
 	FCMTFLAGS += -threads
 	ifeq (1,$(PEDANTIC))
 		CFLAGS += -std=c89 -Wcheck
@@ -248,11 +276,6 @@ ifneq (0,$(INTEL))
 		FCFLAGS += -openmp
 		LDFLAGS += -openmp
 	endif
-	ifeq (0,$(OFFLOAD))
-		CXXFLAGS += -no-offload
-		CFLAGS += -no-offload
-		FCFLAGS += -no-offload
-	endif
 	ifneq (0,$(PTHREAD))
 		DFLAGS += -D_REENTRANT
 		CXXFLAGS += -pthread
@@ -274,43 +297,12 @@ ifneq (0,$(INTEL))
 		endif
 	endif
 else # GCC assumed
-	ifeq (,$(strip $(CXX_CHECK)))
-		CXX = $(GPP)
-	endif
-	ifeq (,$(strip $(CC_CHECK)))
-		CC = $(GCC)
-	endif
-	ifeq (,$(strip $(FC_CHECK)))
-		FC = $(GFC)
-	else ifneq ($(CC_VERSION_STRING),$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/"))
-		FC = $(GFC)
-	endif
-	ifneq (,$(strip $(FC)))
-		FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.\+ \([0-9]\+\.[0-9]\+\.[0-9]\+\)\b.*/\1/")
-	endif
-	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
-	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
-	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
-	ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-		FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
-	else
-		FC_VERSION_STRING = $(NULL)
-		FC_VERSION = 0
-	endif
-	ifeq (GNU,$(FC_NAME))
-		ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-$(info ====================================)
-$(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
-$(info Building without Fortran support!)
-$(info ====================================)
-			FC = $(NULL)
-		endif
-	endif
-	OFFLOAD = 0
-	MIC = 0
+	CXXLDFLAGS += -Wl,--as-needed -lc -lgfortran -Wl,--no-as-needed
+	FCLDFLAGS += -Wl,--as-needed -lc -lstdc++ -Wl,--no-as-needed
+	CLDFLAGS += -Wl,--as-needed -lstdc++ -lgfortran -Wl,--no-as-needed
+	LDFLAGS += -Wl,--as-needed -lrt -ldl -Wl,--no-as-needed
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
-	LDFLAGS += -lrt -ldl
 	ifeq (0,$(COMPATIBLE))
 		CXXFLAGS += -Wno-attributes
 		CFLAGS += -Wno-attributes
@@ -373,7 +365,7 @@ $(info ====================================)
 		CXXFLAGS += -finstrument-functions
 		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
-		ifneq (0,$(GNU)) # e.g. clang does not need/understand below flag
+		ifneq (0,$(GCC)) # e.g. clang does not need/understand below flag
 			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
@@ -385,7 +377,7 @@ $(info ====================================)
 		endif
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
-	ifeq (0,$(GNU)) # fixup older Clang
+	ifeq (0,$(GCC)) # fixup older Clang
 		DFLAGS += -D__extern_always_inline=inline
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
@@ -455,29 +447,8 @@ $(info ====================================)
 			FCFLAGS += -fdefault-real-8 -fdefault-double-8
 		endif
 	endif
-endif
-
-ifneq (,$(strip $(CXX)))
-	LD = $(CXX)
-endif
-ifeq (,$(strip $(LD)))
-	LD = $(CC)
-endif
-ifeq (,$(strip $(LD)))
-	LD = $(FC)
-endif
-
-ifeq (,$(strip $(CXXFLAGS)))
-	CXXFLAGS = $(CFLAGS)
-endif
-ifeq (,$(strip $(CFLAGS)))
-	CFLAGS = $(CXXFLAGS)
-endif
-ifeq (,$(strip $(FCFLAGS)))
-	FCFLAGS = $(CFLAGS)
-endif
-ifeq (,$(strip $(LDFLAGS)))
-	LDFLAGS = $(CFLAGS)
+	OFFLOAD = 0
+	MIC = 0
 endif
 
 MAKE_ILP64 = 0
@@ -527,7 +498,7 @@ ifeq (1,$(MKL)) # sequential
 			--end-group"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm -ldl
+	LDFLAGS += -lpthread -lm
 	ifneq (0,$(OFFLOAD))
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 	endif
@@ -562,7 +533,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 				$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
-			-Wl,--end-group -ldl
+			-Wl,--end-group
 		endif
 	endif
 	ifneq (0,$(INTEL))
@@ -576,7 +547,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm -ldl"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm -ldl
+	LDFLAGS += -lpthread -lm
 else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
@@ -590,23 +561,18 @@ else ifneq (0,$(BLAS)) # generic
 		else
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
-		CLDFLAGS += -lgfortran
-		ifeq (,$(strip $(FC_VERSION_STRING)))
-			LDFLAGS += -lquadmath
-		else ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			CLDFLAGS += -lquadmath
+		CLDFLAGS += -Wl,--as-needed -lgfortran -Wl,--no-as-needed
+		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
+			CLDFLAGS += -Wl,--as-needed -lquadmath -Wl,--no-as-needed
 		endif
 	endif
 endif
 
-# append extra flags
-CXXFLAGS  += $(ECXXFLAGS)
-CXXFLAGS  += $(EFLAGS)
-FCFLAGS   += $(EFCFLAGS)
-FCFLAGS   += $(EFLAGS)
-CFLAGS    += $(ECFLAGS)
-CFLAGS    += $(EFLAGS)
-LDFLAGS   += $(ELDFLAGS)
+# cleanup and extra flags
+CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 .SUFFIXES:
 
