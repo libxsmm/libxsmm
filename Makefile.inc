@@ -35,9 +35,14 @@ STATIC ?= 0
 SYM ?= 0
 DBG ?= 0
 
-# Threading runtime (PTHREAD refers to foundational TRT and not necessarily Posix Threads)
-PTHREAD ?= 0
+# Threading runtime
 OMP ?= 0
+# PTHREAD refers to foundational TRT (and not necessarily Posix Threads)
+ifneq (0,$(OMP))
+	PTHREAD ?= 1
+else
+	PTHREAD ?= 0
+endif
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
@@ -544,7 +549,11 @@ ifeq (1,$(MKL)) # sequential
 	ifneq (0,$(OFFLOAD))
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 		ifneq (,$(strip $(FC)))
-			LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
+			ifneq (0,$(PTHREAD))
+				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
+			else
+				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcore --no-as-needed"
+			endif
 		endif
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
