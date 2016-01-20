@@ -61,7 +61,7 @@
 #define LIBXSMM_ALPHA $ALPHA
 #define LIBXSMM_BETA $BETA
 #define LIBXSMM_JIT $JIT
-
+$LIBXSMM_OFFLOAD_BUILD
 #include "libxsmm_frontend.h"
 
 

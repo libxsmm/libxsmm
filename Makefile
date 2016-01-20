@@ -245,7 +245,8 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
 	@cp -u $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp -u $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp -u $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h $(PRECISION) $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 	$(info =======================================================================)
 	$(info $(INFO))
@@ -278,7 +279,8 @@ $(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@$(ROOTDIR)/.hooks/install.sh
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f $(PRECISION) $(MAKE_ILP64) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
 	@TMPFILE=`mktemp`
