@@ -39,7 +39,7 @@
 # endif
 # include <dlfcn.h>
 #endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(LIBXSMM_OFFLOAD_BUILD)/*workaround*/ && !defined(NDEBUG) /* library code is expected to be mute */
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_BUILD)
@@ -185,7 +185,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_sgemm)(
                                             : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
       : flags);
   assert(m && n && k && a && b && c);
-#if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(LIBXSMM_OFFLOAD_BUILD)/*workaround*/ && !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == LIBXSMM_FSYMBOL(__real_sgemm)) {
     fprintf(stderr, "LIBXSMM: application is required to link against LAPACK/BLAS!\n");
   }
@@ -231,7 +231,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
                                             : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
       : flags);
   assert(m && n && k && a && b && c);
-#if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(LIBXSMM_OFFLOAD_BUILD)/*workaround*/ && !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == LIBXSMM_FSYMBOL(__real_dgemm)) {
     fprintf(stderr, "LIBXSMM: application is required to link against LAPACK/BLAS!\n");
   }
