@@ -206,9 +206,9 @@ else
 endif
 
 ifneq (,$(strip $(FC)))
-	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), $(CC_NAME) $(CC_VERSION_STRING), and $(FC_NAME) $(FC_VERSION_STRING))
+	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), $(CC_NAME) $(CC_VERSION_STRING), and $(FC_NAME) $(FC_VERSION_STRING)
 else
-	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), and $(CC_NAME) $(CC_VERSION_STRING))
+	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), and $(CC_NAME) $(CC_VERSION_STRING)
 endif
 
 ifneq (0,$(INTEL))
