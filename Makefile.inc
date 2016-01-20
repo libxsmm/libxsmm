@@ -548,13 +548,6 @@ ifeq (1,$(MKL)) # sequential
 	LDFLAGS += -lpthread -lm -ldl
 	ifneq (0,$(OFFLOAD))
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
-		ifneq (,$(strip $(FC)))
-			ifneq (0,$(PTHREAD))
-				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
-			else
-				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcore --no-as-needed"
-			endif
-		endif
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL=$(MKL)
@@ -599,9 +592,6 @@ else ifneq (0,$(MKL)) # multi-threaded
 		endif
 		ifneq (0,$(OFFLOAD))
 			LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
-			ifneq (,$(strip $(FC)))
-				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
-			endif
 		endif
 	endif
 	LDFLAGS += -lpthread -lm -ldl
