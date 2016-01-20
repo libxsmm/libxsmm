@@ -252,7 +252,7 @@ ifneq (0,$(INTEL))
 	else
 		CXXFLAGS += -O0
 		CFLAGS += -O0
-		FCFLAGS += -O0
+		FCFLAGS += -O0 -check
 		SYM = $(DBG)
 	endif
 	ifneq (0,$(TRACE))
@@ -300,11 +300,11 @@ ifneq (0,$(INTEL))
 		ifeq (1,$(SYM))
 			CXXFLAGS := -g $(CXXFLAGS)
 			CFLAGS := -g $(CFLAGS)
-			FCFLAGS := -g -check -traceback $(FCFLAGS)
+			FCFLAGS := -g -traceback $(FCFLAGS)
 		else
 			CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
 			CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
-			FCFLAGS := -g -check -traceback $(FCFLAGS)
+			FCFLAGS := -g -traceback $(FCFLAGS)
 		endif
 	endif
 	ifeq (0,$(EXP))
