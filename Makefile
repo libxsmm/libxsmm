@@ -96,9 +96,10 @@ ifneq (0,$(JIT))
 	SSE ?= 1
 endif
 
+BLAS_WARNING ?= 0
 ifeq (Windows_NT,$(OS))
 	ifeq (0,$(STATIC))
-		BLAS_WARNING ?= 1
+		BLAS_WARNING = 1
 		BLAS ?= 2
 	endif
 endif
