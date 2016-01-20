@@ -266,8 +266,10 @@ ifneq (0,$(INTEL))
 		CXXFLAGS += -finstrument-functions
 		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
-		LDFLAGS += -rdynamic
 		DFLAGS += -D__TRACE=$(TRACE)
+		ifneq (0,$(STATIC))
+			LDFLAGS += -rdynamic
+		endif
 	endif
 	ifeq (1,$(shell echo $$((3 > $(DBG)))))
 		ifeq (0,$(COMPATIBLE))
@@ -418,7 +420,9 @@ else # GCC assumed
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
 		endif
 		ifneq (Windows_NT,$(OS))
-			LDFLAGS += -rdynamic
+			ifneq (0,$(STATIC))
+				LDFLAGS += -rdynamic
+			endif
 		else
 			LDFLAGS += -ldbghelp
 		endif
