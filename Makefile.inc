@@ -538,7 +538,7 @@ ifeq (1,$(MKL)) # sequential
 			--end-group"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm
+	LDFLAGS += -lpthread -lm -ldl
 	ifneq (0,$(OFFLOAD))
 		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
 	endif
@@ -573,7 +573,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 				$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
-			-Wl,--end-group
+			-Wl,--end-group -ldl
 		endif
 	endif
 	ifneq (0,$(INTEL))
@@ -587,7 +587,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm -ldl"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm
+	LDFLAGS += -lpthread -lm -ldl
 else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
