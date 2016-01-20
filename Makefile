@@ -937,8 +937,8 @@ endif
 	@rm -f $(INCDIR)/libxsmm.h
 
 # Dummy prefix
-ifeq (,$(strip $(PREFIX))
-	PREFIX ?= .
+ifeq (,$(strip $(PREFIX)))
+PREFIX ?= .
 endif
 
 .PHONY: install-minimal
@@ -978,6 +978,7 @@ install-minimal: lib
 endif
 
 .PHONY: install
+ifneq ($(abspath $(PREFIX)),$(abspath .))
 install: install-minimal
 	@echo
 	@echo "LIBXSMM installing documentation..."
@@ -987,4 +988,5 @@ install: install-minimal
 	@cp -uv $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
 	@cp -uv $(ROOTDIR)/README.md $(PREFIX)/$(PDOCDIR)
 	@cp -uv $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
+endif
 
