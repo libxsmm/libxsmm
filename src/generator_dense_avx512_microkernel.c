@@ -590,7 +590,6 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   unsigned int l_k_b_updates = 0;
   unsigned int l_displacement_k_a = 0;
   unsigned int l_k_a_update = 0;
-  /*unsigned int l_k_a_advance_threshold = 0;*/
 
 #if !defined(NDEBUG)
   if ( i_k_blocking < 8 ) {
@@ -612,11 +611,7 @@ void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generate
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
                               i_gp_reg_mapping->gp_reg_help_2, 6 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
 
-  /* large instruction can also appear when loading A 
-     (passing an 8K offset wrt gp_reg_a pointer). This 
-     local variable holds the maximum number of k loops
-     we can execute and stay within the 8K window. */
-  /*l_k_a_advance_threshold = 8192/(i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);*/
+  /* init a displacement for k unrolling */
   l_displacement_k_a = 0;
   l_k_a_update = 0;
 
