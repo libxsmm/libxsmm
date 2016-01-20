@@ -592,7 +592,7 @@ else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
 	endif
-	OPENBLAS = $(shell $(CC) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
+	OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
 	ifeq (1,$(OPENBLAS))
 		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	else
