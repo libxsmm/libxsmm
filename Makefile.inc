@@ -198,20 +198,18 @@ else ifneq (0,$(MIC))
 endif
 
 ifneq (0,$(INTEL))
-	COMPILERS = Intel Compiler suite
+	SUITE = Intel Compiler suite
 else ifneq (0,$(GCC))
-	COMPILERS = GNU Compiler Collection
+	SUITE = GNU Compiler Collection
 else
-	COMPILERS = non-GNU compilers
+	SUITE = non-GNU compilers
 endif
 
-$(info =======================================================================)
 ifneq (,$(strip $(FC)))
-$(info Using $(COMPILERS): $(CXX_NAME) $(CC_VERSION_STRING), $(CC_NAME) $(CC_VERSION_STRING), and $(FC_NAME) $(FC_VERSION_STRING))
+	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), $(CC_NAME) $(CC_VERSION_STRING), and $(FC_NAME) $(FC_VERSION_STRING))
 else
-$(info Using $(COMPILERS): $(CXX_NAME) $(CC_VERSION_STRING), and $(CC_NAME) $(CC_VERSION_STRING))
+	INFO = Using $(SUITE): $(CXX_NAME) $(CC_VERSION_STRING), and $(CC_NAME) $(CC_VERSION_STRING))
 endif
-$(info =======================================================================)
 
 ifneq (0,$(INTEL))
 	AR ?= xiar
