@@ -75,13 +75,15 @@ INTEL ?= $(shell echo $$((2==$(words $(filter icpc icc, \
   $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))))))
 
 ifneq (0,$(INTEL))
-	ifneq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+	ifneq (,$(strip $(FC)))
+		ifneq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
 $(info ======================================)
 $(info The Intel Fortran Compiler is missing.)
 $(info Building without Fortran support!)
 $(info ======================================)
-	else ifeq (0,$(OFFLOAD))
-		FCFLAGS += -no-offload
+		else ifeq (0,$(OFFLOAD))
+			FCFLAGS += -no-offload
+		endif
 	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
@@ -540,7 +542,10 @@ ifeq (1,$(MKL)) # sequential
 	endif
 	LDFLAGS += -lpthread -lm -ldl
 	ifneq (0,$(OFFLOAD))
-		LDFLAGS += -offload-option,mic,ld,"-lm -ldl --as-needed -lifcoremt --no-as-needed"
+		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
+		ifneq (,$(strip $(FC)))
+			LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
+		endif
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL=$(MKL)
@@ -584,7 +589,10 @@ else ifneq (0,$(MKL)) # multi-threaded
 			endif
 		endif
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-lpthread -lm -ldl --as-needed -lifcoremt --no-as-needed"
+			LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
+			ifneq (,$(strip $(FC)))
+				LDFLAGS += -offload-option,mic,ld,"--as-needed -lifcoremt --no-as-needed"
+			endif
 		endif
 	endif
 	LDFLAGS += -lpthread -lm -ldl
