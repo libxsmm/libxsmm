@@ -187,7 +187,7 @@ ifneq (,$(strip $(FC)))
 endif
 
 # Select code path (if not selected otherwise)
-CPUFLAGS = $(shell grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-)
+CPUFLAGS = $(shell if [[ -e /proc/cpuinfo ]] ; then grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2- ; fi)
 ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
@@ -468,17 +468,18 @@ else # GCC assumed
 		CXXFLAGS += -fno-exceptions
 	endif
 	ifneq (0,$(OMP))
-		ifeq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?))
-			CXXFLAGS += -fopenmp
-			CFLAGS += -fopenmp
-			FCFLAGS += -fopenmp
-			LDFLAGS += -fopenmp
-		else ifneq (,$(strip $(OMP))) # clang: OMP=libomp
+		# clang: OMP=libomp
+		ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
 			CXXFLAGS += -fopenmp=$(OMP)
 			CFLAGS += -fopenmp=$(OMP)
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
 			CLDFLAGS += -fopenmp=$(OMP)
+		else ifneq (0,$(shell $(LD) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lgomp 2>&1 | grep -q gomp; echo $$?))
+			CXXFLAGS += -fopenmp
+			CFLAGS += -fopenmp
+			FCFLAGS += -fopenmp
+			LDFLAGS += -fopenmp
 		endif
 	endif
 	ifneq (0,$(PTHREAD))
