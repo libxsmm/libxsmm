@@ -94,6 +94,8 @@ $(info ======================================)
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
 	endif
+	XLIB_BEGIN = -Wl,--as-needed
+	XLIB_END = -Wl,--no-as-needed
 else
 	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
 		CXX = g++
@@ -180,6 +182,8 @@ ifneq (,$(strip $(FC)))
 	ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
 		ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
 			ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+				XLIB_BEGIN = -Wl,--as-needed
+				XLIB_END = -Wl,--no-as-needed
 				GCC = 1
 			endif
 		endif
@@ -220,10 +224,10 @@ endif
 
 ifneq (0,$(INTEL))
 	AR ?= xiar
-	CXXLDFLAGS += -Wl,--as-needed -lc -Wl,--no-as-needed
-	FCLDFLAGS += -Wl,--as-needed -lc -lstdc++ -Wl,--no-as-needed
-	CLDFLAGS += -Wl,--as-needed -lstdc++ -Wl,--no-as-needed
-	LDFLAGS += -Wl,--as-needed -lrt -ldl -Wl,--no-as-needed
+	CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
+	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
+	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+	LDFLAGS += $(XLIB_BEGIN) -lrt -ldl $(XLIB_END)
 	CXXFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	CFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	FCFLAGS += -fPIC -diag-disable 10010
@@ -346,10 +350,10 @@ ifneq (0,$(INTEL))
 		endif
 	endif
 else # GCC assumed
-	CXXLDFLAGS += -Wl,--as-needed -lc -lgfortran -Wl,--no-as-needed
-	FCLDFLAGS += -Wl,--as-needed -lc -lstdc++ -Wl,--no-as-needed
-	CLDFLAGS += -Wl,--as-needed -lstdc++ -lgfortran -Wl,--no-as-needed
-	LDFLAGS += -Wl,--as-needed -lrt -ldl -Wl,--no-as-needed
+	CXXLDFLAGS += $(XLIB_BEGIN) -lc -lgfortran $(XLIB_END)
+	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
+	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ -lgfortran $(XLIB_END)
+	LDFLAGS += $(XLIB_BEGIN) -lrt -ldl $(XLIB_END)
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
 	ifeq (0,$(COMPATIBLE))
@@ -613,9 +617,9 @@ else ifneq (0,$(BLAS)) # generic
 		else
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
-		CLDFLAGS += -Wl,--as-needed -lgfortran -Wl,--no-as-needed
+		CLDFLAGS += $(XLIB_BEGIN) -lgfortran $(XLIB_END)
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			CLDFLAGS += -Wl,--as-needed -lquadmath -Wl,--no-as-needed
+			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 		endif
 	endif
 endif
