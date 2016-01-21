@@ -131,16 +131,22 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                  i_gp_reg_mapping->gp_reg_help_3, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb * 7 );
 
     /* helper 4: B + 9*ldb, additional base address
-       helper 5: B + 18*ldb, additional base adrress */
+       helper 5: B + 18*ldb, additional base address 
+       helper 6: B + 27*ldb, additional base address, using the the prefetch b register, which was save to stack */
     if ( i_n_blocking > 9 ) {
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_4);
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
-                                   i_gp_reg_mapping->gp_reg_help_4,  9 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
+                                       i_gp_reg_mapping->gp_reg_help_4,  9 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
     }
     if ( i_n_blocking > 18 ) {
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_5);
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
-                                   i_gp_reg_mapping->gp_reg_help_5, 18 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
+                                       i_gp_reg_mapping->gp_reg_help_5, 18 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
+    }
+    if ( i_n_blocking > 27 ) {
+      libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_b_prefetch);
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_b_prefetch, 27 * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
     }
 
     l_displacement_k_b = 0;
@@ -152,12 +158,16 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
       if ( (l_k > 0) && ((l_k%128) == 0) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b, 128 );
         /* advance the second base pointer only if it's needed */
-        if ( i_n_blocking > 8 ) {
+        if ( i_n_blocking > 9 ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_4, 128 );
         }
         /* advance the third base pointer only if it's needed */
-        if ( i_n_blocking > 17 ) {
+        if ( i_n_blocking > 18 ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_help_5, 128 );
+        }
+        /* advance the fourth base pointer only if it's needed */
+        if ( i_n_blocking > 27 ) {
+          libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_prefetch, 128 );
         }
 
         l_displacement_k_b = 0;
@@ -286,63 +296,47 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
         l_scale = 0;
         l_disp = l_displacement_k_b*i_micro_kernel_config->datatype_size;
         /* select the base register */
-        /* first: special cases for l_n > 26 */
         if ( l_n > 26 ) {
-          if ( l_n == 29 ) {
-            l_b_reg = i_gp_reg_mapping->gp_reg_help_4;
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_2;
-            l_scale = 4;
-          } else if ( l_n == 28 ) {
-            l_b_reg = i_gp_reg_mapping->gp_reg_help_5;
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_2;
-            l_scale = 2;
-          } else /* ( l_n == 27 ) */ {
-            l_b_reg = i_gp_reg_mapping->gp_reg_b; /* large displacement for now */
-            l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-            l_scale = 0;
-            l_disp = (l_k * i_micro_kernel_config->datatype_size)
-                     +(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n)
-                     -(128*l_k_b_updates);
-          }
+          l_b_reg = i_gp_reg_mapping->gp_reg_b_prefetch;
+        } else if ( l_n > 17 ) {
+          l_b_reg = i_gp_reg_mapping->gp_reg_help_5;
+        } else if ( l_n > 8 ) {
+          l_b_reg = i_gp_reg_mapping->gp_reg_help_4;
         } else {
-          if ( l_n > 17 ) {
-            l_b_reg = i_gp_reg_mapping->gp_reg_help_5;
-          } else if ( l_n > 8 ) {
-            l_b_reg = i_gp_reg_mapping->gp_reg_help_4;
-          } else {
-            l_b_reg = i_gp_reg_mapping->gp_reg_b;
-          }
-          if ( l_n % 9 == 0 ) {
-            l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-            l_scale = 0;
-          } else if ( l_n % 9 == 1 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
-            l_scale = 1;
-          } else if ( l_n % 9 == 2 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
-            l_scale = 2;
-          } else if ( l_n % 9 == 3 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_1;
-            l_scale = 1;
-          } else if ( l_n % 9 == 4 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
-            l_scale = 4;
-          } else if ( l_n % 9 == 5 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_2;
-            l_scale = 1;
-          } else if ( l_n % 9 == 6 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_1;
-            l_scale = 2;
-          } else if ( l_n % 9 == 7 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_3;
-            l_scale = 1;
-          } else if ( l_n % 9 == 8 ) {
-            l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
-            l_scale = 8;
-          } else {
-            /* shouldn't happen.... */
-          }
+          l_b_reg = i_gp_reg_mapping->gp_reg_b;
         }
+        /* Select SIB */ 
+        if ( l_n % 9 == 0 ) {
+          l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
+          l_scale = 0;
+        } else if ( l_n % 9 == 1 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
+          l_scale = 1;
+        } else if ( l_n % 9 == 2 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
+          l_scale = 2;
+        } else if ( l_n % 9 == 3 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_1;
+          l_scale = 1;
+        } else if ( l_n % 9 == 4 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
+          l_scale = 4;
+        } else if ( l_n % 9 == 5 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_2;
+          l_scale = 1;
+        } else if ( l_n % 9 == 6 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_1;
+          l_scale = 2;
+        } else if ( l_n % 9 == 7 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_3;
+          l_scale = 1;
+        } else if ( l_n % 9 == 8 ) {
+          l_b_idx = i_gp_reg_mapping->gp_reg_help_0;
+          l_scale = 8;
+        } else {
+          /* shouldn't happen.... */
+        }
+        
 
 #if 1
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
