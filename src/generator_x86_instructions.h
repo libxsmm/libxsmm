@@ -196,6 +196,24 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number_dest);
 
 /**
+ * Generates push to the stack for a GPR
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_gp_reg_number the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15)
+ */
+void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
+                                       const unsigned int      i_gp_reg_number );
+
+/**
+ * Generates pop from the stack for a GPR
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_gp_reg_number the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15)
+ */
+void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_gp_reg_number );
+
+/**
  * Allows for mask move instructions in AVX512
  *
  * @param io_generated_code pointer to the pointer of the generated code structure

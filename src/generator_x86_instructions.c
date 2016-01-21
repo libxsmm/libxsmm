@@ -1754,6 +1754,100 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
   }
 }
 
+void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
+                                       const unsigned int      i_gp_reg_number ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int l_reg0 = 0;
+
+    if ( l_maxsize - i < 2 )
+    {
+      fprintf(stderr,"libxsmm_instruction_push_reg: push instructions need up to 2 bytes\n");
+      exit(-1);
+    }
+    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 ) {
+      fprintf(stderr,"libxsmm_instruction_push_reg: invalid register\n");
+      exit(-1);
+    }
+
+    /* determine register encoding */
+    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
+    {
+       l_reg0 = i_gp_reg_number - 8;
+       buf[i++] = (unsigned char)(0x41);
+    } else {
+       l_reg0 = i_gp_reg_number;
+    }
+    buf[i++] = (unsigned char)(0x50 + l_reg0);
+
+    io_generated_code->code_size = i;
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_name[4];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"pushq %%%%%s\\n\\t\"\n", l_gp_reg_name );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       pushq %%%s\n", l_gp_reg_name );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int      i_gp_reg_number ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int l_reg0 = 0;
+
+    if ( l_maxsize - i < 2 )
+    {
+      fprintf(stderr,"libxsmm_instruction_pop_reg: pop instructions need up to 2 bytes\n");
+      exit(-1);
+    }
+    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 ) {
+      fprintf(stderr,"libxsmm_instruction_pop_reg: invalid register\n");
+      exit(-1);
+    }
+
+    /* determine register encoding */
+    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <=15) )
+    {
+       l_reg0 = i_gp_reg_number - 8;
+       buf[i++] = (unsigned char)(0x41);
+    } else {
+       l_reg0 = i_gp_reg_number;
+    }
+    buf[i++] = (unsigned char)(0x50 + l_reg0 + 8);
+
+    io_generated_code->code_size = i;
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_name[4];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"popq %%%%%s\\n\\t\"\n", l_gp_reg_name );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       popq %%%s\n", l_gp_reg_name );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
