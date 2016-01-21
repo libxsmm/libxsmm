@@ -13,7 +13,6 @@ before_install:
   - pip install --user codecov
 
 after_success:
-  - source .codecov && 
     eval ${LIBXSMM_CODECOV}
 
 compiler:
@@ -26,59 +25,59 @@ env:
 
 script:
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null ; fi &&
+    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null ; fi &&
+    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j test-cp2k &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j STATIC=0 test-cp2k &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-rm -j ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" test-cp2k &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j test-smm &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j SSE=0 test-smm &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j SSE=0 AVX=0 test-smm &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
-    source .codecov &&
+    if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-nek -j test-nek &&
     eval ${LIBXSMM_RUNGCOV}

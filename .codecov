@@ -5,29 +5,25 @@
 # Executing LIBXSMM_COVERAGE (after building/running a case) yields code coverage information.
 #
 
-if [[ "${CXX}" == "g++" ]]; then
-  if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
-    TRAVIS_BUILD_DIR=.
-  fi
-  if [[ "${LIBXSMM_COVID}" == "" ]]; then
-    export LIBXSMM_COVID=1
-  else
-    export LIBXSMM_COVID=$((LIBXSMM_COVID+1))
-  fi
-  FIND=$(which find)
-  GCOV=$(which gcov)
-  export EFLAGS="--coverage" ELDFLAGS="--coverage"
-  export LIBXSMM_RUNGCOV="CWD=\${PWD}; for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno') ; do \
-    FILENAME=\$(basename \${FILE} .gcno).o; \
-    FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
-    BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
-    cd \${FILEPATH}; \
-    ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
-    done; mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${LIBXSMM_COVID} && \
-    ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
-      -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${LIBXSMM_COVID} \;"
-  export LIBXSMM_CODECOV="codecov"
-else
-  unset EFLAGS ELDFLAGS LIBXSMM_RUNGCOV LIBXSMM_CODECOV
+if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
+  TRAVIS_BUILD_DIR=.
 fi
+if [[ "${LIBXSMM_COVID}" == "" ]]; then
+  export LIBXSMM_COVID=1
+else
+  export LIBXSMM_COVID=$((LIBXSMM_COVID+1))
+fi
+FIND=$(which find)
+GCOV=$(which gcov)
+export EFLAGS="--coverage" ELDFLAGS="--coverage"
+export LIBXSMM_RUNGCOV="CWD=\${PWD}; for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno') ; do \
+  FILENAME=\$(basename \${FILE} .gcno).o; \
+  FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
+  BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
+  cd \${FILEPATH}; \
+  ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
+  done; mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${LIBXSMM_COVID} && \
+  ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
+    -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${LIBXSMM_COVID} \;"
+export LIBXSMM_CODECOV="codecov"
 
