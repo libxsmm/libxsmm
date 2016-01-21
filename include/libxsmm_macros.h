@@ -137,7 +137,7 @@
 #define LIBXSMM_NBITS16(N) (0 != ((N) & 0xFF00) ? (8 + LIBXSMM_NBITS08((N) >> 8)) : LIBXSMM_NBITS08(N))
 #define LIBXSMM_NBITS32(N) (0 != ((N) & 0xFFFF0000) ? (16 + LIBXSMM_NBITS16((N) >> 16)) : LIBXSMM_NBITS16(N))
 #define LIBXSMM_NBITS64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 + LIBXSMM_NBITS32((N) >> 32)) : LIBXSMM_NBITS32(N))
-#define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64((uint64_t)(N)) + 1) : 1)
+#define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64((unsigned long long)(N)) + 1) : 1)
 
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
@@ -183,11 +183,11 @@
 #endif
 #define LIBXSMM_ALIGN_VALUE(N, TYPESIZE, ALIGNMENT/*POT*/) (LIBXSMM_UP2((N) * (TYPESIZE), ALIGNMENT) / (TYPESIZE))
 #define LIBXSMM_ALIGN_VALUE2(N, POTSIZE, ALIGNMENT/*POT*/) LIBXSMM_DIV2(LIBXSMM_UP2(LIBXSMM_MUL2(N, POTSIZE), ALIGNMENT), POTSIZE)
-#define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_ALIGN_VALUE((uintptr_t)(POINTER), 1, ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
-#define LIBXSMM_ALIGN2(POINTPOT, ALIGNMENT/*POT*/) ((POINTPOT) + LIBXSMM_DIV2(LIBXSMM_ALIGN_VALUE2((uintptr_t)(POINTPOT), 1, ALIGNMENT) - ((uintptr_t)(POINTPOT)), sizeof(*(POINTPOT))))
+#define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_ALIGN_VALUE((unsigned long long)(POINTER), 1, ALIGNMENT) - ((unsigned long long)(POINTER))) / sizeof(*(POINTER)))
+#define LIBXSMM_ALIGN2(POINTPOT, ALIGNMENT/*POT*/) ((POINTPOT) + LIBXSMM_DIV2(LIBXSMM_ALIGN_VALUE2((unsigned long long)(POINTPOT), 1, ALIGNMENT) - ((unsigned long long)(POINTPOT)), sizeof(*(POINTPOT))))
 
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
-#define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT)), NPOT)
+#define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
@@ -204,23 +204,6 @@
 # define LIBXSMM_VISIBILITY_HIDDEN
 # define LIBXSMM_VISIBILITY_INTERNAL
 #endif
-
-#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# if defined(LIBXSMM_OFFLOAD_BUILD)
-#   undef LIBXSMM_OFFLOAD_BUILD
-# endif
-# define LIBXSMM_OFFLOAD_BUILD 1
-# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
-#else
-# if defined(LIBXSMM_OFFLOAD_BUILD)
-#   undef LIBXSMM_OFFLOAD_BUILD
-# endif
-# define LIBXSMM_OFFLOAD(A)
-#endif
-#if !defined(LIBXSMM_OFFLOAD_TARGET)
-# define LIBXSMM_OFFLOAD_TARGET mic
-#endif
-#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__)
@@ -287,33 +270,18 @@
 # endif
 #endif
 
-#if defined(__GNUC__)
-# if defined(LIBXSMM_OFFLOAD_BUILD)
-#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#   include <pthread.h>
-#   pragma offload_attribute(pop)
-# else
-#   include <pthread.h>
-# endif
-# define LIBXSMM_LOCK_TYPE pthread_mutex_t
-# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(&(LOCK))
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(&(LOCK))
-# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(&(LOCK))
-#else /*TODO: Windows*/
+#if defined(_WIN32) /*TODO*/
 # define LIBXSMM_LOCK_TYPE HANDLE
 # define LIBXSMM_LOCK_CONSTRUCT 0
 # define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
 # define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
 # define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-#endif
-
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-# include <stdint.h>
-# pragma offload_attribute(pop)
-#else
-# include <stdint.h>
+#else /* PThreads: include <pthread.h> */
+# define LIBXSMM_LOCK_TYPE pthread_mutex_t
+# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
+# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(&(LOCK))
+# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(&(LOCK))
+# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(&(LOCK))
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/

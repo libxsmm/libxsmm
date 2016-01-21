@@ -48,6 +48,7 @@
 # include <Windows.h>
 #else
 # include <sys/mman.h>
+# include <pthread.h>
 # include <stdlib.h>
 # include <unistd.h>
 # include <fcntl.h>

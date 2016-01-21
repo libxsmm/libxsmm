@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_TIMER_H
 #define LIBXSMM_TIMER_H
 
-#include <libxsmm_macros.h>
+#include <libxsmm.h>
 
 
 /** Returns the current clock tick using a platform-specific resolution. */

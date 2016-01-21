@@ -43,6 +43,23 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+# if defined(LIBXSMM_OFFLOAD_BUILD)
+#   undef LIBXSMM_OFFLOAD_BUILD
+# endif
+# define LIBXSMM_OFFLOAD_BUILD 1
+# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
+#else
+# if defined(LIBXSMM_OFFLOAD_BUILD)
+#   undef LIBXSMM_OFFLOAD_BUILD
+# endif
+# define LIBXSMM_OFFLOAD(A)
+#endif
+#if !defined(LIBXSMM_OFFLOAD_TARGET)
+# define LIBXSMM_OFFLOAD_TARGET mic
+#endif
+#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
+
 /** Helper macro for GEMM argument permutation depending on storage scheme. */
 #if (0 != LIBXSMM_COL_MAJOR)
 # define LIBXSMM_LD(M, N) (M)
@@ -71,19 +88,19 @@
 # define LIBXSMM_NOPREFETCH_A(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_A(EXPR) EXPR
-# define LIBXSMM_PREFETCH_A(EXPR) NULL
+# define LIBXSMM_PREFETCH_A(EXPR) 0
 #endif
 #if defined(LIBXSMM_PREFETCH_B)
 # define LIBXSMM_NOPREFETCH_B(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_B(EXPR) EXPR
-# define LIBXSMM_PREFETCH_B(EXPR) NULL
+# define LIBXSMM_PREFETCH_B(EXPR) 0
 #endif
 #if defined(LIBXSMM_PREFETCH_C)
 # define LIBXSMM_NOPREFETCH_C(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_C(EXPR) EXPR
-# define LIBXSMM_PREFETCH_C(EXPR) NULL
+# define LIBXSMM_PREFETCH_C(EXPR) 0
 #endif
 
 /** Helper macro for GEMM function names (and similar functions). */

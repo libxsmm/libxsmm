@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_CRC32_H
 #define LIBXSMM_CRC32_H
 
-#include <libxsmm_macros.h>
+#include <libxsmm.h>
 
 
 /** Function type representing the CRC32 functionality. */

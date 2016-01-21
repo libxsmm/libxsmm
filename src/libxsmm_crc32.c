@@ -31,6 +31,14 @@
 #include "libxsmm_crc32.h"
 #include <libxsmm.h>
 
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdint.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
+
 #if !defined(LIBXSMM_CRC32_FORCESW)
 /*# define LIBXSMM_CRC32_FORCESW*/
 #endif
