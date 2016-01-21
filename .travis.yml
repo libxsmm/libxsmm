@@ -1,7 +1,14 @@
-language: cpp
-
 sudo: false
 
+os:
+- linux
+- osx
+
+matrix:
+  allow_failures:
+  - os: osx
+
+language: cpp
 addons:
   apt:
     packages:
