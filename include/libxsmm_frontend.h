@@ -38,19 +38,19 @@
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \
   defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
+# if !defined(LIBXSMM_OFFLOAD_TARGET)
+#   define LIBXSMM_OFFLOAD_TARGET mic
+# endif
 #else
 # define LIBXSMM_OFFLOAD(A)
 #endif
-#if !defined(LIBXSMM_OFFLOAD_TARGET)
-# define LIBXSMM_OFFLOAD_TARGET mic
-#endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <assert.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 

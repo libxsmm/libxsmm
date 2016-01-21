@@ -31,11 +31,11 @@
 #include "libxsmm_crc32.h"
 #include <libxsmm.h>
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdint.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
@@ -442,7 +442,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 }
 
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if defined(__SSE4_2__)
@@ -462,7 +462,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 #   define LIBXSMM_CRC32_FORCEHW
 # endif
 #endif
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)

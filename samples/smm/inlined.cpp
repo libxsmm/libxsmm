@@ -31,7 +31,7 @@
 #include <libxsmm.h>
 #include <libxsmm_timer.h>
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <algorithm>
@@ -47,7 +47,7 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
       init<22>(c + i * csize, scale, m, n, i);
     }
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
 #endif
     {

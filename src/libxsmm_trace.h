@@ -32,11 +32,11 @@
 #define LIBXSMM_TRACE_H
 
 #include <libxsmm.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 

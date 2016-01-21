@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 /* must be include first! */
@@ -43,7 +43,7 @@
 # include <stdio.h>
 #endif
 # include <stdint.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #include <libxsmm.h>

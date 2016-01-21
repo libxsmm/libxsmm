@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_trace.h"
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
@@ -64,7 +64,7 @@ int mkstemp(char* filename_template);
 int posix_fallocate(int, off_t, off_t);
 # endif
 #endif
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 

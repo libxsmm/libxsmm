@@ -35,7 +35,7 @@
 # include "libxsmm_trace.h"
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 /* mute warning about target attribute; KNC/native plus JIT is disabled below! */
@@ -57,7 +57,7 @@
 #if !defined(NDEBUG)
 #include <errno.h>
 #endif
-#if defined(LIBXSMM_OFFLOAD_BUILD)
+#if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #if defined(__GNUC__)
