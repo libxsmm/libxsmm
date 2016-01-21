@@ -130,9 +130,6 @@ else
 	LIBEXT = a
 endif
 
-# Produce separate Fortran library (internal option)
-LIBXSMMF ?= 1
-
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
@@ -450,49 +447,28 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-ifneq (,$(strip $(FC)))
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm-mod.o
-ifeq (0,$(LIBXSMMF))
-	$(eval OBJFILES_MIC_MOD = $(OBJFILES_MIC) $(BLDDIR)/mic/libxsmm-mod.o)
-else
-	$(eval OBJFILES_MIC_MOD = $(OBJFILES_MIC))
-endif
-else
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
-	$(eval OBJFILES_MIC_MOD = $(OBJFILES_MIC))
-endif
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_MIC_MOD) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
 else
-	$(AR) -rs $@ $(OBJFILES_MIC_MOD)
+	$(AR) -rs $@ $(OBJFILES_MIC)
 endif
 endif
 endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-ifneq (,$(strip $(FC)))
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm-mod.o
-ifeq (0,$(LIBXSMMF))
-	$(eval OBJFILES_HST_MOD = $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(BLDDIR)/intel64/libxsmm-mod.o)
-else
-	$(eval OBJFILES_HST_MOD = $(OBJFILES_HST) $(OBJFILES_GEN_LIB))
-endif
-else
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
-	$(eval OBJFILES_HST_MOD = $(OBJFILES_HST) $(OBJFILES_GEN_LIB))
-endif
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_HST_MOD) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
-	$(AR) -rs $@ $(OBJFILES_HST_MOD)
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 endif
 
 .PHONY: flib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-ifneq (0,$(LIBXSMMF))
 flib_hst: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
@@ -504,11 +480,9 @@ endif
 endif
 endif
 endif
-endif
 
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
-ifneq (0,$(LIBXSMMF))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.$(LIBEXT)
@@ -516,7 +490,6 @@ $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.
 else
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
-endif
 endif
 endif
 
