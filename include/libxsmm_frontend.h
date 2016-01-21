@@ -35,14 +35,6 @@
 #include "libxsmm_macros.h"
 #include "libxsmm.h"
 
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <assert.h>
-#if defined(LIBXSMM_OFFLOAD_BUILD)
-# pragma offload_attribute(pop)
-#endif
-
 #if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # if defined(LIBXSMM_OFFLOAD_BUILD)
 #   undef LIBXSMM_OFFLOAD_BUILD
@@ -59,6 +51,14 @@
 # define LIBXSMM_OFFLOAD_TARGET mic
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
+
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <assert.h>
+#if defined(LIBXSMM_OFFLOAD_BUILD)
+# pragma offload_attribute(pop)
+#endif
 
 /** Helper macro for GEMM argument permutation depending on storage scheme. */
 #if (0 != LIBXSMM_COL_MAJOR)
