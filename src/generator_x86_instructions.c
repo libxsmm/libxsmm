@@ -1768,7 +1768,7 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
       fprintf(stderr,"libxsmm_instruction_push_reg: push instructions need up to 2 bytes\n");
       exit(-1);
     }
-    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 ) {
+    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
       fprintf(stderr,"libxsmm_instruction_push_reg: invalid register\n");
       exit(-1);
     }
@@ -1815,7 +1815,7 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
       fprintf(stderr,"libxsmm_instruction_pop_reg: pop instructions need up to 2 bytes\n");
       exit(-1);
     }
-    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 ) {
+    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 ) {
       fprintf(stderr,"libxsmm_instruction_pop_reg: invalid register\n");
       exit(-1);
     }
