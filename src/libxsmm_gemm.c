@@ -42,6 +42,7 @@
 #if !defined(LIBXSMM_OFFLOAD_BUILD)/*workaround*/ && !defined(NDEBUG) /* library code is expected to be mute */
 # include <stdio.h>
 #endif
+# include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_BUILD)
 # pragma offload_attribute(pop)
 #endif

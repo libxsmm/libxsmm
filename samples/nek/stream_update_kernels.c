@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_macros.h>
+#include <libxsmm.h>
 #include <stddef.h>
 
 #if defined(__SSE3__)
