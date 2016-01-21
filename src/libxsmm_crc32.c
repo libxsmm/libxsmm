@@ -43,7 +43,7 @@
 /*# define LIBXSMM_CRC32_FORCESW*/
 #endif
 #if !defined(LIBXSMM_CRC32_ALIGNMENT)
-# define LIBXSMM_CRC32_ALIGNMENT LIBXSMM_ALIGNMENT
+# define LIBXSMM_CRC32_ALIGNMENT 8
 #endif
 
 
@@ -352,13 +352,29 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
   } \
 }
 
-#if defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
+#if defined(LIBXSMM_CRC32_ALIGNMENT) && 8 < (LIBXSMM_CRC32_ALIGNMENT)
 # define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
     const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT); \
     if ((SIZE) > (unsigned int)(endb - enda)) { \
       LIBXSMM_CRC32_U64(FN64, INIT, begin, enda); \
+      LIBXSMM_CRC32_U32(FN32, INIT, begin, enda); \
+      LIBXSMM_CRC32_U16(FN16, INIT, begin, enda); \
+      LIBXSMM_CRC32_U8(FN8, INIT, begin, enda); \
+    } \
+    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
+    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
+    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
+    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+  }
+#elif defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
+# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
+    const unsigned char *begin = (const unsigned char*)(DATA); \
+    const unsigned char *const endb = begin + (SIZE); \
+    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    if ((SIZE) > (unsigned int)(endb - enda)) { \
       LIBXSMM_CRC32_U32(FN32, INIT, begin, enda); \
       LIBXSMM_CRC32_U16(FN16, INIT, begin, enda); \
       LIBXSMM_CRC32_U8(FN8, INIT, begin, enda); \
