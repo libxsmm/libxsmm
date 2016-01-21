@@ -35,16 +35,10 @@
 #include "libxsmm_macros.h"
 #include "libxsmm.h"
 
-#if defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# if defined(LIBXSMM_OFFLOAD_BUILD)
-#   undef LIBXSMM_OFFLOAD_BUILD
-# endif
-# define LIBXSMM_OFFLOAD_BUILD 1
+#if defined(LIBXSMM_OFFLOAD_BUILD) && \
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 #else
-# if defined(LIBXSMM_OFFLOAD_BUILD)
-#   undef LIBXSMM_OFFLOAD_BUILD
-# endif
 # define LIBXSMM_OFFLOAD(A)
 #endif
 #if !defined(LIBXSMM_OFFLOAD_TARGET)
