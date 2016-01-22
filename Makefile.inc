@@ -631,7 +631,9 @@ else ifneq (0,$(BLAS)) # generic
 		BLAS_THREADS = o
 	endif
 	OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo $$?)
-	ifneq (0,$(OPENBLAS))
+	ifeq (1,$(OPENBLAS))
+		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+	else
 		ifneq (Windows_NT,$(OS))
 			LDFLAGS += -lblas$(BLAS_BITS)
 		else
@@ -643,8 +645,6 @@ else ifneq (0,$(BLAS)) # generic
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
 			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 		endif
-	else
-		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	endif
 endif
 
