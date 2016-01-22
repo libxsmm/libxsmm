@@ -1,7 +1,3 @@
-# Linux cut has features we use that do not work elsewhere. Mac, etc. users
-# should install GNU coreutils and use "cut" from there.
-# For example, if you use Homebrew, run "brew install coreutils" once and invoke:
-# $ make CUT=/usr/local/Cellar/coreutils/8.24/libexec/gnubin/cut
 CUT ?= cut
 
 ifeq (Windows_NT,$(OS))

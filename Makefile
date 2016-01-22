@@ -322,9 +322,9 @@ $(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(OUTDIR)/libxs
 sources: $(SRCFILES)
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES)))
-	$(eval MVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f2))
-	$(eval NVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f3))
-	$(eval KVALUE := $(shell echo $(basename $@) | $(CUT) --output-delimiter=' ' -d_ -f4))
+	$(eval MVALUE := $(shell echo $(basename $@) | $(CUT) -d_ -f2))
+	$(eval NVALUE := $(shell echo $(basename $@) | $(CUT) -d_ -f3))
+	$(eval KVALUE := $(shell echo $(basename $@) | $(CUT) -d_ -f4))
 ifneq (0,$(ROW_MAJOR)) # row-major
 	$(eval MNVALUE := $(NVALUE))
 	$(eval NMVALUE := $(MVALUE))
@@ -572,9 +572,9 @@ endif
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
@@ -616,9 +616,9 @@ endif
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
@@ -654,9 +654,9 @@ endif
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
@@ -692,9 +692,9 @@ endif
 	@echo "NRUN=1" >> $@
 	@echo "NMAX=\$$(echo \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | $(CUT) -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
@@ -735,12 +735,12 @@ endif
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
-	@echo "  MVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(echo \$${RUN1} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
-	@echo "  MMVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f1)" >> $@
-	@echo "  NNVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f2)" >> $@
-	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) --output-delimiter=' ' -d_ -f3)" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN1} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN1} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN1} | $(CUT) -d_ -f3)" >> $@
+	@echo "  MMVALUE=\$$(echo \$${RUN2} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NNVALUE=\$$(echo \$${RUN2} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KKVALUE=\$$(echo \$${RUN2} | $(CUT) -d_ -f3)" >> $@
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
