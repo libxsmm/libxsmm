@@ -246,17 +246,21 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
-	$(info =======================================================================)
+	$(info ================================================================================)
 	$(info $(INFO))
-	$(info =======================================================================)
+	$(info ================================================================================)
 ifeq (,$(strip $(FC)))
-	$(info Compiler is missing: building without Fortran support!)
-	$(info ==========================================================)
+ifeq (,$(strip $(FC_VERSION_STRING)))
+	$(info Fortran Compiler is missing: building without Fortran support!)
+else
+	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!)
+endif
+	$(info ================================================================================)
 endif
 ifneq (0,$(OMP))
 	$(info LIBXSMM is agnostic with respect to the threading runtime!)
 	$(info Enabling OpenMP suppresses using OS primitives (PThreads).)
-	$(info ==========================================================)
+	$(info ================================================================================)
 endif
 ifneq (0,$(BLAS_WARNING))
 	$(info Windows DLLs req. to link against BLAS since there is no)
@@ -271,7 +275,7 @@ ifeq (1,$(BLAS))
 	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
 	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
 endif
-	$(info ==========================================================)
+	$(info ================================================================================)
 endif
 
 .PHONY: fheader

@@ -149,22 +149,18 @@ ifneq (,$(strip $(FC)))
 				endif
 				ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
 					FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
-					ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-						FC = $(NULL)
-					endif
 				else
-					FC_VERSION_STRING = $(NULL)
+					FC_VERSION = 0
+				endif
+				ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+					# keep FC_VERSION_STRING available for message about outdated compiler
 					FC_VERSION = 0
 					FC = $(NULL)
 				endif
 			else
+				# keep FC_VERSION_STRING available for message about outdated compiler
+				FC_VERSION = 0
 				FC = $(NULL)
-			endif
-			ifeq (,$(strip $(FC)))
-$(info ====================================)
-$(info Outdated GNU Fortran $(FC_VERSION_STRING) detected.)
-$(info Building without Fortran support!)
-$(info ====================================)
 			endif
 		endif
 	endif
@@ -645,8 +641,11 @@ else ifneq (0,$(BLAS)) # generic
 		else
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
+		ifneq (0,$(STATIC))
+			CLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+		endif
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			CLDFLAGS += $(XLIB_BEGIN) -lgfortran -lquadmath $(XLIB_END)
+			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 		endif
 	endif
 endif
