@@ -401,7 +401,7 @@ endif
 		-e 's/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
-		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling .\+ code on .\+ or newer architecture: " __FILE__)/d' \
+		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: " __FILE__)/d' \
 		$@
 	@rm -f ${TMPFILE}
 	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $@
@@ -808,14 +808,14 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@pandoc -D latex > $(TEMPLATE)
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} \
-		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
 	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
+		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/README.md | \
@@ -838,14 +838,14 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@pandoc -D latex > $(TEMPLATE)
 	@TMPFILE=`mktemp`
 	@sed -i ${TMPFILE} \
-		-e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		$(TEMPLATE)
 	@rm -f ${TMPFILE}
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-		-e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-		-e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
+		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/documentation/cp2k.md | \
