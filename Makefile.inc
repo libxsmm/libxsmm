@@ -80,19 +80,14 @@ INTEL ?= $(shell echo $$((2==$(words $(filter icpc icc, \
   $(shell $(CC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))))))
 
 ifneq (0,$(INTEL))
-	ifneq (,$(strip $(FC)))
-		ifneq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
-$(info ======================================)
-$(info The Intel Fortran Compiler is missing.)
-$(info Building without Fortran support!)
-$(info ======================================)
-		else ifeq (0,$(OFFLOAD))
-			FCFLAGS += -no-offload
-		endif
-	endif
 	ifeq (0,$(OFFLOAD))
 		CXXFLAGS += -no-offload
 		CFLAGS += -no-offload
+		ifneq (,$(strip $(FC)))
+			ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | $(CUT) -d" " -f1))
+				FCFLAGS += -no-offload
+			endif
+		endif
 	endif
 	XLIB_BEGIN = -Wl,--as-needed
 	XLIB_END = -Wl,--no-as-needed
@@ -173,6 +168,11 @@ $(info ====================================)
 			endif
 		endif
 	endif
+else
+$(info ======================================)
+$(info The Fortran Compiler is missing.)
+$(info Building without Fortran support!)
+$(info ======================================)
 endif
 
 # compiler names
