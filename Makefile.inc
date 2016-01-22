@@ -351,10 +351,8 @@ ifneq (0,$(INTEL))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
 		DFLAGS += -D__STATIC=1
 	else ifneq (0,$(STATIC))
-		ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo $$?))
-			DFLAGS += -D__STATIC=$(STATIC)
-			SLDFLAGS += -static
-		endif
+		DFLAGS += -D__STATIC=$(STATIC)
+		SLDFLAGS += -static
 	endif
 	ifneq (,$(strip $(R8)))
 		ifneq (0,$(R8))
@@ -517,8 +515,10 @@ else # GCC assumed
 		endif
 	endif
 	ifneq (0,$(STATIC))
-		SLDFLAGS += -static
-		DFLAGS += -D__STATIC=$(STATIC)
+		ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo $$?))
+			DFLAGS += -D__STATIC=$(STATIC)
+			SLDFLAGS += -static
+		endif
 	endif
 	ifneq (,$(strip $(R8)))
 		ifneq (0,$(R8))
