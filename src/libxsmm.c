@@ -484,6 +484,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         fprintf(stderr, "LIBXSMM: %s (mmap)!\n", strerror(errno));
 #endif
         free(generated_code.generated_code);
+        /* clear MAP_FAILED value */
+        *code = 0;
       }
     }
 #if !defined(NDEBUG)/* library code is expected to be mute */
