@@ -52,7 +52,7 @@ if __name__ == "__main__":
         flags = int(sys.argv[10]) if (10 < argc) else 0
         alpha = int(sys.argv[11]) if (11 < argc) else 1
         beta = int(sys.argv[12]) if (12 < argc) else 1
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[13:], threshold) if (13 < argc) else list()
+        mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], threshold)) if (13 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
