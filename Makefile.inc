@@ -168,11 +168,6 @@ $(info ====================================)
 			endif
 		endif
 	endif
-else
-$(info ======================================)
-$(info The Fortran Compiler is missing.)
-$(info Building without Fortran support!)
-$(info ======================================)
 endif
 
 # compiler names

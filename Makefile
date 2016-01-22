@@ -249,6 +249,10 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
 	$(info =======================================================================)
 	$(info $(INFO))
 	$(info =======================================================================)
+ifeq (,$(strip $(FC)))
+	$(info Compiler is missing: building without Fortran support!)
+	$(info ==========================================================)
+endif
 ifneq (0,$(OMP))
 	$(info LIBXSMM is agnostic with respect to the threading runtime!)
 	$(info Enabling OpenMP suppresses using OS primitives (PThreads).)
