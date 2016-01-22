@@ -93,6 +93,7 @@ STATIC ?= 1
 # JIT backend is enabled by default
 JIT ?= 1
 ifneq (0,$(JIT))
+	AVX ?= 0
 	SSE ?= 1
 endif
 
