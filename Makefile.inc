@@ -364,10 +364,15 @@ ifneq (0,$(INTEL))
 		endif
 	endif
 else # GCC assumed
-	CXXLDFLAGS += $(XLIB_BEGIN) -lc -lgfortran $(XLIB_END)
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ -lgfortran $(XLIB_END)
 	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
+	ifneq (,$(strip $(FC)))
+		CXXLDFLAGS += $(XLIB_BEGIN) -lc -lgfortran $(XLIB_END)
+		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ -lgfortran $(XLIB_END)
+	else
+		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
+		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+	endif
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
 	ifeq (0,$(COMPATIBLE))
@@ -640,9 +645,8 @@ else ifneq (0,$(BLAS)) # generic
 		else
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
-		CLDFLAGS += $(XLIB_BEGIN) -lgfortran $(XLIB_END)
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+			CLDFLAGS += $(XLIB_BEGIN) -lgfortran -lquadmath $(XLIB_END)
 		endif
 	endif
 endif
