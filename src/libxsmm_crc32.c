@@ -394,7 +394,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
     return begin == endb ? (INIT) : FN8(INIT, *begin); \
   }
-#endif /*defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)*/
+#endif
 
 
 #if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
