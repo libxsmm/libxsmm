@@ -99,11 +99,17 @@ $(info ======================================)
 else
 	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
 		CXX = g++
+	else ifneq (0,$(shell $(CXX) --version 2> /dev/null; echo $$?))
+		CXX = g++
 	endif
 	ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
 		CC = gcc
+	else ifneq (0,$(shell $(CC) --version 2> /dev/null; echo $$?))
+		CC = gcc
 	endif
 	ifeq (,$(notdir $(shell which $(FC) 2> /dev/null)))
+		FC = $(shell which gfortran 2> /dev/null)
+	else ifneq (0,$(shell $(FC) --version 2> /dev/null; echo $$?))
 		FC = $(shell which gfortran 2> /dev/null)
 	endif
 endif
@@ -177,14 +183,16 @@ ifneq (,$(strip $(FC)))
 endif
 
 # native GCC
-GCC ?= $(shell echo $$((3==$(words $(filter g++ gcc gfortran,$(CXX_NAME) $(CC_NAME) $(FC_NAME))))))
+GCC ?= $(words $(filter g++ gcc gfortran,$(CXX_NAME) $(CC_NAME) $(FC_NAME)))
 ifneq (,$(strip $(FC)))
-	ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-		ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+		XLIB_BEGIN = -Wl,--as-needed
+		XLIB_END = -Wl,--no-as-needed
+		GCC = 1
+		ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+			GCC = 2
 			ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-				XLIB_BEGIN = -Wl,--as-needed
-				XLIB_END = -Wl,--no-as-needed
-				GCC = 1
+				GCC = 3
 			endif
 		endif
 	endif
@@ -213,7 +221,7 @@ ifneq (0,$(INTEL))
 else ifneq (0,$(GCC))
 	SUITE = GNU Compiler Collection
 else
-	SUITE = non-GNU compilers
+	SUITE = Other compilers
 endif
 
 ifneq (,$(strip $(FC)))
@@ -418,9 +426,13 @@ else # GCC assumed
 		CXXFLAGS += -finstrument-functions
 		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
-		ifneq (0,$(GCC)) # e.g. clang does not need/understand below flag
-			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		ifeq (1,$(GCC)) # e.g. clang does not need/understand below flag
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		endif
+		ifeq (2,$(GCC)) # e.g. clang does not need/understand below flag
+			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
+		endif
+		ifeq (3,$(GCC)) # e.g. clang does not need/understand below flag
 			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
 		endif
 		ifneq (Windows_NT,$(OS))
