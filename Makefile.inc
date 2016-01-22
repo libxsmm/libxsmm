@@ -178,6 +178,7 @@ ifneq (,$(strip $(FC)))
 endif
 
 # native GCC
+GCC ?= 0
 ifeq (gcc,$(CC_NAME))
 	GCC = 1
 else ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
