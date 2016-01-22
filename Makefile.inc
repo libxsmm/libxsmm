@@ -426,14 +426,15 @@ else # GCC assumed
 		CXXFLAGS += -finstrument-functions
 		CFLAGS += -finstrument-functions
 		FCFLAGS += -finstrument-functions
-		ifeq (1,$(GCC)) # e.g. clang does not need/understand below flag
+		# e.g. clang does not need/understand below flag
+		ifneq (0,$(shell echo $$((1 <= $(GCC)))))
 			CFLAGS += -finstrument-functions-exclude-function-list=_mm_
-		endif
-		ifeq (2,$(GCC)) # e.g. clang does not need/understand below flag
-			CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
-		endif
-		ifeq (3,$(GCC)) # e.g. clang does not need/understand below flag
-			FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
+			ifneq (0,$(shell echo $$((2 <= $(GCC)))))
+				CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_
+				ifneq (0,$(shell echo $$((3 <= $(GCC)))))
+					FCFLAGS += -finstrument-functions-exclude-function-list=_mm_
+				endif
+			endif
 		endif
 		ifneq (Windows_NT,$(OS))
 			ifneq (0,$(STATIC))
