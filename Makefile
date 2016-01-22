@@ -402,7 +402,7 @@ endif
 endif
 endif
 	$(eval TMPFILE = $(shell mktemp /tmp/fileXXXXXX))
-	@sed $@ \
+	@cat $@ | sed \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
