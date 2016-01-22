@@ -351,8 +351,10 @@ ifneq (0,$(INTEL))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
 		DFLAGS += -D__STATIC=1
 	else ifneq (0,$(STATIC))
-		SLDFLAGS += -static
-		DFLAGS += -D__STATIC=$(STATIC)
+		ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo $$?))
+			DFLAGS += -D__STATIC=$(STATIC)
+			SLDFLAGS += -static
+		endif
 	endif
 	ifneq (,$(strip $(R8)))
 		ifneq (0,$(R8))
@@ -633,9 +635,7 @@ else ifneq (0,$(BLAS)) # generic
 		BLAS_THREADS = o
 	endif
 	OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo $$?)
-	ifeq (1,$(OPENBLAS))
-		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
-	else
+	ifneq (0,$(OPENBLAS))
 		ifneq (Windows_NT,$(OS))
 			LDFLAGS += -lblas$(BLAS_BITS)
 		else
@@ -647,6 +647,8 @@ else ifneq (0,$(BLAS)) # generic
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
 			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 		endif
+	else
+		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	endif
 endif
 
