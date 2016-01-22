@@ -178,14 +178,24 @@ ifneq (,$(strip $(FC)))
 endif
 
 # native GCC
-GCC ?= $(words $(filter g++ gcc gfortran,$(CXX_NAME) $(CC_NAME) $(FC_NAME)))
-ifneq (,$(strip $(FC)))
-	ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-		XLIB_BEGIN = -Wl,--as-needed
-		XLIB_END = -Wl,--no-as-needed
-		GCC = 1
-		ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
-			GCC = 2
+ifeq (gcc,$(CC_NAME))
+	GCC = 1
+else ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+	GCC = 1
+endif
+ifeq (1,$(GCC))
+	# C Compiler is used for link stage
+	XLIB_BEGIN = -Wl,--as-needed
+	XLIB_END = -Wl,--no-as-needed
+	ifeq (g++,$(CXX_NAME))
+		GCC = 2
+	else ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
+		GCC = 2
+	endif
+	ifeq (2,$(GCC))
+		ifeq (gfortran,$(FC_NAME))
+			GCC = 3
+		else ifneq (,$(strip $(FC)))
 			ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(.\+\)) .*/\1/"))
 				GCC = 3
 			endif
