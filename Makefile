@@ -281,13 +281,15 @@ $(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@$(ROOTDIR)/.hooks/install.sh
+ifeq (0,$(OFFLOAD))
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
+	sed '/ATTRIBUTES OFFLOAD:MIC/d' > $@
+else
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
-ifeq (0,$(OFFLOAD))
-	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
-	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
-	@rm -f ${TMPFILE} 
 endif
 
 .PHONY: compile_generator_lib
@@ -395,16 +397,16 @@ ifneq (1,$(PRECISION))
 endif
 endif
 endif
-	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
-	@sed -i ${TMPFILE} \
+	$(eval TMPFILE = $(shell mktemp /tmp/fileXXXXXX))
+	@sed $@ \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/' \
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: " __FILE__)/d' \
-		$@
-	@rm -f ${TMPFILE}
-	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $@
+		> $(TMPFILE)
+	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
+	@mv $(TMPFILE) $@
 endif
 
 .PHONY: main
@@ -804,14 +806,12 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(SPLDIR)/nek/rstr-perf.sh $@
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
-	@pandoc -D latex > $(TEMPLATE)
-	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
-	@sed -i ${TMPFILE} \
+	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	@mv $(TMPFILE) $(TMPFILE).tex
+	@pandoc -D latex | sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		$(TEMPLATE)
-	@rm -f ${TMPFILE}
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
+		$(TMPFILE).tex
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
@@ -820,7 +820,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/README.md | \
 	pandoc \
-		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
+		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -830,18 +830,15 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TEMPLATE)
+	@rm $(TMPFILE).tex
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-
-	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
-	@pandoc -D latex > $(TEMPLATE)
-	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
-	@sed -i ${TMPFILE} \
+	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	@mv $(TMPFILE) $(TMPFILE).tex
+	@pandoc -D latex | sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		$(TEMPLATE)
-	@rm -f ${TMPFILE}
+		$(TMPFILE).tex
 	@sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
@@ -850,7 +847,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		$(ROOTDIR)/documentation/cp2k.md | \
 	pandoc \
-		--latex-engine=xelatex --template=$(TEMPLATE) --listings \
+		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
@@ -860,7 +857,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TEMPLATE)
+	@rm $(TMPFILE).tex
 
 .PHONY: documentation
 documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
