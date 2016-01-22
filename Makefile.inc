@@ -498,7 +498,7 @@ else # GCC assumed
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
 			CLDFLAGS += -fopenmp=$(OMP)
-		else ifneq (0,$(shell $(LD) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lgomp 2>&1 | grep -q gomp; echo $$?))
+		else ifneq (0,$(shell $(LD) $(SLDFLAGS) -lgomp 2>&1 | grep -q gomp; echo $$?))
 			CXXFLAGS += -fopenmp
 			CFLAGS += -fopenmp
 			FCFLAGS += -fopenmp
@@ -627,7 +627,7 @@ else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
 	endif
-	OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
+	OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
 	ifeq (1,$(OPENBLAS))
 		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	else
