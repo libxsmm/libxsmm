@@ -108,25 +108,31 @@ endif
 # linker setup
 LD = $(CC)
 
-CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\b.*/\1/")
+CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)\b.*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | $(CUT) -d"." -f3)
 ifeq (3,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR) $(CC_VERSION_PATCH)))
 	CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100 + $(CC_VERSION_PATCH)))")
+ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
+	CC_VERSION = $(shell echo "$$(($(CC_VERSION_MAJOR) * 10000 + $(CC_VERSION_MINOR) * 100))")
+	CC_VERSION_PATCH = 0
 else
 	CC_VERSION_STRING = $(NULL)
 	CC_VERSION = 0
 endif
 
 ifneq (,$(notdir $(shell which $(FC) 2> /dev/null)))
-	FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\b.*/\1/")
+	FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)\b.*/\1/")
 	FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
 	FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
 	FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
 endif
 ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
 	FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+	FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
+	FC_VERSION_PATCH = 0
 else
 	FC_VERSION_STRING = $(NULL)
 	FC_VERSION = 0
@@ -138,13 +144,16 @@ ifneq (,$(strip $(FC)))
 			ifneq (gfortran,$(notdir $(FC)))
 				FC = gfortran
 				ifneq (,$(notdir $(shell which $(FC) 2> /dev/null)))
-					FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\b.*/\1/")
+					FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)\b.*/\1/")
 					FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f1)
 					FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f2)
 					FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | $(CUT) -d"." -f3)
 				endif
 				ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
 					FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+				ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+					FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
+					FC_VERSION_PATCH = 0
 				else
 					FC_VERSION = 0
 				endif
