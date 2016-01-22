@@ -241,7 +241,7 @@ ifneq (0,$(INTEL))
 	CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-	LDFLAGS += $(XLIB_BEGIN) -lrt -ldl $(XLIB_END)
+	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	CXXFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	CFLAGS += -fPIC -Wall -diag-disable 3415,10010
 	FCFLAGS += -fPIC -diag-disable 10010
@@ -367,7 +367,7 @@ else # GCC assumed
 	CXXLDFLAGS += $(XLIB_BEGIN) -lc -lgfortran $(XLIB_END)
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ -lgfortran $(XLIB_END)
-	LDFLAGS += $(XLIB_BEGIN) -lrt -ldl $(XLIB_END)
+	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	CXXFLAGS += -Wall -Wno-unused-function
 	CFLAGS += -Wall -Wno-unused-function
 	ifeq (0,$(COMPATIBLE))
@@ -498,7 +498,7 @@ else # GCC assumed
 			# omit passing special OMP into Fortran compiler
 			FCFLAGS += -fopenmp
 			CLDFLAGS += -fopenmp=$(OMP)
-		else ifneq (0,$(shell $(LD) $(SLDFLAGS) -lgomp 2>&1 | grep -q gomp; echo $$?))
+		else ifneq (0,$(shell $(LD) $(SLDFLAGS) -lgomp 2>&1 | grep -q "\-lgomp"; echo $$?))
 			CXXFLAGS += -fopenmp
 			CFLAGS += -fopenmp
 			FCFLAGS += -fopenmp
@@ -524,6 +524,10 @@ else # GCC assumed
 	endif
 	OFFLOAD = 0
 	MIC = 0
+endif
+
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo $$?))
+	LDFLAGS += $(XLIB_BEGIN) -lrt $(XLIB_END)
 endif
 
 MAKE_ILP64 = 0
@@ -627,7 +631,7 @@ else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
 	endif
-	OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q openblas$(BLAS_THREADS)$(BLAS_BITS); echo $$?)
+	OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo $$?)
 	ifeq (1,$(OPENBLAS))
 		LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
 	else
