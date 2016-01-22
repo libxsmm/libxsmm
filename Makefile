@@ -285,7 +285,7 @@ $(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 ifeq (0,$(OFFLOAD))
-	@TMPFILE=`mktemp`
+	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
 	@sed -i ${TMPFILE} '/ATTRIBUTES OFFLOAD:MIC/d' $@
 	@rm -f ${TMPFILE} 
 endif
@@ -395,7 +395,7 @@ ifneq (1,$(PRECISION))
 endif
 endif
 endif
-	@TMPFILE=`mktemp`
+	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
 	@sed -i ${TMPFILE} \
 		-e 's/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/' \
 		-e 's/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/' \
@@ -806,7 +806,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@TMPFILE=`mktemp`
+	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
 	@sed -i ${TMPFILE} \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
@@ -836,7 +836,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 
 	$(eval TEMPLATE := $(shell mktemp --tmpdir=. --suffix=.tex))
 	@pandoc -D latex > $(TEMPLATE)
-	@TMPFILE=`mktemp`
+	@TMPFILE=$$(mktemp /tmp/fileXXXXXX)
 	@sed -i ${TMPFILE} \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
