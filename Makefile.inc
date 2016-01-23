@@ -372,6 +372,9 @@ else # GCC assumed
 		ifneq (,$(strip $(LIBGFORTRAN)))
 			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) $(XLIB_END)
 			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) $(XLIB_END)
+		else
+			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
+			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
 		endif
 	else
 		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
