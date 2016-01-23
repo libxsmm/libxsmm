@@ -20,7 +20,7 @@ addons:
     - libblas-dev
     - liblapack-dev
   artifacts: true
-  s3_region: "eu-central-1"
+  s3_region: "us-east-1"
 
 before_install:
   - pip install --user codecov
