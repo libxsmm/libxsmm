@@ -382,7 +382,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             munmap(code, cache[i].code_size);
 # else /* library code is expected to be mute */
             if (0 != munmap(code, code_size)) {
-              fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
+              fprintf(stderr, "LIBXSMM: %s (munmap error #%i)!\n", strerror(errno), errno);
             }
 # endif
           }
@@ -426,7 +426,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       *code = mmap(0, generated_code.code_size,
         /* must be a superset of what mprotect populates (see below) */
         PROT_READ | PROT_WRITE | PROT_EXEC,
-        MAP_PRIVATE, fd, 0);
+        MAP_ANON | MAP_PRIVATE, fd, 0);
       close(fd);
 
       if (MAP_FAILED != *code) {
@@ -437,7 +437,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 # else /* library code is expected to be mute */
         /* proceed even in case of an error, we then just take what we got (THP) */
         if (0 != madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE)) {
-          fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
+          fprintf(stderr, "LIBXSMM: %s (madvise error #%i)!\n", strerror(errno), errno);
         }
 # endif /*defined(NDEBUG)*/
 #else
@@ -475,9 +475,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if defined(NDEBUG)
           munmap(*code, generated_code.code_size);
 #else /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM: %s (mprotect)!\n", strerror(errno));
+          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i)!\n", strerror(errno), errno);
           if (0 != munmap(*code, generated_code.code_size)) {
-            fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
+            fprintf(stderr, "LIBXSMM: %s (munmap error #%i)!\n", strerror(errno), errno);
           }
 #endif
           free(generated_code.generated_code);
@@ -485,7 +485,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       }
       else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM: %s (mmap)!\n", strerror(errno));
+        fprintf(stderr, "LIBXSMM: %s (mmap error #%i)!\n", strerror(errno), errno);
 #endif
         free(generated_code.generated_code);
         /* clear MAP_FAILED value */
@@ -500,7 +500,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   }
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    fprintf(stderr, "%s\n", libxsmm_strerror(generated_code.last_error));
+    fprintf(stderr, "%s (error #%i)\n", libxsmm_strerror(generated_code.last_error), generated_code.last_error);
 #endif
     free(generated_code.generated_code);
   }
