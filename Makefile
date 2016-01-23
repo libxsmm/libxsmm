@@ -108,6 +108,9 @@ endif
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
+# Number of repeated calls (tests)
+TESTSIZE ?= 1000
+
 ifeq (1,$(AVX))
 	GENTARGET = snb
 else ifeq (2,$(AVX))
@@ -771,7 +774,7 @@ test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
 $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	@cd $(SPLDIR)/cp2k && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
-	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ 1000
+	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ $(TESTSIZE)
 
 .PHONY: perf-cp2k
 perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
@@ -785,7 +788,7 @@ test-smm: $(SPLDIR)/smm/smm-test.txt
 $(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	@cd $(SPLDIR)/smm && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
-	@$(SPLDIR)/smm/smmf-perf.sh $@ 1000
+	@$(SPLDIR)/smm/smmf-perf.sh $@ $(TESTSIZE)
 
 .PHONY: perf-smm
 perf-smm: $(SPLDIR)/smm/smmf-perf.txt
