@@ -368,7 +368,7 @@ else # GCC assumed
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	ifneq (,$(strip $(FC)))
-		LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
+		LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
 		ifneq (,$(strip $(LIBGFORTRAN)))
 			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) $(XLIB_END)
 			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) $(XLIB_END)
