@@ -368,8 +368,11 @@ else # GCC assumed
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	ifneq (,$(strip $(FC)))
-		CXXLDFLAGS += $(XLIB_BEGIN) -lc -lgfortran $(XLIB_END)
-		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ -lgfortran $(XLIB_END)
+		LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
+		ifneq (,$(strip $(LIBGFORTRAN)))
+			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) $(XLIB_END)
+			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) $(XLIB_END)
+		endif
 	else
 		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
 		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
@@ -649,7 +652,9 @@ else ifneq (0,$(BLAS)) # generic
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
 		ifneq (0,$(STATIC))
-			CLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+			ifneq (,$(strip $(LIBGFORTRAN)))
+				CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
+			endif
 		endif
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
 			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
