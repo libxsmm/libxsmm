@@ -12,12 +12,15 @@ matrix:
     compiler: gcc
 
 language: cpp
+
 addons:
   apt:
     packages:
     - gfortran
     - libblas-dev
     - liblapack-dev
+  artifacts: true
+  s3_region: "eu-west-1"
 
 before_install:
   - pip install --user codecov
