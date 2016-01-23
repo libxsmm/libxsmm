@@ -243,8 +243,8 @@ ifneq (0,$(INTEL))
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
 	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
-	CXXFLAGS += -fPIC -Wall -diag-disable 3415,10010
-	CFLAGS += -fPIC -Wall -diag-disable 3415,10010
+	CXXFLAGS += -fPIC -Wall -diag-disable 1879,3415,10010
+	CFLAGS += -fPIC -Wall -diag-disable 1879,3415,10010
 	FCFLAGS += -fPIC -diag-disable 10010
 	LDFLAGS += -fPIC
 	FCMTFLAGS += -threads
