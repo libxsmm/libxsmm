@@ -42,7 +42,7 @@ script:
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null; fi &&
+    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${LIBXSMM_COVID}.txt; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
@@ -50,7 +50,7 @@ script:
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> /dev/null; fi &&
+    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${LIBXSMM_COVID}.txt; fi &&
     eval ${LIBXSMM_RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
