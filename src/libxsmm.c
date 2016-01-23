@@ -70,6 +70,9 @@
 # endif
 #endif
 
+/* memory-map the actual file descriptor for the open /dev/zero */
+/*#define LIBXSMM_MMAP_DEVZERO*/
+
 /* larger cache capacity lowers the probability of key collisions; should be a prime number */
 #define LIBXSMM_CACHESIZE 999979
 /* flag fused into the memory address of a code version in case of collision */
@@ -419,16 +422,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 
   /* handle an eventual error in the else-branch */
   if (0 == generated_code.last_error) {
+#if defined(LIBXSMM_MMAP_DEVZERO)
     const int fd = open("/dev/zero", O_RDWR);
-
+#else
+    const int fd = 0;
+#endif
     if (0 <= fd) {
       /* create executable buffer */
       *code = mmap(0, generated_code.code_size,
         /* must be a superset of what mprotect populates (see below) */
         PROT_READ | PROT_WRITE | PROT_EXEC,
         MAP_ANON | MAP_PRIVATE, fd, 0);
+#if defined(LIBXSMM_MMAP_DEVZERO)
       close(fd);
-
+#endif
       if (MAP_FAILED != *code) {
         /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 #if defined(MADV_NOHUGEPAGE)
