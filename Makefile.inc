@@ -657,7 +657,9 @@ else ifneq (0,$(BLAS)) # generic
 			endif
 		endif
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+			ifneq (,$(strip $(LIBGFORTRAN))) # conclusion: quadmath available
+				CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+			endif
 		endif
 	endif
 endif
