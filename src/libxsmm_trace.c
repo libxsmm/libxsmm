@@ -58,8 +58,24 @@ int mkstemp(char* filename_template);
 # if defined(_REENTRANT)
 #   include <pthread.h>
 # endif
-# if (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
-     (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+# if defined(__APPLE__) && defined(__MACH__)
+/* taken from libtransmission fdlimit.c */
+LIBXSMM_INLINE
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, off_t length)
+{
+  fstore_t fst;
+  fst.fst_flags = F_ALLOCATECONTIG;
+  fst.fst_posmode = F_PEOFPOSMODE;
+  fst.fst_offset = offset;
+  fst.fst_length = length;
+  fst.fst_bytesalloc = 0;
+  return fcntl(fd, F_PREALLOCATE, &fst);
+}
+# elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
+       (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
 int posix_fallocate(int, off_t, off_t);
 # endif
