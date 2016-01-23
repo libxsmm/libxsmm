@@ -7,6 +7,9 @@ os:
 matrix:
   allow_failures:
   - os: osx
+  exclude:
+  - os: osx
+    compiler: gcc
 
 language: cpp
 addons:
