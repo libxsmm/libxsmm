@@ -432,7 +432,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       *code = mmap(0, generated_code.code_size,
         /* must be a superset of what mprotect populates (see below) */
         PROT_READ | PROT_WRITE | PROT_EXEC,
+#if defined(__APPLE__) && defined(__MACH__)
         MAP_ANON | MAP_PRIVATE, fd, 0);
+#else
+        MAP_PRIVATE, fd, 0);
+#endif
 #if defined(LIBXSMM_MMAP_DEVZERO)
       close(fd);
 #endif
