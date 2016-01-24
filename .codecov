@@ -1,5 +1,8 @@
 #!/bin/bash
 
+FIND=$(which find)
+GCOV=$(which gcov)
+
 #
 # This script is supposed to be source'd prior to building the library and samples using GNU GCC.
 # Executing "eval ${COVERAGE} (after building/running a case) yields code coverage information.
@@ -8,13 +11,19 @@
 if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
   TRAVIS_BUILD_DIR=.
 fi
+
+if [[ "${TRAVIS_JOB_NUMBER}" == "" ]]; then
+  TRAVIS_JOB_NUMBER=0.0
+fi
+
 if [[ "${COVID}" == "" ]]; then
   export COVID=1
 else
   export COVID=$((COVID+1))
 fi
-FIND=$(which find)
-GCOV=$(which gcov)
+
+export JOBID=$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2)
+export TESTSIZE=$(if [[ "${TRAVIS_OS_NAME}" != "osx" ]]; then echo 1000; else echo 13; fi)
 export EFLAGS="--coverage" ELDFLAGS="--coverage"
 export RUNGCOV="CWD=\${PWD}; for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno') ; do \
   FILENAME=\$(basename \${FILE} .gcno).o; \

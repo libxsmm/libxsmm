@@ -14,8 +14,6 @@ matrix:
     compiler: gcc
 
 env:
-  global:
-  - TESTSIZE=$(if [[ "${TRAVIS_OS_NAME}" != "osx" ]]; then echo 1000; else echo 13; fi)
   matrix:
   - LIBXSMM_JIT=0
   - LIBXSMM_JIT=1
@@ -29,12 +27,14 @@ addons:
     - libblas-dev
     - liblapack-dev
   artifacts:
-    #s3_region: "us-east-1"
-    bucket: ${ARTIFACTS_BUCKET}
+    target_paths: ""
+    bucket: libxsmm
     secret: ${ARTIFACTS_SECRET}
     key: ${ARTIFACTS_KEY}
     paths:
-    - $(rm -f artifacts.tar ; git ls-files -o | xargs tar rf artifacts.tar -T - ; echo artifacts.tar)
+    - $(rm -f artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar; \
+      git ls-files -o | xargs tar rf artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -; \
+      echo artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar)
 
 before_install:
   - pip install --user codecov
