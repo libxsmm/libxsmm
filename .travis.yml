@@ -32,8 +32,8 @@ addons:
     secret: ${ARTIFACTS_SECRET}
     key: ${ARTIFACTS_KEY}
     paths:
-    - $(rm -f artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar; \
-      git ls-files -o | xargs tar rf artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -; \
+    - $(rm -f artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar;
+      git ls-files -o | xargs tar rf artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -;
       echo artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar)
 
 before_install:
