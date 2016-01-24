@@ -12,6 +12,8 @@ matrix:
   exclude:
   - os: osx
     compiler: gcc
+    env:
+    - TESTSIZE=13
 
 env:
   - LIBXSMM_JIT=0
@@ -25,8 +27,11 @@ addons:
     - gfortran
     - libblas-dev
     - liblapack-dev
-  artifacts: true
-    s3_region: "us-east-1"
+  artifacts:
+    #s3_region: "us-east-1"
+    bucket: ${ARTIFACTS_BUCKET}
+    secret: ${ARTIFACTS_SECRET}
+    key: ${ARTIFACTS_KEY}
     paths:
     - $(rm -f artifacts.tar ; git ls-files -o | xargs tar rf artifacts.tar -T - ; echo artifacts.tar)
 
