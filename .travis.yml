@@ -27,14 +27,14 @@ addons:
     - libblas-dev
     - liblapack-dev
   artifacts:
-    target_paths: ""
+    target_paths: "artifacts"
     bucket: libxsmm
     secret: ${ARTIFACTS_SECRET}
     key: ${ARTIFACTS_KEY}
     paths:
-    - $(rm -f artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar;
-      git ls-files -o | xargs tar rf artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -;
-      echo artifacts-$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2).tar)
+    - $(rm -f $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar;
+      git ls-files -o | xargs tar rf $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -;
+      echo $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar)
 
 before_install:
   - pip install --user codecov
