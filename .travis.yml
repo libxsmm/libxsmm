@@ -12,10 +12,11 @@ matrix:
   exclude:
   - os: osx
     compiler: gcc
-    env:
-    - TESTSIZE=13
 
 env:
+  global:
+  - TESTSIZE=$(if [[ "${TRAVIS_OS_NAME}" != "osx" ]]; then echo 1000; else echo 13; fi)
+  matrix:
   - LIBXSMM_JIT=0
   - LIBXSMM_JIT=1
 
