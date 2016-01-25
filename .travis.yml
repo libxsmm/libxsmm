@@ -4,10 +4,19 @@ os:
 - linux
 - osx
 
+compiler:
+  - clang
+  - gcc
+
 matrix:
   exclude:
   - os: osx
     compiler: gcc
+
+env:
+  matrix:
+  - LIBXSMM_JIT=0
+  - LIBXSMM_JIT=1
 
 language: cpp
 
@@ -17,22 +26,21 @@ addons:
     - gfortran
     - libblas-dev
     - liblapack-dev
-  artifacts: true
-  s3_region: "us-east-1"
+  artifacts:
+    target_paths: "artifacts"
+    bucket: libxsmm
+    secret: ${ARTIFACTS_SECRET}
+    key: ${ARTIFACTS_KEY}
+    paths:
+    - $(rm -f $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar;
+      git ls-files -o | xargs tar rf $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar -T -;
+      echo $(echo ${TRAVIS_JOB_NUMBER} | cut -d. -f2).tar)
 
 before_install:
   - pip install --user codecov
 
 after_success:
-    eval ${LIBXSMM_CODECOV}
-
-compiler:
-  - clang
-  - gcc
-
-env:
-  - LIBXSMM_JIT=0
-  - LIBXSMM_JIT=1
+  - eval ${CODECOV}
 
 script:
   - cd ${TRAVIS_BUILD_DIR} &&
@@ -40,56 +48,56 @@ script:
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${LIBXSMM_COVID}.txt; fi &&
-    eval ${LIBXSMM_RUNGCOV}
+    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${COVID}.txt; fi &&
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean && make -e TRACE=1 &&
     cd ${TRAVIS_BUILD_DIR}/tests &&
     make ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" TRACE=1 test &&
-    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${LIBXSMM_COVID}.txt; fi &&
-    eval ${LIBXSMM_RUNGCOV}
+    if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then env LIBXSMM_TRACE=1 ./threadsafety 2> threadsafety-trace-${COVID}.txt; fi &&
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j test-cp2k &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j STATIC=0 test-cp2k &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-rm -j ECXXFLAGS="-DREAL_TYPE=float ${ECXXFLAGS}" test-cp2k &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j test-smm &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j SSE=0 test-smm &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-cm -j SSE=0 AVX=0 test-smm &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
   - cd ${TRAVIS_BUILD_DIR} &&
     if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     make -e clean &&
     ./make.sh -ci-nek -j test-nek &&
-    eval ${LIBXSMM_RUNGCOV}
+    eval ${RUNGCOV}
 
