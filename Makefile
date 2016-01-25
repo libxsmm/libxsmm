@@ -69,6 +69,7 @@ endif
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
+TSTDIR = $(ROOTDIR)/tests
 SRCDIR = $(ROOTDIR)/src
 INCDIR = include
 BLDDIR = build
@@ -557,7 +558,7 @@ $(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=\"23_23_23\"" >> $@
+	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -601,7 +602,7 @@ $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=\"23_23_23\"" >> $@
+	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -645,7 +646,7 @@ $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=\"23_23_23\"" >> $@
+	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -683,7 +684,7 @@ $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
 else
-	@echo "RUNS=\"23_23_23\"" >> $@
+	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
 	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
@@ -760,14 +761,19 @@ endif
 	@echo >> $@
 	@chmod +x $@
 
-.PHONY: tests
-tests: test-cp2k test-smm test-nek
-
 .PHONY: test
 test: test-cp2k
 
 .PHONY: perf
 perf: perf-cp2k
+
+.PHONY: test-all
+test-all: test-cp2k test-smm test-nek
+
+.PHONY: tests
+tests: lib_hst
+	@cd $(TSTDIR) && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
