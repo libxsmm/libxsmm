@@ -62,6 +62,12 @@
 # define LIBXSMM_LD(M, N) (N)
 #endif
 
+#if defined(LIBXSMM_SANITIZE_GEMM)
+# define LIBXSMM_MAX2(A, B) LIBXSMM_MAX(A, B)
+#else
+# define LIBXSMM_MAX2(A, B) (A)
+#endif
+
 /** Helper macro for aligning a buffer for aligned loads/store instructions. */
 #if (0 != (4/*LIBXSMM_GEMM_FLAG_ALIGN_A*/ & LIBXSMM_FLAGS) || 0 != (8/*LIBXSMM_GEMM_FLAG_ALIGN_C*/ & LIBXSMM_FLAGS))
 # define LIBXSMM_ALIGN_LDST(POINTER) LIBXSMM_ALIGN2(POINTER, LIBXSMM_ALIGNMENT)
@@ -156,12 +162,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
   const char libxsmm_blas_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
   const REAL libxsmm_blas_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_blas_xgemm_beta_ = (REAL)(BETA); \
-  const libxsmm_blasint libxsmm_blas_xgemm_lda_ = (libxsmm_blasint)LIBXSMM_MAX(LIBXSMM_LD(LDA, LDB), LIBXSMM_LD(M, N)); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (libxsmm_blasint)LIBXSMM_MAX(LIBXSMM_LD(LDB, LDA), K); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)LIBXSMM_MAX(LDC, LIBXSMM_LD(M, N)); \
+  const libxsmm_blasint libxsmm_blas_xgemm_lda_ = (libxsmm_blasint)LIBXSMM_MAX2(LIBXSMM_LD(LDA, LDB), LIBXSMM_LD(M, N)); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (libxsmm_blasint)LIBXSMM_MAX2(LIBXSMM_LD(LDB, LDA), K); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)LIBXSMM_MAX2(LDC, LIBXSMM_LD(M, N)); \
   const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)LIBXSMM_LD(M, N); \
   const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)LIBXSMM_LD(N, M); \
   const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(K); \
+  assert(libxsmm_blas_xgemm_m_ <= libxsmm_blas_xgemm_lda_); \
+  assert(libxsmm_blas_xgemm_k_ <= libxsmm_blas_xgemm_ldb_); \
+  assert(libxsmm_blas_xgemm_m_ <= libxsmm_blas_xgemm_ldc_); \
   assert(0 != ((uintptr_t)SYMBOL)); \
   SYMBOL(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
     &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \
@@ -197,6 +206,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const REAL libxsmm_inline_xgemm_beta_ = (REAL)(1 == (BETA) ? 1 : (0 == (BETA) ? 0 : (BETA))); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
+  assert(LIBXSMM_LD(M, N) <= LIBXSMM_LD(LDA, LDB)); \
+  assert((K) <= LIBXSMM_LD(LDB, LDA)); \
+  assert(LIBXSMM_LD(M, N) <= (LDC)); \
   LIBXSMM_PRAGMA_SIMD \
   for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)LIBXSMM_LD(M, N)); ++libxsmm_inline_xgemm_j_) { \
     LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_K, LIBXSMM_AVG_K) \
