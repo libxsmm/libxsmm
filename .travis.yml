@@ -26,6 +26,7 @@ addons:
     - gfortran
     - libblas-dev
     - liblapack-dev
+    - sshpass
 
 before_install:
   - pip install --user codecov
