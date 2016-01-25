@@ -247,7 +247,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   }
 }
 
-#else /*!defined(__STATIC)*/
+#elif !defined(__APPLE__) || !defined(__MACH__)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
@@ -324,6 +324,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMB
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 
-#endif /*defined(__STATIC)*/
+#endif
 #endif /*defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)*/
 
