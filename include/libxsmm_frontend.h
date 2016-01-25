@@ -62,6 +62,12 @@
 # define LIBXSMM_LD(M, N) (N)
 #endif
 
+#if !defined(LIBXSMM_SANITIZE_GEMM)
+# if defined(__APPLE__) && defined(__MACH__)
+#   define LIBXSMM_SANITIZE_GEMM
+# endif
+#endif
+
 /** Used to sanize GEMM arguments (LDx vs. M/N/K). */
 #if defined(LIBXSMM_SANITIZE_GEMM)
 # define LIBXSMM_MAX2(A, B) LIBXSMM_MAX(A, B)
