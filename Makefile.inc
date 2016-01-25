@@ -275,7 +275,10 @@ ifneq (0,$(INTEL))
 		else
 			DFLAGS += -DNDEBUG
 		endif
-	else
+	else # debugging enabled
+		ifneq (0,$(shell echo $$((1 < $(DBG)))))
+			DFLAGS += -D_DEBUG
+		endif
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0 -check
@@ -290,7 +293,7 @@ ifneq (0,$(INTEL))
 			LDFLAGS += -rdynamic
 		endif
 	endif
-	ifeq (1,$(shell echo $$((3 > $(DBG)))))
+	ifneq (0,$(shell echo $$((3 > $(DBG)))))
 		ifeq (0,$(COMPATIBLE))
 			ifeq (1,$(AVX))
 				TARGET = -xAVX
@@ -439,6 +442,9 @@ else # GCC assumed
 			DFLAGS += -DNDEBUG
 		endif
 	else
+		ifneq (0,$(shell echo $$((1 < $(DBG)))))
+			DFLAGS += -D_DEBUG
+		endif
 		CXXFLAGS += -O0
 		CFLAGS += -O0
 		FCFLAGS += -O0
@@ -470,7 +476,7 @@ else # GCC assumed
 	ifeq (0,$(GCC)) # fixup older Clang
 		DFLAGS += -D__extern_always_inline=inline
 	endif
-	ifeq (1,$(shell echo $$((3 > $(DBG)))))
+	ifneq (0,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -mavx
 		else ifeq (2,$(AVX))

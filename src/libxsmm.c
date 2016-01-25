@@ -455,7 +455,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         memcpy(*code, generated_code.generated_code, generated_code.code_size);
 
         if (0/*ok*/ == mprotect(*code, generated_code.code_size, PROT_EXEC | PROT_READ)) {
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && defined(_DEBUG)
           /* write buffer for manual decode as binary to a file */
           char objdump_name[512];
           FILE* byte_code;
@@ -471,7 +471,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
             fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
             fclose(byte_code);
           }
-#endif /*NDEBUG*/
+#endif /*!defined(NDEBUG) && defined(_DEBUG)*/
           /* free temporary/initial code buffer */
           free(generated_code.generated_code);
           /* finalize code generation */
