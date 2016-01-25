@@ -277,12 +277,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
       ((unsigned long long)(K)))) \
   { \
     const int libxsmm_xgemm_flags_ = (int)(FLAGS); \
-    const int libxsmm_xgemm_lda_ = (int)LIBXSMM_MAX2(LDA, M); \
-    const int libxsmm_xgemm_ldb_ = (int)LIBXSMM_MAX2(LDB, K); \
-    const int libxsmm_xgemm_ldc_ = (int)LIBXSMM_MAX2(LDC, M); \
+    const int libxsmm_xgemm_lda_ = (int)(LDA), libxsmm_xgemm_ldb_ = (int)(LDB), libxsmm_xgemm_ldc_ = (int)(LDC); \
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
     int libxsmm_xgemm_fallback_ = 0; \
-    assert((M) <= libxsmm_xgemm_lda_ && (K) <= libxsmm_xgemm_ldb_ && (M) <= libxsmm_xgemm_ldc_); \
     if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH) { \
       const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = \
         LIBXSMM_MMDISPATCH_SYMBOL(REAL)((int)(M), (int)(N), (int)(K), \
