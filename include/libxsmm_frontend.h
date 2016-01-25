@@ -62,9 +62,10 @@
 # define LIBXSMM_LD(M, N) (N)
 #endif
 
+/** Used to sanize GEMM arguments (LDx vs. M/N/K). */
 #if defined(LIBXSMM_SANITIZE_GEMM)
 # define LIBXSMM_MAX2(A, B) LIBXSMM_MAX(A, B)
-#else
+#else /* Argument B is not considered; pass-through A. */
 # define LIBXSMM_MAX2(A, B) (A)
 #endif
 
@@ -276,7 +277,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
       ((unsigned long long)(K)))) \
   { \
     const int libxsmm_xgemm_flags_ = (int)(FLAGS); \
-    const int libxsmm_xgemm_lda_ = (int)(LDA), libxsmm_xgemm_ldb_ = (int)(LDB), libxsmm_xgemm_ldc_ = (int)(LDC); \
+    const int libxsmm_xgemm_lda_ = (int)LIBXSMM_MAX2(LDA, M); \
+    const int libxsmm_xgemm_ldb_ = (int)LIBXSMM_MAX2(LDB, K); \
+    const int libxsmm_xgemm_ldc_ = (int)LIBXSMM_MAX2(LDC, M); \
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
     int libxsmm_xgemm_fallback_ = 0; \
     assert((M) <= libxsmm_xgemm_lda_ && (K) <= libxsmm_xgemm_ldb_ && (M) <= libxsmm_xgemm_ldc_); \
