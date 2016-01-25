@@ -1,38 +1,35 @@
 #!/bin/bash
-
-FIND=$(which find)
-GCOV=$(which gcov)
-
 #
 # This script is supposed to be source'd prior to building the library and samples using GNU GCC.
 # Executing "eval ${COVERAGE} (after building/running a case) yields code coverage information.
+# Prerequisite: source .env
 #
+FIND=$(which find)
+GCOV=$(which gcov)
 
-if [[ "${TRAVIS_BUILD_DIR}" == "" ]]; then
-  TRAVIS_BUILD_DIR=.
-fi
+EFLAGS="--coverage" ELDFLAGS="--coverage"
 
-if [[ "${TRAVIS_JOB_NUMBER}" == "" ]]; then
-  TRAVIS_JOB_NUMBER=0.0
-fi
-
-if [[ "${COVID}" == "" ]]; then
-  export COVID=1
+# count number of times the script got source'd
+if [[ "${COVID}" != "" ]]; then
+  COVID=$((COVID+1))
 else
-  export COVID=$((COVID+1))
+  COVID=1
 fi
 
-export JOBID=$(echo {TRAVIS_JOB_NUMBER} | cut -d. -f2)
-export TESTSIZE=$(if [[ "${TRAVIS_OS_NAME}" != "osx" ]]; then echo 1000; else echo 13; fi)
-export EFLAGS="--coverage" ELDFLAGS="--coverage"
-export RUNGCOV="CWD=\${PWD}; for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno') ; do \
-  FILENAME=\$(basename \${FILE} .gcno).o; \
-  FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
-  BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
-  cd \${FILEPATH}; \
-  ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
-  done; mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
-  ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
-    -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \;"
-export CODECOV="codecov"
+if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
+  RUNGCOV="CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
+      FILENAME=\$(basename \${FILE} .gcno).o; \
+      FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
+      BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
+      cd \${FILEPATH}; \
+      ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
+    done && \
+    mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
+    ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
+      -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID}\; && \
+    cd \${CWD}"
+  CODECOV="codecov"
+else
+  echo "Please run \"source .env\" first!"
+fi
 
