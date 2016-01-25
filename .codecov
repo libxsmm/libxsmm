@@ -26,7 +26,7 @@ if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
     done && \
     mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
     ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
-      -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID}\; && \
+      -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
     cd \${CWD}"
   CODECOV="codecov"
 else
