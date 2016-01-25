@@ -247,7 +247,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   }
 }
 
-#elif !defined(__APPLE__) || !defined(__MACH__)
+#else
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
