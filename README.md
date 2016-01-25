@@ -250,7 +250,7 @@ There might be situations in which it is up-front not clear which problem sizes 
 
 1. In order to stay agnostic to any threading model used, Pthread mutexes are guarding the updates of the JITted code cache (link line with -lpthread is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
 2. There is no support for the Intel SSE (Intel Xeon 5500/5600 series) and IMCI (Intel Xeon Phi coprocessor code-named Knights Corner) instruction set extensions. However, statically generated SSE-kernels can be leveraged without disabling support for JITting AVX kernels.
-3. There is no support for the Windows calling convention.
+3. There is no support for the Windows calling convention (only kernels with PREFETCH=0 signature).
 
 The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_JIT=0`). The latter is an environment variable which is also allowing to set a code path independent of the CPUID (LIBXSMM_JIT=0|1|snb|hsw|knl). Please note that LIBXSMM_JIT=1 is only supported for symmetry, and this environment setup cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
