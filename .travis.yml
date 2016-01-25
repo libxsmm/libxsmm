@@ -30,51 +30,48 @@ addons:
 before_install:
   - pip install --user codecov
 
-after_success:
-  - eval ${CODECOV}
-
 script:
   - source .env
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" tests &&
+    cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" tests &&
     if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" tests &&
+    cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" tests &&
     if [[ "${CXX}" != "g++" && "${TRAVIS_OS_NAME}" != "osx" ]]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && ./make.sh -ci-rm -j &&
+    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
     ./make.sh -ci-rm test-cp2k &&
     ./make.sh -ci-rm test-smm &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && ./make.sh -ci-cm -j &&
+    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && ./make.sh -ci-cm -j STATIC=0 &&
+    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j STATIC=0 &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm tests &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
+    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
-    cd ${TRAVIS_BUILD_DIR} && make -e clean && ./make.sh -ci-nek -j &&
+    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-nek -j &&
     ./make.sh -ci-nek test-nek &&
-    eval ${RUNGCOV}
+    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
