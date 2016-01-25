@@ -40,8 +40,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                  const unsigned int                  i_n_blocking,
-                                                 const unsigned int                  i_k_blocking,
-                                                 const int                           i_offset );
+                                                 const unsigned int                  i_k_blocking );
 
 #if 0
 void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
