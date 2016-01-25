@@ -27,6 +27,8 @@ addons:
     - libblas-dev
     - liblapack-dev
     - sshpass
+  ssh_known_hosts:
+  - ${UPLOAD_URL}
 
 before_install:
   - pip install --user codecov
