@@ -51,7 +51,6 @@ script:
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
     cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
     ./make.sh -ci-rm test-cp2k &&
-    ./make.sh -ci-rm test-smm &&
     eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - if [[ "${CXX}" == "g++" ]]; then source .codecov; fi &&
