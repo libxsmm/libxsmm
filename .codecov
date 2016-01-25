@@ -17,7 +17,7 @@ else
 fi
 
 if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
-  RUNGCOV="CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
+  RUNGCOV="(CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
       FILENAME=\$(basename \${FILE} .gcno).o; \
       FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
       BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
@@ -27,7 +27,7 @@ if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
     mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
     ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
       -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
-    cd \${CWD}"
+    cd \${CWD})"
   CODECOV="codecov"
 else
   echo "Please run \"source .env\" first!"
