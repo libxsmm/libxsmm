@@ -206,7 +206,7 @@ ifeq (1,$(GCC))
 endif
 
 # Select code path (if not selected otherwise)
-CPUFLAGS = $(shell if [[ -e /proc/cpuinfo ]] ; then grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2- ; fi)
+CPUFLAGS = $(shell if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | $(CUT) -d: -f2-; fi)
 ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
