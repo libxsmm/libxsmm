@@ -242,7 +242,6 @@ ifneq (0,$(INTEL))
 	CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
 	CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	CXXFLAGS += -fPIC -Wall -diag-disable 1879,3415,10010
 	CFLAGS += -fPIC -Wall -diag-disable 1879,3415,10010
 	FCFLAGS += -fPIC -diag-disable 10010
@@ -369,7 +368,6 @@ ifneq (0,$(INTEL))
 	endif
 else # GCC assumed
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-	LDFLAGS += $(XLIB_BEGIN) -ldl $(XLIB_END)
 	ifneq (,$(strip $(FC)))
 		ifneq (3,$(GCC))
 			LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
@@ -551,7 +549,13 @@ else # GCC assumed
 endif
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo $$?))
-	LDFLAGS += $(XLIB_BEGIN) -lrt $(XLIB_END)
+	LIBRT = -lrt
+endif
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo $$?))
+	LIBDL = -lrt
+endif
+ifneq (,$(strip $(LIBRT) $(LIBDL)))
+	LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
 
 MAKE_ILP64 = 0
@@ -601,9 +605,9 @@ ifeq (1,$(MKL)) # sequential
 			--end-group"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm -ldl
+	LDFLAGS += -lpthread -lm $(LIBDL)
 	ifneq (0,$(OFFLOAD))
-		LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
+		LDFLAGS += -offload-option,mic,ld,"-lm $(LIBDL)"
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL=$(MKL)
@@ -636,7 +640,7 @@ else ifneq (0,$(MKL)) # multi-threaded
 				$(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).a \
 				$(MKLROOT)/lib/intel64/libmkl_core.a \
 				$(MKLROOT)/lib/intel64/libmkl_gnu_thread.a \
-			-Wl,--end-group -ldl
+			-Wl,--end-group $(LIBDL)
 		endif
 	endif
 	ifneq (0,$(INTEL))
@@ -647,10 +651,10 @@ else ifneq (0,$(MKL)) # multi-threaded
 			endif
 		endif
 		ifneq (0,$(OFFLOAD))
-			LDFLAGS += -offload-option,mic,ld,"-lm -ldl"
+			LDFLAGS += -offload-option,mic,ld,"-lm $(LIBDL)"
 		endif
 	endif
-	LDFLAGS += -lpthread -lm -ldl
+	LDFLAGS += -lpthread -lm $(LIBDL)
 else ifneq (0,$(BLAS)) # generic
 	ifneq (1,$(BLAS))
 		BLAS_THREADS = o
