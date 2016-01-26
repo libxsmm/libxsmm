@@ -97,6 +97,54 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, con
 }
 
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm_(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  int flags = LIBXSMM_FLAGS;
+  flags = (0 != transa
+      ? (('N' == *transa || 'n' == *transa) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_A)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_A))
+      : flags);
+  flags = (0 != transb
+      ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
+      : flags);
+  assert(m && n && k && a && b && c);
+  LIBXSMM_SGEMM(flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm_(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  int flags = LIBXSMM_FLAGS;
+  flags = (0 != transa
+      ? (('N' == *transa || 'n' == *transa) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_A)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_A))
+      : flags);
+  flags = (0 != transb
+      ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
+                                            : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
+      : flags);
+  assert(m && n && k && a && b && c);
+  LIBXSMM_DGEMM(flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
