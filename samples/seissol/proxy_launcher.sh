@@ -24,6 +24,8 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+MAKE=$(which make)
 
 # Please adjust 
 SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
@@ -137,8 +139,8 @@ set -x
 if [ "${GENCODE}" == '1' ]; then
   # build libxsmm generator backend
   cd ${LIBXSMM_ROOT}
-#  make realclean
-  make generator
+#  ${MAKE} realclean
+  ${MAKE} generator
 
   cd ${SEISSOL_KERNELS_ROOT}/preprocessing
   rm -rf generated_code/*

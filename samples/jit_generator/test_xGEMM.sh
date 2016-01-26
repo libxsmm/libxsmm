@@ -24,6 +24,8 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+MAKE=$(which make)
 
 M="4 10 20 35 56 84"
 M="4 12 20 36 56 84"
@@ -33,8 +35,8 @@ M="4 12 20 36 56 84"
 
 cd ./../../
 
-#make realclean
-make generator
+#${MAKE} realclean
+${MAKE} generator
 
 #exit if compiler fails
 rc=$?; if [ $rc != 0 ]]; then exit $rc; fi
