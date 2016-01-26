@@ -43,6 +43,7 @@ install:
     fi
 
 after_success:
+  - eval ${RUNGCOV}
   - eval ${CODECOV} 
 
 before_script:
@@ -54,34 +55,34 @@ script:
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
     ./make.sh -ci-rm test-cp2k &&
     ./make.sh -ci-rm tests &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j STATIC=0 &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm tests &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 
   - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-nek -j &&
     ./make.sh -ci-nek test-nek &&
-    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
+    make -e clean-all
 

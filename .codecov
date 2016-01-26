@@ -17,7 +17,7 @@ if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
 
   if [ "$1" == "1" ]; then
     export ELDFLAGS="--coverage"
-    export EFLAGS="--coverage"
+    export EFLAGS="-g --coverage"
     export RUNGCOV="(CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
         FILENAME=\$(basename \${FILE} .gcno).o; \
         FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
@@ -27,7 +27,7 @@ if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
       done && \
       mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
       ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
-        -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
+        -exec cp {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
       cd \${CWD})"
     export CODECOV="codecov"
   else
