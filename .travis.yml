@@ -53,6 +53,7 @@ script:
   - source .codecov $(if [[ "${CXX}" == "g++" ]]; then echo 1; else echo 0; fi) &&
     cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
     ./make.sh -ci-rm test-cp2k &&
+    ./make.sh -ci-rm tests &&
     eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
 
   - source .codecov $(if [[ "${CXX}" == "g++" ]]; then echo 1; else echo 0; fi) &&
