@@ -32,56 +32,56 @@ addons:
     - sshpass
 
 before_install:
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew update; fi
+
+install:
   - pip install --user codecov
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      brew update;
-      curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
+      cd /tmp && curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
         tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make && sudo make install &&
-        cd ..;
+        cd ${TRAVIS_BUILD_DIR};
     fi
 
-script:
+after_success:
+  - eval ${CODECOV} 
+
+before_script:
   - source .env
+  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi)
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" tests &&
+script:
+  - cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" tests &&
+  - cd ${TRAVIS_BUILD_DIR} && make -e TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
+  - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-rm -j &&
     ./make.sh -ci-rm test-cp2k &&
     ./make.sh -ci-rm tests &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j &&
+  - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j STATIC=0 &&
+  - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j STATIC=0 &&
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm tests &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
+  - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
     ./make.sh -ci-cm test-smm &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-nek -j &&
+  - cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-nek -j &&
     ./make.sh -ci-nek test-nek &&
-    eval ${RUNGCOV} && eval ${CODECOV} && make -e clean-all && eval ${UPLOAD}
+    eval ${RUNGCOV} && make -e clean-all && eval ${UPLOAD} && make -e realclean-all
 
