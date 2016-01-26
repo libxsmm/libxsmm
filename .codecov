@@ -10,15 +10,15 @@ GCOV=$(which gcov)
 if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
   # count number of times the script got source'd
   if [[ "${COVID}" != "" ]]; then
-    COVID=$((COVID+1))
+    export COVID=$((COVID+1))
   else
-    COVID=1
+    export COVID=1
   fi
 
   if [[ "$1" == "1" ]]; then
-    ELDFLAGS="--coverage"
-    EFLAGS="--coverage"
-    RUNGCOV="(CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
+    export ELDFLAGS="--coverage"
+    export EFLAGS="--coverage"
+    export RUNGCOV="(CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
         FILENAME=\$(basename \${FILE} .gcno).o; \
         FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
         BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
@@ -29,12 +29,12 @@ if [[ "${TRAVIS_BUILD_DIR}" != "" ]]; then
       ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
         -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
       cd \${CWD})"
-    CODECOV="codecov"
+    export CODECOV="codecov"
   else
-    ELDFLAGS=""
-    EFLAGS=""
-    RUNGCOV=""
-    CODECOV=""
+    unset ELDFLAGS
+    unset EFLAGS
+    unset RUNGCOV
+    unset CODECOV
   fi
 else
   echo "Please run \"source .env\" first!"
