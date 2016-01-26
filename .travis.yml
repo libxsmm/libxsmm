@@ -9,6 +9,7 @@ compiler:
   - gcc
 
 matrix:
+  fast_finish: true
   allow_failures:
   - os: osx
   exclude:
