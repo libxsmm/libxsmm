@@ -723,13 +723,13 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture!\n" );
       break;
     case LIBXSMM_ERR_LDA:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda needs to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda needs to be larger or equal to m!\n" );
       break;
     case LIBXSMM_ERR_LDB:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb needs to be bigger than k!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb needs to be larger or equal to k!\n" );
       break;
     case LIBXSMM_ERR_LDC:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc needs to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc needs to be larger or equal to m!\n" );
       break;
     case LIBXSMM_ERR_SPARSE_GEN:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
