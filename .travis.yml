@@ -28,7 +28,7 @@ addons:
     - liblapack-dev
     - sshpass
   ssh_known_hosts:
-  - ${UPLOAD_URL}
+  - $UPLOAD_URL
 
 before_install:
   - pip install --user codecov

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0 .sh)

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 ECHO=$(which echo)
 CUT=$(which cut)

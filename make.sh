@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [[ "-cp2k" == "$1" ]] ; then
   shift

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 HERE=$(cd $(dirname $0); pwd -P)
 FILE=cp2k-perf.txt
