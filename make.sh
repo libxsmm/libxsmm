@@ -25,7 +25,7 @@ elif [ "-nekbone" == "$1" ]; then
   shift
   make -e $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
     BETA=0 THRESHOLD=$((324*324*18)) 
-elif [ "-ci-cm" == "$1" || "-ci" == "$1" ]; then
+elif [ "-ci-cm" == "$1" ] || [ "-ci" == "$1" ]; then
   shift
   make -e $* SYM=1 PEDANTIC=1 MNK=" \
     0 8 15, \

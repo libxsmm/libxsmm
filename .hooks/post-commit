@@ -4,7 +4,7 @@ VERSIONSCRIPT=${GIT_DIR}/hooks/version.sh
 VERSIONFILE=${GIT_DIR}/../version.txt
 LOCKFILE=${GIT_DIR}/.commit
 
-if [[ -e ${LOCKFILE} ]] ; then
+if [ -e ${LOCKFILE} ]; then
   ECHO=$(which echo)
   GREP=$(which grep)
   GIT=$(which git)
@@ -14,7 +14,7 @@ if [[ -e ${LOCKFILE} ]] ; then
   ${RM} ${LOCKFILE}
 
   ${GIT} diff --name-only | ${GREP} -q ${VERSIONFILE}
-  if [[ "0" != "$?" ]] ; then
+  if [ "0" != "$?" ]; then
     # update version file
     ${VERSIONSCRIPT} > ${VERSIONFILE}
     ${GIT} add ${VERSIONFILE}
