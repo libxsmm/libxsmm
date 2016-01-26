@@ -723,13 +723,13 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: unknown architecture!\n" );
       break;
     case LIBXSMM_ERR_LDA:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda need to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: lda needs to be bigger than m!\n" );
       break;
     case LIBXSMM_ERR_LDB:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb need to be bigger than k!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldb needs to be bigger than k!\n" );
       break;
     case LIBXSMM_ERR_LDC:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc need to be bigger than m!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc needs to be bigger than m!\n" );
       break;
     case LIBXSMM_ERR_SPARSE_GEN:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
@@ -756,7 +756,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
       break;
     case LIBXSMM_ERR_NO_IMCI:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: IMCI architecture requested but called for a different on!\n" );
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: IMCI architecture requested but called for a different one!\n" );
       break;
     case LIBXSMM_ERR_REG_BLOCK:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
@@ -798,10 +798,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: No destination jump label is available!\n");
       break;
     case LIBXSMM_ERR_EXCEED_JMPLBL:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: too many nested loop, exceed loop label tracker!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: too many nested loops, exceeding loop label tracker!\n");
       break;
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
-      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not alloc temporay memory for reading CSC file!\n");
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not allocate temporay memory for reading CSC file!\n");
       break;
     /* default, we didn't don't know what happend */
     default:
