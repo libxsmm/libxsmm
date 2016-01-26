@@ -36,7 +36,8 @@ before_install:
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       brew update;
       curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
-        tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make && sudo make install;
+        tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make && sudo make install &&
+        cd ..;
     fi
 
 script:
