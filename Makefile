@@ -551,7 +551,7 @@ nek_mic: lib_mic
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/cp2k/.make $(SPLDIR)/smm/smmf-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/rstr-perf.sh
 
 $(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
-	@echo "#!/bin/bash" > $@
+	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=cp2k-perf.txt" >> $@
@@ -561,11 +561,11 @@ else
 	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  SIZE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "else" >> $@
@@ -582,7 +582,7 @@ endif
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
-	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
@@ -595,7 +595,7 @@ endif
 	@chmod +x $@
 
 $(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
-	@echo "#!/bin/bash" > $@
+	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
@@ -605,11 +605,11 @@ else
 	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  SIZE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "else" >> $@
@@ -626,7 +626,7 @@ endif
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
-	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
@@ -639,7 +639,7 @@ endif
 	@chmod +x $@
 
 $(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/bin/bash" > $@
+	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/grad-perf.txt" >> $@
@@ -649,7 +649,7 @@ else
 	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
@@ -664,7 +664,7 @@ endif
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
-	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
@@ -677,7 +677,7 @@ endif
 	@chmod +x $@
 
 $(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/bin/bash" > $@
+	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
@@ -687,7 +687,7 @@ else
 	@echo "RUNS=\"23_23_23 4_6_9 13_5_7 24_3_36\"" >> $@
 endif
 	@echo >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
@@ -702,7 +702,7 @@ endif
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
-	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
@@ -715,7 +715,7 @@ endif
 	@chmod +x $@
 
 $(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
-	@echo "#!/bin/bash" > $@
+	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
 	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
@@ -727,7 +727,7 @@ else
 	@echo "RUNT=\"8_8_8\"" >> $@
 endif
 	@echo >> $@
-	@echo "if [[ \"\" != \"\$$1\" ]] ; then" >> $@
+	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
@@ -748,7 +748,7 @@ endif
 	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
-	@echo "  if [[ 0 != \$${RESULT} ]] ; then" >> $@
+	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
@@ -965,19 +965,19 @@ install-minimal: lib generator
 	@cp -uv $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@cp -uv $(OUTDIR)/libxsmmf.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@cp -uv $(OUTDIR)/libxsmmf.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@if [[ -e $(OUTDIR)/mic/libxsmm.so ]] ; then \
+	@if [ -e $(OUTDIR)/mic/libxsmm.so ]; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.so $(PREFIX)/$(POUTDIR)/mic ; \
 	fi
-	@if [[ -e $(OUTDIR)/mic/libxsmm.a ]] ; then \
+	@if [ -e $(OUTDIR)/mic/libxsmm.a ]; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.a $(PREFIX)/$(POUTDIR)/mic ; \
 	fi
-	@if [[ -e $(OUTDIR)/mic/libxsmmf.so ]] ; then \
+	@if [ -e $(OUTDIR)/mic/libxsmmf.so ]; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmmf.so $(PREFIX)/$(POUTDIR)/mic ; \
 	fi
-	@if [[ -e $(OUTDIR)/mic/libxsmmf.a ]] ; then \
+	@if [ -e $(OUTDIR)/mic/libxsmmf.a ]; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmmf.a $(PREFIX)/$(POUTDIR)/mic ; \
 	fi

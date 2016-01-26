@@ -5,7 +5,7 @@ NAME=$(basename $0 .sh)
 GREP=$(which grep)
 ENV=$(which env)
 
-if [[ "Windows_NT" == "${OS}" ]] ; then
+if [ "Windows_NT" == "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
@@ -15,16 +15,16 @@ else
 fi
 
 MICINFO=$(which micinfo 2> /dev/null)
-if [[ "" != "${MICINFO}" ]] ; then
+if [ "" != "${MICINFO}" ]; then
   MICCORES=$("${MICINFO}" | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
 fi
-if [[ "" == "${MICCORES}" ]] ; then
+if [ "" == "${MICCORES}" ]; then
   MICCORES=61
 fi
 MICTPERC=3
 
-if [[ "-mic" != "$1" ]] ; then
-  if [[ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]] ; then
+if [ "-mic" != "$1" ]; then
+  if [ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \

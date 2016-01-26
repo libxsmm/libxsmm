@@ -37,7 +37,7 @@ cd ./../../
 make generator
 
 #exit if compiler fails
-rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+rc=$?; if [ $rc != 0 ]]; then exit $rc; fi
 
 cd ./samples/jit_generator/
 

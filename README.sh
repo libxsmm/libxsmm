@@ -3,7 +3,7 @@
 HERE=$(cd $(dirname $0); pwd -P)
 
 # output directory
-if [[ "" != "$1" ]] ; then
+if [ "" != "$1" ]; then
   DOCDIR=$1
   shift
 else

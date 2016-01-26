@@ -3,15 +3,15 @@
 HERE=$(cd $(dirname $0); pwd -P)
 VARIANT=Cached
 
-if [[ "" != "$1" ]] ; then
+if [ "" != "$1" ]; then
   VARIANT=$1
   shift
 fi
 
-if [[ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]] ; then
+if [ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files/gnuplot/bin/gnuplot
-elif [[ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]] ; then
+elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
@@ -21,7 +21,7 @@ fi
 
 GNUPLOT_MAJOR=0
 GNUPLOT_MINOR=0
-if [[ -f "${GNUPLOT}" ]] ; then
+if [ -f "${GNUPLOT}" ]; then
   GNUPLOT_MAJOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
   GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
 fi
@@ -43,14 +43,14 @@ function capturedTxtToDataFile {
   > ${HERE}/$1.dat
 }
 
-if [[ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]] ; then
-  if [[ "" == "$1" ]] ; then
+if [ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]; then
+  if [ "" == "$1" ]; then
     FILENAME=smm-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
   fi
-  if [[ "" == "$1" ]] ; then
+  if [ "" == "$1" ]; then
     MULTI=1
   else
     MULTI=$1

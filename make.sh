@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [[ "-cp2k" == "$1" ]] ; then
+if [ "-cp2k" == "$1" ]; then
   shift
   make -e $* \
   PRECISION=2 PREFETCH=1 \
@@ -17,23 +17,23 @@ if [[ "-cp2k" == "$1" ]] ; then
     32 29 55, \
     12, \
     4 5 7 9 13 25 26 28 32 45"
-elif [[ "-nek" == "$1" ]] ; then
+elif [ "-nek" == "$1" ]; then
   shift
   make -e $* M="4 8 10 12 16 64 100 144" N="4 8 10 12 16 64 100 144" K="4 8 10 12" \
     BETA=0 THRESHOLD=$((144*144*12))
-elif [[ "-nekbone" == "$1" ]] ; then
+elif [ "-nekbone" == "$1" ]; then
   shift
   make -e $* M="10 16 18 100 256 324" N="10 16 18 100 256 324" K="10 16 18" \
     BETA=0 THRESHOLD=$((324*324*18)) 
-elif [[ "-ci-cm" == "$1" || "-ci" == "$1" ]] ; then
+elif [ "-ci-cm" == "$1" || "-ci" == "$1" ]; then
   shift
   make -e $* SYM=1 PEDANTIC=1 MNK=" \
     0 8 15, \
     23 24 42"
-elif [[ "-ci-rm" == "$1" ]] ; then
+elif [ "-ci-rm" == "$1" ]; then
   shift
   make -e $* SYM=1 PEDANTIC=1 ROW_MAJOR=1 MNK="9 7 3, 23"
-elif [[ "-ci-nek" == "$1" ]] ; then
+elif [ "-ci-nek" == "$1" ]; then
   shift
   make -e $* SYM=1 PEDANTIC=1 M="4 8" N="4 8" K="4 8" 
 else

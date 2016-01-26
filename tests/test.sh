@@ -4,7 +4,7 @@ HERE=$(cd $(dirname $0); pwd -P)
 GREP=$(which grep)
 ENV=$(which env)
 
-if [[ "Windows_NT" == "${OS}" ]] ; then
+if [ "Windows_NT" == "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
@@ -24,8 +24,8 @@ for TEST in ${TESTS} ; do
   echo -n "${NTEST} of ${NMAX} (${NAME})... "
 
   ERROR=$({
-  if [[ "-mic" != "$1" ]] ; then
-    if [[ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]] ; then
+  if [ "-mic" != "$1" ]; then
+    if [ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         KMP_AFFINITY=scatter,granularity=fine,1 \
         MIC_KMP_AFFINITY=scatter,granularity=fine \
@@ -46,7 +46,7 @@ for TEST in ${TESTS} ; do
       -e "KMP_AFFINITY=scatter,granularity=fine"
   fi > /dev/null; } 2>&1)
   RESULT=$?
-  if [[ 0 != ${RESULT} ]] ; then
+  if [ 0 != ${RESULT} ]; then
     echo "FAILED(${RESULT}) ${ERROR}"
     exit 1
   else

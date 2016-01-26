@@ -7,7 +7,7 @@ LOCKFILE=${GIT_DIR}/.commit
 CP=$(which cp)
 RM=$(which rm)
 
-if [[ -e ${GIT_DIR}/hooks ]] ; then
+if [ -e ${GIT_DIR}/hooks ]; then
   ${CP} ${HERE}/version.sh ${GIT_DIR}/hooks
   ${CP} ${HERE}/pre-commit ${GIT_DIR}/hooks
   ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks
