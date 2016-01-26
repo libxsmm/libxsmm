@@ -2,7 +2,7 @@
 
 MAKE=$(which make)
 
-if [ "-cp2k" == "$1" ]; then
+if [ "$1" == "-cp2k" ]; then
   shift
   ${MAKE} -e $* \
   PRECISION=2 PREFETCH=1 \
