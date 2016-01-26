@@ -2,7 +2,7 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 
-if [ "-2" == "$1" ]; then
+if [ "-2" = "$1" ]; then
   shift
   RUNS=" \
     2_2_2 \

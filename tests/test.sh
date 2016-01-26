@@ -4,7 +4,7 @@ HERE=$(cd $(dirname $0); pwd -P)
 GREP=$(which grep)
 ENV=$(which env)
 
-if [ "Windows_NT" == "${OS}" ]; then
+if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")

@@ -44,13 +44,13 @@ function capturedTxtToDataFile {
 }
 
 if [ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]; then
-  if [ "" == "$1" ]; then
+  if [ "" = "$1" ]; then
     FILENAME=smm-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
   fi
-  if [ "" == "$1" ]; then
+  if [ "" = "$1" ]; then
     MULTI=1
   else
     MULTI=$1

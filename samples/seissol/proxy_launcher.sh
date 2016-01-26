@@ -25,7 +25,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-MAKE=$(which make)
+MAKE=${MAKE:-make}
 
 # Please adjust 
 SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
@@ -186,7 +186,7 @@ else
   # running on regular CPU
   export OMP_NUM_THREADS=${CORES}
   NPROCS=`cat /proc/cpuinfo | grep "core id" | wc -l`
-  if [ "${NPROCS}" == "${CORES}" ]; then
+  if [ "${NPROCS}" = "${CORES}" ]; then
     export KMP_AFFINITY=compact,granularity=thread,explicit,verbose
   else
     export KMP_AFFINITY=proclist=[0-$((CORES-1))],granularity=thread,explicit,verbose

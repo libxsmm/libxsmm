@@ -29,7 +29,7 @@ if [ "" != "${BC}" ]; then
   AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 
-  if [ "0" == "$((NUM % 2))" ]; then
+  if [ "0" = "$((NUM % 2))" ]; then
     A=$(echo ${PERF} | cut -d" " -f${NUM2})
     B=$(echo ${PERF} | cut -d" " -f$((NUM2 + 1)))
     MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
@@ -61,13 +61,13 @@ fi
 
 SED=$(which sed)
 if [ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]; then
-  if [ "" == "$1" ]; then
+  if [ "" = "$1" ]; then
     FILENAME=cp2k-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
   fi
-  if [ "" == "$1" ]; then
+  if [ "" = "$1" ]; then
     MULTI=1
   else
     MULTI=$1
