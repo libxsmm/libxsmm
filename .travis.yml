@@ -1,4 +1,4 @@
-sudo: false
+#sudo: false
 
 os:
 - linux
@@ -35,7 +35,8 @@ before_install:
   - pip install --user codecov
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       brew update;
-      brew install sshpass;
+      curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
+        tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make && sudo make install;
     fi
 
 script:
