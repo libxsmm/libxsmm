@@ -1002,3 +1002,17 @@ install: install-minimal
 	@cp -uv $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
 endif
 
+.PHONY: install-all
+ifneq ($(abspath $(PREFIX)),$(abspath .))
+install-all: install samples
+	@echo
+	@echo "LIBXSMM installing samples..."
+	@cp -uv $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.exe cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/smm/,smm smm.exe smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/smm/,specialized specialized.exe specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/smm/,dispatched dispatched.exe dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/smm/,inlined inlined.exe inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/smm/,blas blas.exe blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -uv $(addprefix $(SPLDIR)/nek/,axhm axhm.exe grad grad.exe rstr rstr.exe *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+endif
+
