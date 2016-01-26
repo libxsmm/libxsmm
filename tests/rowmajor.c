@@ -24,7 +24,7 @@ int main()
 {
 #if 0 != LIBXSMM_ROW_MAJOR
   const libxsmm_blasint m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
-  REAL_TYPE a[k*lda], b[n*ldb], c[n*ldc], d[n*ldc];
+  REAL_TYPE a[K*LDA], b[N*LDB], c[N*LDC], d[N*LDC];
   const REAL_TYPE alpha = 1, beta = 1;
   const char notrans = 'N';
   double d2 = 0;
