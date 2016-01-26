@@ -56,7 +56,7 @@ script:
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
@@ -65,7 +65,7 @@ script:
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
@@ -73,7 +73,7 @@ script:
     ./make.sh -ci-rm test-cp2k &&
     ./make.sh -ci-rm tests &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
@@ -81,7 +81,7 @@ script:
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm test-smm &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
@@ -89,20 +89,20 @@ script:
     ./make.sh -ci-cm test-cp2k &&
     ./make.sh -ci-cm tests &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
     cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-cm -j SSE=0 AVX=0 &&
     ./make.sh -ci-cm test-smm &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
     cd ${TRAVIS_BUILD_DIR} && ./make.sh -ci-nek -j &&
     ./make.sh -ci-nek test-nek &&
     make -e install-all PREFIX=libxsmm &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar xfz ${UPLOAD_FILE} libxsmm &&
+    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
     eval ${UPLOAD} && make -e clean-all
 
