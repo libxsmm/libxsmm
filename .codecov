@@ -20,7 +20,7 @@ if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
   if [ "$1" = "1" ]; then
     export ELDFLAGS="--coverage"
     export EFLAGS="--coverage"
-    export RUNGCOV="(CWD=\${PWD} && COVLOG=codecov-\${COVID}.txt && ${CAT} /dev/null > \${COVLOG} \
+    export RUNGCOV="(CWD=\${PWD} && COVLOG=codecov-\${COVID}.txt && ${CAT} /dev/null > \${COVLOG} && \
       for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
         FILENAME=\$(basename \${FILE} .gcno).o && \
         FILEPATH=\$(echo \${FILE} | ${SED} -e 's/\(.\+\)build.\+/\1/g') && \
