@@ -464,7 +464,9 @@ else # GCC assumed
 		endif
 		ifneq (Windows_NT,$(OS))
 			ifneq (0,$(STATIC))
-				LDFLAGS += -rdynamic
+				ifeq (3,$(GCC))
+					LDFLAGS += -rdynamic
+				endif
 			endif
 		else
 			LDFLAGS += -ldbghelp
