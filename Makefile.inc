@@ -534,8 +534,8 @@ else # GCC assumed
 		endif
 	endif
 	ifneq (0,$(STATIC))
+		DFLAGS += -D__STATIC=$(STATIC)
 		ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo $$?))
-			DFLAGS += -D__STATIC=$(STATIC)
 			SLDFLAGS += -static
 		endif
 	endif

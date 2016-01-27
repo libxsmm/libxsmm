@@ -193,7 +193,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_dgemm(const char* transa
  * A cross-OS based approach could be based on http://www.pintool.org/ and might
  * also help instrumenting and tracing calls (TRACE).
  */
-#if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
+#if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__))
 #if defined(__STATIC)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
