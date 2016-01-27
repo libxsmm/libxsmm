@@ -4,8 +4,11 @@
 # Executing "eval ${COVERAGE} (after building/running a case) yields code coverage information.
 # Prerequisite: source .env
 #
+MKDIR=$(which mkdir)
 FIND=$(which find)
 GCOV=$(which gcov)
+SED=$(which sed)
+CAT=$(which cat)
 
 if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
   # count number of times the script got source'd
@@ -14,21 +17,22 @@ if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
   else
     export COVID=1
   fi
-
   if [ "$1" = "1" ]; then
     export ELDFLAGS="--coverage"
     export EFLAGS="--coverage"
-    export RUNGCOV="(CWD=\${PWD} && for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
-        FILENAME=\$(basename \${FILE} .gcno).o; \
-        FILEPATH=\$(echo \${FILE} | sed -e 's/\(.\+\)build.\+/\1/g'); \
-        BUILD=\$(dirname \${FILE} | sed -e 's/^.\+\(build.*\)/\1/g'); \
-        cd \${FILEPATH}; \
-        ${GCOV} -o \${BUILD} -pb \${FILENAME}; \
+    export RUNGCOV="(CWD=\${PWD} && COVLOG=codecov-\${COVID}.txt && ${CAT} /dev/null > \${COVLOG} \
+      for FILE in \$(${FIND} ${TRAVIS_BUILD_DIR} -type f -name '*.gcno'); do \
+        FILENAME=\$(basename \${FILE} .gcno).o && \
+        FILEPATH=\$(echo \${FILE} | ${SED} -e 's/\(.\+\)build.\+/\1/g') && \
+        BUILD=\$(dirname \${FILE} | ${SED} -e 's/^.\+\(build.*\)/\1/g') && \
+        cd \${FILEPATH} && \
+        ${GCOV} -o \${BUILD} -pb \${FILENAME} >> \${COVLOG}; \
       done && \
+      cd \${CWD})"
+    export RUNXCOV="(eval \${RUNGCOV} && \
       mkdir -p ${TRAVIS_BUILD_DIR}/codecov/${COVID} && \
       ${FIND} ${TRAVIS_BUILD_DIR} -not \( -path ${TRAVIS_BUILD_DIR}/codecov -prune \) -type f -name '*.gcov' \
-        -exec cp {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \; && \
-      cd \${CWD})"
+        -exec mv {} ${TRAVIS_BUILD_DIR}/codecov/${COVID} \;)"
     export CODECOV="codecov"
   else
     unset ELDFLAGS

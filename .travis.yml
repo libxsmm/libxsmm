@@ -17,6 +17,8 @@ matrix:
     compiler: gcc
 
 env:
+  global:
+  - UPLOAD_DIR=libxsmm
   matrix:
   - LIBXSMM_JIT=0
   - LIBXSMM_JIT=1
@@ -50,50 +52,36 @@ before_script:
 
 script:
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    make -e -j PREFIX=libxsmm TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-all tests &&
+    make -e -j PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-all tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    make -e -j PREFIX=libxsmm TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-all tests &&
+    make -e -j PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-all tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm -j PREFIX=libxsmm install-all test-cp2k tests &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    ./make.sh -ci-rm -j PREFIX=${UPLOAD_DIR} install-all test-cp2k tests &&
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=libxsmm install-all test-cp2k test-smm &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} install-all test-cp2k test-smm &&
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=libxsmm STATIC=0 install-all test-cp2k tests &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} STATIC=0 install-all test-cp2k tests &&
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=libxsmm SSE=0 AVX=0 install-all test-smm &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 install-all test-smm &&
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-nek -j PREFIX=libxsmm install-all test-nek &&
-    eval ${RUNGCOV} &&
-    UPLOAD_FILE=artifact-${JOBID}-${COVID}.tgz && tar cfz ${UPLOAD_FILE} libxsmm &&
-    eval ${UPLOAD} && make -e clean-all
+    ./make.sh -ci-nek -j PREFIX=${UPLOAD_DIR} install-all test-nek &&
+    eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
 

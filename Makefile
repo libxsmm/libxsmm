@@ -986,7 +986,7 @@ install-minimal: lib generator
 	@cp -uv $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
 	@cp -uv $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
 else
-install-minimal: lib
+install-minimal: lib generator
 endif
 
 .PHONY: install
@@ -1014,5 +1014,7 @@ install-all: install samples
 	@cp -uv $(addprefix $(SPLDIR)/smm/,inlined inlined.exe inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
 	@cp -uv $(addprefix $(SPLDIR)/smm/,blas blas.exe blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
 	@cp -uv $(addprefix $(SPLDIR)/nek/,axhm axhm.exe grad grad.exe rstr rstr.exe *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+else
+install-all: samples
 endif
 
