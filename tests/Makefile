@@ -99,7 +99,7 @@ XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
 all: $(XFILES)
 
 $(OUTDIR)/%: $(BLDDIR)/%-c.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $< $(LIBNAME).$(LIBEXT) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $< $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-mod.o: $(DEPDIR)/include/%.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(dir $@)
