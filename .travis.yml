@@ -1,4 +1,4 @@
-#sudo: false
+sudo: false
 
 os:
 - linux
@@ -15,6 +15,7 @@ matrix:
   exclude:
   - os: osx
     compiler: gcc
+    sudo: true
 
 env:
   global:

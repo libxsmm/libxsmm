@@ -242,11 +242,11 @@ $(INCDIR)/libxsmm.h: $(INCDIR)/.make \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile
 	@$(ROOTDIR)/.hooks/install.sh
-	@cp -u $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
-	@cp -u $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
-	@cp -u $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
-	@cp -u $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
-	@cp -u $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
@@ -959,12 +959,12 @@ install-minimal: lib generator
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR)
-	@cp -uv $(OUTDIR)/libxsmmgen.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/libxsmmgen.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/libxsmmf.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -uv $(OUTDIR)/libxsmmf.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmgen.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmgen.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmf.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmf.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmm.so ]; then \
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmm.so $(PREFIX)/$(POUTDIR)/mic ; \
@@ -981,10 +981,10 @@ install-minimal: lib generator
 		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmmf.a $(PREFIX)/$(POUTDIR)/mic ; \
 	fi
-	@cp -uv $(BINDIR)/libxsmm_generator $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR)
-	@cp -uv $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
-	@cp -uv $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
+	@cp -v $(BINDIR)/libxsmm_generator $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR)
+	@cp -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
+	@cp -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
 else
 install-minimal: lib generator
 endif
@@ -995,11 +995,11 @@ install: install-minimal
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
-	@cp -uv $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
-	@cp -uv $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
-	@cp -uv $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
-	@cp -uv $(ROOTDIR)/README.md $(PREFIX)/$(PDOCDIR)
-	@cp -uv $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/README.md $(PREFIX)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
 endif
 
 .PHONY: install-all
@@ -1007,13 +1007,13 @@ ifneq ($(abspath $(PREFIX)),$(abspath .))
 install-all: install samples
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@cp -uv $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.exe cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/smm/,smm smm.exe smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/smm/,specialized specialized.exe specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/smm/,dispatched dispatched.exe dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/smm/,inlined inlined.exe inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/smm/,blas blas.exe blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -uv $(addprefix $(SPLDIR)/nek/,axhm axhm.exe grad grad.exe rstr rstr.exe *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.exe cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.exe smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.exe specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.exe dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.exe inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.exe blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/nek/,axhm axhm.exe grad grad.exe rstr rstr.exe *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
 else
 install-all: samples
 endif
