@@ -93,29 +93,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
 
-/** Dispatched general dense matrix multiplication (single-precision). */
+/** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-/** Dispatched general dense matrix multiplication (double-precision). */
+/** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc);
-
-/** Dispatched general dense matrix multiplication (single-precision), can be called from F77 codes. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm_(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
-
-/** Dispatched general dense matrix multiplication (double-precision), can be called from F77 codes. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm_(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
