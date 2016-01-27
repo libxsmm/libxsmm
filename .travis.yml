@@ -51,41 +51,41 @@ before_script:
   - source .env
 
 script:
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    make -e -j PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-dev tests &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    make -e PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-dev tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    make -e -j PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-dev tests &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    make -e PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-dev tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm -j PREFIX=${UPLOAD_DIR} STATIC=0 install-dev tests test-cp2k &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} STATIC=0 install-dev tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm -j PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} STATIC=0 install-dev tests test-cp2k test-smm &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} STATIC=0 install-dev tests test-cp2k test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k test-smm &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm -j PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 install-dev test-smm &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 install-dev test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
-  - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-nek -j PREFIX=${UPLOAD_DIR} install-dev test-nek &&
+  - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
+    ./make.sh -ci-nek PREFIX=${UPLOAD_DIR} install-dev test-nek &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 

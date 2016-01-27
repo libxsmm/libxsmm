@@ -30,8 +30,8 @@ elif [ "-nekbone" = "$1" ]; then
 elif [ "-ci-cm" = "$1" ] || [ "-ci" = "$1" ]; then
   shift
   ${MAKE} -e $* SYM=1 PEDANTIC=1 MNK=" \
-    0 8 15, \
-    23 24 42"
+    0 8 23, \
+    1 2"
 elif [ "-ci-rm" = "$1" ]; then
   shift
   ${MAKE} -e $* SYM=1 PEDANTIC=1 ROW_MAJOR=1 MNK="9 7 3, 23"

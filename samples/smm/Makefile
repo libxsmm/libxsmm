@@ -46,8 +46,14 @@ else
 endif
 ifneq (0,$(STATIC))
 	LIBEXT ?= a
+	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
+		LIBEXT = so
+	endif
 else
 	LIBEXT ?= so
+	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
+		LIBEXT = a
+	endif
 endif
 
 OUTNAME := $(shell basename $(ROOTDIR))
