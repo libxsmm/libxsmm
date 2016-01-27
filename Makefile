@@ -576,21 +576,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
-	@echo "  >&2 \$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
+	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    ${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    ${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  ${ECHO} >> \$${FILE}" >> $@
+	@echo "  \$${ECHO} >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -621,21 +621,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
-	@echo "  >&2 \$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
+	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    ${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    ${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  ${ECHO} >> \$${FILE}" >> $@
+	@echo "  \$${ECHO} >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -660,21 +660,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
-	@echo "  >&2 \$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
+	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    ${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    ${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  ${ECHO} >> \$${FILE}" >> $@
+	@echo "  \$${ECHO} >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -699,21 +699,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
-	@echo "  >&2 \$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | $(CUT) -d_ -f3)" >> $@
+	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    ${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    ${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  ${ECHO} >> \$${FILE}" >> $@
+	@echo "  \$${ECHO} >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -740,27 +740,27 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NRUNS=\$$(${ECHO} \$${RUNS} | wc -w)" >> $@
-	@echo "NRUNT=\$$(${ECHO} \$${RUNT} | wc -w)" >> $@
+	@echo "NRUNS=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NRUNT=\$$(\$${ECHO} \$${RUNT} | wc -w)" >> $@
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
-	@echo "  MVALUE=\$$(${ECHO} \$${RUN1} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(${ECHO} \$${RUN1} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(${ECHO} \$${RUN1} | $(CUT) -d_ -f3)" >> $@
-	@echo "  MMVALUE=\$$(${ECHO} \$${RUN2} | $(CUT) -d_ -f1)" >> $@
-	@echo "  NNVALUE=\$$(${ECHO} \$${RUN2} | $(CUT) -d_ -f2)" >> $@
-	@echo "  KKVALUE=\$$(${ECHO} \$${RUN2} | $(CUT) -d_ -f3)" >> $@
-	@echo "  >&2 \$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN1} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN1} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN1} | $(CUT) -d_ -f3)" >> $@
+	@echo "  MMVALUE=\$$(\$${ECHO} \$${RUN2} | $(CUT) -d_ -f1)" >> $@
+	@echo "  NNVALUE=\$$(\$${ECHO} \$${RUN2} | $(CUT) -d_ -f2)" >> $@
+	@echo "  KKVALUE=\$$(\$${ECHO} \$${RUN2} | $(CUT) -d_ -f3)" >> $@
+	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    ${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    ${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  ${ECHO} >> \$${FILE}" >> $@
+	@echo "  \$${ECHO} >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo "done" >> $@
