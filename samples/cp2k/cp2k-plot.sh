@@ -16,29 +16,30 @@ PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
   cut -d" " -f2 | \
   sort -n)
 
-NUM=$(echo "${PERF}" | wc -l)
-MIN=$(echo ${PERF} | cut -d" " -f1)
-MAX=$(echo ${PERF} | cut -d" " -f${NUM})
+ECHO=$(which echo)
+NUM=$(${ECHO} "${PERF}" | wc -l)
+MIN=$(${ECHO} ${PERF} | cut -d" " -f1)
+MAX=$(${ECHO} ${PERF} | cut -d" " -f${NUM})
 
-echo "num=${NUM}"
-echo "min=${MIN}"
-echo "max=${MAX}"
+${ECHO} "num=${NUM}"
+${ECHO} "min=${MIN}"
+${ECHO} "max=${MAX}"
 
 BC=$(which bc 2> /dev/null)
 if [ "" != "${BC}" ]; then
-  AVG=$(echo "$(echo -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
+  AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
 
   if [ "0" = "$((NUM % 2))" ]; then
-    A=$(echo ${PERF} | cut -d" " -f${NUM2})
-    B=$(echo ${PERF} | cut -d" " -f$((NUM2 + 1)))
-    MED=$(echo "$(echo -n "scale=3;(${A} + ${B})/2")" | ${BC})
+    A=$(${ECHO} ${PERF} | cut -d" " -f${NUM2})
+    B=$(${ECHO} ${PERF} | cut -d" " -f$((NUM2 + 1)))
+    MED=$(${ECHO} "$(${ECHO} -n "scale=3;(${A} + ${B})/2")" | ${BC})
   else
-    MED=$(echo ${PERF} | cut -d" " -f$((NUM2 + 1)))
+    MED=$(${ECHO} ${PERF} | cut -d" " -f$((NUM2 + 1)))
   fi
 
-  echo "avg=${AVG}"
-  echo "med=${MED}"
+  ${ECHO} "avg=${AVG}"
+  ${ECHO} "med=${MED}"
 fi
 
 if [ -f /cygdrive/c/Program\ Files/gnuplot/bin/wgnuplot ]; then
@@ -62,7 +63,7 @@ fi
 SED=$(which sed)
 if [ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]; then
   if [ "" = "$1" ]; then
-    FILENAME=cp2k-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
+    FILENAME=cp2k-$(${ECHO} ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift

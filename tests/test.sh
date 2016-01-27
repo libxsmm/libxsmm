@@ -1,6 +1,7 @@
 #!/bin/sh
 
 HERE=$(cd $(dirname $0); pwd -P)
+ECHO=$(which echo)
 GREP=$(which grep)
 ENV=$(which env)
 
@@ -13,15 +14,15 @@ else
   LDD=$(which ldd)
 fi
 
-echo "============="
-echo "Running tests"
-echo "============="
+${ECHO} "============="
+${ECHO} "Running tests"
+${ECHO} "============="
 TESTS=$(ls -1 ${HERE}/*.c)
 NTEST=1
-NMAX=$(echo ${TESTS} | wc -w)
+NMAX=$(${ECHO} ${TESTS} | wc -w)
 for TEST in ${TESTS} ; do
   NAME=$(basename ${TEST} .c)
-  echo -n "${NTEST} of ${NMAX} (${NAME})... "
+  ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
 
   ERROR=$({
   if [ "-mic" != "$1" ]; then
@@ -47,10 +48,10 @@ for TEST in ${TESTS} ; do
   fi > /dev/null; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
-    echo "FAILED(${RESULT}) ${ERROR}"
+    ${ECHO} "FAILED(${RESULT}) ${ERROR}"
     exit 1
   else
-    echo "OK ${ERROR}"
+    ${ECHO} "OK ${ERROR}"
   fi
   NTEST=$((NTEST+1))
 done
