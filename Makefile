@@ -100,8 +100,11 @@ ifneq (0,$(JIT))
 endif
 
 BLAS_WARNING ?= 0
-ifeq (Windows_NT,$(OS))
-	ifeq (0,$(STATIC))
+ifeq (0,$(STATIC))
+	ifeq (Windows_NT,$(OS))
+		BLAS_WARNING = 1
+		BLAS ?= 2
+	else ifeq (Darwin,$(shell uname))
 		BLAS_WARNING = 1
 		BLAS ?= 2
 	endif
@@ -268,8 +271,8 @@ ifneq (0,$(OMP))
 	$(info ================================================================================)
 endif
 ifneq (0,$(BLAS_WARNING))
-	$(info Windows DLLs req. to link against BLAS since there is no)
-	$(info runtime resolution/search for weak symbols implemented.)
+	$(info Building a shared library requires to link against BLAS since there is)
+	$(info no runtime resolution/search for weak symbols implemented for this OS.)
 endif
 ifneq (0,$(BLAS))
 ifneq (Windows_NT,$(OS))
