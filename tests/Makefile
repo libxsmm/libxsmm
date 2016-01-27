@@ -40,12 +40,15 @@ else
 	LIBNAME = $(DEPDIR)/lib/libxsmm
 endif
 
-ifneq (,$(wildcard $(LIBNAME).a))
+ifneq (,$(strip $(wildcard $(LIBNAME).a)))
 	STATIC ?= 1
-	LIBEXT = a
 else
 	STATIC ?= 0
-	LIBEXT = so
+endif
+ifneq (0,$(STATIC))
+	LIBEXT ?= a
+else
+	LIBEXT ?= so
 endif
 
 OUTNAME := $(shell basename $(ROOTDIR))
