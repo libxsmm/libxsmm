@@ -972,77 +972,79 @@ realclean-all: realclean
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) realclean
 
 # Dummy prefix
-ifeq (,$(strip $(PREFIX)))
-PREFIX ?= .
+ifneq (,$(strip $(PREFIX)))
+INSTALL_ROOT = $(PREFIX)
+else
+INSTALL_ROOT = .
 endif
 
 .PHONY: install-minimal
 install-minimal: lib generator
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing binaries..."
-	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR)
-	@cp -v $(OUTDIR)/libxsmmgen.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmgen.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmf.so $(PREFIX)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmf.a $(PREFIX)/$(POUTDIR) 2> /dev/null || true
+	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
+	@cp -v $(OUTDIR)/libxsmmgen.so $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmgen.a $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmm.so $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmm.a $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmf.so $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmf.a $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmm.so ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmm.so $(PREFIX)/$(POUTDIR)/mic ; \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmm.so $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.a ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmm.a $(PREFIX)/$(POUTDIR)/mic ; \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmm.a $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.so ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmmf.so $(PREFIX)/$(POUTDIR)/mic ; \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmmf.so $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.a ]; then \
-		mkdir -p $(PREFIX)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmmf.a $(PREFIX)/$(POUTDIR)/mic ; \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -uv $(OUTDIR)/mic/libxsmmf.a $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
-	@cp -v $(BINDIR)/libxsmm_generator $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR)
-	@cp -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
-	@cp -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
+	@cp -v $(BINDIR)/libxsmm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
+	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
+	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR)
 endif
 
 .PHONY: install
 install: install-minimal
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing documentation..."
-	@mkdir -p $(PREFIX)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(PREFIX)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/$(DOCDIR)/*.md $(PREFIX)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/version.txt $(PREFIX)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/README.md $(PREFIX)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/LICENSE $(PREFIX)/$(PDOCDIR)
+	@mkdir -p $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/README.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/LICENSE $(INSTALL_ROOT)/$(PDOCDIR)
 endif
 
 .PHONY: install-all
 install-all: install samples
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 endif
 
 .PHONY: install-dev
 install-dev: install-all build-tests
-ifneq ($(abspath $(PREFIX)),$(abspath .))
+ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing tests..."
-	@mkdir -p $(PREFIX)/$(PTSTDIR)
-	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(PREFIX)/$(PTSTDIR) 2> /dev/null || true
+	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
+	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
 endif
 
