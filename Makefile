@@ -81,6 +81,7 @@ DOCDIR = documentation
 PINCDIR = $(INCDIR)
 POUTDIR = $(OUTDIR)
 PBINDIR = $(BINDIR)
+PTSTDIR = tests
 PDOCDIR = share/libxsmm
 
 CXXFLAGS = $(NULL)
@@ -770,8 +771,13 @@ perf: perf-cp2k
 .PHONY: test-all
 test-all: test-cp2k test-smm test-nek
 
+.PHONY: build-tests
+build-tests: lib_hst
+	@cd $(TSTDIR) && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
+
 .PHONY: tests
-tests: lib_hst
+tests: build-tests
 	@cd $(TSTDIR) && $(MAKE) clean && $(MAKE) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
@@ -954,8 +960,8 @@ PREFIX ?= .
 endif
 
 .PHONY: install-minimal
-ifneq ($(abspath $(PREFIX)),$(abspath .))
 install-minimal: lib generator
+ifneq ($(abspath $(PREFIX)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(PREFIX)/$(POUTDIR) $(PREFIX)/$(PBINDIR) $(PREFIX)/$(PINCDIR)
@@ -985,13 +991,11 @@ install-minimal: lib generator
 	@cp -v $(INCDIR)/libxsmm*.h $(PREFIX)/$(PINCDIR)
 	@cp -v $(INCDIR)/libxsmm.f $(PREFIX)/$(PINCDIR)
 	@cp -v $(INCDIR)/*.mod* $(PREFIX)/$(PINCDIR)
-else
-install-minimal: lib generator
 endif
 
 .PHONY: install
-ifneq ($(abspath $(PREFIX)),$(abspath .))
 install: install-minimal
+ifneq ($(abspath $(PREFIX)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(PREFIX)/$(PDOCDIR)
@@ -1003,18 +1007,25 @@ install: install-minimal
 endif
 
 .PHONY: install-all
-ifneq ($(abspath $(PREFIX)),$(abspath .))
 install-all: install samples
+ifneq ($(abspath $(PREFIX)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.exe cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.exe smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.exe specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.exe dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.exe inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.exe blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/nek/,axhm axhm.exe grad grad.exe rstr rstr.exe *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
-else
-install-all: samples
+	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smm-plot.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(PREFIX)/$(PBINDIR) 2> /dev/null || true
+endif
+
+.PHONY: install-dev
+install-dev: install-all build-tests
+ifneq ($(abspath $(PREFIX)),$(abspath .))
+	@echo
+	@echo "LIBXSMM installing tests..."
+	@mkdir -p $(PREFIX)/$(PTSTDIR)
+	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(PREFIX)/$(PTSTDIR) 2> /dev/null || true
 endif
 
