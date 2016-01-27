@@ -10,8 +10,8 @@ compiler:
 
 matrix:
   fast_finish: true
-  #allow_failures:
-  #- os: osx
+  allow_failures:
+  - os: osx
   exclude:
   - os: osx
     compiler: gcc
@@ -78,11 +78,11 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k test-smm &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 install-dev test-smm &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 install-dev &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
