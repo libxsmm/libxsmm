@@ -443,7 +443,6 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 
 LIBXSMM_EXTERN_C
 #if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(noinline)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_trace(
