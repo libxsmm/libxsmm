@@ -53,7 +53,7 @@ before_script:
 script:
   - source .codecov $(if [ "${CXX}" == "g++" ]; then echo 1; else echo 0; fi) &&
     make -e -j PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-dev tests &&
-    if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
+    if [ "${CXX}" != "nomatch-g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     eval ${RUNGCOV} && eval ${UPLOAD} && make -e clean-all
