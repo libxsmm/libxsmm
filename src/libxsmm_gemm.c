@@ -287,7 +287,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   }
 }
 
-#elif 0 /* TODO: fix LD_PRELOAD solution under Linux and OS X. */
+#else
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
