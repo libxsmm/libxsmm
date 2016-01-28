@@ -41,12 +41,10 @@ else
 endif
 
 ifneq (0,$(STATIC))
-	LIBEXT ?= a
 	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
 		LIBEXT = so
 	endif
 else
-	LIBEXT ?= so
 	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
 		LIBEXT = a
 	endif
@@ -154,15 +152,15 @@ else
 	@rm -f $(XFILES)
 endif
 	@rm -f *.gcno *.gcda *.gcov
-	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
 install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
 ifeq (0,$(OFFLOAD))
 ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
 endif
 	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true

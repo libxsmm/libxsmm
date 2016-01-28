@@ -40,12 +40,10 @@ else
 endif
 
 ifneq (0,$(STATIC))
-	LIBEXT ?= a
 	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
 		LIBEXT = so
 	endif
 else
-	LIBEXT ?= so
 	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
 		LIBEXT = a
 	endif
@@ -89,19 +87,19 @@ F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS) $(F77OBJS) $(F90OBJS)
 
 .PHONY: all
-all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(OUTDIR)/libstream_update_kernels.a
+all: $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/axhm $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
 
 $(BLDDIR)/stream_update_kernels-mod.o: $(SRCDIR)/stream_update_kernels.f $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@ $(FMFLAGS) $(OUTDIR)
 
-$(OUTDIR)/libstream_update_kernels.a: $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o
+$(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o
 	$(AR) -rs $@ $(BLDDIR)/stream_update_kernels-c.o
 
 $(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f $(BLDDIR)/.make $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/grad: $(OUTDIR)/.make $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/grad: $(OUTDIR)/.make $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
@@ -109,8 +107,8 @@ endif
 $(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f $(BLDDIR)/.make $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/rstr: $(OUTDIR)/.make $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/rstr: $(OUTDIR)/.make $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
@@ -118,8 +116,8 @@ endif
 $(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f $(BLDDIR)/.make $(BLDDIR)/stream_update_kernels-mod.o $(MODULES) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-$(OUTDIR)/axhm: $(OUTDIR)/.make $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.a $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/axhm: $(OUTDIR)/.make $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME).$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(MODULES) $(abspath $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 ifeq (0,$(STATIC))
 	@cp -u $(LIBNAME).$(LIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
@@ -175,17 +173,17 @@ endif
 else
 	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
 endif
-	@rm -f $(OUTDIR)/libstream_update_kernels.a
+	@rm -f $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
 	@rm -f *.gcno *.gcda *.gcov
-	@rm -f $(OUTDIR)/libxsmm.so
+	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
 install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
 ifeq (0,$(OFFLOAD))
 ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.so $(OUTDIR) 2> /dev/null || true
+	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
 endif
 	@cp $(ROOTDIR)/grad-perf.sh $(OUTDIR) 2> /dev/null || true
