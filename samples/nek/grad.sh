@@ -11,7 +11,11 @@ if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
   export PATH=${PATH}:${HERE}
 else
-  LDD=$(which ldd)
+  if [ "" != "$(which ldd)" ]; then
+    LDD=ldd
+  else
+    LDD=echo
+  fi
 fi
 
 MICINFO=$(which micinfo 2> /dev/null)
@@ -24,7 +28,7 @@ fi
 MICTPERC=3
 
 if [ "-mic" != "$1" ]; then
-  if [ "" != "$(${LDD} ${HERE}/${NAME} | ${GREP} libiomp5\.so)" ]; then
+  if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.so)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
