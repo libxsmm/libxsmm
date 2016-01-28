@@ -370,12 +370,16 @@ ifneq (0,$(INTEL))
 	endif
 else # GCC assumed
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-	ifneq (,$(strip $(FC)))
-		ifneq (3,$(GCC))
+	ifneq (3,$(GCC))
+		ifneq (,$(strip $(FC)))
 			LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
 		else
-			LIBGFORTRAN = -lgfortran
+			LIBGFORTRAN = $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
 		endif
+	else
+		LIBGFORTRAN = -lgfortran
+	endif
+	ifneq (,$(strip $(FC)))
 		ifneq (,$(strip $(LIBGFORTRAN)))
 			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
 			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
