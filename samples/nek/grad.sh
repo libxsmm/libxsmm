@@ -33,7 +33,7 @@ if [ "-mic" != "$1" ]; then
       OFFLOAD_INIT=on_start \
     ${HERE}/${NAME} $*
   else
-    ${ENV} \
+    ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE} \
       OMP_PROC_BIND=TRUE \
     ${HERE}/${NAME} $*
   fi
