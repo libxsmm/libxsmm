@@ -116,7 +116,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, con
   internal_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
-
+#if 0
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm_(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -135,7 +135,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dgemm_(const char* transa, co
 {
   internal_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-
+#endif
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
