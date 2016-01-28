@@ -189,12 +189,22 @@
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
-#if defined(_WIN32) && !defined(__GNUC__)
-# define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-#elif defined(__GNUC__) || defined(__clang__)
-# define LIBXSMM_TLS __thread
-#elif defined(__cplusplus)
-# define LIBXSMM_TLS thread_local
+#if !defined(_REENTRANT) && !defined(LIBXSMM_NOSYNC)
+# define _REENTRANT
+#endif
+
+#if defined(_REENTRANT)
+# if defined(_WIN32) && !defined(__GNUC__)
+#   define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
+# elif defined(__GNUC__) || defined(__clang__)
+#   define LIBXSMM_TLS __thread
+# elif defined(__cplusplus)
+#   define LIBXSMM_TLS thread_local
+# else
+#   error Missing TLS support!
+# endif
+#else
+# define LIBXSMM_TLS
 #endif
 
 #if defined(__GNUC__)

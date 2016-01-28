@@ -353,6 +353,8 @@ ifneq (0,$(INTEL))
 		ifneq (Windows_NT,$(OS))
 			CLDFLAGS += -pthread
 		endif
+	else
+		DFLAGS += -DLIBXSMM_NOSYNC
 	endif
 	ifeq (1,$(STATIC))
 		SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
@@ -534,6 +536,8 @@ else # GCC assumed
 		ifneq (Windows_NT,$(OS))
 			CLDFLAGS += -pthread
 		endif
+	else
+		DFLAGS += -DLIBXSMM_NOSYNC
 	endif
 	ifneq (0,$(STATIC))
 		DFLAGS += -D__STATIC=$(STATIC)
