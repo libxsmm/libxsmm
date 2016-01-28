@@ -25,7 +25,7 @@ TRACE ?= 0
 COMPATIBLE ?= 0
 
 # Static or shared binary
-STATIC ?= 1
+STATIC ?= 0
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
