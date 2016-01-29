@@ -389,23 +389,18 @@ ifneq (0,$(INTEL))
 	endif
 else # GCC assumed
 	FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-	ifneq (3,$(GCC))
-		ifneq (,$(strip $(FC)))
-			LIBGFORTRAN = $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
-		else
-			LIBGFORTRAN = $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1)
-		endif
-	else
-		LIBGFORTRAN = -lgfortran
-	endif
 	ifneq (,$(strip $(FC)))
-		ifneq (,$(strip $(LIBGFORTRAN)))
-			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
-			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
-		else
-			CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-			CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+		LIBGFORTRAN = $(abspath $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
+	else
+		LIBGFORTRAN = $(abspath $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
+	endif
+	ifneq (,$(LIBGFORTRAN))
+		LDFLAGS += -Wl,-rpath=$(abspath $(dir $(LIBGFORTRAN)))
+		ifeq (3,$(GCC)) # prune link-line
+			LIBGFORTRAN = -lgfortran
 		endif
+		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
+		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
 	else
 		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
 		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
@@ -711,12 +706,12 @@ else ifneq (0,$(BLAS)) # generic
 			LDFLAGS += -lblas$(BLAS_BITS).dll
 		endif
 		ifneq (0,$(STATIC))
-			ifneq (,$(strip $(LIBGFORTRAN)))
+			ifneq (,$(LIBGFORTRAN))
 				CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
 			endif
 		endif
 		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			ifneq (,$(strip $(LIBGFORTRAN))) # conclusion: quadmath available
+			ifneq (,$(LIBGFORTRAN)) # conclusion: quadmath available
 				CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 			endif
 		endif
