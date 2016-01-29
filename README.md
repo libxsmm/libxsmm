@@ -61,7 +61,7 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_mmfunction<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mmdispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_mmdispatch) the given LIBXSMM_?MMFUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?MMFUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
-To generate the interface inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated), simply run the following command:
+The build system relies on GNU Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key-value pairs. Key-value pairs can be supplied in three different ways: (1) after the "make" command, (2) prior to the "make" command which is sourcing the key-value pair as a Shell variable, or (3) by exporting the key-value pair as an environment variable (`export`, or `setenv`). Of course this can be mixed, however the second method requires to supply the `-e` flag i.e., `env CC=gcc make -e` since the key-value pairs are not considered otherwise. To generate the interface of the library inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated), simply run the following command:
 
 ```
 make
@@ -128,10 +128,16 @@ The recorded output file can be further evaluated (see also [cp2k-test.sh](https
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
-**NOTE**: by default, a combination of a C/C++ and a Fortran compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran`), the need for a Fortran compiler can be relaxed (`make FC=`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). Fortran code can make use of LIBXSMM by relying on the module file (and linking against 'libxsmmf'), or by including the interface (and linking against 'libxsmm').
+**NOTE**: by default, a combination of a C/C++ and a Fortran compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran`), the need for a Fortran compiler can be relaxed (`make FC=`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). Fortran code can make use of LIBXSMM in three different ways:
+
+* By relying on the module file, and by linking against 'libxsmm' and 'libxsmmf',
+* By including the interface 'libxsmm.f', and by linking against 'libxsmm', or by
+* Optionally declaring 'libxsmm_?gemm' (like BLAS), and by linking against 'libxsmm'.
+
+At the expense of a limited functionality (libxsmm_?gemm), the latter method also works with Fortran 77 (otherwise the Fortran 2003 standard is necessary).
 
 ## Installation
-Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels. If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags are not supporting a more specific instruction set extension (code path). The JIT backend does not support or generate SSE code by itself, and therefore the library is built using SSE code if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE allows not only to include statically generated SSE kernels (if specified by M, N, K, or MNK) but also to run on any system supporting at least SSE 4.2 code (needed when accelerating code-dispatch using CRC32 instructions).
+Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE3 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
 There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1) building the library in an out-of-tree fashion, and (2) installing into a certain location. Building in an out-of-tree fashion looks like:
 
@@ -150,7 +156,7 @@ make clean
 
 Performing `make install-minimal` omits the documentation (default: `PREFIX/share/libxsmm`). Moreover, `PINCDIR`, `POUTDIR`, `PBINDIR`, and `PDOCDIR` allow to customize the locations underneath of the `PREFIX` location.
 
-**NOTE**: the library is agnostic with respect to the threading-runtime, and enabling OpenMP (OMP=1) when building the library is a non-default option (untested). The library is also agnostic with respect to the selected LAPACK/BLAS library, and linking GEMM routines (BLAS=1|2) when building the library may prevent a user to decide at the time of linking the actual application. Also, building the library with SSE=0 and AVX=0 omits any target specification (see also the TARGET flag in the [Performance Tuning](#tuning) section).
+**NOTE**: the library is agnostic with respect to the threading-runtime, and enabling OpenMP (OMP=1) when building the library is a non-default option (untested). The library is also agnostic with respect to the selected LAPACK/BLAS library if supported by the OS and link model (STATIC), and therefore linking GEMM routines when building the library (by supplying BLAS=1|2) may prevent a user from deciding at the time of linking the actual application.
 
 ## Running
 ### Call Wrapper
@@ -195,7 +201,7 @@ LIBXSMM_TRACE=1 ./myapplication
 
 Syntactically up to three arguments separated by commas (which allows to omit arguments) are taken (`tid,i,n`): *tid* signifies the ID of the thread to be traced with 1...NTHREADS being valid and where LIBXSMM_TRACE=1 is filtering for the "main thread" (in fact the first thread running into the trace facility); grabbing all threads (no filter) can be achieved by supplying a negative id (which is also the default when omitted). The second argument is pruning higher levels of the call-tree with *i=1* being the default (level zero is the highest at the same level as the main function). The last argument is taking the number of inclusive call levels with *n=-1* being the default (signifying no filter).
 
-Please note, that debug symbols without the trace facility and without any eventual console output can be enabled separately (`make SYM=1`; implied by TRACE=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible or non-private I/O.
+Please note that the trace facility is severely impacting the performance (even with LIBXSMM_TRACE=0), and this is not just because of console output but rather since inlining (internal) function  might be prevented along with additional call overhead on each function entry and exit. Therefore debug symbols can be also enabled separately (`make SYM=1`; implied by TRACE=1 or DBG=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible (console) or other non-private I/O (files).
 
 ## Performance
 ### Tuning
