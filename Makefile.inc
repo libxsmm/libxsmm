@@ -192,7 +192,7 @@ endif
 CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | cut -d" " -f1)
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | cut -d" " -f1)
 ifneq (,$(strip $(FC)))
-	FC_NAME = $(notdir $(FC))
+	FC_NAME = $(firstword $(notdir $(FC)))
 endif
 
 # native GCC?
@@ -588,7 +588,10 @@ ifneq (,$(strip $(LIBRT) $(LIBDL)))
 endif
 # avoid Homebrew based GCC AS
 ifeq (Darwin,$(UNAME))
-	LDFLAGS = -Wa,-q
+	CXXFLAGS += -Wa,-q
+	FCFLAGS += -Wa,-q
+	CFLAGS += -Wa,-q
+	LDFLAGS += -Wa,-q
 endif
 
 MAKE_ILP64 = 0
