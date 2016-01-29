@@ -42,12 +42,16 @@ endif
 
 DEPSTATIC ?= $(STATIC)
 ifneq (0,$(DEPSTATIC))
-	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
-		LIBEXT = so
+	ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
+		LIBEXT = $(SLIBEXT)
+	else # fallback
+		LIBEXT = $(DLIBEXT)
 	endif
 else
-	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
-		LIBEXT = a
+	ifneq (,$(strip $(wildcard $(LIBNAME).$(DLIBEXT))))
+		LIBEXT = $(DLIBEXT)
+	else # fallback
+		LIBEXT = $(SLIBEXT)
 	endif
 endif
 
