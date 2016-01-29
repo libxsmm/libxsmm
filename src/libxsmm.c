@@ -40,6 +40,7 @@
 #endif
 /* mute warning about target attribute; KNC/native plus JIT is disabled below! */
 #include <libxsmm_generator.h>
+#include <immintrin.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
