@@ -586,12 +586,18 @@ endif
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
 	LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
-# avoid Homebrew based GCC AS
 ifeq (Darwin,$(UNAME))
-	CXXFLAGS += -Wa,-q
-	FCFLAGS += -Wa,-q
-	CFLAGS += -Wa,-q
-	LDFLAGS += -Wa,-q
+	# avoid Homebrew based GCC AS; apply the flag only to the non-GCC components
+	ifneq (0,$(shell echo $$((1 <= $(GCC)))))
+		LDFLAGS += -Wa,-q
+		CFLAGS += -Wa,-q
+		ifneq (0,$(shell echo $$((2 <= $(GCC)))))
+			CXXFLAGS += -Wa,-q
+			ifneq (0,$(shell echo $$((3 <= $(GCC)))))
+				FCFLAGS += -Wa,-q
+			endif
+		endif
+	endif
 endif
 
 MAKE_ILP64 = 0
