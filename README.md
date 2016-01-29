@@ -61,7 +61,7 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. Moreover, in C++ a type 'libxsmm_mmfunction<*type*>' can be used to instantiate a functor rather than making a distinction for the numeric type in 'libxsmm_?mmdispatch'. Similarly in Fortran, when calling the generic interface (libxsmm_mmdispatch) the given LIBXSMM_?MMFUNCTION is dispatched such that libxsmm_call can be used to actually perform the function call using the PROCEDURE POINTER wrapped by LIBXSMM_?MMFUNCTION. Beside of dispatching code, one can also call a specific kernel (e.g., 'libxsmm_dmm_4_4_4') using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
-The build system relies on GNU Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key-value pairs. Key-value pairs can be supplied in two ways: (1)\ after the "make" command, or (2)\ prior to the "make" command (`env`) which is effectively the same as exporting the key-value pair as an environment variable (`export`, or `setenv`). Of course both methods can be mixed, however the second method requires to supply the `-e` flag i.e., `env CC=gcc make -e` since the key-value pairs are not considered otherwise.
+The build system relies on GNU Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key-value pairs. Key-value pairs can be supplied in two ways: (1)&#160;after the "make" command, or (2)&#160;prior to the "make" command (`env`) which is effectively the same as exporting the key-value pair as an environment variable (`export`, or `setenv`). Of course both methods can be mixed, however the second method requires to supply the `-e` flag i.e., `env CC=gcc make -e` since the key-value pairs are not considered otherwise.
 
 To generate the interface of the library inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated), simply run the following command:
 
@@ -141,7 +141,7 @@ At the expense of a limited functionality (libxsmm_?gemm), the latter method als
 ## Installation
 Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE3 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
-There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1)\ building the library in an out-of-tree fashion, and (2)\ installing into a certain location. Building in an out-of-tree fashion looks like:
+There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1)&#160;building the library in an out-of-tree fashion, and (2)&#160;installing into a certain location. Building in an out-of-tree fashion looks like:
 
 ```
 cd libxsmm-install
@@ -164,7 +164,7 @@ Performing `make install-minimal` omits the documentation (default: `PREFIX/shar
 ### Call Wrapper
 Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
 
-There are two cases to consider: (1)\ an application which is linking statically against LAPACK/BLAS, and (2)\ an application which is dynamically linked against LAPACK/BLAS. The first case requires making `-Wl,--wrap=xgemm_ /path/to/libxsmm.a` part of the link-line and then relinking the application:
+There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires making `-Wl,--wrap=xgemm_ /path/to/libxsmm.a` part of the link-line and then relinking the application:
 
 ```
 gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a
@@ -235,7 +235,7 @@ The function 'libxsmm_?mmdispatch' helps amortizing the cost of the dispatch whe
 1. Specialized routine (implemented in assembly code),
 3. LAPACK/BLAS library call (fallback).
 
-Both levels are accessible directly (see [Interface](#interface) section) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL)\ 11.2 DIRECT CALL feature. 
+Both levels are accessible directly (see [Interface](#interface) section) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL)&#160;11.2 DIRECT CALL feature. 
 
 Further, a preprocessor symbol denotes the largest problem size (*M* x *N* x *K*) that belongs to the first level, and therefore determines if a matrix multiplication falls back to calling into the LAPACK/BLAS library alongside of LIBXSMM. The problem size threshold can be configured by using for example:
 
