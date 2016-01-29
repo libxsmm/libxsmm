@@ -586,6 +586,10 @@ endif
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
 	LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
+# avoid Homebrew based GCC AS
+ifeq (Darwin,$(UNAME))
+	LDFLAGS = -Wa,-q
+endif
 
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
