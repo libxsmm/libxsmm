@@ -62,7 +62,7 @@
 # define LIBXSMM_LD(M, N) (N)
 #endif
 
-/** Used to sanize GEMM arguments (LDx vs. M/N/K). */
+/** Used to sanitize GEMM arguments (LDx vs. M/N/K). */
 #if defined(LIBXSMM_SANITIZE_GEMM)
 # define LIBXSMM_MAX2(A, B) LIBXSMM_MAX(A, B)
 #else /* Argument B is not considered; pass-through A. */

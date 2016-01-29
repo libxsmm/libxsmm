@@ -3,7 +3,7 @@
 
 # Automatically disable parallel builds
 # depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explcitly
+# MAKE_PARALLEL=0: disable explicitly
 # MAKE_PARALLEL=1: enable explicitly
 ifeq (0,$(MAKE_PARALLEL))
 .NOTPARALLEL:
