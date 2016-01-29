@@ -794,7 +794,7 @@ test: test-cp2k
 perf: perf-cp2k
 
 .PHONY: test-all
-test-all: test-cp2k test-smm test-nek
+test-all: tests test-cp2k test-smm test-nek
 
 .PHONY: build-tests
 build-tests: lib_hst
