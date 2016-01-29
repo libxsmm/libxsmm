@@ -63,21 +63,23 @@ CPPSRCS := $(shell ls -1 $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
 CXXSRCS := $(shell ls -1 $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
 CCXSRCS := $(shell ls -1 $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
 CSOURCS := $(shell ls -1 $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-FTNSRCS := $(shell ls -1 $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
+FXXSRCS := $(shell ls -1 $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
 F77SRCS := $(shell ls -1 $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
 F90SRCS := $(shell ls -1 $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
-SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS) $(FTNSRCS) $(F77SRCS) $(F90SRCS)
 CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
-FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FTNSRCS:.f=-f.o)))
+FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FXXSRCS:.f=-f.o)))
 F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
+SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
+OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
+FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
+MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS) $(FTNOBJS)
 
 .PHONY: all
 all: $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
@@ -85,17 +87,17 @@ all: $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_ker
 $(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
 	$(AR) -rs $@ $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
 
-$(OUTDIR)/axhm: $(OUTDIR)/.make $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME)f.$(LIBEXT)
+$(OUTDIR)/axhm: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
 		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
-$(OUTDIR)/grad: $(OUTDIR)/.make $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME)f.$(LIBEXT)
+$(OUTDIR)/grad: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
 		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
-$(OUTDIR)/rstr: $(OUTDIR)/.make $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(LIBNAME)f.$(LIBEXT)
+$(OUTDIR)/rstr: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
 		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
@@ -120,8 +122,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/M
 
 .PHONY: clean
 clean:
-	@rm -f $(OBJECTS)
-	@rm -f *.mod *.modmic
+	@rm -f $(OBJECTS) $(FTNOBJS)
 	@rm -f fit.log *.dat
 
 .PHONY: realclean
@@ -135,11 +136,12 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
+	@rm -f $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr
 endif
 else
-	@rm -f $(OUTDIR)/grad $(OUTDIR)/axhm $(OUTDIR)/rstr
+	@rm -f $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr
 endif
+	@rm -f $(MODULES) $(ROOTDIR)/axhm-perf.sh $(ROOTDIR)/grad-perf.sh $(ROOTDIR)/rstr-perf.sh
 	@rm -f $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
@@ -153,8 +155,11 @@ ifneq (0,$(MIC))
 	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
 endif
 endif
+	@cp $(ROOTDIR)/axhm-perf.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/grad-perf.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/grad.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/rstr-perf.sh $(OUTDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/rstr.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/torture.sh $(OUTDIR) 2> /dev/null || true
 
