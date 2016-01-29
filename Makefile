@@ -232,7 +232,7 @@ FLAGS = $(shell echo $$((((0!=$(ALIGNED_LOADS))*4) | ((0!=$(ALIGNED_STORES))*8))
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
 	SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
-	SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);\n
+	SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
 endif
 
 .PHONY: cheader
@@ -414,7 +414,7 @@ endif
 		-e 's/#pragma message (".*KERNEL COMPILATION ERROR in: " __FILE__)/  $(SUPPRESS_UNUSED_VARIABLE_WARNINGS)/' \
 		-e '/#error No kernel was compiled, lacking support for current architecture?/d' \
 		-e '/#pragma message (".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: " __FILE__)/d' \
-		> $(TMPFILE)
+		| tr '~' '\n' > $(TMPFILE)
 	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
 	@mv $(TMPFILE) $@
 endif
