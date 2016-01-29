@@ -89,6 +89,10 @@ FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 .PHONY: all
 all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
+	$(FC) -o $@ $(FTNOBJS) $(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
+		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make
 	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
@@ -100,10 +104,6 @@ $(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o
 
 $(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o
 	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/smm: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
-	$(FC) -o $@ $(FTNOBJS) $(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
-		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
