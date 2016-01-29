@@ -233,7 +233,7 @@
 /** Execute the XGETBV, and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
 #if defined(__GNUC__)
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
-    "xgetbv" : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
+    ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
   )
 #else
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
