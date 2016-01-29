@@ -40,7 +40,8 @@ else
 	LIBNAME = $(DEPDIR)/lib/libxsmm
 endif
 
-ifneq (0,$(STATIC))
+DEPSTATIC ?= $(STATIC)
+ifneq (0,$(DEPSTATIC))
 	ifeq (,$(strip $(wildcard $(LIBNAME).$(LIBEXT))))
 		LIBEXT = so
 	endif

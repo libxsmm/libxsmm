@@ -47,8 +47,7 @@ PROGRAM stpm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
-  INTEGER :: argc, m, n, k, routine, check
-  integer :: mm, nn, kk
+  INTEGER :: argc, m, n, k, routine, check, mm, nn, kk
   INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
   CHARACTER(32) :: argv
   DOUBLE PRECISION :: duration, max_diff
@@ -72,49 +71,44 @@ PROGRAM stpm
   ELSE
     k = m
   END IF
+  mm = 0
   IF (4 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(4, argv)
     READ(argv, "(I32)") mm
-  ELSE
-    mm = 10
   END IF
+  mm = MERGE(10, mm, 0.EQ.mm)
+  nn = 0
   IF (5 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(5, argv)
     READ(argv, "(I32)") nn
-  ELSE
-    nn = mm
   END IF
+  nn = MERGE(mm, nn, 0.EQ.nn)
+  kk = 0
   IF (6 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(6, argv)
     READ(argv, "(I32)") kk
-  ELSE
-    kk = mm
   END IF
+  kk = MERGE(mm, kk, 0.EQ.kk)
   IF (7 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(7, argv)
     READ(argv, "(I32)") i
   ELSE
-    i = 2 ! 2 GByte for A and B (and C, but this currently not used by the F90 test)
+    i = 0
   END IF
   IF (8 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(8, argv)
     READ(argv, "(I32)") totsize
   ELSE
-    totsize = i ! -> we have 1 iteration by default
-  END IF
-
-  ! determining how many repitions are needed
-  IF (i >= totsize) THEN
-    reps = 1
-    totsize = i
-  ELSE
-    reps = totsize / i
+    totsize = 0 ! 1 iteration by default
   END IF
 
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
-  s = ISHFT(MAX(i, 0_8), 29) / (((m * n * k) + (nn * mm * kk)) * T)
+  ! workload is about 2 GByte in memory by default
+  s = MERGE(ISHFT(2_8, 30) / (((m * n * k) + (nn * mm * kk)) * T), MAX(i, 0_8), 0.EQ.i)
+  ! determining how many repititions are needed
+  reps = MAX(s, totsize) / s
   duration = 0; max_diff = 0
 
   ALLOCATE(a(m,n,k,s))
@@ -146,8 +140,8 @@ PROGRAM stpm
   dy = 1.
   dz = 1.
 
-  WRITE(*, "(6(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " mm=", mm, " nn=", nn, &
-  " kk=", kk, " size=", UBOUND(a, 4), " total-stream-GB=", totsize, " reps=", reps
+  WRITE(*, "(6(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
+    " mm=", mm, " nn=", nn, " kk=", kk, " size=", UBOUND(a, 4), " reps=", reps
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
