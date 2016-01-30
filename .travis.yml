@@ -70,7 +70,7 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} install-dev tests test-cp2k &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} PREFETCH=1 install-dev tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
