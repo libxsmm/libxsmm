@@ -21,7 +21,7 @@ env:
   - UPLOAD_DIR=libxsmm
   matrix:
   - LIBXSMM_JIT=0
-  - LIBXSMM_JIT=1
+  - DBG=1
 
 language: cpp
 
