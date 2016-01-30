@@ -724,6 +724,10 @@ FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
 CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
 LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
+.PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
+           $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
+           %/.make
+
 .SUFFIXES:
 
 %/.make:
