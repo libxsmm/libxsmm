@@ -312,14 +312,15 @@
           PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTERFACE
-            TYPE(C_FUNPTR) PURE FUNCTION ddispatch(                     &
+            PURE FUNCTION ddispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmm_dmmdispatch")
+     &      RESULT(fn) BIND(C, NAME="libxsmm_dmmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
               INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
+              TYPE(C_FUNPTR) :: fn
             END FUNCTION
           END INTERFACE
           IF (.NOT.PRESENT(prefetch).OR.                                &
