@@ -395,7 +395,7 @@ else # GCC assumed
 		LIBGFORTRAN = $(abspath $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
 	endif
 	ifneq (,$(LIBGFORTRAN))
-		LDFLAGS += -Wl,-rpath=$(abspath $(dir $(LIBGFORTRAN)))
+		LDFLAGS := $(LDFLAGS) -Wl,-rpath=$(abspath $(dir $(LIBGFORTRAN)))
 		ifeq (3,$(GCC)) # prune link-line
 			LIBGFORTRAN = -lgfortran
 		endif
