@@ -251,9 +251,9 @@ else
 endif
 
 ifneq (,$(strip $(FC)))
-	INFO = Using $(SUITE): $(CXX_NAME) $(strip $(CC_VERSION_STRING)), $(CC_NAME) $(strip $(CC_VERSION_STRING)), and $(FC_NAME) $(strip $(FC_VERSION_STRING))
+	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CC_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
 else
-	INFO = Using $(SUITE): $(CXX_NAME) $(strip $(CC_VERSION_STRING)), and $(CC_NAME) $(strip $(CC_VERSION_STRING))
+	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CC_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
 endif
 
 ifneq (0,$(INTEL))
