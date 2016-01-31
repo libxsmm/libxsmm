@@ -155,6 +155,9 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_BIN) $(OBJFILES_HST) $(OBJFILES_MIC)
 
+.PHONY: libxsmm
+libxsmm: lib
+
 .PHONY: lib
 lib: header drytest lib_hst lib_mic
 
