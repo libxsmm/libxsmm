@@ -281,9 +281,9 @@ ifneq (0,$(INTEL))
 	# flag specifying output directory must be last
 	FMFLAGS += -module
 	ifeq (0,$(DBG))
-		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
-		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias
-		FCFLAGS += $(OPTFLAG)
+		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
+		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
+		FCFLAGS += $(OPTFLAG) -fp-model fast=2 -align array64byte
 		ifneq (0,$(IPO))
 			CXXFLAGS += -ipo
 			CFLAGS += -ipo
