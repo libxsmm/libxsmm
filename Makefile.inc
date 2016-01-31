@@ -281,6 +281,7 @@ ifneq (0,$(INTEL))
 	# flag specifying output directory must be last
 	FMFLAGS += -module
 	ifeq (0,$(DBG))
+		# consider more accurate -fp-model (C/C++: precise, Fortran: source)
 		CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
 		CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
 		FCFLAGS += $(OPTFLAG) -fp-model fast=2 -align array64byte
