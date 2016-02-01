@@ -139,6 +139,7 @@
 #define LIBXSMM_NBITS64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 + LIBXSMM_NBITS32((N) >> 32)) : LIBXSMM_NBITS32(N))
 #define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_NBITS64((unsigned long long)(N)) + 1) : 1)
 
+#define LIBXSMM_DEFAULT(DEFAULT, VALUE) (0 < (VALUE) ? (VALUE) : (DEFAULT))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
@@ -189,7 +190,9 @@
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
-#if !defined(_REENTRANT) && !defined(LIBXSMM_NOSYNC)
+#if defined(LIBXSMM_NOSYNC)
+# undef _REENTRANT
+#elif !defined(_REENTRANT)
 # define _REENTRANT
 #endif
 
