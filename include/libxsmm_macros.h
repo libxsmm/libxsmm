@@ -246,24 +246,6 @@
   }
 #endif
 
-/**
- * Below group of preprocessor symbols are used to fixup some platform specifics.
- */
-#if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
-# define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
-#endif
-#if !defined(_CRT_SECURE_NO_DEPRECATE)
-# define _CRT_SECURE_NO_DEPRECATE 1
-#endif
-#if !defined(_USE_MATH_DEFINES)
-# define _USE_MATH_DEFINES 1
-#endif
-#if !defined(WIN32_LEAN_AND_MEAN)
-# define WIN32_LEAN_AND_MEAN 1
-#endif
-#if !defined(NOMINMAX)
-# define NOMINMAX 1
-#endif
 #if defined(_WIN32)
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
 # define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
@@ -297,4 +279,32 @@
 # define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(&(LOCK))
 #endif
 
+/** Below group is to fixup some platform/compiler specifics. */
+#if defined(_WIN32)
+# if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
+#   define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
+# endif
+# if !defined(_CRT_SECURE_NO_DEPRECATE)
+#   define _CRT_SECURE_NO_DEPRECATE 1
+# endif
+# if !defined(_USE_MATH_DEFINES)
+#   define _USE_MATH_DEFINES 1
+# endif
+# if !defined(WIN32_LEAN_AND_MEAN)
+#   define WIN32_LEAN_AND_MEAN 1
+# endif
+# if !defined(NOMINMAX)
+#   define NOMINMAX 1
+# endif
+# if defined(__INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
+#   define __builtin_huge_val() HUGE_VAL
+#   define __builtin_huge_valf() HUGE_VALF
+#   define __builtin_nan nan
+#   define __builtin_nanf nanf
+#   define __builtin_nans nan
+#   define __builtin_nansf nanf
+# endif
+#endif
+
 #endif /*LIBXSMM_MACROS_H*/
+
