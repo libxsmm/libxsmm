@@ -196,5 +196,11 @@
     <None Include="..\README.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\.gitignore" />
+    <None Include="..\.codecov" />
+    <None Include="..\.env" />
+    <None Include="..\Makefile.inc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\version.txt" />
   </ItemGroup>
 </Project>

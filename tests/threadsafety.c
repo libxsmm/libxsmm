@@ -5,7 +5,7 @@
 int main()
 {
   /* we do not care about the initial values */
-  const float a[23*23], b[23*23];
+  /*const*/ float a[23*23], b[23*23];
   int i;
 
 #if defined(_OPENMP)
