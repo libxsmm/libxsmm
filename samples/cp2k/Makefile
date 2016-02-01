@@ -131,7 +131,7 @@ endif
 else
 	@rm -f $(OUTDIR)/$(OUTNAME)
 endif
-	@rm -f $(MODULES) $(ROOTDIR)/cp2k-perf.sh
+	@rm -f $(MODULES) $(ROOTDIR)/$(OUTNAME)-perf.sh
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
