@@ -68,6 +68,7 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_AVG_K = $AVG_K
         INTEGER(C_INT), PARAMETER :: LIBXSMM_FLAGS = $FLAGS
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ILP64 = $ILP64
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_SYNC = $SYNC
         INTEGER(C_INT), PARAMETER :: LIBXSMM_JIT = $JIT
 
         ! Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit).

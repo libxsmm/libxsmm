@@ -60,6 +60,7 @@
 #define LIBXSMM_ILP64 $ILP64
 #define LIBXSMM_ALPHA $ALPHA
 #define LIBXSMM_BETA $BETA
+#define LIBXSMM_SYNC $SYNC
 #define LIBXSMM_JIT $JIT
 $LIBXSMM_OFFLOAD_BUILD
 #include "libxsmm_frontend.h"

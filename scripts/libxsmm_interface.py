@@ -48,11 +48,12 @@ if __name__ == "__main__":
         row_major = int(sys.argv[6]) if (6 < argc) else 0
         prefetch = int(sys.argv[7]) if (7 < argc) else 0
         threshold = int(sys.argv[8]) if (8 < argc) else 0
-        jit = int(sys.argv[9]) if (9 < argc) else 0
-        flags = int(sys.argv[10]) if (10 < argc) else 0
-        alpha = int(sys.argv[11]) if (11 < argc) else 1
-        beta = int(sys.argv[12]) if (12 < argc) else 1
-        mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], threshold)) if (13 < argc) else list()
+        sync = int(sys.argv[9]) if (9 < argc) else 0
+        jit = int(sys.argv[10]) if (10 < argc) else 0
+        flags = int(sys.argv[11]) if (11 < argc) else 0
+        alpha = int(sys.argv[12]) if (12 < argc) else 1
+        beta = int(sys.argv[13]) if (13 < argc) else 1
+        mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], threshold)) if (14 < argc) else list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -93,6 +94,7 @@ if __name__ == "__main__":
             "ILP64":      1 if (0 != ilp64) else 0, \
             "ALPHA":      alpha, \
             "BETA":       beta, \
+            "SYNC":       1 if (0 != sync) else 0, \
             "JIT":        1 if (0 != jit) else 0, \
             "MNK_INTERFACE_LIST": "" \
         }
