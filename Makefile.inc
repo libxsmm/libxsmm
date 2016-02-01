@@ -48,14 +48,15 @@ endif
 SYM ?= 0
 DBG ?= 0
 
-# Threading runtime
-OMP ?= 0
 # PTHREAD refers to foundational TRT (and not necessarily Posix Threads)
 ifneq (0,$(OMP))
 	PTHREAD ?= 1
 else
 	PTHREAD ?= 0
 endif
+
+# Threading runtime
+OMP ?= 0
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
