@@ -105,6 +105,8 @@ ifneq (0,$(INTEL))
 	endif
 	XLIB_BEGIN = -Wl,--as-needed
 	XLIB_END = -Wl,--no-as-needed
+	# disable CPUID check
+	COMPATIBLE = 1
 else
 	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
 		CXX = g++
@@ -327,7 +329,13 @@ ifneq (0,$(INTEL))
 					TARGET = -xMIC-AVX512
 				endif
 			else ifneq (0,$(SSE))
-				TARGET = -xSSE3
+				ifeq (1,$(SSE)) # default
+					TARGET = -xSSE3
+				else ifeq (4,$(SSE))
+					TARGET = -xSSE4.2
+				else
+					TARGET = -xSSE$(SSE)
+				endif
 			else ifneq (0,$(AVX))
 				TARGET = -xHost
 			endif
@@ -342,7 +350,15 @@ ifneq (0,$(INTEL))
 					TARGET += -mavx512er -mavx512pf
 				endif
 			else ifneq (0,$(SSE))
-				TARGET = -msse3
+				ifeq (1,$(SSE)) # default
+					TARGET = -msse3
+				else ifeq (2,$(SSE))
+					# implicitly present (64-bit ABI)
+				else ifeq (4,$(SSE))
+					TARGET = -msse4.2
+				else # perhaps better to use TARGET
+					TARGET = -msse$(SSE)
+				endif
 			else ifneq (0,$(AVX))
 				TARGET = -march=native
 			endif
@@ -510,7 +526,15 @@ else # GCC assumed
 				TARGET += -mavx512er -mavx512pf
 			endif
 		else ifneq (0,$(SSE))
-			TARGET = -msse3
+			ifeq (1,$(SSE)) # default
+				TARGET = -msse3
+			else ifeq (2,$(SSE))
+				# implicitly present (64-bit ABI)
+			else ifeq (4,$(SSE))
+				TARGET = -msse4.2
+			else # perhaps better to use TARGET
+				TARGET = -msse$(SSE)
+			endif
 		else ifneq (0,$(AVX))
 			TARGET = -march=native
 		endif
