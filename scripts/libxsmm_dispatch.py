@@ -41,6 +41,7 @@ if __name__ == "__main__":
         threshold = int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
 
+        print("LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0);")
         print("libxsmm_gemm_descriptor desc;")
         print("unsigned int indx;")
         for mnk in mnklist:
@@ -56,7 +57,7 @@ if __name__ == "__main__":
                 print("  result[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
                 print("  result[indx].descriptor = desc;")
-                print("}")
+                print("} LIBXSMM_DEBUG(else ++cdp);")
             if (1 != precision): # only single-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
@@ -66,7 +67,7 @@ if __name__ == "__main__":
                 print("  result[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
                 print("  result[indx].descriptor = desc;")
-                print("}")
+                print("} LIBXSMM_DEBUG(else ++csp);")
     elif (1 < argc):
         print("/* no static code */")
     else:

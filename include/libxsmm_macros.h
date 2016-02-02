@@ -218,6 +218,12 @@
 # define LIBXSMM_VISIBILITY_INTERNAL
 #endif
 
+#if defined(NDEBUG)
+# define LIBXSMM_DEBUG(...)
+#else
+# define LIBXSMM_DEBUG(...) __VA_ARGS__
+#endif
+
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__)
 # define LIBXSMM_CPUID(FUNCTION, EAX, EBX, ECX, EDX) \
