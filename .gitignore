@@ -23,6 +23,8 @@ _*.txt
 *.gcno
 *.gcda
 *.gcov
+*.iobj
+*.ipdb
 *.log
 *.suo
 *.exe
