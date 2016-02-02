@@ -59,9 +59,10 @@ if [ -f "${GNUPLOT}" ]; then
   GNUPLOT_MAJOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
   GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
 fi
+GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
 SED=$(which sed)
-if [ ( "4" -le "${GNUPLOT_MAJOR}" && "6" -le "${GNUPLOT_MINOR}" ) || ( "5" -le "${GNUPLOT_MAJOR}" ) ]; then
+if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   if [ "" = "$1" ]; then
     FILENAME=cp2k-$(${ECHO} ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
   else
