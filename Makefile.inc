@@ -77,14 +77,25 @@ else
 	MIC ?= 0
 endif
 
-# Automatically pickup the Intel Compiler (if available)
-ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
+ENV_CXX = $(shell echo $${CXX})
+ENV_CC = $(shell echo $${CC})
+ENV_FC = $(shell echo $${FC})
+
+# Automatically pickup the environment (make -e not needed),
+# or pickup the Intel Compiler (if available).
+ifneq (,$(ENV_CXX))
+	CXX = $(ENV_CXX)
+else ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
 	CXX = icpc
 endif
-ifneq (,$(notdir $(shell which icc 2> /dev/null)))
+ifneq (,$(ENV_CC))
+	CC = $(ENV_CC)
+else ifneq (,$(notdir $(shell which icc 2> /dev/null)))
 	CC = icc
 endif
-ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
+ifneq (,$(ENV_FC))
+	FC = $(ENV_FC)
+else ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
 	FC = ifort
 endif
 
