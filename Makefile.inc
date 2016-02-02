@@ -343,11 +343,12 @@ ifneq (0,$(INTEL))
 			ifeq (1,$(AVX))
 				TARGET = -mavx
 			else ifeq (2,$(AVX))
-				TARGET = -mavx2
+				TARGET = -march=core-avx2
 			else ifeq (3,$(AVX))
-				TARGET = -mavx512f -mavx512cd
-				ifneq (0,$(MIC))
-					TARGET += -mavx512er -mavx512pf
+				ifeq (0,$(MIC))
+					TARGET = -xCOMMON-AVX512
+				else
+					TARGET = -xMIC-AVX512
 				endif
 			else ifneq (0,$(SSE))
 				ifeq (1,$(SSE)) # default
