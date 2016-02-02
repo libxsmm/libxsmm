@@ -12,7 +12,7 @@
  */
 int main(int argc, char* argv[])
 {
-  const int size = LIBXSMM_DEFAULT(1 << 25, 1 < argc ? atoi(argv[1]) : 0);
+  const int size = LIBXSMM_DEFAULT(1 << 27, 1 < argc ? atoi(argv[1]) : 0);
   unsigned long long start;
   double duration;
   int i;
