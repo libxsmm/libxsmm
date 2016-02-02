@@ -631,7 +631,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code internal_find_code(const libxs
   entry += i; /* actual entry */
 
   do {
-    /* read regd code */
+    /* read registered code */
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
     result.xmm = __atomic_load_n(&entry->code.xmm, __ATOMIC_SEQ_CST);
