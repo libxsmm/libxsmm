@@ -41,7 +41,6 @@ if __name__ == "__main__":
         threshold = int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
 
-        print("LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0);")
         print("libxsmm_gemm_descriptor desc;")
         print("unsigned int indx;")
         for mnk in mnklist:

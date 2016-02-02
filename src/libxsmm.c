@@ -257,6 +257,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             if (0 == internal_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
+              LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0);
               /* setup the dispatch table for the statically generated code */
 #             include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
