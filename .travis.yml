@@ -66,7 +66,7 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} STATIC=0 install-dev tests test-cp2k &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_REGSIZE=32 ${ECFLAGS}" STATIC=0 install-dev tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean-all
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
