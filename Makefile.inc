@@ -77,25 +77,15 @@ else
 	MIC ?= 0
 endif
 
-ENV_CXX = $(shell echo $${CXX})
-ENV_CC = $(shell echo $${CC})
-ENV_FC = $(shell echo $${FC})
-
 # Automatically pickup the environment (make -e not needed),
 # or pickup the Intel Compiler (if available).
-ifneq (,$(ENV_CXX))
-	CXX = $(ENV_CXX)
-else ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
+ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
 	CXX = icpc
 endif
-ifneq (,$(ENV_CC))
-	CC = $(ENV_CC)
-else ifneq (,$(notdir $(shell which icc 2> /dev/null)))
+ifneq (,$(notdir $(shell which icc 2> /dev/null)))
 	CC = icc
 endif
-ifneq (,$(ENV_FC))
-	FC = $(ENV_FC)
-else ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
+ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
 	FC = ifort
 endif
 
@@ -121,23 +111,37 @@ ifneq (0,$(INTEL))
 else
 	ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
 		CXX = g++
-	else ifneq (0,$(shell $(CXX) --version 2> /dev/null; echo $$?))
+	else ifneq (0,$(shell $(CXX) --version > /dev/null 2> /dev/null; echo $$?))
 		CXX = g++
 	endif
 	ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
 		CC = gcc
-	else ifneq (0,$(shell $(CC) --version 2> /dev/null; echo $$?))
+	else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo $$?))
 		CC = gcc
 	endif
 	ifeq (,$(notdir $(shell which $(FC) 2> /dev/null)))
 		FC = $(shell which gfortran 2> /dev/null)
-	else ifneq (0,$(shell $(FC) --version 2> /dev/null; echo $$?))
+	else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo $$?))
 		FC = $(shell which gfortran 2> /dev/null)
 	endif
 endif
 
 # linker setup
 LD = $(CC)
+
+CXX_VERSION_STRING = $(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
+CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f2)
+CXX_VERSION_PATCH = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f3)
+ifeq (3,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR) $(CXX_VERSION_PATCH)))
+	CXX_VERSION = $(shell echo "$$(($(CXX_VERSION_MAJOR) * 10000 + $(CXX_VERSION_MINOR) * 100 + $(CXX_VERSION_PATCH)))")
+else ifeq (2,$(words $(CXX_VERSION_MAJOR) $(CXX_VERSION_MINOR)))
+	CXX_VERSION = $(shell echo "$$(($(CXX_VERSION_MAJOR) * 10000 + $(CXX_VERSION_MINOR) * 100))")
+	CXX_VERSION_PATCH = 0
+else
+	CXX_VERSION_STRING = $(NULL)
+	CXX_VERSION = 0
+endif
 
 CC_VERSION_STRING = $(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f1)
@@ -265,9 +269,9 @@ else
 endif
 
 ifneq (,$(strip $(FC)))
-	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CC_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
+	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
 else
-	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CC_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
+	INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
 endif
 
 ifneq (0,$(INTEL))
