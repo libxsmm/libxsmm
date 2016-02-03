@@ -303,7 +303,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
       else {
-        fprintf(stderr, "LIBXSMM: failed to initialize trace (%i)!\n", i);
+        fprintf(stderr, "LIBXSMM: failed to initialize trace (error #%i)!\n", i);
       }
 #endif
     }
@@ -375,7 +375,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         i = libxsmm_trace_finalize();
 # if !defined(NDEBUG) /* library code is expected to be mute */
         if (EXIT_SUCCESS != i) {
-          fprintf(stderr, "LIBXSMM: failed to finalize trace (%i)!\n", i);
+          fprintf(stderr, "LIBXSMM: failed to finalize trace (error #%i)!\n", i);
         }
 # endif
 #endif
@@ -405,11 +405,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             munmap(code, registry[i].code_size);
 # else /* library code is expected to be mute */
             if (0 != munmap(code, code_size)) {
-              static LIBXSMM_TLS int once = 0;
-              if (0 == once) {
-                fprintf(stderr, "LIBXSMM: %s (munmap error #%i)!\n", strerror(errno), errno);
-                once = 1;
-              }
+              fprintf(stderr, "LIBXSMM: %s (munmap error #%i with address %p)!\n",
+                strerror(errno), errno, code);
             }
 # endif
           }
@@ -472,7 +469,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         if (0 != madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE)) {
           static LIBXSMM_TLS int once = 0;
           if (0 == once) {
-            fprintf(stderr, "LIBXSMM: %s (madvise error #%i)!\n", strerror(errno), errno);
+            fprintf(stderr, "LIBXSMM: %s (madvise error #%i with address %p)!\n",
+              strerror(errno), errno, *code);
             once = 1;
           }
         }
@@ -514,7 +512,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #else /* library code is expected to be mute */
           static LIBXSMM_TLS int once = 0;
           if (0 == once) {
-            fprintf(stderr, "LIBXSMM: %s (mprotect error #%i)!\n", strerror(errno), errno);
+            fprintf(stderr, "LIBXSMM: %s (mprotect error #%i with address %p)!\n",
+              strerror(errno), errno, *code);
             once = 1;
           }
           if (0 != munmap(*code, generated_code.code_size)) {
