@@ -476,7 +476,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
 # if !defined(NDEBUG) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter CRC32 intrinsic code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter CRC32 instruction code path!\n");
     once = 1;
   }
 # endif
