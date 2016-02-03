@@ -104,6 +104,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
   /* needed to distinct statically generated code and for munmap */
   unsigned int code_size;
 } internal_regentry;
+LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0);
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regentry* internal_registry = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_jit = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_has_crc32 = 0;
@@ -415,6 +416,11 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         }
 #endif /*defined(__GNUC__)*/
         free((void*)registry);
+#if !defined(NDEBUG) /* library code is expected to be mute */
+        if (0 != internal_ncollisions) {
+          fprintf(stderr, "LIBXSMM: %u hash key collisions found in the registry!\n", internal_ncollisions);
+        }
+#endif
       }
     }
 #if !defined(_OPENMP) /* release locks */
@@ -732,6 +738,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code internal_find_code(const libxs
               const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
               i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE));
               i0 = i; /* keep starting point of free-slot-search in mind */
+              LIBXSMM_DEBUG(++internal_ncollisions);
 
               /* fixup existing entry */
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
@@ -820,3 +827,4 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 
   return internal_find_code(&desc).dmm;
 }
+
