@@ -41,13 +41,14 @@ if __name__ == "__main__":
         prefetch = int(sys.argv[5])
 
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
-        signature = "a, b, c" if (0 == prefetch) else "a, b, c, pa, pb, pc"
+        if (0 == prefetch): signature = "a, b, c"
+        else: signature = "a, b, c, pa, pb, pc"
         if (2 != precision):
             print
             print
             print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
             print("  const float* a, const float* b, float* c" \
-               + (", const float* pa, const float* pb, const float* pc)" if (0 != prefetch) else ")"))
+               + [")", ", const float* pa, const float* pb, const float* pc)"][0!=prefetch])
             print("{")
             print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_sp)")
             print("  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");")
@@ -76,7 +77,7 @@ if __name__ == "__main__":
             print
             print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(")
             print("  const double* a, const double* b, double* c" \
-               + (", const double* pa, const double* pb, const double* pc)" if (0 != prefetch) else ")"))
+               + [")", ", const double* pa, const double* pb, const double* pc)"][0!=prefetch])
             print("{")
             print("#if defined(__AVX512F__) && defined(LIBXSMM_GENTARGET_knl_dp)")
             print("  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");")

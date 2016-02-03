@@ -41,19 +41,32 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # optional argument(s)
-        precision = int(sys.argv[2]) if (2 < argc) else 0
-        ilp64 = int(sys.argv[3]) if (3 < argc) else 0
-        offload = int(sys.argv[4]) if (4 < argc) else 0
-        alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) if (5 < argc) else 64
-        row_major = int(sys.argv[6]) if (6 < argc) else 0
-        prefetch = int(sys.argv[7]) if (7 < argc) else 0
-        threshold = int(sys.argv[8]) if (8 < argc) else 0
-        sync = int(sys.argv[9]) if (9 < argc) else 0
-        jit = int(sys.argv[10]) if (10 < argc) else 0
-        flags = int(sys.argv[11]) if (11 < argc) else 0
-        alpha = int(sys.argv[12]) if (12 < argc) else 1
-        beta = int(sys.argv[13]) if (13 < argc) else 1
-        mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], threshold)) if (14 < argc) else list()
+        if (2 < argc): precision = int(sys.argv[2])
+        else: precision = 0
+        if (3 < argc): ilp64 = int(sys.argv[3])
+        else: ilp64 = 0
+        if (4 < argc): offload = int(sys.argv[4])
+        else: offload = 0
+        if (5 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) 
+        else: alignment = 64
+        if (6 < argc): row_major = int(sys.argv[6]) 
+        else: row_major = 0
+        if (7 < argc): prefetch = int(sys.argv[7])
+        else: prefetch = 0
+        if (8 < argc): threshold = int(sys.argv[8])
+        else: threshold = 0
+        if (9 < argc): sync = int(sys.argv[9])
+        else: sync = 0
+        if (10 < argc): jit = int(sys.argv[10])
+        else: jit = 0
+        if (11 < argc): flags = int(sys.argv[11])
+        else: flags = 0
+        if (12 < argc): alpha = int(sys.argv[12])
+        else: alpha = 1
+        if (13 < argc): beta = int(sys.argv[13])
+        else: beta = 1
+        if (14 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], threshold))
+        else: mnklist = list()
 
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
@@ -72,7 +85,7 @@ if __name__ == "__main__":
         major, minor, update, patch = libxsmm_utilities.version_numbers(version)
 
         substitute = { \
-            "LIBXSMM_OFFLOAD_BUILD": "\n#define LIBXSMM_OFFLOAD_BUILD" if (0 != offload) else "", \
+            "LIBXSMM_OFFLOAD_BUILD": ["", "\n#define LIBXSMM_OFFLOAD_BUILD"][0!=offload], \
             "VERSION":    version, \
             "BRANCH":     branch, \
             "MAJOR":      major, \
@@ -80,22 +93,22 @@ if __name__ == "__main__":
             "UPDATE":     update, \
             "PATCH":      patch, \
             "ALIGNMENT":  alignment, \
-            "ROW_MAJOR":  1 if (0 != row_major) else 0, \
-            "COL_MAJOR":  0 if (0 != row_major) else 1, \
+            "ROW_MAJOR":  [0, 1][0!=row_major], \
+            "COL_MAJOR":  [1, 0][0!=row_major], \
             "PREFETCH":   prefetch, \
             "MAX_MNK":    maxmnk, \
-            "MAX_M":      maxm if (avgm < maxm) else maxdim, \
-            "MAX_N":      maxn if (avgn < maxn) else maxdim, \
-            "MAX_K":      maxk if (avgk < maxk) else maxdim, \
+            "MAX_M":      [maxdim, maxm][avgm<maxm], \
+            "MAX_N":      [maxdim, maxn][avgn<maxn], \
+            "MAX_K":      [maxdim, maxk][avgk<maxk], \
             "AVG_M":      avgm, \
             "AVG_N":      avgn, \
             "AVG_K":      avgk, \
             "FLAGS":      flags, \
-            "ILP64":      1 if (0 != ilp64) else 0, \
+            "ILP64":      [0, 1][0!=ilp64], \
             "ALPHA":      alpha, \
             "BETA":       beta, \
-            "SYNC":       1 if (0 != sync) else 0, \
-            "JIT":        1 if (0 != jit) else 0, \
+            "SYNC":       [0, 1][0!=sync], \
+            "JIT":        [0, 1][0!=jit], \
             "MNK_INTERFACE_LIST": "" \
         }
 
@@ -105,11 +118,11 @@ if __name__ == "__main__":
                 if (2 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c" + \
-                          (",\n  const float* pa, const float* pb, const float* pc);" if (0 != prefetch) else ");")
+                          [");", ",\n  const float* pa, const float* pb, const float* pc);"][0!=prefetch]
                 if (1 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c" + \
-                          (",\n  const double* pa, const double* pb, const double* pc);" if (0 != prefetch) else ");")
+                          [");", ",\n  const double* pa, const double* pb, const double* pc);"][0!=prefetch]
                 if (0 == precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if (mnklist and 0 != precision): substitute["MNK_INTERFACE_LIST"] += "\n"
@@ -131,20 +144,20 @@ if __name__ == "__main__":
                     if (2 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + \
-                            ("," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
                             "            IMPORT :: C_FLOAT\n" \
                             "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" + \
-                            ("            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "") + \
+                            ["", "            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
                             "          END SUBROUTINE"
                     if (1 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + \
-                            ("," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n" if (0 != prefetch) else ") BIND(C)\n") + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
                             "            IMPORT :: C_DOUBLE\n" \
                             "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" + \
-                            ("            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n" if (0 != prefetch) else "") + \
+                            ["", "            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
                             "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             print(template.safe_substitute(substitute))

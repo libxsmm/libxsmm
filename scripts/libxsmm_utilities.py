@@ -29,11 +29,15 @@
 ###############################################################################
 ## Hans Pabst (Intel Corp.)
 ###############################################################################
-from functools import reduce
 import itertools
 import operator
 import sys, os
 import re
+
+try:
+    from functools import reduce
+except:
+    pass
 
 
 def upper_list(lists, level):
@@ -48,12 +52,24 @@ def upper_list(lists, level):
         return []
 
 
+# https://docs.python.org/3/library/itertools.html#itertools.product
+def itertools_product(*args):
+    # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
+    # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
+    pools = [tuple(pool) for pool in args]
+    result = [[]]
+    for pool in pools:
+        result = [x+[y] for x in result for y in pool]
+    for prod in result:
+        yield tuple(prod)
+
+
 def load_mnklist(argv, threshold, format = 0, resultset = set()):
     if (0 == format): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == format): # new input format
         groups = map(lambda group: [int(i) for i in group.split()], " ".join(argv[0:]).split(","))
-        resultset = set(itertools.chain(*[list(itertools.product(*(i, i, i))) for i in groups]))
+        resultset = set(itertools.chain(*[list(itertools_product(*(i, i, i))) for i in groups]))
     elif (-2 == format): # legacy format
         mlist = list(map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2:2+int(argv[0])])))
         nlist = list(map(int, map(lambda s: str(s).replace(",", " ").strip(), argv[2+int(argv[0]):2+int(argv[0])+int(argv[1])])))
@@ -78,9 +94,11 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
 
 
 def max_mnk(mnklist, init = 0, index = None):
-    return reduce(max, map(lambda mnk: \
-      mnk[index] if (None != index and 0 <= index and index < 3) \
-      else (mnk[0] * mnk[1] * mnk[2]), mnklist), init)
+    if (None != index and 0 <= index and index < 3):
+        mapped = map(lambda mnk: mnk[index], mnklist)
+    else:
+        mapped = map(lambda mnk: mnk[0] * mnk[1] * mnk[2], mnklist)
+    return reduce(max, mapped, init)
 
 
 def median(list_of_numbers, fallback = None, average = True):
@@ -93,12 +111,16 @@ def median(list_of_numbers, fallback = None, average = True):
             medval = int(0.5 * (list_of_numbers[size2-1] + list_of_numbers[size2]) + 0.5)
         else:
             medval = list_of_numbers[size2]
-        return min(medval, fallback) if None != fallback else medval
+        if (None != fallback):
+            result = min(medval, fallback)
+        else:
+            result = medval
     elif (None != fallback):
-        return fallback
+        result = fallback
     else:
         sys.tracebacklimit = 0
         raise ValueError("median: empty list!")
+    return result
 
 
 def is_pot(num):
@@ -125,19 +147,31 @@ def align_value(n, typesize, alignment):
 def version_branch():
     versionfile = os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt")
     version = "1.0"
-    with open(versionfile, "r") as file:
+    file = open(versionfile, "r")
+    try:
         version = file.read().replace("\n", "")
-    versionlist = version.split("-")
-    return ("-".join(map(str, versionlist[1:])), versionlist[0]) if (1 < len(versionlist)) else (version, "")
+        versionlist = version.split("-")
+        if (1 < len(versionlist)):
+            result = ("-".join(map(str, versionlist[1:])), versionlist[0])
+        else:
+            result = (version, "")
+    finally:
+        file.close()
+    return result
 
 
 def version_numbers(version):
     versionlist = version.split("-")
-    patch = int(versionlist[1]) if (1 < len(versionlist)) else 0
-    versionlist = versionlist[0].split(".") if (0 < len(versionlist)) else list()
-    major = int(versionlist[0]) if (0 < len(versionlist)) else 1
-    minor = int(versionlist[1]) if (1 < len(versionlist)) else 0
-    update = int(versionlist[2]) if (2 < len(versionlist)) else 0
+    if (1 < len(versionlist)): patch = int(versionlist[1])
+    else: patch = 0
+    if (0 < len(versionlist)): versionlist = versionlist[0].split(".")
+    else: versionlist = list()
+    if (0 < len(versionlist)): major = int(versionlist[0])
+    else: major = 1
+    if (1 < len(versionlist)): minor = int(versionlist[1])
+    else: minor = 0
+    if (2 < len(versionlist)): update = int(versionlist[2])
+    else: update = 0
     return major, minor, update, patch
 
 
