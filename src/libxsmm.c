@@ -484,9 +484,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         }
 # endif /*defined(NDEBUG)*/
 #elif !(defined(__APPLE__) && defined(__MACH__))
-        LIBXSMM_MESSAGE("====================================================================")
-        LIBXSMM_MESSAGE("Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
-        LIBXSMM_MESSAGE("====================================================================")
+        LIBXSMM_MESSAGE("================================================================================")
+        LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
+        LIBXSMM_MESSAGE("================================================================================")
 #endif /*MADV_NOHUGEPAGE*/
         /* copy temporary buffer into the prepared executable buffer */
         memcpy(*code, generated_code.generated_code, generated_code.code_size);
@@ -571,9 +571,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   }
 #elif !defined(__MIC__)
   LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
-  LIBXSMM_MESSAGE("======================================================")
-  LIBXSMM_MESSAGE("The JIT BACKEND is not supported on Windows right now!")
-  LIBXSMM_MESSAGE("======================================================")
+  LIBXSMM_MESSAGE("================================================================================")
+  LIBXSMM_MESSAGE("LIBXSMM: The JIT BACKEND is currently not supported on Microsoft Windows!")
+  LIBXSMM_MESSAGE("================================================================================")
 #else
   LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
 #endif /*_WIN32*/

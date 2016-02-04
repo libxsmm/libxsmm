@@ -61,9 +61,9 @@ if __name__ == "__main__":
             print("#elif defined(__MIC__) && defined(LIBXSMM_GENTARGET_knc_sp)")
             print("  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
-            print("  LIBXSMM_MESSAGE(\"===============================================================\")")
-            print("  LIBXSMM_MESSAGE(\"No specific instruction set extension found for specialization!\")")
-            print("  LIBXSMM_MESSAGE(\"===============================================================\")")
+            print("  LIBXSMM_MESSAGE(\"================================================================================\")")
+            print("  LIBXSMM_MESSAGE(\"LIBXSMM: No specific instruction set extension found for specialization!\")")
+            print("  LIBXSMM_MESSAGE(\"================================================================================\")")
             if (0 != prefetch):
                 print("  LIBXSMM_UNUSED(pa); LIBXSMM_UNUSED(pb); LIBXSMM_UNUSED(pc);")
             print("  LIBXSMM_INLINE_XGEMM(float, int/*libxsmm_blasint not req.*/, LIBXSMM_FSYMBOL(sgemm),\n" \

@@ -480,6 +480,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
     once = 1;
   }
 # endif
+  LIBXSMM_MESSAGE("================================================================================");
+  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using the CRC32 instruction!");
+  LIBXSMM_MESSAGE("================================================================================");
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
 }
