@@ -540,7 +540,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if !defined(NDEBUG) /* library code is expected to be mute */
         static LIBXSMM_TLS int once = 0;
         if (0 == once) {
-          fprintf(stderr, "LIBXSMM: %s (mmap error #%i)!\n", strerror(errno), errno);
+          fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)!\n",
+            strerror(errno), errno);
           once = 1;
         }
 #endif
