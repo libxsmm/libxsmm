@@ -104,7 +104,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
   /* needed to distinct statically generated code and for munmap */
   unsigned int code_size;
 } internal_regentry;
-LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0);
+LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0;)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regentry* internal_registry = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_jit = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_has_crc32 = 0;
