@@ -16,6 +16,7 @@ out*.txt
 _*.txt
 *.stackdump
 *.opensdf
+*.opendb
 *.dylib
 *.docx
 *.user
