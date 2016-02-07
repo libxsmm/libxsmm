@@ -125,8 +125,9 @@ LIBXSMM_RETARGETABLE void internal_delete(void* value)
   munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
 #else /* library code is expected to be mute */
   if (0 != munmap(value, LIBXSMM_TRACE_SYMBOLSIZE)) {
+    const int error = errno;
     fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p)\n",
-      strerror(errno), errno, value);
+      strerror(error), error, value);
   }
 #endif
 
@@ -395,8 +396,9 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
               }
 #   if !defined(NDEBUG)
               else {
+                const int error = errno;
                 fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)\n",
-                  strerror(errno), errno);
+                  strerror(error), error);
               }
 #   endif
             }

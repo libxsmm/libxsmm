@@ -408,8 +408,9 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             munmap(code.xmm, registry[i].code_size);
 # else /* library code is expected to be mute */
             if (0 != munmap(code.xmm, code_size)) {
+              const int error = errno;
               fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p)!\n",
-                strerror(errno), errno, code.xmm);
+                strerror(error), error, code.xmm);
             }
 # endif
           }
@@ -477,8 +478,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         if (0 != madvise(*code, generated_code.code_size, MADV_NOHUGEPAGE)) {
           static LIBXSMM_TLS int once = 0;
           if (0 == once) {
+            const int error = errno;
             fprintf(stderr, "LIBXSMM: %s (madvise error #%i at %p)!\n",
-              strerror(errno), errno, *code);
+              strerror(error), error, *code);
             once = 1;
           }
         }
@@ -520,15 +522,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #else /* library code is expected to be mute */
           static LIBXSMM_TLS int once = 0;
           if (0 == once) {
+            const int error = errno;
             fprintf(stderr, "LIBXSMM: %s (mprotect error #%i at %p)!\n",
-              strerror(errno), errno, *code);
+              strerror(error), error, *code);
             once = 1;
           }
           if (0 != munmap(*code, generated_code.code_size)) {
             static LIBXSMM_TLS int once_mmap_error = 0;
             if (0 == once_mmap_error) {
+              const int error = errno;
               fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p)!\n",
-                strerror(errno), errno, *code);
+                strerror(error), error, *code);
               once_mmap_error = 1;
             }
           }
@@ -540,8 +544,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if !defined(NDEBUG) /* library code is expected to be mute */
         static LIBXSMM_TLS int once = 0;
         if (0 == once) {
+          const int error = errno;
           fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)!\n",
-            strerror(errno), errno);
+            strerror(error), error);
           once = 1;
         }
 #endif
@@ -564,7 +569,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if !defined(NDEBUG) /* library code is expected to be mute */
     static LIBXSMM_TLS int once = 0;
     if (0 == once) {
-      fprintf(stderr, "%s (error #%i)\n", libxsmm_strerror(generated_code.last_error), generated_code.last_error);
+      fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error), generated_code.last_error);
       once = 1;
     }
 #endif
