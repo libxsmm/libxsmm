@@ -40,21 +40,28 @@
 #define LIBXSMM_UNIQUE(NAME) LIBXSMM_CONCATENATE(NAME, __LINE__)
 
 #if defined(__cplusplus)
-# define LIBXSMM_EXTERN_C extern "C"
-# define LIBXSMM_INLINE inline
 # define LIBXSMM_VARIADIC ...
+# define LIBXSMM_EXTERN_C extern "C"
+# define LIBXSMM_INLINE_KEYWORD inline
+# define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 #else
-# define LIBXSMM_EXTERN_C
 # define LIBXSMM_VARIADIC
+# define LIBXSMM_EXTERN_C extern
 # if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__))
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
-#   define LIBXSMM_INLINE static inline
+#   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
-#   define LIBXSMM_INLINE static __inline
+#   define LIBXSMM_INLINE_KEYWORD __inline
 # else
-#   define LIBXSMM_INLINE static
+#   define LIBXSMM_INLINE_KEYWORD
 # endif /*C99*/
+# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
+# if defined(LIBXSMM_BUILD)
+#   define LIBXSMM_INLINE_EXPORT LIBXSMM_EXTERN_C
+# else
+#   define LIBXSMM_INLINE_EXPORT LIBXSMM_INLINE
+# endif
 #endif /*__cplusplus*/
 
 #if !defined(LIBXSMM_RESTRICT)
