@@ -106,6 +106,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
 } internal_regentry;
 LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0;)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regentry* internal_registry = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_arch_name = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_jit = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_has_crc32 = 0;
 
@@ -159,11 +160,11 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.xmm = (SRC)
 #endif
 
-#define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, CRC32_FUNCTION) { \
+#define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, CRC32_FUNCTION, DIFF_FUNCTION) { \
   unsigned int hash, diff = 0, diff0 = 0, i, i0; \
   internal_code result; \
   INTERNAL_FIND_CODE_DECLARE(entry); \
-  assert(0 != (CRC32_FUNCTION)); \
+  assert(0 != (CRC32_FUNCTION) && 0 != (DIFF_FUNCTION)); \
   INTERNAL_FIND_CODE_INIT(entry); \
   /* check if the requested xGEMM is already JITted */ \
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
@@ -177,14 +178,14 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
       if (0 == diff0) { \
         if (0 == (LIBXSMM_HASH_COLLISION & result.imm)) { /* check for no collision */ \
           /* calculate bitwise difference (deep check) */ \
-          diff = internal_gemmdiff(&(DESCRIPTOR), &entry->descriptor); \
+          diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &entry->descriptor); \
           if (0 != diff) { /* new collision discovered (but no code version yet) */ \
             /* allow to fix-up current entry inside of the guarded/locked region */ \
             result.xmm = 0; \
           } \
         } \
         /* collision discovered but code version exists; perform initial deep check */ \
-        else if (0 != internal_gemmdiff(&(DESCRIPTOR), &entry->descriptor)) { \
+        else if (0 != (DIFF_FUNCTION)(&(DESCRIPTOR), &entry->descriptor)) { \
           /* continue linearly searching code starting at re-hashed index position */ \
           const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
           unsigned int next; \
@@ -192,7 +193,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
           for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
             i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); next != i0/*no code found*/ && \
             /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
-            (0 == (entry = registry + i)->code.xmm || 0 != (diff = internal_gemmdiff(&(DESCRIPTOR), &entry->descriptor))); \
+            (0 == (entry = registry + i)->code.xmm || 0 != (diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &entry->descriptor))); \
             i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
           if (0 == diff) { /* found exact code version; continue with atomic load */ \
             continue; \
@@ -257,12 +258,12 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
     } \
   } \
   while (0 != diff); \
-  assert(0 == result.xmm || 0 == internal_gemmdiff(&(DESCRIPTOR), &entry->descriptor)); \
+  assert(0 == result.xmm || 0 == (DIFF_FUNCTION)(&(DESCRIPTOR), &entry->descriptor)); \
   return result.SELECTOR; \
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_arch_name(int* is_static, int* has_crc32)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_cpuid(int* is_static, int* has_crc32)
 {
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
   const char* name = 0;
@@ -390,14 +391,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
           /* decide using internal_has_crc32 instead of relying on a libxsmm_crc32_function pointer
            * to be able to inline the call instead of using an indirection (via fn. pointer)
            */
-          const char *const arch_name = internal_arch_name(&is_static, &internal_has_crc32);
+          internal_arch_name = internal_cpuid(&is_static, &internal_has_crc32);
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].code.xmm = 0;
           { /* omit registering code if JIT is enabled and if an ISA extension is found
              * which is beyond the static code path used to compile the library
              */
 #if (0 != LIBXSMM_JIT) && !defined(__MIC__)
             const char *const env_jit = getenv("LIBXSMM_JIT");
-            internal_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? arch_name : ('0' != *env_jit ? env_jit : 0);
+            internal_jit = (0 == env_jit || 0 == *env_jit || '1' == *env_jit) ? internal_arch_name : ('0' != *env_jit ? env_jit : 0);
             if (0 == internal_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
@@ -405,7 +406,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
               /* setup the dispatch table for the statically generated code */
 #             include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
-              if (0 == arch_name && (0 == env_jit || '1' == *env_jit)) {
+              if (0 == internal_arch_name && (0 == env_jit || '1' == *env_jit)) {
 # if defined(__SSE3__)
                 fprintf(stderr, "LIBXSMM: SSE instruction set extension is not supported for JIT-code generation!\n");
 # elif defined(__MIC__)
@@ -745,6 +746,34 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx512f(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  return internal_gemmdiff(a, b);
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx2(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  return internal_gemmdiff(a, b);
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  return internal_gemmdiff(a, b);
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_sse(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  return internal_gemmdiff(a, b);
+}
+
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const float* alpha, const float* beta,
@@ -762,10 +791,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-#if defined(__SSE4_2__)
+#if defined(__AVX512F__)
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+#elif defined(__AVX2__)
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+#elif defined(__AVX__)
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+#elif defined(__SSE4_2__)
   INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
 #else
-  INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32);
+  INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, (0 != internal_arch_name)
+    ? ((/*knl*/'k' == *internal_arch_name || /*skx*/'k' == internal_arch_name[1]) ? internal_gemmdiff_avx512f :
+       (/*hsw*/'h' == *internal_arch_name ? internal_gemmdiff_avx2 :
+       (/*snb*/'s' == *internal_arch_name ? internal_gemmdiff_avx :
+       (/*sse*/0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff))))
+    : (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
 #endif
 }
 
@@ -787,10 +827,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-#if defined(__SSE4_2__)
+#if defined(__AVX512F__)
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+#elif defined(__AVX2__)
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+#elif defined(__AVX__)
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+#elif defined(__SSE4_2__)
   INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
 #else
-  INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32);
+  INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, (0 != internal_arch_name)
+    ? ((/*knl*/'k' == *internal_arch_name || /*skx*/'k' == internal_arch_name[1]) ? internal_gemmdiff_avx512f :
+       (/*hsw*/'h' == *internal_arch_name ? internal_gemmdiff_avx2 :
+       (/*snb*/'s' == *internal_arch_name ? internal_gemmdiff_avx :
+       (/*sse*/0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff))))
+    : (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
 #endif
 }
 
