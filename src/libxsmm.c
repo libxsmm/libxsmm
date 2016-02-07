@@ -146,7 +146,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #   define INTERNAL_FIND_CODE_READ(ENTRY, DST) (DST) = __sync_or_and_fetch(&((ENTRY)->code.xmm), 0)
 #   define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) { \
       /*const*/void* old = (ENTRY)->code.xmm; \
-      while (!__sync_bool_compare_and_swap(&((ENTRY)->code.xmm), old, SRC) old = (ENTRY)->code.xmm; \
+      while (!__sync_bool_compare_and_swap(&((ENTRY)->code.xmm), old, SRC)) old = (ENTRY)->code.xmm; \
     }
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32) /*TODO*/
