@@ -792,13 +792,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
 #if defined(__AVX512F__)
-  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_avx512f);
 #elif defined(__AVX2__)
-  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_avx2);
 #elif defined(__AVX__)
-  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_avx);
 #elif defined(__SSE4_2__)
-  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_sse);
 #else
   INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, (0 != internal_arch_name)
     ? ((/*knl*/'k' == *internal_arch_name || /*skx*/'k' == internal_arch_name[1]) ? internal_gemmdiff_avx512f :
@@ -828,13 +828,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
 #if defined(__AVX512F__)
-  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_avx512f);
 #elif defined(__AVX2__)
-  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_avx2);
 #elif defined(__AVX__)
-  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_avx);
 #elif defined(__SSE4_2__)
-  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42);
+  INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_sse);
 #else
   INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, (0 != internal_arch_name)
     ? ((/*knl*/'k' == *internal_arch_name || /*skx*/'k' == internal_arch_name[1]) ? internal_gemmdiff_avx512f :
