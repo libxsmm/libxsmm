@@ -57,12 +57,13 @@
 #   define LIBXSMM_INLINE_KEYWORD
 # endif /*C99*/
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
-# if defined(LIBXSMM_BUILD)
-#   define LIBXSMM_INLINE_EXPORT LIBXSMM_EXTERN_C
-# else
-#   define LIBXSMM_INLINE_EXPORT LIBXSMM_INLINE
-# endif
 #endif /*__cplusplus*/
+
+#if defined(LIBXSMM_BUILD)
+# define LIBXSMM_INLINE_EXPORT LIBXSMM_EXTERN_C
+#else
+# define LIBXSMM_INLINE_EXPORT LIBXSMM_INLINE
+#endif
 
 #if !defined(LIBXSMM_RESTRICT)
 # if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
