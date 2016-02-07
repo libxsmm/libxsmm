@@ -258,7 +258,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             if (0 == internal_jit || 0 != is_static)
 #endif
             { /* open scope for variable declarations */
-              LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0);
+              LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0;)
               /* setup the dispatch table for the statically generated code */
 #             include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
@@ -739,7 +739,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code internal_find_code(const libxs
               const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
               i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE));
               i0 = i; /* keep starting point of free-slot-search in mind */
-              LIBXSMM_DEBUG(++internal_ncollisions);
+              LIBXSMM_DEBUG(++internal_ncollisions;)
 
               /* fixup existing entry */
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
