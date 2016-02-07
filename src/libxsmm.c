@@ -802,6 +802,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
   const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
   const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
   const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
+  int result;
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
@@ -810,7 +811,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-  return internal_find_code(&desc).smm;
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  result = internal_find_code(&desc).smm;
+  return result;
 }
 
 
@@ -823,6 +826,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
   const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
   const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
+  int result;
 
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
@@ -831,6 +835,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-  return internal_find_code(&desc).dmm;
+  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */
+  result = internal_find_code(&desc).dmm;
+  return result;
 }
 
