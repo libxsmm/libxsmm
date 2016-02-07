@@ -382,7 +382,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abx
         PURE SUBROUTINE libxsmm_smmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN) :: a, b, c
           TYPE(C_PTR) :: ab, ba
           ab = MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR)
           ba = MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR)
@@ -392,7 +392,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abx
         PURE SUBROUTINE libxsmm_dmmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN) :: a, b, c
           TYPE(C_PTR) :: ab, ba
           ab = MERGE(a, b, 0.NE.LIBXSMM_COL_MAJOR)
           ba = MERGE(b, a, 0.NE.LIBXSMM_COL_MAJOR)
@@ -402,7 +402,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prx
         PURE SUBROUTINE libxsmm_smmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           TYPE(C_PTR) :: ab, ba, pr, pq
           ab = MERGE( a,  b, 0.NE.LIBXSMM_COL_MAJOR)
           ba = MERGE( b,  a, 0.NE.LIBXSMM_COL_MAJOR)
@@ -414,7 +414,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prx
         PURE SUBROUTINE libxsmm_dmmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           TYPE(C_PTR) :: ab, ba, pr, pq
           ab = MERGE( a,  b, 0.NE.LIBXSMM_COL_MAJOR)
           ba = MERGE( b,  a, 0.NE.LIBXSMM_COL_MAJOR)
