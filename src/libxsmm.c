@@ -772,21 +772,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
 
 #if !defined(__MIC__)
 # if defined(__AVX2__)
-#   include <immintrin.h>
 #   if !defined(LIBXSMM_AVX2)
 #     define LIBXSMM_AVX2
 #   endif
 # elif (40700 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)) && !defined(__MIC__)
 #   pragma GCC push_options
 #   pragma GCC target("avx2")
+#   if !defined(LIBXSMM_AVX2)
+#     define LIBXSMM_AVX2
+#   endif
+# elif defined(__INTEL_COMPILER) || defined(_WIN32)
+#   if !defined(LIBXSMM_AVX2)
+#     define LIBXSMM_AVX2
+#   endif
+# endif
+# if defined(LIBXSMM_AVX2)
 #   include <immintrin.h>
-#   if !defined(LIBXSMM_AVX2)
-#     define LIBXSMM_AVX2
-#   endif
-# elif defined(_WIN32)
-#   if !defined(LIBXSMM_AVX2)
-#     define LIBXSMM_AVX2
-#   endif
 # endif
 #endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx2(
