@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
   }
 
   if (0 < dcall && 0 < ddisp) {
-    fprintf(stdout, "\tdispatch calls/s: %.0f Hz\n", size / ddisp);
-    fprintf(stdout, "\tempty calls/s: %.0f Hz\n", size / dcall);
+    fprintf(stdout, "\tdispatch calls/s: %.1f MHz\n", 1E-6 * size / ddisp);
+    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-6 * size / dcall);
     fprintf(stdout, "\toverhead: %.1fx\n", ddisp / dcall);
   }
   fprintf(stdout, "Finished\n");
