@@ -435,7 +435,7 @@ else # GCC assumed
 			LIBGFORTRAN = -lgfortran
 		endif
 		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
-		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
+		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm -lgcc_s -lgcc $(XLIB_END)
 	else
 		CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
 		CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
