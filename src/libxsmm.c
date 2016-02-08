@@ -72,7 +72,7 @@
 
 /* enable generic variant of internal_gemmdiff */
 #if !defined(LIBXSMM_GEMMDIFF_FORCESW)
-/*# define LIBXSMM_GEMMDIFF_FORCESW*/
+# define LIBXSMM_GEMMDIFF_FORCESW
 #endif
 
 /* larger capacity of the registry lowers the probability of key collisions */
