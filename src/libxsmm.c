@@ -747,6 +747,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(
 
 
 #if defined(__MIC__)
+# include <immintrin.h>
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
