@@ -1,7 +1,14 @@
 #include <libxsmm.h>
 #include <libxsmm_timer.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
 /**
@@ -33,33 +40,38 @@ int main(int argc, char* argv[])
   fprintf(stderr, "\tWarning: JIT support has been disabled at build time!\n");
 #endif
 
-  /* first invocation may initialize some internals (libxsmm_init),
-   * or actually generate code (code gen. time is out of scope)
-   */
-  libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-    NULL/*flags*/, NULL/*prefetch*/);
-
-  /* run non-inline function to measure call overhead of an "empty" function */
-  start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-# pragma omp parallel for
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
-  for (i = 0; i < size; ++i) {
-    libxsmm_init(); /* subsequent calls are not doing any work */
-  }
-  dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
-
-  start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-# pragma omp parallel for
-#endif
-  for (i = 0; i < size; ++i) {
+  {
+    /* first invocation may initialize some internals (libxsmm_init),
+     * or actually generate code (code gen. time is out of scope)
+     */
     libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       NULL/*flags*/, NULL/*prefetch*/);
+
+    /* run non-inline function to measure call overhead of an "empty" function */
+    start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
+    for (i = 0; i < size; ++i) {
+      libxsmm_init(); /* subsequent calls are not doing any work */
+    }
+    dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
+
+    start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
+    for (i = 0; i < size; ++i) {
+      libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
+        NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
+        NULL/*flags*/, NULL/*prefetch*/);
+    }
+    ddisp = libxsmm_timer_duration(start, libxsmm_timer_tick());
   }
-  ddisp = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   if (0 < dcall && 0 < ddisp) {
     fprintf(stdout, "\tdispatch calls/s: %.0f Hz\n", size / ddisp);
