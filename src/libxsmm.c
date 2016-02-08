@@ -831,11 +831,62 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx2(
 #endif
 
 
+#if !defined(__MIC__)
+# if defined(__AVX__)
+#   if !defined(LIBXSMM_AVX)
+#     define LIBXSMM_AVX
+#   endif
+# elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)) && !defined(__MIC__)
+#   pragma GCC push_options
+#   pragma GCC target("avx")
+#   if !defined(LIBXSMM_AVX)
+#     define LIBXSMM_AVX
+#   endif
+# elif defined(__INTEL_COMPILER) || defined(_WIN32)
+#   if !defined(LIBXSMM_AVX)
+#     define LIBXSMM_AVX
+#   endif
+# endif
+# if defined(LIBXSMM_AVX)
+#   include <immintrin.h>
+# endif
+#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
+#if defined(LIBXSMM_AVX)
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compilation error */
+  const __m256i mask = _mm256_set_epi32(0, -1, -1, -1, -1, -1, -1, -1);
+# endif
+  __m256 ia, ib;
+
+  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+  assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
+  assert(0 != a && 0 != b);
+
+  ia = _mm256_maskload_ps((const float*)a, mask);
+  ib = _mm256_maskload_ps((const float*)b, mask);
+
+  return _mm256_testnzc_ps(ia, ib);
+#else
+# if !defined(NDEBUG) /* library code is expected to be mute */
+  static LIBXSMM_TLS int once = 0;
+  if (0 == once) {
+    fprintf(stderr, "LIBXSMM: unable to enter AVX instruction code path!\n");
+    once = 1;
+  }
+# endif
+# if !defined(__MIC__)
+  LIBXSMM_MESSAGE("================================================================================");
+  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using AVX instructions!");
+  LIBXSMM_MESSAGE("================================================================================");
+# endif
   return internal_gemmdiff(a, b);
+#endif
 }
+#if !defined(__MIC__) && !defined(__AVX__) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# pragma GCC pop_options
+#endif
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_sse(
@@ -862,20 +913,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-#if !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__MIC__)
+#if defined(LIBXSMM_GEMMDIFF_FORCESW)
+  INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, internal_gemmdiff);
+#elif defined(__MIC__)
   INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32, internal_gemmdiff_imci);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__AVX2__)
+#elif defined(__AVX2__)
   INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_avx2);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__AVX__)
+#elif defined(__AVX__)
   INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_avx);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__SSE4_2__)
+#elif defined(__SSE4_2__)
   INTERNAL_FIND_CODE(desc, smm, libxsmm_crc32_sse42, internal_gemmdiff_sse);
 #else
-  INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32,
-# if !defined(LIBXSMM_GEMMDIFF_FORCESW)
-    0 != internal_arch_name ? (/*snb*/'b' != internal_arch_name[2] ? internal_gemmdiff_avx2 : internal_gemmdiff_avx) :
-# endif
-                              (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
+  INTERNAL_FIND_CODE(desc, smm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
+    ? (/*snb*/'b' != internal_arch_name[2] ? internal_gemmdiff_avx2 : internal_gemmdiff_avx)
+    : (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
 #endif
 }
 
@@ -897,20 +948,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
     0 == beta ? LIBXSMM_BETA : *beta,
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
 
-#if !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__MIC__)
+#if defined(LIBXSMM_GEMMDIFF_FORCESW)
+  INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, internal_gemmdiff);
+#elif defined(__MIC__)
   INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32, internal_gemmdiff_imci);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__AVX2__)
+#elif defined(__AVX2__)
   INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_avx2);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__AVX__)
+#elif defined(__AVX__)
   INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_avx);
-#elif !defined(LIBXSMM_GEMMDIFF_FORCESW) && defined(__SSE4_2__)
+#elif defined(__SSE4_2__)
   INTERNAL_FIND_CODE(desc, dmm, libxsmm_crc32_sse42, internal_gemmdiff_sse);
 #else
-  INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32,
-# if !defined(LIBXSMM_GEMMDIFF_FORCESW)
-    0 != internal_arch_name ? (/*snb*/'b' != internal_arch_name[2] ? internal_gemmdiff_avx2 : internal_gemmdiff_avx) :
-# endif
-                              (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
+  INTERNAL_FIND_CODE(desc, dmm, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
+    ? (/*snb*/'b' != internal_arch_name[2] ? internal_gemmdiff_avx2 : internal_gemmdiff_avx)
+    : (0 != internal_has_crc32 ? internal_gemmdiff_sse : internal_gemmdiff));
 #endif
 }
 

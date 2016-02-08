@@ -74,11 +74,12 @@
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
 /** The libxsmm_gemm_descriptor structure must be ordered by the size of the members (packed). */
-#define LIBXSMM_GEMM_DESCRIPTOR_SIZE (3 * sizeof(unsigned int)  /*LDA,LDB,LDC*/ \
-                                    + 3 * sizeof(unsigned int)  /*M,N,K*/       \
-                                    + 1 * sizeof(unsigned char) /*flags*/       \
-                                    + 2 * sizeof(signed char)   /*alpha,beta*/  \
-                                    + 1 * sizeof(unsigned char) /*prefetch*/)
+#define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(unsigned int)
+                                         * M,N,K:       3 * sizeof(unsigned int)
+                                         * flags:       1 * sizeof(unsigned char)
+                                         * alpha,beta:  2 * sizeof(signed char)
+                                         * prefetch:    1 * sizeof(unsigned char)
+                                         */
 
 /**
  * Structure storing the gemm argument description.
