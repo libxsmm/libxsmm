@@ -54,19 +54,27 @@
 # elif (40700 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 #   define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(__target__("avx2"))
 #   define LIBXSMM_AVX_MAX 2
-#   pragma GCC push_options
-#   pragma GCC target("avx2")
-#   include <immintrin.h>
-#   pragma GCC pop_options
+#   if defined(__clang__)
+#     include <immintrin.h>
+#   else
+#     pragma GCC push_options
+#     pragma GCC target("avx2")
+#     include <immintrin.h>
+#     pragma GCC pop_options
+#   endif
 # elif defined(__AVX__)
 #   define LIBXSMM_AVX_MAX 1
 # elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 #   define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(__target__("avx"))
 #   define LIBXSMM_AVX_MAX 1
-#   pragma GCC push_options
-#   pragma GCC target("avx")
-#   include <immintrin.h>
-#   pragma GCC pop_options
+#   if defined(__clang__)
+#     include <immintrin.h>
+#   else
+#     pragma GCC push_options
+#     pragma GCC target("avx")
+#     include <immintrin.h>
+#     pragma GCC pop_options
+#   endif
 # endif
 # if defined(LIBXSMM_AVX_MAX)
 #   define LIBXSMM_SSE_MAX 5
@@ -76,20 +84,28 @@
 # elif defined(__GNUC__)
 #   define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(__target__("sse4.2"))
 #   define LIBXSMM_SSE_MAX 4
-#   pragma GCC push_options
-#   pragma GCC target("sse4.2")
-#   include <immintrin.h>
-#   pragma GCC pop_options
+#   if defined(__clang__)
+#     include <immintrin.h>
+#   else
+#     pragma GCC push_options
+#     pragma GCC target("sse4.2")
+#     include <immintrin.h>
+#     pragma GCC pop_options
+#   endif
 # elif defined(__SSE3__)
 #   define LIBXSMM_SSE_MAX 3
 #   include <immintrin.h>
 # elif defined(__GNUC__)
 #   define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(__target__("sse3"))
 #   define LIBXSMM_SSE_MAX 3
-#   pragma GCC push_options
-#   pragma GCC target("sse3")
-#   include <immintrin.h>
-#   pragma GCC pop_options
+#   if defined(__clang__)
+#     include <immintrin.h>
+#   else
+#     pragma GCC push_options
+#     pragma GCC target("sse3")
+#     include <immintrin.h>
+#     pragma GCC pop_options
+#   endif
 # endif
 #endif
 #if !defined(LIBXSMM_INTRINSICS)
