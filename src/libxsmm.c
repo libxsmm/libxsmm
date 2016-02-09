@@ -69,6 +69,8 @@
 #   endif
 # endif
 #endif
+/* must be the last included header */
+#include "libxsmm_intrinsics.h"
 
 /* enable generic variant of internal_gemmdiff */
 #if !defined(LIBXSMM_GEMMDIFF_FORCESW)
@@ -408,7 +410,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #             include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
               if (0 == internal_arch_name && (0 == env_jit || '1' == *env_jit)) {
-# if defined(__SSE3__)
+# if defined(LIBXSMM_SSE) && (3 <= (LIBXSMM_SSE))
                 fprintf(stderr, "LIBXSMM: SSE instruction set extension is not supported for JIT-code generation!\n");
 # elif defined(__MIC__)
                 fprintf(stderr, "LIBXSMM: IMCI architecture (Xeon Phi coprocessor) is not supported for JIT-code generation!\n");
@@ -749,110 +751,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff(
 }
 
 
-#if defined(__MIC__)
-# include <immintrin.h>
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_sse(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
-  const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
-  __m512i ia, ib; /* we do not care about the initial state */
-
-  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
-  assert(0 != a && 0 != b);
-
-  ia = _mm512_mask_loadunpackhi_epi32(
-    _mm512_mask_loadunpacklo_epi32(ia/*some state*/, mask, a),
-    mask, ((const char*)a) + 32);
-  ib = _mm512_mask_loadunpackhi_epi32(
-    _mm512_mask_loadunpacklo_epi32(ib/*some state*/, mask, b),
-    mask, ((const char*)b) + 32);
-
-  return _mm512_mask_reduce_or_epi32(mask, _mm512_xor_si512(ia, ib));
-}
-#endif /*defined(__MIC__)*/
-
-
-#if !defined(__MIC__)
-# if defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# elif (40700 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)) && !defined(__MIC__)
-#   pragma GCC push_options
-#   pragma GCC target("avx2")
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# elif defined(__INTEL_COMPILER) || defined(_WIN32)
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# endif
-# if defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#   include <immintrin.h>
-# endif
-#endif
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx2(
-  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
-{
-#if defined(LIBXSMM_GEMMDIFF_FORCEHW)
-  __m256i mask = _mm256_setzero_si256(), ia, ib;
-
-  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
-  assert(0 != a && 0 != b);
-
-  mask = _mm256_srai_epi32(mask, LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
-  ia = _mm256_maskload_epi32((const void*)a, mask);
-  ib = _mm256_maskload_epi32((const void*)b, mask);
-
-  return _mm256_testnzc_si256(ia, ib);
-#else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX2 instruction code path!\n");
-    once = 1;
-  }
-# endif
-# if !defined(__MIC__)
-  LIBXSMM_MESSAGE("================================================================================");
-  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using AVX2 instructions!");
-  LIBXSMM_MESSAGE("================================================================================");
-# endif
   return internal_gemmdiff(a, b);
-#endif
 }
-#if !defined(__MIC__) && !(defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))) && (40700 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# pragma GCC pop_options
-#endif
 
 
-#if !defined(__MIC__)
-# if defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)) && !defined(__MIC__)
-#   pragma GCC push_options
-#   pragma GCC target("avx")
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# elif defined(__INTEL_COMPILER) || defined(_WIN32)
-#   if !defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#     define LIBXSMM_GEMMDIFF_FORCEHW
-#   endif
-# endif
-# if defined(LIBXSMM_GEMMDIFF_FORCEHW)
-#   include <immintrin.h>
-# endif
-#endif
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx(
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int internal_gemmdiff_avx(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
-#if defined(LIBXSMM_GEMMDIFF_FORCEHW)
+#if defined(LIBXSMM_AVX_MAX) && (1 <= (LIBXSMM_AVX_MAX))
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compilation error */
 #   if !defined(__CYGWIN__)
   const union { __m256i i32; } mask = { _mm256_set_epi32(0, -1, -1, -1, -1, -1, -1, -1) };
@@ -886,16 +795,62 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_avx(
   return internal_gemmdiff(a, b);
 #endif
 }
-#if !defined(__MIC__) && !(defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# pragma GCC pop_options
-#endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_sse(
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int internal_gemmdiff_avx2(
   const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
+#if defined(LIBXSMM_AVX_MAX) && (2 <= (LIBXSMM_AVX_MAX))
+  __m256i mask = _mm256_setzero_si256(), ia, ib;
+
+  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+  assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
+  assert(0 != a && 0 != b);
+
+  mask = _mm256_srai_epi32(mask, LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
+  ia = _mm256_maskload_epi32((const void*)a, mask);
+  ib = _mm256_maskload_epi32((const void*)b, mask);
+
+  return _mm256_testnzc_si256(ia, ib);
+#else
+# if !defined(NDEBUG) /* library code is expected to be mute */
+  static LIBXSMM_TLS int once = 0;
+  if (0 == once) {
+    fprintf(stderr, "LIBXSMM: unable to enter AVX2 instruction code path!\n");
+    once = 1;
+  }
+# endif
+# if !defined(__MIC__)
+  LIBXSMM_MESSAGE("================================================================================");
+  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using AVX2 instructions!");
+  LIBXSMM_MESSAGE("================================================================================");
+# endif
   return internal_gemmdiff(a, b);
+#endif
 }
+
+
+#if defined(__MIC__)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
+  const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
+  __m512i ia, ib; /* we do not care about the initial state */
+
+  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+  assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
+  assert(0 != a && 0 != b);
+
+  ia = _mm512_mask_loadunpackhi_epi32(
+    _mm512_mask_loadunpacklo_epi32(ia/*some state*/, mask, a),
+    mask, ((const char*)a) + 32);
+  ib = _mm512_mask_loadunpackhi_epi32(
+    _mm512_mask_loadunpacklo_epi32(ib/*some state*/, mask, b),
+    mask, ((const char*)b) + 32);
+
+  return _mm512_mask_reduce_or_epi32(mask, _mm512_xor_si512(ia, ib));
+}
+#endif /*defined(__MIC__)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,

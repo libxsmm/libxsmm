@@ -227,6 +227,7 @@
 #endif
 
 #if defined(NDEBUG)
+# define LIBXSMM_NDEBUG NDEBUG
 # define LIBXSMM_DEBUG(...)
 #else
 # define LIBXSMM_DEBUG(...) __VA_ARGS__
@@ -258,29 +259,6 @@
     EAX = (int)libxsmm_xgetbv_; \
     EDX = (int)(libxsmm_xgetbv_ >> 32); \
   }
-#endif
-
-/** Backup of symbol state prior to an eventual manipulation (e.g., via GCC pragma target). */
-#if defined(__AVX512F__)
-# if !defined(LIBXSMM_AVX)
-#   define LIBXSMM_AVX 3
-# endif
-#elif defined(__AVX2__)
-# if !defined(LIBXSMM_AVX)
-#   define LIBXSMM_AVX 2
-# endif
-#elif defined(__AVX__)
-# if !defined(LIBXSMM_AVX)
-#   define LIBXSMM_AVX 1
-# endif
-#elif defined(__SSE4_2__)
-# if !defined(LIBXSMM_SSE)
-#   define LIBXSMM_SSE 4
-# endif
-#elif defined(__SSE3__)
-# if !defined(LIBXSMM_SSE)
-#   define LIBXSMM_SSE 3
-# endif
 #endif
 
 #if defined(_WIN32)
