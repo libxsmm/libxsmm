@@ -51,6 +51,7 @@
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
+    <ClInclude Include="..\src\libxsmm_intrinsics.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
   <ItemGroup>

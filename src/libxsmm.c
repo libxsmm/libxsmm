@@ -763,10 +763,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int internal_gem
 {
 #if defined(LIBXSMM_AVX_MAX) && (1 <= (LIBXSMM_AVX_MAX))
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compilation error */
-#   if !defined(__CYGWIN__)
-  const union { __m256i i32; } mask = { _mm256_set_epi32(0, -1, -1, -1, -1, -1, -1, -1) };
+#   if !defined(__CYGWIN__) && !(defined(__INTEL_COMPILER) && defined(_WIN32))
+  /*const*/ struct { __m256i i32; } mask = { _mm256_set_epi32(0, -1, -1, -1, -1, -1, -1, -1) };
 #   else /* Cygwin/GCC: _mm256_set_epi32 causes an illegal instruction */
-  const union { int array[8]; __m256i i32; } mask = { { -1, -1, -1, -1, -1, -1, -1, 0 } };
+  const union { int32_t array[8]; __m256i i32; } mask = { { -1, -1, -1, -1, -1, -1, -1, 0 } };
 #   endif
 # endif
   __m256 ia, ib;
