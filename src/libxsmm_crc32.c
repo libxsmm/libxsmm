@@ -446,7 +446,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 
 
 #if !defined(__MIC__)
-# if defined(__SSE4_2__)
+# if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
 #   if !defined(LIBXSMM_CRC32_FORCEHW)
 #     define LIBXSMM_CRC32_FORCEHW
 #   endif
@@ -485,7 +485,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
 }
-#if !defined(__MIC__) && !defined(__SSE4_2__) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#if !defined(__MIC__) && !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
 # pragma GCC pop_options
 #endif
 
