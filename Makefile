@@ -140,6 +140,13 @@ endif
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
+HEADERS = $(ROOTDIR)/include/libxsmm_frontend.h \
+          $(ROOTDIR)/include/libxsmm_generator.h \
+          $(ROOTDIR)/include/libxsmm_macros.h \
+          $(ROOTDIR)/include/libxsmm_timer.h \
+          $(ROOTDIR)/include/libxsmm_typedefs.h \
+          $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ")
+
 SRCFILES = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c libxsmm_trace.c)
 SRCFILES_GEN_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_driver.c)
@@ -240,12 +247,9 @@ endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(INCDIR)/.make \
-                     $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
-                     $(ROOTDIR)/include/libxsmm_macros.h $(ROOTDIR)/include/libxsmm_typedefs.h $(ROOTDIR)/include/libxsmm_frontend.h \
-                     $(ROOTDIR)/include/libxsmm_generator.h $(ROOTDIR)/include/libxsmm_timer.h \
-                     $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
-                     $(ROOTDIR)/Makefile
+$(INCDIR)/libxsmm.h: $(INCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
+                     $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
+                     $(HEADERS)
 	@$(ROOTDIR)/.hooks/install.sh
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true

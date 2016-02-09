@@ -227,6 +227,7 @@
 #endif
 
 #if defined(NDEBUG)
+# define LIBXSMM_NDEBUG NDEBUG
 # define LIBXSMM_DEBUG(...)
 #else
 # define LIBXSMM_DEBUG(...) __VA_ARGS__

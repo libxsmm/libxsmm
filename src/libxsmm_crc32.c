@@ -41,6 +41,8 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+/* must be the last included header */
+#include "libxsmm_intrinsics.h"
 
 #if !defined(LIBXSMM_CRC32_FORCESW)
 /*# define LIBXSMM_CRC32_FORCESW*/
@@ -50,7 +52,7 @@
 #endif
 
 
-#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)
 /* table-based implementation taken from http://dpdk.org/. */
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_table[][256] = {
   { /*table0*/
@@ -326,7 +328,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     0xE54C35A1, 0xAC704886, 0x7734CFEF, 0x3E08B2C8, 0xC451B7CC, 0x8D6DCAEB, 0x56294D82, 0x1F1530A5
   }
 };
-#endif /*!defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)*/
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)*/
 
 
 #define LIBXSMM_CRC32_U64(FN, INIT, BEGIN, END) { \
@@ -400,7 +402,8 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 #endif
 
 
-#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int init, unsigned char value)
 {
   return internal_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
@@ -432,42 +435,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
   init = internal_crc32_u32(init, split.half[1]);
   return init;
 }
-#endif /*!defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)*/
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)*/
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
+  const void* data, unsigned int size, unsigned int init)
 {
-#if !defined(__SSE4_2__) || defined(LIBXSMM_CRC32_FORCESW)
-  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
-#else
-  return libxsmm_crc32_sse42(data, size, init);
-#endif
-}
-
-
-#if !defined(__MIC__)
-# if defined(__SSE4_2__)
-#   if !defined(LIBXSMM_CRC32_FORCEHW)
-#     define LIBXSMM_CRC32_FORCEHW
-#   endif
-# elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)) && !defined(__MIC__)
-#   pragma GCC push_options
-#   pragma GCC target("sse4.2")
-#   if !defined(LIBXSMM_CRC32_FORCEHW)
-#     define LIBXSMM_CRC32_FORCEHW
-#   endif
-# elif defined(__INTEL_COMPILER) || defined(_WIN32)
-#   if !defined(LIBXSMM_CRC32_FORCEHW)
-#     define LIBXSMM_CRC32_FORCEHW
-#   endif
-# endif
-# if defined(LIBXSMM_CRC32_FORCEHW)
-#   include <immintrin.h>
-# endif
-#endif
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int init)
-{
-#if defined(LIBXSMM_CRC32_FORCEHW)
+#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX))
   LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */
@@ -485,7 +459,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(const voi
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
 }
-#if !defined(__MIC__) && !defined(__SSE4_2__) && (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
-# pragma GCC pop_options
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
+{
+#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_FORCESW)
+  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
+#else
+  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
+}
 
