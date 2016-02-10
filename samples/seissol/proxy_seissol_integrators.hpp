@@ -31,8 +31,8 @@ void computeAderIntegration() {
 #ifdef _OPENMP
   #pragma omp parallel 
   {
-#if NUMBER_OF_GLOBAL_DATA_COPIES>1
-  //GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
+  //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
   GlobalData* l_globalData = m_globalDataArray[0];
 #else
   GlobalData* l_globalData = m_globalData;
@@ -58,8 +58,8 @@ void computeVolumeIntegration() {
 #ifdef _OPENMP
   #pragma omp parallel 
   {
-#if NUMBER_OF_GLOBAL_DATA_COPIES>1
-  //GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
+  //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
   GlobalData* l_globalData = m_globalDataArray[0];
 #else
   GlobalData* l_globalData = m_globalData;
@@ -83,8 +83,8 @@ void computeLocalBoundaryIntegration() {
 #ifdef _OPENMP
   #pragma omp parallel
   {
-#if NUMBER_OF_GLOBAL_DATA_COPIES>1
-  //GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
+  //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
   GlobalData* l_globalData = m_globalDataArray[0];
 #else
   GlobalData* l_globalData = m_globalData;
@@ -115,8 +115,8 @@ void computeLocalIntegration() {
 #ifdef _OPENMP
   #pragma omp parallel
   {
-#if NUMBER_OF_GLOBAL_DATA_COPIES>1
-  //GlobalData* l_globalData = m_globalDataArray[(omp_get_thread_num()/NUMBER_OF_COMPACT_THREADS_PER_GLOBAL_DATA_COPY)%NUMBER_OF_GLOBAL_DATA_COPIES];
+#if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
+  //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
   GlobalData* l_globalData = m_globalDataArray[0];
 #else
   GlobalData* l_globalData = m_globalData;
