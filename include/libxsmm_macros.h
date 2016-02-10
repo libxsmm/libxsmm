@@ -327,10 +327,10 @@
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
 # endif
-# if defined(__clang__)
-#   if !defined(__extern_always_inline)
-#     define __extern_always_inline LIBXSMM_INLINE_KEYWORD
-#   endif
+#endif
+#if defined(__clang__)
+# if !defined(__extern_always_inline)
+#   define __extern_always_inline LIBXSMM_INLINE_KEYWORD
 # endif
 #endif
 
