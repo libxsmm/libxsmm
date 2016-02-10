@@ -66,6 +66,11 @@
 # endif
 #endif
 
+/* enable generic variant of libxsmm_gemm_diff */
+#if !defined(LIBXSMM_GEMM_DIFF_SW)
+# define LIBXSMM_GEMM_DIFF_SW
+#endif
+
 /* larger capacity of the registry lowers the probability of key collisions */
 /*#define LIBXSMM_HASH_PRIME*/
 #if defined(LIBXSMM_HASH_PRIME)
@@ -675,7 +680,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
   INTERNAL_FIND_CODE_INIT(entry);
 
-#if defined(LIBXSMM_GEMMDIFF_FORCESW)
+#if defined(LIBXSMM_GEMM_DIFF_SW)
   INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 #elif defined(__MIC__)
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
@@ -712,7 +717,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
     0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
   INTERNAL_FIND_CODE_INIT(entry);
 
-#if defined(LIBXSMM_GEMMDIFF_FORCESW)
+#if defined(LIBXSMM_GEMM_DIFF_SW)
   INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 #elif defined(__MIC__)
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
