@@ -837,6 +837,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
 {
   const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
   __m512i ia, ib; /* we do not care about the initial state */
+  /* however, avoid warning about "variable is used before its value is set" */
+  ia = ib = _mm512_set1_epi32(0);
 
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
@@ -849,7 +851,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_gemmdiff_imci(
     _mm512_mask_loadunpacklo_epi32(ib/*some state*/, mask, b),
     mask, ((const char*)b) + 32);
 
-  return _mm512_mask_reduce_or_epi32(mask, _mm512_xor_si512(ia, ib));
+  /* mask not required here since ia and ib are zero-initialized */
+  return _mm512_reduce_or_epi32(_mm512_xor_si512(ia, ib));
 }
 #endif /*defined(__MIC__)*/
 
