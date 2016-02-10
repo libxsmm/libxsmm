@@ -409,7 +409,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
               /* setup the dispatch table for the statically generated code */
 #             include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
-              if (0 == internal_arch_name && (0 == env_jit || '1' == *env_jit)) {
+# if defined(__MIC__)
+                if (0 == internal_arch_name)
+# else
+                if (0 == internal_arch_name && (0 == env_jit || '1' == *env_jit))
+# endif
+                {
 # if defined(LIBXSMM_SSE) && (3 <= (LIBXSMM_SSE))
                 fprintf(stderr, "LIBXSMM: SSE instruction set extension is not supported for JIT-code generation!\n");
 # elif defined(__MIC__)
