@@ -44,15 +44,15 @@
 /* must be the last included header */
 #include "libxsmm_intrinsics.h"
 
-#if !defined(LIBXSMM_CRC32_FORCESW)
-/*# define LIBXSMM_CRC32_FORCESW*/
+#if !defined(LIBXSMM_CRC32_SW)
+/*# define LIBXSMM_CRC32_SW*/
 #endif
 #if !defined(LIBXSMM_CRC32_ALIGNMENT)
 # define LIBXSMM_CRC32_ALIGNMENT 8
 #endif
 
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)
 /* table-based implementation taken from http://dpdk.org/. */
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_table[][256] = {
   { /*table0*/
@@ -328,7 +328,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     0xE54C35A1, 0xAC704886, 0x7734CFEF, 0x3E08B2C8, 0xC451B7CC, 0x8D6DCAEB, 0x56294D82, 0x1F1530A5
   }
 };
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)*/
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)*/
 
 
 #define LIBXSMM_CRC32_U64(FN, INIT, BEGIN, END) { \
@@ -402,7 +402,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 #endif
 
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int init, unsigned char value)
 {
@@ -435,7 +435,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
   init = internal_crc32_u32(init, split.half[1]);
   return init;
 }
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_FORCESW)*/
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
@@ -463,7 +463,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
 {
-#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_FORCESW)
+#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_SW)
   return libxsmm_crc32_sse42(data, size, init);
 #else
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
