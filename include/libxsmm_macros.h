@@ -39,6 +39,9 @@
 #define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE2(SYMBOL, _)
 #define LIBXSMM_UNIQUE(NAME) LIBXSMM_CONCATENATE(NAME, __LINE__)
 
+#define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (MAJOR * 10000 + MINOR * 100 + UPDATE)
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) (MAJOR * 1000000 + MINOR * 10000 + UPDATE * 100 + PATCH)
+
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
 # define LIBXSMM_EXTERN_C extern "C"
@@ -85,7 +88,7 @@
 
 #if defined(_MSC_VER)
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
-#elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#elif (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
 #else
 # define LIBXSMM_MESSAGE(MSG)
@@ -184,7 +187,7 @@
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
 # if defined(_MSC_VER)
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
-# elif (40500 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+# elif (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION)
@@ -205,9 +208,9 @@
 #endif
 
 #if defined(_REENTRANT)
-# if defined(_WIN32) && !defined(__GNUC__)
+# if (defined(_WIN32) && !defined(__GNUC__)) || defined(__clang__)
 #   define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-# elif defined(__GNUC__) || defined(__clang__)
+# elif defined(__GNUC__)
 #   define LIBXSMM_TLS __thread
 # elif defined(__cplusplus)
 #   define LIBXSMM_TLS thread_local

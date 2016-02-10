@@ -94,7 +94,7 @@ int posix_fallocate(int, off_t, off_t);
 #endif
 #if defined(__GNUC__)
 # if !defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (40704 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #     define LIBXSMM_TRACE_GCCATOMICS 1
 #   else
 #     define LIBXSMM_TRACE_GCCATOMICS 0

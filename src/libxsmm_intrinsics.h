@@ -31,6 +31,8 @@
 #ifndef LIBXSMM_INTRINSICS_H
 #define LIBXSMM_INTRINSICS_H
 
+#include <libxsmm_macros.h>
+
 #if defined(__MIC__)
 # include <immintrin.h>
 #else
@@ -52,13 +54,15 @@
 #   define LIBXSMM_AVX_MAX 2
 #   define LIBXSMM_SSE_MAX 5
 #   include <immintrin.h>
+# elif defined(__clang__)
+#   if (LIBXSMM_VERSION3(3, 7, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+#     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.2,avx,avx2"))
+#     define LIBXSMM_AVX_MAX 2
+#     define LIBXSMM_SSE_MAX 5
+#   endif
+#   include <immintrin.h>
 # elif defined(__GNUC__)
-#   if defined(__clang__)
-#     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.2"))
-/*#     define LIBXSMM_SSE_MAX 4
-#     pragma clang optimize "sse3,sse4.2,avx,avx2"*/
-#     include <immintrin.h>
-#   elif (40700 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#   if (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.2,avx,avx2"))
 #     pragma GCC push_options
 #     pragma GCC target("sse3,sse4.2,avx,avx2")
@@ -66,7 +70,7 @@
 #     pragma GCC pop_options
 #     define LIBXSMM_AVX_MAX 2
 #     define LIBXSMM_SSE_MAX 5
-#   elif (40400 <= (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__))
+#   elif (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.2,avx"))
 #     pragma GCC push_options
 #     pragma GCC target("sse3,sse4.2,avx")
@@ -80,6 +84,7 @@
 # elif defined(__AVX__)
 #   define LIBXSMM_AVX_MAX 1
 #   define LIBXSMM_SSE_MAX 5
+#   include <immintrin.h>
 # elif defined(__SSE4_2__)
 #   define LIBXSMM_SSE_MAX 4
 #   include <immintrin.h>
