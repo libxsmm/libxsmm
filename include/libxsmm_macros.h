@@ -50,15 +50,16 @@
 #else
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN_C extern
-# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__))
+# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__)) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
 #   define LIBXSMM_INLINE_KEYWORD __inline
-# else
+# endif
+# if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
-# endif /*C99*/
+# endif
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
 
@@ -89,6 +90,10 @@
 #if defined(_MSC_VER)
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
 #elif (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
+#elif (LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
+  && 0 /* message format looks awful; disabled */
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
 #else
 # define LIBXSMM_MESSAGE(MSG)
@@ -321,6 +326,11 @@
 #   define __builtin_nanf nanf
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
+# endif
+# if defined(__clang__)
+#   if !defined(__extern_always_inline)
+#     define __extern_always_inline LIBXSMM_INLINE_KEYWORD
+#   endif
 # endif
 #endif
 

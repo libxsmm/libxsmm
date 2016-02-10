@@ -441,7 +441,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int init)
 {
-#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX))
+#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX)) && !defined(LIBXSMM_NO_CRC32)
   LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */
@@ -464,7 +464,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
 {
 #if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_FORCESW)
-  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
+  return libxsmm_crc32_sse42(data, size, init);
 #else
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif

@@ -529,9 +529,6 @@ else # GCC assumed
 		endif
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
-	ifeq (0,$(GCC)) # fixup older Clang
-		DFLAGS += -D__extern_always_inline=inline
-	endif
 	ifneq (0,$(shell echo $$((3 > $(DBG)))))
 		ifeq (1,$(AVX))
 			TARGET = -mavx
