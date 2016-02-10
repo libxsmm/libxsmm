@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2016, Intel Corporation                                **
+** Copyright (c) 2016, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,26 +28,18 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CRC32_H
-#define LIBXSMM_CRC32_H
+#ifndef LIBXSMM_CPUID_H
+#define LIBXSMM_CPUID_H
 
 #include <libxsmm.h>
 
 
-/** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_crc32_function)(const void*, unsigned int, unsigned int);
-
-/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
-  const void* data, unsigned int size, unsigned int init);
-
-/** Similar to libxsmm_crc32 (uses CRC32 instructions available since SSE4.2). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
-  const void* data, unsigned int size, unsigned int init);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_cpuid(int* is_static, int* has_crc32);
 
 
 #if defined(LIBXSMM_BUILD)
-# include "libxsmm_crc32.c"
+# include "libxsmm_cpuid.c"
 #endif
 
-#endif /*LIBXSMM_CRC32_H*/
+#endif /*LIBXSMM_CPUID_H*/
+
