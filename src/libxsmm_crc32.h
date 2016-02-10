@@ -46,7 +46,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int init);
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CRC32_NOINLINE)
 # include "libxsmm_crc32.c"
 #endif
 

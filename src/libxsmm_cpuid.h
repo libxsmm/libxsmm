@@ -37,7 +37,7 @@
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_cpuid(int* is_static, int* has_crc32);
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CPUID_NOINLINE)
 # include "libxsmm_cpuid.c"
 #endif
 
