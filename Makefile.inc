@@ -430,7 +430,8 @@ else # GCC assumed
 		LIBGFORTRAN = $(abspath $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
 	endif
 	ifneq (,$(LIBGFORTRAN))
-		LDFLAGS := $(LDFLAGS) -Wl,-rpath=$(abspath $(dir $(LIBGFORTRAN)))
+		LIBGFCPATH = $(abspath $(dir $(LIBGFORTRAN)))
+		LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
 		ifeq (3,$(GCC)) # prune link-line
 			LIBGFORTRAN = -lgfortran
 		endif
@@ -753,10 +754,9 @@ else ifneq (0,$(BLAS)) # generic
 				CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
 			endif
 		endif
-		ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
-			ifneq (,$(LIBGFORTRAN)) # conclusion: quadmath available
-				CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
-			endif
+		QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo $$?)
+		ifneq (0,$(QUADMATH))
+			CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
 		endif
 	endif
 endif
