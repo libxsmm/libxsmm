@@ -96,6 +96,9 @@
     <ClInclude Include="..\src\libxsmm_gemm_diff.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_gemm.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">

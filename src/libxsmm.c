@@ -31,6 +31,7 @@
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_crc32.h"
 #include "libxsmm_cpuid.h"
+#include "libxsmm_gemm.h"
 
 #if defined(__TRACE)
 # include "libxsmm_trace.h"
@@ -288,9 +289,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
     result = internal_registry;
 #endif
     if (0 == result) {
+      int init_code = libxsmm_gemm_init(0/*auto-discovered*/, 0/*auto-discovered*/);
 #if defined(__TRACE)
       const char *const env_trace_init = getenv("LIBXSMM_TRACE");
-      if (env_trace_init) {
+      if (EXIT_SUCCESS == init_code && 0 != env_trace_init) {
         int match[] = { 0, 0 }, filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = -1;
         char buffer[32];
 
@@ -303,15 +305,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
         if (1 == sscanf(env_trace_init, "%*[^,],%*[^,],%32s", buffer)) {
           match[1] = sscanf(buffer, "%i", &filter_maxnsyms);
         }
-        i = (0 == filter_threadid && 0 == match[0] && 0 == match[1]) ? EXIT_SUCCESS
+        init_code = (0 == filter_threadid && 0 == match[0] && 0 == match[1]) ? EXIT_SUCCESS
           : libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
       }
-      else
 #endif
-      {
-        i = EXIT_SUCCESS;
-      }
-      if (EXIT_SUCCESS == i) {
+      if (EXIT_SUCCESS == init_code) {
         result = (internal_regentry*)malloc((LIBXSMM_REGSIZE + 1/*padding*/) * sizeof(internal_regentry));
 
         if (result) {
@@ -381,7 +379,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
       else {
-        fprintf(stderr, "LIBXSMM: failed to initialize trace (error #%i)!\n", i);
+        fprintf(stderr, "LIBXSMM: failed to initialize sub-component (error #%i)!\n", init_code);
       }
 #endif
     }
@@ -457,6 +455,12 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         }
 # endif
 #endif
+        i = libxsmm_gemm_finalize();
+# if !defined(NDEBUG) /* library code is expected to be mute */
+        if (EXIT_SUCCESS != i) {
+          fprintf(stderr, "LIBXSMM: failed to finalize (error #%i)!\n", i);
+        }
+# endif
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
         __atomic_store_n(&internal_registry, 0, __ATOMIC_SEQ_CST);

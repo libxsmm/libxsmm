@@ -52,6 +52,7 @@
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_cpuid.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
+    <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
     <ClInclude Include="..\src\libxsmm_intrinsics.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />

@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include "libxsmm_gemm.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -47,6 +48,17 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+  libxsmm_sgemm_function sgemm_function, libxsmm_sgemm_function dgemm_function)
+{
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void)
+{
+}
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
@@ -282,14 +294,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMB
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  typedef void (*function_type)(
-    const char*, const char*,
-    const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-    const float*, const float*, const libxsmm_blasint*,
-    const float*, const libxsmm_blasint*,
-    const float*, float*, const libxsmm_blasint*);
   static LIBXSMM_RETARGETABLE union {
-    function_type fn;
+    libxsmm_sgemm_function fn;
     void* pv;
   } original = { 0 };
   int flags = LIBXSMM_FLAGS;
@@ -320,14 +326,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMB
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  typedef void (*function_type)(
-    const char*, const char*,
-    const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-    const double*, const double*, const libxsmm_blasint*,
-    const double*, const libxsmm_blasint*,
-    const double*, double*, const libxsmm_blasint*);
   static LIBXSMM_RETARGETABLE union {
-    function_type fn;
+    libxsmm_dgemm_function fn;
     void* pv;
   } original = { 0 };
   int flags = LIBXSMM_FLAGS;
