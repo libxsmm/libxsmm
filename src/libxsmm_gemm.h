@@ -54,7 +54,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
   /** If NULL is given, the routine attempts to find the SGEMM function. */
   libxsmm_sgemm_function sgemm_function,
   /** If NULL is given, the routine attempts to find the DGEMM function. */
-  libxsmm_sgemm_function dgemm_function);
+  libxsmm_dgemm_function dgemm_function);
 
 /** Finalizes the gemm facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void);

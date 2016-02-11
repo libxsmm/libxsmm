@@ -2,16 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if defined(__MKL)
-# include <mkl.h>
-#endif
-
 #if !defined(REAL_TYPE)
 # define REAL_TYPE float
 #endif
 
 /*#define USE_LIBXSMM_BLAS*/
-/*#define USE_CBLAS*/
 #define M 64
 #define N 239
 #define K 64
@@ -52,10 +47,7 @@ int main()
   LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
-#if defined(__MKL) || defined(USE_CBLAS)
-  LIBXSMM_CBLAS_GEMM_SYMBOL(REAL_TYPE)(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k,
-    alpha, a, lda, b, ldb, beta, d, ldc);
-#elif defined(USE_LIBXSMM_BLAS)
+#if defined(USE_LIBXSMM_BLAS)
   LIBXSMM_XBLAS_GEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #else
