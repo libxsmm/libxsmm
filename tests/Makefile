@@ -23,7 +23,7 @@ OUTDIR = .
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
+IFLAGS = -I$(DEPDIR)/include -I$(DEPDIR)/src
 
 BLAS ?= 1
 OMP ?= 1
