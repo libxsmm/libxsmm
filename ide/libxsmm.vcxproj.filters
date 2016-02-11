@@ -90,6 +90,12 @@
     <ClInclude Include="..\src\libxsmm_intrinsics.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_cpuid.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_gemm_diff.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">
@@ -171,6 +177,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_trace.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_cpuid.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_gemm_diff.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

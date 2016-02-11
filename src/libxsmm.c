@@ -312,7 +312,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
         i = EXIT_SUCCESS;
       }
       if (EXIT_SUCCESS == i) {
-        result = (internal_regentry*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regentry));
+        result = (internal_regentry*)malloc((LIBXSMM_REGSIZE + 1/*padding*/) * sizeof(internal_regentry));
 
         if (result) {
           int is_static = 0;

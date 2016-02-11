@@ -75,23 +75,19 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* a, const libxs
 #if defined(LIBXSMM_AVX_MAX) && (1 <= (LIBXSMM_AVX_MAX)) && !(defined(__APPLE__) && defined(__MACH__) && \
   /* prevents fatal error (error in backend) apparently caused by _mm256_testnzc_ps */ \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-  __m256 ia, ib;
-# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compilation error */
-#   if !defined(__CYGWIN__) && !(defined(__INTEL_COMPILER) && defined(_WIN32))
-  struct { __m256i i32; } mask;
-  mask.i32 = _mm256_set_epi32(0, -1, -1, -1, -1, -1, -1, -1);
-#   else /* Cygwin/GCC: _mm256_set_epi32 causes an illegal instruction */
-  const union { int32_t array[8]; __m256i i32; } mask = { { -1, -1, -1, -1, -1, -1, -1, 0 } };
-#   endif
-# endif
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
   assert(0 != a && 0 != b);
-
-  ia = _mm256_maskload_ps((const float*)a, mask.i32);
-  ib = _mm256_maskload_ps((const float*)b, mask.i32);
-
-  return _mm256_testnzc_ps(ia, ib);
+  {
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
+    const int yes = 0x80000000, no = 0x0;
+    const __m256i mask = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
+    union { __m256 s; __m256i i; } a256, b256;
+# endif
+    a256.s = _mm256_maskload_ps((const float*)a, mask);
+    b256.s = _mm256_maskload_ps((const float*)b, mask);
+    return _mm256_testnzc_si256(a256.i, b256.i) | _mm256_testnzc_si256(b256.i, a256.i);
+  }
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
@@ -116,16 +112,18 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* a, const libx
 #if defined(LIBXSMM_AVX_MAX) && (2 <= (LIBXSMM_AVX_MAX)) && !(defined(__APPLE__) && defined(__MACH__) && \
   /* prevents fatal error (error in backend) apparently caused by _mm256_testnzc_si256 */ \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-  __m256i mask = _mm256_setzero_si256(), ia, ib;
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
   assert(0 != a && 0 != b);
-
-  mask = _mm256_srai_epi32(mask, LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
-  ia = _mm256_maskload_epi32((const void*)a, mask);
-  ib = _mm256_maskload_epi32((const void*)b, mask);
-
-  return _mm256_testnzc_si256(ia, ib);
+  {
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
+    const int yes = 0x80000000, no = 0x0;
+    const __m256i mask = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
+    const __m256i a256 = _mm256_maskload_epi32((const void*)a, mask);
+    const __m256i b256 = _mm256_maskload_epi32((const void*)b, mask);
+# endif
+    return _mm256_testnzc_si256(a256, b256) | _mm256_testnzc_si256(b256, a256);
+  }
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
@@ -148,23 +146,19 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* a, const libx
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
-  const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
-  __m512i ia, ib; /* we do not care about the initial state */
-  /* however, avoid warning about "variable is used before its value is set" */
-  ia = ib = _mm512_set1_epi32(0);
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
   assert(0 != a && 0 != b);
-
-  ia = _mm512_mask_loadunpackhi_epi32(
-    _mm512_mask_loadunpacklo_epi32(ia/*some state*/, mask, a),
-    mask, ((const char*)a) + 32);
-  ib = _mm512_mask_loadunpackhi_epi32(
-    _mm512_mask_loadunpacklo_epi32(ib/*some state*/, mask, b),
-    mask, ((const char*)b) + 32);
-
-  /* mask not required here since ia and ib are zero-initialized */
-  return _mm512_reduce_or_epi32(_mm512_xor_si512(ia, ib));
+  {
+    const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
+    const __m512i a512 = _mm512_mask_loadunpackhi_epi32(
+      _mm512_mask_loadunpacklo_epi32(_mm512_set1_epi32(0), mask, a),
+      mask, ((const char*)a) + 32);
+    const __m512i b512 = _mm512_mask_loadunpackhi_epi32(
+      _mm512_mask_loadunpacklo_epi32(_mm512_set1_epi32(0), mask, b),
+      mask, ((const char*)b) + 32);
+    return _mm512_reduce_or_epi32(_mm512_xor_si512(a512, b512));
+  }
 }
 #endif /*defined(__MIC__)*/
 

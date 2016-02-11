@@ -50,7 +50,9 @@
     <ClInclude Include="..\src\generator_sparse_csc_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
+    <ClInclude Include="..\src\libxsmm_cpuid.h" />
     <ClInclude Include="..\src\libxsmm_crc32.h" />
+    <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
     <ClInclude Include="..\src\libxsmm_intrinsics.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
@@ -78,8 +80,31 @@
     <ClCompile Include="..\src\generator_sparse_csc_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm.c" />
-    <ClCompile Include="..\src\libxsmm_crc32.c" />
+    <ClCompile Include="..\src\libxsmm_cpuid.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_crc32.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\libxsmm_gemm.c" />
+    <ClCompile Include="..\src\libxsmm_gemm_diff.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
   </ItemGroup>
