@@ -16,14 +16,14 @@ endif
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
-INCDIR = $(DEPDIR)/include
+INCDIR = .
 BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(DEPDIR)/include -I$(DEPDIR)/src
+IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS ?= 1
 OMP ?= 1
@@ -110,6 +110,10 @@ else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
 
+.PHONY: test
+test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
+	@$(OUTDIR)/test.sh
+
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
@@ -128,22 +132,18 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-.PHONY: test
-test: $(XFILES) $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
-	@$(OUTDIR)/test.sh
+.PHONY: clean-minimal
+clean-minimal:
+	@rm -f $(OBJECTS) $(FTNOBJS)
+	@rm -f fit.log *.dat
 
 .PHONY: clean
-clean:
+clean: clean-minimal
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
-else
-	@rm -f $(OBJECTS) $(FTNOBJS)
 endif
-else
-	@rm -f $(OBJECTS) $(FTNOBJS)
 endif
-	@rm -f fit.log *.dat
 
 .PHONY: realclean
 realclean: clean

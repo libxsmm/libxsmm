@@ -16,14 +16,14 @@ endif
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
-INCDIR = $(DEPDIR)/include
+INCDIR = .
 BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
+IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS ?= 1
 OMP ?= 1

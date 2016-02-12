@@ -16,14 +16,14 @@ endif
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
-INCDIR = $(DEPDIR)/include
+INCDIR = .
 BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
 DFLAGS = $(NULL)
-IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(DEPDIR)/include
+IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS ?= 1
 OMP ?= 1
@@ -85,9 +85,10 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
+XFILES := $(OUTDIR)/$(OUTNAME)
 
 .PHONY: all
-all: $(OUTDIR)/$(OUTNAME)
+all: $(XFILES)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS)
 	$(LD) -o $@ $(OBJECTS) $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -129,10 +130,10 @@ ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/$(OUTNAME)
+	@rm -f $(XFILES)
 endif
 else
-	@rm -f $(OUTDIR)/$(OUTNAME)
+	@rm -f $(XFILES)
 endif
 	@rm -f $(MODULES) $(ROOTDIR)/$(OUTNAME)-perf.sh
 	@rm -f *.gcno *.gcda *.gcov

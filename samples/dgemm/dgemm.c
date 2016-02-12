@@ -22,8 +22,9 @@ void dgemm_(const char*, const char*, const int*, const int*, const int*,
   const double*, double*, const int*);
 
 
-int main()
+int main(int argc, char* argv[])
 {
+  const int size = 1 < argc ? atoi(argv[1]) : (1 << 22);
   const int m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
   double a[LDA*K], b[LDB*N], c[LDC*N];
   const double alpha = 1, beta = 1;
@@ -49,7 +50,10 @@ int main()
     }
   }
 
-  for (i = 0; i < 1000; ++i) {
+#if defined(_OPENMP)
+# pragma omp parallel for
+#endif
+  for (i = 0; i < size; ++i) {
     dgemm_(&notrans, &notrans, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
   }
 
