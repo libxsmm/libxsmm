@@ -111,16 +111,19 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/M
 
 .PHONY: clean
 clean:
+ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
+ifneq ($(abspath $(BLDDIR)),$(abspath .))
+	@rm -rf $(BLDDIR)
+else
 	@rm -f $(OBJECTS) $(FTNOBJS)
+endif
+else
+	@rm -f $(OBJECTS) $(FTNOBJS)
+endif
 	@rm -f fit.log *.dat
 
 .PHONY: realclean
 realclean: clean
-ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
-ifneq ($(abspath $(BLDDIR)),$(abspath .))
-	@rm -rf $(BLDDIR)
-endif
-endif
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
@@ -135,13 +138,4 @@ endif
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
-
-install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-ifeq (0,$(OFFLOAD))
-ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-endif
-endif
-	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
 

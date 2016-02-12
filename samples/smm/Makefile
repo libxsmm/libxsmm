@@ -85,9 +85,10 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
+XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
 
 .PHONY: all
-all: $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+all: $(XFILES)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(FTNOBJS) $(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
@@ -123,47 +124,33 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-.PHONY: clean
-clean:
+.PHONY: clean-minimal
+clean-minimal:
 	@rm -f $(OBJECTS) $(FTNOBJS)
 	@rm -f fit.log *.dat
 
-.PHONY: realclean
-realclean: clean
+.PHONY: clean
+clean: clean-minimal
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
 endif
 endif
+
+.PHONY: realclean
+realclean: clean
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+	@rm -f $(XFILES)
 endif
 else
-	@rm -f $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inlined $(OUTDIR)/specialized
+	@rm -f $(XFILES)
 endif
 	@rm -f $(MODULES) $(ROOTDIR)/smmf-perf.sh
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
-
-install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-ifeq (0,$(OFFLOAD))
-ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-endif
-endif
-	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.plt $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-plot.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-test.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/blas.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/dispatched.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/inlined.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/specialized.sh $(OUTDIR) 2> /dev/null || true
 

@@ -110,18 +110,21 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-.PHONY: clean
-clean:
+.PHONY: clean-minimal
+clean-minimal:
 	@rm -f $(OBJECTS) $(FTNOBJS)
 	@rm -f fit.log *.dat
 
-.PHONY: realclean
-realclean: clean
+.PHONY: clean
+clean: clean-minimal
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
 endif
 endif
+
+.PHONY: realclean
+realclean: clean
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
@@ -136,18 +139,4 @@ endif
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
-
-install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-ifeq (0,$(OFFLOAD))
-ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-endif
-endif
-	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf-jit.plt $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.plt $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-plot.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/$(OUTNAME)-test.sh $(OUTDIR) 2> /dev/null || true
 

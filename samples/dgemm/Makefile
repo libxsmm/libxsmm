@@ -97,19 +97,17 @@ all: $(XFILES)
 
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (Windows_NT,$(UNAME))
+	$(info ================================================================================)
+	$(info The static link-time wrapper mechanism is not supported under Windows/Cygwin!)
+	$(info ================================================================================)
+endif
 
-ifneq (Windows_NT,$(UNAME))
 ifneq (0,$(DEPSTATIC))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
-endif
-else
-.PHONY: $(OUTDIR)/dgemm-wrap
-$(info ================================================================================)
-$(info The static link-time wrapper mechanism is not supported under Windows/Cygwin!)
-$(info ================================================================================)
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
@@ -131,12 +129,20 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/M
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
 .PHONY: test
-test: $(XFILES) $(OUTDIR)/.make $(OUTDIR)/test.sh
+test: $(XFILES) $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh
 
 .PHONY: clean
 clean:
+ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
+ifneq ($(abspath $(BLDDIR)),$(abspath .))
+	@rm -rf $(BLDDIR)
+else
 	@rm -f $(OBJECTS) $(FTNOBJS)
+endif
+else
+	@rm -f $(OBJECTS) $(FTNOBJS)
+endif
 	@rm -f fit.log *.dat
 
 .PHONY: realclean
@@ -155,13 +161,4 @@ endif
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
-
-install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-ifeq (0,$(OFFLOAD))
-ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-endif
-endif
-	@cp $(ROOTDIR)/$(OUTNAME).sh $(OUTDIR) 2> /dev/null || true
 

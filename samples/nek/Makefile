@@ -85,9 +85,10 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
+XFILES := $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
 
 .PHONY: all
-all: $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
+all: $(XFILES)
 
 $(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
 	$(AR) -rs $@ $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
@@ -125,26 +126,29 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-.PHONY: clean
-clean:
+.PHONY: clean-minimal
+clean-minimal:
 	@rm -f $(OBJECTS) $(FTNOBJS)
 	@rm -f fit.log *.dat
 
-.PHONY: realclean
-realclean: clean
+.PHONY: clean
+clean: clean-minimal
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
 endif
 endif
+
+.PHONY: realclean
+realclean: clean
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
 else
-	@rm -f $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr
+	@rm -f $(XFILES)
 endif
 else
-	@rm -f $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr
+	@rm -f $(XFILES)
 endif
 	@rm -f $(MODULES) $(ROOTDIR)/axhm-perf.sh $(ROOTDIR)/grad-perf.sh $(ROOTDIR)/rstr-perf.sh
 	@rm -f $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
@@ -152,19 +156,4 @@ endif
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
-
-install: all clean
-	@cp $(DEPDIR)/lib/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-ifeq (0,$(OFFLOAD))
-ifneq (0,$(MIC))
-	@cp $(DEPDIR)/lib/mic/libxsmm.$(DLIBEXT) $(OUTDIR) 2> /dev/null || true
-endif
-endif
-	@cp $(ROOTDIR)/axhm-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/axhm.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/grad-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/grad.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/rstr-perf.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/rstr.sh $(OUTDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/torture.sh $(OUTDIR) 2> /dev/null || true
 
