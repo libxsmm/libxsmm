@@ -34,18 +34,15 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-/* must be included first! */
 #if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
-# if !defined(_GNU_SOURCE)
-#   define _GNU_SOURCE
-# endif
 # include <dlfcn.h>
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
 # include <stdio.h>
 #endif
-# include <stdlib.h>
-# include <stdint.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <assert.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

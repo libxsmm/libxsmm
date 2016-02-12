@@ -328,6 +328,11 @@
 #   define __builtin_nansf nanf
 # endif
 #endif
+#if defined(__GNUC__)
+# if !defined(_GNU_SOURCE)
+#   define _GNU_SOURCE
+# endif
+#endif
 #if defined(__clang__)
 # if !defined(__extern_always_inline)
 #   define __extern_always_inline LIBXSMM_INLINE_KEYWORD
