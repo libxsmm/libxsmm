@@ -71,7 +71,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(dgemm);
 
 #if !defined(LIBXSMM_GEMM_WRAP) && defined(__GNUC__) && \
-  !defined(__CYGWIN__) && !defined(_WIN32) /*&& !(defined(__APPLE__) && defined(__MACH__))*/
+  !defined(__CYGWIN__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
+  LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_GEMM_WRAP
 # if defined(__STATIC)
 #   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
