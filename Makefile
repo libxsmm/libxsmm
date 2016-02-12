@@ -140,12 +140,13 @@ endif
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
-HEADERS = $(ROOTDIR)/include/libxsmm_frontend.h \
+HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/*.c 2> /dev/null | tr "\n" " ") \
+          $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
-          $(ROOTDIR)/include/libxsmm_typedefs.h \
-          $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ")
+          $(ROOTDIR)/include/libxsmm_typedefs.h
 
 SRCFILES = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c libxsmm_trace.c)
