@@ -233,7 +233,7 @@ Further, the generated interface of the library also encodes the parameters the 
 The function 'libxsmm_?mmdispatch' helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
 
 1. Specialized routine (implemented in assembly code),
-3. LAPACK/BLAS library call (fallback).
+2. LAPACK/BLAS library call (fallback).
 
 Both levels are accessible directly (see [Interface](#interface) section) allowing to customize the code dispatch. The fallback level may be supplied by the Intel Math Kernel Library (Intel MKL)&#160;11.2 DIRECT CALL feature. 
 
