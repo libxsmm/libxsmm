@@ -98,11 +98,18 @@ all: $(XFILES)
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
+ifneq (Windows_NT,$(UNAME))
 ifneq (0,$(DEPSTATIC))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
+endif
+else
+.PHONY: $(OUTDIR)/dgemm-wrap
+$(info ================================================================================)
+$(info The static link-time wrapper mechanism is not supported under Windows/Cygwin!)
+$(info ================================================================================)
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
