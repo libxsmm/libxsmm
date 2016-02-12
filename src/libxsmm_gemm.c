@@ -71,12 +71,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(dgemm);
 
 #if !defined(LIBXSMM_GEMM_WRAP) && defined(__GNUC__) && \
-  !defined(__CYGWIN__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__))
+  !defined(__CYGWIN__) && !defined(_WIN32) /*&& !(defined(__APPLE__) && defined(__MACH__))*/
 # define LIBXSMM_GEMM_WRAP
-# if defined(LIBXSMM_GEMM_WRAP)
-#   if defined(__STATIC)
-#     define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
-#     define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
+# if defined(__STATIC)
+#   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
+#   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
@@ -95,10 +94,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double* beta, double*, const libxsmm_blasint*);
-#   else
-#     define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
-#     define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
-#   endif
+# else
+#   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
+#   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
+# endif
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_WRAP_SGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -127,8 +126,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
-# endif /*defined(LIBXSMM_GEMM_WRAP)*/
-#endif
+#endif /*defined(LIBXSMM_GEMM_WRAP)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
