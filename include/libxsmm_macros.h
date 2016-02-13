@@ -132,20 +132,6 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-#if !defined(LIBXSMM_UNUSED)
-# if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/
-#   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
-# else
-#   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
-# endif
-#endif
-
-#if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
-# define LIBXSMM_UNUSED_ARG LIBXSMM_ATTRIBUTE(unused)
-#else
-# define LIBXSMM_UNUSED_ARG
-#endif
-
 /*Based on Stackoverflow's NBITSx macro.*/
 #define LIBXSMM_NBITS02(N) (0 != ((N) & 2/*0b10*/) ? 1 : 0)
 #define LIBXSMM_NBITS04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 + LIBXSMM_NBITS02((N) >> 2)) : LIBXSMM_NBITS02(N))
@@ -206,6 +192,20 @@
 
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
+
+#if !defined(LIBXSMM_UNUSED)
+# if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/
+#   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
+# else
+#   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
+# endif
+#endif
+
+#if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
+# define LIBXSMM_UNUSED_ARG LIBXSMM_ATTRIBUTE(unused)
+#else
+# define LIBXSMM_UNUSED_ARG
+#endif
 
 #if defined(LIBXSMM_NOSYNC)
 # undef _REENTRANT
