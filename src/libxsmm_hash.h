@@ -39,11 +39,17 @@ typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, 
 
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
-  const void* data, unsigned int size, unsigned int init);
+  const void* data, unsigned int size, unsigned int seed);
 
 /** Similar to libxsmm_crc32 (uses CRC32 instructions available since SSE4.2). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
-  const void* data, unsigned int size, unsigned int init);
+  const void* data, unsigned int size, unsigned int seed);
+
+/** Calculate a hash value for a given quantity (size) of raw data according to the seed (init. value). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash(
+  const void* data, unsigned int size,
+  /** Upper bound of the result. */
+  unsigned int n);
 
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)

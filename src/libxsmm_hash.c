@@ -44,15 +44,15 @@
 /* must be the last included header */
 #include "libxsmm_intrinsics.h"
 
-#if !defined(LIBXSMM_CRC32_SW)
-/*# define LIBXSMM_CRC32_SW*/
+#if !defined(LIBXSMM_HASH_SW)
+/*# define LIBXSMM_HASH_SW*/
 #endif
-#if !defined(LIBXSMM_CRC32_ALIGNMENT)
-# define LIBXSMM_CRC32_ALIGNMENT 8
+#if !defined(LIBXSMM_HASH_ALIGNMENT)
+# define LIBXSMM_HASH_ALIGNMENT 8
 #endif
 
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)
 /* table-based implementation taken from http://dpdk.org/. */
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_table[][256] = {
   { /*table0*/
@@ -328,131 +328,138 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     0xE54C35A1, 0xAC704886, 0x7734CFEF, 0x3E08B2C8, 0xC451B7CC, 0x8D6DCAEB, 0x56294D82, 0x1F1530A5
   }
 };
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)*/
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)*/
 
 
-#define LIBXSMM_CRC32_U64(FN, INIT, BEGIN, END) { \
+#define LIBXSMM_HASH_U64(FN, SEED, N, BEGIN, END) { \
   for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { \
-    INIT = (uint32_t)FN(INIT, *(const uint64_t*)(BEGIN)); \
+    SEED = (uint32_t)FN(SEED, N, *(const uint64_t*)(BEGIN)); \
   } \
 }
-#define LIBXSMM_CRC32_U32(FN, INIT, BEGIN, END) { \
+#define LIBXSMM_HASH_U32(FN, SEED, N, BEGIN, END) { \
   const unsigned char *const next = (BEGIN) + 4; \
   if (next <= (END)) { \
-    INIT = FN(INIT, *(const uint32_t*)(BEGIN)); \
+    SEED = FN(SEED, N, *(const uint32_t*)(BEGIN)); \
     BEGIN = next; \
   } \
 }
-#define LIBXSMM_CRC32_U16(FN, INIT, BEGIN, END) { \
+#define LIBXSMM_HASH_U16(FN, SEED, N, BEGIN, END) { \
   const unsigned char *const next = (BEGIN) + 2; \
   if (next <= (END)) { \
-    INIT = FN(INIT, *(const uint16_t*)(BEGIN)); \
+    SEED = FN(SEED, N, *(const uint16_t*)(BEGIN)); \
     BEGIN = next; \
   } \
 }
-#define LIBXSMM_CRC32_U8(FN, INIT, BEGIN, END) { \
+#define LIBXSMM_HASH_U8(FN, SEED, N, BEGIN, END) { \
   if ((BEGIN) < (END)) { \
-    INIT = FN(INIT, *(BEGIN)); \
+    SEED = FN(SEED, N, *(BEGIN)); \
     ++(BEGIN); \
   } \
 }
 
-#if defined(LIBXSMM_CRC32_ALIGNMENT) && 8 < (LIBXSMM_CRC32_ALIGNMENT)
-# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
+#define LIBXSMM_HASH_UNBOUNDED 0
+#define LIBXSMM_HASH_CRC32_U8(SEED, N, VALUE) _mm_crc32_u8(SEED, VALUE)
+#define LIBXSMM_HASH_CRC32_U16(SEED, N, VALUE) _mm_crc32_u16(SEED, VALUE)
+#define LIBXSMM_HASH_CRC32_U32(SEED, N, VALUE) _mm_crc32_u32(SEED, VALUE)
+#define LIBXSMM_HASH_CRC32_U64(SEED, N, VALUE) _mm_crc32_u64(SEED, VALUE)
+#define LIBXSMM_HASH1(SEED, N, VALUE) LIBXSMM_MOD1((SEED << 5) + (VALUE) - 1, N)
+
+#if defined(LIBXSMM_HASH_ALIGNMENT) && 8 < (LIBXSMM_HASH_ALIGNMENT)
+# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
-    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_HASH_ALIGNMENT); \
     if ((SIZE) > (unsigned int)(endb - enda)) { \
-      LIBXSMM_CRC32_U64(FN64, INIT, begin, enda); \
-      LIBXSMM_CRC32_U32(FN32, INIT, begin, enda); \
-      LIBXSMM_CRC32_U16(FN16, INIT, begin, enda); \
-      LIBXSMM_CRC32_U8(FN8, INIT, begin, enda); \
+      LIBXSMM_HASH_U64(FN64, SEED, N, begin, enda); \
+      LIBXSMM_HASH_U32(FN32, SEED, N, begin, enda); \
+      LIBXSMM_HASH_U16(FN16, SEED, N, begin, enda); \
+      LIBXSMM_HASH_U8(FN8, SEED, N, begin, enda); \
     } \
-    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT); \
-    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
-    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
-    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
-    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_HASH_ALIGNMENT); \
+    LIBXSMM_HASH_U64(FN64, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U32(FN32, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U16(FN16, SEED, N, begin, endb); \
+    return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
   }
-#elif defined(LIBXSMM_CRC32_ALIGNMENT) && 1 < (LIBXSMM_CRC32_ALIGNMENT)
-# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
+#elif defined(LIBXSMM_HASH_ALIGNMENT) && 1 < (LIBXSMM_HASH_ALIGNMENT)
+# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
-    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_CRC32_ALIGNMENT); \
+    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_HASH_ALIGNMENT); \
     if ((SIZE) > (unsigned int)(endb - enda)) { \
-      LIBXSMM_CRC32_U32(FN32, INIT, begin, enda); \
-      LIBXSMM_CRC32_U16(FN16, INIT, begin, enda); \
-      LIBXSMM_CRC32_U8(FN8, INIT, begin, enda); \
+      LIBXSMM_HASH_U32(FN32, SEED, N, begin, enda); \
+      LIBXSMM_HASH_U16(FN16, SEED, N, begin, enda); \
+      LIBXSMM_HASH_U8(FN8, SEED, N, begin, enda); \
     } \
-    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_CRC32_ALIGNMENT); \
-    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
-    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
-    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
-    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+    LIBXSMM_ASSUME_ALIGNED(begin, LIBXSMM_HASH_ALIGNMENT); \
+    LIBXSMM_HASH_U64(FN64, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U32(FN32, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U16(FN16, SEED, N, begin, endb); \
+    return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
   }
 #else
-# define LIBXSMM_CRC32(FN64, FN32, FN16, FN8, DATA, SIZE, INIT) { \
+# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
-    LIBXSMM_CRC32_U64(FN64, INIT, begin, endb); \
-    LIBXSMM_CRC32_U32(FN32, INIT, begin, endb); \
-    LIBXSMM_CRC32_U16(FN16, INIT, begin, endb); \
-    return begin == endb ? (INIT) : FN8(INIT, *begin); \
+    LIBXSMM_HASH_U64(FN64, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U32(FN32, SEED, N, begin, endb); \
+    LIBXSMM_HASH_U16(FN16, SEED, N, begin, endb); \
+    return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
   }
 #endif
 
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)
+#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int init, unsigned char value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int seed, unsigned int n, unsigned char value)
 {
-  return internal_crc32_table[0][(init^value)&0xFF] ^ (init >> 8);
+  return internal_crc32_table[0][(seed^value)&0xFF] ^ (seed >> 8);
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int init, unsigned short value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int seed, unsigned int n, unsigned short value)
 {
   union { uint16_t value; uint8_t half[2]; } split; split.value = value;
-  init = internal_crc32_u8(init, split.half[0]);
-  init = internal_crc32_u8(init, split.half[1]);
-  return init;
+  seed = internal_crc32_u8(seed, n, split.half[0]);
+  seed = internal_crc32_u8(seed, n, split.half[1]);
+  return seed;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int init, unsigned int value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int seed, unsigned int n, unsigned int value)
 {
-  init ^= value;
-  init = (internal_crc32_table[0][(init>>24)&0xFF] ^ internal_crc32_table[1][(init>>16)&0xFF])
-       ^ (internal_crc32_table[2][(init>>8)&0xFF]  ^ internal_crc32_table[3][init&0xFF]);
-  return init;
+  seed ^= value;
+  seed = (internal_crc32_table[0][(seed>>24)&0xFF] ^ internal_crc32_table[1][(seed>>16)&0xFF])
+       ^ (internal_crc32_table[2][(seed>>8)&0xFF]  ^ internal_crc32_table[3][seed&0xFF]);
+  return seed;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int init, unsigned long long value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int seed, unsigned int n, unsigned long long value)
 {
   union { uint64_t value; uint32_t half[2]; } split; split.value = value;
-  init = internal_crc32_u32(init, split.half[0]);
-  init = internal_crc32_u32(init, split.half[1]);
-  return init;
+  seed = internal_crc32_u32(seed, n, split.half[0]);
+  seed = internal_crc32_u32(seed, n, split.half[1]);
+  return seed;
 }
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)*/
+
+#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)*/
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_SW)
-  return libxsmm_crc32_sse42(data, size, init);
+#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_HASH_SW)
+  return libxsmm_crc32_sse42(data, size, seed);
 #else
-  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
+  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #endif
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
-  const void* data, unsigned int size, unsigned int init)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
 #if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX)) && !defined(LIBXSMM_NO_CRC32)
-  LIBXSMM_CRC32(_mm_crc32_u64, _mm_crc32_u32, _mm_crc32_u16, _mm_crc32_u8, data, size, init);
+  LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
@@ -466,7 +473,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
   LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using the CRC32 instruction!");
   LIBXSMM_MESSAGE("================================================================================");
 # endif
-  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
+  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
+{
+  LIBXSMM_HASH(LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, data, size, size, n);
 }
 
