@@ -108,6 +108,10 @@ $(OUTDIR)/rstr: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(
 		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
+$(BLDDIR)/axhm-f.o: $(BLDDIR)/stream_update_kernels-f.o
+$(BLDDIR)/grad-f.o: $(BLDDIR)/stream_update_kernels-f.o
+$(BLDDIR)/rstr-f.o: $(BLDDIR)/stream_update_kernels-f.o
+
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
