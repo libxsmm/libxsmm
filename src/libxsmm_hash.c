@@ -438,6 +438,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
 #endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_CRC32_SW)*/
 
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
+{
+#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_SW)
+  return libxsmm_crc32_sse42(data, size, init);
+#else
+  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
+#endif
+}
+
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int init)
 {
@@ -456,16 +466,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
   LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using the CRC32 instruction!");
   LIBXSMM_MESSAGE("================================================================================");
 # endif
-  LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
-#endif
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int init)
-{
-#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_CRC32_SW)
-  return libxsmm_crc32_sse42(data, size, init);
-#else
   LIBXSMM_CRC32(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, init);
 #endif
 }
