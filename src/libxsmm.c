@@ -74,17 +74,35 @@
 # define LIBXSMM_GEMM_DIFF_SW
 #endif
 
+/* enable using CRC32 function for hash values */
+#if !defined(LIBXSMM_HASH_CRC32)
+# define LIBXSMM_HASH_CRC32
+#endif
+
 /* allow external definition to enable testing */
 #if !defined(LIBXSMM_REGSIZE)
-# define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
 # define LIBXSMM_REGSIZE 524287 /* Mersenne Prime number */
+# if defined(LIBXSMM_HASH_CRC32)
+#   define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
+# else
+#   define LIBXSMM_HASH_MOD(N, MERSENNE) (N)
+# endif
 #else
-# define LIBXSMM_HASH_MOD(A, B) ((A) % (B))
+# if defined(LIBXSMM_HASH_CRC32)
+#   define LIBXSMM_HASH_MOD(N, M) ((N) % (M))
+# else
+#   define LIBXSMM_HASH_MOD(N, M) (N)
+# endif
+#endif
+
+#if defined(LIBXSMM_HASH_CRC32)
+# define LIBXSMM_HASH_SEED 25071975
+#else
+# define LIBXSMM_HASH_SEED LIBXSMM_REGSIZE
 #endif
 
 /* flag fused into the memory address of a code version in case of collision */
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
-#define LIBXSMM_HASH_SEED 0 /* CRC32 seed */
 
 typedef union LIBXSMM_RETARGETABLE internal_code {
   libxsmm_smmfunction smm;
@@ -155,12 +173,12 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.xmm = (SRC)
 #endif
 
-#define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, ENTRY, CRC32_FUNCTION, DIFF_FUNCTION) { \
+#define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, ENTRY, HASH_FUNCTION, DIFF_FUNCTION) { \
   unsigned int hash, diff = 0, diff0 = 0, i, i0; \
   internal_code result; \
   /* check if the requested xGEMM is already JITted */ \
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
-  hash = (CRC32_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED); \
+  hash = (HASH_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED); \
   i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_REGSIZE); \
   (ENTRY) += i; /* actual entry */ \
   do { \
@@ -306,7 +324,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
         if (result) {
           int is_static = 0;
           /* decide using internal_has_crc32 instead of relying on a libxsmm_hash_function pointer
-           * to be able to inline the call instead of using an indirection (via fn. pointer)
+           * which will allow to inline the call instead of using an indirection (via fn. pointer)
            */
           internal_arch_name = libxsmm_cpuid(&is_static, &internal_has_crc32);
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].code.xmm = 0;
@@ -346,7 +364,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #endif
             }
           }
-#if !defined(NDEBUG) && defined(__MIC__) /* library code is expected to be mute */ && (0 != LIBXSMM_JIT)
+#if !defined(NDEBUG) /* library code is expected to be mute */ && defined(LIBXSMM_HASH_CRC32) && !defined(__MIC__) && (0 != LIBXSMM_JIT)
           if (0 == internal_has_crc32) {
             fprintf(stderr, "LIBXSMM: CRC32 instructions are not available!\n");
           }
@@ -678,19 +696,45 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
   INTERNAL_FIND_CODE_INIT(entry);
 
 #if defined(LIBXSMM_GEMM_DIFF_SW)
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff);
+# endif
 #elif defined(__MIC__)
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_imci);
+# endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_avx2);
+# endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_avx);
+# endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_sse);
+# endif
 #else
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+# else
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, 0 != internal_arch_name
+    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
+    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+# endif
 #endif
 }
 
@@ -715,19 +759,45 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   INTERNAL_FIND_CODE_INIT(entry);
 
 #if defined(LIBXSMM_GEMM_DIFF_SW)
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff);
+# endif
 #elif defined(__MIC__)
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_imci);
+# endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_avx2);
+# endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_avx);
+# endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_sse);
+# endif
 #else
+# if defined(LIBXSMM_HASH_CRC32)
   INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+# else
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, 0 != internal_arch_name
+    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
+    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+# endif
 #endif
 }
 
