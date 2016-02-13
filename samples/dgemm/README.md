@@ -1,9 +1,11 @@
 # Wrapped DGEMM
 
-This code sample attempts to benchmark the performance of the dispatch mechanism. This mechanism is relevant when replacing GEMM calls (see [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation), or generally when calling LIBXSMM's `libxsmm_?gemm` functions.
+This code sample is calling DGEMM and there is no dependency on the LIBXSMM API as it only relies on LAPACK/BLAS interface. Two variants are linked when building the source code: (1) code which is dynamically linked against LAPACK/BLAS, (2) code which is linked using `--wrap=`*symbol* as possible when using a GNU GCC compatible tool chain. For more information see the [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation.
+
+The code will execute in three flavours when running `dgemm-test.sh`: (1) code variant which is dynamically linked against the originally supplied LAPACK/BLAS library, (2) code variant which is linked using the wrapper mechanism of the GNU GCC tool chain, and (3) the first code but using the LD_PRELOAD mechanism (available under Linux).
 
 **Command Line Interface (CLI)**
 
 * Optionally takes the number of repeated DGEMM calls
-* Shows performance of the workload
+* Shows the performance of the workload (wall time)
 
