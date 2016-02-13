@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm_diff.h"
-#include "libxsmm_crc32.h"
+#include "libxsmm_hash.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_gemm.h"
 
@@ -74,21 +74,12 @@
 # define LIBXSMM_GEMM_DIFF_SW
 #endif
 
-/* larger capacity of the registry lowers the probability of key collisions */
-/*#define LIBXSMM_HASH_PRIME*/
-#if defined(LIBXSMM_HASH_PRIME)
-# define LIBXSMM_HASH_MOD(A, B) ((A) % (B))
-#else
-# define LIBXSMM_HASH_MOD(A, B) LIBXSMM_MOD2(A, B)
-#endif
-
 /* allow external definition to enable testing */
 #if !defined(LIBXSMM_REGSIZE)
-# if defined(LIBXSMM_HASH_PRIME)
-#   define LIBXSMM_REGSIZE 999979
-# else
-#   define LIBXSMM_REGSIZE 1048576
-# endif
+# define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
+# define LIBXSMM_REGSIZE 524287 /* Mersenne Prime number */
+#else
+# define LIBXSMM_HASH_MOD(A, B) ((A) % (B))
 #endif
 
 /* flag fused into the memory address of a code version in case of collision */
@@ -314,7 +305,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 
         if (result) {
           int is_static = 0;
-          /* decide using internal_has_crc32 instead of relying on a libxsmm_crc32_function pointer
+          /* decide using internal_has_crc32 instead of relying on a libxsmm_hash_function pointer
            * to be able to inline the call instead of using an indirection (via fn. pointer)
            */
           internal_arch_name = libxsmm_cpuid(&is_static, &internal_has_crc32);

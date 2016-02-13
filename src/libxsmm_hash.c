@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_crc32.h"
+#include "libxsmm_hash.h"
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

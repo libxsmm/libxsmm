@@ -28,14 +28,14 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CRC32_H
-#define LIBXSMM_CRC32_H
+#ifndef LIBXSMM_HASH_H
+#define LIBXSMM_HASH_H
 
 #include <libxsmm.h>
 
 
 /** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_crc32_function)(const void*, unsigned int, unsigned int);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, unsigned int, unsigned int);
 
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
@@ -46,8 +46,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int init);
 
 
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CRC32_NOINLINE)
-# include "libxsmm_crc32.c"
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
+# include "libxsmm_hash.c"
 #endif
 
-#endif /*LIBXSMM_CRC32_H*/
+#endif /*LIBXSMM_HASH_H*/
