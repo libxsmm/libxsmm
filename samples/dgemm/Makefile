@@ -97,13 +97,26 @@ all: $(XFILES)
 
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-ifeq (Windows_NT,$(UNAME))
+ifeq (Darwin,$(UNAME))
+	$(info ================================================================================)
+	$(info The static link-time wrapper mechanism is not supported under OS X!)
+	$(info ================================================================================)
+else ifeq (Windows_NT,$(UNAME))
 	$(info ================================================================================)
 	$(info The static link-time wrapper mechanism is not supported under Windows/Cygwin!)
 	$(info ================================================================================)
 endif
 
+WRAP ?= 0
+ifneq (Darwin,$(UNAME))
+ifneq (Windows_NT,$(UNAME))
 ifneq (0,$(DEPSTATIC))
+	WRAP = 1
+endif
+endif
+endif
+
+ifneq (0,$(WRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
 else
