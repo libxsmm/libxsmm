@@ -37,12 +37,12 @@
 #if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
 # include <dlfcn.h>
 #endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(NDEBUG)
+# include <assert.h>
 # include <stdio.h>
 #endif
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -110,13 +110,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_S
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-# if defined(__clang__) && !defined(__STATIC)
-  if (LIBXSMM_GEMM_WRAP_SGEMM == libxsmm_internal_sgemm) {
-    union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    libxsmm_internal_sgemm = internal.pf;
-  }
-# endif
+  assert(LIBXSMM_GEMM_WRAP_SGEMM != libxsmm_internal_sgemm);
   LIBXSMM_XGEMM(float, libxsmm_blasint, libxsmm_internal_sgemm, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -131,13 +125,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_D
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-# if defined(__clang__) && !defined(__STATIC)
-  if (LIBXSMM_GEMM_WRAP_DGEMM == libxsmm_internal_dgemm) {
-    union { const void* pv; libxsmm_dgemm_function pf; } internal = { NULL };
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    libxsmm_internal_dgemm = internal.pf;
-  }
-# endif
+  assert(LIBXSMM_GEMM_WRAP_DGEMM != libxsmm_internal_dgemm);
   LIBXSMM_XGEMM(double, libxsmm_blasint, libxsmm_internal_dgemm, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
