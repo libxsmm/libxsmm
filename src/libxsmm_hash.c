@@ -458,7 +458,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX)) && !defined(LIBXSMM_NO_CRC32)
+#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX))
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
 # if !defined(NDEBUG) /* library code is expected to be mute */

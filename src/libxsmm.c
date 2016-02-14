@@ -327,6 +327,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
            * which will allow to inline the call instead of using an indirection (via fn. pointer)
            */
           internal_arch_name = libxsmm_cpuid(&is_static, &internal_has_crc32);
+          if (0 != internal_has_crc32) {
+#if !defined(LIBXSMM_SSE_MAX) || (4 > (LIBXSMM_SSE_MAX))
+            internal_has_crc32 = 0;
+# if !defined(NDEBUG) /* library code is expected to be mute */ && defined(LIBXSMM_HASH_CRC32)
+            fprintf(stderr, "LIBXSMM: CRC32 instructions are not accessible due to the compiler used!\n");
+# endif
+#endif
+          }
+#if !defined(NDEBUG) /* library code is expected to be mute */ && defined(LIBXSMM_HASH_CRC32)
+          else {
+            fprintf(stderr, "LIBXSMM: CRC32 instructions are not available!\n");
+          }
+#endif
+
+
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].code.xmm = 0;
           { /* omit registering code if JIT is enabled and if an ISA extension is found
              * which is beyond the static code path used to compile the library
@@ -364,11 +379,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #endif
             }
           }
-#if !defined(NDEBUG) /* library code is expected to be mute */ && defined(LIBXSMM_HASH_CRC32) && !defined(__MIC__) && (0 != LIBXSMM_JIT)
-          if (0 == internal_has_crc32) {
-            fprintf(stderr, "LIBXSMM: CRC32 instructions are not available!\n");
-          }
-#endif
           atexit(libxsmm_finalize);
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
