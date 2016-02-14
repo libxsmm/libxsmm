@@ -629,11 +629,10 @@ ifeq (Darwin,$(UNAME))
 		CFLAGS += -Wa,-q
 		ifneq (0,$(shell echo $$((2 <= $(GCC)))))
 			CXXFLAGS += -Wa,-q
-			ifneq (0,$(shell echo $$((3 <= $(GCC)))))
-				FCFLAGS += -Wa,-q
-			endif
 		endif
 	endif
+	FLDFLAGS += -Wa,-q
+	FCFLAGS += -Wa,-q
 endif
 
 MAKE_ILP64 = 0
