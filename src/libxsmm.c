@@ -223,7 +223,10 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
     if (0 == result.xmm && 0 != internal_jit) { \
       INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */ \
       /* re-read registry entry after acquiring the lock */ \
-      if (0 == diff) result = (ENTRY)->code; \
+      if (0 == diff) { \
+        result = (ENTRY)->code; \
+        result.imm &= ~LIBXSMM_HASH_COLLISION; \
+      } \
       if (0 == result.xmm) { /* double-check after acquiring the lock */ \
         if (0 == diff) { \
           /* found a conflict-free registry-slot, and attempt to build the kernel */ \
@@ -266,7 +269,6 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
     } \
   } \
   while (0 != diff); \
-  assert(0 == result.xmm || 0 == (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor))); \
   return result.SELECTOR; \
 }
 
