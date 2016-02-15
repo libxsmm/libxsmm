@@ -132,9 +132,9 @@ ifeq (0,$(STATIC))
 	GENERATOR = @$(ENV) \
 		LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
 		PATH="$(OUTDIR):$(PATH)" \
-	$(BINDIR)/libxsmm_generator
+	$(BINDIR)/libxsmm_gemm_generator
 else
-	GENERATOR = $(BINDIR)/libxsmm_generator
+	GENERATOR = $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -348,7 +348,7 @@ $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py
 
 .PHONY: sources
 sources: $(SRCFILES) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
+$(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES)))
 	$(eval MVALUE := $(shell echo $(basename $@) | cut -d_ -f2))
 	$(eval NVALUE := $(shell echo $(basename $@) | cut -d_ -f3))
@@ -996,7 +996,7 @@ ifneq (,$(wildcard $(OUTDIR)))
 	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
 ifneq (,$(wildcard $(BINDIR)))
-	@rm -f $(BINDIR)/libxsmm_generator
+	@rm -f $(BINDIR)/libxsmm_gemm_generator
 endif
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
@@ -1074,7 +1074,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 		cp -uv $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
-	@cp -v $(BINDIR)/libxsmm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(BINDIR)/libxsmm_gemm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR)
