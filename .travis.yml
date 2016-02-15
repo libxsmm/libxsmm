@@ -78,7 +78,7 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} tests test-cp2k test-smm install-dev &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_HASH_BASIC ${ECFLAGS}" tests test-cp2k test-smm install-dev &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
