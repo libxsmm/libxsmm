@@ -271,7 +271,7 @@ In rare situations it might be useful to directly incorporate generated C code (
 
 ```
 make generator
-bin/libxsmm_generator
+bin/libxsmm_gemm_generator
 ```
 
 The code generator driver program accepts the following arguments:
@@ -309,9 +309,9 @@ The prefetch strategy can be:
 Here are some examples of invoking the driver program:
 
 ```
-bin/libxsmm_generator dense foo.c foo 16 16 16 32 32 32 1 1 1 1 hsw nopf DP
-bin/libxsmm_generator dense_asm foo.c foo 16 16 16 32 32 32 1 1 1 1 knl AL2_BL2viaC DP
-bin/libxsmm_generator sparse foo.c foo 16 16 16 32 0 32 1 1 1 1 hsw nopf DP bar.csc
+bin/libxsmm_gemm_generator dense foo.c foo 16 16 16 32 32 32 1 1 1 1 hsw nopf DP
+bin/libxsmm_gemm_generator dense_asm foo.c foo 16 16 16 32 32 32 1 1 1 1 knl AL2_BL2viaC DP
+bin/libxsmm_gemm_generator sparse foo.c foo 16 16 16 32 0 32 1 1 1 1 hsw nopf DP bar.csc
 ```
 
 Please note, there are additional examples given in samples/generator and samples/seissol.
