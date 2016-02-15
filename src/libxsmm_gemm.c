@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include "libxsmm_gemm.h"
 
 #if defined(__STATIC)
@@ -39,12 +38,6 @@
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#if defined(__GNUC__) && !defined(__CYGWIN__) && !defined(_WIN32)
-# include <dlfcn.h>
-#endif
-#if !defined(NDEBUG)
-# include <stdio.h>
 #endif
 #include <stdlib.h>
 #include <stdint.h>
@@ -66,40 +59,24 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(dgemm);
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;
   }
-#if defined(LIBXSMM_GEMM_WRAP)
-  else {
-    union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
-# if defined(__STATIC)
-    internal.pf = LIBXSMM_FSYMBOL(__real_sgemm);
-# else
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-# endif
-    if (NULL != internal.pv) {
-      libxsmm_internal_sgemm = internal.pf;
-    }
+#if defined(LIBXSMM_GEMM_WRAP) && defined(__STATIC)
+  else if (NULL != LIBXSMM_FSYMBOL(__real_sgemm)) {
+    libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/
 
   if (NULL != dgemm_function) {
     libxsmm_internal_dgemm = dgemm_function;
   }
-#if defined(LIBXSMM_GEMM_WRAP)
-  else {
-    union { const void* pv; libxsmm_dgemm_function pf; } internal = { NULL };
-# if defined(__STATIC)
-    internal.pf = LIBXSMM_FSYMBOL(__real_dgemm);
-# else
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-# endif
-    if (NULL != internal.pv) {
-      libxsmm_internal_dgemm = internal.pf;
-    }
+#if defined(LIBXSMM_GEMM_WRAP) && defined(__STATIC)
+  else if (NULL != LIBXSMM_FSYMBOL(__real_dgemm)) {
+    libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/
 
@@ -110,7 +87,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_finalize(void)
 {
   return EXIT_SUCCESS;
 }

@@ -78,11 +78,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double* beta, double*, const libxsmm_blasint*);
 # elif !defined(__CYGWIN__) /* LD_PRELOAD */
-#   define LIBXSMM_GEMM_WRAP /*LIBXSMM_ATTRIBUTE(weak)*/
+#   define LIBXSMM_GEMM_WRAP
+#   define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE(weak)
 #   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
 #   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/
+
+#if !defined(LIBXSMM_GEMM_WEAK)
+# define LIBXSMM_GEMM_WEAK
+#endif
 
 #endif /*LIBXSMM_GEMM_WRAP_H*/
 

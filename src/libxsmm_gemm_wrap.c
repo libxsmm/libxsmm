@@ -29,26 +29,74 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm_wrap.h"
+#include "libxsmm_gemm.h"
 
 
 #if defined(LIBXSMM_GEMM_WRAP)
 #if !defined(__STATIC) /*avoid remark about external function definition with no prior declaration*/
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_SGEMM(
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <stdlib.h>
+# include <dlfcn.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
   const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*,
   const float*, const libxsmm_blasint* ldb,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_DGEMM(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*,
   const double*, const libxsmm_blasint* ldb,
   const double*, double*, const libxsmm_blasint*);
-#endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_SGEMM(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
+{
+  if (NULL == sgemm_function) {
+    union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
+    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+    if (NULL != internal.pv) {
+      libxsmm_internal_sgemm = internal.pf;
+    }
+  }
+  else {
+    libxsmm_internal_sgemm = sgemm_function;
+  }
+
+  if (NULL == dgemm_function) {
+    union { const void* pv; libxsmm_dgemm_function pf; } internal = { NULL };
+    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+    if (NULL != internal.pv) {
+      libxsmm_internal_dgemm = internal.pf;
+    }
+  }
+  else {
+    libxsmm_internal_dgemm = dgemm_function;
+  }
+
+  return (NULL != libxsmm_internal_sgemm
+       && NULL != libxsmm_internal_dgemm)
+    ? EXIT_SUCCESS
+    : EXIT_FAILURE;
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void)
+{
+  return EXIT_SUCCESS;
+}
+#endif /*!defined(__STATIC)*/
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -65,7 +113,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_S
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WRAP void LIBXSMM_GEMM_WRAP_DGEMM(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
