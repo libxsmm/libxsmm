@@ -30,7 +30,12 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include "libxsmm_gemm.h"
-#include "libxsmm_gemm_wrap.c"
+
+#if defined(__STATIC)
+# include "libxsmm_gemm_wrap.c"
+#else
+# include "libxsmm_gemm_wrap.h"
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
