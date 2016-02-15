@@ -413,6 +413,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int seed, unsigned int n, unsigned char value)
 {
+  LIBXSMM_UNUSED(n);
   return internal_crc32_table[0][(seed^value)&0xFF] ^ (seed >> 8);
 }
 
@@ -420,6 +421,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int seed, unsigned int n, unsigned short value)
 {
   union { uint16_t value; uint8_t half[2]; } split; split.value = value;
+  LIBXSMM_UNUSED(n);
   seed = internal_crc32_u8(seed, n, split.half[0]);
   seed = internal_crc32_u8(seed, n, split.half[1]);
   return seed;
@@ -428,6 +430,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int seed, unsigned int n, unsigned int value)
 {
+  LIBXSMM_UNUSED(n);
   seed ^= value;
   seed = (internal_crc32_table[0][(seed>>24)&0xFF] ^ internal_crc32_table[1][(seed>>16)&0xFF])
        ^ (internal_crc32_table[2][(seed>>8)&0xFF]  ^ internal_crc32_table[3][seed&0xFF]);
@@ -438,6 +441,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int seed, unsigned int n, unsigned long long value)
 {
   union { uint64_t value; uint32_t half[2]; } split; split.value = value;
+  LIBXSMM_UNUSED(n);
   seed = internal_crc32_u32(seed, n, split.half[0]);
   seed = internal_crc32_u32(seed, n, split.half[1]);
   return seed;
