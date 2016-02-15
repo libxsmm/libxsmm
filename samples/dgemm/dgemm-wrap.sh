@@ -30,6 +30,7 @@ MICTPERC=3
 if [ "-mic" != "$1" ]; then
   if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.so)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
+      DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       KMP_AFFINITY=scatter,granularity=fine,1 \
       MIC_KMP_AFFINITY=scatter,granularity=fine \
       MIC_KMP_PLACE_THREADS=$((MICCORES-1))c${MICTPERC}t \
@@ -38,6 +39,7 @@ if [ "-mic" != "$1" ]; then
     ${HERE}/${NAME} $*
   else
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
+      DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       OMP_PROC_BIND=TRUE \
     ${HERE}/${NAME} $*
   fi
