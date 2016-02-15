@@ -177,7 +177,7 @@ Relinking the application is often accomplished by copying, pasting, and modifyi
 If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
 
 ```
-LD_PRELOAD=/path/to/libxsmm.so ./myapplication
+LD_PRELOAD=/path/to/libxsmmld.so ./myapplication
 ```
 
 This case obviously requires to build a shared library of LIBXSMM:
