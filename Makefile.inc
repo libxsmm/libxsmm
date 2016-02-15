@@ -2,8 +2,8 @@ ifeq (Windows_NT,$(OS))
 	UNAME ?= Windows_NT
 	ENV ?= $(NULL)
 	# Cygwin based
-	DLIBEXT ?= so
-	SLIBEXT ?= a
+	DLIBEXT ?= dll
+	SLIBEXT ?= lib
 else
 	UNAME ?= $(shell uname)
 	ENV ?= env
@@ -37,8 +37,46 @@ COMPATIBLE ?= 0
 # Static or shared binary
 STATIC ?= 0
 
-# Library extension
+OFFLOAD ?= 0
+ifneq (0,$(OFFLOAD))
+	MPSS ?= 1
+	MIC ?= 1
+else
+	MPSS ?= 0
+	MIC ?= 0
+endif
+
+ifeq (0,$(MIC))
+	LIBNAME ?= $(DEPDIR)/lib/libxsmm
+else ifeq (0,$(OFFLOAD))
+	LIBNAME ?= $(DEPDIR)/lib/mic/libxsmm
+else
+	LIBNAME ?= $(DEPDIR)/lib/libxsmm
+endif
+
+# Secondary static
 ifneq (0,$(STATIC))
+	ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)))
+		DEPSTATIC ?= 1
+	else # fallback
+		STATIC2 = $(STATIC)
+		STATIC = 0
+		DEPSTATIC ?= $(STATIC)
+		STATIC := $(STATIC2)
+	endif
+else
+	ifneq (,$(wildcard $(LIBNAME).$(DLIBEXT)))
+		DEPSTATIC ?= 0
+	else # fallback
+		STATIC2 = $(STATIC)
+		STATIC = 1
+		DEPSTATIC ?= $(STATIC)
+		STATIC := $(STATIC2)
+	endif
+endif
+
+# Library extension
+ifneq (0,$(DEPSTATIC))
 	LIBEXT ?= $(SLIBEXT)
 else
 	LIBEXT ?= $(DLIBEXT)
@@ -68,13 +106,14 @@ IPO ?= 0
 ILP64 ?= 0
 BLAS ?= 0
 
-OFFLOAD ?= 0
-ifneq (0,$(OFFLOAD))
-	MPSS ?= 1
-	MIC ?= 1
+# Conditional abspath/link-line generator function
+ABSLIBS ?= 0
+ifneq (0,$(DEPSTATIC))
+	libdir = $(abspath $1)
+else ifneq (0,$(ABSLIBS))
+	libdir = $(abspath $1)
 else
-	MPSS ?= 0
-	MIC ?= 0
+	libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
 
 # Automatically pickup the environment (make -e not needed),
@@ -430,7 +469,7 @@ else # GCC assumed
 		LIBGFORTRAN = $(abspath $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
 	endif
 	ifneq (,$(LIBGFORTRAN))
-		LIBGFCPATH = $(abspath $(dir $(LIBGFORTRAN)))
+		LIBGFCPATH = $(dir $(LIBGFORTRAN))
 		LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
 		ifeq (3,$(GCC)) # prune link-line
 			LIBGFORTRAN = -lgfortran

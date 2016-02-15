@@ -274,8 +274,8 @@ else
 endif
 	$(info ================================================================================)
 endif
-ifeq (Windows_NT,$(UNAME))
 ifeq (0,$(STATIC))
+ifeq (Windows_NT,$(UNAME))
 	$(info The shared link-time wrapper (libxsmmld) is not supported under Windows/Cygwin!)
 	$(info ================================================================================)
 endif
@@ -326,8 +326,8 @@ compile_generator_lib: $(OBJFILES_GEN_LIB)
 $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: build_generator_lib
-build_generator_lib: $(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT))
-$(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT)): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
+build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
@@ -340,8 +340,8 @@ $(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Make
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
 .PHONY: generator
 generator: $(BINDIR)/libxsmm_generator
-$(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT)) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(OBJFILES_GEN_BIN) $(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS) -o $@
+$(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+	$(CC) $(OBJFILES_GEN_BIN) $(call libdir,$(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS) -o $@
 
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
@@ -480,8 +480,8 @@ endif
 .PHONY: clib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-clib_mic: $(abspath $(OUTDIR)/mic/libxsmm.$(LIBEXT))
-$(abspath $(OUTDIR)/mic/libxsmm.$(LIBEXT)): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
+clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
 else
@@ -491,8 +491,8 @@ endif
 endif
 
 .PHONY: clib_hst
-clib_hst: $(abspath $(OUTDIR)/libxsmm.$(LIBEXT))
-$(abspath $(OUTDIR)/libxsmm.$(LIBEXT)): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
 else
@@ -503,12 +503,12 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-flib_hst: $(abspath $(OUTDIR)/mic/libxsmmf.$(LIBEXT))
+flib_hst: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(abspath $(OUTDIR)/mic/libxsmmf.$(LIBEXT)): $(BLDDIR)/mic/libxsmm-mod.o $(abspath $(OUTDIR)/mic/libxsmm.$(LIBEXT))
-	$(FC) -o $@ $(BLDDIR)/mic/libxsmm-mod.o $(abspath $(OUTDIR)/mic/libxsmm.$(LIBEXT)) -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/mic/libxsmm-mod.o $(call libdir,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-$(abspath $(OUTDIR)/mic/libxsmmf.$(LIBEXT)): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/.make
+$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/.make
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
 endif
 endif
@@ -517,12 +517,12 @@ endif
 
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
-flib_hst: $(abspath $(OUTDIR)/libxsmmf.$(LIBEXT))
+flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(abspath $(OUTDIR)/libxsmmf.$(LIBEXT)): $(BLDDIR)/intel64/libxsmm-mod.o $(abspath $(OUTDIR)/libxsmm.$(LIBEXT))
-	$(FC) -o $@ $(BLDDIR)/intel64/libxsmm-mod.o $(abspath $(OUTDIR)/libxsmm.$(LIBEXT)) -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.$(LIBEXT)
+	$(FC) -o $@ $(BLDDIR)/intel64/libxsmm-mod.o $(call libdir,$(OUTDIR)/libxsmm.$(LIBEXT)) -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-$(abspath $(OUTDIR)/libxsmmf.$(LIBEXT)): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 endif
@@ -531,18 +531,20 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifeq (0,$(STATIC))
-wrap_mic: $(abspath $(OUTDIR)/mic/libxsmmld.$(DLIBEXT))
-$(abspath $(OUTDIR)/mic/libxsmmld.$(DLIBEXT)): $(OUTDIR)/mic/.make $(WRAPOBJS_MIC) $(abspath $(OUTDIR)/mic/libxsmm.$(DLIBEXT))
-	$(LD) -o $@ $(WRAPOBJS_MIC) $(abspath $(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+wrap_mic: $(OUTDIR)/mic/libxsmmld.$(DLIBEXT)
+$(OUTDIR)/mic/libxsmmld.$(DLIBEXT): $(OUTDIR)/mic/.make $(WRAPOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
+	$(LD) -o $@ $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
 endif
 endif
 endif
 
 .PHONY: wrap_hst
 ifeq (0,$(STATIC))
-wrap_hst: $(abspath $(OUTDIR)/libxsmmld.$(DLIBEXT))
-$(abspath $(OUTDIR)/libxsmmld.$(DLIBEXT)): $(OUTDIR)/.make $(WRAPOBJS_HST) $(abspath $(OUTDIR)/libxsmm.$(DLIBEXT))
-	$(LD) -o $@ $(WRAPOBJS_HST) $(abspath $(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
+ifneq (Windows_NT,$(UNAME))
+wrap_hst: $(OUTDIR)/libxsmmld.$(DLIBEXT)
+$(OUTDIR)/libxsmmld.$(DLIBEXT): $(OUTDIR)/.make $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
+	$(LD) -o $@ $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
+endif
 endif
 
 .PHONY: samples

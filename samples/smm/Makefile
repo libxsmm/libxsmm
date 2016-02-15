@@ -32,29 +32,6 @@ SYM ?= 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-else ifeq (0,$(OFFLOAD))
-	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
-else
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-endif
-
-DEPSTATIC ?= $(STATIC)
-ifneq (0,$(DEPSTATIC))
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
-		LIBEXT = $(SLIBEXT)
-	else # fallback
-		LIBEXT = $(DLIBEXT)
-	endif
-else
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(DLIBEXT))))
-		LIBEXT = $(DLIBEXT)
-	else # fallback
-		LIBEXT = $(SLIBEXT)
-	endif
-endif
-
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
@@ -91,20 +68,20 @@ XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inl
 all: $(XFILES)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
-	$(FC) -o $@ $(FTNOBJS) $(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
+	$(FC) -o $@ $(FTNOBJS) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make
-	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/dispatched: $(OUTDIR)/.make $(BLDDIR)/dispatched-cpp.o
-	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o
-	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o
-	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@

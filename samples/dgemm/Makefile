@@ -29,36 +29,14 @@ BLAS ?= 1
 OMP ?= 1
 SYM ?= 1
 
-# include common Makefile artifacts
-include $(DEPDIR)/Makefile.inc
-
-ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-else ifeq (0,$(OFFLOAD))
-	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
-else
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-endif
-
 ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
 	DEPSTATIC ?= 1
 else
 	DEPSTATIC ?= 0
 endif
 
-ifneq (0,$(DEPSTATIC))
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
-		LIBEXT = $(SLIBEXT)
-	else # fallback
-		LIBEXT = $(DLIBEXT)
-	endif
-else
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(DLIBEXT))))
-		LIBEXT = $(DLIBEXT)
-	else # fallback
-		LIBEXT = $(SLIBEXT)
-	endif
-endif
+# include common Makefile artifacts
+include $(DEPDIR)/Makefile.inc
 
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
@@ -118,7 +96,7 @@ endif
 
 ifneq (0,$(WRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
-	$(LD) -o $@ $< $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
+	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif

@@ -32,29 +32,6 @@ SYM ?= 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-else ifeq (0,$(OFFLOAD))
-	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
-else
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-endif
-
-DEPSTATIC ?= $(STATIC)
-ifneq (0,$(DEPSTATIC))
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
-		LIBEXT = $(SLIBEXT)
-	else # fallback
-		LIBEXT = $(DLIBEXT)
-	endif
-else
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(DLIBEXT))))
-		LIBEXT = $(DLIBEXT)
-	else # fallback
-		LIBEXT = $(SLIBEXT)
-	endif
-endif
-
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
@@ -95,17 +72,17 @@ $(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_
 
 $(OUTDIR)/axhm: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/axhm-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
-		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
+		$(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(OUTDIR)/grad: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/grad-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
-		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
+		$(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(OUTDIR)/rstr: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/rstr-f.o $(BLDDIR)/mxm_std-f.o $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) \
-		$(abspath $(LIBNAME)f.$(LIBEXT)) $(abspath $(LIBNAME).$(LIBEXT)) \
+		$(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
 $(BLDDIR)/axhm-f.o: $(BLDDIR)/stream_update_kernels-f.o

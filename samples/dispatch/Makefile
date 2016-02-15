@@ -31,29 +31,6 @@ SYM ?= 1
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
-ifeq (0,$(MIC))
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-else ifeq (0,$(OFFLOAD))
-	LIBNAME = $(DEPDIR)/lib/mic/libxsmm
-else
-	LIBNAME = $(DEPDIR)/lib/libxsmm
-endif
-
-DEPSTATIC ?= $(STATIC)
-ifneq (0,$(DEPSTATIC))
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
-		LIBEXT = $(SLIBEXT)
-	else # fallback
-		LIBEXT = $(DLIBEXT)
-	endif
-else
-	ifneq (,$(strip $(wildcard $(LIBNAME).$(DLIBEXT))))
-		LIBEXT = $(DLIBEXT)
-	else # fallback
-		LIBEXT = $(SLIBEXT)
-	endif
-endif
-
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
@@ -90,7 +67,7 @@ XFILES := $(OUTDIR)/$(OUTNAME)
 all: $(XFILES)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS)
-	$(LD) -o $@ $(OBJECTS) $(abspath $(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
