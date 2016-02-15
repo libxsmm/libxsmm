@@ -42,7 +42,7 @@ if __name__ == "__main__":
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
 
         print("libxsmm_gemm_descriptor desc;")
-        print("unsigned int indx;")
+        print("unsigned int hash, indx;")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
             mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
@@ -51,7 +51,7 @@ if __name__ == "__main__":
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
-                print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED) % (LIBXSMM_REGSIZE);")
+                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
                 print("if (0 == result[indx].code.xmm) { /* no further effort to handle collision */")
                 print("  result[indx].code.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
@@ -61,7 +61,7 @@ if __name__ == "__main__":
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH);")
-                print("indx = libxsmm_crc32(&desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED) % (LIBXSMM_REGSIZE);")
+                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
                 print("if (0 == result[indx].code.xmm) { /* no further effort to handle collision */")
                 print("  result[indx].code.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
