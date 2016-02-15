@@ -82,23 +82,20 @@
 /* allow external definition to enable testing */
 #if !defined(LIBXSMM_REGSIZE)
 # define LIBXSMM_REGSIZE 524287 /* Mersenne Prime number */
-# if defined(LIBXSMM_HASH_BASIC)
-#   define LIBXSMM_HASH_MOD(N, MERSENNE) (N)
-# else
-#   define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
-# endif
+# define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
 #else
-# if defined(LIBXSMM_HASH_BASIC)
-#   define LIBXSMM_HASH_MOD(N, M) (N)
-# else
-#   define LIBXSMM_HASH_MOD(N, M) ((N) % (M))
-# endif
+# define LIBXSMM_HASH_MOD(N, M) ((N) % (M))
 #endif
 
 #if defined(LIBXSMM_HASH_BASIC)
-# define LIBXSMM_HASH_SEED LIBXSMM_REGSIZE
+# define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, HASH_FUNCTION, DESCRIPTOR) \
+    HASH = (HASH_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_REGSIZE); \
+    assert((LIBXSMM_REGSIZE) > (HASH)); \
+    INDX = (HASH)
 #else
-# define LIBXSMM_HASH_SEED 25071975
+# define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, HASH_FUNCTION, DESCRIPTOR) \
+    HASH = (HASH_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
+    INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_REGSIZE)
 #endif
 
 /* flag fused into the memory address of a code version in case of collision */
@@ -137,7 +134,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) assert(0 != (VARIABLE))
 #else /* lazy initialization */
   /* use return value of internal_init to refresh local representation */
-# define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) (VARIABLE) = internal_init()
+# define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) VARIABLE = internal_init()
 #endif
 
 #if defined(_OPENMP)
@@ -153,11 +150,11 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
 #   define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = __atomic_load_n(&internal_registry, __ATOMIC_RELAXED)
-#   define INTERNAL_FIND_CODE_READ(ENTRY, DST) (DST) = __atomic_load_n(&((ENTRY)->code.xmm), __ATOMIC_SEQ_CST)
+#   define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = __atomic_load_n(&((ENTRY)->code.xmm), __ATOMIC_SEQ_CST)
 #   define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) __atomic_store_n(&((ENTRY)->code.xmm), SRC, __ATOMIC_SEQ_CST)
 # else
 #   define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = __sync_or_and_fetch(&internal_registry, 0)
-#   define INTERNAL_FIND_CODE_READ(ENTRY, DST) (DST) = __sync_or_and_fetch(&((ENTRY)->code.xmm), 0)
+#   define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = __sync_or_and_fetch(&((ENTRY)->code.xmm), 0)
 #   define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) { \
       /*const*/void* old = (ENTRY)->code.xmm; \
       while (!__sync_bool_compare_and_swap(&((ENTRY)->code.xmm), old, SRC)) old = (ENTRY)->code.xmm; \
@@ -165,11 +162,11 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32) /*TODO*/
 # define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = internal_registry
-# define INTERNAL_FIND_CODE_READ(ENTRY, DST) (DST) = (ENTRY)->code.xmm
+# define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = (ENTRY)->code.xmm
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.xmm = (SRC)
 #else
 # define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = internal_registry
-# define INTERNAL_FIND_CODE_READ(ENTRY, DST) (DST) = (ENTRY)->code.xmm
+# define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = (ENTRY)->code.xmm
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.xmm = (SRC)
 #endif
 
@@ -178,8 +175,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
   internal_code result; \
   /* check if the requested xGEMM is already JITted */ \
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
-  hash = (HASH_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED); \
-  i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_REGSIZE); \
+  LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, HASH_FUNCTION, DESCRIPTOR); \
   (ENTRY) += i; /* actual entry */ \
   do { \
     INTERNAL_FIND_CODE_READ(ENTRY, result.xmm); /* read registered code */ \
@@ -203,7 +199,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
           for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
             i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); next != i0/*no code found*/ && \
             /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
-            (0 == ((ENTRY) = registry + i)->code.xmm || 0 != (diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor)))); \
+            (0 == (ENTRY = (registry + i))->code.xmm || 0 != (diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor)))); \
             i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
           if (0 == diff) { /* found exact code version; continue with atomic load */ \
             continue; \
