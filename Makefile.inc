@@ -59,8 +59,8 @@ ifneq (0,$(STATIC))
 	ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)))
 		DEPSTATIC ?= 1
 	else # fallback
-		STATIC2 = $(STATIC)
-		STATIC = 0
+		STATIC2 := $(STATIC)
+		STATIC := 0
 		DEPSTATIC ?= $(STATIC)
 		STATIC := $(STATIC2)
 	endif
@@ -68,8 +68,8 @@ else
 	ifneq (,$(wildcard $(LIBNAME).$(DLIBEXT)))
 		DEPSTATIC ?= 0
 	else # fallback
-		STATIC2 = $(STATIC)
-		STATIC = 1
+		STATIC2 := $(STATIC)
+		STATIC := 1
 		DEPSTATIC ?= $(STATIC)
 		STATIC := $(STATIC2)
 	endif
