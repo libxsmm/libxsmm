@@ -18,6 +18,7 @@ if [ -e dgemm-blas ]; then
     ${ECHO} "Running DGEMM (LD_PRELOAD)"
     ${ECHO} "============================="
     ( time LD_PRELOAD=${LIBXSMM} ${HERE}/dgemm-blas.sh $*; ) 2>&1 | ${GREP} real
+    ${ECHO}
   fi
 fi
 
