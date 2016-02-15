@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LIBXSMM=../../lib/libxsmm.so
+LIBXSMM=../../lib/libxsmmld.so
 
 HERE=$(cd $(dirname $0); pwd -P)
 ECHO=$(which echo)

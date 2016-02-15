@@ -158,29 +158,33 @@ OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) \
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
                $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_gemm.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
+WRAPOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_wrap.o
+WRAPOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_wrap.o
+
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_BIN) $(OBJFILES_HST) $(OBJFILES_MIC)
+OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC)
+FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 
 .PHONY: libxsmm
 libxsmm: lib
 
 .PHONY: lib
-lib: header drytest lib_hst lib_mic
+lib: headers drytest lib_hst lib_mic
 
 .PHONY: all
 all: lib samples
 
-.PHONY: header
-header: cheader fheader
+.PHONY: headers
+headers: cheader fheader
 
 .PHONY: interface
-interface: header
+interface: headers
 
 .PHONY: lib_mic
-lib_mic: clib_mic
+lib_mic: clib_mic flib_mic wrap_mic
 
 .PHONY: lib_hst
-lib_hst: clib_hst flib_hst
+lib_hst: clib_hst flib_hst wrap_hst
 
 PREFETCH_ID = 0
 PREFETCH_SCHEME = nopf
@@ -270,6 +274,12 @@ else
 endif
 	$(info ================================================================================)
 endif
+ifeq (Windows_NT,$(UNAME))
+ifeq (0,$(STATIC))
+	$(info The shared link-time wrapper (libxsmmld) is not supported under Windows/Cygwin!)
+	$(info ================================================================================)
+endif
+endif
 ifneq (0,$(OMP))
 	$(info LIBXSMM is agnostic with respect to the threading runtime!)
 	$(info Enabling OpenMP suppresses using OS primitives (PThreads).)
@@ -333,8 +343,11 @@ generator: $(BINDIR)/libxsmm_generator
 $(BINDIR)/libxsmm_generator: $(BINDIR)/.make $(OBJFILES_GEN_BIN) $(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT)) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	$(CC) $(OBJFILES_GEN_BIN) $(abspath $(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS) -o $@
 
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py
+	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+
 .PHONY: sources
-sources: $(SRCFILES)
+sources: $(SRCFILES) $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES)))
 	$(eval MVALUE := $(shell echo $(basename $@) | cut -d_ -f2))
@@ -428,11 +441,6 @@ endif
 	@mv $(TMPFILE) $@
 endif
 
-.PHONY: main
-main: $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_dispatch.py
-	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
-
 .PHONY: compile_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
@@ -517,6 +525,24 @@ else
 $(abspath $(OUTDIR)/libxsmmf.$(LIBEXT)): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
+endif
+
+.PHONY: wrap_mic
+ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
+ifeq (0,$(STATIC))
+wrap_mic: $(abspath $(OUTDIR)/mic/libxsmmld.$(DLIBEXT))
+$(abspath $(OUTDIR)/mic/libxsmmld.$(DLIBEXT)): $(OUTDIR)/mic/.make $(WRAPOBJS_MIC) $(abspath $(OUTDIR)/mic/libxsmm.$(DLIBEXT))
+	$(LD) -o $@ $(WRAPOBJS_MIC) $(abspath $(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+endif
+endif
+endif
+
+.PHONY: wrap_hst
+ifeq (0,$(STATIC))
+wrap_hst: $(abspath $(OUTDIR)/libxsmmld.$(DLIBEXT))
+$(abspath $(OUTDIR)/libxsmmld.$(DLIBEXT)): $(OUTDIR)/.make $(WRAPOBJS_HST) $(abspath $(OUTDIR)/libxsmm.$(DLIBEXT))
+	$(LD) -o $@ $(WRAPOBJS_HST) $(abspath $(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
 endif
 
 .PHONY: samples
@@ -932,7 +958,6 @@ documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
 
 .PHONY: clean-minimal
 clean-minimal:
-	@rm -f $(OBJECTS) $(SRCFILES) $(BLDDIR)/libxsmm_dispatch.h
 	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -rf $(SCRDIR)/__pycache__
 	@touch $(SPLDIR)/cp2k/.make
@@ -942,8 +967,8 @@ clean-minimal:
 
 .PHONY: clean
 clean: clean-minimal
-	@rm -f $(BLDDIR)/intel64/*.o
-	@rm -f $(BLDDIR)/mic/*.o
+	@rm -f $(OBJECTS) $(FTNOBJS) $(SRCFILES)
+	@rm -f $(BLDDIR)/libxsmm_dispatch.h
 
 .PHONY: realclean
 realclean: clean
@@ -955,19 +980,20 @@ endif
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
-else
-	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
-else
-	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
 ifneq ($(abspath $(BINDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BINDIR)),$(abspath .))
 	@rm -rf $(BINDIR)
-else
-	@rm -f $(BINDIR)/libxsmm_generator
 endif
-else
+endif
+ifneq (,$(wildcard $(OUTDIR)))
+	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmmf.$(LIBEXT) $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmmld.$(LIBEXT) $(OUTDIR)/mic/libxsmmld.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)
+endif
+ifneq (,$(wildcard $(BINDIR)))
 	@rm -f $(BINDIR)/libxsmm_generator
 endif
 	@rm -f *.gcno *.gcda *.gcov
