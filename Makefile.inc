@@ -811,7 +811,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 	$(filter-out environment% default automatic,$(origin $V)), \
-	$(if $(filter-out .DEFAULT_GOAL libdir,$V), \
+	$(if $(filter-out .DEFAULT_GOAL STATIC2 libdir,$V), \
 		$V=$($V)?)))
 .state: $(shell $(DEPDIR)/.hooks/state.sh $(abspath .) '$(STATE)')
 
