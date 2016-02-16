@@ -364,6 +364,15 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 #define LIBXSMM_HASH_CRC32_U64(SEED, N, VALUE) _mm_crc32_u64(SEED, VALUE)
 #define LIBXSMM_HASH1(SEED, N, VALUE) LIBXSMM_MOD1((SEED << 5) + (VALUE) - 1, N)
 
+#define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
+  const unsigned char *begin = (const unsigned char*)(DATA); \
+  const unsigned char *const endb = begin + (SIZE); \
+  LIBXSMM_HASH_U64(FN64, SEED, N, begin, endb); \
+  LIBXSMM_HASH_U32(FN32, SEED, N, begin, endb); \
+  LIBXSMM_HASH_U16(FN16, SEED, N, begin, endb); \
+  return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
+}
+
 #if defined(LIBXSMM_HASH_ALIGNMENT) && 8 < (LIBXSMM_HASH_ALIGNMENT)
 # define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
@@ -398,14 +407,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
   }
 #else
-# define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
-    const unsigned char *begin = (const unsigned char*)(DATA); \
-    const unsigned char *const endb = begin + (SIZE); \
-    LIBXSMM_HASH_U64(FN64, SEED, N, begin, endb); \
-    LIBXSMM_HASH_U32(FN32, SEED, N, begin, endb); \
-    LIBXSMM_HASH_U16(FN16, SEED, N, begin, endb); \
-    return begin == endb ? (SEED) : FN8(SEED, N, *begin); \
-  }
+# define LIBXSMM_HASH LIBXSMM_HASH_UNALIGNED
 #endif
 
 
@@ -484,6 +486,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
 {
-  LIBXSMM_HASH(LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, data, size, size, n);
+  LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, LIBXSMM_HASH1, data, size, size, n);
 }
 
