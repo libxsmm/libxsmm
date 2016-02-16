@@ -809,7 +809,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 .SUFFIXES:
 
-.state: $(ROOTDIR)/Makefile
+.state: .make $(ROOTDIR)/Makefile
 	@$(foreach V,$(sort $(.VARIABLES)),$(if \
 		$(filter-out environment% default automatic,$(origin $V)), \
 		$(if $(filter-out .DEFAULT_GOAL libdir,$V), \
@@ -818,6 +818,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 	@if [ "0" != "$$(echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' | diff -q $@ - > /dev/null ; echo $$?)" ]; then \
 		echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' > $@; \
 	fi
+	@touch .make
 
 %/.make:
 	@mkdir -p $(basename $@)
