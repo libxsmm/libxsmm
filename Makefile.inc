@@ -46,6 +46,7 @@ else
 	MIC ?= 0
 endif
 
+DEPDIR ?= $(ROOTDIR)
 ifeq (0,$(MIC))
 	LIBNAME ?= $(DEPDIR)/lib/libxsmm
 else ifeq (0,$(OFFLOAD))
@@ -807,6 +808,16 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
            %/.make
 
 .SUFFIXES:
+
+.state: $(ROOTDIR)/Makefile
+	@$(foreach V,$(sort $(.VARIABLES)),$(if \
+		$(filter-out environment% default automatic,$(origin $V)), \
+		$(if $(filter-out .DEFAULT_GOAL libdir,$V), \
+			$(eval STATE += $(strip $V)=$($V)?))))
+	@if [ ! -e .state ]; then touch .state; fi
+	@if [ "0" != "$$(echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' | diff -q .state - > /dev/null ; echo $$?)" ]; then \
+		echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' > .state; \
+	fi
 
 %/.make:
 	@mkdir -p $(basename $@)

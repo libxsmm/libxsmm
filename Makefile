@@ -250,7 +250,8 @@ endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(INCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
+$(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
+                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                      $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
                      $(HEADERS)
 	@$(ROOTDIR)/.hooks/install.sh
@@ -303,7 +304,7 @@ endif
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make \
+$(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
                      $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
@@ -1008,6 +1009,9 @@ endif
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
 	@rm -f $(INCDIR)/libxsmm.h
+	@rm -f $(INCDIR)/.make
+	@rm -f $(DOCDIR)/.make
+	@rm -f .state
 
 .PHONY: clean-all
 clean-all: clean
@@ -1117,4 +1121,8 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
 	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
 endif
+
+# enable tracking last build
+.PHONY: state
+state: .state
 

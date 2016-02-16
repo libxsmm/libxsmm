@@ -153,3 +153,7 @@ endif
 	@rm -f $(OUTDIR)/*.bin
 	@rm -f $(OUTDIR)/.make
 
+# enable tracking last build
+.PHONY: state
+state: .state
+

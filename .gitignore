@@ -9,6 +9,7 @@ ide/_vs*-*.bat
 ide/*.amplxeproj
 ide/build
 tmp
+.state
 .make
 notes.txt
 err*.txt
