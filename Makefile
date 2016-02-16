@@ -175,7 +175,7 @@ lib: headers drytest lib_hst lib_mic
 all: lib samples
 
 .PHONY: headers
-headers: cheader fheader
+headers: .state cheader fheader
 
 .PHONY: interface
 interface: headers
@@ -1124,8 +1124,4 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
 	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
 endif
-
-# enable tracking last build
-.PHONY: state
-state: .state
 
