@@ -813,10 +813,10 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 	@$(foreach V,$(sort $(.VARIABLES)),$(if \
 		$(filter-out environment% default automatic,$(origin $V)), \
 		$(if $(filter-out .DEFAULT_GOAL libdir,$V), \
-			$(eval STATE += $(strip $V)=$($V)?))))
-	@if [ ! -e .state ]; then touch .state; fi
-	@if [ "0" != "$$(echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' | diff -q .state - > /dev/null ; echo $$?)" ]; then \
-		echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' > .state; \
+			$(eval STATE += $V=$($V)?))))
+	@if [ ! -e $@ ]; then touch $@; fi
+	@if [ "0" != "$$(echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' | diff -q $@ - > /dev/null ; echo $$?)" ]; then \
+		echo '$(STATE)' | tr '?' '\n' | sed 's/^  *//' > $@; \
 	fi
 
 %/.make:
