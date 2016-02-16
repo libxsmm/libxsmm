@@ -64,7 +64,7 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
 
-.PHONY: .state all
+.PHONY: all
 all: $(XFILES)
 
 .PHONY: tests
@@ -123,6 +123,5 @@ endif
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
-	@rm -f $(OUTDIR)/.make
-	@rm -f .state
+	@rm -f .make .state
 

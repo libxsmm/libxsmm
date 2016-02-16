@@ -64,7 +64,7 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
 
-.PHONY: .state all
+.PHONY: all
 all: $(XFILES)
 
 $(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
@@ -136,6 +136,5 @@ endif
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
 	@rm -f $(OUTDIR)/*.bin
-	@rm -f $(OUTDIR)/.make
-	@rm -f .state
+	@rm -f .make .state
 

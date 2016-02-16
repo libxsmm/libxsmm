@@ -175,7 +175,7 @@ lib: headers drytest lib_hst lib_mic
 all: lib samples
 
 .PHONY: headers
-headers: .state cheader fheader
+headers: cheader fheader
 
 .PHONY: interface
 interface: headers
@@ -1014,7 +1014,7 @@ endif
 	@rm -f $(INCDIR)/libxsmm.h
 	@rm -f $(INCDIR)/.make
 	@rm -f $(DOCDIR)/.make
-	@rm -f .state
+	@rm -f .make .state
 
 .PHONY: clean-all
 clean-all: clean
