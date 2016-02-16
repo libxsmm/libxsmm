@@ -832,7 +832,7 @@ test: test-cp2k
 perf: perf-cp2k
 
 .PHONY: test-all
-test-all: tests test-cp2k test-dgemm test-nek test-smm
+test-all: tests test-cp2k test-wrap test-nek test-smm
 
 .PHONY: build-tests
 build-tests: lib_hst
@@ -867,6 +867,9 @@ test-dgemm: lib_hst
 	@cd $(SPLDIR)/dgemm && \
 	$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
+
+.PHONY: test-wrap
+test-wrap: test-dgemm
 
 .PHONY: test-smm
 test-smm: $(SPLDIR)/smm/smm-test.txt

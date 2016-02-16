@@ -103,7 +103,7 @@ endif
 
 .PHONY: test
 test: $(OUTDIR)/.make $(OUTDIR)/dgemm-test.sh $(XFILES)
-	@$(OUTDIR)/dgemm-test.sh
+	@$(OUTDIR)/dgemm-test.sh 1000000
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
