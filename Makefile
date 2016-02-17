@@ -549,7 +549,7 @@ endif
 endif
 
 .PHONY: samples
-samples: cp2k smm nek
+samples: cp2k dgemm nek smm
 
 .PHONY: cp2k
 cp2k: lib_hst
@@ -563,17 +563,23 @@ cp2k_mic: lib_mic
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
-.PHONY: smm
-smm: lib_hst
-	@cd $(SPLDIR)/smm && $(MAKE) --no-print-directory \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
+.PHONY: dgemm
+dgemm: lib_hst
+	@cd $(SPLDIR)/dgemm && $(MAKE) --no-print-directory \
+		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
-.PHONY: smm_mic
-smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(MAKE) --no-print-directory \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=$(TRACE) \
+.PHONY: dgemm_mic
+dgemm_mic: lib_mic
+	@cd $(SPLDIR)/dgemm && $(MAKE) --no-print-directory \
+		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
+
+.PHONY: wrap
+wrap: dgemm
+
+.PHONY: wrap_mic
+wrap_mic: dgemm_mic
 
 .PHONY: nek
 nek: lib_hst
@@ -584,6 +590,18 @@ nek: lib_hst
 .PHONY: nek_mic
 nek_mic: lib_mic
 	@cd $(SPLDIR)/nek && $(MAKE) --no-print-directory \
+		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=$(TRACE) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
+
+.PHONY: smm
+smm: lib_hst
+	@cd $(SPLDIR)/smm && $(MAKE) --no-print-directory \
+		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
+
+.PHONY: smm_mic
+smm_mic: lib_mic
+	@cd $(SPLDIR)/smm && $(MAKE) --no-print-directory \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
@@ -863,7 +881,7 @@ $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 .PHONY: test-dgemm
-test-dgemm: lib_hst
+test-dgemm: dgemm
 	@cd $(SPLDIR)/dgemm && $(MAKE) --no-print-directory \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
@@ -1049,25 +1067,31 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(OUTDIR)/libxsmmgen.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmgen.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmld.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmf.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@if [ -e $(OUTDIR)/mic/libxsmm.$(DLIBEXT) ]; then \
+	@cp -v $(OUTDIR)/libxsmm.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@if [ -e $(OUTDIR)/mic/libxsmmld.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmm.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-	fi
-	@if [ -e $(OUTDIR)/mic/libxsmm.$(SLIBEXT) ]; then \
-		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmmld.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-		cp -uv $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+	fi
+
+	@if [ -e $(OUTDIR)/mic/libxsmm.$(DLIBEXT) ]; then \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmm.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+	fi
+	@if [ -e $(OUTDIR)/mic/libxsmm.$(SLIBEXT) ]; then \
+		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@cp -v $(BINDIR)/libxsmm_gemm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
