@@ -259,6 +259,8 @@ ifneq (,$(findstring gcc,$(CC_NAME)))
 	GCC = 1
 else ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
 	GCC = 1
+else ifeq (ifeq (0,$($(CC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
+	GCC = 1
 endif
 ifeq (1,$(GCC))
 	# C Compiler is used for link stage
@@ -270,12 +272,16 @@ ifeq (1,$(GCC))
 		GCC = 2
 	else ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
 		GCC = 2
+	else ifeq (ifeq (0,$($(CXX) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
+		GCC = 2
 	endif
 	ifeq (2,$(GCC))
 		ifneq (,$(findstring gfortran,$(FC_NAME)))
 			GCC = 3
 		else ifneq (,$(strip $(FC)))
 			ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+				GCC = 3
+			else ifeq (ifeq (0,$($(FC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
 				GCC = 3
 			endif
 		endif
