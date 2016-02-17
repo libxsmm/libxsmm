@@ -60,7 +60,7 @@ ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
 	DEPSTATIC ?= $(STATIC)
 else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT))) # prefer static (library exists)
 	DEPSTATIC ?= 1
-else ifeq (,$(wildcard $(LIBNAME).$(DLIBEXT))) # take shared (library exists)
+else ifneq (,$(wildcard $(LIBNAME).$(DLIBEXT))) # take shared (library exists)
 	DEPSTATIC ?= 0
 else
 	DEPSTATIC ?= $(STATIC)
