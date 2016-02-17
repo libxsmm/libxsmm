@@ -294,7 +294,7 @@ ifneq (0,$(AVX))
 	endif
 else ifneq (0,$(SSE))
 	ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
-		SSE ?= 1
+		SSE ?= 3
 	endif
 else ifneq (0,$(MIC))
 	MPSS = 1
@@ -386,6 +386,8 @@ ifneq (0,$(INTEL))
 			else ifneq (0,$(SSE))
 				ifeq (1,$(SSE)) # default
 					TARGET = -xSSE3
+				else ifeq (3,$(SSE))
+					TARGET = -xSSE3
 				else ifeq (4,$(SSE))
 					TARGET = -xSSE4.2
 				else
@@ -410,6 +412,8 @@ ifneq (0,$(INTEL))
 					TARGET = -msse3
 				else ifeq (2,$(SSE))
 					# implicitly present (64-bit ABI)
+				else ifeq (3,$(SSE))
+					TARGET = -msse3
 				else ifeq (4,$(SSE))
 					TARGET = -msse4.2
 				else # perhaps better to use TARGET
