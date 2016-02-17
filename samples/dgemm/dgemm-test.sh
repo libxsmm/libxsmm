@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DEPDIR=../..
 
@@ -6,7 +6,6 @@ HERE=$(cd $(dirname $0); pwd -P)
 TMPF=$(mktemp /tmp/fileXXXXXX)
 UNAME=$(which uname)
 ECHO=$(which echo)
-TIME=$(which time)
 GREP=$(which grep)
 SORT=$(which sort)
 RM=$(which rm)
@@ -21,7 +20,7 @@ if [ -e dgemm-blas ]; then
   ${ECHO} "============================="
   ${ECHO} "Running DGEMM (ORIGINAL BLAS)"
   ${ECHO} "============================="
-  { ${TIME} -p ${HERE}/dgemm-blas.sh $* 2>${TMPF}; } 2>&1 | ${GREP} real
+  { time ${HERE}/dgemm-blas.sh $* 2>${TMPF}; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
@@ -37,7 +36,7 @@ if [ -e dgemm-blas ]; then
     ${ECHO} "============================="
     ${ECHO} "Running DGEMM (LD_PRELOAD)"
     ${ECHO} "============================="
-    { ${TIME} -p  \
+    { time \
       LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmld.${LIBEXT} \
       DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmmld.${LIBEXT} \
       ${HERE}/dgemm-blas.sh $* 2>${TMPF}; } 2>&1 | ${GREP} real
@@ -58,7 +57,7 @@ if [ -e dgemm-wrap ]; then
   ${ECHO} "============================="
   ${ECHO} "Running DGEMM (STATIC WRAP)"
   ${ECHO} "============================="
-  { ${TIME} -p  ${HERE}/dgemm-wrap.sh $* 2>${TMPF}; } 2>&1 | ${GREP} real
+  { time ${HERE}/dgemm-wrap.sh $* 2>${TMPF}; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
