@@ -55,7 +55,7 @@ for TEST in ${TESTS} ; do
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} "FAILED(${RESULT}) ${ERROR}"
-    exit 1
+    exit ${RESULT}
   else
     ${ECHO} "OK ${ERROR}"
   fi
