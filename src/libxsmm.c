@@ -75,7 +75,7 @@
 #endif
 
 /* alternative hash algorithm (instead of CRC32) */
-#if !defined(LIBXSMM_HASH_BASIC)
+#if !defined(LIBXSMM_HASH_BASIC) && !defined(LIBXSMM_REGSIZE)
 # if !defined(LIBXSMM_SSE_MAX) || (4 > (LIBXSMM_SSE_MAX))
 #   define LIBXSMM_HASH_BASIC
 # endif
@@ -83,14 +83,14 @@
 
 /* allow external definition to enable testing */
 #if !defined(LIBXSMM_REGSIZE)
-# define LIBXSMM_REGSIZE 524287 /* Mersenne Prime number */
-# define LIBXSMM_HASH_MOD(N, MERSENNE) LIBXSMM_MOD1(N, MERSENNE)
+# define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number */
+# define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
 #else
-# define LIBXSMM_HASH_MOD(N, M) ((N) % (M))
+# define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
 #endif
 
 #if defined(LIBXSMM_HASH_BASIC)
-# define LIBXSMM_HASH_FUNCTION libxsmm_hash
+# define LIBXSMM_HASH_FUNCTION libxsmm_hash_npot
 # define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, HASH_FUNCTION, DESCRIPTOR) \
     HASH = (HASH_FUNCTION)(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_REGSIZE); \
     assert((LIBXSMM_REGSIZE) > (HASH)); \
@@ -707,37 +707,37 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
 
 #if defined(LIBXSMM_GEMM_DIFF_SW)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff);
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
   INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_imci);
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
 # else
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
 # endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_avx2);
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
 # else
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_avx);
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
 # endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, libxsmm_gemm_diff_sse);
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
 # else
   INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash, 0 != internal_arch_name
+  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # else
@@ -770,37 +770,37 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 
 #if defined(LIBXSMM_GEMM_DIFF_SW)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff);
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
   INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_imci);
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
 # else
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
 # endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_avx2);
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
 # else
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_avx);
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
 # endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, libxsmm_gemm_diff_sse);
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
 # else
   INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash, 0 != internal_arch_name
+  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # else

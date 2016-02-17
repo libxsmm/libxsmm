@@ -51,6 +51,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash(
   /** Upper bound of the result. */
   unsigned int n);
 
+/** Calculate a hash value for a given quantity (size) of raw data according to the seed (init. value). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash_npot(
+  const void* data, unsigned int size,
+  /** Upper bound of the result. */
+  unsigned int npot);
+
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
 # include "libxsmm_hash.c"
