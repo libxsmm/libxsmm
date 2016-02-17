@@ -575,12 +575,6 @@ dgemm_mic: lib_mic
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) MIC=1 TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
-.PHONY: wrap
-wrap: dgemm
-
-.PHONY: wrap_mic
-wrap_mic: dgemm_mic
-
 .PHONY: nek
 nek: lib_hst
 	@cd $(SPLDIR)/nek && $(MAKE) --no-print-directory \
