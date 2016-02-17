@@ -59,18 +59,20 @@ endif
 ifneq (0,$(STATIC))
 	ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)))
 		DEPSTATIC ?= 1
-	else ifeq (file,$(origin STATIC))
-		DEPSTATIC ?= 0
-	else
+	else # fallback
+		STATIC2 := $(STATIC)
+		STATIC := 0
 		DEPSTATIC ?= $(STATIC)
+		STATIC := $(STATIC2)
 	endif
 else
 	ifneq (,$(wildcard $(LIBNAME).$(DLIBEXT)))
 		DEPSTATIC ?= 0
-	else ifeq (file,$(origin STATIC))
-		DEPSTATIC ?= 1
-	else
+	else # fallback
+		STATIC2 := $(STATIC)
+		STATIC := 1
 		DEPSTATIC ?= $(STATIC)
+		STATIC := $(STATIC2)
 	endif
 endif
 
@@ -809,7 +811,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 	$(filter-out environment% default automatic,$(origin $V)), \
-	$(if $(filter-out .DEFAULT_GOAL BLAS_WARNING libdir,$V), \
+	$(if $(filter-out .DEFAULT_GOAL STATIC2 BLAS_WARNING libdir,$V), \
 		$V=$($V)?)))
 .state: $(shell $(DEPDIR)/.hooks/state.sh $(abspath .) '$(STATE)')
 
