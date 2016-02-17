@@ -1,8 +1,8 @@
 #!/bin/bash
 
-DEPDIR=../..
-
 HERE=$(cd $(dirname $0); pwd -P)
+DEPDIR=${HERE}/../..
+
 TMPF=$(mktemp /tmp/fileXXXXXX)
 UNAME=$(which uname)
 ECHO=$(which echo)
@@ -16,7 +16,7 @@ else
   LIBEXT=dylib
 fi
 
-if [ -e dgemm-blas ]; then
+if [ -e ${HERE}/dgemm-blas ]; then
   ${ECHO} "============================="
   ${ECHO} "Running DGEMM (ORIGINAL BLAS)"
   ${ECHO} "============================="
@@ -52,7 +52,7 @@ if [ -e dgemm-blas ]; then
   fi
 fi
 
-if [ -e dgemm-wrap ]; then
+if [ -e ${HERE}/dgemm-wrap ]; then
   ${ECHO}
   ${ECHO} "============================="
   ${ECHO} "Running DGEMM (STATIC WRAP)"
