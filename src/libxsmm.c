@@ -76,7 +76,7 @@
 
 /* alternative hash algorithm (instead of CRC32) */
 #if !defined(LIBXSMM_HASH_BASIC)
-# if defined(__MIC__)
+# if !defined(LIBXSMM_SSE_MAX) || (4 > (LIBXSMM_SSE_MAX))
 #   define LIBXSMM_HASH_BASIC
 # endif
 #endif
@@ -342,8 +342,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             fprintf(stderr, "LIBXSMM: CRC32 instructions are not available!\n");
           }
 #endif
-
-
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].code.xmm = 0;
           { /* omit registering code if JIT is enabled and if an ISA extension is found
              * which is beyond the static code path used to compile the library
