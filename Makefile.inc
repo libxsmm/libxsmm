@@ -56,22 +56,14 @@ else
 endif
 
 # Secondary static
-ifneq (0,$(STATIC))
-	ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT)))
-		DEPSTATIC ?= 1
-	else ifeq (file,$(origin STATIC))
-		DEPSTATIC ?= 0
-	else
-		DEPSTATIC ?= 1
-	endif
+ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
+	DEPSTATIC ?= $(STATIC)
+else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT))) # prefer static (library exists)
+	DEPSTATIC ?= 1
+else ifeq (,$(wildcard $(LIBNAME).$(DLIBEXT))) # take shared (library exists)
+	DEPSTATIC ?= 0
 else
-	ifneq (,$(wildcard $(LIBNAME).$(DLIBEXT)))
-		DEPSTATIC ?= 0
-	else ifeq (file,$(origin STATIC))
-		DEPSTATIC ?= 1
-	else
-		DEPSTATIC ?= 0
-	endif
+	DEPSTATIC ?= $(STATIC)
 endif
 
 # Library extension
