@@ -69,6 +69,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(
   else if (NULL != LIBXSMM_FSYMBOL(__real_sgemm)) {
     libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
   }
+  else if (NULL != LIBXSMM_FSYMBOL(__real_mkl_sgemm)) {
+    libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_mkl_sgemm);
+  }
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/
 
   if (NULL != dgemm_function) {
@@ -77,6 +80,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(
 #if defined(LIBXSMM_GEMM_WRAP) && defined(__STATIC)
   else if (NULL != LIBXSMM_FSYMBOL(__real_dgemm)) {
     libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
+  }
+  else if (NULL != LIBXSMM_FSYMBOL(__real_mkl_dgemm)) {
+    libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_mkl_dgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/
 
