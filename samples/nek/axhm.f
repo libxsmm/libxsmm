@@ -49,7 +49,7 @@ PROGRAM stpm
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   INTEGER :: argc, m, n, k, routine, check
-  INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, totsize
+  INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, total_size
   CHARACTER(32) :: argv
   DOUBLE PRECISION :: duration, max_diff, h1, h2
 
@@ -80,9 +80,9 @@ PROGRAM stpm
   END IF
   IF (5 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(5, argv)
-    READ(argv, "(I32)") totsize
+    READ(argv, "(I32)") total_size
   ELSE
-    totsize = 0 ! 1 iteration by default
+    total_size = 0 ! 1 iteration by default
   END IF
 
   ! Initialize LIBXSMM
@@ -91,7 +91,7 @@ PROGRAM stpm
   ! workload is about 2 GByte in memory by default
   s = MERGE(ISHFT(2_8, 30) / ((m * n * k) * T * 6), MAX(i, 0_8), 0.EQ.i)
   ! determining how many repititions are needed
-  reps = MAX(s, totsize) / s
+  total_size = MAX(s, total_size); reps = total_size / s
   duration = 0; max_diff = 0
 
   ALLOCATE(a(m,n,k,s))
@@ -170,6 +170,7 @@ PROGRAM stpm
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
+  !$OMP BARRIER
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -193,7 +194,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  CALL performance(duration, m, n, k, s, reps)
+  CALL performance(duration, m, n, k, total_size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
@@ -205,6 +206,7 @@ PROGRAM stpm
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
+  !$OMP BARRIER
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -228,7 +230,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  CALL performance(duration, m, n, k, s, reps)
+  CALL performance(duration, m, n, k, total_size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
@@ -240,6 +242,7 @@ PROGRAM stpm
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
+  !$OMP BARRIER
   DO r = 1, reps
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -263,7 +266,7 @@ PROGRAM stpm
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  CALL performance(duration, m, n, k, s, reps)
+  CALL performance(duration, m, n, k, total_size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
 
   c(:,:,:,:) = 0.0
@@ -278,6 +281,7 @@ PROGRAM stpm
     !$OMP MASTER
     start = libxsmm_timer_tick()
     !$OMP END MASTER
+    !$OMP BARRIER
     DO r = 1, reps
       !$OMP DO
       DO i = LBOUND(a, 4), UBOUND(a, 4)
@@ -301,7 +305,7 @@ PROGRAM stpm
     !$OMP END PARALLEL
 
     ! Print Performance Summary and check results
-    CALL performance(duration, m, n, k, s, reps)
+    CALL performance(duration, m, n, k, total_size)
     IF (check.NE.0) max_diff = MAX(max_diff, validate(d, c))
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"
@@ -330,16 +334,15 @@ CONTAINS
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   END FUNCTION
 
-  SUBROUTINE performance(duration, m, n, k, s, reps)
-    DOUBLE PRECISION, INTENT(IN)    :: duration
+  SUBROUTINE performance(duration, m, n, k, size)
+    DOUBLE PRECISION, INTENT(IN) :: duration
     INTEGER, INTENT(IN)    :: m, n, k
-    INTEGER(8), INTENT(IN) :: s, reps
-
+    INTEGER(8), INTENT(IN) :: size
     IF (0.LT.duration) THEN
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-        (reps * s * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
+        (size * m * n * k * (2*(m+n+k) + 2 + 4) * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (reps * s * m * n * k * (6) * T / (duration * ISHFT(1_8, 30))), " GB/s"
+        (size * m * n * k * (6) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     END IF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", (1D3 * duration)/reps, " ms"
   END SUBROUTINE
