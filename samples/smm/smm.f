@@ -121,6 +121,7 @@ PROGRAM smm
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
+  !$OMP BARRIER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
     CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
@@ -144,6 +145,7 @@ PROGRAM smm
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
+  !$OMP BARRIER
   !$OMP DO
   DO i = LBOUND(a, 3), UBOUND(a, 3)
     CALL libxsmm_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
@@ -170,6 +172,7 @@ PROGRAM smm
     !$OMP MASTER
     start = libxsmm_timer_tick()
     !$OMP END MASTER
+    !$OMP BARRIER
     !$OMP DO
     DO i = LBOUND(a, 3), UBOUND(a, 3)
       CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), tmp)
@@ -242,15 +245,15 @@ CONTAINS
     END DO
   END SUBROUTINE
 
-  SUBROUTINE performance(duration, m, n, k, s)
+  SUBROUTINE performance(duration, m, n, k, size)
     REAL(T), INTENT(IN) :: duration
     INTEGER, INTENT(IN) :: m, n, k
-    INTEGER(8), INTENT(IN) :: s
+    INTEGER(8), INTENT(IN) :: size
     IF (0.LT.duration) THEN
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:", &
-        (2D0 * s * m * n * k * 1D-9 / duration), " GFLOPS/s"
+        (2D0 * size * m * n * k * 1D-9 / duration), " GFLOPS/s"
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (s * (m * k + k * n) * T / (duration * ISHFT(1_8, 30))), " GB/s"
+        (size * (m * k + k * n) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     END IF
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
   END SUBROUTINE
