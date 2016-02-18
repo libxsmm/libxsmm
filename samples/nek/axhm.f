@@ -119,7 +119,7 @@ PROGRAM stpm
   dx = 1.; dy = 1.; dz = 1.
   h1 = 1.; h2 = 1.
 
-  WRITE(*, "(A,I0,A,I0,A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
+  WRITE(*, "(3(A,I0),A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
     " size=", UBOUND(a, 4), " reps=", reps
 
   CALL GETENV("CHECK", argv)

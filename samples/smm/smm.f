@@ -94,7 +94,7 @@ PROGRAM smm
     CALL init(24, b(:,:,i), scale, i - 1)
   END DO
 
-  WRITE(*, "(A,I0,A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
+  WRITE(*, "(3(A,I0),A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
 
   ! compute reference solution and warmup BLAS library
   ALLOCATE(d(m,n))
