@@ -198,6 +198,7 @@ PROGRAM stpm
       CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -227,6 +228,7 @@ PROGRAM stpm
       CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -256,6 +258,7 @@ PROGRAM stpm
       CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -288,6 +291,7 @@ PROGRAM stpm
         CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
       END DO
     END DO
+    !$OMP BARRIER
     !$OMP MASTER
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
     !$OMP END MASTER

@@ -184,6 +184,7 @@ PROGRAM stpm
                                     h1, h2, m*n*k )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -218,6 +219,7 @@ PROGRAM stpm
                                     h1, h2, m*n*k )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -252,6 +254,7 @@ PROGRAM stpm
                                     h1, h2, m*n*k )
     END DO
   END DO
+  !$OMP BARRIER
   !$OMP MASTER
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
   !$OMP END MASTER
@@ -289,6 +292,7 @@ PROGRAM stpm
                                       h1, h2, m*n*k )
       END DO
     END DO
+    !$OMP BARRIER
     !$OMP MASTER
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
     !$OMP END MASTER
