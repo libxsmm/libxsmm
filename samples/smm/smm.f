@@ -42,10 +42,10 @@ PROGRAM smm
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
   !$OMP THREADPRIVATE(tmp)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm
-  INTEGER :: argc, m, n, k
-  INTEGER(8) :: i, s, start
-  CHARACTER(32) :: argv
   DOUBLE PRECISION :: duration, scale, max_diff, diff
+  INTEGER(8) :: i, r, s, total_size, repetitions, start
+  INTEGER :: argc, m, n, k
+  CHARACTER(32) :: argv
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -72,6 +72,12 @@ PROGRAM smm
   ELSE
     i = 0
   END IF
+  IF (5 <= argc) THEN
+    CALL GET_COMMAND_ARGUMENT(5, argv)
+    READ(argv, "(I32)") total_size
+  ELSE
+    total_size = 0 ! 1 repetition by default
+  END IF
 
   ! Initialize LIBXSMM
   CALL libxsmm_init()
@@ -79,8 +85,10 @@ PROGRAM smm
   ! Eventually JIT-compile the requested kernel
   CALL libxsmm_dispatch(xmm, m, n, k)
 
-  ! 2 GByte by default for A and B (and C, but this is currently not used)
+  ! workload is about 2 GByte in memory by default
   s = MERGE(ISHFT(2_8, 30) / ((m * k + k * n + m * n) * T), MAX(i, 0_8), 0.EQ.i)
+  ! determining how many repititions are needed
+  total_size = MAX(s, total_size); repetitions = total_size / s
   duration = 0; scale = (1D0 / s); max_diff = 0
 
   ALLOCATE(c(m,n))
@@ -94,18 +102,21 @@ PROGRAM smm
     CALL init(24, b(:,:,i), scale, i - 1)
   END DO
 
-  WRITE(*, "(3(A,I0),A,I0)") "m=", m, " n=", n, " k=", k, " size=", UBOUND(a, 3)
+  WRITE(*, "(3(A,I0),A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
+    " size=", UBOUND(a, 3), " repetitions=", repetitions
 
   ! compute reference solution and warmup BLAS library
   ALLOCATE(d(m,n))
   d(:,:) = 0
-  !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i) &
-  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b)
+  !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i, r) &
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, repetitions)
   ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
-  !$OMP DO
-  DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+  DO r = 1, repetitions
+    !$OMP DO
+    DO i = LBOUND(a, 3), UBOUND(a, 3)
+      CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+    END DO
   END DO
   d(:,:) = d(:,:) + tmp(:UBOUND(d,1),:)
   ! Deallocate thread-local arrays
@@ -114,17 +125,19 @@ PROGRAM smm
 
   WRITE(*, "(A)") "Streamed... (BLAS)"
   c(:,:) = 0
-  !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) &
-  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration)
+  !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start) &
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration, repetitions)
   ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP BARRIER
-  !$OMP DO
-  DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+  DO r = 1, repetitions
+    !$OMP DO
+    DO i = LBOUND(a, 3), UBOUND(a, 3)
+      CALL libxsmm_blas_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+    END DO
   END DO
   !$OMP BARRIER
   !$OMP MASTER
@@ -134,21 +147,23 @@ PROGRAM smm
   ! Deallocate thread-local arrays
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, s)
+  CALL performance(duration, m, n, k, total_size)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
-  !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) &
-  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration)
+  !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start) &
+  !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration, repetitions)
   ALLOCATE(tmp(m,n))
   tmp(:,:) = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP BARRIER
-  !$OMP DO
-  DO i = LBOUND(a, 3), UBOUND(a, 3)
-    CALL libxsmm_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+  DO r = 1, repetitions
+    !$OMP DO
+    DO i = LBOUND(a, 3), UBOUND(a, 3)
+      CALL libxsmm_gemm(m=m, n=n, k=k, a=a(:,:,i), b=b(:,:,i), c=tmp)
+    END DO
   END DO
   !$OMP BARRIER
   !$OMP MASTER
@@ -158,7 +173,7 @@ PROGRAM smm
   ! Deallocate thread-local arrays
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, s)
+  CALL performance(duration, m, n, k, total_size)
   diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   max_diff = MAX(diff, max_diff)
@@ -166,16 +181,19 @@ PROGRAM smm
   IF (libxsmm_available(xmm)) THEN
     c(:,:) = 0
     WRITE(*, "(A)") "Streamed... (specialized)"
-    !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, start) !DEFAULT(NONE) SHARED(m, n, a, b, duration, xmm)
+    !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)
+      !DEFAULT(NONE) SHARED(m, n, a, b, duration, repetitions, xmm)
     ALLOCATE(tmp(m,n))
     tmp(:,:) = 0
     !$OMP MASTER
     start = libxsmm_timer_tick()
     !$OMP END MASTER
     !$OMP BARRIER
-    !$OMP DO
-    DO i = LBOUND(a, 3), UBOUND(a, 3)
-      CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), tmp)
+    DO r = 1, repetitions
+      !$OMP DO
+      DO i = LBOUND(a, 3), UBOUND(a, 3)
+        CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), tmp)
+      END DO
     END DO
     !$OMP BARRIER
     !$OMP MASTER
@@ -185,7 +203,7 @@ PROGRAM smm
     ! Deallocate thread-local arrays
     DEALLOCATE(tmp)
     !$OMP END PARALLEL
-    CALL performance(duration, m, n, k, s)
+    CALL performance(duration, m, n, k, total_size)
     diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
     max_diff = MAX(diff, max_diff)

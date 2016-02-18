@@ -50,10 +50,10 @@ PROGRAM grad
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
-  INTEGER :: argc, m, n, k, routine, check
-  INTEGER(8) :: i, j, s, ix, iy, iz, start, reps, r, total_size
-  CHARACTER(32) :: argv
   DOUBLE PRECISION :: duration, max_diff
+  INTEGER :: argc, m, n, k, routine, check
+  INTEGER(8) :: i, j, ix, iy, iz, r, s, total_size, repetitions, start
+  CHARACTER(32) :: argv
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -84,7 +84,7 @@ PROGRAM grad
     CALL GET_COMMAND_ARGUMENT(5, argv)
     READ(argv, "(I32)") total_size
   ELSE
-    total_size = 0 ! 1 iteration by default
+    total_size = 0 ! 1 repetition by default
   END IF
 
   ! Initialize LIBXSMM
@@ -93,7 +93,7 @@ PROGRAM grad
   ! workload is about 2 GByte in memory by default
   s = MERGE(ISHFT(2_8, 30) / ((m * n * k) * T * 5), MAX(i, 0_8), 0.EQ.i)
   ! determining how many repititions are needed
-  total_size = MAX(s, total_size); reps = total_size / s
+  total_size = MAX(s, total_size); repetitions = total_size / s
   duration = 0; max_diff = 0
 
   ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
@@ -117,7 +117,7 @@ PROGRAM grad
   dx = 1.; dy = 2.; dz = 3.
 
   WRITE(*, "(3(A,I0),A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
-    " size=", UBOUND(a, 4), " reps=", reps
+    " size=", UBOUND(a, 4), " repetitions=", repetitions
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
@@ -137,9 +137,9 @@ PROGRAM grad
     END DO 
 
     WRITE(*, "(A)") "Calculating check..."
-    !$OMP PARALLEL PRIVATE(i) DEFAULT(NONE) &
-    !$OMP   SHARED(duration, a, dx, dy, dz, rx, ry, rz, m, n, k, reps)
-    DO r = 1, reps
+    !$OMP PARALLEL PRIVATE(i, j, r) DEFAULT(NONE) &
+    !$OMP   SHARED(a, dx, dy, dz, rx, ry, rz, m, n, k, repetitions)
+    DO r = 1, repetitions
       !$OMP DO
       DO i = LBOUND(a, 4), UBOUND(a, 4)
         rx(:,:,:,i) = reshape( matmul(dx, reshape(a(:,:,:,i), (/m,n*k/))), (/m,n,k/))
@@ -154,15 +154,15 @@ PROGRAM grad
   END IF
 
   WRITE(*, "(A)") "Streamed... (BLAS)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, reps)
+  !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
+  !$OMP   SHARED(a, dx, dy, dz, cx, cy, cz, m, n, k, duration, repetitions)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3 = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP BARRIER
-  DO r = 1, reps
+  DO r = 1, repetitions
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
       CALL libxsmm_blas_gemm(m=m, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
@@ -188,15 +188,15 @@ PROGRAM grad
   IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
 
   WRITE(*, "(A)") "Streamed... (mxm)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, reps)
+  !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
+  !$OMP   SHARED(a, dx, dy, dz, cx, cy, cz, m, n, k, duration, repetitions)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3 = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP BARRIER
-  DO r = 1, reps
+  DO r = 1, repetitions
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
       CALL mxmf2(dx, m, a(:,:,:,i), m, tm1(:,:,:), n*k)
@@ -222,15 +222,15 @@ PROGRAM grad
   IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
-  !$OMP PARALLEL PRIVATE(i, start) DEFAULT(NONE) &
-  !$OMP   SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, reps)
+  !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
+  !$OMP   SHARED(a, dx, dy, dz, cx, cy, cz, m, n, k, duration, repetitions)
   ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
   tm1 = 0; tm2 = 0; tm3 = 0
   !$OMP MASTER
   start = libxsmm_timer_tick()
   !$OMP END MASTER
   !$OMP BARRIER
-  DO r = 1, reps
+  DO r = 1, repetitions
     !$OMP DO
     DO i = LBOUND(a, 4), UBOUND(a, 4)
       CALL libxsmm_gemm(m=m, n=n*k, k=m, a=dx, b=a(:,:,1,i), c=tm1(:,:,1), alpha=alpha, beta=beta)
@@ -260,14 +260,14 @@ PROGRAM grad
   CALL libxsmm_dispatch(xmm2, m, n, n, alpha=alpha, beta=beta)
   CALL libxsmm_dispatch(xmm3, m*n, k, k, alpha=alpha, beta=beta)
   IF (libxsmm_available(xmm1).AND.libxsmm_available(xmm2).AND.libxsmm_available(xmm3)) THEN
-    !$OMP PARALLEL PRIVATE(i, start) !DEFAULT(NONE) SHARED(duration, a, dx, dy, dz, cx, cy, cz, m, n, k, xmm1, xmm2, xmm3, reps)
+    !$OMP PARALLEL PRIVATE(i, j, r, start) !DEFAULT(NONE) SHARED(a, dx, dy, dz, cx, cy, cz, m, n, k, duration, repetitions, xmm1, xmm2, xmm3)
     ALLOCATE(tm1(m,n,k), tm2(m,n,k), tm3(m,n,k))
     tm1 = 0; tm2 = 0; tm3 = 0
     !$OMP MASTER
     start = libxsmm_timer_tick()
     !$OMP END MASTER
     !$OMP BARRIER
-    DO r = 1, reps
+    DO r = 1, repetitions
       !$OMP DO
       DO i = LBOUND(a, 4), UBOUND(a, 4)
         CALL libxsmm_call(xmm1,  C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1(1,1,1)))
@@ -331,6 +331,6 @@ CONTAINS
       WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
         (size * m * n * k * (4) * T / (duration * ISHFT(1_8, 30))), " GB/s"
     END IF
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", (1D3 * duration)/reps, " ms"
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", (1D3 * duration)/repetitions, " ms"
   END SUBROUTINE
 END PROGRAM
