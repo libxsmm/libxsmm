@@ -59,32 +59,32 @@
 #   define LIBXSMM_GEMM_WRAP
 #   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
 #   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
-  const float* beta, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_dgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
-  const double* beta, double*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_mkl_sgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
-  const float* beta, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_mkl_dgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
-  const double* beta, double*, const libxsmm_blasint*);
-/* mute warning about external function definition with no prior declaration */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
-  const float* beta, float*, const libxsmm_blasint*);
-/* mute warning about external function definition with no prior declaration */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
-  const double* beta, double*, const libxsmm_blasint*);
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+      const float* beta, float*, const libxsmm_blasint*);
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_dgemm)(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+      const double* beta, double*, const libxsmm_blasint*);
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_mkl_sgemm)(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+      const float* beta, float*, const libxsmm_blasint*);
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_mkl_dgemm)(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+      const double* beta, double*, const libxsmm_blasint*);
+    /* mute warning about external function definition with no prior declaration */
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+      const float* beta, float*, const libxsmm_blasint*);
+    /* mute warning about external function definition with no prior declaration */
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
+      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+      const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+      const double* beta, double*, const libxsmm_blasint*);
 # elif !defined(__CYGWIN__) /* LD_PRELOAD */
 #   define LIBXSMM_GEMM_WRAP
 #   define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE(weak)
