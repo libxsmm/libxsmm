@@ -1,23 +1,16 @@
 #!/bin/sh
 
-VERSIONSCRIPT=${GIT_DIR}/hooks/version.sh
-VERSIONFILE=${GIT_DIR}/../version.txt
+ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 LOCKFILE=${GIT_DIR}/.commit
+GIT=$(which git)
+RM=$(which rm)
 
 if [ -e ${LOCKFILE} ]; then
-  ECHO=$(which echo)
-  GREP=$(which grep)
-  GIT=$(which git)
-  RM=$(which rm)
-
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}
 
-  ${GIT} diff --name-only | ${GREP} -q ${VERSIONFILE}
-  if [ "0" != "$?" ]; then
-    # update version file
-    ${VERSIONSCRIPT} > ${VERSIONFILE}
-    ${GIT} add ${VERSIONFILE}
-    ${GIT} commit --amend -C HEAD --no-verify
-  fi
+  # update the version file
+  ${ROOTDIR}/.hooks/version.sh > ${ROOTDIR}/version.txt
+  ${GIT} add version.txt
+  ${GIT} commit --amend -C HEAD --no-verify
 fi

@@ -1,6 +1,13 @@
 #!/bin/sh
 
+ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 LOCKFILE=${GIT_DIR}/.commit
 TOUCH=$(which touch)
+GREP=$(which grep)
+GIT=$(which git)
 
-${TOUCH} ${LOCKFILE}
+${GIT} diff --cached --name-status | ${GREP} -q version.txt
+if [ "0" != "$?" ]; then
+  # trigger updating the version file
+  ${TOUCH} ${LOCKFILE}
+fi
