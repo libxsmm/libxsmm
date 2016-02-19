@@ -53,7 +53,7 @@ then
 fi
 
 # set SDE to run AVX512 code
-SDE="/nfs_home/aheineck/Simulators/sde/sde-buildkit-internal-rs-7.23.0-2015-04-30-lin/sde64 -knl -mix -- "
+SDE_KNL="sde64 -knl -mix -- "
 
 N="9"
 #N="1 2 3 4 5 6 7 8 9 10 30 31 60 62"
@@ -78,7 +78,7 @@ do
         ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       elif [ "${ARCH}" == 'knl' ]; then
         icc -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
-        ${SDE} ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+        ${SDE_KNL} ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
       else
         echo "unsupported architecture!"
       fi
