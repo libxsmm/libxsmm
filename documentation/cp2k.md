@@ -15,6 +15,7 @@ In order to build CP2K/intel from source, make sure to rely on one of the recomm
 * Intel Compiler 15.0.3.187 (Build 20150407)
 * Intel Compiler 16.0.0.109 (Build 20150815)
 * Intel Compiler 16.0.1.150 (Build 20151021)
+* Intel Compiler 16.0.2.181 (Build 20160204)
 
 For Intel MPI, usually any version is fine.
 
