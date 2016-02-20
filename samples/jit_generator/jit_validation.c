@@ -218,7 +218,7 @@ void run_jit_double( const double*                   i_a,
   l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
   l_fd = open("/dev/zero", O_RDWR);
-  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_32BIT, l_fd, 0);
   close(l_fd);
   /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! */
   madvise(p, l_code_page_size, MADV_NOHUGEPAGE); 
@@ -338,7 +338,7 @@ void run_jit_float( const float*                    i_a,
   l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
   l_fd = open("/dev/zero", O_RDWR);
-  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_32BIT, l_fd, 0);
   close(l_fd);
   /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! */
   madvise(p, l_code_page_size, MADV_NOHUGEPAGE); 
