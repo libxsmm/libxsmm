@@ -46,7 +46,7 @@
 /*@TODO remove:*/
 #define LIBXSMM_BUILD_PAGESIZE sysconf(_SC_PAGESIZE)
 
-#define REPS 10000
+#define REPS 100000
 
 void print_help() {
   printf("\n\n");
@@ -218,10 +218,10 @@ void run_jit_double( const double*                   i_a,
   l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
   l_fd = open("/dev/zero", O_RDWR);
-  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_32BIT, l_fd, 0);
   close(l_fd);
-  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
-  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! */
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); 
   if (p == MAP_FAILED) {
     fprintf(stderr, "something bad happend in mmap!\n");
   }
@@ -242,6 +242,9 @@ void run_jit_double( const double*                   i_a,
     }
     exit(-1);
   }
+
+  /* print function point address */
+  printf("function pointer address: %llx\n", (size_t)l_code);
 
   /* set function pointer and jitted code */
   if ( 0 == (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) ) {
@@ -335,10 +338,10 @@ void run_jit_float( const float*                    i_a,
   l_code_pages = (((l_generated_code.code_size-1)*sizeof(unsigned char))/LIBXSMM_BUILD_PAGESIZE)+1;
   l_code_page_size = LIBXSMM_BUILD_PAGESIZE*l_code_pages;
   l_fd = open("/dev/zero", O_RDWR);
-  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, l_fd, 0);
+  p = mmap(0, l_code_page_size, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_32BIT, l_fd, 0);
   close(l_fd);
-  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! 
-  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); */
+  /* explicitly disable THP for this memory region, kernel 2.6.38 or higher! */
+  madvise(p, l_code_page_size, MADV_NOHUGEPAGE); 
   if (p == MAP_FAILED) {
     fprintf(stderr, "LIBXSMM: something bad happend in mmap, couldn't allocate code buffer!\n");
     exit(-1);
@@ -360,6 +363,10 @@ void run_jit_float( const float*                    i_a,
     }
     exit(-1);
   }
+  
+  /* print function point address */
+  printf("function pointer address: %llx\n", (size_t)l_code);
+  printf("code pointer address: %llx\n", (size_t)l_gen_code); 
 
   /* set function pointer and jitted code */
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_NONE ) {
