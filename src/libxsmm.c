@@ -175,6 +175,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #endif
 
 #define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, ENTRY, HASH_FUNCTION, DIFF_FUNCTION) { \
+  INTERNAL_FIND_CODE_INIT(ENTRY); \
   unsigned int hash, diff = 0, diff0 = 0, i, i0; \
   internal_code result; \
   /* check if the requested xGEMM is already JITted */ \
@@ -273,6 +274,28 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
   while (0 != diff); \
   return result.SELECTOR; \
 }
+
+#define INTERNAL_DISPATCH(FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, \
+  SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION) \
+{ \
+  INTERNAL_FIND_CODE_DECLARE(entry); \
+  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
+    0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB), \
+    0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA), \
+    0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC), \
+    0 == (PALPHA) ? LIBXSMM_ALPHA : *(PALPHA), \
+    0 == (PBETA) ? LIBXSMM_BETA : *(PBETA), \
+    0 == (PREFETCH) ? LIBXSMM_PREFETCH : *(PREFETCH)); \
+  INTERNAL_FIND_CODE(desc, SELECTOR, entry, HASH_FUNCTION, DIFF_FUNCTION); \
+}
+
+#define INTERNAL_SMMDISPATCH(PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, HASH_FUNCTION, DIFF_FUNCTION) \
+  INTERNAL_DISPATCH((0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)) | LIBXSMM_GEMM_FLAG_F32PREC, \
+  M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, smm, HASH_FUNCTION, DIFF_FUNCTION)
+
+#define INTERNAL_DMMDISPATCH(PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, HASH_FUNCTION, DIFF_FUNCTION) \
+  INTERNAL_DISPATCH(0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS), \
+  M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, dmm, HASH_FUNCTION, DIFF_FUNCTION)
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
@@ -691,57 +714,44 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
 {
-  const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags)) | LIBXSMM_GEMM_FLAG_F32PREC;
-  const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
-  const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
-  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
-
-  INTERNAL_FIND_CODE_DECLARE(entry);
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
-    LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-    LIBXSMM_LD(ilda, ildb), LIBXSMM_LD(ildb, ilda), ildc,
-    0 == alpha ? LIBXSMM_ALPHA : *alpha,
-    0 == beta ? LIBXSMM_BETA : *beta,
-    0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
-  INTERNAL_FIND_CODE_INIT(entry);
-
 #if defined(LIBXSMM_GEMM_DIFF_SW)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32, libxsmm_gemm_diff_imci);
 # endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
 # endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, smm, entry, libxsmm_hash_npot, 0 != internal_arch_name
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # else
-  INTERNAL_FIND_CODE(desc, smm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
+  INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch,
+    0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # endif
@@ -754,57 +764,44 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
 {
-  const int iflags = (0 == flags ? LIBXSMM_FLAGS : (*flags));
-  const int ilda = (0 == lda ? LIBXSMM_LD(m, k) : *lda);
-  const int ildb = (0 == ldb ? LIBXSMM_LD(k, n) : *ldb);
-  const int ildc = (0 == ldc ? LIBXSMM_LD(m, n) : *ldc);
-
-  INTERNAL_FIND_CODE_DECLARE(entry);
-  LIBXSMM_GEMM_DESCRIPTOR_TYPE(desc, LIBXSMM_ALIGNMENT, iflags,
-    LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
-    LIBXSMM_LD(ilda, ildb), LIBXSMM_LD(ildb, ilda), ildc,
-    0 == alpha ? LIBXSMM_ALPHA : *alpha,
-    0 == beta ? LIBXSMM_BETA : *beta,
-    0 == prefetch ? LIBXSMM_PREFETCH : *prefetch);
-  INTERNAL_FIND_CODE_INIT(entry);
-
 #if defined(LIBXSMM_GEMM_DIFF_SW)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_imci);
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32, libxsmm_gemm_diff_imci);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32, libxsmm_gemm_diff_imci);
 # endif
 #elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx2);
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
 #elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx);
 # endif
 #elif defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_sse);
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_FIND_CODE(desc, dmm, entry, libxsmm_hash_npot, 0 != internal_arch_name
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # else
-  INTERNAL_FIND_CODE(desc, dmm, entry, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
+  INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch,
+    0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
     ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
 # endif
