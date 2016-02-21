@@ -93,14 +93,11 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* a, const libxs
 # endif
 # if defined(LIBXSMM_GEMM_DIFF_MASK_A)
     a256.f = _mm256_maskload_ps((const float*)a, m256.i);
-    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
-# elif 1
-    a256.i = _mm256_lddqu_si256((const __m256i*)a);
-    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
 # else
+    /*a256.i = _mm256_lddqu_si256((const __m256i*)a);*/
     a256.i = _mm256_loadu_si256((const __m256i*)a);
-    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
 # endif /*defined(LIBXSMM_GEMM_DIFF_MASK_A)*/
+    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
     r0 = _mm256_testnzc_si256(a256.i, b256.i);
     r1 = _mm256_testnzc_si256(b256.i, a256.i);
     return r0 | r1;
@@ -137,14 +134,11 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* a, const libx
 # endif
 # if defined(LIBXSMM_GEMM_DIFF_MASK_A)
     const __m256i a256 = _mm256_maskload_epi32((const void*)a, m256);
-    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
-# elif 1
-    const __m256i a256 = _mm256_lddqu_si256((const __m256i*)a);
-    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
 # else
+    /*const __m256i a256 = _mm256_lddqu_si256((const __m256i*)a);*/
     const __m256i a256 = _mm256_loadu_si256((const __m256i*)a);
-    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
 # endif /*defined(LIBXSMM_GEMM_DIFF_MASK_A)*/
+    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
     const int r0 = _mm256_testnzc_si256(a256, b256);
     const int r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
