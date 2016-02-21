@@ -41,6 +41,9 @@
 # pragma offload_attribute(pop)
 #endif
 
+/** Enable/disable masked load of descriptor A */
+/*#define LIBXSMM_GEMM_DIFF_MASK_A*/
+
 
 /** Function type representing the gemm_diff functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);

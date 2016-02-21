@@ -77,22 +77,30 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* a, const libxs
   assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
   assert(0 != a && 0 != b);
   {
-# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
     int r0, r1;
-    union { __m256 s; __m256i i; } a256, b256;
+    union { __m256 f; __m256i i; } a256, b256;
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
 #   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
-    const union { int32_t array[8]; __m256i m256i; } mask = { /* use literal value rather than yes/no
+    const union { int32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
       in order to avoid warning about "initializer element is not computable at load time" */
       { 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x0 }
     };
 #   else
     const int yes = 0x80000000, no = 0x0;
-    struct { __m256i m256i; } mask;
-    mask.m256i = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
+    struct { __m256i i; } m256;
+    m256.i = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   endif
 # endif
-    a256.s = _mm256_maskload_ps((const float*)a, mask.m256i);
-    b256.s = _mm256_maskload_ps((const float*)b, mask.m256i);
+# if defined(LIBXSMM_GEMM_DIFF_MASK_A)
+    a256.f = _mm256_maskload_ps((const float*)a, m256.i);
+    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
+# elif 1
+    a256.i = _mm256_lddqu_si256((const __m256i*)a);
+    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
+# else
+    a256.i = _mm256_loadu_si256((const __m256i*)a);
+    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
+# endif /*defined(LIBXSMM_GEMM_DIFF_MASK_A)*/
     r0 = _mm256_testnzc_si256(a256.i, b256.i);
     r1 = _mm256_testnzc_si256(b256.i, a256.i);
     return r0 | r1;
@@ -125,13 +133,20 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* a, const libx
   {
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
     const int yes = 0x80000000, no = 0x0;
-    const __m256i mask = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
-    const __m256i a256 = _mm256_maskload_epi32((const void*)a, mask);
-    const __m256i b256 = _mm256_maskload_epi32((const void*)b, mask);
-    int r0, r1;
+    const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 # endif
-    r0 = _mm256_testnzc_si256(a256, b256);
-    r1 = _mm256_testnzc_si256(b256, a256);
+# if defined(LIBXSMM_GEMM_DIFF_MASK_A)
+    const __m256i a256 = _mm256_maskload_epi32((const void*)a, m256);
+    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
+# elif 1
+    const __m256i a256 = _mm256_lddqu_si256((const __m256i*)a);
+    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
+# else
+    const __m256i a256 = _mm256_loadu_si256((const __m256i*)a);
+    const __m256i b256 = _mm256_maskload_epi32((const void*)b, m256);
+# endif /*defined(LIBXSMM_GEMM_DIFF_MASK_A)*/
+    const int r0 = _mm256_testnzc_si256(a256, b256);
+    const int r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
   }
 #else
