@@ -17,26 +17,29 @@ int main()
     ? (/*snb*/'b' != cpuid[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
     : (0 != has_crc32/*sse4.2*/ ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff);
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  union { libxsmm_gemm_descriptor descriptor; char simd[32]; } a;
-  libxsmm_gemm_descriptor b;
+  union { libxsmm_gemm_descriptor descriptor; char simd[32]; } a, b;
 
   LIBXSMM_GEMM_DESCRIPTOR(a.descriptor, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
     LIBXSMM_LD(lda, ldb), LIBXSMM_LD(ldb, lda), ldc,
     LIBXSMM_ALPHA, LIBXSMM_BETA,
     LIBXSMM_PREFETCH_NONE);
-
-#if !defined(LIBXSMM_GEMM_DIFF_MASK_A)
-  for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(a.simd); ++i) a.simd[i] = 0;
-#endif
-
-  LIBXSMM_GEMM_DESCRIPTOR(b, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,
+  LIBXSMM_GEMM_DESCRIPTOR(b.descriptor, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,
     LIBXSMM_LD(m, n), LIBXSMM_LD(n, m), k,
     LIBXSMM_LD(lda, ldb), LIBXSMM_LD(ldb, lda), ldc,
     LIBXSMM_ALPHA, LIBXSMM_BETA,
     LIBXSMM_PREFETCH_BL2_VIA_C);
+#if defined(LIBXSMM_GEMM_DIFF_MASK_A)
+  for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(a.simd); ++i) {
+    a.simd[i] = 'a'; b.simd[i] = 'b';
+  }
+#else
+  for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(a.simd); ++i) {
+    a.simd[i] = b.simd[i] = 0;
+  }
+#endif
 
-  if (0 == libxsmm_gemm_diff(&a.descriptor, &b)) {
+  if (0 == libxsmm_gemm_diff(&a.descriptor, &b.descriptor)) {
     fprintf(stderr, "using static code path\n");
     return 1;
   }
@@ -44,11 +47,11 @@ int main()
     fprintf(stderr, "using static code path\n");
     return 2;
   }
-  else if (0 == libxsmm_gemm_diff(&b, &a.descriptor)) {
+  else if (0 == libxsmm_gemm_diff(&b.descriptor, &a.descriptor)) {
     fprintf(stderr, "using static code path\n");
     return 3;
   }
-  else if (0 == diff(&a.descriptor, &b)) {
+  else if (0 == diff(&a.descriptor, &b.descriptor)) {
     fprintf(stderr, "using %s code path\n", cpuid
       ? cpuid : (0 != has_crc32 ? "SSE"
       : (0 != is_static ? "static" : "non-AVX")));
@@ -60,7 +63,7 @@ int main()
       : (0 != is_static ? "static" : "non-AVX")));
     return 5;
   }
-  else if (0 == diff(&b, &a.descriptor)) {
+  else if (0 == diff(&b.descriptor, &a.descriptor)) {
     fprintf(stderr, "using %s code path\n", cpuid
       ? cpuid : (0 != has_crc32 ? "SSE"
       : (0 != is_static ? "static" : "non-AVX")));
