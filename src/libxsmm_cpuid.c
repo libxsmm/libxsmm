@@ -47,6 +47,7 @@ const char* libxsmm_cpuid(int* is_static, int* has_crc32)
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
   const char* name = 0;
 
+  assert(is_static != has_crc32 || 0 == is_static);
   if (is_static) *is_static = 0;
 
   LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
