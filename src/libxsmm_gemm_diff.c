@@ -78,7 +78,7 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* a, const libxs
   assert(0 != a && 0 != b);
   {
     int r0, r1;
-    union { __m256 f; __m256i i; } a256, b256;
+    __m256i a256, b256;
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE) /* otherwise generate a compile-time error */
 #   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
     const union { int32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
@@ -92,14 +92,14 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* a, const libxs
 #   endif
 # endif
 # if defined(LIBXSMM_GEMM_DIFF_MASK_A)
-    a256.f = _mm256_maskload_ps((const float*)a, m256.i);
+    a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)a, m256.i));
 # else
-    /*a256.i = _mm256_lddqu_si256((const __m256i*)a);*/
-    a256.i = _mm256_loadu_si256((const __m256i*)a);
+    /*a256 = _mm256_lddqu_si256((const __m256i*)a);*/
+    a256 = _mm256_loadu_si256((const __m256i*)a);
 # endif /*defined(LIBXSMM_GEMM_DIFF_MASK_A)*/
-    b256.f = _mm256_maskload_ps((const float*)b, m256.i);
-    r0 = _mm256_testnzc_si256(a256.i, b256.i);
-    r1 = _mm256_testnzc_si256(b256.i, a256.i);
+    b256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)b, m256.i));
+    r0 = _mm256_testnzc_si256(a256, b256);
+    r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
   }
 #else
