@@ -13,9 +13,6 @@ int main()
 {
   int is_static, has_crc32;
   const char *const cpuid = libxsmm_cpuid(&is_static, &has_crc32);
-  const libxsmm_gemm_diff_function diff = 0 != cpuid
-    ? (/*snb*/'b' != cpuid[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
-    : (0 != has_crc32/*sse4.2*/ ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff);
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
   union { libxsmm_gemm_descriptor descriptor; char simd[32]; } a, b;
   unsigned int i;
@@ -52,26 +49,49 @@ int main()
     fprintf(stderr, "using static code path\n");
     return 3;
   }
-  else if (0 == diff(&a.descriptor, &b.descriptor)) {
-    fprintf(stderr, "using %s code path\n", cpuid
-      ? cpuid : (0 != has_crc32 ? "SSE"
-      : (0 != is_static ? "static" : "non-AVX")));
-    return 4;
+  if (0 != has_crc32/*sse4.2*/ || 0 != cpuid) {
+    if (0 == libxsmm_gemm_diff_sse(&a.descriptor, &b.descriptor)) {
+      fprintf(stderr, "using SSE code path\n");
+      return 4;
+    }
+    else if (0 != libxsmm_gemm_diff_sse(&a.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using SSE code path\n");
+      return 5;
+    }
+    else if (0 == libxsmm_gemm_diff_sse(&b.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using SSE code path\n");
+      return 6;
+    }
   }
-  else if (0 != diff(&a.descriptor, &a.descriptor)) {
-    fprintf(stderr, "using %s code path\n", cpuid
-      ? cpuid : (0 != has_crc32 ? "SSE"
-      : (0 != is_static ? "static" : "non-AVX")));
-    return 5;
+  if (0 != cpuid) {
+    if (0 == libxsmm_gemm_diff_avx(&a.descriptor, &b.descriptor)) {
+      fprintf(stderr, "using AVX code path\n");
+      return 7;
+    }
+    else if (0 != libxsmm_gemm_diff_avx(&a.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using AVX code path\n");
+      return 8;
+    }
+    else if (0 == libxsmm_gemm_diff_avx(&b.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using AVX code path\n");
+      return 9;
+    }
+    if (/*snb*/'b' != cpuid[2]) {
+      if (0 == libxsmm_gemm_diff_avx2(&a.descriptor, &b.descriptor)) {
+      fprintf(stderr, "using AVX2 code path\n");
+        return 10;
+      }
+      else if (0 != libxsmm_gemm_diff_avx2(&a.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using AVX2 code path\n");
+        return 11;
+      }
+      else if (0 == libxsmm_gemm_diff_avx2(&b.descriptor, &a.descriptor)) {
+      fprintf(stderr, "using AVX2 code path\n");
+        return 12;
+      }
+    }
   }
-  else if (0 == diff(&b.descriptor, &a.descriptor)) {
-    fprintf(stderr, "using %s code path\n", cpuid
-      ? cpuid : (0 != has_crc32 ? "SSE"
-      : (0 != is_static ? "static" : "non-AVX")));
-    return 6;
-  }
-  else {
-    return EXIT_SUCCESS;
-  }
+
+  return EXIT_SUCCESS;
 }
 
