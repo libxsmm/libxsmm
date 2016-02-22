@@ -9,14 +9,14 @@ int main()
   int i;
 
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for default(none) private(i)
 #endif
   for (i = 0; i < 1000; ++i) {
     libxsmm_init();
   }
 
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for default(none) private(i)
 #endif
   for (i = 0; i < 1000; ++i) {
     float c[23*23];
@@ -35,7 +35,7 @@ int main()
   }
 
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for default(none) private(i)
 #endif
   for (i = 0; i < 1000; ++i) {
     libxsmm_finalize();
