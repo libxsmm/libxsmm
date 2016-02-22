@@ -114,7 +114,7 @@ endif
 include $(ROOTDIR)/Makefile.inc
 
 # Number of repeated calls (tests)
-TESTSIZE ?= 1000
+TESTSIZE ?= 64
 
 ifeq (1,$(AVX))
 	GENTARGET = snb
@@ -664,12 +664,6 @@ endif
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
-	@echo "  SIZE=\$$1" >> $@
-	@echo "  shift" >> $@
-	@echo "else" >> $@
-	@echo "  SIZE=0" >> $@
-	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
@@ -679,7 +673,7 @@ endif
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
 	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
@@ -709,12 +703,6 @@ endif
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
-	@echo "  SIZE=\$$1" >> $@
-	@echo "  shift" >> $@
-	@echo "else" >> $@
-	@echo "  SIZE=0" >> $@
-	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
@@ -724,7 +712,7 @@ endif
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
 	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
@@ -754,12 +742,6 @@ endif
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
-	@echo "  SIZE=\$$1" >> $@
-	@echo "  shift" >> $@
-	@echo "else" >> $@
-	@echo "  SIZE=0" >> $@
-	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
@@ -769,7 +751,7 @@ endif
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
 	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
 	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
@@ -801,12 +783,6 @@ endif
 	@echo "  FILE=\$$1" >> $@
 	@echo "  shift" >> $@
 	@echo "fi" >> $@
-	@echo "if [ \"\" != \"\$$1\" ]; then" >> $@
-	@echo "  SIZE=\$$1" >> $@
-	@echo "  shift" >> $@
-	@echo "else" >> $@
-	@echo "  SIZE=0" >> $@
-	@echo "fi" >> $@
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
@@ -822,7 +798,7 @@ endif
 	@echo "  NNVALUE=\$$(\$${ECHO} \$${RUN2} | cut -d_ -f2)" >> $@
 	@echo "  KKVALUE=\$$(\$${ECHO} \$${RUN2} | cut -d_ -f3)" >> $@
 	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
-	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$${SIZE} >> \$${FILE}; } 2>&1)" >> $@
+	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
 	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
@@ -864,7 +840,7 @@ $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
-	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ $(TESTSIZE)
+	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ $(shell echo $$(($(TESTSIZE) * 16)))
 
 .PHONY: perf-cp2k
 perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt

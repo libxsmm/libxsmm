@@ -52,7 +52,7 @@ PROGRAM grad
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   DOUBLE PRECISION :: duration, max_diff
   INTEGER :: argc, m, n, k, routine, check
-  INTEGER(8) :: i, j, ix, iy, iz, r, s, total_size, repetitions, start
+  INTEGER(8) :: i, j, ix, iy, iz, r, s, size1, size, repetitions, start
   CHARACTER(32) :: argv
 
   argc = COMMAND_ARGUMENT_COUNT()
@@ -76,25 +76,26 @@ PROGRAM grad
   END IF
   IF (4 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(4, argv)
-    READ(argv, "(I32)") i
+    READ(argv, "(I32)") size1
   ELSE
-    i = 0
+    size1 = 0
   END IF
   IF (5 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(5, argv)
-    READ(argv, "(I32)") total_size
+    READ(argv, "(I32)") size
   ELSE
-    total_size = 0 ! 1 repetition by default
+    size = 0 ! 1 repetition by default
   END IF
 
   ! Initialize LIBXSMM
   CALL libxsmm_init()
 
   ! workload is about 2 GByte in memory by default
-  s = MERGE(ISHFT(2_8, 30) / ((m * n * k) * T * 5), MAX(i, 0_8), 0.EQ.i)
+  size1 = MERGE(2048_8, MAX(size1, 0_8), 0.EQ.size1)
+  s = ISHFT(size1, 20) / ((m * n * k) * T * 5)
   ! determining how many repititions are needed
-  total_size = MAX(s, total_size); repetitions = total_size / s
-  duration = 0; max_diff = 0
+  size = MAX(s, ISHFT(MAX(size, 0_8), 20) / ((m * n * k) * T * 5))
+  repetitions = size / s; duration = 0; max_diff = 0
 
   ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
@@ -116,8 +117,8 @@ PROGRAM grad
   END DO 
   dx = 1.; dy = 2.; dz = 3.
 
-  WRITE(*, "(3(A,I0),A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
-    " size=", UBOUND(a, 4), " repetitions=", repetitions
+  WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
+    " elements=", UBOUND(a, 4), " size=", size1, "MB repetitions=", repetitions
 
   CALL GETENV("CHECK", argv)
   READ(argv, "(I32)") check
@@ -184,7 +185,7 @@ PROGRAM grad
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, total_size)
+  call performance(duration, m, n, k, size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
 
   WRITE(*, "(A)") "Streamed... (mxm)"
@@ -218,7 +219,7 @@ PROGRAM grad
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, total_size)
+  call performance(duration, m, n, k, size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
@@ -252,7 +253,7 @@ PROGRAM grad
   !$OMP END PARALLEL
 
   ! Print Performance Summary and check results
-  call performance(duration, m, n, k, total_size)
+  call performance(duration, m, n, k, size)
   IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
 
   WRITE(*, "(A)") "Streamed... (specialized)"
@@ -289,7 +290,7 @@ PROGRAM grad
     !$OMP END PARALLEL
 
     ! Print Performance Summary and check results
-    call performance(duration, m, n, k, total_size)
+    call performance(duration, m, n, k, size)
     IF (check.NE.0) max_diff = MAX(max_diff, validate(rx, ry, rz, cx, cy, cz))
   ELSE
     WRITE(*,*) "Could not build specialized function(s)!"

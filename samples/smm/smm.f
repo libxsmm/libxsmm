@@ -43,7 +43,7 @@ PROGRAM smm
   !$OMP THREADPRIVATE(tmp)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm
   DOUBLE PRECISION :: duration, scale, max_diff, diff
-  INTEGER(8) :: i, r, s, total_size, repetitions, start
+  INTEGER(8) :: i, r, s, size1, size, repetitions, start
   INTEGER :: argc, m, n, k
   CHARACTER(32) :: argv
 
@@ -68,15 +68,15 @@ PROGRAM smm
   END IF
   IF (4 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(4, argv)
-    READ(argv, "(I32)") i
+    READ(argv, "(I32)") size1
   ELSE
-    i = 0
+    size1 = 0
   END IF
   IF (5 <= argc) THEN
     CALL GET_COMMAND_ARGUMENT(5, argv)
-    READ(argv, "(I32)") total_size
+    READ(argv, "(I32)") size
   ELSE
-    total_size = 0 ! 1 repetition by default
+    size = 0 ! 1 repetition by default
   END IF
 
   ! Initialize LIBXSMM
@@ -86,10 +86,11 @@ PROGRAM smm
   CALL libxsmm_dispatch(xmm, m, n, k)
 
   ! workload is about 2 GByte in memory by default
-  s = MERGE(ISHFT(2_8, 30) / ((m * k + k * n + m * n) * T), MAX(i, 0_8), 0.EQ.i)
+  size1 = MERGE(2048_8, MAX(size1, 0_8), 0.EQ.size1)
+  s = ISHFT(size1, 20) / ((m * k + k * n + m * n) * T)
   ! determining how many repititions are needed
-  total_size = MAX(s, total_size); repetitions = total_size / s
-  duration = 0; scale = (1D0 / s); max_diff = 0
+  size = MAX(s, ISHFT(MAX(size, 0_8), 20) / ((m * k + k * n + m * n) * T))
+  repetitions = size / s; duration = 0; scale = (1D0 / s); max_diff = 0
 
   ALLOCATE(c(m,n))
   ALLOCATE(a(m,k,s))
@@ -102,8 +103,8 @@ PROGRAM smm
     CALL init(24, b(:,:,i), scale, i - 1)
   END DO
 
-  WRITE(*, "(3(A,I0),A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
-    " size=", UBOUND(a, 3), " repetitions=", repetitions
+  WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
+    " elements=", UBOUND(a, 3), " size=", size1, "MB repetitions=", repetitions
 
   ! compute reference solution and warmup BLAS library
   ALLOCATE(d(m,n))
@@ -147,7 +148,7 @@ PROGRAM smm
   ! Deallocate thread-local arrays
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, total_size)
+  CALL performance(duration, m, n, k, size)
 
   WRITE(*, "(A)") "Streamed... (auto-dispatched)"
   c(:,:) = 0
@@ -173,7 +174,7 @@ PROGRAM smm
   ! Deallocate thread-local arrays
   DEALLOCATE(tmp)
   !$OMP END PARALLEL
-  CALL performance(duration, m, n, k, total_size)
+  CALL performance(duration, m, n, k, size)
   diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
   WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   max_diff = MAX(diff, max_diff)
@@ -203,7 +204,7 @@ PROGRAM smm
     ! Deallocate thread-local arrays
     DEALLOCATE(tmp)
     !$OMP END PARALLEL
-    CALL performance(duration, m, n, k, total_size)
+    CALL performance(duration, m, n, k, size)
     diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
     max_diff = MAX(diff, max_diff)
