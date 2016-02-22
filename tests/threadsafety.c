@@ -16,7 +16,7 @@ int main()
   }
 
 #if defined(_OPENMP)
-# pragma omp parallel for default(none) private(i)
+# pragma omp parallel for default(none) private(i) shared(a, b)
 #endif
   for (i = 0; i < 1000; ++i) {
     float c[23*23];
