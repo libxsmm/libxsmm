@@ -9,6 +9,7 @@ build/mm_*_*_*.c
 ide/_vs*-*.bat
 ide/*.amplxeproj
 ide/build
+ide/r*ah
 tmp
 .state
 .make
