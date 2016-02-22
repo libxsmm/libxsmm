@@ -729,7 +729,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
 # if defined(LIBXSMM_HASH_BASIC)
   INTERNAL_SMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
-  INTERNAL_SMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+  const libxsmm_hash_function crc32_fun = 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32;
+  INTERNAL_SMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, crc32_fun, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
@@ -743,7 +744,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
 # else
   INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
-#elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
+#elif defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
   INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
@@ -756,15 +757,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
   INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
+  const libxsmm_gemm_diff_function diff_fun = 0 != internal_arch_name ? libxsmm_gemm_diff_avx : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff);
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, 0 != internal_arch_name
-    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
-    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+  INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, diff_fun);
 # else
-  INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch,
-    0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
-    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
-    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+  const libxsmm_hash_function crc32_fun = 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32;
+  INTERNAL_SMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, crc32_fun, diff_fun);
 # endif
 #endif
 }
@@ -779,7 +777,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 # if defined(LIBXSMM_HASH_BASIC)
   INTERNAL_DMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff);
 # else
-  INTERNAL_DMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, libxsmm_gemm_diff);
+  const libxsmm_hash_function crc32_fun = 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32;
+  INTERNAL_DMMDISPATCH(0, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, crc32_fun, libxsmm_gemm_diff);
 # endif
 #elif defined(__MIC__)
 # if defined(LIBXSMM_HASH_BASIC)
@@ -793,7 +792,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 # else
   INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_avx2);
 # endif
-#elif defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
+#elif defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))
 # if defined(LIBXSMM_HASH_BASIC)
   INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, libxsmm_gemm_diff_avx);
 # else
@@ -806,15 +805,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_crc32_sse42, libxsmm_gemm_diff_sse);
 # endif
 #else
+  const libxsmm_gemm_diff_function diff_fun = 0 != internal_arch_name ? libxsmm_gemm_diff_avx : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff);
 # if defined(LIBXSMM_HASH_BASIC)
-  INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, 0 != internal_arch_name
-    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
-    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+  INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, libxsmm_hash_npot, diff_fun);
 # else
-  INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch,
-    0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32, 0 != internal_arch_name
-    ? (/*snb*/'b' != internal_arch_name[2] ? libxsmm_gemm_diff_avx2 : libxsmm_gemm_diff_avx)
-    : (0 != internal_has_crc32 ? libxsmm_gemm_diff_sse : libxsmm_gemm_diff));
+  const libxsmm_hash_function crc32_fun = 0 != internal_has_crc32 ? libxsmm_crc32_sse42 : libxsmm_crc32;
+  INTERNAL_DMMDISPATCH(LIBXSMM_GEMM_DESCRIPTOR_XSIZE, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch, crc32_fun, diff_fun);
 # endif
 #endif
 }
