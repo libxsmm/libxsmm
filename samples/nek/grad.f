@@ -52,7 +52,7 @@ PROGRAM grad
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   DOUBLE PRECISION :: duration, max_diff
   INTEGER :: argc, m, n, k, routine, check
-  INTEGER(8) :: i, j, ix, iy, iz, r, s, size1, size, repetitions, start
+  INTEGER(8) :: i, j, ix, iy, iz, r, s, size0, size1, size, repetitions, start
   CHARACTER(32) :: argv
 
   argc = COMMAND_ARGUMENT_COUNT()
@@ -91,11 +91,10 @@ PROGRAM grad
   CALL libxsmm_init()
 
   ! workload is about 2 GByte in memory by default
-  size1 = MERGE(2048_8, MAX(size1, 0_8), 0.EQ.size1)
-  s = ISHFT(size1, 20) / ((m * n * k) * T * 5)
-  ! determining how many repititions are needed
-  size = MAX(s, ISHFT(MAX(size, 0_8), 20) / ((m * n * k) * T * 5))
-  repetitions = size / s; duration = 0; max_diff = 0
+  size0 = (m * n * k) * T * 5 ! size of a single stream element in Byte
+  size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1) + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
+  size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0 + ISHFT(1, 20) - 1, -20), 0.LE.size), 20) / size0
+  s = ISHFT(size1, 20) / size0; repetitions = size / s; duration = 0; max_diff = 0
 
   ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
   ALLOCATE(a(m,n,k,s))
