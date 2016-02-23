@@ -189,6 +189,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
       if (0 == diff0) { \
         if (0 == (LIBXSMM_HASH_COLLISION & result.imm)) { /* check for no collision */ \
           /* calculate bitwise difference (deep check) */ \
+          LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
           diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor)); \
           if (0 != diff) { /* new collision discovered (but no code version yet) */ \
             /* allow to fix-up current entry inside of the guarded/locked region */ \

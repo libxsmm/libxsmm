@@ -52,12 +52,10 @@ unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* a, const libxsmm_g
   unsigned int result, i;
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(0 != a && 0 != b);
-
   result = ia[0] ^ ib[0];
   for (i = 1; i < LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)); ++i) {
     result |= (ia[i] ^ ib[i]);
   }
-
   return result;
 }
 
