@@ -175,9 +175,9 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #endif
 
 #define INTERNAL_FIND_CODE(DESCRIPTOR, SELECTOR/*smm or dmm*/, ENTRY, HASH_FUNCTION, DIFF_FUNCTION) { \
-  INTERNAL_FIND_CODE_INIT(ENTRY); \
   unsigned int hash, diff = 0, diff0 = 0, i0; \
   internal_code result; \
+  INTERNAL_FIND_CODE_INIT(ENTRY); \
   /* check if the requested xGEMM is already JITted */ \
   LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
   LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, HASH_FUNCTION, DESCRIPTOR); \
