@@ -49,8 +49,12 @@ endif
 DEPDIR ?= $(ROOTDIR)
 ifeq (0,$(MIC))
 	LIBNAME ?= $(DEPDIR)/lib/libxsmm
-else ifeq (0,$(OFFLOAD))
-	LIBNAME ?= $(DEPDIR)/lib/mic/libxsmm
+else ifneq (3,$(AVX))
+	ifeq (0,$(OFFLOAD))
+		LIBNAME ?= $(DEPDIR)/lib/mic/libxsmm
+	else
+		LIBNAME ?= $(DEPDIR)/lib/libxsmm
+	endif
 else
 	LIBNAME ?= $(DEPDIR)/lib/libxsmm
 endif
