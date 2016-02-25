@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_FRONTEND_H
 #define LIBXSMM_FRONTEND_H
 
-#include "libxsmm_typedefs.h"
+#include "libxsmm_generator.h"
 #include "libxsmm_macros.h"
 #include "libxsmm.h"
 

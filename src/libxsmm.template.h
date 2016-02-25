@@ -78,10 +78,19 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const f
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (weak-typed). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
+  libxsmm_smmfunction smm;
+  libxsmm_dmmfunction dmm;
+} libxsmm_xmmfunction;
+
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
 /** Uninitialize the library and free internal memory (optional). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
+
+/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
