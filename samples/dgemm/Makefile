@@ -25,9 +25,9 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS ?= 1
-OMP ?= 1
-SYM ?= 1
+BLAS = 1
+OMP = 1
+SYM = 1
 
 ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
 	DEPSTATIC ?= 1

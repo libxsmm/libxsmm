@@ -25,8 +25,8 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS ?= 1
-SYM ?= 1
+BLAS = 1
+SYM = 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
