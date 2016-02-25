@@ -132,6 +132,12 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
+#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
+# define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
+#else
+# define LIBXSMM_OPENMP_COLLAPSE(N)
+#endif
+
 #define LIBXSMM_REPEAT_1(A) A
 #define LIBXSMM_REPEAT_2(A) LIBXSMM_REPEAT_1(A); A
 #define LIBXSMM_REPEAT_3(A) LIBXSMM_REPEAT_2(A); A
