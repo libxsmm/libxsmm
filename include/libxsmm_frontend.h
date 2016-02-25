@@ -77,15 +77,16 @@
 #endif
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
-#if 0 != ((LIBXSMM_PREFETCH) & 2) || 0 != ((LIBXSMM_PREFETCH) & 4)
+#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/)
 # define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 8)
+#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/)
 # define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
 #endif
 #if 0/*no scheme yet using C*/
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
 #endif
+/** Secondary helper macros derived from the above group. */
 #if defined(LIBXSMM_PREFETCH_A)
 # define LIBXSMM_NOPREFETCH_A(EXPR)
 #else
