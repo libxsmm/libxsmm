@@ -69,6 +69,14 @@
 # endif
 #endif
 
+/**
+ * LIBXSMM is agnostic with respect to the threading runtime!
+ * LIBXSMM_OPENMP suppresses using OS primitives (PThreads)
+ */
+#if defined(_OPENMP) && !defined(LIBXSMM_OPENMP)
+/*# define LIBXSMM_OPENMP*/
+#endif
+
 /* enable generic variant of libxsmm_gemm_diff */
 #if !defined(LIBXSMM_GEMM_DIFF_SW) /*&& defined(__MIC__)*/
 # define LIBXSMM_GEMM_DIFF_SW
@@ -124,7 +132,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_arch_name 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_jit = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_has_crc32 = 0;
 
-#if !defined(_OPENMP)
+#if !defined(LIBXSMM_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_reglock[] = {
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
   LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -141,7 +149,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) VARIABLE = internal_init()
 #endif
 
-#if defined(_OPENMP)
+#if defined(LIBXSMM_OPENMP)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #else
@@ -151,7 +159,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock[LOCKINDEX]); }
 #endif
 
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
 #   define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = __atomic_load_n(&internal_registry, __ATOMIC_RELAXED)
 #   define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = __atomic_load_n(&((ENTRY)->code.xmm), __ATOMIC_SEQ_CST)
@@ -164,7 +172,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
       while (!__sync_bool_compare_and_swap(&((ENTRY)->code.xmm), old, SRC)) old = (ENTRY)->code.xmm; \
     }
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32) /*TODO*/
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32) /*TODO*/
 # define INTERNAL_FIND_CODE_DECLARE(ENTRY) internal_regentry* ENTRY = internal_registry
 # define INTERNAL_FIND_CODE_READ(ENTRY, DST) DST = (ENTRY)->code.xmm
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.xmm = (SRC)
@@ -312,7 +320,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
   /*const*/internal_regentry* result;
   int i;
 
-#if !defined(_OPENMP)
+#if !defined(LIBXSMM_OPENMP)
   /* acquire locks and thereby shortcut lazy initialization later on */
   const int nlocks = sizeof(internal_reglock) / sizeof(*internal_reglock);
   for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock[i]);
@@ -320,13 +328,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 # pragma omp critical(internal_reglock)
 #endif
   {
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
     result = __atomic_load_n(&internal_registry, __ATOMIC_SEQ_CST);
 # else
     result = __sync_or_and_fetch(&internal_registry, 0);
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
     result = internal_registry; /*TODO*/
 #else
     result = internal_registry;
@@ -412,7 +420,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             }
           }
           atexit(libxsmm_finalize);
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
           __atomic_store_n(&internal_registry, result, __ATOMIC_SEQ_CST);
 # else
@@ -421,7 +429,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             while (!__sync_bool_compare_and_swap(&internal_registry, old, result)) old = internal_registry;
           }
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
           internal_registry = result; /*TODO*/
 #else
           internal_registry = result;
@@ -435,7 +443,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #endif
     }
   }
-#if !defined(_OPENMP) /* release locks */
+#if !defined(LIBXSMM_OPENMP) /* release locks */
   for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock[i]);
 #endif
   assert(result);
@@ -449,13 +457,13 @@ LIBXSMM_ATTRIBUTE(constructor)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
   const void *const registry = __atomic_load_n(&internal_registry, __ATOMIC_RELAXED);
 # else
   const void *const registry = __sync_or_and_fetch(&internal_registry, 0);
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
   const void *const registry = internal_registry; /*TODO*/
 #else
   const void *const registry = internal_registry;
@@ -473,13 +481,13 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
   internal_regentry* registry = __atomic_load_n(&internal_registry, __ATOMIC_SEQ_CST);
 # else
   internal_regentry* registry = __sync_or_and_fetch(&internal_registry, 0);
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
   internal_regentry* registry = internal_registry; /*TODO*/
 #else
   internal_regentry* registry = internal_registry;
@@ -487,7 +495,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 
   if (0 != registry) {
     int i;
-#if !defined(_OPENMP)
+#if !defined(LIBXSMM_OPENMP)
     /* acquire locks and thereby shortcut lazy initialization later on */
     const int nlocks = sizeof(internal_reglock) / sizeof(*internal_reglock);
     for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock[i]);
@@ -512,7 +520,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           fprintf(stderr, "LIBXSMM: failed to finalize (error #%i)!\n", i);
         }
 # endif
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
         __atomic_store_n(&internal_registry, 0, __ATOMIC_SEQ_CST);
 # else
@@ -521,7 +529,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           LIBXSMM_UNUSED(dummy);
         }
 # endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
         internal_registry = 0; /*TODO*/
 #else
         internal_registry = 0;
@@ -556,7 +564,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #endif
       }
     }
-#if !defined(_OPENMP) /* release locks */
+#if !defined(LIBXSMM_OPENMP) /* release locks */
   for (i = 0; i < nlocks; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock[i]);
 #endif
   }

@@ -281,11 +281,6 @@ ifeq (Windows_NT,$(UNAME))
 	$(info ================================================================================)
 endif
 endif
-ifneq (0,$(OMP))
-	$(info LIBXSMM is agnostic with respect to the threading runtime!)
-	$(info Enabling OpenMP suppresses using OS primitives (PThreads).)
-	$(info ================================================================================)
-endif
 ifneq (0,$(BLAS_WARNING))
 	$(info Building a shared library requires to link against BLAS since there is)
 	$(info no runtime resolution/search for weak symbols implemented for this OS.)
