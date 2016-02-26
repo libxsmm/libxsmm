@@ -47,7 +47,7 @@
 
 #if defined(_OPENMP)
 # if !defined(LIBXSMM_GEMM_OMPS_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
-#   define LIBXSMM_GEMM_OMPS_TASKS
+/*#   define LIBXSMM_GEMM_OMPS_TASKS*/
 # endif
 # if defined(LIBXSMM_GEMM_OMPS_TASKS)
 #   define LIBXSMM_GEMM_OMPS_TASK_START LIBXSMM_PRAGMA(omp single nowait)
@@ -58,7 +58,7 @@
 #   define LIBXSMM_GEMM_OMPS_TASK_START
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC
 #   define LIBXSMM_GEMM_OMPS_TASK
-#   define LIBXSMM_GEMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for schedule(static) LIBXSMM_OPENMP_COLLAPSE(N))
+#   define LIBXSMM_GEMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for LIBXSMM_OPENMP_COLLAPSE(N))
 # endif
 #else
 # define LIBXSMM_GEMM_OMPS_TASK_START
