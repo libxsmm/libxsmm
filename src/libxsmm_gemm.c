@@ -45,76 +45,71 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_OMPS_TILE_M 32
-#define LIBXSMM_OMPS_TILE_N 32
-#define LIBXSMM_OMPS_TILE_K 32
-
 #if defined(_OPENMP)
-# if !defined(LIBXSMM_OMPS_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
-#   define LIBXSMM_OMPS_TASKS
+# if !defined(LIBXSMM_GEMM_OMPS_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
+#   define LIBXSMM_GEMM_OMPS_TASKS
 # endif
-# if defined(LIBXSMM_OMPS_TASKS)
-#   define LIBXSMM_OMPS_BEGIN LIBXSMM_PRAGMA(omp single nowait)
-#   define LIBXSMM_OMPS_TASK LIBXSMM_PRAGMA(omp task)
-#   define LIBXSMM_OMPS_FOR(N)
-#   define LIBXSMM_OMPS_END LIBXSMM_PRAGMA(omp taskwait)
+# if defined(LIBXSMM_GEMM_OMPS_TASKS)
+#   define LIBXSMM_GEMM_OMPS_TASK_START LIBXSMM_PRAGMA(omp single nowait)
+#   define LIBXSMM_GEMM_OMPS_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
+#   define LIBXSMM_GEMM_OMPS_TASK LIBXSMM_PRAGMA(omp task)
+#   define LIBXSMM_GEMM_OMPS_FOR(N)
 # else
-#   define LIBXSMM_OMPS_BEGIN
-#   define LIBXSMM_OMPS_TASK
-#   define LIBXSMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for schedule(static) LIBXSMM_OPENMP_COLLAPSE(N))
-#   define LIBXSMM_OMPS_END
+#   define LIBXSMM_GEMM_OMPS_TASK_START
+#   define LIBXSMM_GEMM_OMPS_TASK_SYNC
+#   define LIBXSMM_GEMM_OMPS_TASK
+#   define LIBXSMM_GEMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for schedule(static) LIBXSMM_OPENMP_COLLAPSE(N))
 # endif
 #else
-# define LIBXSMM_OMPS_BEGIN
-# define LIBXSMM_OMPS_TASK
-# define LIBXSMM_OMPS_FOR(N)
-# define LIBXSMM_OMPS_END
+# define LIBXSMM_GEMM_OMPS_TASK_START
+# define LIBXSMM_GEMM_OMPS_TASK_SYNC
+# define LIBXSMM_GEMM_OMPS_TASK
+# define LIBXSMM_GEMM_OMPS_FOR(N)
 #endif
 
-#define LIBXSMM_OMPS_XGEMM(REAL, SYMBOL, ARGS, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const libxsmm_blasint num_m = (*m) / (LIBXSMM_OMPS_TILE_M), num_n = (*n) / (LIBXSMM_OMPS_TILE_N), num_k = (*k) / (LIBXSMM_OMPS_TILE_K); \
-  LIBXSMM_GEMM_DESCRIPTOR((ARGS).desc, LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_OMPS_TILE_M, LIBXSMM_OMPS_TILE_N, LIBXSMM_OMPS_TILE_K, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
+#define LIBXSMM_GEMM_OMPS_XGEMM(REAL, SYMBOL, ARGS, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+  const libxsmm_blasint num_m = (M) / (TILE_M), num_n = (N) / (TILE_N), num_k = (K) / (TILE_K), nn = (N) - num_n * (TILE_N); \
+  LIBXSMM_GEMM_DESCRIPTOR((ARGS).desc, LIBXSMM_ALIGNMENT, FLAGS, TILE_M, TILE_N, TILE_K, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
   (ARGS).alpha.LIBXSMM_TPREFIX_NAME(REAL) = ALPHA; \
   (ARGS).beta.LIBXSMM_TPREFIX_NAME(REAL) = BETA; \
-  LIBXSMM_OMPS_BEGIN { \
+  LIBXSMM_GEMM_OMPS_TASK_START \
+  { \
     libxsmm_blasint h, i; \
     libxsmm_xmmfunction xmm = libxsmm_xmmdispatch(&((ARGS).desc)); \
     if (0 == xmm.dmm) { xmm.LIBXSMM_TPREFIX(REAL,mm) = SYMBOL; /* fallback */ } \
-    LIBXSMM_OMPS_FOR(2) \
+    LIBXSMM_GEMM_OMPS_FOR(2) \
     for (i = 0; i < num_n; ++i) { \
       for (h = 0; h < num_m; ++h) { \
-        const libxsmm_blasint ic = i * (*ldc) * (LIBXSMM_OMPS_TILE_N) + h * (LIBXSMM_OMPS_TILE_M); \
-        LIBXSMM_OMPS_TASK \
+        const libxsmm_blasint ic = i * (LDC) * (TILE_N) + h * (TILE_M); \
+        LIBXSMM_GEMM_OMPS_TASK \
         { \
           libxsmm_blasint j; \
           for (j = 0; j < num_k; ++j) { \
-            const libxsmm_blasint ia = j * (*lda) * (LIBXSMM_OMPS_TILE_K) + h * (LIBXSMM_OMPS_TILE_M); \
-            const libxsmm_blasint ib = i * (*ldb) * (LIBXSMM_OMPS_TILE_N) + j * (LIBXSMM_OMPS_TILE_K); \
-            xmm.LIBXSMM_TPREFIX(REAL,mm)(a + ia, b + ib, c + ic); \
+            const libxsmm_blasint ia = j * (LDA) * (TILE_K) + h * (TILE_M); \
+            const libxsmm_blasint ib = i * (LDB) * (TILE_N) + j * (TILE_K); \
+            xmm.LIBXSMM_TPREFIX(REAL,mm)((A) + ia, (B) + ib, (C) + ic); \
           } \
         } \
       } \
     } \
-    if ((*n) > num_n * (LIBXSMM_OMPS_TILE_N)) { /* remainder tiles are processed using the auto-dispatched routine */ \
-      const libxsmm_blasint nn = LIBXSMM_MIN(LIBXSMM_OMPS_TILE_N, (*n) - num_n * ((LIBXSMM_OMPS_TILE_N) * (LIBXSMM_OMPS_TILE_N))); \
-      LIBXSMM_OMPS_FOR(1) \
-      for (h = 0; h < num_m; ++h) { \
-        const libxsmm_blasint ic = num_n * (*ldc) * ((LIBXSMM_OMPS_TILE_N) * (LIBXSMM_OMPS_TILE_N)) + h * (LIBXSMM_OMPS_TILE_M); \
-        const libxsmm_blasint mm = LIBXSMM_MIN(LIBXSMM_OMPS_TILE_M, (*m) - h * (LIBXSMM_OMPS_TILE_M)); \
-        LIBXSMM_OMPS_TASK \
+    if (0 < nn) { /* remainder tiles are processed using the auto-dispatched routine */ \
+      LIBXSMM_GEMM_OMPS_FOR(1) \
+      for (h = 0; h < (M); h += TILE_M) { \
+        const libxsmm_blasint ic = num_n * (LDC) * ((TILE_N) * (TILE_N)) + h; \
+        const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h); \
+        LIBXSMM_GEMM_OMPS_TASK \
         { \
           libxsmm_blasint j; \
-          for (j = 0; j < num_k; ++j) { \
-            const libxsmm_blasint jk = j * (LIBXSMM_OMPS_TILE_K), kk = LIBXSMM_MIN(LIBXSMM_OMPS_TILE_K, (*k) - jk); \
-            LIBXSMM_XGEMM(REAL, libxsmm_blasint, LIBXSMM_BLAS_GEMM_SYMBOL(REAL), (ARGS).desc.flags, mm, nn, kk, *alpha, \
-              a + jk * (*lda) + h * (LIBXSMM_OMPS_TILE_M), *lda, \
-              b + jk + (*ldb) * num_n * ((LIBXSMM_OMPS_TILE_N) * (LIBXSMM_OMPS_TILE_N)), *ldb, *beta, \
-              c + ic, *ldc); \
+          for (j = 0; j < (K); j += TILE_K) { \
+            LIBXSMM_XGEMM(REAL, libxsmm_blasint, LIBXSMM_BLAS_GEMM_SYMBOL(REAL), (ARGS).desc.flags, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
+              ALPHA, (A) + j * (LDA) + h * (TILE_M), LDA, (B) + j + (LDB) * num_n * ((TILE_N) * (TILE_N)), LDB, \
+              BETA, (C) + ic, LDC); \
           } \
         } \
       } \
     } \
-  } LIBXSMM_OMPS_END \
+    LIBXSMM_GEMM_OMPS_TASK_SYNC \
+  } \
 }
 
 
@@ -264,7 +259,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC, *m, *n, *k,
+  LIBXSMM_GEMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC,
+    32/*TILE_M*/, 32/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -279,7 +275,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags, *m, *n, *k,
+  LIBXSMM_GEMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags,
+    32/*TILE_M*/, 32/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
