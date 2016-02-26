@@ -84,12 +84,10 @@
         LIBXSMM_GEMM_OMPS_TASK \
         { \
           libxsmm_blasint j = 0; \
-          if (0 && ((TILE_M) == mm) && ((TILE_N) == nn)) { \
-            const libxsmm_blasint max_k = (K) - LIBXSMM_MOD2(K, TILE_K); \
-            for (; j < max_k; j += TILE_K) { \
+          if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
+            for (; j < (K) - LIBXSMM_MOD2(K, TILE_K); j += TILE_K) { \
               xmm.LIBXSMM_TPREFIX(REAL,mm)((A) + j * (LDA) + h, (B) + i * (LDB) + j, (C) + ic); \
             } \
-            j = max_k; \
           } \
           for (; j < (K); j += TILE_K) { \
             LIBXSMM_XGEMM(REAL, libxsmm_blasint, LIBXSMM_BLAS_GEMM_SYMBOL(REAL), (ARGS).desc.flags, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
