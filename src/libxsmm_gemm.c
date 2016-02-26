@@ -68,7 +68,6 @@
 #endif
 
 #define LIBXSMM_GEMM_OMPS_XGEMM(REAL, SYMBOL, ARGS, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const libxsmm_blasint num_m = (M) / (TILE_M), num_n = (N) / (TILE_N), num_k = (K) / (TILE_K), nn = (N) - num_n * (TILE_N); \
   LIBXSMM_GEMM_DESCRIPTOR((ARGS).desc, LIBXSMM_ALIGNMENT, FLAGS, TILE_M, TILE_N, TILE_K, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
   (ARGS).alpha.LIBXSMM_TPREFIX_NAME(REAL) = ALPHA; \
   (ARGS).beta.LIBXSMM_TPREFIX_NAME(REAL) = BETA; \
@@ -78,32 +77,23 @@
     libxsmm_xmmfunction xmm = libxsmm_xmmdispatch(&((ARGS).desc)); \
     if (0 == xmm.dmm) { xmm.LIBXSMM_TPREFIX(REAL,mm) = SYMBOL; /* fallback */ } \
     LIBXSMM_GEMM_OMPS_FOR(2) \
-    for (i = 0; i < num_n; ++i) { \
-      for (h = 0; h < num_m; ++h) { \
-        const libxsmm_blasint ic = i * (LDC) * (TILE_N) + h * (TILE_M); \
-        LIBXSMM_GEMM_OMPS_TASK \
-        { \
-          libxsmm_blasint j; \
-          for (j = 0; j < num_k; ++j) { \
-            const libxsmm_blasint ia = j * (LDA) * (TILE_K) + h * (TILE_M); \
-            const libxsmm_blasint ib = i * (LDB) * (TILE_N) + j * (TILE_K); \
-            xmm.LIBXSMM_TPREFIX(REAL,mm)((A) + ia, (B) + ib, (C) + ic); \
-          } \
-        } \
-      } \
-    } \
-    if (0 < nn) { /* remainder tiles are processed using the auto-dispatched routine */ \
-      LIBXSMM_GEMM_OMPS_FOR(1) \
+    for (i = 0; i < (N); i += TILE_N) { \
       for (h = 0; h < (M); h += TILE_M) { \
-        const libxsmm_blasint ic = num_n * (LDC) * ((TILE_N) * (TILE_N)) + h; \
-        const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h); \
+        const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h), nn = LIBXSMM_MIN(TILE_N, (N) - i); \
+        const libxsmm_blasint ic = i * (LDC) + h; \
         LIBXSMM_GEMM_OMPS_TASK \
         { \
-          libxsmm_blasint j; \
-          for (j = 0; j < (K); j += TILE_K) { \
+          libxsmm_blasint j = 0; \
+          if (0 && ((TILE_M) == mm) && ((TILE_N) == nn)) { \
+            const libxsmm_blasint max_k = (K) - LIBXSMM_MOD2(K, TILE_K); \
+            for (; j < max_k; j += TILE_K) { \
+              xmm.LIBXSMM_TPREFIX(REAL,mm)((A) + j * (LDA) + h, (B) + i * (LDB) + j, (C) + ic); \
+            } \
+            j = max_k; \
+          } \
+          for (; j < (K); j += TILE_K) { \
             LIBXSMM_XGEMM(REAL, libxsmm_blasint, LIBXSMM_BLAS_GEMM_SYMBOL(REAL), (ARGS).desc.flags, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
-              ALPHA, (A) + j * (LDA) + h * (TILE_M), LDA, (B) + j + (LDB) * num_n * ((TILE_N) * (TILE_N)), LDB, \
-              BETA, (C) + ic, LDC); \
+              ALPHA, (A) + j * (LDA) + h, LDA, (B) + i * (LDB) + j, LDB, BETA, (C) + ic, LDC); \
           } \
         } \
       } \
