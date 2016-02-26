@@ -52,18 +52,18 @@
 # if defined(LIBXSMM_GEMM_OMPS_TASKS)
 #   define LIBXSMM_GEMM_OMPS_TASK_START LIBXSMM_PRAGMA(omp single nowait)
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
-#   define LIBXSMM_GEMM_OMPS_TASK LIBXSMM_PRAGMA(omp task)
+#   define LIBXSMM_GEMM_OMPS_TASK(...) LIBXSMM_PRAGMA(omp task firstprivate(__VA_ARGS__))
 #   define LIBXSMM_GEMM_OMPS_FOR(N)
 # else
 #   define LIBXSMM_GEMM_OMPS_TASK_START
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC
-#   define LIBXSMM_GEMM_OMPS_TASK
-#   define LIBXSMM_GEMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for LIBXSMM_OPENMP_COLLAPSE(N))
+#   define LIBXSMM_GEMM_OMPS_TASK(...)
+#   define LIBXSMM_GEMM_OMPS_FOR(N) LIBXSMM_PRAGMA(omp for LIBXSMM_OPENMP_COLLAPSE(N) schedule(dynamic))
 # endif
 #else
 # define LIBXSMM_GEMM_OMPS_TASK_START
 # define LIBXSMM_GEMM_OMPS_TASK_SYNC
-# define LIBXSMM_GEMM_OMPS_TASK
+# define LIBXSMM_GEMM_OMPS_TASK(...)
 # define LIBXSMM_GEMM_OMPS_FOR(N)
 #endif
 
@@ -79,10 +79,11 @@
     LIBXSMM_GEMM_OMPS_FOR(2) \
     for (i = 0; i < (N); i += TILE_N) { \
       for (h = 0; h < (M); h += TILE_M) { \
-        const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h), nn = LIBXSMM_MIN(TILE_N, (N) - i); \
-        const libxsmm_blasint ic = i * (LDC) + h; \
-        LIBXSMM_GEMM_OMPS_TASK \
+        LIBXSMM_GEMM_OMPS_TASK(h, i) \
         { \
+          const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h); \
+          const libxsmm_blasint nn = LIBXSMM_MIN(TILE_N, (N) - i); \
+          const libxsmm_blasint ic = i * (LDC) + h; \
           libxsmm_blasint j = 0; \
           if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
             for (; j < (K) - LIBXSMM_MOD2(K, TILE_K); j += TILE_K) { \
@@ -248,7 +249,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_GEMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC,
-    64/*TILE_M*/, 64/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
+    64/*TILE_M*/, 32/*TILE_N*/, 16/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -264,7 +265,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_GEMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags,
-    128/*TILE_M*/, 128/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
+    64/*TILE_M*/, 32/*TILE_N*/, 16/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
