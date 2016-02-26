@@ -99,6 +99,10 @@ ifneq (0,$(JIT))
 	SSE ?= 1
 endif
 
+# OpenMP is enabled by default (more choice for "OMPS" routines)
+# (LIBXSMM is still agnostic wrt threading runtime)
+OMP ?= 1
+
 BLAS_WARNING ?= 0
 ifeq (0,$(STATIC))
 	ifeq (Windows_NT,$(OS))
