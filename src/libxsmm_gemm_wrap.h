@@ -42,17 +42,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB, M, N, K, A, B, C) \
-  int FLAGS = (0 != (TRANSA) \
-    ? (('N' == *(TRANSA) || 'n' == *(TRANSA)) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
-                                              : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) \
-    : LIBXSMM_FLAGS); \
-  FLAGS = (0 != (TRANSB) \
-    ? (('N' == *(TRANSB) || 'n' == *(TRANSB)) ? ((FLAGS) & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
-                                              : ((FLAGS) |  LIBXSMM_GEMM_FLAG_TRANS_B)) \
-    : (FLAGS)); \
-  assert(0 != (M) && 0 != (N) && 0 != (K) && 0 != (A) && 0 != (B) && 0 != (C))
-
 #if !defined(LIBXSMM_GEMM_WRAP) && defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && !defined(__CYGWIN__)
 # if defined(__STATIC) /* -Wl,--wrap=xgemm_ */

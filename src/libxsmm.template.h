@@ -112,14 +112,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ int flags = (0 != transa
-    ? (('N' == *transa || 'n' == *transa) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A)
-                                          : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A))
-    : LIBXSMM_FLAGS);
-  flags = (0 != transb
-    ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
-                                          : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
-    : flags);
+{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_SGEMM(flags, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -137,14 +130,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ int flags = (0 != transa
-    ? (('N' == *transa || 'n' == *transa) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A)
-                                          : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A))
-    : LIBXSMM_FLAGS);
-  flags = (0 != transb
-    ? (('N' == *transb || 'n' == *transb) ? (flags & ~LIBXSMM_GEMM_FLAG_TRANS_B)
-                                          : (flags |  LIBXSMM_GEMM_FLAG_TRANS_B))
-    : flags);
+{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_DGEMM(flags, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -152,6 +138,20 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 #endif
+
+/** Dispatched general dense matrix multiplication (single-precision). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc);
+
+/** Dispatched general dense matrix multiplication (double-precision). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa, const char* transb,
