@@ -248,7 +248,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_GEMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC,
-    32/*TILE_M*/, 32/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
+    64/*TILE_M*/, 64/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -264,7 +264,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_GEMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags,
-    32/*TILE_M*/, 32/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
+    128/*TILE_M*/, 128/*TILE_N*/, 32/*TILE_K*/, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
