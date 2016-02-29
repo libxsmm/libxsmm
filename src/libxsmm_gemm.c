@@ -87,7 +87,7 @@
           libxsmm_blasint j = 0; \
           if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
             for (; j < (K) - LIBXSMM_MOD2(K, TILE_K); j += TILE_K) { \
-              xmm.LIBXSMM_TPREFIX(REAL,mm)((A) + j * (LDA) + h, (B) + i * (LDB) + j, (C) + ic); \
+              LIBXSMM_MMCALL(xmm.LIBXSMM_TPREFIX(REAL,mm), (A) + j * (LDA) + h, (B) + i * (LDB) + j, (C) + ic, M, N, K, LDA, LDB, LDC); \
             } \
           } \
           for (; j < (K); j += TILE_K) { \
