@@ -576,8 +576,10 @@ else # GCC assumed
 	ifneq (0,$(shell echo $$((3 > $(DBG)))))
 		ifeq (3,$(GCC))
 			# downgrade to AVX2 due to outdated compiler
-			ifneq (0,$(shell echo "$$((40900 > $(CC_VERSION)))"))
-				AVX = 2
+			ifneq (0,$(shell echo "$$((3 <= $(AVX)))"))
+				ifneq (0,$(shell echo "$$((40900 > $(CC_VERSION)))"))
+					AVX = 2
+				endif
 			endif
 		endif
 		ifeq (1,$(AVX))
