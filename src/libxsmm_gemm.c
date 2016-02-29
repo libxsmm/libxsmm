@@ -115,9 +115,38 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(dgemm);
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_gemm_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
+  { { 128, 128, 32 }, { 64, 64, 32 } }, /*generic*/
+  { {  64,  32, 16 }, { 64, 32, 16 } }  /*knl*/
+};
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_gemm_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
+  { 0, 0, 0 }, { 0, 0, 0 }
+};
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(const char* archid,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
+  const char *const env_tile_size[] = { getenv("LIBXSMM_TILEM"), getenv("LIBXSMM_TILEN"), getenv("LIBXSMM_TILEK") };
+  const int config = (0 == archid || 'k' != archid[0] || 'n' != archid[1] || 'l' != archid[2]) ? 0 : 1;
+
+  /* attempt to setup tile sizes from the environment */
+  internal_gemm_tile_size[0/*DP*/][0/*M*/] = (env_tile_size[0] && *env_tile_size[0]) ? atoi(env_tile_size[0]) : 0;
+  internal_gemm_tile_size[0/*DP*/][1/*N*/] = (env_tile_size[1] && *env_tile_size[1]) ? atoi(env_tile_size[1]) : 0;
+  internal_gemm_tile_size[0/*DP*/][2/*K*/] = (env_tile_size[2] && *env_tile_size[2]) ? atoi(env_tile_size[2]) : 0;
+  /* environment-defined tile sizes applies for DP and SP */
+  internal_gemm_tile_size[1/*SP*/][0/*M*/] = internal_gemm_tile_size[0/*DP*/][0/*M*/];
+  internal_gemm_tile_size[1/*SP*/][1/*N*/] = internal_gemm_tile_size[0/*DP*/][1/*N*/];
+  internal_gemm_tile_size[1/*SP*/][2/*K*/] = internal_gemm_tile_size[0/*DP*/][2/*M*/];
+
+  /* load predefined configuration if tile size is not setup by the environment */
+  if (0 >= internal_gemm_tile_size[0/*DP*/][0/*M*/]) internal_gemm_tile_size[0/*DP*/][0/*M*/] = internal_gemm_tile_sizes[config][0/*DP*/][0/*M*/];
+  if (0 >= internal_gemm_tile_size[0/*DP*/][1/*N*/]) internal_gemm_tile_size[0/*DP*/][1/*M*/] = internal_gemm_tile_sizes[config][0/*DP*/][1/*N*/];
+  if (0 >= internal_gemm_tile_size[0/*DP*/][2/*K*/]) internal_gemm_tile_size[0/*DP*/][2/*M*/] = internal_gemm_tile_sizes[config][0/*DP*/][2/*K*/];
+  if (0 >= internal_gemm_tile_size[1/*SP*/][0/*M*/]) internal_gemm_tile_size[1/*SP*/][0/*M*/] = internal_gemm_tile_sizes[config][1/*SP*/][0/*M*/];
+  if (0 >= internal_gemm_tile_size[1/*SP*/][1/*N*/]) internal_gemm_tile_size[1/*SP*/][1/*M*/] = internal_gemm_tile_sizes[config][1/*SP*/][1/*N*/];
+  if (0 >= internal_gemm_tile_size[1/*SP*/][2/*K*/]) internal_gemm_tile_size[1/*SP*/][2/*M*/] = internal_gemm_tile_sizes[config][1/*SP*/][2/*K*/];
+
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;
   }
@@ -248,12 +277,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC,
-    64/*TILE_M*/, 32/*TILE_N*/, 16/*TILE_K*/, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  assert(0 < internal_gemm_tile_size[1/*SP*/][0/*M*/]
+      && 0 < internal_gemm_tile_size[1/*SP*/][1/*N*/]
+      && 0 < internal_gemm_tile_size[1/*SP*/][2/*K*/]);
+  {
+    const int tile_m = internal_gemm_tile_size[1/*SP*/][0/*M*/];
+    const int tile_n = internal_gemm_tile_size[1/*SP*/][1/*N*/];
+    const int tile_k = internal_gemm_tile_size[1/*SP*/][2/*K*/];
+    LIBXSMM_GEMM_OMPS_XGEMM(float, internal_omps_sblas, internal_omps_args, flags | LIBXSMM_GEMM_FLAG_F32PREC,
+      tile_m, tile_n, tile_k, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
 }
 
 
@@ -264,12 +301,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags,
-    64/*TILE_M*/, 32/*TILE_N*/, 16/*TILE_K*/, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  assert(0 < internal_gemm_tile_size[0/*DP*/][0/*M*/]
+      && 0 < internal_gemm_tile_size[0/*DP*/][1/*N*/]
+      && 0 < internal_gemm_tile_size[0/*DP*/][2/*K*/]);
+  {
+    const int tile_m = internal_gemm_tile_size[0/*DP*/][0/*M*/];
+    const int tile_n = internal_gemm_tile_size[0/*DP*/][1/*N*/];
+    const int tile_k = internal_gemm_tile_size[0/*DP*/][2/*K*/];
+    LIBXSMM_GEMM_OMPS_XGEMM(double, internal_omps_dblas, internal_omps_args, flags,
+      tile_m, tile_n, tile_k, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
 }
 
 
