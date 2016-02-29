@@ -70,6 +70,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "descriptor", "..\tests\desc
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xgemm", "..\samples\xgemm\xgemm.vcxproj", "{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -224,6 +229,18 @@ Global
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|Win32.Build.0 = symbols|Win32
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|x64.ActiveCfg = symbols|x64
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|x64.Build.0 = symbols|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.debug|Win32.ActiveCfg = debug|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.debug|Win32.Build.0 = debug|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.debug|x64.ActiveCfg = debug|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.debug|x64.Build.0 = debug|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.release|Win32.ActiveCfg = release|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.release|Win32.Build.0 = release|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.release|x64.ActiveCfg = release|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.release|x64.Build.0 = release|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|Win32.ActiveCfg = symbols|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|Win32.Build.0 = symbols|Win32
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|x64.ActiveCfg = symbols|x64
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -241,5 +258,6 @@ Global
 		{CFE44381-4153-4318-A6BC-12ACD0D2F5C0} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{25D60DA9-C699-4530-AD01-A1908DE9735F} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
+		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 	EndGlobalSection
 EndGlobal
