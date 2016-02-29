@@ -278,6 +278,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
     LIBXSMM_PREFETCH_C(PC)); \
 }
 
+#if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH)
+# define LIBXSMM_MMCALL(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
+  LIBXSMM_MMCALL_ABC(FN, A, B, C)
+#else
+# define LIBXSMM_MMCALL(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
+  LIBXSMM_MMCALL_PRF(FN, A, B, C, (A) + (LDA) * (K), (B) + (LDB) * (N), (C) + (LDC) * (N))
+#endif
+
 /**
  * Execute a specialized function, or use a fallback code path depending on threshold (template).
  * LIBXSMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
@@ -292,37 +300,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
     const int libxsmm_xgemm_flags_ = (int)(FLAGS); \
     const int libxsmm_xgemm_lda_ = (int)(LDA), libxsmm_xgemm_ldb_ = (int)(LDB), libxsmm_xgemm_ldc_ = (int)(LDC); \
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
-    int libxsmm_xgemm_fallback_ = 0; \
-    if (LIBXSMM_PREFETCH_NONE == LIBXSMM_PREFETCH) { \
-      const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = \
-        LIBXSMM_MMDISPATCH_SYMBOL(REAL)((int)(M), (int)(N), (int)(K), \
-          &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
-          &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
-          &libxsmm_xgemm_flags_, 0); \
-      if (0 != libxsmm_mmfunction_) { \
-        LIBXSMM_MMCALL_ABC(libxsmm_mmfunction_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C)); \
-      } \
-      else { \
-        libxsmm_xgemm_fallback_ = 1; \
-      } \
+    const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL(REAL)( \
+      (int)(M), (int)(N), (int)(K), &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
+      &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, &libxsmm_xgemm_flags_, 0); \
+    if (0 != libxsmm_mmfunction_) { \
+      LIBXSMM_MMCALL(libxsmm_mmfunction_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), M, N, K, LDA, LDB, LDC); \
     } \
     else { \
-      const int libxsmm_xgemm_prefetch_ = (LIBXSMM_PREFETCH); \
-      const LIBXSMM_MMFUNCTION_TYPE(REAL) libxsmm_mmfunction_ = \
-        LIBXSMM_MMDISPATCH_SYMBOL(REAL)((int)(M), (int)(N), (int)(K), \
-          &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
-          &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, \
-          &libxsmm_xgemm_flags_, &libxsmm_xgemm_prefetch_); \
-      if (0 != libxsmm_mmfunction_) { \
-        LIBXSMM_MMCALL_PRF(libxsmm_mmfunction_, (const REAL*)(A), (const REAL*)(B), (REAL*)(C), \
-          ((const REAL*)(A)) + libxsmm_xgemm_lda_ * (K), ((const REAL*)(B)) + libxsmm_xgemm_ldb_ * (N), \
-          ((const REAL*)(C)) + libxsmm_xgemm_ldc_ * (N)); \
-      } \
-      else { \
-        libxsmm_xgemm_fallback_ = 1; \
-      } \
-    } \
-    if (0 != libxsmm_xgemm_fallback_) { \
       LIBXSMM_FALLBACK0(REAL, INT, SYMBOL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
     } \
   } \
