@@ -574,6 +574,12 @@ else # GCC assumed
 		DFLAGS += -D__TRACE=$(TRACE)
 	endif
 	ifneq (0,$(shell echo $$((3 > $(DBG)))))
+		ifeq (3,$(GCC))
+			# downgrade to AVX2 due to outdated compiler
+			ifneq (0,$(shell echo "$$((40900 > $(CC_VERSION)))"))
+				AVX = 2
+			endif
+		endif
 		ifeq (1,$(AVX))
 			TARGET = -mavx
 		else ifeq (2,$(AVX))
