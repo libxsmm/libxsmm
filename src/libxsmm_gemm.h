@@ -49,6 +49,9 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
+/** Configures tile sizes for multithreaded GEMM functions; NOT thread-safe. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_init_archid(const char* archid);
+
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
   /** If NULL is given, the routine attempts to find the SGEMM function. */

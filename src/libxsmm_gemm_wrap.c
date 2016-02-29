@@ -58,7 +58,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const double*, double*, const libxsmm_blasint*);
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   if (NULL == sgemm_function) {
