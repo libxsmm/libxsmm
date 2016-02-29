@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
     unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP) && defined(USE_PARALLEL)
 #   pragma omp parallel
+#   pragma omp single
 #endif
     for (i = 0; i < nrepeat; ++i) {
       LIBXSMM_XOMPS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
