@@ -53,6 +53,7 @@
 # if !defined(LIBXSMM_GEMM_OMPS_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
 #   define LIBXSMM_GEMM_OMPS_TASKS
 # endif
+# define LIBXSMM_GEMM_OMPS_MIN_NTASKS (20 * omp_get_max_threads())
 # if defined(LIBXSMM_GEMM_OMPS_TASKS)
 #   define LIBXSMM_GEMM_OMPS_TASK_START LIBXSMM_PRAGMA(omp single nowait)
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
@@ -65,17 +66,17 @@
 #   define LIBXSMM_GEMM_OMPS_FOR(N) /*LIBXSMM_PRAGMA(omp for LIBXSMM_OPENMP_COLLAPSE(N) schedule(dynamic))*/
 # endif
 #else
+# define LIBXSMM_GEMM_OMPS_MIN_NTASKS 1
 # define LIBXSMM_GEMM_OMPS_TASK_START
 # define LIBXSMM_GEMM_OMPS_TASK_SYNC
 # define LIBXSMM_GEMM_OMPS_TASK(...)
 # define LIBXSMM_GEMM_OMPS_FOR(N)
 #endif
-#define LIBXSMM_GEMM_OMPS_TASKSCALE 20
 
 #define LIBXSMM_GEMM_OMPS_XGEMM(REAL, SYMBOL, ARGS, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   LIBXSMM_GEMM_OMPS_TASK_START \
   { \
-    const libxsmm_blasint min_ntasks = (LIBXSMM_GEMM_OMPS_TASKSCALE) * omp_get_max_threads(); \
+    const libxsmm_blasint min_ntasks = LIBXSMM_GEMM_OMPS_MIN_NTASKS; \
     const libxsmm_blasint num_m = ((M) + (TILE_M) - 1) / (TILE_M), num_n = ((N) + (TILE_N) - 1) / (TILE_N); \
     const libxsmm_blasint num_t = num_m * num_n, max_j = ((K) / (TILE_K)) * (TILE_K); \
     libxsmm_blasint tile_m, tile_n, h, i; \
