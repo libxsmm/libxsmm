@@ -41,6 +41,10 @@
 #endif
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -66,29 +70,38 @@
 # define LIBXSMM_GEMM_OMPS_TASK(...)
 # define LIBXSMM_GEMM_OMPS_FOR(N)
 #endif
+#define LIBXSMM_GEMM_OMPS_TASKSCALE 20
 
 #define LIBXSMM_GEMM_OMPS_XGEMM(REAL, SYMBOL, ARGS, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  LIBXSMM_GEMM_DESCRIPTOR((ARGS).desc, LIBXSMM_ALIGNMENT, FLAGS, \
-    LIBXSMM_MIN(TILE_M, M), LIBXSMM_MIN(TILE_N, N), LIBXSMM_MIN(TILE_K, K), \
-    LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
-  (ARGS).alpha.LIBXSMM_TPREFIX_NAME(REAL) = ALPHA; \
-  (ARGS).beta.LIBXSMM_TPREFIX_NAME(REAL) = BETA; \
   LIBXSMM_GEMM_OMPS_TASK_START \
   { \
-    libxsmm_blasint h, i; \
+    const libxsmm_blasint min_ntasks = (LIBXSMM_GEMM_OMPS_TASKSCALE) * omp_get_max_threads(); \
+    const libxsmm_blasint num_m = ((M) + (TILE_M) - 1) / (TILE_M), num_n = ((N) + (TILE_N) - 1) / (TILE_N); \
+    const libxsmm_blasint num_t = num_m * num_n, max_j = ((K) / (TILE_K)) * (TILE_K); \
+    libxsmm_blasint tile_m, tile_n, h, i; \
+    if (num_t < min_ntasks) { \
+      const double ratio = sqrt(((double)min_ntasks) / num_t); \
+      tile_n = (int)(num_n * ratio /*+ 0.5*/); tile_m = (min_ntasks + tile_n - 1) / tile_n; \
+    } \
+    else { \
+      tile_m = (M) / num_m; tile_n = (N) / num_n; \
+    } \
+    LIBXSMM_GEMM_DESCRIPTOR((ARGS).desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, TILE_K, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
+    (ARGS).alpha.LIBXSMM_TPREFIX_NAME(REAL) = ALPHA; \
+    (ARGS).beta.LIBXSMM_TPREFIX_NAME(REAL) = BETA; \
     libxsmm_xmmfunction xmm = libxsmm_xmmdispatch(&((ARGS).desc)); \
     if (0 == xmm.dmm) { xmm.LIBXSMM_TPREFIX(REAL,mm) = SYMBOL; /* fallback */ } \
     LIBXSMM_GEMM_OMPS_FOR(2) \
-    for (i = 0; i < (N); i += TILE_N) { \
-      for (h = 0; h < (M); h += TILE_M) { \
+    for (i = 0; i < (N); i += tile_n) { \
+      for (h = 0; h < (M); h += tile_m) { \
         LIBXSMM_GEMM_OMPS_TASK(h, i) \
         { \
-          const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - h); \
-          const libxsmm_blasint nn = LIBXSMM_MIN(TILE_N, (N) - i); \
+          const libxsmm_blasint mm = LIBXSMM_MIN(tile_m, (M) - h); \
+          const libxsmm_blasint nn = LIBXSMM_MIN(tile_n, (N) - i); \
           const libxsmm_blasint ic = i * (LDC) + h; \
           libxsmm_blasint j = 0; \
-          if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
-            for (; j < (K) - LIBXSMM_MOD2(K, TILE_K); j += TILE_K) { \
+          if ((tile_m == mm) && (tile_n == nn)) { \
+            for (; j < max_j; j += TILE_K) { \
               LIBXSMM_MMCALL(xmm.LIBXSMM_TPREFIX(REAL,mm), (A) + j * (LDA) + h, (B) + i * (LDB) + j, (C) + ic, M, N, K, LDA, LDB, LDC); \
             } \
           } \
