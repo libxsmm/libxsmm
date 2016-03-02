@@ -152,13 +152,14 @@ LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind)
 {
-  const char *const env[] = { getenv("LIBXSMM_TILEM"), getenv("LIBXSMM_TILEN"), getenv("LIBXSMM_TILEK"), getenv("LIBXSMM_GEMM") };
   const int config = (0 == archid || 'k' != archid[0] || 'n' != archid[1] || 'l' != archid[2]) ? 0 : 1;
+  const char* env[3], *const env_gemm_kind = getenv("LIBXSMM_GEMM");
 
   /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
   libxsmm_internal_gemm = (env[3] ? atoi(env[3]) : gemm_kind);
 
   /* attempt to setup tile sizes from the environment (LIBXSMM_TILEM, LIBXSMM_TILEN, and LIBXSMM_TILEK) */
+  env[0] = getenv("LIBXSMM_TILEM"); env[1] = getenv("LIBXSMM_TILEN"); env[2] = getenv("LIBXSMM_TILEK");
   internal_gemm_tile_size[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
   internal_gemm_tile_size[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
   internal_gemm_tile_size[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
