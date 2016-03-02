@@ -140,7 +140,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_gemm_tile_size[/*D
 };
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void libxsmm_gemm_init_archid(const char* archid)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void libxsmm_gemm_configure(const char* archid)
 {
   const char *const env_tile_size[] = { getenv("LIBXSMM_TILEM"), getenv("LIBXSMM_TILEN"), getenv("LIBXSMM_TILEK") };
   const int config = (0 == archid || 'k' != archid[0] || 'n' != archid[1] || 'l' != archid[2]) ? 0 : 1;
@@ -167,7 +167,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void libxsmm_gemm_init_a
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK int libxsmm_gemm_init(const char* archid,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
-  libxsmm_gemm_init_archid(archid);
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid);
 
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;

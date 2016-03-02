@@ -61,6 +61,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid);
+
   if (NULL == sgemm_function) {
     union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
     internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));

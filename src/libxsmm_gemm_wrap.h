@@ -86,5 +86,9 @@
 # define LIBXSMM_GEMM_WEAK
 #endif
 
+
+/** INTERNAL pre-initialization step called by libxsmm_gemm_init, e.g. configures the tile sizes for multithreaded GEMM functions. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid);
+
 #endif /*LIBXSMM_GEMM_WRAP_H*/
 
