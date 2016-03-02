@@ -6,6 +6,9 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -20,16 +23,24 @@
 int main(int argc, char* argv[])
 {
   const int size = LIBXSMM_DEFAULT(1 << 27, 1 < argc ? atoi(argv[1]) : 0);
+  const int nthreads = LIBXSMM_DEFAULT(1, 1 < argc ? atoi(argv[2]) : 0);
   unsigned long long start;
   double dcall, ddisp;
   int i;
 
-  fprintf(stdout, "Dispatching %i calls %s internal synchronization...\n", size,
-#if 0 != LIBXSMM_SYNC
-    "with");
-#else
-    "without");
+#if defined(_OPENMP)
+  if (1 < nthreads) omp_set_num_threads(nthreads);
 #endif
+
+  fprintf(stdout, "Dispatching %i calls %s internal synchronization using %i thread%s...\n", size,
+#if 0 != LIBXSMM_SYNC
+    "with",
+#else
+    "without",
+#endif
+    1 >= nthreads ? 1 : nthreads,
+    1 >= nthreads ? "" : "s");
+
 #if 0 != LIBXSMM_JIT
   { const char *const jit = getenv("LIBXSMM_JIT");
     if (0 != jit && '0' == *jit) {
