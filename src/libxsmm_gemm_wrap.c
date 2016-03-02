@@ -33,7 +33,7 @@
 
 
 #if defined(LIBXSMM_GEMM_WRAP)
-#if !defined(__STATIC) /*avoid remark about external function definition with no prior declaration*/
+#if !defined(__STATIC)
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 # endif
@@ -44,12 +44,14 @@
 # endif
 
 
+/* avoid remark about external function definition with no prior declaration */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
   const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*,
   const float*, const libxsmm_blasint* ldb,
   const float*, float*, const libxsmm_blasint*);
+/* avoid remark about external function definition with no prior declaration */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
@@ -58,11 +60,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const double*, double*, const libxsmm_blasint*);
 
 
+/* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid);
+  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/);
 
   if (NULL == sgemm_function) {
     union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
@@ -109,13 +112,26 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   assert(LIBXSMM_GEMM_WRAP_SGEMM != libxsmm_internal_sgemm);
-  LIBXSMM_XGEMM(float, libxsmm_blasint, libxsmm_internal_sgemm, flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  switch (libxsmm_internal_gemm) {
+    case 1: {
+      libxsmm_omps_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    case 2: {
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      libxsmm_omps_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: {
+      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+      LIBXSMM_XGEMM(float, libxsmm_blasint, libxsmm_internal_sgemm, flags, *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+  }
 }
 
 
@@ -126,13 +142,26 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   assert(LIBXSMM_GEMM_WRAP_DGEMM != libxsmm_internal_dgemm);
-  LIBXSMM_XGEMM(double, libxsmm_blasint, libxsmm_internal_dgemm, flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  switch (libxsmm_internal_gemm) {
+    case 1: {
+      libxsmm_omps_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    case 2: {
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      libxsmm_omps_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: {
+      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+      LIBXSMM_XGEMM(double, libxsmm_blasint, libxsmm_internal_dgemm, flags, *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+  }
 }
 
 #endif /*defined(LIBXSMM_GEMM_WRAP)*/

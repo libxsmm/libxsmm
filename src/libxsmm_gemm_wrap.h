@@ -87,8 +87,14 @@
 #endif
 
 
-/** INTERNAL pre-initialization step called by libxsmm_gemm_init, e.g. configures the tile sizes for multithreaded GEMM functions. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid);
+/** INTERNAL kind of GEMM (0: small gemm, 1: sequential, 2: parallelized) */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
+
+/**
+ * INTERNAL pre-initialization step called by libxsmm_gemm_init,
+ * e.g. configures the tile sizes for multithreaded GEMM functions.
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind);
 
 #endif /*LIBXSMM_GEMM_WRAP_H*/
 
