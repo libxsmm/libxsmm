@@ -81,14 +81,25 @@
     const libxsmm_blasint num_m = ((M) + tile_m - 1) / tile_m, num_n = ((N) + tile_n - 1) / tile_n, num_t = num_m * num_n; \
     const libxsmm_blasint min_ntasks = LIBXSMM_GEMM_OMPS_MIN_NTASKS; \
     libxsmm_gemm_descriptor desc; \
-    if (num_t < min_ntasks) { \
+    if (num_t < min_ntasks) { /* ensure some parallel slack */ \
       const double ratio = sqrt(((double)min_ntasks) / num_t); \
       tile_n = (int)(num_n * ratio /*+ 0.5*/); tile_m = (min_ntasks + tile_n - 1) / tile_n; \
     } \
     else { \
       tile_m = (M) / num_m; tile_n = (N) / num_n; \
     } \
-    tile_m = LIBXSMM_MIN(tile_m, M); tile_n = LIBXSMM_MIN(tile_n, N); tile_k = LIBXSMM_MIN(tile_k, K); \
+    { /* adjust for non-square operand shapes */ \
+      float rm = 1.f, rn = ((float)(N)) / M, rk = ((float)(K)) / M; \
+      if (1.f < rn) { \
+        rm /= rn; rn = 1.f; rk /= rn; \
+      } \
+      if (1.f < rk) { \
+        rm /= rk; rn /= rk; rk = 1.f; \
+      } \
+      tile_m = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm + 0.5)), M), 8); \
+      tile_n = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn + 0.5)), N), 8); \
+      tile_k = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk + 0.5)), K), 8); \
+    } \
     LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
     xmm = libxsmm_xmmdispatch(&desc); \
   } \
