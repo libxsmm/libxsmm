@@ -96,9 +96,9 @@
       if (1.f < rk) { \
         rm /= rk; rn /= rk; rk = 1.f; \
       } \
-      tile_m = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm + 0.5)), M), 8); \
-      tile_n = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn + 0.5)), N), 8); \
-      tile_k = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk + 0.5)), K), 8); \
+      tile_m = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm /*+ 0.5*/)), M), 8); \
+      tile_n = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)), N), 8); \
+      tile_k = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), K), 8); \
     } \
     LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
     xmm = libxsmm_xmmdispatch(&desc); \
