@@ -74,7 +74,7 @@
 #endif
 
 #define LIBXSMM_GEMM_OMPS_XGEMM(REAL, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  libxsmm_blasint tile_m = LIBXSMM_MAX(TILE_M, 8), tile_n = LIBXSMM_MAX(TILE_N, 8), tile_k = LIBXSMM_MAX(TILE_K, 8); \
+  libxsmm_blasint tile_m = LIBXSMM_MAX(TILE_M, 2), tile_n = LIBXSMM_MAX(TILE_N, 2), tile_k = LIBXSMM_MAX(TILE_K, 2); \
   libxsmm_xmmfunction xmm; \
   LIBXSMM_GEMM_OMPS_START \
   { \
@@ -96,9 +96,9 @@
       if (1.f < rk) { \
         rm /= rk; rn /= rk; rk = 1.f; \
       } \
-      tile_m = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm /*+ 0.5*/)), M), 8); \
-      tile_n = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)), N), 8); \
-      tile_k = LIBXSMM_MAX(LIBXSMM_MIN((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), K), 8); \
+      tile_m = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm /*+ 0.5*/)),  8), M); \
+      tile_n = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)),  8), N); \
+      tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), 32), K); \
     } \
     LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
     xmm = libxsmm_xmmdispatch(&desc); \
