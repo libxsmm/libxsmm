@@ -11,16 +11,14 @@ else
 fi
 
 # temporary file
-TEMPLATE=$(mktemp --tmpdir=. --suffix=.tex)
+TMPFILE=$(mktemp fileXXXXXX)
+mv ${TMPFILE} ${TMPFILE}.tex
 
-# dump pandoc template for latex
-pandoc -D latex > ${TEMPLATE}
-
-# adjust the template
-sed -i \
+# dump pandoc template for latex, and adjust the template
+pandoc -D latex | sed \
   -e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-  -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-  ${TEMPLATE}
+  -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
+  ${TMPFILE}.tex
 
 # cleanup markup and pipe into pandoc using the template
 # LIBXSMM documentation
@@ -32,7 +30,7 @@ sed \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   README.md | tee >( \
 pandoc \
-  --latex-engine=xelatex --template=${TEMPLATE} --listings \
+  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
@@ -56,7 +54,7 @@ sed \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   ${HERE}/documentation/cp2k.md | tee >( \
 pandoc \
-  --latex-engine=xelatex --template=${TEMPLATE} --listings \
+  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="CP2K with LIBXSMM" \
@@ -71,4 +69,4 @@ pandoc \
   -o ${DOCDIR}/cp2k.docx
 
 # remove temporary file
-rm ${TEMPLATE}
+rm ${TMPFILE}.tex
