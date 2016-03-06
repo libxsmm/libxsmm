@@ -109,8 +109,8 @@
       const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
       libxsmm_blasint h, i; \
       LIBXSMM_GEMM_OMPS_FOR(2) \
-      for (i = 0; i < (N); i += tile_n) { \
-        for (h = 0; h < (M); h += tile_m) { \
+      for (h = 0; h < (M); h += tile_m) { \
+        for (i = 0; i < (N); i += tile_n) { \
           LIBXSMM_GEMM_OMPS_TASK(h, i) \
           { \
             const libxsmm_blasint mm = LIBXSMM_MIN(tile_m, (M) - h); \
@@ -152,8 +152,8 @@ LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSY
 
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_gemm_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-  { { 256, 128, 32 }, { 64, 256, 256 } }, /*generic*/
-  { { 128,  48, 48 }, { 64,  48,  80 } }  /*knl*/
+  { { 128, 48, 48 }, { 64, 48, 80 } }, /*generic*/
+  { { 128, 48, 48 }, { 64, 48, 80 } }  /*knl*/
 };
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_gemm_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
   { 0, 0, 0 }, { 0, 0, 0 }
