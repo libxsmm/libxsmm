@@ -54,7 +54,7 @@
 #   define LIBXSMM_GEMM_OMPS_TASKS
 # endif
 # define LIBXSMM_GEMM_OMPS_MIN_NTASKS(NT) (40 * omp_get_num_threads() / (NT))
-# define LIBXSMM_GEMM_OMPS_OVERHEAD 8
+# define LIBXSMM_GEMM_OMPS_OVERHEAD(NT) (4 * (NT))
 # if defined(LIBXSMM_GEMM_OMPS_TASKS)
 #   define LIBXSMM_GEMM_OMPS_START LIBXSMM_PRAGMA(omp single nowait)
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
@@ -68,7 +68,7 @@
 # endif
 #else
 # define LIBXSMM_GEMM_OMPS_MIN_NTASKS(NT) 1
-# define LIBXSMM_GEMM_OMPS_OVERHEAD 0
+# define LIBXSMM_GEMM_OMPS_OVERHEAD(NT) 0
 # define LIBXSMM_GEMM_OMPS_START
 # define LIBXSMM_GEMM_OMPS_TASK_SYNC
 # define LIBXSMM_GEMM_OMPS_TASK(...)
@@ -97,13 +97,13 @@
   libxsmm_xmmfunction xmm; \
   LIBXSMM_GEMM_OMPS_START \
   { \
-    const libxsmm_blasint num_t = (LIBXSMM_GEMM_OMPS_OVERHEAD) <= num_k ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
+    const libxsmm_blasint num_t = (LIBXSMM_GEMM_OMPS_OVERHEAD(NT)) <= num_k ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
     const libxsmm_blasint min_ntasks = LIBXSMM_GEMM_OMPS_MIN_NTASKS(NT); \
     libxsmm_gemm_descriptor desc; \
     if (min_ntasks < num_t) { /* ensure enough parallel slack */ \
       tile_m = (M) / num_m; tile_n = (N) / num_n; \
     } \
-    else if ((LIBXSMM_GEMM_OMPS_OVERHEAD) <= num_k) { \
+    else if ((LIBXSMM_GEMM_OMPS_OVERHEAD(NT)) <= num_k) { \
       const double ratio = sqrt(((double)min_ntasks) / num_t); \
       tile_n = (int)(num_n * ratio /*+ 0.5*/); \
       tile_m = (min_ntasks + tile_n - 1) / tile_n; \
@@ -130,7 +130,7 @@
     { \
       const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
       libxsmm_blasint h, i; \
-      if ((LIBXSMM_GEMM_OMPS_OVERHEAD) <= num_k) { /* amortize overhead */ \
+      if ((LIBXSMM_GEMM_OMPS_OVERHEAD(NT)) <= num_k) { /* amortize overhead */ \
         LIBXSMM_GEMM_OMPS_FOR(2) \
         for (h = 0; h < (M); h += tile_m) { \
           for (i = 0; i < (N); i += tile_n) { \
