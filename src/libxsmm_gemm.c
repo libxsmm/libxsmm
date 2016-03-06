@@ -53,7 +53,7 @@
 # if !defined(LIBXSMM_GEMM_OMPS_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
 #   define LIBXSMM_GEMM_OMPS_TASKS
 # endif
-# define LIBXSMM_GEMM_OMPS_MIN_NTASKS (20 * omp_get_max_threads())
+# define LIBXSMM_GEMM_OMPS_MIN_NTASKS (20 * omp_get_num_threads())
 # if defined(LIBXSMM_GEMM_OMPS_TASKS)
 #   define LIBXSMM_GEMM_OMPS_START LIBXSMM_PRAGMA(omp single nowait)
 #   define LIBXSMM_GEMM_OMPS_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
