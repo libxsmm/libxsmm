@@ -43,15 +43,15 @@ int main(int argc, char* argv[])
   REAL_TYPE *const b = (REAL_TYPE*)malloc(ldb * n * sizeof(REAL_TYPE));
   REAL_TYPE *const c = (REAL_TYPE*)malloc(ldc * n * sizeof(REAL_TYPE));
   REAL_TYPE *const d = (REAL_TYPE*)malloc(ldc * n * sizeof(REAL_TYPE));
-  const double gflops = 2.0 * m * n * k * 1E-9;
+  const double scale = 1.0 / nrepeat, gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
   const REAL_TYPE alpha = 1, beta = 1;
   int i;
 
-  init(42, a, 1.0, m, k, lda);
-  init(24, b, 1.0, k, n, ldb);
-  init(0, c, 1.0, m, n, ldc);
-  init(0, d, 1.0, m, n, ldc);
+  init(42, a, scale, m, k, lda);
+  init(24, b, scale, k, n, ldb);
+  init(0, c, scale, m, n, ldc);
+  init(0, d, scale, m, n, ldc);
 
   { /* Tiled xGEMM */
     double duration;
