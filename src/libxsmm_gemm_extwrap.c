@@ -102,7 +102,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void)
 }
 
 
-#endif /*defined(__STATIC)*/
+#endif /*!defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB void LIBXSMM_GEMM_EXTWRAP_SGEMM(
