@@ -99,7 +99,7 @@
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm_wrap.h">
+    <ClInclude Include="..\src\libxsmm_gemm_ext.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -191,7 +191,10 @@
     <ClCompile Include="..\src\libxsmm_gemm_diff.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm_wrap.c">
+    <ClCompile Include="..\src\libxsmm_gemm_extwrap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_gemm_extomp.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

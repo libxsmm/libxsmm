@@ -438,11 +438,12 @@ ifneq (0,$(INTEL))
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
+	OMPFLAG = -fopenmp
 	ifneq (0,$(OMP))
-		CXXFLAGS += -openmp
-		CFLAGS += -openmp
-		FCFLAGS += -openmp
-		LDFLAGS += -openmp
+		CXXFLAGS += $(OMPFLAG)
+		CFLAGS += $(OMPFLAG)
+		FCFLAGS += $(OMPFLAG)
+		LDFLAGS += $(OMPFLAG)
 	endif
 	ifneq (0,$(PTHREAD))
 		DFLAGS += -D_REENTRANT
@@ -625,19 +626,20 @@ else # GCC assumed
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
+	OMPFLAG = -fopenmp
 	ifneq (0,$(OMP))
 		# clang: OMP=libomp
 		ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
-			CXXFLAGS += -fopenmp=$(OMP)
-			CFLAGS += -fopenmp=$(OMP)
+			CXXFLAGS += $(OMPFLAG)=$(OMP)
+			CFLAGS += $(OMPFLAG)=$(OMP)
 			# omit passing special OMP into Fortran compiler
-			FCFLAGS += -fopenmp
-			CLDFLAGS += -fopenmp=$(OMP)
+			FCFLAGS += $(OMPFLAG)
+			CLDFLAGS += $(OMPFLAG)=$(OMP)
 		else ifneq (0,$(shell $(LD) $(SLDFLAGS) -lgomp 2>&1 | grep -q "\-lgomp"; echo $$?))
-			CXXFLAGS += -fopenmp
-			CFLAGS += -fopenmp
-			FCFLAGS += -fopenmp
-			LDFLAGS += -fopenmp
+			CXXFLAGS += $(OMPFLAG)
+			CFLAGS += $(OMPFLAG)
+			FCFLAGS += $(OMPFLAG)
+			LDFLAGS += $(OMPFLAG)
 		endif
 	endif
 	ifneq (0,$(PTHREAD))

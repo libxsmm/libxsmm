@@ -41,6 +41,7 @@ _*.txt
 *.lib
 *.mod
 *.bin
+*.dll
 *.so
 *.o
 *.a

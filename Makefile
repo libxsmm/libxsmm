@@ -99,9 +99,9 @@ ifneq (0,$(JIT))
 	SSE ?= 1
 endif
 
-# OpenMP is enabled by default (more choice for "OMPS" routines)
-# (LIBXSMM is still agnostic wrt threading runtime)
-OMP ?= 1
+# OpenMP is disabled by default and LIBXSMM is
+# always agnostic wrt the threading runtime
+OMP ?= 0
 
 BLAS_WARNING ?= 0
 ifeq (0,$(STATIC))
@@ -162,11 +162,13 @@ OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) \
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
                $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_gemm.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
-WRAPOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_wrap.o
-WRAPOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_wrap.o
+WRAPOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_extwrap.o
+WRAPOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_extwrap.o
+EXTOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_extomp.o
+EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_extomp.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC)
+OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC)
 FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 
 .PHONY: libxsmm
@@ -185,10 +187,10 @@ headers: cheader fheader
 interface: headers
 
 .PHONY: lib_mic
-lib_mic: clib_mic flib_mic wrap_mic
+lib_mic: clib_mic flib_mic ext_mic
 
 .PHONY: lib_hst
-lib_hst: clib_hst flib_hst wrap_hst
+lib_hst: clib_hst flib_hst ext_hst
 
 PREFETCH_ID = 0
 PREFETCH_SCHEME = nopf
@@ -281,7 +283,7 @@ endif
 endif
 ifeq (0,$(STATIC))
 ifeq (Windows_NT,$(UNAME))
-	$(info The shared link-time wrapper (libxsmmld) is not supported under Windows/Cygwin!)
+	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!)
 	$(info ================================================================================)
 endif
 endif
@@ -503,7 +505,7 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-flib_hst: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
+flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/mic/libxsmm-mod.o $(call libdir,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
@@ -527,24 +529,46 @@ $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 endif
 endif
 
-.PHONY: wrap_mic
+ifeq (0,$(OMP))
+EXTOMPFLAG = $(OMPFLAG)
+endif
+
+.PHONY: compile_ext_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
+compile_ext_mic: $(EXTOBJS_MIC)
+$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic $(EXTOMPFLAG) -c $< -o $@
+endif
+endif
+
+.PHONY: compile_ext_hst
+compile_ext_hst: $(EXTOBJS_HST)
+$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) $(EXTOMPFLAG) -c $< -o $@
+
+.PHONY: ext_mic
+ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
+ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
-wrap_mic: $(OUTDIR)/mic/libxsmmld.$(DLIBEXT)
-$(OUTDIR)/mic/libxsmmld.$(DLIBEXT): $(OUTDIR)/mic/.make $(WRAPOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
-	$(LD) -o $@ $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
+	$(LD) -o $@ $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+else
+$(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
+	$(AR) -rs $@ $(EXTOBJS_MIC)
 endif
 endif
 endif
 
-.PHONY: wrap_hst
+.PHONY: ext_hst
+ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
-ifneq (Windows_NT,$(UNAME))
-wrap_hst: $(OUTDIR)/libxsmmld.$(DLIBEXT)
-$(OUTDIR)/libxsmmld.$(DLIBEXT): $(OUTDIR)/.make $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
-	$(LD) -o $@ $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
-endif
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
+	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
+else # static
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
+	$(AR) -rs $@ $(EXTOBJS_HST)
 endif
 
 .PHONY: samples
@@ -998,7 +1022,7 @@ endif
 ifneq (,$(wildcard $(OUTDIR)))
 	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 	@rm -f $(OUTDIR)/libxsmmf.$(LIBEXT) $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
-	@rm -f $(OUTDIR)/libxsmmld.$(LIBEXT) $(OUTDIR)/mic/libxsmmld.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmmext.$(LIBEXT) $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)
 endif
 ifneq (,$(wildcard $(BINDIR)))
@@ -1051,14 +1075,14 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(OUTDIR)/libxsmmgen.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmgen.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmld.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@cp -v $(OUTDIR)/libxsmmext.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmf.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmm.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
 	@cp -v $(OUTDIR)/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@if [ -e $(OUTDIR)/mic/libxsmmld.$(DLIBEXT) ]; then \
+	@if [ -e $(OUTDIR)/mic/libxsmmext.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
-		cp -v $(OUTDIR)/mic/libxsmmld.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
+		cp -v $(OUTDIR)/mic/libxsmmext.$(DLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \

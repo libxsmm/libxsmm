@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_GEMM_WRAP_H
-#define LIBXSMM_GEMM_WRAP_H
+#ifndef LIBXSMM_GEMM_EXT_H
+#define LIBXSMM_GEMM_EXT_H
 
 #include <libxsmm.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -42,12 +42,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_GEMM_WRAP) && defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
+#if !defined(LIBXSMM_GEMM_EXTWRAP) && defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && !defined(__CYGWIN__)
 # if defined(__STATIC) /* -Wl,--wrap=xgemm_ */
-#   define LIBXSMM_GEMM_WRAP
-#   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
-#   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
+#   define LIBXSMM_GEMM_EXTWRAP
+#   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
+#   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
     LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_FSYMBOL(__real_sgemm)(
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
@@ -65,29 +65,35 @@
       const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
       const double* beta, double*, const libxsmm_blasint*);
     /* mute warning about external function definition with no prior declaration */
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_SGEMM(
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
       const float* beta, float*, const libxsmm_blasint*);
     /* mute warning about external function definition with no prior declaration */
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WRAP_DGEMM(
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
       const double* beta, double*, const libxsmm_blasint*);
 # elif !defined(__CYGWIN__) /* LD_PRELOAD */
-#   define LIBXSMM_GEMM_WRAP
+#   define LIBXSMM_GEMM_EXTWRAP
 #   define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE(weak)
-#   define LIBXSMM_GEMM_WRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
-#   define LIBXSMM_GEMM_WRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
+#   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
+#   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif
-#endif /*defined(LIBXSMM_GEMM_WRAP)*/
+#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 
 #if !defined(LIBXSMM_GEMM_WEAK)
 # define LIBXSMM_GEMM_WEAK
 #endif
 
 
-/** INTERNAL kind of GEMM (0: small gemm, 1: sequential, 2: parallelized) */
+/** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+
+/** INTERNAL: number of threads per core */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_num_nt;
+
+/** INTERNAL: kind of GEMM (0: small gemm, 1: sequential, 2: parallelized) */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
 
 /**
@@ -96,5 +102,5 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
  */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind);
 
-#endif /*LIBXSMM_GEMM_WRAP_H*/
+#endif /*LIBXSMM_GEMM_EXT_H*/
 
