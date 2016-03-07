@@ -446,6 +446,12 @@ $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
 	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
 	$(INCDIR)/libxsmm.h, \
 	-mmic $(EXTOMPFLAG))))
+ifeq (0,$(STATIC))
+$(foreach OBJ,$(WRAPOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, \
+	-mmic)))
+endif
 endif
 endif
 
@@ -464,6 +470,12 @@ $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
 $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
 	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
 	$(INCDIR)/libxsmm.h, $(NULL))))
+
+ifeq (0,$(STATIC))
+$(foreach OBJ,$(WRAPOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, $(TARGET))))
+endif
 
 .PHONY: compile_mic
 ifneq (0,$(MIC))
