@@ -200,8 +200,8 @@ PREFETCH_TYPE = 0
 
 ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 9))))
 	PREFETCH_ID = $(PREFETCH)
-else ifeq (1,$(PREFETCH)) # curAL2
-	PREFETCH_ID = 5
+else ifeq (1,$(PREFETCH)) # AL2_BL2viaC
+	PREFETCH_ID = 6
 else ifeq (pfsigonly,$(PREFETCH))
 	PREFETCH_ID = 2
 else ifeq (BL2viaC,$(PREFETCH))
