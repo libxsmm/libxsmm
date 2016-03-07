@@ -46,7 +46,6 @@ int main(int argc, char* argv[])
   const double scale = 1.0 / nrepeat, gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
   const REAL_TYPE alpha = 1, beta = 1;
-  int i;
 
   init(42, a, scale, m, k, lda);
   init(24, b, scale, k, n, ldb);
@@ -54,7 +53,7 @@ int main(int argc, char* argv[])
   init(0, d, scale, m, n, ldc);
 
   { /* Tiled xGEMM */
-    double duration;
+    int i; double duration;
     unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP) && defined(USE_PARALLEL)
 #   pragma omp parallel
@@ -70,7 +69,7 @@ int main(int argc, char* argv[])
   }
 
   { /* LAPACK/BLAS xGEMM */
-    double duration;
+    int i; double duration;
     unsigned long long start = libxsmm_timer_tick();
     for (i = 0; i < nrepeat; ++i) {
       LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
@@ -85,8 +84,8 @@ int main(int argc, char* argv[])
     libxsmm_blasint i, j; double diff = 0;
     for (i = 0; i < n; ++i) {
       for (j = 0; j < m; ++j) {
-        const libxsmm_blasint k = i * ldc + j;
-        const double e = c[k] - d[k];
+        const libxsmm_blasint h = i * ldc + j;
+        const double e = c[h] - d[h];
         diff = LIBXSMM_MAX(diff, e * e);
       }
     }
