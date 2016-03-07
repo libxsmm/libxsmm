@@ -121,7 +121,7 @@
     LIBXSMM_GEMM_EXTOMP_START \
     { \
       const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
-      libxsmm_blasint h, i; \
+      libxsmm_blasint h = 0, i = 0; \
       if ((LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT)) <= num_k) { /* amortize overhead */ \
         LIBXSMM_GEMM_EXTOMP_FOR(2) \
         for (h = 0; h < (M); h += tile_m) { \
