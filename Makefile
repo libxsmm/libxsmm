@@ -152,23 +152,25 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 
-SRCFILES = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
+SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c libxsmm_trace.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_dense_gemm_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
-OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES)) \
-               $(BLDDIR)/intel64/libxsmm.o $(BLDDIR)/intel64/libxsmm_gemm.o
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES)) \
-               $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_gemm.o \
+OBJFILES_HST = $(BLDDIR)/intel64/libxsmm.o $(BLDDIR)/intel64/libxsmm_gemm.o
+OBJFILES_MIC = $(BLDDIR)/mic/libxsmm.o $(BLDDIR)/mic/libxsmm_gemm.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
+KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KERNELOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 WRAPOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_extwrap.o
 WRAPOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_extwrap.o
 EXTOBJS_HST = $(BLDDIR)/intel64/libxsmm_gemm_extomp.o
 EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_extomp.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC)
+OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
+          $(KERNELOBJS_HST) $(KERNELOBJS_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC) \
+          $(EXTOBJS_HST) $(EXTOBJS_MIC)
 FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 
 .PHONY: libxsmm
@@ -323,35 +325,13 @@ else
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 endif
 
-.PHONY: compile_generator_lib
-compile_generator_lib: $(OBJFILES_GEN_LIB)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
-.PHONY: build_generator_lib
-build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
-$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
-ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
-else
-	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
-endif
-
-.PHONY: compile_gemm_generator
-compile_gemm_generator: $(OBJFILES_GEN_GEMM_BIN)
-$(BLDDIR)/%.o: $(SRCDIR)/%.c $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -c $< -o $@
-.PHONY: generator
-generator: $(BINDIR)/libxsmm_gemm_generator
-$(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT) $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	$(CC) $(OBJFILES_GEN_GEMM_BIN) $(call libdir,$(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS) -o $@
-
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 .PHONY: sources
-sources: $(SRCFILES) $(BLDDIR)/libxsmm_dispatch.h
+sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
-ifneq (,$(strip $(SRCFILES)))
+ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval MVALUE := $(shell echo $(basename $@) | cut -d_ -f2))
 	$(eval NVALUE := $(shell echo $(basename $@) | cut -d_ -f3))
 	$(eval KVALUE := $(shell echo $(basename $@) | cut -d_ -f4))
@@ -443,21 +423,59 @@ endif
 	@mv $(TMPFILE) $@
 endif
 
+define DEFINE_COMPILE_RULE
+$(1): $(2) $(3) $(dir $(1))/.make
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(4) -c $(2) -o $(1)
+endef
+
+ifeq (0,$(OMP))
+EXTOMPFLAG = $(OMPFLAG)
+endif
+
+ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
+$(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, \
+	-mmic)))
+$(foreach OBJ,$(KERNELOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, \
+	-mmic)))
+$(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, \
+	-mmic $(EXTOMPFLAG))))
+endif
+endif
+
+$(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, $(TARGET))))
+$(foreach OBJ,$(KERNELOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, $(TARGET))))
+$(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, $(TARGET) $(EXTOMPFLAG))))
+$(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, $(NULL))))
+$(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
+	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+	$(INCDIR)/libxsmm.h, $(NULL))))
+
 .PHONY: compile_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-compile_mic: $(OBJFILES_MIC)
-$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+compile_mic:
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 endif
 
 .PHONY: compile_hst
-compile_hst: $(OBJFILES_HST)
-$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+compile_hst:
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
@@ -479,26 +497,40 @@ $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/intel64/libxsmm-mod.o $(FMFLAGS) $(INCDIR)
 endif
 
+.PHONY: build_generator_lib
+build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
+$(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
+ifeq (0,$(STATIC))
+	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
+else
+	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
+endif
+
+.PHONY: generator
+generator: $(BINDIR)/libxsmm_gemm_generator
+$(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
+	$(CC) $(OBJFILES_GEN_GEMM_BIN) $(call libdir,$(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS) -o $@
+
 .PHONY: clib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC)
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KERNELOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
 else
-	$(AR) -rs $@ $(OBJFILES_MIC)
+	$(AR) -rs $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC)
 endif
 endif
 endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) -shared $(LDFLAGS) $(CLDFLAGS)
 else
-	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST)
 endif
 
 .PHONY: flib_mic
@@ -528,24 +560,6 @@ $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 endif
-
-ifeq (0,$(OMP))
-EXTOMPFLAG = $(OMPFLAG)
-endif
-
-.PHONY: compile_ext_mic
-ifneq (0,$(MIC))
-ifneq (0,$(MPSS))
-compile_ext_mic: $(EXTOBJS_MIC)
-$(BLDDIR)/mic/%.o: $(SRCDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic $(EXTOMPFLAG) -c $< -o $@
-endif
-endif
-
-.PHONY: compile_ext_hst
-compile_ext_hst: $(EXTOBJS_HST)
-$(BLDDIR)/intel64/%.o: $(SRCDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) $(EXTOMPFLAG) -c $< -o $@
 
 .PHONY: ext_mic
 ifneq (0,$(MIC))
@@ -999,7 +1013,7 @@ clean-minimal:
 
 .PHONY: clean
 clean: clean-minimal
-	@rm -f $(OBJECTS) $(FTNOBJS) $(SRCFILES)
+	@rm -f $(OBJECTS) $(FTNOBJS) $(SRCFILES_KERNELS)
 	@rm -f $(BLDDIR)/libxsmm_dispatch.h
 
 .PHONY: realclean
