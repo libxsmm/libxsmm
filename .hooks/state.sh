@@ -15,7 +15,7 @@ fi
 
 SHELLFILE=${HERE}/${NAME}
 STATEFILE=${DEST}/.state
-STATE=$(${ECHO} $2 | ${TR} '?' '\n' | ${SED} -e 's/^  *//')
+STATE=$(${TR} '?' '\n' | ${SED} -e 's/^  *//')
 
 if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - > /dev/null; ${ECHO} $?) ]; then
   ${ECHO} "${STATE}" > ${STATEFILE}

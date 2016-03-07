@@ -831,7 +831,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 	$(filter-out environment% default automatic,$(origin $V)), \
 	$(if $(filter-out .DEFAULT_GOAL BLAS_WARNING libdir,$V), \
 		$V=$($V)?)))
-.state: $(shell $(DEPDIR)/.hooks/state.sh $(abspath .) '$(STATE)')
+.state: $(shell echo '$(STATE)' | $(DEPDIR)/.hooks/state.sh $(abspath .))
 
 %/.make:
 	@mkdir -p $(basename $@)
