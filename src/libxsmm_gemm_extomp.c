@@ -114,7 +114,7 @@
       tile_n = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)),  8), N); \
       tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), 32), K); \
     } \
-    LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH); \
+    LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_AL2_AHEAD); \
     xmm = libxsmm_xmmdispatch(&desc); \
   } \
   if (0 != xmm.dmm) { \
