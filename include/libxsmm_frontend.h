@@ -31,7 +31,6 @@
 #ifndef LIBXSMM_FRONTEND_H
 #define LIBXSMM_FRONTEND_H
 
-#include "libxsmm_generator.h"
 #include "libxsmm_macros.h"
 #include "libxsmm.h"
 
@@ -49,6 +48,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include "libxsmm_generator.h"
 #include <assert.h>
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
