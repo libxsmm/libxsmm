@@ -112,7 +112,7 @@
       if (1.f < rk) { rm /= rk; rn /= rk; rk = 1.f; } \
       tile_m = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_m * rm /*+ 0.5*/)),  8), M); \
       tile_n = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)),  8), N); \
-      tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), 32), K); \
+      tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), 16), K); \
     } \
     LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_AL2_AHEAD); \
     xmm = libxsmm_xmmdispatch(&desc); \
