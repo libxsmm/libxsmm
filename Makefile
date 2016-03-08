@@ -233,15 +233,15 @@ else ifeq (4,$(PREFETCH_ID))
 else ifeq (5,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2
 	PREFETCH_TYPE = 16
-else ifeq (8,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2jpst
-	PREFETCH_TYPE = 4
 else ifeq (6,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2_BL2viaC
 	PREFETCH_TYPE = $(shell echo $$((8 | 2)))
 else ifeq (7,$(PREFETCH_ID))
 	PREFETCH_SCHEME = curAL2_BL2viaC
 	PREFETCH_TYPE = $(shell echo $$((8 | 16)))
+else ifeq (8,$(PREFETCH_ID))
+	PREFETCH_SCHEME = AL2jpst
+	PREFETCH_TYPE = 4
 else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst_BL2viaC
 	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
