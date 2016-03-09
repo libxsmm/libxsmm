@@ -86,9 +86,10 @@
 #define LIBXSMM_GEMM_EXTOMP_XGEMM(REAL, FLAGS, NT, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   libxsmm_blasint tile_m = LIBXSMM_MAX(TILE_M, 2), tile_n = LIBXSMM_MAX(TILE_N, 2), tile_k = LIBXSMM_MAX(TILE_K, 2); \
   const libxsmm_blasint num_m = ((M) + tile_m - 1) / tile_m, num_n = ((N) + tile_n - 1) / tile_n, num_k = ((K) + tile_k - 1) / tile_k; \
+  const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
   libxsmm_xmmfunction xmm; \
   LIBXSMM_GEMM_EXTOMP_START \
-  { \
+  if (0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && 1 == scalpha && (1 == scbeta || 0 == scbeta)) { \
     const libxsmm_blasint num_t = (LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT)) <= num_k ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
     const libxsmm_blasint min_ntasks = LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT); \
     libxsmm_gemm_descriptor desc; \
@@ -114,8 +115,11 @@
       tile_n = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_n * rn /*+ 0.5*/)),  8), N); \
       tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_NBITS(tile_k * rk /*+ 0.5*/)), 16), K); \
     } \
-    LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_AL2_AHEAD); \
+    LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, LDA, LDB, LDC, scalpha, scbeta, LIBXSMM_PREFETCH_AL2_AHEAD); \
     xmm = libxsmm_xmmdispatch(&desc); \
+  } \
+  else { /* TODO: not supported (bypass) */ \
+    xmm.dmm = 0; \
   } \
   if (0 != xmm.dmm) { \
     LIBXSMM_GEMM_EXTOMP_START \
