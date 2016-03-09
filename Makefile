@@ -579,7 +579,7 @@ ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
-	$(LD) -o $@ $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(EXTOMPFLAG) $(LDFLAGS) $(CLDFLAGS)
 else
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
 	$(AR) -rs $@ $(EXTOBJS_MIC)
@@ -591,7 +591,7 @@ endif
 ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
-	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(EXTOMPFLAG) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
 	$(AR) -rs $@ $(EXTOBJS_HST)
