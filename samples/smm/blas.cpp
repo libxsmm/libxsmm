@@ -40,9 +40,11 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
+#include <vector>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
+# include <mkl.h>
 #endif
 #if defined(_OPENMP)
 # include <omp.h>
@@ -154,6 +156,29 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
+
+#if defined(__MKL) && (2 == __MKL)
+      { // MKL-batched
+        fprintf(stdout, "MKL-Batched (A,B,C)...\n");
+        const char transa_array[] = 0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? "N" : "T";
+        const char transb_array[] = 0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? "N" : "T";
+        std::vector<int> lda_array(s, m), ldb_array(s, k), ldc_array(s, m);
+        const T alpha_array = LIBXSMM_ALPHA, beta_array = LIBXSMM_BETA;
+        std::vector<T*> a_array(s, a), b_array(s, b), c_array(s, c);
+        const int group_count = 1;
+        const unsigned long long start = libxsmm_timer_tick();
+        dgemm_batch(transa_array, transb_array, &m, &n, &k,
+          &alpha_array, const_cast<const T**>(&a_array[0]), &lda_array[0],
+                        const_cast<const T**>(&b_array[0]), &ldb_array[0],
+           &beta_array, static_cast<T**>(&c_array[0]), &ldc_array[0], &group_count, &s);
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration) {
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+#endif
 
       { // streaming
         fprintf(stdout, "Streamed (A,B)...\n");
