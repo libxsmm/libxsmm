@@ -287,16 +287,21 @@ return internal_find_code_result.xmm
 #define INTERNAL_DISPATCH(VECTOR_WIDTH, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION) { \
   INTERNAL_FIND_CODE_DECLARE(entry); \
   union { libxsmm_gemm_descriptor descriptor; char simd[0!=(VECTOR_WIDTH)?(VECTOR_WIDTH):(LIBXSMM_GEMM_DESCRIPTOR_SIZE)]; } simd_descriptor; \
-  LIBXSMM_GEMM_DESCRIPTOR(simd_descriptor.descriptor, 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
-    0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB), \
-    0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA), \
-    0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC), \
-    0 == (PALPHA) ? LIBXSMM_ALPHA : *(PALPHA), \
-    0 == (PBETA) ? LIBXSMM_BETA : *(PBETA), \
-    0 == (PREFETCH) ? LIBXSMM_PREFETCH : *(PREFETCH)); \
-  for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(simd_descriptor.simd); ++i) simd_descriptor.simd[i] = 0; \
-  { \
-    INTERNAL_FIND_CODE(simd_descriptor.descriptor, entry, HASH_FUNCTION, DIFF_FUNCTION).SELECTOR; \
+  if (0 == (FLAGS & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B))) { \
+    LIBXSMM_GEMM_DESCRIPTOR(simd_descriptor.descriptor, 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
+      0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB), \
+      0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA), \
+      0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC), \
+      0 == (PALPHA) ? LIBXSMM_ALPHA : *(PALPHA), \
+      0 == (PBETA) ? LIBXSMM_BETA : *(PBETA), \
+      0 == (PREFETCH) ? LIBXSMM_PREFETCH : *(PREFETCH)); \
+    for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(simd_descriptor.simd); ++i) simd_descriptor.simd[i] = 0; \
+    { \
+      INTERNAL_FIND_CODE(simd_descriptor.descriptor, entry, HASH_FUNCTION, DIFF_FUNCTION).SELECTOR; \
+    } \
+  } \
+  else { /* not supported (bypass) */ \
+    return 0; \
   } \
 }
 

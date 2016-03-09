@@ -182,9 +182,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
   const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)LIBXSMM_LD(M, N); \
   const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)LIBXSMM_LD(N, M); \
   const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(K); \
-  assert(libxsmm_blas_xgemm_m_ <= libxsmm_blas_xgemm_lda_); \
-  assert(libxsmm_blas_xgemm_k_ <= libxsmm_blas_xgemm_ldb_); \
-  assert(libxsmm_blas_xgemm_m_ <= libxsmm_blas_xgemm_ldc_); \
   assert(0 != ((uintptr_t)LIBXSMM_BLAS_GEMM_SYMBOL(REAL))); \
   LIBXSMM_BLAS_GEMM_SYMBOL(REAL)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
     &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \
@@ -219,9 +216,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
   const REAL libxsmm_inline_xgemm_beta_ = (REAL)(1 == (BETA) ? 1 : (0 == (BETA) ? 0 : (BETA))); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
-  assert(LIBXSMM_LD(M, N) <= LIBXSMM_LD(LDA, LDB)); \
-  assert((K) <= LIBXSMM_LD(LDB, LDA)); \
-  assert(LIBXSMM_LD(M, N) <= (LDC)); \
+  /* TODO: remove/adjust precondition if anything other than NN is supported */ \
+  assert(LIBXSMM_LD(M, N) <= LIBXSMM_LD(LDA, LDB) && (K) <= LIBXSMM_LD(LDB, LDA) && LIBXSMM_LD(M, N) <= (LDC)); \
   LIBXSMM_PRAGMA_SIMD \
   for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)LIBXSMM_LD(M, N)); ++libxsmm_inline_xgemm_j_) { \
     LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_K, LIBXSMM_AVG_K) \
