@@ -643,7 +643,9 @@ else # GCC assumed
 			CXXFLAGS += $(OMPFLAG)
 			CFLAGS += $(OMPFLAG)
 			FCFLAGS += $(OMPFLAG)
-			LDFLAGS += $(OMPFLAG)
+			ifneq (Darwin,$(UNAME))
+				LDFLAGS += $(OMPFLAG)
+			endif
 		endif
 	endif
 	ifneq (0,$(PTHREAD))
