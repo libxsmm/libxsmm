@@ -28,14 +28,14 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "generator_dense_noarch.h"
+#include "generator_gemm_noarch.h"
 #include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
-void libxsmm_generator_dense_noarch_kernel( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*         io_generated_code,
                                             const libxsmm_gemm_descriptor* i_xgemm_desc,
                                             const char*                     i_arch ) {
   char l_new_code[512];

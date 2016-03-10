@@ -243,7 +243,7 @@ int main(int argc, char* argv []) {
       return -1;
     }
 
-    libxsmm_generator_sparse( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in );
+    libxsmm_generator_spgemm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in );
   }
 
   if ( (strcmp(l_type, "dense")     == 0) || 
@@ -254,9 +254,9 @@ int main(int argc, char* argv []) {
     }
 
     if ( strcmp(l_type, "dense")  == 0 ) {
-      libxsmm_generator_dense_inlineasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_gemm_inlineasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
     } else {
-      libxsmm_generator_dense_directasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_gemm_directasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
     }
   }
   

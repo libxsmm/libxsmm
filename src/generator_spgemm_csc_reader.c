@@ -73,7 +73,7 @@
 #include <string.h>
 
 #include "generator_common.h"
-#include "generator_sparse_csc_reader.h"
+#include "generator_spgemm_csc_reader.h"
 
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csc_file_in,

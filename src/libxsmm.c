@@ -591,7 +591,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   generated_code.last_error = 0;
 
   /* generate kernel */
-  libxsmm_generator_dense_kernel(&generated_code, desc, internal_jit);
+  libxsmm_generator_gemm_kernel(&generated_code, desc, internal_jit);
 
   /* handle an eventual error in the else-branch */
   if (0 == generated_code.last_error) {

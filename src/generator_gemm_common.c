@@ -29,7 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include "generator_dense_common.h"
+#include "generator_gemm_common.h"
 #include "generator_common.h"
 #include "generator_x86_instructions.h"
 #include <libxsmm_macros.h>
@@ -38,7 +38,7 @@
 #include <string.h>
 
 
-void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                   const char*                     i_arch,
                                                                   const unsigned int              i_use_masking_a_c ) {
@@ -226,13 +226,13 @@ void libxsmm_generator_dense_init_micro_kernel_config_fullvector( libxsmm_micro_
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
-void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                   const char*                     i_arch,
                                                                   const unsigned int              i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
-    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, redirecting to scalar, please fix the generation code!!!\n");
-    libxsmm_generator_dense_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_gemm_init_micro_kernel_config_halfvector, redirecting to scalar, please fix the generation code!!!\n");
+    libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else if( strcmp( i_arch, "snb" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX;
     io_micro_kernel_config->vector_reg_count = 16;
@@ -320,8 +320,8 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
   } else if ( (strcmp( i_arch, "knc" ) == 0) ||
               (strcmp( i_arch, "knl" ) == 0) ||
               (strcmp( i_arch, "skx" ) == 0)    ) {
-    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
-    libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
+    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else {  }
 
   io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
@@ -332,7 +332,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_halfvector( libxsmm_micro_
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
-void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                               const char*                     i_arch,
                                                               const unsigned int              i_use_masking_a_c ) {
@@ -417,8 +417,8 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   } else if ( (strcmp( i_arch, "knc" ) == 0) ||
               (strcmp( i_arch, "knl" ) == 0) ||
               (strcmp( i_arch, "skx" ) == 0)    ) {
-    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_dense_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
-    libxsmm_generator_dense_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
+    fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
+    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else {  }
 
   io_micro_kernel_config->prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
@@ -429,7 +429,7 @@ void libxsmm_generator_dense_init_micro_kernel_config_scalar( libxsmm_micro_kern
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
-void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if ( io_generated_code->code_type == 0 ) {
     char l_new_code[512];
@@ -451,7 +451,7 @@ void libxsmm_generator_dense_add_flop_counter( libxsmm_generated_code*         i
   }
 }
 
-void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_header_kloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -463,7 +463,7 @@ void libxsmm_generator_dense_header_kloop( libxsmm_generated_code*             i
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
 
-void libxsmm_generator_dense_footer_kloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -480,7 +480,7 @@ void libxsmm_generator_dense_footer_kloop( libxsmm_generated_code*             i
   }
 }
 
-void libxsmm_generator_dense_header_nloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_header_nloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -491,7 +491,7 @@ void libxsmm_generator_dense_header_nloop( libxsmm_generated_code*             i
 }
 
 
-void libxsmm_generator_dense_footer_nloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -509,7 +509,7 @@ void libxsmm_generator_dense_footer_nloop( libxsmm_generated_code*             i
 }
 
 
-void libxsmm_generator_dense_header_mloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_header_mloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -518,7 +518,7 @@ void libxsmm_generator_dense_header_mloop( libxsmm_generated_code*             i
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_mloop, i_m_blocking );
 }
 
-void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*             io_generated_code,
                                            libxsmm_loop_label_tracker*         io_loop_label_tracker,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
@@ -566,7 +566,7 @@ void libxsmm_generator_dense_footer_mloop( libxsmm_generated_code*             i
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_generated_code,
                                      const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                      const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -636,7 +636,7 @@ void libxsmm_generator_dense_load_C( libxsmm_generated_code*             io_gene
   }
 }
 
-void libxsmm_generator_dense_store_C( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_generated_code,
                                       const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                       const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,

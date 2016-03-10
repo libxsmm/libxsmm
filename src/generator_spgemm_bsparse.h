@@ -29,19 +29,18 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_SSE3_MICROKERNEL_H
-#define GENERATOR_DENSE_SSE3_MICROKERNEL_H
+#ifndef GENERATOR_SPARSE_BSPARSE_H
+#define GENERATOR_SPARSE_BSPARSE_H
 
-#include "generator_common.h"
-#include "generator_dense_common.h"
+#include <libxsmm_generator.h>
 
-void libxsmm_generator_dense_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
-                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                               const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                               const unsigned int                  i_m_blocking,
-                                               const unsigned int                  i_n_blocking,
-                                               const int                           i_offset );
+/* @TODO change int based architecture value */
+void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_generated_code,
+                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                       const char*                     i_arch,
+                                       const unsigned int*             i_row_idx,
+                                       const unsigned int*             i_column_idx,
+                                       const double*                   i_values );
 
-#endif /* GENERATOR_DENSE_SSE3_MICROKERNEL_H */
+#endif /* GENERATOR_SPARSE_BSPARSE_H */
 

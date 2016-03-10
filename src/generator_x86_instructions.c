@@ -2044,7 +2044,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 9)) {
-      fprintf(stderr, "libxsmm_generator_dense_x86_open_instruction_stream: Jit buffer too small\n!");
+      fprintf(stderr, "libxsmm_generator_gemm_x86_open_instruction_stream: Jit buffer too small\n!");
       exit(-1);
     }
 
@@ -2264,7 +2264,7 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 10)) {
-      fprintf(stderr, "libxsmm_generator_dense_x86_close_instruction_stream: Jit buffer too small!\n" );
+      fprintf(stderr, "libxsmm_generator_gemm_x86_close_instruction_stream: Jit buffer too small!\n" );
       exit(-1);
     }
 

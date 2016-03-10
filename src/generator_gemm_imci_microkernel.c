@@ -29,7 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include "generator_dense_imci_microkernel.h"
+#include "generator_gemm_imci_microkernel.h"
 #include "generator_x86_instructions.h"
 #include <libxsmm_macros.h>
 
@@ -38,7 +38,7 @@
 #include <string.h>
 
 
-void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_imci_microkernel( libxsmm_generated_code*             io_generated_code,
                                                const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -55,7 +55,7 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
     return;
   }
   if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
-    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_dense_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
+    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
   }
 #endif
 
@@ -156,7 +156,7 @@ void libxsmm_generator_dense_imci_microkernel( libxsmm_generated_code*          
   }
 }
 
-unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -171,7 +171,7 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
 
   /* Let's do something special for SeisSol with k=9, fully unroll */
   if ((i_xgemm_desc->k == 9)) {
-    libxsmm_generator_dense_imci_microkernel( io_generated_code,
+    libxsmm_generator_gemm_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
                                                 i_xgemm_desc,
@@ -180,11 +180,11 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 -1 );
   } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
     if (i_xgemm_desc->k != l_k_blocking) {
-      libxsmm_generator_dense_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
+      libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                             i_micro_kernel_config->vector_length, l_k_blocking);
     }
 
-    libxsmm_generator_dense_imci_microkernel( io_generated_code,
+    libxsmm_generator_gemm_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
                                                 i_xgemm_desc,
@@ -193,17 +193,17 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 -1 );
 
     if (i_xgemm_desc->k != l_k_blocking) {
-      libxsmm_generator_dense_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
+      libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                            i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
     }
   } else {
     unsigned int l_max_blocked_k = (i_xgemm_desc->k/l_k_blocking)*l_k_blocking;
     unsigned int l_k;
     if (l_max_blocked_k > 0 ) {
-      libxsmm_generator_dense_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
+      libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                             i_micro_kernel_config->vector_length, l_k_blocking);
 
-      libxsmm_generator_dense_imci_microkernel( io_generated_code,
+      libxsmm_generator_gemm_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
                                                 i_xgemm_desc,
@@ -211,11 +211,11 @@ unsigned int libxsmm_generator_dense_imci_kernel_kloop( libxsmm_generated_code* 
                                                 l_k_blocking,
                                                 -1 );
 
-      libxsmm_generator_dense_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
+      libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                              i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
     }
     for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
-      libxsmm_generator_dense_imci_microkernel( io_generated_code,
+      libxsmm_generator_gemm_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
                                                 i_xgemm_desc,
@@ -290,7 +290,7 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
   }
 }
 
-void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_load_C_imci( libxsmm_generated_code*             io_generated_code,
                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -363,7 +363,7 @@ void libxsmm_generator_dense_load_C_imci( libxsmm_generated_code*             io
   }
 }
 
-void libxsmm_generator_dense_store_C_imci( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_store_C_imci( libxsmm_generated_code*             io_generated_code,
                                            const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                            const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,

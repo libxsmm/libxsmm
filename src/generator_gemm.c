@@ -35,13 +35,13 @@
 
 #include <libxsmm_generator.h>
 #include "generator_common.h"
-#include "generator_dense_common.h"
-#include "generator_dense_sse3_avx_avx2.h"
-#include "generator_dense_imci_avx512.h"
-#include "generator_dense_noarch.h"
+#include "generator_gemm_common.h"
+#include "generator_gemm_sse3_avx_avx2.h"
+#include "generator_gemm_imci_avx512.h"
+#include "generator_gemm_noarch.h"
 
 /* @TODO change int based architecture value */
-void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
                                      const char*                     i_arch ) {
   /* apply the alignement override */
@@ -114,15 +114,15 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
        (strcmp(i_arch, "snb") == 0) ||
        (strcmp(i_arch, "hsw") == 0)    ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_dense_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "knc") == 0) ||
        (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "skx") == 0)    ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_dense_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_dense_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -132,10 +132,10 @@ void libxsmm_generator_dense_kernel( libxsmm_generated_code*         io_generate
   libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 
   /* add flop counter for debug compilation */
-  libxsmm_generator_dense_add_flop_counter( io_generated_code, i_xgemm_desc );
+  libxsmm_generator_gemm_add_flop_counter( io_generated_code, i_xgemm_desc );
 }
 
-void libxsmm_generator_dense_inlineasm(const char*                     i_file_out,
+void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
@@ -151,7 +151,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* generate the actual kernel code for current description depending on the architecture */
-  libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
+  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc, i_arch );
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );
@@ -170,7 +170,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
       fputs( l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_dense_inlineasm could not write to into destination source file\n");
+      fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_inlineasm could not write to into destination source file\n");
       exit(-1);
     }
   }
@@ -179,7 +179,7 @@ void libxsmm_generator_dense_inlineasm(const char*                     i_file_ou
   free( l_generated_code.generated_code );
 }
 
-void libxsmm_generator_dense_directasm(const char*                     i_file_out,
+void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
@@ -193,7 +193,7 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
 
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_direct: we cannot create ASM when noarch is specified!\n");
+    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: we cannot create ASM when noarch is specified!\n");
     exit(-1);
   }
 
@@ -201,7 +201,7 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* generate the actual kernel code for current description depending on the architecture */
-  libxsmm_generator_dense_kernel( &l_generated_code, i_xgemm_desc, i_arch );
+  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc, i_arch );
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
@@ -217,7 +217,7 @@ void libxsmm_generator_dense_directasm(const char*                     i_file_ou
       fputs( l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_dense_direct: could not write to into destination source file!\n");
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: could not write to into destination source file!\n");
       exit(-1);
     }
   }

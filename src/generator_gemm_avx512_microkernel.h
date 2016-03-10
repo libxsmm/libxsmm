@@ -33,9 +33,9 @@
 #define GENERATOR_DENSE_AVX512_MICROKERNEL_H
 
 #include "generator_common.h"
-#include "generator_dense_common.h"
+#include "generator_gemm_common.h"
 
-void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*             io_generated_code,
                                                  const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                  const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                  const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -43,7 +43,7 @@ void libxsmm_generator_dense_avx512_microkernel( libxsmm_generated_code*        
                                                  const unsigned int                  i_k_blocking );
 
 #if 0
-void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
                                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
@@ -51,13 +51,13 @@ void libxsmm_generator_dense_avx512_microkernel_k_large( libxsmm_generated_code*
                                                          const unsigned int                  i_k_blocking );
 #endif
 
-void libxsmm_generator_dense_avx512_microkernel_k_large_n_nine( libxsmm_generated_code*             io_generated_code,
+void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated_code*             io_generated_code,
                                                                 const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
                                                                 const libxsmm_micro_kernel_config*  i_micro_kernel_config,
                                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                 const unsigned int                  i_k_blocking );
 
-unsigned int libxsmm_generator_dense_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
                                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,

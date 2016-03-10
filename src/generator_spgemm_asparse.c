@@ -67,7 +67,7 @@
  * @section DESCRIPTION
  * <DESCRIPTION>
  */
-#include "generator_sparse_asparse.h"
+#include "generator_spgemm_asparse.h"
 #include "generator_common.h"
 #include <libxsmm_macros.h>
 #include <stdio.h>
@@ -209,7 +209,7 @@ void libxsmm_sparse_asparse_innerloop_four_vector( libxsmm_generated_code*      
   }
 }
 
-void libxsmm_generator_sparse_asparse( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_spgemm_asparse( libxsmm_generated_code*         io_generated_code,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch,
                                        const unsigned int*             i_row_idx,

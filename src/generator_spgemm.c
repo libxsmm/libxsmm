@@ -30,9 +30,9 @@
 ******************************************************************************/
 #include <libxsmm_generator.h>
 #include "generator_common.h"
-#include "generator_sparse_csc_reader.h"
-#include "generator_sparse_asparse.h"
-#include "generator_sparse_bsparse.h"
+#include "generator_spgemm_csc_reader.h"
+#include "generator_spgemm_asparse.h"
+#include "generator_spgemm_bsparse.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <stdio.h>
 
 
-void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generated_code,
+void libxsmm_generator_spgemm_kernel( libxsmm_generated_code*         io_generated_code,
                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                     i_arch,
                                       const unsigned int*             i_row_idx,
@@ -58,7 +58,7 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_sparse_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+    libxsmm_generator_spgemm_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
@@ -71,7 +71,7 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    libxsmm_generator_sparse_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+    libxsmm_generator_spgemm_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPARSE_GEN );
@@ -79,7 +79,7 @@ void libxsmm_generator_sparse_kernel( libxsmm_generated_code*         io_generat
   }
 }
 
-void libxsmm_generator_sparse( const char*                     i_file_out,
+void libxsmm_generator_spgemm( const char*                     i_file_out,
                                const char*                     i_routine_name,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
                                const char*                     i_arch,
@@ -145,7 +145,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
 #endif
 
   /* generate the actual kernel code for current description depending on the architecture */
-  libxsmm_generator_sparse_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+  libxsmm_generator_spgemm_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );
@@ -175,7 +175,7 @@ void libxsmm_generator_sparse( const char*                     i_file_out,
       fputs( l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_sparse: could not write to into destination source file\n");
+      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_spgemm: could not write to into destination source file\n");
       exit(-1);
     }
   }
