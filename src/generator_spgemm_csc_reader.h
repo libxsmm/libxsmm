@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_SPARSE_CSC_READER_H
-#define GENERATOR_SPARSE_CSC_READER_H
+#ifndef GENERATOR_SPGEMM_CSC_READER_H
+#define GENERATOR_SPGEMM_CSC_READER_H
 
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csc_file_in,
@@ -41,5 +41,5 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 unsigned int*           o_column_count,
                                 unsigned int*           o_element_count );
 
-#endif /* GENERATOR_SPARSE_CSC_READER_H */
+#endif /* GENERATOR_SPGEMM_CSC_READER_H */
 

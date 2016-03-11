@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_COMMON_H
-#define GENERATOR_DENSE_COMMON_H
+#ifndef GENERATOR_GEMM_COMMON_H
+#define GENERATOR_GEMM_COMMON_H
 
 #include "generator_common.h"
 
@@ -111,4 +111,4 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                       const unsigned int                  i_m_blocking,
                                       const unsigned int                  i_n_blocking );
 
-#endif /* GENERATOR_DENSE_COMMON_H */
+#endif /* GENERATOR_GEMM_COMMON_H */

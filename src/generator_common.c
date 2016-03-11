@@ -731,7 +731,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_LDC:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: ldc needs to be greater than or equal to m!\n" );
       break;
-    case LIBXSMM_ERR_SPARSE_GEN:
+    case LIBXSMM_ERR_SPGEMM_GEN:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
       break;
     case LIBXSMM_ERR_CSC_INPUT:

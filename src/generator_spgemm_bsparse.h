@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_SPARSE_BSPARSE_H
-#define GENERATOR_SPARSE_BSPARSE_H
+#ifndef GENERATOR_SPGEMM_BSPARSE_H
+#define GENERATOR_SPGEMM_BSPARSE_H
 
 #include <libxsmm_generator.h>
 
@@ -42,5 +42,5 @@ void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_genera
                                        const unsigned int*             i_column_idx,
                                        const double*                   i_values );
 
-#endif /* GENERATOR_SPARSE_BSPARSE_H */
+#endif /* GENERATOR_SPGEMM_BSPARSE_H */
 

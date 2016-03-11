@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_AVX2_MICROKERNEL_H
-#define GENERATOR_DENSE_AVX2_MICROKERNEL_H
+#ifndef GENERATOR_GEMM_AVX2_MICROKERNEL_H
+#define GENERATOR_GEMM_AVX2_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
@@ -43,5 +43,5 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                                const unsigned int                  i_n_blocking,
                                                const int                           i_offset );
 
-#endif /* GENERATOR_DENSE_AVX2_MICROKERNEL_H */
+#endif /* GENERATOR_GEMM_AVX2_MICROKERNEL_H */
 

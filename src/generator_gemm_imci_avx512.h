@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_IMCI_AVX512_H
-#define GENERATOR_DENSE_IMCI_AVX512_H
+#ifndef GENERATOR_GEMM_IMCI_AVX512_H
+#define GENERATOR_GEMM_IMCI_AVX512_H
 
 #include "generator_common.h"
 
@@ -38,5 +38,5 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                  const char*                     i_arch );
 
-#endif /* GENERATOR_DENSE_IMCI_AVX512_H */
+#endif /* GENERATOR_GEMM_IMCI_AVX512_H */
 

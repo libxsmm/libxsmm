@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_IMCI_MICROKERNEL_H
-#define GENERATOR_DENSE_IMCI_MICROKERNEL_H
+#ifndef GENERATOR_GEMM_IMCI_MICROKERNEL_H
+#define GENERATOR_GEMM_IMCI_MICROKERNEL_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
@@ -77,5 +77,5 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
                                             const unsigned int      i_use_masking,
                                             const unsigned int      i_is_store );
 
-#endif /* GENERATOR_DENSE_IMCI_MICROKERNEL_H */
+#endif /* GENERATOR_GEMM_IMCI_MICROKERNEL_H */
 

@@ -246,5 +246,5 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
                                                  const unsigned int          i_jmp_instr,
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
 
-#endif /* GENERATOR_DENSE_INSTRUCTIONS_H */
+#endif /* GENERATOR_GEMM_INSTRUCTIONS_H */
 

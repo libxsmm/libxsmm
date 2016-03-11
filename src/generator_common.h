@@ -173,7 +173,7 @@
 #define LIBXSMM_ERR_LDA                  90003
 #define LIBXSMM_ERR_LDB                  90004
 #define LIBXSMM_ERR_LDC                  90005
-#define LIBXSMM_ERR_SPARSE_GEN           90006
+#define LIBXSMM_ERR_SPGEMM_GEN           90006
 #define LIBXSMM_ERR_CSC_INPUT            90007
 #define LIBXSMM_ERR_CSC_READ_LEN         90008
 #define LIBXSMM_ERR_CSC_READ_DESC        90009

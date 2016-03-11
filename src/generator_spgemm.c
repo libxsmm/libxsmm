@@ -74,7 +74,7 @@ void libxsmm_generator_spgemm_kernel( libxsmm_generated_code*         io_generat
     libxsmm_generator_spgemm_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPARSE_GEN );
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }
 }

@@ -29,8 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_DENSE_SSE3_AVX_AVX2_H
-#define GENERATOR_DENSE_SSE3_AVX_AVX2_H
+#ifndef GENERATOR_GEMM_SSE3_AVX_AVX2_H
+#define GENERATOR_GEMM_SSE3_AVX_AVX2_H
 
 #include "generator_common.h"
 #include "generator_gemm_common.h"
@@ -48,5 +48,5 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_update_m_blocking( libxsmm_mic
                                                                       const char*                     i_arch,
                                                                       const unsigned int              i_current_m_blocking );
 
-#endif /* GENERATOR_DENSE_SSE3_AVX_AVX2_H */
+#endif /* GENERATOR_GEMM_SSE3_AVX_AVX2_H */
 
