@@ -591,7 +591,11 @@ endif
 ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
+ifneq (Darwin,$(UNAME))
 	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(EXTOMPFLAG) $(LDFLAGS) $(CLDFLAGS)
+else
+	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
+endif
 else # static
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
 	$(AR) -rs $@ $(EXTOBJS_HST)
