@@ -154,7 +154,7 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c libxsmm_trace.c)
-SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_dense_gemm_driver.c)
+SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_HST = $(BLDDIR)/intel64/libxsmm.o $(BLDDIR)/intel64/libxsmm_gemm.o
