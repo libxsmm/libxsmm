@@ -77,11 +77,6 @@
 /*# define LIBXSMM_OPENMP*/
 #endif
 
-/* enable generic variant of libxsmm_gemm_diff */
-#if !defined(LIBXSMM_GEMM_DIFF_SW) /*&& defined(__MIC__)*/
-# define LIBXSMM_GEMM_DIFF_SW
-#endif
-
 /* alternative hash algorithm (instead of CRC32) */
 #if !defined(LIBXSMM_HASH_BASIC) && !defined(LIBXSMM_REGSIZE)
 # if !defined(LIBXSMM_SSE_MAX) || (4 > (LIBXSMM_SSE_MAX))

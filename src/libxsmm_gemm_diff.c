@@ -45,8 +45,67 @@
 #include "libxsmm_intrinsics.h"
 
 
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diff_function internal_gemm_diff_function = libxsmm_gemm_diff;
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_gemm_diff_function libxsmm_gemm_diff_init(const char* archid, int has_sse)
+{
+#if !defined(LIBXSMM_GEMM_DIFF_SW)
+# if defined(__MIC__)
+  internal_gemm_diff_function = libxsmm_gemm_diff_imci;
+# elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
+  internal_gemm_diff_function = libxsmm_gemm_diff_avx2;
+# elif defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))
+  internal_gemm_diff_function = libxsmm_gemm_diff_avx;
+# elif defined(LIBXSMM_SSE) && (3 <= (LIBXSMM_SSE))
+  internal_gemm_diff_function = libxsmm_gemm_diff_sse;
+# else
+  if (0 != archid) {
+    if ('h' == archid[0] && 's' == archid[1] && 'w' == archid[2]) {
+      internal_gemm_diff_function = libxsmm_gemm_diff_avx2;
+    }
+    /** 0 != archid is implying at least AVX capabilities */
+    else /*if ('s' == archid[0] && 'n' == archid[1] && 'b' == archid[2])*/ {
+      internal_gemm_diff_function = libxsmm_gemm_diff_avx;
+    }
+  }
+  else if (0 != has_sse) {
+    internal_gemm_diff_function = libxsmm_gemm_diff_sse;
+  }
+# endif
+#endif
+  return internal_gemm_diff_function;
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_finalize(void)
+{
+}
+
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
+{
+  /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
+#if defined(LIBXSMM_GEMM_DIFF_SW)
+  return libxsmm_gemm_diff_sw(a, b);
+#elif defined(__MIC__)
+  return libxsmm_gemm_diff_imci(a, b);
+#elif defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
+  return libxsmm_gemm_diff_avx2(a, b);
+#elif defined(LIBXSMM_AVX) && (1 <= (LIBXSMM_AVX))
+  return libxsmm_gemm_diff_avx(a, b);
+#elif defined(LIBXSMM_SSE) && (3 <= (LIBXSMM_SSE))
+  return libxsmm_gemm_diff_sse(a, b);
+#else /* pointer based function call */
+  assert(0 != internal_gemm_diff_function);
+  return (*internal_gemm_diff_function)(a, b);
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* a, const libxsmm_gemm_descriptor* b)
 {
   const unsigned *const ia = (const unsigned int*)a, *const ib = (const unsigned int*)b;
   unsigned int result, i;
