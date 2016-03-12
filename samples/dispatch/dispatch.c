@@ -23,7 +23,7 @@
 int main(int argc, char* argv[])
 {
   const int size = LIBXSMM_DEFAULT(1 << 27, 1 < argc ? atoi(argv[1]) : 0);
-  const int nthreads = LIBXSMM_DEFAULT(1, 1 < argc ? atoi(argv[2]) : 0);
+  const int nthreads = LIBXSMM_DEFAULT(1, 2 < argc ? atoi(argv[2]) : 0);
   unsigned long long start;
   double dcall, ddisp;
   int i;
