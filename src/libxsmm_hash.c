@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_hash.h"
+#include "libxsmm_intrinsics_x86.h"
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -42,8 +43,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-/* must be the last included header */
-#include "libxsmm_intrinsics_x86.h"
 
 #if !defined(LIBXSMM_HASH_ALIGNMENT)
 # define LIBXSMM_HASH_ALIGNMENT 8
