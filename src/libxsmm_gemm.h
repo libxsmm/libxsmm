@@ -57,7 +57,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
   libxsmm_dgemm_function dgemm_function);
 
 /** Finalizes the gemm facility; NOT thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_finalize(void);
 
 #endif /*LIBXSMM_GEMM_H*/
 

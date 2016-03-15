@@ -260,20 +260,20 @@
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__)
-# define LIBXSMM_CPUID(FUNCTION, EAX, EBX, ECX, EDX) \
+# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
     __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION))
 #else
-# define LIBXSMM_CPUID(FUNCTION, EAX, EBX, ECX, EDX) { \
-    int libxsmm_cpuid_[4]; \
-    __cpuid(libxsmm_cpuid_, FUNCTION); \
-    EAX = libxsmm_cpuid_[0]; \
-    EBX = libxsmm_cpuid_[1]; \
-    ECX = libxsmm_cpuid_[2]; \
-    EDX = libxsmm_cpuid_[3]; \
+# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
+    int libxsmm_cpuid_x86_[4]; \
+    __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
+    EAX = libxsmm_cpuid_x86_[0]; \
+    EBX = libxsmm_cpuid_x86_[1]; \
+    ECX = libxsmm_cpuid_x86_[2]; \
+    EDX = libxsmm_cpuid_x86_[3]; \
   }
 #endif
 
-/** Execute the XGETBV, and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
+/** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
 #if defined(__GNUC__)
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
     ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \

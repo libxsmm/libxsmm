@@ -36,43 +36,7 @@
     <ClInclude Include="..\include\libxsmm_timer.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_dense_noarch.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_sse3_avx_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_sse3_microkernel.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_common.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_avx_microkernel.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_avx2_microkernel.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_avx512_microkernel.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_common.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_imci_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_dense_imci_microkernel.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_sparse_asparse.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_sparse_bsparse.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_sparse_csc_reader.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_typedefs.h">
@@ -87,10 +51,7 @@
     <ClInclude Include="..\src\libxsmm_trace.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_intrinsics.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_cpuid.h">
+    <ClInclude Include="..\src\libxsmm_intrinsics_x86.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_gemm_diff.h">
@@ -100,6 +61,45 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_gemm_ext.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_avx_microkernel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_imci_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_imci_microkernel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_noarch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_asparse.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_bsparse.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csc_reader.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_cpuid_x86.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -128,49 +128,7 @@
     <ClCompile Include="..\src\libxsmm_timer.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_dense_sse3_avx_avx2.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_sse3_microkernel.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_common.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_avx_microkernel.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_avx2_microkernel.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_avx512_microkernel.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_common.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_imci_avx512.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_imci_microkernel.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_dense_noarch.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_sparse_asparse.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_sparse_bsparse.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_sparse_csc_reader.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_sparse.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm.c">
@@ -185,9 +143,6 @@
     <ClCompile Include="..\src\libxsmm_trace.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_cpuid.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_gemm_diff.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -195,6 +150,51 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_gemm_extomp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_avx_microkernel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_common.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_imci_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_imci_microkernel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_noarch.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_asparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_bsparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csc_reader.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

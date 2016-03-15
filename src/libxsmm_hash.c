@@ -36,23 +36,21 @@
 #endif
 #include <stdint.h>
 #if !defined(NDEBUG)
+# include <assert.h>
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 /* must be the last included header */
-#include "libxsmm_intrinsics.h"
+#include "libxsmm_intrinsics_x86.h"
 
-#if !defined(LIBXSMM_HASH_SW)
-/*# define LIBXSMM_HASH_SW*/
-#endif
 #if !defined(LIBXSMM_HASH_ALIGNMENT)
 # define LIBXSMM_HASH_ALIGNMENT 8
 #endif
 
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_hash_function internal_hash_function = libxsmm_crc32_sw;
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)
 /* table-based implementation taken from http://dpdk.org/. */
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_table[][256] = {
   { /*table0*/
@@ -328,8 +326,6 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
     0xE54C35A1, 0xAC704886, 0x7734CFEF, 0x3E08B2C8, 0xC451B7CC, 0x8D6DCAEB, 0x56294D82, 0x1F1530A5
   }
 };
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)*/
-
 
 #define LIBXSMM_HASH_U64(FN, SEED, N, BEGIN, END) { \
   for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { \
@@ -412,8 +408,6 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 #endif
 
 
-#if !(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)
-
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int seed, unsigned int n, unsigned char value)
 {
   LIBXSMM_UNUSED(n);
@@ -450,37 +444,56 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
   return seed;
 }
 
-#endif /*!(defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))) || defined(LIBXSMM_HASH_SW)*/
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_init(int target_arch)
+{
+#if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  LIBXSMM_UNUSED(target_arch);
+#else
+  if (LIBXSMM_X86_SSE4_2 <= target_arch)
+#endif
+  {
+#if !defined(NDEBUG) && (!defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > LIBXSMM_MAX_STATIC_TARGET_ARCH))
+    fprintf(stderr, "LIBXSMM: CRC32 instructions are not accessible due to the compiler used!\n");
+#endif
+    internal_hash_function = libxsmm_crc32_sse42;
+  }
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_finalize(void)
+{
+}
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE)) && !defined(LIBXSMM_HASH_SW)
+#if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
   return libxsmm_crc32_sse42(data, size, seed);
-#else
-  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
+#else /* pointer based function call */
+  assert(0 != internal_hash_function);
+  return (*internal_hash_function)(data, size, seed);
 #endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
+{
+  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 }
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_SSE_MAX) && (4 <= (LIBXSMM_SSE_MAX))
+#if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter CRC32 instruction code path!\n");
-    once = 1;
-  }
-# endif
 # if !defined(__MIC__)
   LIBXSMM_MESSAGE("================================================================================");
-  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using the CRC32 instruction!");
+  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using CRC32 instructions!");
   LIBXSMM_MESSAGE("================================================================================");
 # endif
-  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
+  return libxsmm_crc32_sw(data, size, seed);
 #endif
 }
 
@@ -495,3 +508,4 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash_npot(const void*
 {
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, data, size, size, npot);
 }
+

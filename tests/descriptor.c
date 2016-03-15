@@ -1,5 +1,5 @@
 #include <libxsmm_gemm_diff.h>
-#include <libxsmm_cpuid.h>
+#include <libxsmm_cpuid_x86.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -11,8 +11,8 @@
  */
 int main()
 {
-  int is_static, has_crc32;
-  const char *const cpuid = libxsmm_cpuid(&is_static, &has_crc32);
+  const char* archid;
+  const int cpuid = libxsmm_cpuid_x86(&archid);
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
   union { libxsmm_gemm_descriptor descriptor; char simd[LIBXSMM_ALIGNMENT]; } a, b;
   unsigned int i;
@@ -54,7 +54,7 @@ int main()
     fprintf(stderr, "using generic code path\n");
     return 4;
   }
-  if (0 != has_crc32/*sse4.2*/ || 0 != cpuid) {
+  if (LIBXSMM_X86_SSE3 <= cpuid) {
     if (0 == libxsmm_gemm_diff_sse(&a.descriptor, &b.descriptor)) {
       fprintf(stderr, "using SSE code path\n");
       return 5;
@@ -72,7 +72,7 @@ int main()
       return 8;
     }
   }
-  if (0 != cpuid) {
+  if (LIBXSMM_X86_AVX <= cpuid) {
     if (0 == libxsmm_gemm_diff_avx(&a.descriptor, &b.descriptor)) {
       fprintf(stderr, "using AVX code path\n");
       return 9;
@@ -89,23 +89,23 @@ int main()
       fprintf(stderr, "using AVX code path\n");
       return 12;
     }
-    if (/*snb*/'b' != cpuid[2]) {
-      if (0 == libxsmm_gemm_diff_avx2(&a.descriptor, &b.descriptor)) {
+  }
+  if (LIBXSMM_X86_AVX2 <= cpuid) {
+    if (0 == libxsmm_gemm_diff_avx2(&a.descriptor, &b.descriptor)) {
       fprintf(stderr, "using AVX2 code path\n");
-        return 13;
-      }
-      else if (0 == libxsmm_gemm_diff_avx2(&b.descriptor, &a.descriptor)) {
+      return 13;
+    }
+    else if (0 == libxsmm_gemm_diff_avx2(&b.descriptor, &a.descriptor)) {
       fprintf(stderr, "using AVX2 code path\n");
-        return 14;
-      }
-      else if (0 != libxsmm_gemm_diff_avx2(&a.descriptor, &a.descriptor)) {
+      return 14;
+    }
+    else if (0 != libxsmm_gemm_diff_avx2(&a.descriptor, &a.descriptor)) {
       fprintf(stderr, "using AVX2 code path\n");
-        return 15;
-      }
-      else if (0 != libxsmm_gemm_diff_avx2(&b.descriptor, &b.descriptor)) {
+      return 15;
+    }
+    else if (0 != libxsmm_gemm_diff_avx2(&b.descriptor, &b.descriptor)) {
       fprintf(stderr, "using AVX2 code path\n");
-        return 16;
-      }
+      return 16;
     }
   }
   if (1 != libxsmm_gemm_diffn(&a.descriptor, &b.descriptor, 1, sizeof(libxsmm_gemm_descriptor))) {

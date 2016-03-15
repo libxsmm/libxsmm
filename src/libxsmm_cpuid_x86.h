@@ -28,18 +28,23 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CPUID_H
-#define LIBXSMM_CPUID_H
+#ifndef LIBXSMM_CPUID_X86_H
+#define LIBXSMM_CPUID_X86_H
 
 #include <libxsmm.h>
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_cpuid(int* is_static, int* has_crc32);
+/**
+ * Returns the target architecture and instruction set extension (code path),
+ * and thereby (via argument list) optionally returns an internal name of the
+ * target architecture.
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid);
 
 
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CPUID_NOINLINE)
-# include "libxsmm_cpuid.c"
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CPUID_X86_NOINLINE)
+# include "libxsmm_cpuid_x86.c"
 #endif
 
-#endif /*LIBXSMM_CPUID_H*/
+#endif /*LIBXSMM_CPUID_X86_H*/
 

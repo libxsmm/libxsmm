@@ -89,6 +89,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
 /** Uninitialize the library and free internal memory (optional). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
 
+/**
+ * Returns the architecture and instruction set extension as determined by the CPUID flags.
+ * If 0 != LIBXSMM_JIT and LIBXSMM_X86_AVX <= result, then this instruction set extension
+ * is targeted by the JIT code generator.
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch();
+
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 

@@ -59,13 +59,6 @@
 #define LIBXSMM_X86_MASK_REG_UNDEF         255
 #define LIBXSMM_X86_IMCI_AVX512_MASK         1  /* this specifies k1 */
 
-/* defining instruction sets */
-#define LIBXSMM_X86_SSE3                  1000
-#define LIBXSMM_X86_AVX                   1001
-#define LIBXSMM_X86_AVX2                  1002
-#define LIBXSMM_X86_IMCI                  1003
-#define LIBXSMM_X86_AVX512                1004
-
 /* special instruction */
 #define LIBXSMM_X86_INSTR_UNDEF           9999
 

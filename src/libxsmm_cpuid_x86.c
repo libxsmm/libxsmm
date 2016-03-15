@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_cpuid.h"
+#include "libxsmm_cpuid_x86.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -41,76 +41,60 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-const char* libxsmm_cpuid(int* is_static, int* has_crc32)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
 {
+  int target_arch = LIBXSMM_X86_GENERIC;
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-  const char* name = 0;
+  if (archid) *archid = "x86";
 
-  assert(is_static != has_crc32 || 0 == is_static);
-  if (is_static) *is_static = 0;
-
-  LIBXSMM_CPUID(0, eax, ebx, ecx, edx);
+  LIBXSMM_CPUID_X86(0, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
-    LIBXSMM_CPUID(1, eax, ebx, ecx, edx);
+    LIBXSMM_CPUID_X86(1, eax, ebx, ecx, edx);
 
     /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
     if (0x0C000000 == (0x0C000000 & ecx)) {
       /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
-      if (has_crc32) {
-        *has_crc32 = (0x00100000 == (0x00100000 & ecx) ? 1 : 0);
-#if defined(LIBXSMM_SSE) && (4 <= (LIBXSMM_SSE))
-        assert(0 != *has_crc32); /* failed to detect CRC32 instruction */
-#endif
+      if (0x00100000 == (0x00100000 & ecx)) {
+        target_arch = LIBXSMM_MAX(LIBXSMM_X86_SSE4_2, target_arch);
       }
       LIBXSMM_XGETBV(0, eax, edx);
 
       if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
         if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
-          LIBXSMM_CPUID(7, eax, ebx, ecx, edx);
+          LIBXSMM_CPUID_X86(7, eax, ebx, ecx, edx);
 
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
              AVX512ER(0x08000000) */
           if (0x1C010000 == (0x1C010000 & ebx)) {
-            name = "knl";
+            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX512, target_arch);
+            if (archid) *archid = "knl";
           }
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
              AVX512BW(0x40000000), AVX512VL(0x80000000) */
           else if (0xD0030000 == (0xD0030000 & ebx)) {
-            name = "skx";
+            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX512, target_arch);
+            if (archid) *archid = "skx";
           }
-
-#if defined(LIBXSMM_AVX) && (3 == (LIBXSMM_AVX))
-          if (is_static) *is_static = 1;
-#endif
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
-#if defined(LIBXSMM_AVX) && (3 <= (LIBXSMM_AVX))
-            assert(!"Failed to detect Intel AVX-512 extensions!");
-#endif
-#if defined(LIBXSMM_AVX) && (2 == (LIBXSMM_AVX))
-            if (is_static) *is_static = 1;
-#endif
-            name = "hsw";
+            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX2, target_arch);
+            if (archid) *archid = "hsw";
           }
           else {
-#if defined(LIBXSMM_AVX) && (2 <= (LIBXSMM_AVX))
-            assert(!"Failed to detect Intel AVX2 extensions!");
-#endif
-#if defined(LIBXSMM_AVX) && (1 == (LIBXSMM_AVX))
-            if (is_static) *is_static = 1;
-#endif
-            name = "snb";
+            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX, target_arch);
+            if (archid) *archid = "snb";
           }
         }
       }
     }
   }
-  else if (has_crc32) {
-    *has_crc32 = 0;
-  }
 
-  return name;
+#if defined(LIBXSMM_STATIC_TARGET_ARCH)
+  /* check if procedure obviously failed to detect the highest available instruction set extension */
+  assert(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
+#endif
+
+  return target_arch;
 }
 

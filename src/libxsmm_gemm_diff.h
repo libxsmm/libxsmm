@@ -58,7 +58,7 @@ typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(const l
 
 
 /** Initialize GEMM/DIFF module; not thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(const char* archid, int has_sse);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arch);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_finalize(void);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */

@@ -33,15 +33,27 @@
 
 #include <libxsmm.h>
 
+#if !defined(LIBXSMM_HASH_SW)
+/*# define LIBXSMM_HASH_SW*/
+#endif
+
 
 /** Function type representing the CRC32 functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, unsigned int, unsigned int);
 
-/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
+/** Initialize hash function module; not thread-safe. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_init(int target_arch);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_finalize(void);
+
+/** Dispatched implementation which may (or may not) use a SIMD extension. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(
   const void* data, unsigned int size, unsigned int seed);
 
-/** Similar to libxsmm_crc32 (uses CRC32 instructions available since SSE4.2). */
+/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sw(
+  const void* data, unsigned int size, unsigned int seed);
+
+/** Similar to libxsmm_crc32_sw (uses CRC32 instructions available since SSE4.2). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int seed);
 
