@@ -96,11 +96,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_finalize(void)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_finalize(void)
 {
-  return EXIT_SUCCESS;
 }
-
 
 #endif /*!defined(__STATIC)*/
 
