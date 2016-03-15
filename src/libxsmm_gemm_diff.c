@@ -65,6 +65,7 @@ unsigned int internal_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arch)
 {
 #if defined(__MIC__)
+  LIBXSMM_UNUSED(target_arch);
   internal_gemm_diff_function = libxsmm_gemm_diff_imci;
   /* TODO: consider libxsmm_gemm_diffn_function for IMCI */
 #else
