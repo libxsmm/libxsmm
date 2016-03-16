@@ -56,7 +56,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
     if (0x0C000000 == (0x0C000000 & ecx)) {
       /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
       if (0x00100000 == (0x00100000 & ecx)) {
-        target_arch = LIBXSMM_MAX(LIBXSMM_X86_SSE4_2, target_arch);
+        target_arch = LIBXSMM_X86_SSE4_2;
       }
       LIBXSMM_XGETBV(0, eax, edx);
 
@@ -67,23 +67,23 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
              AVX512ER(0x08000000) */
           if (0x1C010000 == (0x1C010000 & ebx)) {
-            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX512, target_arch);
+            target_arch = LIBXSMM_X86_AVX512;
             if (archid) *archid = "knl";
           }
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
              AVX512BW(0x40000000), AVX512VL(0x80000000) */
           else if (0xD0030000 == (0xD0030000 & ebx)) {
-            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX512, target_arch);
+            target_arch = LIBXSMM_X86_AVX512;
             if (archid) *archid = "skx";
           }
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
-            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX2, target_arch);
+            target_arch = LIBXSMM_X86_AVX2;
             if (archid) *archid = "hsw";
           }
           else {
-            target_arch = LIBXSMM_MAX(LIBXSMM_X86_AVX, target_arch);
+            target_arch = LIBXSMM_X86_AVX;
             if (archid) *archid = "snb";
           }
         }
