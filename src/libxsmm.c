@@ -573,11 +573,12 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             }
           }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM_JIT=%s NJIT=%u NSTATIC=%u\n",
-            0 != internal_target_archid ? internal_target_archid : "0", njit, nstatic);
-
+          fprintf(stderr, "LIBXSMM_JIT=%s NJIT=%u NSTATIC=%u", 0 != internal_target_archid ? internal_target_archid : "0", njit, nstatic);
           if (0 != internal_ncollisions) {
             fprintf(stderr, ": %u hash key collisions handled!\n", internal_ncollisions);
+          }
+          else {
+            fprintf(stderr, "\n");
           }
 #endif
         }
