@@ -491,23 +491,26 @@ compile_hst:
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
-.PHONY: compile_mic_mod
+.PHONY: module_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-compile_mic_mod: $(BLDDIR)/mic/libxsmm-mod.o
+module_mic: $(BLDDIR)/mic/libxsmm-mod.o
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/mic/libxsmm-mod.o $(FMFLAGS) $(INCDIR)/mic
 endif
 endif
 endif
 
-.PHONY: compile_hst_mod
+.PHONY: module_hst
 ifneq (,$(strip $(FC)))
-compile_hst_mod: $(BLDDIR)/intel64/libxsmm-mod.o
+module_hst: $(BLDDIR)/intel64/libxsmm-mod.o
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/intel64/libxsmm-mod.o $(FMFLAGS) $(INCDIR)
 endif
+
+.PHONY: module
+module: module_hst module_mic
 
 .PHONY: build_generator_lib
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
