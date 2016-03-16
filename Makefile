@@ -294,9 +294,9 @@ ifneq (0,$(BLAS_WARNING))
 	$(info no runtime resolution/search for weak symbols implemented for this OS.)
 endif
 ifneq (0,$(BLAS))
-ifneq (Windows_NT,$(UNAME))
+ifeq (0,$(BLAS_WARNING))
 	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!)
-	$(info Linking it now may prevent users to make an own decision.)
+	$(info Linking a certain BLAS library may prevent users to decide.)
 endif
 ifeq (1,$(BLAS))
 	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
