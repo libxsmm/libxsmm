@@ -32,8 +32,8 @@
 #define LIBXSMM_TYPEDEFS_H
 
 /**
- * Enumerates the available target architectures and
- * instruction set extensions.
+ * Enumerates the available target architectures and instruction
+ * set extensions as returned by libxsmm_get_target_arch().
  */
 #define LIBXSMM_TARGET_ARCH_UNKNOWN 0
 #define LIBXSMM_TARGET_ARCH_GENERIC 1

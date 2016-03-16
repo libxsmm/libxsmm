@@ -108,6 +108,8 @@
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD)
 
+        ! Enumerates the available target architectures and instruction
+        ! set extensions as returned by libxsmm_get_target_arch().
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
