@@ -108,6 +108,18 @@
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD)
 
+        INTEGER(C_INT), PARAMETER ::                                    &
+     &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
+     &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
+     &    LIBXSMM_X86_GENERIC      = 1000,                              &
+     &    LIBXSMM_X86_IMCI         = 1001,                              &
+     &    LIBXSMM_X86_SSE3         = 1002,                              &
+     &    LIBXSMM_X86_SSE4_1       = 1003,                              &
+     &    LIBXSMM_X86_SSE4_2       = 1004,                              &
+     &    LIBXSMM_X86_AVX          = 1005,                              &
+     &    LIBXSMM_X86_AVX2         = 1006,                              &
+     &    LIBXSMM_X86_AVX512       = 1007
+
         ! Type of a function specialized for a given parameter set.
         ABSTRACT INTERFACE
           ! Specialized function with fused alpha and beta arguments.
@@ -125,16 +137,16 @@
           END SUBROUTINE
         END INTERFACE
 
-        ! Generic function type constructing a procedure pointer
-        ! associated with a backend function (single-precision).
+        ! Generic function type which is representing either one of the
+        ! two wrapped backend procedure pointers (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
           PRIVATE
             PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
             PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS, POINTER :: fn1
         END TYPE
 
-        ! Generic function type constructing a procedure pointer
-        ! associated with a backend function (double-precision).
+        ! Generic function type which is representing either one of the
+        ! two wrapped backend procedure pointers (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
           PRIVATE
             PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
@@ -219,16 +231,24 @@
           MODULE PROCEDURE libxsmm_blas_sgemm, libxsmm_blas_dgemm
         END INTERFACE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize, libxsmm_get_target_arch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
           END SUBROUTINE
 
+          ! Uninitialize the library and free internal memory (optional).
           SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
+
+          ! Returns the architecture and instruction set extension
+          ! as determined by the CPUID flags. 0 != LIBXSMM_JIT and
+          ! LIBXSMM_X86_AVX <= result, then this instruction set
+          ! extension is targeted by the JIT code generator.
+          INTEGER(C_INT) PURE FUNCTION libxsmm_get_target_arch() BIND(C)
+            IMPORT :: C_INT
+          END FUNCTION
 
           ! Non-pure function returning the current clock tick
           ! using a platform-specific resolution.
