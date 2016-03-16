@@ -35,6 +35,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdint.h>
+#include <string.h>
 #if !defined(NDEBUG)
 # include <assert.h>
 # include <stdio.h>
@@ -114,6 +115,9 @@ unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const l
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
+#if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW))
+  return 0 != memcmp(reference, desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
+#else
   const unsigned *const ia = (const unsigned int*)reference, *const ib = (const unsigned int*)desc;
   unsigned int result, i;
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
@@ -123,6 +127,7 @@ unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, cons
     result |= (ia[i] ^ ib[i]);
   }
   return result;
+#endif
 }
 
 
