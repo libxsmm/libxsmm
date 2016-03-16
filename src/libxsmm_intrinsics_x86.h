@@ -59,7 +59,7 @@
 #   include <immintrin.h>
 # elif defined(__clang__)
 #   if (defined(__APPLE__) && defined(__MACH__) && (LIBXSMM_VERSION3(6, 2, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) \
-    || (!(defined(__APPLE__) && defined(__MACH__)) && LIBXSMM_VERSION3(3, 7, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+  || (!(defined(__APPLE__) && defined(__MACH__)) && LIBXSMM_VERSION3(3, 7, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     if !defined(__AVX2__)
