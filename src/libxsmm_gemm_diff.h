@@ -79,6 +79,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn(const libx
   const libxsmm_gemm_descriptor* desc, unsigned int ndesc,
   /** Number of bytes until the next descriptor is reached (stride). */
   int nbytes);
+
 /** Generic implementation of libxsmm_gemm_diffn which is only relying on high-level constructs. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* desc, unsigned int ndesc, int nbytes);

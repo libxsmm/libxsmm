@@ -16,6 +16,9 @@ endif
 # Python interpreter
 PYTHON ?= python
 
+# THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
+THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
+
 # Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise
 ROW_MAJOR ?= 0
 
@@ -27,6 +30,9 @@ ROW_MAJOR ?= 0
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0
 
+# Generate prefetches
+PREFETCH ?= 0
+
 # Preferred precision when registering statically generated code versions
 # 0: SP and DP code versions to be registered
 # 1: SP only
@@ -35,12 +41,6 @@ PRECISION ?= 0
 
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
-
-# Generate prefetches
-PREFETCH ?= 0
-
-# THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
-THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
 
 # Generate code using aligned Load/Store instructions
 # !=0: enable if lda/ldc (m) is a multiple of ALIGNMENT
