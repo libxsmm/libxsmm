@@ -54,6 +54,8 @@ unsigned int internal_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference
   const libxsmm_gemm_descriptor* desc, unsigned int ndesc, int nbytes)
 {
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+  /* even avoid control flow in the production code (branching into a fallback) but at least manifest the precondition */
+  assert(0 == ndesc % 2 && LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes);
   /* TODO: intrinsic based implementation */
   return libxsmm_gemm_diffn_sw(reference, desc, ndesc, nbytes);
 #else
@@ -95,7 +97,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
-#if defined(LIBXSMM_GEMM_DIFF_SW)
+#if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diff_sw(reference, desc);
 #elif defined(__MIC__)
   return libxsmm_gemm_diff_imci(reference, desc);
