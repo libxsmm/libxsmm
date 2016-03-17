@@ -283,7 +283,11 @@ ifeq (1,$(GCC))
 endif
 
 # Select code path (if not selected otherwise)
-CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi))
+CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
+		grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
+	elif [ "Darwin" = "$(UNAME)" ]; then \
+		sysctl -a machdep.cpu.features | cut -d: -f2- | tr [:upper:] [:lower:]; \
+	fi))
 ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
