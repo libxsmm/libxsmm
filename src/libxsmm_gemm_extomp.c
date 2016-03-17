@@ -68,18 +68,24 @@
 #endif
 
 #define LIBXSMM_GEMM_EXTOMP_XGEMM_TASK(REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const libxsmm_blasint mm = LIBXSMM_MIN(tile_m, (M) - (POS_H)); \
-  const libxsmm_blasint nn = LIBXSMM_MIN(tile_n, (N) - (POS_I)); \
-  const libxsmm_blasint ic = (POS_I) * (LDC) + (POS_H); \
-  libxsmm_blasint j = 0; \
-  if ((tile_m == mm) && (tile_n == nn)) { \
-    for (; j < max_j; j += tile_k) { \
-      LIBXSMM_MMCALL(xmm.LIBXSMM_TPREFIX(REAL,mm), (A) + j * (LDA) + (POS_H), (B) + (POS_I) * (LDB) + j, (C) + ic, M, N, K, LDA, LDB, LDC); \
+  const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
+  libxsmm_blasint j = 0, j_next = TILE_K; \
+  if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
+    for (; j < max_j; j = j_next) { \
+      LIBXSMM_MMCALL_PRF(xmm.LIBXSMM_TPREFIX(REAL,mm), \
+        (A) + (POS_H) + (LDA) * j, \
+        (B) + (POS_I) * (LDB) + j, \
+        (C) + ic, \
+        (A) + (POS_H) + (LDA) * j_next, \
+        (B) + (POS_I) * (LDB) + j_next, \
+        (C) + ic); \
+      j_next = j + (TILE_K); \
     } \
   } \
-  for (; j < (K); j += tile_k) { /* remainder */ \
-    LIBXSMM_XGEMM(REAL, libxsmm_blasint, FLAGS, mm, nn, LIBXSMM_MIN(tile_k, (K) - j), \
+  for (; j < (K); j = j_next) { /* remainder */ \
+    LIBXSMM_XGEMM(REAL, libxsmm_blasint, FLAGS, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
       ALPHA, (A) + j * (LDA) + (POS_H), LDA, (B) + (POS_I) * (LDB) + j, LDB, BETA, (C) + ic, LDC); \
+    j_next = j + (TILE_K); \
   } \
 }
 
