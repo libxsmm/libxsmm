@@ -1135,7 +1135,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		cp -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
 	@cp -v $(BINDIR)/libxsmm_gemm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR)2> /dev/null || true
+	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 endif
@@ -1176,5 +1176,14 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
 	@cp -v $(basename $(shell ls -1 ${TSTDIR}/*.c 2> /dev/null | tr "\n" " ")) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
+endif
+
+.PHONY: install-artifacts
+install-artifacts: install-dev
+ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
+	@echo
+	@echo "LIBXSMM installing artifacts..."
+	@mkdir -p $(INSTALL_ROOT)/$(PDOCDIR)/artifacts
+	@cp -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
 endif
 
