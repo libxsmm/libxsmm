@@ -836,7 +836,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 	$(filter-out environment% default automatic,$(origin $V)), \
-	$(if $(filter-out .DEFAULT_GOAL BLAS_WARNING MAKEFILE_LIST PREFIX libdir,$V), \
+	$(if $(filter-out .DEFAULT_GOAL BLAS_WARNING MAKEFILE_LIST MAKEOVERRIDES PREFIX libdir,$V), \
 		$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.hooks/state.sh $(abspath .))
 
