@@ -54,10 +54,23 @@ unsigned int internal_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-  /* even avoid control flow in the production code (branching into a fallback) but at least manifest the precondition */
-  assert(0 == (ndescs % 2) && LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes);
-  /* TODO: intrinsic based implementation */
-  return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
+  /* even avoid control flow in the production code (branching into a fallback) but at least manifest the preconditions */
+  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (1 << LIBXSMM_NBITS(ndescs)));
+  assert(LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes); /* packed array of descriptors */
+# if defined(NDEBUG)
+  LIBXSMM_UNUSED(nbytes);
+# endif
+  { /* TODO: intrinsic based implementation */
+    const unsigned int end = hint + ndescs;
+    unsigned int i, j = LIBXSMM_MOD2(hint, ndescs);
+    const libxsmm_gemm_descriptor* d = descs + j;
+    for (i = hint; i < end; ++i) {
+      if (0 == libxsmm_gemm_diff(reference, d)) return j;
+      j = LIBXSMM_MOD2(i, ndescs); /* wrap around index */
+      d = descs + j;
+    }
+  }
+  return ndescs;
 #else
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
 #endif
@@ -275,16 +288,34 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-  if (0 != ndescs) {
-    const char* d = ((const char*)descs) + (hint % ndescs) * nbytes;
-    unsigned int i = 0;
-    for (; i != ndescs; ++i) {
-      if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)d)) {
-        return (i + hint) % ndescs;
-      }
-      d += nbytes;
+  const unsigned int end = hint + ndescs;
+#if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
+  unsigned int i, j = 0 != ndescs ? (hint % ndescs) : 0;
+  const char *const desc = (const char*)descs;
+  const char* d = desc + j * nbytes;
+  for (i = hint; i < end; ++i) {
+    if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)d)) {
+      return j;
+    }
+    j = i % ndescs; /* wrap around the index */
+    d = desc + j * nbytes; /* negative stride runs backwards */
+  }
+#else /* manifesting the preconditions of a less general implementation */
+  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (1 << LIBXSMM_NBITS(ndescs)));
+  assert(LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes); /* packed array of descriptors */
+# if defined(NDEBUG)
+  LIBXSMM_UNUSED(nbytes);
+# endif
+  { /* more optimized implementation */
+    unsigned int i, j = LIBXSMM_MOD2(hint, ndescs);
+    const libxsmm_gemm_descriptor* d = descs + j;
+    for (i = hint; i < end; ++i) {
+      if (0 == libxsmm_gemm_diff(reference, d)) return j;
+      j = LIBXSMM_MOD2(i, ndescs); /* wrap around index */
+      d = descs + j;
     }
   }
+#endif
   return ndescs;
 }
 
