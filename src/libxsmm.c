@@ -94,7 +94,7 @@
 #endif
 
 #if !defined(LIBXSMM_CACHESIZE)
-# define LIBXSMM_CACHESIZE 4
+# define LIBXSMM_CACHESIZE 0
 #endif
 
 #if defined(LIBXSMM_HASH_BASIC)
