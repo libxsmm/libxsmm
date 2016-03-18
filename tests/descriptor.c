@@ -108,19 +108,19 @@ int main()
       return 16;
     }
   }
-  if (1 != libxsmm_gemm_diffn(&a.descriptor, &b.descriptor, 1, sizeof(libxsmm_gemm_descriptor))) {
+  if (1 != libxsmm_gemm_diffn(&a.descriptor, &b.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
     fprintf(stderr, "using dispatched code path\n");
     return 17;
   }
-  else if (1 != libxsmm_gemm_diffn(&b.descriptor, &a.descriptor, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (1 != libxsmm_gemm_diffn(&b.descriptor, &a.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
     fprintf(stderr, "using dispatched code path\n");
     return 18;
   }
-  else if (0 != libxsmm_gemm_diffn(&a.descriptor, &a.descriptor, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (0 != libxsmm_gemm_diffn(&a.descriptor, &a.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
     fprintf(stderr, "using dispatched code path\n");
     return 19;
   }
-  else if (0 != libxsmm_gemm_diffn(&b.descriptor, &b.descriptor, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (0 != libxsmm_gemm_diffn(&b.descriptor, &b.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
     fprintf(stderr, "using dispatched code path\n");
     return 20;
   }

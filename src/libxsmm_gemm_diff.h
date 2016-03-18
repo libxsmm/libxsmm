@@ -54,7 +54,7 @@
 /** Function type representing the gemm_diff functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);
 /** Function type representing the gemm_diffn functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*, unsigned int, int);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*, unsigned int, unsigned int, int);
 
 
 /** Initialize GEMM/DIFF module; not thread-safe. */
@@ -76,13 +76,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_imci(const 
 /** Compare a number of descriptors (array) against a reference descriptor. Returns the index of the first match (or ndesc in case of no match). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
   /** Array of descriptors with ndesc elements. */
-  const libxsmm_gemm_descriptor* desc, unsigned int ndesc,
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs,
   /** Number of bytes until the next descriptor is reached (stride). */
   int nbytes);
 
 /** Generic implementation of libxsmm_gemm_diffn which is only relying on high-level constructs. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* desc, unsigned int ndesc, int nbytes);
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
 # include "libxsmm_gemm_diff.c"
