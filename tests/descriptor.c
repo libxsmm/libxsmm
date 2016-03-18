@@ -108,21 +108,37 @@ int main()
       return 16;
     }
   }
-  if (1 != libxsmm_gemm_diffn(&a.descriptor, &b.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
+  if (0 == libxsmm_gemm_diff(&a.descriptor, &b.descriptor)) {
     fprintf(stderr, "using dispatched code path\n");
     return 17;
   }
-  else if (1 != libxsmm_gemm_diffn(&b.descriptor, &a.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (0 == libxsmm_gemm_diff(&b.descriptor, &a.descriptor)) {
     fprintf(stderr, "using dispatched code path\n");
     return 18;
   }
-  else if (0 != libxsmm_gemm_diffn(&a.descriptor, &a.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (0 != libxsmm_gemm_diff(&a.descriptor, &a.descriptor)) {
     fprintf(stderr, "using dispatched code path\n");
     return 19;
   }
-  else if (0 != libxsmm_gemm_diffn(&b.descriptor, &b.descriptor, 0, 1, sizeof(libxsmm_gemm_descriptor))) {
+  else if (0 != libxsmm_gemm_diff(&b.descriptor, &b.descriptor)) {
     fprintf(stderr, "using dispatched code path\n");
     return 20;
+  }
+
+  { /* testing diff-search */
+    libxsmm_gemm_descriptor descs[] = { a.descriptor, a.descriptor, b.descriptor, a.descriptor };
+    if (0 != libxsmm_gemm_diffn(&a.descriptor, descs, 0/*hint*/,
+      sizeof(descs) / sizeof(*descs), LIBXSMM_GEMM_DESCRIPTOR_SIZE))
+    {
+      fprintf(stderr, "using dispatched diff-search\n");
+      return 21;
+    }
+    else if (2 != libxsmm_gemm_diffn(&b.descriptor, descs, 0/*hint*/,
+      sizeof(descs) / sizeof(*descs), LIBXSMM_GEMM_DESCRIPTOR_SIZE))
+    {
+      fprintf(stderr, "using dispatched diff-search\n");
+      return 22;
+    }
   }
 
   return EXIT_SUCCESS;

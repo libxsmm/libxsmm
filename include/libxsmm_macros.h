@@ -153,8 +153,8 @@
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
-#define LIBXSMM_MUL2(N, NPOT) ((N) << (LIBXSMM_LOG2(NPOT) - 1))
-#define LIBXSMM_DIV2(N, NPOT) ((N) >> (LIBXSMM_LOG2(NPOT) - 1))
+#define LIBXSMM_MUL2(N, NPOT) ((N) << LIBXSMM_LOG2(NPOT))
+#define LIBXSMM_DIV2(N, NPOT) ((N) >> LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_MUL2(LIBXSMM_DIV2((N) + (NPOT) - 1, NPOT), NPOT)
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 
