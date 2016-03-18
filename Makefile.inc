@@ -283,7 +283,7 @@ ifeq (1,$(GCC))
 endif
 
 # Select code path (if not selected otherwise)
-CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfox ]; then \
+CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
 		grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
 	elif [ "Darwin" = "$(UNAME)" ]; then \
 		sysctl -a machdep.cpu.features \
@@ -294,14 +294,22 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfox ]; then \
 ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
+		SSE ?= 0
 	else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
 		AVX ?= 2
-	else ifeq (1,$(words $(filter avx%,$(CPUFLAGS))))
+		SSE ?= 0
+	else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
 		AVX ?= 1
+		SSE ?= 0
+	else #ifeq (,$(AVX))
+		AVX = 0
 	endif
-else ifneq (0,$(SSE))
+endif
+ifneq (0,$(SSE))
 	ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
 		SSE ?= 3
+	else #ifeq (,$(SSE))
+		SSE ?= 0
 	endif
 else ifneq (0,$(MIC))
 	MPSS = 1
