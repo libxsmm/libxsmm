@@ -93,6 +93,10 @@
 # define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
 #endif
 
+#if !defined(LIBXSMM_CACHESIZE)
+# define LIBXSMM_CACHESIZE 0
+#endif
+
 #if defined(LIBXSMM_HASH_BASIC)
 # define LIBXSMM_HASH_FUNCTION libxsmm_hash_npot
 # define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, HASH_FUNCTION, DESCRIPTOR) \
@@ -177,106 +181,134 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_WRITE(ENTRY, SRC) (ENTRY)->code.pmm = (SRC)
 #endif
 
+#if defined(LIBXSMM_CACHESIZE) && (0 < LIBXSMM_CACHESIZE)
+# define INTERNAL_FIND_CODE_CACHE_DECL \
+  static LIBXSMM_TLS libxsmm_gemm_descriptor cache_desc[LIBXSMM_CACHESIZE]; \
+  static LIBXSMM_TLS internal_code cache_code[LIBXSMM_CACHESIZE]; \
+  static LIBXSMM_TLS unsigned int cache_hit = LIBXSMM_CACHESIZE
+# define INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, RESULT) \
+  /* search small cache starting with the last hit on record */ \
+  i = libxsmm_gemm_diffn(DESCRIPTOR, cache_desc, cache_hit, LIBXSMM_CACHESIZE, LIBXSMM_GEMM_DESCRIPTOR_SIZE); \
+  if (LIBXSMM_CACHESIZE > i) { /* cache hit */ \
+    RESULT = cache_code[i]; \
+    cache_hit = i; \
+  } \
+  else
+# define INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, RESULT) \
+  i = (cache_hit + LIBXSMM_CACHESIZE - 1) % LIBXSMM_CACHESIZE; \
+  cache_code[i] = internal_find_code_result; \
+  cache_desc[i] = *(DESCRIPTOR); \
+  cache_hit = i
+#else
+# define INTERNAL_FIND_CODE_CACHE_DECL
+# define INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, RESULT)
+# define INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, RESULT)
+#endif
+
 #define INTERNAL_FIND_CODE(DESCRIPTOR, ENTRY, HASH_FUNCTION, DIFF_FUNCTION) \
   internal_code internal_find_code_result; \
 { \
+  INTERNAL_FIND_CODE_CACHE_DECL; \
   unsigned int hash, diff = 0, diff0 = 0, i0; \
   INTERNAL_FIND_CODE_INIT(ENTRY); \
-  /* check if the requested xGEMM is already JITted */ \
-  LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
-  LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, HASH_FUNCTION, DESCRIPTOR); \
-  (ENTRY) += i; /* actual entry */ \
-  do { \
-    INTERNAL_FIND_CODE_READ(ENTRY, internal_find_code_result.pmm); /* read registered code */ \
-    /* entire block is conditional wrt LIBXSMM_JIT; static code currently does not have collisions */ \
-    if (0 != internal_find_code_result.pmm) { \
-      if (0 == diff0) { \
-        if (0 == (LIBXSMM_HASH_COLLISION & internal_find_code_result.imm)) { /* check for no collision */ \
-          /* calculate bitwise difference (deep check) */ \
-          LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
-          diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor)); \
-          if (0 != diff) { /* new collision discovered (but no code version yet) */ \
-            /* allow to fix-up current entry inside of the guarded/locked region */ \
-            internal_find_code_result.pmm = 0; \
+  INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, internal_find_code_result) { \
+    /* check if the requested xGEMM is already JITted */ \
+    LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
+    LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, HASH_FUNCTION, *(DESCRIPTOR)); \
+    (ENTRY) += i; /* actual entry */ \
+    do { \
+      INTERNAL_FIND_CODE_READ(ENTRY, internal_find_code_result.pmm); /* read registered code */ \
+      /* entire block is conditional wrt LIBXSMM_JIT; static code currently does not have collisions */ \
+      if (0 != internal_find_code_result.pmm) { \
+        if (0 == diff0) { \
+          if (0 == (LIBXSMM_HASH_COLLISION & internal_find_code_result.imm)) { /* check for no collision */ \
+            /* calculate bitwise difference (deep check) */ \
+            LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
+            diff = (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor)); \
+            if (0 != diff) { /* new collision discovered (but no code version yet) */ \
+              /* allow to fix-up current entry inside of the guarded/locked region */ \
+              internal_find_code_result.pmm = 0; \
+            } \
+          } \
+          /* collision discovered but code version exists; perform initial deep check */ \
+          else if (0 != (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor))) { \
+            /* continue linearly searching code starting at re-hashed index position */ \
+            const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
+            unsigned int next; \
+            internal_regentry *const registry = (ENTRY) - i; /* recalculate base address */ \
+            for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
+              i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); next != i0/*no code found*/ && \
+              /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
+              (0 == (ENTRY = (registry + i))->code.pmm || 0 != (diff = (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor)))); \
+              i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
+            if (0 == diff) { /* found exact code version; continue with atomic load */ \
+              continue; \
+            } \
+            else { /* no code found */ \
+              internal_find_code_result.pmm = 0; \
+              break; \
+            } \
+          } \
+          else { /* clear the uppermost bit of the address */ \
+            internal_find_code_result.imm &= ~LIBXSMM_HASH_COLLISION; \
           } \
         } \
-        /* collision discovered but code version exists; perform initial deep check */ \
-        else if (0 != (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor))) { \
-          /* continue linearly searching code starting at re-hashed index position */ \
-          const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
-          unsigned int next; \
-          internal_regentry *const registry = (ENTRY) - i; /* recalculate base address */ \
-          for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
-            i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); next != i0/*no code found*/ && \
-            /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
-            (0 == (ENTRY = (registry + i))->code.pmm || 0 != (diff = (DIFF_FUNCTION)(&(DESCRIPTOR), &((ENTRY)->descriptor)))); \
-            i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
-          if (0 == diff) { /* found exact code version; continue with atomic load */ \
-            continue; \
-          } \
-          else { /* no code found */ \
-            internal_find_code_result.pmm = 0; \
-            break; \
-          } \
+        else { /* new collision discovered (but no code version yet) */ \
+          internal_find_code_result.pmm = 0; \
         } \
-        else { /* clear the uppermost bit of the address */ \
+      } \
+      /* check if code generation or fix-up is needed, also check whether JIT is supported (CPUID) */ \
+      if (0 == internal_find_code_result.pmm && LIBXSMM_X86_AVX <= internal_target_arch) { \
+        INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */ \
+        /* re-read registry entry after acquiring the lock */ \
+        if (0 == diff) { \
+          internal_find_code_result = (ENTRY)->code; \
           internal_find_code_result.imm &= ~LIBXSMM_HASH_COLLISION; \
         } \
-      } \
-      else { /* new collision discovered (but no code version yet) */ \
-        internal_find_code_result.pmm = 0; \
-      } \
-    } \
-    /* check if code generation or fix-up is needed, also check whether JIT is supported (CPUID) */ \
-    if (0 == internal_find_code_result.pmm && LIBXSMM_X86_AVX <= internal_target_arch) { \
-      INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */ \
-      /* re-read registry entry after acquiring the lock */ \
-      if (0 == diff) { \
-        internal_find_code_result = (ENTRY)->code; \
-        internal_find_code_result.imm &= ~LIBXSMM_HASH_COLLISION; \
-      } \
-      if (0 == internal_find_code_result.pmm) { /* double-check after acquiring the lock */ \
-        if (0 == diff) { \
-          /* found a conflict-free registry-slot, and attempt to build the kernel */ \
-          internal_build(&(DESCRIPTOR), &internal_find_code_result, &((ENTRY)->code_size)); \
-          if (0 != internal_find_code_result.pmm) { /* synchronize registry entry */ \
-            (ENTRY)->descriptor = (DESCRIPTOR); \
-            INTERNAL_FIND_CODE_WRITE(ENTRY, internal_find_code_result.pmm); \
-          } \
-        } \
-        else { /* 0 != diff */ \
-          const unsigned int base = i; \
-          if (0 == diff0) { \
-            /* flag existing entry as collision */ \
-            /*const*/ void * /*const*/ code = (void*)((ENTRY)->code.imm | LIBXSMM_HASH_COLLISION); \
-            /* find new slot to store the code version */ \
-            const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
-            i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)); \
-            i0 = i; /* keep starting point of free-slot-search in mind */ \
-            LIBXSMM_DEBUG(++internal_ncollisions;) \
-            INTERNAL_FIND_CODE_WRITE(ENTRY, code); /* fix-up existing entry */ \
-            diff0 = diff; /* no more fix-up */ \
-          } \
-          else { \
-            const unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE); \
-            if (next != i0) { /* linear search for free slot */ \
-              i = next; \
-            } \
-            else { /* out of registry capacity (no free slot found) */ \
-              diff = 0; \
+        if (0 == internal_find_code_result.pmm) { /* double-check after acquiring the lock */ \
+          if (0 == diff) { \
+            /* found a conflict-free registry-slot, and attempt to build the kernel */ \
+            internal_build(DESCRIPTOR, &internal_find_code_result, &((ENTRY)->code_size)); \
+            if (0 != internal_find_code_result.pmm) { /* synchronize registry entry */ \
+              (ENTRY)->descriptor = *(DESCRIPTOR); \
+              INTERNAL_FIND_CODE_WRITE(ENTRY, internal_find_code_result.pmm); \
             } \
           } \
-          (ENTRY) -= base; /* recalculate base address */ \
-          (ENTRY) += i; \
+          else { /* 0 != diff */ \
+            const unsigned int base = i; \
+            if (0 == diff0) { \
+              /* flag existing entry as collision */ \
+              /*const*/ void * /*const*/ code = (void*)((ENTRY)->code.imm | LIBXSMM_HASH_COLLISION); \
+              /* find new slot to store the code version */ \
+              const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
+              i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)); \
+              i0 = i; /* keep starting point of free-slot-search in mind */ \
+              LIBXSMM_DEBUG(++internal_ncollisions;) \
+              INTERNAL_FIND_CODE_WRITE(ENTRY, code); /* fix-up existing entry */ \
+              diff0 = diff; /* no more fix-up */ \
+            } \
+            else { \
+              const unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE); \
+              if (next != i0) { /* linear search for free slot */ \
+                i = next; \
+              } \
+              else { /* out of registry capacity (no free slot found) */ \
+                diff = 0; \
+              } \
+            } \
+            (ENTRY) -= base; /* recalculate base address */ \
+            (ENTRY) += i; \
+          } \
         } \
+        INTERNAL_FIND_CODE_UNLOCK(lock); \
       } \
-      INTERNAL_FIND_CODE_UNLOCK(lock); \
+      else { \
+        diff = 0; \
+      } \
     } \
-    else { \
-      diff = 0; \
-    } \
+    while (0 != diff); \
+    INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, internal_find_code_result); \
   } \
-  while (0 != diff); \
 } \
 return internal_find_code_result.xmm
 
@@ -284,7 +316,7 @@ return internal_find_code_result.xmm
   INTERNAL_FIND_CODE_DECLARE(entry); \
   const signed char scalpha = (signed char)(0 == (PALPHA) ? LIBXSMM_ALPHA : *(PALPHA)), scbeta = (signed char)(0 == (PBETA) ? LIBXSMM_BETA : *(PBETA)); \
   if (0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && 1 == scalpha && (1 == scbeta || 0 == scbeta)) { \
-    DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(DESC, 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
+    DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
       0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB), \
       0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA), \
       0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC), scalpha, scbeta, \
@@ -300,12 +332,12 @@ return internal_find_code_result.xmm
 
 #if defined(LIBXSMM_GEMM_DIFF_MASK_A) /* no padding i.e., LIBXSMM_GEMM_DESCRIPTOR_SIZE */
 # define INTERNAL_DISPATCH(FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION) \
-    INTERNAL_DISPATCH_MAIN(libxsmm_gemm_descriptor descriptor, descriptor, \
+    INTERNAL_DISPATCH_MAIN(libxsmm_gemm_descriptor descriptor, &descriptor, \
     FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION)
 #else /* padding: LIBXSMM_GEMM_DESCRIPTOR_SIZE -> LIBXSMM_ALIGNMENT */
 # define INTERNAL_DISPATCH(FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION) { \
     INTERNAL_DISPATCH_MAIN(union { libxsmm_gemm_descriptor desc; char simd[LIBXSMM_ALIGNMENT]; } simd_descriptor; \
-      for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(simd_descriptor.simd); ++i) simd_descriptor.simd[i] = 0, simd_descriptor.desc, \
+      for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(simd_descriptor.simd); ++i) simd_descriptor.simd[i] = 0, &simd_descriptor.desc, \
     FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, SELECTOR/*smm or dmm*/, HASH_FUNCTION, DIFF_FUNCTION)
 #endif
 
@@ -762,9 +794,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_xmmdispatch(con
   assert(descriptor);
   {
 #if defined(LIBXSMM_HASH_BASIC)
-    INTERNAL_FIND_CODE(*descriptor, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
+    INTERNAL_FIND_CODE(descriptor, entry, libxsmm_hash_npot, libxsmm_gemm_diff);
 #else
-    INTERNAL_FIND_CODE(*descriptor, entry, libxsmm_crc32, libxsmm_gemm_diff);
+    INTERNAL_FIND_CODE(descriptor, entry, libxsmm_crc32, libxsmm_gemm_diff);
 #endif
   }
 }
