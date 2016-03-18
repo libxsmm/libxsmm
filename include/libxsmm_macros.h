@@ -230,7 +230,7 @@
 #endif
 
 #if defined(_REENTRANT)
-# if (defined(_WIN32) && !defined(__GNUC__)) || defined(__clang__)
+# if (defined(_WIN32) && !defined(__GNUC__))
 #   define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
 # elif defined(__GNUC__)
 #   define LIBXSMM_TLS __thread
