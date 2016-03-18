@@ -55,7 +55,7 @@ unsigned int internal_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference
 {
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   /* even avoid control flow in the production code (branching into a fallback) but at least manifest the preconditions */
-  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (2 << LIBXSMM_LOG2(ndescs)));
+  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
   assert(LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes); /* packed array of descriptors */
 # if defined(NDEBUG)
   LIBXSMM_UNUSED(nbytes);
@@ -301,7 +301,7 @@ unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, con
     d = desc + j * nbytes; /* negative stride runs backwards */
   }
 #else /* manifesting the preconditions of a less general implementation */
-  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (2 << LIBXSMM_LOG2(ndescs)));
+  assert(0 != ndescs && 0 == (ndescs % 2) && /*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
   assert(LIBXSMM_GEMM_DESCRIPTOR_SIZE == nbytes); /* packed array of descriptors */
 # if defined(NDEBUG)
   LIBXSMM_UNUSED(nbytes);
