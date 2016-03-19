@@ -134,11 +134,13 @@ unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, cons
   return 0 != memcmp(reference, desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
 #else
   const unsigned *const ia = (const unsigned int*)reference, *const ib = (const unsigned int*)desc;
+  const unsigned int end = (LIBXSMM_GEMM_DESCRIPTOR_SIZE >> 2);
   unsigned int result, i;
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+  assert(2 == LIBXSMM_LOG2(sizeof(unsigned int)));
   assert(0 != reference && 0 != desc);
   result = ia[0] ^ ib[0];
-  for (i = 1; i < LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)); ++i) {
+  for (i = 1; i < end; ++i) {
     result |= (ia[i] ^ ib[i]);
   }
   return result;
@@ -256,9 +258,10 @@ unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, co
 {
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4));
+  assert(2 == LIBXSMM_LOG2(sizeof(unsigned int)));
   assert(0 != reference && 0 != desc);
   {
-    const __mmask16 mask = (0xFFFF >> (16 - LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, 4)));
+    const __mmask16 mask = (0xFFFF >> (16 - (LIBXSMM_GEMM_DESCRIPTOR_SIZE >> 2)));
     const __m512i a512 = _mm512_mask_loadunpackhi_epi32(
       _mm512_mask_loadunpacklo_epi32(_mm512_set1_epi32(0), mask, reference),
       mask, ((const char*)reference) + 32);
