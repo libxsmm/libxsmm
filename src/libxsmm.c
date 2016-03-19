@@ -202,7 +202,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
     cache_hit = i
 # else
 #   define INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, RESULT) \
-    i = LIBXSMM_MOD(cache_hit + LIBXSMM_CACHESIZE - 1, LIBXSMM_CACHESIZE); \
+    i = LIBXSMM_MOD2(cache_hit + LIBXSMM_CACHESIZE - 1, LIBXSMM_CACHESIZE); \
     cache_code[i] = internal_find_code_result; \
     cache_desc[i] = *(DESCRIPTOR); \
     cache_hit = i
