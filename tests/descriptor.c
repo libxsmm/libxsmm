@@ -126,18 +126,18 @@ int main()
   }
 
   { /* testing diff-search */
-    libxsmm_gemm_descriptor descs[4];
-    descs[0] = a.descriptor; descs[1] = a.descriptor;
-    descs[2] = b.descriptor; descs[3] = a.descriptor;
+    union { libxsmm_gemm_descriptor desc; char padding[32]; } descs[4];
+    descs[0].desc = a.descriptor; descs[1].desc = a.descriptor;
+    descs[2].desc = b.descriptor; descs[3].desc = a.descriptor;
 
-    if (0 != libxsmm_gemm_diffn(&a.descriptor, descs, 0/*hint*/,
-      sizeof(descs) / sizeof(*descs), sizeof(libxsmm_gemm_descriptor)))
+    if (0 != libxsmm_gemm_diffn(&a.descriptor, &descs[0].desc, 0/*hint*/,
+      sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
       fprintf(stderr, "using dispatched diff-search\n");
       return 21;
     }
-    else if (2 != libxsmm_gemm_diffn(&b.descriptor, descs, 0/*hint*/,
-      sizeof(descs) / sizeof(*descs), sizeof(libxsmm_gemm_descriptor)))
+    else if (2 != libxsmm_gemm_diffn(&b.descriptor, &descs[0].desc, 0/*hint*/,
+      sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
       fprintf(stderr, "using dispatched diff-search\n");
       return 22;
