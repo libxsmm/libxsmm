@@ -131,13 +131,13 @@ int main()
     descs[2] = b.descriptor; descs[3] = a.descriptor;
 
     if (0 != libxsmm_gemm_diffn(&a.descriptor, descs, 0/*hint*/,
-      sizeof(descs) / sizeof(*descs), LIBXSMM_GEMM_DESCRIPTOR_SIZE))
+      sizeof(descs) / sizeof(*descs), sizeof(libxsmm_gemm_descriptor)))
     {
       fprintf(stderr, "using dispatched diff-search\n");
       return 21;
     }
     else if (2 != libxsmm_gemm_diffn(&b.descriptor, descs, 0/*hint*/,
-      sizeof(descs) / sizeof(*descs), LIBXSMM_GEMM_DESCRIPTOR_SIZE))
+      sizeof(descs) / sizeof(*descs), sizeof(libxsmm_gemm_descriptor)))
     {
       fprintf(stderr, "using dispatched diff-search\n");
       return 22;
