@@ -183,12 +183,13 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 
 #if defined(LIBXSMM_CACHESIZE) && (0 < LIBXSMM_CACHESIZE)
 # define INTERNAL_FIND_CODE_CACHE_DECL \
-  static LIBXSMM_TLS libxsmm_gemm_descriptor cache_desc[LIBXSMM_CACHESIZE+1/*padding*/]; \
+  static LIBXSMM_TLS union { libxsmm_gemm_descriptor desc; char padding[32]; } cache[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS internal_code cache_code[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS unsigned int cache_hit = LIBXSMM_CACHESIZE
 # define INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, RESULT) \
+  assert(32 >= sizeof(libxsmm_gemm_descriptor)); \
   /* search small cache starting with the last hit on record */ \
-  i = libxsmm_gemm_diffn(DESCRIPTOR, cache_desc, cache_hit, LIBXSMM_CACHESIZE, LIBXSMM_GEMM_DESCRIPTOR_SIZE); \
+  i = libxsmm_gemm_diffn(DESCRIPTOR, &cache[0].desc, cache_hit, LIBXSMM_CACHESIZE, 32); \
   if (LIBXSMM_CACHESIZE > i) { /* cache hit */ \
     RESULT = cache_code[i]; \
     cache_hit = i; \
@@ -198,13 +199,14 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #   define INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, RESULT) \
     i = (cache_hit + LIBXSMM_CACHESIZE - 1) % LIBXSMM_CACHESIZE; \
     cache_code[i] = internal_find_code_result; \
-    cache_desc[i] = *(DESCRIPTOR); \
+    cache[i].desc = *(DESCRIPTOR); \
     cache_hit = i
 # else
 #   define INTERNAL_FIND_CODE_CACHE_FINALIZE(DESCRIPTOR, RESULT) \
+    assert(/*is pot*/LIBXSMM_CACHESIZE == (1 << LIBXSMM_LOG2(LIBXSMM_CACHESIZE))); \
     i = LIBXSMM_MOD2(cache_hit + LIBXSMM_CACHESIZE - 1, LIBXSMM_CACHESIZE); \
     cache_code[i] = internal_find_code_result; \
-    cache_desc[i] = *(DESCRIPTOR); \
+    cache[i].desc = *(DESCRIPTOR); \
     cache_hit = i
 # endif
 #else
