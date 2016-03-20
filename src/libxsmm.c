@@ -187,7 +187,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
   static LIBXSMM_TLS internal_code cache_code[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS unsigned int cache_hit = LIBXSMM_CACHESIZE
 # define INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, RESULT) \
-  assert(32 >= sizeof(libxsmm_gemm_descriptor)); \
+  assert(32 >= LIBXSMM_GEMM_DESCRIPTOR_SIZE); \
   /* search small cache starting with the last hit on record */ \
   i = libxsmm_gemm_diffn(DESCRIPTOR, &cache[0].desc, cache_hit, LIBXSMM_CACHESIZE, 32); \
   if (LIBXSMM_CACHESIZE > i) { /* cache hit */ \
@@ -649,7 +649,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   assert(0 == code->pmm);
 
   /* allocate temporary buffer which is large enough to cover the generated code */
-  generated_code.generated_code = malloc(131072 * sizeof(unsigned char));
+  generated_code.generated_code = malloc(131072);
   generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
   generated_code.code_size = 0;
   generated_code.code_type = 2;
