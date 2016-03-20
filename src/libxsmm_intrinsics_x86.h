@@ -103,7 +103,8 @@
 #     endif
 #   endif
 # elif defined(__GNUC__)
-#   if (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   if (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+  && 0 /*AVX-512 support in GCC appears to be incomplete (missing at least _mm512_mask_reduce_or_epi32)*/
 #     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,avx512f"))
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
 #     pragma GCC push_options
