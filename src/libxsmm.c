@@ -183,7 +183,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 
 #if defined(LIBXSMM_CACHESIZE) && (0 < LIBXSMM_CACHESIZE)
 # define INTERNAL_FIND_CODE_CACHE_DECL \
-  static LIBXSMM_TLS union { libxsmm_gemm_descriptor desc; char padding[32]; } cache[LIBXSMM_CACHESIZE]; \
+  static LIBXSMM_TLS union { char padding[32]; libxsmm_gemm_descriptor desc; } cache[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS internal_code cache_code[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS unsigned int cache_hit = LIBXSMM_CACHESIZE
 # define INTERNAL_FIND_CODE_CACHE_BEGIN(DESCRIPTOR, RESULT) \
