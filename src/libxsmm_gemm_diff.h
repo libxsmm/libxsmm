@@ -52,9 +52,11 @@
 
 
 /** Function type representing the gemm_diff functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(
+  const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);
 /** Function type representing the gemm_diffn functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*, unsigned int, unsigned int, int);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(
+  const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*, unsigned int, unsigned int, int);
 
 
 /** Initialize GEMM/DIFF module; not thread-safe. */
@@ -62,18 +64,26 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arc
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_finalize(void);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+
 /** Generic implementation which is only relying on high-level constructs. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_sw(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 /** Collection of implementations which are using specific instruction set extensions. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx2(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 #if defined(__MIC__)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_imci(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 #endif
 
-/** Compare a number of descriptors (array) against a reference descriptor. Returns the index of the first match (or ndesc in case of no match). */
+/**
+ * Compare a number of descriptors (array) against a reference descriptor.
+ * Returns the index of the first match (or ndesc in case of no match).
+ */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
   /** Array of descriptors with ndesc elements. */
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs,
@@ -82,6 +92,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn(const libx
 
 /** Generic implementation of libxsmm_gemm_diffn which is only relying on high-level constructs. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+/** Collection of implementations which are using specific instruction set extensions. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)

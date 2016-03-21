@@ -54,24 +54,6 @@ int main()
     fprintf(stderr, "using generic code path\n");
     return 4;
   }
-  if (LIBXSMM_X86_SSE3 <= cpuid) {
-    if (0 == libxsmm_gemm_diff_sse(&a.descriptor, &b.descriptor)) {
-      fprintf(stderr, "using SSE code path\n");
-      return 5;
-    }
-    else if (0 == libxsmm_gemm_diff_sse(&b.descriptor, &a.descriptor)) {
-      fprintf(stderr, "using SSE code path\n");
-      return 6;
-    }
-    else if (0 != libxsmm_gemm_diff_sse(&a.descriptor, &a.descriptor)) {
-      fprintf(stderr, "using SSE code path\n");
-      return 7;
-    }
-    else if (0 != libxsmm_gemm_diff_sse(&b.descriptor, &b.descriptor)) {
-      fprintf(stderr, "using SSE code path\n");
-      return 8;
-    }
-  }
   if (LIBXSMM_X86_AVX <= cpuid) {
     if (0 == libxsmm_gemm_diff_avx(&a.descriptor, &b.descriptor)) {
       fprintf(stderr, "using AVX code path\n");
@@ -126,21 +108,77 @@ int main()
   }
 
   { /* testing diff-search */
-    union { libxsmm_gemm_descriptor desc; char padding[32]; } descs[4];
-    descs[0].desc = a.descriptor; descs[1].desc = a.descriptor;
-    descs[2].desc = b.descriptor; descs[3].desc = a.descriptor;
+    union { libxsmm_gemm_descriptor desc; char padding[32]; } descs[8];
+    descs[0].desc = b.descriptor; descs[1].desc = a.descriptor;
+    descs[2].desc = a.descriptor; descs[3].desc = a.descriptor;
+    descs[4].desc = a.descriptor; descs[5].desc = a.descriptor;
+    descs[6].desc = b.descriptor; descs[7].desc = a.descriptor;
 
-    if (0 != libxsmm_gemm_diffn(&a.descriptor, &descs[0].desc, 0/*hint*/,
+    if (1 != libxsmm_gemm_diffn_sw(&a.descriptor, &descs[0].desc, 0/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
-      fprintf(stderr, "using dispatched diff-search\n");
+      fprintf(stderr, "using generic diff-search\n");
       return 21;
     }
-    else if (2 != libxsmm_gemm_diffn(&b.descriptor, &descs[0].desc, 0/*hint*/,
+    else if (6 != libxsmm_gemm_diffn_sw(&b.descriptor, &descs[0].desc, 2/*hint*/,
+      sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+    {
+      fprintf(stderr, "using generic diff-search\n");
+      return 22;
+    }
+    if (LIBXSMM_X86_AVX <= cpuid) {
+      if (1 != libxsmm_gemm_diffn_avx(&a.descriptor, &descs[0].desc, 0/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX-based diff-search\n");
+        return 23;
+      }
+      else if (6 != libxsmm_gemm_diffn_avx(&b.descriptor, &descs[0].desc, 2/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX-based diff-search\n");
+        return 24;
+      }
+    }
+    if (LIBXSMM_X86_AVX2 <= cpuid) {
+      if (1 != libxsmm_gemm_diffn_avx2(&a.descriptor, &descs[0].desc, 0/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX2-based diff-search\n");
+        return 25;
+      }
+      else if (6 != libxsmm_gemm_diffn_avx2(&b.descriptor, &descs[0].desc, 2/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX2-based diff-search\n");
+        return 26;
+      }
+    }
+    if (LIBXSMM_X86_AVX512 <= cpuid) {
+      if (1 != libxsmm_gemm_diffn_avx512(&a.descriptor, &descs[0].desc, 0/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX512-based diff-search\n");
+        return 27;
+      }
+      else if (6 != libxsmm_gemm_diffn_avx512(&b.descriptor, &descs[0].desc, 2/*hint*/,
+        sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+      {
+        fprintf(stderr, "using AVX512-based diff-search\n");
+        return 28;
+      }
+    }
+    if (1 != libxsmm_gemm_diffn(&a.descriptor, &descs[0].desc, 0/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
       fprintf(stderr, "using dispatched diff-search\n");
-      return 22;
+      return 29;
+    }
+    else if (6 != libxsmm_gemm_diffn(&b.descriptor, &descs[0].desc, 2/*hint*/,
+      sizeof(descs) / sizeof(*descs), sizeof(*descs)))
+    {
+      fprintf(stderr, "using dispatched diff-search\n");
+      return 30;
     }
   }
 
