@@ -78,10 +78,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx2(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-#if defined(__MIC__)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_imci(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-#endif
 
 /**
  * Compare a number of descriptors (array) against a reference descriptor.
@@ -102,6 +100,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx(const 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
+  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
