@@ -312,7 +312,9 @@ ifneq (0,$(SSE))
 		SSE ?= 0
 	endif
 else ifneq (0,$(MIC))
-	MPSS = 1
+	ifneq (3,$(AVX))
+		MPSS = 1
+	endif
 endif
 
 ifneq (0,$(INTEL))
