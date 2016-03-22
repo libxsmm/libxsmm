@@ -233,8 +233,10 @@
           MODULE PROCEDURE libxsmm_blas_sgemm, libxsmm_blas_dgemm
         END INTERFACE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize, libxsmm_get_target_arch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick, libxsmm_timer_duration
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
