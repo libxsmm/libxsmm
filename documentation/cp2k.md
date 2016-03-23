@@ -39,7 +39,7 @@ make ARCH=Linux-x86-64-intel VERSION=psmp LIBXSMMROOT=/path/to/libxsmm -j
 
 To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (similar to `ARCH=Linux-x86-64-intel` and `VERSION=psmp`).
 
-* **LIBXSMM_PREFETCH**: set `LIBXSMM_PREFETCH=1` to unconditionally enable software prefetches.
+* **LIBXSMM_PREFETCH**: set `LIBXSMM_PREFETCH=1` to enable automatic software prefetches.
 * **LIBXSMM_MNK, LIBXSMM_M, LIBXSMM_N, LIBXSMM_K**: see [LIBXSMM documentation](https://github.com/hfp/libxsmm/#build-instructions).
 * **JIT**: set `JIT=0` to disable JIT code generation (enabled by default), and to statically specialize LIBXSMM.
 * **MPI**: set `MPI=3` to experiment with more recent MPI features e.g., with remote memory access.
