@@ -82,8 +82,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
   libxsmm_internal_gemm = (env_gemm_kind ? atoi(env_gemm_kind) : gemm_kind);
   libxsmm_internal_gemm_prefetch = prefetch;
 
-  /* attempt to setup tile sizes from the environment (LIBXSMM_TILEM, LIBXSMM_TILEN, and LIBXSMM_TILEK) */
-  env[0] = getenv("LIBXSMM_TILEM"); env[1] = getenv("LIBXSMM_TILEN"); env[2] = getenv("LIBXSMM_TILEK");
+  /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
+  env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
   libxsmm_internal_tile_size[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
   libxsmm_internal_tile_size[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
   libxsmm_internal_tile_size[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
