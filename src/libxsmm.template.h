@@ -95,6 +95,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
  * is targeted by the JIT code generator.
  */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch();
+/** Returns a name for the target architecture as identified by libxsmm_get_target_arch(). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid();
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);

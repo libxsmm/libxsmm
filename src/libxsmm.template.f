@@ -270,6 +270,22 @@
         END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
+        ! Returns a name for the target architecture as identified
+        ! by libxsmm_get_target_arch().
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
+        PURE FUNCTION libxsmm_get_target_archid() RESULT(name)
+          CHARACTER(LEN=3) :: name
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: get_target_archid
+          INTERFACE
+            PURE SUBROUTINE get_target_archid(name, length) BIND(C)
+              IMPORT :: C_CHAR, C_INT
+              CHARACTER(C_CHAR), INTENT(OUT) :: name(*)
+              INTEGER(C_INT), VALUE, INTENT(IN) :: length
+            END SUBROUTINE
+          END INTERFACE
+          CALL get_target_archid(name, LEN(name))
+        END FUNCTION
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr
         FUNCTION srealptr(a) RESULT(p)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
@@ -556,7 +572,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
         SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER(1), INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
@@ -585,7 +601,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm
         SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER(1), INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
@@ -614,7 +630,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
         SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER(1), INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
@@ -643,7 +659,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm
         SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER(1), INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb

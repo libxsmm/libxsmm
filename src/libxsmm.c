@@ -596,6 +596,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
                 /* make address valid by clearing an eventual collision flag */
                 code.imm &= ~LIBXSMM_HASH_COLLISION;
 #if defined(_WIN32)
+                /* TODO: executable memory buffer under Windows */
 #else
 # if defined(NDEBUG)
                 munmap(code.pmm, code_size);
@@ -636,7 +637,28 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch()
 {
+#if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return internal_target_arch;
+#else /* no JIT support */
+  return LIBXSMM_TARGET_ARCH_GENERIC;
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid()
+{
+  return internal_target_archid;
+}
+
+
+/* function serves as a helper for implementing the Fortran interface */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_archid(char* name, int length)
+{
+  const char* c = internal_target_archid ? internal_target_archid : "";
+  int i;
+  assert(0 != name); /* valid here since function is not in the public interface */
+  for (i = 0; i < length && 0 != *c; ++i, ++c) name[i] = *c;
+  for (; i < length; ++i) name[i] = ' ';
 }
 
 
@@ -787,13 +809,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #endif
     free(generated_code.generated_code);
   }
-#elif !defined(__MIC__)
-  LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
+#else
+# if !defined(__MIC__)
   LIBXSMM_MESSAGE("================================================================================")
   LIBXSMM_MESSAGE("LIBXSMM: The JIT BACKEND is currently not supported under Microsoft Windows!")
   LIBXSMM_MESSAGE("================================================================================")
-#else
+# endif
   LIBXSMM_UNUSED(desc); LIBXSMM_UNUSED(code); LIBXSMM_UNUSED(code_size);
+  /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
+  assert(LIBXSMM_X86_AVX > libxsmm_get_target_arch());
 #endif /*_WIN32*/
 }
 
