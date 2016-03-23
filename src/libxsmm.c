@@ -128,6 +128,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
 LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0;)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regentry* internal_registry = 0;
 
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_prefetch = LIBXSMM_MAX(LIBXSMM_PREFETCH, 0);
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_target_arch = LIBXSMM_TARGET_ARCH_GENERIC;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const char* internal_target_archid = 0;
 
@@ -326,11 +327,12 @@ return internal_find_code_result.xmm
   INTERNAL_FIND_CODE_DECLARE(entry); \
   const signed char scalpha = (signed char)(0 == (PALPHA) ? LIBXSMM_ALPHA : *(PALPHA)), scbeta = (signed char)(0 == (PBETA) ? LIBXSMM_BETA : *(PBETA)); \
   if (0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && 1 == scalpha && (1 == scbeta || 0 == scbeta)) { \
+    const int internal_dispatch_main_prefetch = (0 == (PREFETCH) ? LIBXSMM_PREFETCH : *(PREFETCH)); \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, FLAGS, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
       0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB), \
       0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA), \
       0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC), scalpha, scbeta, \
-      0 == (PREFETCH) ? LIBXSMM_PREFETCH : *(PREFETCH)); \
+      0 > internal_dispatch_main_prefetch ? internal_prefetch : internal_dispatch_main_prefetch); \
     { \
       INTERNAL_FIND_CODE(DESC, entry, HASH_FUNCTION, DIFF_FUNCTION).SELECTOR; \
     } \
@@ -427,6 +429,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
       if (0 == internal_target_archid) {
         internal_target_arch = libxsmm_cpuid_x86(&internal_target_archid);
+        assert(0 != internal_target_arch);
+      }
+      if (0 > LIBXSMM_PREFETCH) {
+        assert(0 != internal_target_arch);
+        internal_prefetch = 0 != strcmp("knl", internal_target_archid)
+#if defined(_WIN32) || defined(__CYGWIN__)
+          /* TODO: account for calling convention; avoid passing 6 arguments */
+          ? LIBXSMM_PREFETCH_NONE
+#else
+          ? LIBXSMM_PREFETCH_AL2
+#endif
+          : LIBXSMM_PREFETCH_AL2BL2_VIA_C;
       }
       libxsmm_hash_init(internal_target_arch);
       libxsmm_gemm_diff_init(internal_target_arch);
