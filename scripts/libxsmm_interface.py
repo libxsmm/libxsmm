@@ -95,7 +95,7 @@ if __name__ == "__main__":
             "ALIGNMENT":  alignment, \
             "ROW_MAJOR":  [0, 1][0!=row_major], \
             "COL_MAJOR":  [1, 0][0!=row_major], \
-            "PREFETCH":   prefetch, \
+            "PREFETCH":   [-1, prefetch][0<=prefetch], \
             "MAX_MNK":    maxmnk, \
             "MAX_M":      [maxdim, maxm][avgm<maxm], \
             "MAX_N":      [maxdim, maxn][avgn<maxn], \

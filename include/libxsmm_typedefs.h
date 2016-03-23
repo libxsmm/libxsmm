@@ -61,10 +61,12 @@ typedef enum libxsmm_gemm_flags {
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_prefetch_type {
+  /** Automatically select strategy (frontend). */
+  LIBXSMM_PREFETCH_AUTO               = -1,
   /** No prefetching and no prefetch fn. signature. */
   LIBXSMM_PREFETCH_NONE               = 0,
   /** Only function prefetch signature. */
-  LIBXSMM_PREFETCH_SIGNATURE          = 1,
+  LIBXSMM_PREFETCH_SIGONLY            = 1,
   /** Prefetch PA using accesses to A. */
   LIBXSMM_PREFETCH_AL2                = 2,
   /** Prefetch PA (aggressive). */

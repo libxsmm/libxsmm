@@ -154,7 +154,7 @@ int main(int argc, char* argv []) {
     l_prefetch = LIBXSMM_PREFETCH_NONE;
   }
   else if (strcmp("pfsigonly", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_SIGNATURE;
+    l_prefetch = LIBXSMM_PREFETCH_SIGONLY;
   }
   else if (strcmp("BL2viaC", argv[15]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;

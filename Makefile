@@ -203,8 +203,8 @@ PREFETCH_TYPE = 0
 
 ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 9))))
 	PREFETCH_ID = $(PREFETCH)
-else ifeq (1,$(PREFETCH)) # AL2_BL2viaC
-	PREFETCH_ID = 6
+else ifeq (1,$(PREFETCH)) # auto
+	PREFETCH_ID = 1
 else ifeq (pfsigonly,$(PREFETCH))
 	PREFETCH_ID = 2
 else ifeq (BL2viaC,$(PREFETCH))
@@ -224,7 +224,12 @@ else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
 endif
 
 # Mapping build options to libxsmm_prefetch_type (see include/libxsmm_typedefs.h)
-ifeq (2,$(PREFETCH_ID))
+ifeq (1,$(PREFETCH_ID))
+	# Prefetch "auto" is a pseudo strategy introduced by the frontend;
+	# select "pfsigonly" for statically generated code.
+	PREFETCH_SCHEME = pfsigonly
+	PREFETCH_TYPE = -1
+else ifeq (2,$(PREFETCH_ID))
 	PREFETCH_SCHEME = pfsigonly
 	PREFETCH_TYPE = 1
 else ifeq (3,$(PREFETCH_ID))
