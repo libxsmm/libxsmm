@@ -50,7 +50,8 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const double*, double*, const libxsmm_blasint*);
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+  const char* archid, int prefetch/*default prefetch strategy*/,
   /** If NULL is given, the routine attempts to find the SGEMM function. */
   libxsmm_sgemm_function sgemm_function,
   /** If NULL is given, the routine attempts to find the DGEMM function. */

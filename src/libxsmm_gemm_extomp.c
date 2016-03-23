@@ -177,7 +177,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_EXTOMP_XGEMM(float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_num_nt,
+  LIBXSMM_GEMM_EXTOMP_XGEMM(float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
     libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
     libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
     libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
@@ -195,7 +195,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_EXTOMP_XGEMM(double, flags, libxsmm_internal_num_nt,
+  LIBXSMM_GEMM_EXTOMP_XGEMM(double, flags, libxsmm_internal_gemm_nthreads_per_core,
     libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
     libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
     libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,

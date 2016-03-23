@@ -61,11 +61,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
 
 
 /* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, int prefetch,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/);
+  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/, prefetch);
 
   if (NULL == sgemm_function) {
     union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };

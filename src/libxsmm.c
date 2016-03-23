@@ -460,7 +460,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
       libxsmm_hash_init(internal_target_arch);
       libxsmm_gemm_diff_init(internal_target_arch);
-      init_code = libxsmm_gemm_init(internal_target_archid, 0/*auto-discovered*/, 0/*auto-discovered*/);
+      init_code = libxsmm_gemm_init(internal_target_archid, internal_prefetch,
+        0/*auto-discovered*/, 0/*auto-discovered*/);
 #if defined(__TRACE)
       const char *const env_trace_init = getenv("LIBXSMM_TRACE");
       if (EXIT_SUCCESS == init_code && 0 != env_trace_init) {

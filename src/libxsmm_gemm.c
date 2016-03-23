@@ -41,6 +41,7 @@
 #endif
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -66,18 +67,20 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_tile_sizes[/*confi
 LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
   { 0, 0, 0 }, { 0, 0, 0 }
 };
-LIBXSMM_RETARGETABLE int libxsmm_internal_num_nt = 2;
+LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch = LIBXSMM_MAX(LIBXSMM_PREFETCH, 0);
+LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core = 2;
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind, int prefetch)
 {
-  const int config = (0 == archid || 'k' != archid[0] || 'n' != archid[1] || 'l' != archid[2]) ? 0 : 1;
+  const int config = 0 != strcmp("knl", archid) ? 0 : 1;
   const char* env[3], *const env_gemm_kind = getenv("LIBXSMM_GEMM");
 
   /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
+  libxsmm_internal_gemm_nthreads_per_core = 1 == config ? 4 : 2; /* threads per core */
   libxsmm_internal_gemm = (env_gemm_kind ? atoi(env_gemm_kind) : gemm_kind);
-  libxsmm_internal_num_nt = 1 == config ? 4 : 2; /* threads per core */
+  libxsmm_internal_gemm_prefetch = prefetch;
 
   /* attempt to setup tile sizes from the environment (LIBXSMM_TILEM, LIBXSMM_TILEN, and LIBXSMM_TILEK) */
   env[0] = getenv("LIBXSMM_TILEM"); env[1] = getenv("LIBXSMM_TILEN"); env[2] = getenv("LIBXSMM_TILEK");
@@ -99,11 +102,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(const char* archid,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(const char* archid, int prefetch,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/);
+  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/, prefetch);
 
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;
