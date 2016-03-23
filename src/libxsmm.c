@@ -436,13 +436,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
         if (0 == env_prefetch || 0 == *env_prefetch) {
           assert(0 != internal_target_arch);
           internal_prefetch = 0 != strcmp("knl", internal_target_archid)
-#if defined(_WIN32) || defined(__CYGWIN__)
-            /* TODO: account for calling convention; avoid passing 6 arguments */
-            ? LIBXSMM_PREFETCH_NONE
-#else
-            ? LIBXSMM_PREFETCH_AL2
-#endif
-            : LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+            ? LIBXSMM_PREFETCH_NONE : LIBXSMM_PREFETCH_AL2BL2_VIA_C;
         }
         else { /* user/runtime input */
           switch (atoi(env_prefetch)) {
