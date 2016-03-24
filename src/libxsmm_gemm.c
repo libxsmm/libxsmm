@@ -61,7 +61,7 @@ LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSY
 
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-  { { 128, 48, 48 }, { 64, 48, 80 } }, /*generic*/
+  { {  48, 48, 48 }, { 64, 48, 80 } }, /*generic*/
   { { 128, 48, 48 }, { 64, 48, 80 } }  /*knl*/
 };
 LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
@@ -87,7 +87,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
 
   /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
   libxsmm_internal_gemm = (env_gemm_kind ? atoi(env_gemm_kind) : gemm_kind);
-  libxsmm_internal_gemm_prefetch = prefetch;
+  libxsmm_internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  LIBXSMM_UNUSED(prefetch);
 
   /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
   env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
