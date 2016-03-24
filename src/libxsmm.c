@@ -429,16 +429,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
       if (0 == internal_target_archid) {
         internal_target_arch = libxsmm_cpuid_x86(&internal_target_archid);
-        assert(0 != internal_target_arch);
+        assert(0 != internal_target_archid);
       }
-      if (0 > LIBXSMM_PREFETCH) {
+      { /* select prefetch strategy for JIT */
         const char *const env_prefetch = getenv("LIBXSMM_PREFETCH");
         if (0 == env_prefetch || 0 == *env_prefetch) {
-          assert(0 != internal_target_arch);
-          internal_prefetch = 0 != strcmp("knl", internal_target_archid)
-            ? LIBXSMM_PREFETCH_NONE : LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+          if (0 > LIBXSMM_PREFETCH) { /* permitted by LIBXSMM_PREFETCH_AUTO */
+            assert(0 != internal_target_archid);
+            internal_prefetch = 0 != strcmp("knl", internal_target_archid)
+              ? LIBXSMM_PREFETCH_NONE : LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+          }
         }
-        else { /* user/runtime input */
+        else { /* user input considered even if LIBXSMM_PREFETCH_AUTO is disabled */
           switch (atoi(env_prefetch)) {
             case 2: internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
             case 3: internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
