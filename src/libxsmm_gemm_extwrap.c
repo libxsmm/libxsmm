@@ -65,7 +65,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, 
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/, prefetch);
+  libxsmm_gemm_configure(archid, prefetch);
 
   if (NULL == sgemm_function) {
     union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };

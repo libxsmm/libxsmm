@@ -37,6 +37,10 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+#if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
+# include <stdlib.h>
+# include <dlfcn.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -47,27 +51,38 @@
 # endif
 # define LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT) (40 * omp_get_num_threads() / (NT))
 # define LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT) (4 * (NT))
-# if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
-#   define LIBXSMM_GEMM_EXTOMP_START LIBXSMM_PRAGMA(omp single nowait)
-#   define LIBXSMM_GEMM_EXTOMP_TASK_SYNC LIBXSMM_PRAGMA(omp taskwait)
-#   define LIBXSMM_GEMM_EXTOMP_TASK(...) LIBXSMM_PRAGMA(omp task firstprivate(__VA_ARGS__))
-#   define LIBXSMM_GEMM_EXTOMP_FOR(N)
-# else
-#   define LIBXSMM_GEMM_EXTOMP_START
-#   define LIBXSMM_GEMM_EXTOMP_TASK_SYNC
-#   define LIBXSMM_GEMM_EXTOMP_TASK(...)
-#   define LIBXSMM_GEMM_EXTOMP_FOR(N) /*LIBXSMM_PRAGMA(omp for LIBXSMM_OPENMP_COLLAPSE(N) schedule(dynamic))*/
-# endif
+# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 1
+# define LIBXSMM_GEMM_EXTOMP_FOR_INIT
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N) LIBXSMM_PRAGMA(omp parallel for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(N))
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N) LIBXSMM_PRAGMA(omp for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(N))
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
 #else
 # define LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT) 1
 # define LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT) 0
-# define LIBXSMM_GEMM_EXTOMP_START
-# define LIBXSMM_GEMM_EXTOMP_TASK_SYNC
-# define LIBXSMM_GEMM_EXTOMP_TASK(...)
-# define LIBXSMM_GEMM_EXTOMP_FOR(N)
+# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 1
+# define LIBXSMM_GEMM_EXTOMP_FOR_INIT
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N)
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N)
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
 #endif
 
-#define LIBXSMM_GEMM_EXTOMP_XGEMM_TASK(REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+# define LIBXSMM_GEMM_EXTOMP_TSK_INIT LIBXSMM_PRAGMA(omp single nowait)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL(N) LIBXSMM_PRAGMA(omp parallel)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN(N) /* nothing */
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY(...) LIBXSMM_PRAGMA(omp task firstprivate(__VA_ARGS__))
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END LIBXSMM_PRAGMA(omp taskwait)
+#else
+# define LIBXSMM_GEMM_EXTOMP_TSK_INIT LIBXSMM_GEMM_EXTOMP_FOR_INIT
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL(N) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN(N) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY(...) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
+#endif
+
+#define LIBXSMM_GEMM_EXTOMP_KERNEL(REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
   libxsmm_blasint j = 0, j_next = TILE_K; \
   if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
@@ -89,14 +104,17 @@
   } \
 }
 
-#define LIBXSMM_GEMM_EXTOMP_XGEMM(REAL, FLAGS, NT, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_GEMM_EXTOMP_XGEMM(INIT, LOOP_BEGIN, LOOP_BODY, LOOP_END, \
+  REAL, FLAGS, NT, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+{ \
   libxsmm_blasint tile_m = LIBXSMM_MAX(TILE_M, 2), tile_n = LIBXSMM_MAX(TILE_N, 2), tile_k = LIBXSMM_MAX(TILE_K, 2); \
   const libxsmm_blasint num_m = ((M) + tile_m - 1) / tile_m, num_n = ((N) + tile_n - 1) / tile_n, num_k = ((K) + tile_k - 1) / tile_k; \
   const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
   libxsmm_xmmfunction xmm; \
-  LIBXSMM_GEMM_EXTOMP_START \
+  INIT \
   if (0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && 1 == scalpha && (1 == scbeta || 0 == scbeta)) { \
-    const libxsmm_blasint num_t = (LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT)) <= num_k ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
+    const libxsmm_blasint num_t = (LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT) && 1 < LIBXSMM_GEMM_EXTOMP_COLLAPSE) <= num_k \
+      ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
     const libxsmm_blasint min_ntasks = LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT); \
     libxsmm_gemm_descriptor desc; \
     if (min_ntasks < num_t) { /* ensure enough parallel slack */ \
@@ -128,39 +146,39 @@
     xmm.dmm = 0; \
   } \
   if (0 != xmm.dmm) { \
-    LIBXSMM_GEMM_EXTOMP_START \
+    INIT \
     { \
       const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
       libxsmm_blasint h = 0, i = 0; \
       if ((LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT)) <= num_k) { /* amortize overhead */ \
-        LIBXSMM_GEMM_EXTOMP_FOR(2) \
+        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
         for (h = 0; h < (M); h += tile_m) { \
           for (i = 0; i < (N); i += tile_n) { \
-            LIBXSMM_GEMM_EXTOMP_TASK(h, i) \
-            LIBXSMM_GEMM_EXTOMP_XGEMM_TASK(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+            LOOP_BODY(h, i) \
+            LIBXSMM_GEMM_EXTOMP_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
           } \
         } \
-        LIBXSMM_GEMM_EXTOMP_TASK_SYNC \
+        LOOP_END \
       } \
       else if (num_n <= num_m) { \
-        LIBXSMM_GEMM_EXTOMP_FOR(2) \
+        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
         for (h = 0; h < (M); h += tile_m) { \
-          LIBXSMM_GEMM_EXTOMP_TASK(h) \
+          LOOP_BODY(h) \
           for (i = 0; i < (N); i += tile_n) { \
-            LIBXSMM_GEMM_EXTOMP_XGEMM_TASK(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+            LIBXSMM_GEMM_EXTOMP_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
           } \
         } \
-        LIBXSMM_GEMM_EXTOMP_TASK_SYNC \
+        LOOP_END \
       } \
       else { \
-        LIBXSMM_GEMM_EXTOMP_FOR(2) \
+        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
         for (i = 0; i < (N); i += tile_n) { \
-          LIBXSMM_GEMM_EXTOMP_TASK(i) \
+          LOOP_BODY(i) \
           for (h = 0; h < (M); h += tile_m) { \
-            LIBXSMM_GEMM_EXTOMP_XGEMM_TASK(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+            LIBXSMM_GEMM_EXTOMP_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
           } \
         } \
-        LIBXSMM_GEMM_EXTOMP_TASK_SYNC \
+        LOOP_END \
       } \
     } \
   } \
@@ -170,40 +188,60 @@
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_omps_sgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
+#if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
+
+/* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, int prefetch,
+  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_EXTOMP_XGEMM(float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
-    libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
-    libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
-    libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
+
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+  { /* consider user input about using (OpenMP-)tasks; this code must be here
+    * because maybe only this translation unit is compiled with OpenMP support
+    */
+    const char *const env_tasks = getenv("LIBXSMM_TASKS");
+    if (0 != env_tasks && 0 != *env_tasks) {
+      libxsmm_internal_gemm_tasks = atoi(env_tasks);
+    }
+  }
+#endif
+
+  if (NULL == sgemm_function) {
+    union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
+    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+    if (NULL != internal.pv) {
+      libxsmm_internal_sgemm = internal.pf;
+    }
+  }
+  else {
+    libxsmm_internal_sgemm = sgemm_function;
+  }
+
+  if (NULL == dgemm_function) {
+    union { const void* pv; libxsmm_dgemm_function pf; } internal = { NULL };
+    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+    if (NULL != internal.pv) {
+      libxsmm_internal_dgemm = internal.pf;
+    }
+  }
+  else {
+    libxsmm_internal_dgemm = dgemm_function;
+  }
+
+  return (NULL != libxsmm_internal_sgemm
+       && NULL != libxsmm_internal_dgemm)
+    ? EXIT_SUCCESS
+    : EXIT_FAILURE;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_omps_dgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_finalize(void)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_GEMM_EXTOMP_XGEMM(double, flags, libxsmm_internal_gemm_nthreads_per_core,
-    libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
-    libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
-    libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
+
+#endif /*defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa, const char* transb,
@@ -212,15 +250,58 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_sgemm(const char* transa
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   if (2 <= libxsmm_internal_gemm) { /* enable internal parallelization */
-#if defined(_OPENMP)
-#   pragma omp parallel
-#   pragma omp single
-#endif
-    internal_omps_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    if (0 == libxsmm_internal_gemm_tasks) {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
+        libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
+        libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+    else {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL,
+        LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
+        libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
+        libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
   }
   else { /* default: potentially sequential or externally parallelized */
-    internal_omps_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    if (0 == libxsmm_internal_gemm_tasks) {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
+        libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
+        libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+    else {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[1/*SP*/][0/*M*/],
+        libxsmm_internal_tile_size[1/*SP*/][1/*N*/],
+        libxsmm_internal_tile_size[1/*SP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
   }
 }
 
@@ -232,14 +313,58 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omps_dgemm(const char* transa
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   if (2 <= libxsmm_internal_gemm) { /* enable internal parallelization */
-#if defined(_OPENMP)
-#   pragma omp parallel
-#   pragma omp single
-#endif
-    internal_omps_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+    if (0 == libxsmm_internal_gemm_tasks) {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        double, flags, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
+        libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
+        libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+    else {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL,
+        LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
+        double, flags, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
+        libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
+        libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
   }
   else { /* default: potentially sequential or externally parallelized */
-    internal_omps_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+    if (0 == libxsmm_internal_gemm_tasks) {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        double, flags, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
+        libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
+        libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+    else {
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
+        double, flags, libxsmm_internal_gemm_nthreads_per_core,
+        libxsmm_internal_tile_size[0/*DP*/][0/*M*/],
+        libxsmm_internal_tile_size[0/*DP*/][1/*N*/],
+        libxsmm_internal_tile_size[0/*DP*/][2/*K*/], *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
   }
 }
 

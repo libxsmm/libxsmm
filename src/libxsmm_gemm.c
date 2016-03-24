@@ -61,7 +61,7 @@ LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSY
 
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-  { {  48, 48, 48 }, { 64, 48, 80 } }, /*generic*/
+  { {  32, 32, 32 }, { 64, 48, 80 } }, /*generic*/
   { { 128, 48, 48 }, { 64, 48, 80 } }  /*knl*/
 };
 LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
@@ -69,13 +69,19 @@ LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,
 };
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch = LIBXSMM_MAX(LIBXSMM_PREFETCH, 0);
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core = 2;
+LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks = 0;
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int prefetch,
+  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
-  const char* env[3], *const env_gemm_kind = getenv("LIBXSMM_GEMM");
+  const char* env[3], *const env_gemm = getenv("LIBXSMM_GEMM");
   int config = 0;
+
+  if (0 != env_gemm && 0 != *env_gemm) {
+    libxsmm_internal_gemm = atoi(env_gemm);
+  }
 
 #if !defined(__MIC__)
   if (0 == strcmp("knl", archid))
@@ -86,7 +92,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
   }
 
   /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
-  libxsmm_internal_gemm = (env_gemm_kind ? atoi(env_gemm_kind) : gemm_kind);
   libxsmm_internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
   LIBXSMM_UNUSED(prefetch);
 
@@ -107,14 +112,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
   if (0 >= libxsmm_internal_tile_size[1/*SP*/][0/*M*/]) libxsmm_internal_tile_size[1][0] = internal_tile_sizes[config][1][0];
   if (0 >= libxsmm_internal_tile_size[1/*SP*/][1/*N*/]) libxsmm_internal_tile_size[1][1] = internal_tile_sizes[config][1][1];
   if (0 >= libxsmm_internal_tile_size[1/*SP*/][2/*K*/]) libxsmm_internal_tile_size[1][2] = internal_tile_sizes[config][1][2];
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(const char* archid, int prefetch,
-  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
-{
-  /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, 0/*default gemm kind is small gemm*/, prefetch);
 
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;
@@ -139,6 +136,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_in
     libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_mkl_dgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(const char* archid, int prefetch)
+{
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
 
   return (NULL != libxsmm_internal_sgemm
        && NULL != libxsmm_internal_dgemm)

@@ -31,16 +31,7 @@
 #ifndef LIBXSMM_GEMM_EXT_H
 #define LIBXSMM_GEMM_EXT_H
 
-#include <libxsmm.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#if !defined(NDEBUG)
-# include <assert.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+#include "libxsmm_gemm.h"
 
 #if !defined(LIBXSMM_GEMM_EXTWRAP) && defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && !defined(__CYGWIN__)
@@ -97,14 +88,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core;
 /** INTERNAL: prefetch strategy */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch;
+/** INTERNAL: determines whether (OpenMP-)tasks are preferred over thread-style parallelization */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks;
 /** INTERNAL: kind of GEMM (0: small gemm, 1: sequential, 2: parallelized) */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
-
-/**
- * INTERNAL pre-initialization step called by libxsmm_gemm_init,
- * e.g. configures the tile sizes for multithreaded GEMM functions.
- */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind, int prefetch);
 
 #endif /*LIBXSMM_GEMM_EXT_H*/
 

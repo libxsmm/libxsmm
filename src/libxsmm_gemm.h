@@ -49,13 +49,19 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-/** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
-  const char* archid, int prefetch/*default prefetch strategy*/,
+/**
+ * INTERNAL pre-initialization step called by libxsmm_gemm_init,
+ * e.g. configures the tile sizes for multithreaded GEMM functions.
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int prefetch,
   /** If NULL is given, the routine attempts to find the SGEMM function. */
   libxsmm_sgemm_function sgemm_function,
   /** If NULL is given, the routine attempts to find the DGEMM function. */
   libxsmm_dgemm_function dgemm_function);
+
+/** Provides GEMM functions available via BLAS; NOT thread-safe. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(
+  const char* archid, int prefetch/*default prefetch strategy*/);
 
 /** Finalizes the gemm facility; NOT thread-safe. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_finalize(void);
