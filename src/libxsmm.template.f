@@ -239,6 +239,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_omp_sgemm
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_omp_dgemm
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -269,7 +271,29 @@
             IMPORT :: C_LONG_LONG, C_DOUBLE
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
           END FUNCTION
-        END INTERFACE$MNK_INTERFACE_LIST
+
+          SUBROUTINE libxsmm_omp_sgemm(transa, transb, m, n, k,         &
+     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
+            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            REAL(C_FLOAT), INTENT(IN) :: alpha, beta
+            REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
+            REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+          END SUBROUTINE
+
+          SUBROUTINE libxsmm_omp_dgemm(transa, transb, m, n, k,         &
+     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
+            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
+            REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
+            REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+          END SUBROUTINE
+      END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
         ! Returns a name for the target architecture as identified
