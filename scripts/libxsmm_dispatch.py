@@ -48,11 +48,13 @@ if __name__ == "__main__":
             mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
             ldxsig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), " + kstr + ", LIBXSMM_LD(" + mstr + ", " + nstr + ")"
             if (2 != precision): # only double-precision
+                print("#if defined(_WIN32) || defined(__CYGWIN__) /*TODO: account for calling convention; avoid passing 6 arguments*/")
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("  " + mnksig + ", " + ldxsig + ",")
-                print("#if defined(_WIN32) || defined(__CYGWIN__) /*TODO: account for calling convention; avoid passing 6 arguments*/")
-                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, 0 > LIBXSMM_PREFETCH ? LIBXSMM_PREFETCH_NONE: LIBXSMM_PREFETCH);")
+                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH_NONE);")
                 print("#else")
+                print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
+                print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, 0 > LIBXSMM_PREFETCH ? LIBXSMM_PREFETCH_SIGONLY: LIBXSMM_PREFETCH);")
                 print("#endif")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
@@ -62,11 +64,13 @@ if __name__ == "__main__":
                 print("  result[indx].descriptor = desc;")
                 print("} LIBXSMM_DEBUG(else ++cdp;)")
             if (1 != precision): # only single-precision
+                print("#if defined(_WIN32) || defined(__CYGWIN__) /*TODO: account for calling convention; avoid passing 6 arguments*/")
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
-                print("#if defined(_WIN32) || defined(__CYGWIN__) /*TODO: account for calling convention; avoid passing 6 arguments*/")
-                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, 0 > LIBXSMM_PREFETCH ? LIBXSMM_PREFETCH_NONE : LIBXSMM_PREFETCH);")
+                print("  LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_PREFETCH_NONE);")
                 print("#else")
+                print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
+                print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, 0 > LIBXSMM_PREFETCH ? LIBXSMM_PREFETCH_SIGONLY : LIBXSMM_PREFETCH);")
                 print("#endif")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
