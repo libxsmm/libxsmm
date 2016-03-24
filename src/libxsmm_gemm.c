@@ -74,11 +74,18 @@ LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int gemm_kind, int prefetch)
 {
-  const int config = 0 != strcmp("knl", archid) ? 0 : 1;
   const char* env[3], *const env_gemm_kind = getenv("LIBXSMM_GEMM");
+  int config = 0;
+
+#if !defined(__MIC__)
+  if (0 == strcmp("knl", archid))
+#endif
+  {
+    libxsmm_internal_gemm_nthreads_per_core = 4;
+    config = 1;
+  }
 
   /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
-  libxsmm_internal_gemm_nthreads_per_core = 1 == config ? 4 : 2; /* threads per core */
   libxsmm_internal_gemm = (env_gemm_kind ? atoi(env_gemm_kind) : gemm_kind);
   libxsmm_internal_gemm_prefetch = prefetch;
 
