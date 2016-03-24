@@ -56,22 +56,22 @@
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
       const double* beta, double*, const libxsmm_blasint*);
-    /* mute warning about external function definition with no prior declaration */
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
-      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-      const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
-      const float* beta, float*, const libxsmm_blasint*);
-    /* mute warning about external function definition with no prior declaration */
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
-      const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-      const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
-      const double* beta, double*, const libxsmm_blasint*);
 # elif !defined(__CYGWIN__) /* LD_PRELOAD */
 #   define LIBXSMM_GEMM_EXTWRAP
 #   define LIBXSMM_GEMM_WEAK_DLIB LIBXSMM_ATTRIBUTE(weak)
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif
+  /* avoid remark about external function definition with no prior declaration */
+  LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+    const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+    const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+    const float* beta, float*, const libxsmm_blasint*);
+  /* avoid remark about external function definition with no prior declaration */
+  LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+    const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+    const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+    const double* beta, double*, const libxsmm_blasint*);
 #endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 
 #if !defined(LIBXSMM_GEMM_WEAK_SLIB)

@@ -51,33 +51,33 @@
 # endif
 # define LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT) (40 * omp_get_num_threads() / (NT))
 # define LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT) (4 * (NT))
-# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 1
 # define LIBXSMM_GEMM_EXTOMP_FOR_INIT
-# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N) LIBXSMM_PRAGMA(omp parallel for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(N))
-# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N) LIBXSMM_PRAGMA(omp for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(N))
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(LIBXSMM_GEMM_EXTOMP_COLLAPSE))
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN LIBXSMM_PRAGMA(omp for schedule(dynamic,1) LIBXSMM_OPENMP_COLLAPSE(LIBXSMM_GEMM_EXTOMP_COLLAPSE))
 # define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
 # define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
 #else
 # define LIBXSMM_GEMM_EXTOMP_MIN_NTASKS(NT) 1
 # define LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT) 0
-# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 1
 # define LIBXSMM_GEMM_EXTOMP_FOR_INIT
-# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N)
-# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N)
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL
+# define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN
 # define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
 # define LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
 #endif
 
 #if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 2
 # define LIBXSMM_GEMM_EXTOMP_TSK_INIT LIBXSMM_PRAGMA(omp single nowait)
-# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL(N) LIBXSMM_PRAGMA(omp parallel)
-# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN(N) /* nothing */
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN /* nothing */
 # define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY(...) LIBXSMM_PRAGMA(omp task firstprivate(__VA_ARGS__))
 # define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END LIBXSMM_PRAGMA(omp taskwait)
 #else
+# define LIBXSMM_GEMM_EXTOMP_COLLAPSE 1
 # define LIBXSMM_GEMM_EXTOMP_TSK_INIT LIBXSMM_GEMM_EXTOMP_FOR_INIT
-# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL(N) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL(N)
-# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN(N) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN(N)
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL
+# define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN
 # define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY(...) LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY(...)
 # define LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END
 #endif
@@ -151,7 +151,7 @@
       const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
       libxsmm_blasint h = 0, i = 0; \
       if ((LIBXSMM_GEMM_EXTOMP_OVERHEAD(NT)) <= num_k) { /* amortize overhead */ \
-        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
+        LOOP_BEGIN \
         for (h = 0; h < (M); h += tile_m) { \
           for (i = 0; i < (N); i += tile_n) { \
             LOOP_BODY(h, i) \
@@ -161,7 +161,7 @@
         LOOP_END \
       } \
       else if (num_n <= num_m) { \
-        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
+        LOOP_BEGIN \
         for (h = 0; h < (M); h += tile_m) { \
           LOOP_BODY(h) \
           for (i = 0; i < (N); i += tile_n) { \
@@ -171,7 +171,7 @@
         LOOP_END \
       } \
       else { \
-        LOOP_BEGIN(LIBXSMM_GEMM_EXTOMP_COLLAPSE) \
+        LOOP_BEGIN \
         for (i = 0; i < (N); i += tile_n) { \
           LOOP_BODY(i) \
           for (h = 0; h < (M); h += tile_m) { \
@@ -191,11 +191,15 @@
 #if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
 
 /* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, int prefetch,
-  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, int prefetch)
 {
+  union { const void* pv; libxsmm_sgemm_function pf; } internal_sgemm = { NULL };
+  union { const void* pv; libxsmm_dgemm_function pf; } internal_dgemm = { NULL };
+  internal_sgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+  internal_dgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+
   /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
+  libxsmm_gemm_configure(archid, prefetch, internal_sgemm.pf, internal_dgemm.pf);
 
 #if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
   { /* consider user input about using (OpenMP-)tasks; this code must be here
@@ -207,28 +211,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, 
     }
   }
 #endif
-
-  if (NULL == sgemm_function) {
-    union { const void* pv; libxsmm_sgemm_function pf; } internal = { NULL };
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    if (NULL != internal.pv) {
-      libxsmm_internal_sgemm = internal.pf;
-    }
-  }
-  else {
-    libxsmm_internal_sgemm = sgemm_function;
-  }
-
-  if (NULL == dgemm_function) {
-    union { const void* pv; libxsmm_dgemm_function pf; } internal = { NULL };
-    internal.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    if (NULL != internal.pv) {
-      libxsmm_internal_dgemm = internal.pf;
-    }
-  }
-  else {
-    libxsmm_internal_dgemm = dgemm_function;
-  }
 
   return (NULL != libxsmm_internal_sgemm
        && NULL != libxsmm_internal_dgemm)
