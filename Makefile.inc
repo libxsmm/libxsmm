@@ -295,6 +295,9 @@ ifneq (0,$(AVX))
 	ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
 		AVX ?= 3
 		SSE ?= 0
+		ifeq (1,$(words $(filter avx512er,$(CPUFLAGS))))
+			MIC = 1
+		endif
 	else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
 		AVX ?= 2
 		SSE ?= 0
