@@ -89,11 +89,8 @@
 
 #if defined(_MSC_VER)
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
-#elif (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
-#elif (LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
-  && 0 /* message format looks awful; disabled */
-#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#elif LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
+   && LIBXSMM_VERSION3(5, 0, 0) >  LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
 #else
 # define LIBXSMM_MESSAGE(MSG)
