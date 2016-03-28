@@ -30,7 +30,23 @@ ROW_MAJOR ?= 0
 # (M(N(K))) using M, N, and K separately. Please consult the documentation for further details.
 MNK ?= 0
 
-# Generate prefetches
+# Enable thread-local cache of recently dispatched kernels either
+# 0: "disable", 1: "enable", or small power-of-two number.
+CACHE ?= 1
+
+# Issue software prefetch instructions (see end of section
+# https://github.com/hfp/libxsmm/#generator-driver)
+# Use the enumerator 1...9, or the exact strategy
+# name pfsigonly...AL2jpst_BL2viaC.
+# 1: auto-select
+# 2: pfsigonly
+# 3: BL2viaC
+# 4: AL2
+# 5: curAL2
+# 6: AL2_BL2viaC
+# 7: curAL2_BL2viaC
+# 8: AL2jpst
+# 9: AL2jpst_BL2viaC
 PREFETCH ?= 0
 
 # Preferred precision when registering statically generated code versions
@@ -64,6 +80,10 @@ ifneq (0,$(BETA))
 ifneq (1,$(BETA))
 $(error BETA needs to be eiter 0 or 1)
 endif
+endif
+
+ifneq (1,$(CACHE))
+	DFLAGS = -DLIBXSMM_CACHESIZE=$(CACHE)
 endif
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
