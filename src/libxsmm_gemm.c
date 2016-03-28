@@ -70,18 +70,17 @@ LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch = LIBXSMM_MAX(LIBXSMM_PREFETCH, 0);
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core = 2;
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks = 0;
-LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 2;
+LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp = 2;
+LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int prefetch,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
-  const char* env[3], *const env_gemm = getenv("LIBXSMM_GEMM");
   int config = 0;
 
-  if (0 != env_gemm && 0 != *env_gemm) {
-    libxsmm_internal_gemm = atoi(env_gemm);
-  }
+  libxsmm_internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  LIBXSMM_UNUSED(prefetch);
 
 #if !defined(__MIC__)
   if (0 == strcmp("knl", archid))
@@ -91,27 +90,46 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
     config = 1;
   }
 
-  /* determine what will be executed in the wrapper code (0: small gemm, 1: sequential, 2: parallelized) */
-  libxsmm_internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-  LIBXSMM_UNUSED(prefetch);
+  { /* behaviour of libxsmm_omp_?gemm routines (OpenMP based)
+     * 1: parallelized but without internal parallel region,
+     * 2: parallelized with internal parallel region" )
+     */
+    const char *const env = getenv("LIBXSMM_OMP");
+    if (0 != env && 0 != *env) {
+      libxsmm_internal_gemm_omp = atoi(env);
+    }
+  }
 
-  /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
-  env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-  libxsmm_internal_tile_size[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
-  libxsmm_internal_tile_size[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
-  libxsmm_internal_tile_size[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
-  /* environment-defined tile sizes applies for DP and SP */
-  libxsmm_internal_tile_size[1/*SP*/][0/*M*/] = libxsmm_internal_tile_size[0/*DP*/][0];
-  libxsmm_internal_tile_size[1/*SP*/][1/*N*/] = libxsmm_internal_tile_size[0/*DP*/][1];
-  libxsmm_internal_tile_size[1/*SP*/][2/*K*/] = libxsmm_internal_tile_size[0/*DP*/][2];
+  { /* behaviour of LD_PRELOAD ?GEMM routines
+     * 0: sequential below-threshold routine (no OpenMP) with fallback to BLAS,
+     * 1: OpenMP-parallelized but without internal parallel region,
+     * 2: OpenMP-parallelized with internal parallel region" )
+     */
+    const char *const env = getenv("LIBXSMM_GEMM");
+    if (0 != env && 0 != *env) {
+      libxsmm_internal_gemm = atoi(env);
+    }
+  }
 
-  /* load predefined configuration if tile size is not setup by the environment */
-  if (0 >= libxsmm_internal_tile_size[0/*DP*/][0/*M*/]) libxsmm_internal_tile_size[0][0] = internal_tile_sizes[config][0][0];
-  if (0 >= libxsmm_internal_tile_size[0/*DP*/][1/*N*/]) libxsmm_internal_tile_size[0][1] = internal_tile_sizes[config][0][1];
-  if (0 >= libxsmm_internal_tile_size[0/*DP*/][2/*K*/]) libxsmm_internal_tile_size[0][2] = internal_tile_sizes[config][0][2];
-  if (0 >= libxsmm_internal_tile_size[1/*SP*/][0/*M*/]) libxsmm_internal_tile_size[1][0] = internal_tile_sizes[config][1][0];
-  if (0 >= libxsmm_internal_tile_size[1/*SP*/][1/*N*/]) libxsmm_internal_tile_size[1][1] = internal_tile_sizes[config][1][1];
-  if (0 >= libxsmm_internal_tile_size[1/*SP*/][2/*K*/]) libxsmm_internal_tile_size[1][2] = internal_tile_sizes[config][1][2];
+  { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
+    const char* env[3];
+    env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
+    libxsmm_internal_tile_size[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
+    libxsmm_internal_tile_size[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
+    libxsmm_internal_tile_size[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
+    /* environment-defined tile sizes applies for DP and SP */
+    libxsmm_internal_tile_size[1/*SP*/][0/*M*/] = libxsmm_internal_tile_size[0/*DP*/][0];
+    libxsmm_internal_tile_size[1/*SP*/][1/*N*/] = libxsmm_internal_tile_size[0/*DP*/][1];
+    libxsmm_internal_tile_size[1/*SP*/][2/*K*/] = libxsmm_internal_tile_size[0/*DP*/][2];
+
+    /* load predefined configuration if tile size is not setup by the environment */
+    if (0 >= libxsmm_internal_tile_size[0/*DP*/][0/*M*/]) libxsmm_internal_tile_size[0][0] = internal_tile_sizes[config][0][0];
+    if (0 >= libxsmm_internal_tile_size[0/*DP*/][1/*N*/]) libxsmm_internal_tile_size[0][1] = internal_tile_sizes[config][0][1];
+    if (0 >= libxsmm_internal_tile_size[0/*DP*/][2/*K*/]) libxsmm_internal_tile_size[0][2] = internal_tile_sizes[config][0][2];
+    if (0 >= libxsmm_internal_tile_size[1/*SP*/][0/*M*/]) libxsmm_internal_tile_size[1][0] = internal_tile_sizes[config][1][0];
+    if (0 >= libxsmm_internal_tile_size[1/*SP*/][1/*N*/]) libxsmm_internal_tile_size[1][1] = internal_tile_sizes[config][1][1];
+    if (0 >= libxsmm_internal_tile_size[1/*SP*/][2/*K*/]) libxsmm_internal_tile_size[1][2] = internal_tile_sizes[config][1][2];
+  }
 
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;

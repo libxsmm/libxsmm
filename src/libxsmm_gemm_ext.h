@@ -90,7 +90,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_cor
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch;
 /** INTERNAL: determines whether (OpenMP-)tasks are preferred over thread-style parallelization */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks;
-/** INTERNAL: kind of GEMM (0: small gemm, 1: sequential, 2: parallelized) */
+/** INTERNAL: kind of OMP-based ?GEMM (1: sequential, 2: parallelized) */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp;
+/** INTERNAL: kind of LD_PRELOAD ?GEMM (0: small gemm, 1: sequential, 2: parallelized) */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
 
 #endif /*LIBXSMM_GEMM_EXT_H*/
