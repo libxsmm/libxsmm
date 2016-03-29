@@ -61,8 +61,8 @@ LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSY
 
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-  { { 32, 32, 32 }, { 32, 32, 32 } }, /*generic*/
-  { { 32, 32, 32 }, { 32, 32, 32 } }  /*knl*/
+  { { 72, 32, 16 }, { 72, 32, 16 } }, /*generic*/
+  { { 72, 32, 16 }, { 72, 32, 16 } }  /*knl*/
 };
 LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
   { 0, 0, 0 }, { 0, 0, 0 }
