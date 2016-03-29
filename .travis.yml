@@ -59,33 +59,33 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    make -e PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}"  install-artifacts tests test-wrap &&
+    make -e PREFIX=${UPLOAD_DIR} TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-artifacts tests test-wrap &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt; 
     fi &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_REGSIZE=32 ${ECFLAGS}" STATIC=0  install-artifacts tests test-cp2k &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_REGSIZE=32 ${ECFLAGS}" STATIC=0 install-artifacts tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} PREFETCH=1  install-artifacts tests test-cp2k &&
+    ./make.sh -ci-rm PREFIX=${UPLOAD_DIR} PREFETCH=1 install-artifacts tests test-cp2k &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} STATIC=0  install-artifacts tests test-cp2k test-smm &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} STATIC=0 install-artifacts tests test-cp2k test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_HASH_BASIC ${ECFLAGS}"  install-artifacts tests test-cp2k test-smm &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} ECFLAGS="-DLIBXSMM_HASH_BASIC ${ECFLAGS}" install-artifacts tests test-cp2k test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} SSE=0 AVX=0  install-artifacts tests test-smm &&
+    ./make.sh -ci-cm PREFIX=${UPLOAD_DIR} SSE=0 AVX=0 CACHE=0 install-artifacts tests test-smm &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CXX}" = "g++" ]; then echo 1; else echo 0; fi) &&
-    ./make.sh -ci-nek PREFIX=${UPLOAD_DIR}  install-artifacts test-nek &&
+    ./make.sh -ci-nek PREFIX=${UPLOAD_DIR} install-artifacts test-nek &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
