@@ -5,7 +5,7 @@ LIBXSMM is a library for small dense and small sparse matrix-matrix multiplicati
 
 **What is a small matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M N K)<sup>1/3</sup> \<= 80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the L2 cache. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
 
-**What about "medium-sized" matrix multiplication?** A more recent addition are GEMM routines (`libxsmm_omp_?gemm`) which are parallelized using OpenMP ("omp"). These routines are leveraging the same specialized kernel routines as the small matrix multiplications, in-memory code generation (JIT), and automatic code/parameter dispatch but implementing a tile-based multiplication scheme i.e., a scheme which is supposedly suitable for larger problem sizes. The terminology "medium-sized" is because there is no claim about reaching a performance level e.g., similar to a vendor-supplied BLAS library. However, please note that the (original) idea of only aiming for "medium-sized" matrix multiplications is not necessarily true going forward.
+**What about "medium-sized" matrix multiplication?** A more recent addition are GEMM routines which are parallelized using OpenMP (`libxsmm_omp_?gemm`). These routines are leveraging the same specialized kernel routines as the small matrix multiplications, in-memory code generation (JIT), and automatic code/parameter dispatch but implementing a tile-based multiplication scheme i.e., a scheme suitable for larger problem sizes. The phrase "medium-sized" is because of the (original) idea of aiming for "medium-sized" multiplications (which is not necessarily true going forward), but in particular because of not aiming to reach the same relative performance level as with the small-sized multiplications when comparing to e.g., a vendor-tuned BLAS library.
 
 **How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against [Intel&#160;MKL&#160;11.2](https://registrationcenter.intel.com/en/forms/?productid=2558) (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (`env MKL_VERBOSE=1 ./workload > verbose.txt`). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (`grep -a "MKL_VERBOSE DGEMM" verbose.txt | cut -d, -f3-5`).
 
@@ -21,7 +21,7 @@ void libxsmm_init(void);
 void libxsmm_finalize(void);
 ```
 
-To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from LAPACK/BLAS standard however without compromising the binary compatibility).
+To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from the LAPACK/BLAS standard, however without compromising the binary compatibility).
 
 ```C
 /** Automatically dispatched dense matrix multiplication (single/double-precision, C code). */
@@ -36,16 +36,16 @@ libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*re
 
 For the C interface (with type prefix 's' or 'd'), all arguments and in particular m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. The C++ interface is also supplying overloaded versions where m, n, and k are allowed to be passed by&#8209;value (making it clearer that m, n, and k are non-optional arguments).
 
-The Fortran interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments (where the C/C++ interface is allowing NULL to be passed).
+The FORTRAN interface supports optional arguments (without affecting the binary compatibility with the original LAPACK/BLAS interface) by allowing to omit arguments where the C/C++ interface is allows for NULL to be passed.
 
-```Fortran
+```FORTRAN
 ! Automatically dispatched dense matrix multiplication (single/double-precision).
 CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ! Automatically dispatched dense matrix multiplication (generic interface).
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
-For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm` instead of `libxsmm_gemm`) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. However, the re-exposed functions are twiddling the necessary arguments in order to account for ROW_MAJOR storage order (if enabled). The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback implementation when building an application-specific dispatch mechanism.
+For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm` instead of `libxsmm_gemm`) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
 ```C
 /** Automatically dispatched dense matrix multiplication (single/double-precision). */
@@ -54,7 +54,7 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines are by default opening a parallel region internally, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_OMP=1 (1: sequential, and 2: parallelized/default). The actual mechanism is based on "classic" OpenMP by default (thread-based parallelism), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) in order to keep the main library independent from a particular threading runtime (agnostic). For this reason, the Fortran interface does not allow to treat some of the arguments optional.
+A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines are by default opening a parallel region internally, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_OMP=1 (1:&#160;sequential, and 2:&#160;parallelized/default). The actual parallelism is based on "classic" OpenMP by default (thread-based), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) keeping the main library agnostic with respect to a particular threading runtime. For the same reason, the FORTRAN interface does not allow optional arguments for this pair of routines.
 
 ```C
 /** OpenMP parallelized dense matrix multiplication (single/double-precision). */
@@ -76,7 +76,7 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* flags, const int* prefetch);
 ```
 
-A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. In C++, a type `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction for the numeric type in `libxsmm_?mmdispatch`. Similarly in Fortran, when calling the generic interface (`libxsmm_mmdispatch`) the given `LIBXSMM_?MMFUNCTION` is dispatched such that `libxsmm_call` can be used to actually perform the function call using the PROCEDURE POINTER wrapped by `LIBXSMM_?MMFUNCTION`. Beside of dispatching code, one can also call a specific kernel (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included for statically generated kernels.
+A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. In C++, a type `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction for the numeric type in `libxsmm_?mmdispatch`. Similarly in FORTRAN, when calling the generic interface (`libxsmm_mmdispatch`) the given `LIBXSMM_?MMFUNCTION` is dispatched such that `libxsmm_call` can be used to actually perform the function call using the PROCEDURE POINTER wrapped by `LIBXSMM_?MMFUNCTION`. Beside of dispatching code, one can also call a specific kernel (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included for statically generated kernels.
 
 ## Build Instructions
 The build system relies on GNU Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key&#8209;value pairs. Key&#8209;value pairs can be supplied in two ways: (1)&#160;after the "make" command, or (2)&#160;prior to the "make" command (`env`) which is effectively the same as exporting the key&#8209;value pair as an environment variable (`export`, or `setenv`). Of course both methods can be mixed, however the second method may requires to supply the `-e` flag. Please note that the CXX, CC, and FC keys are handled such that they are taken into account in any case.
@@ -148,13 +148,13 @@ The recorded output file can be further evaluated (see also [cp2k-test.sh](https
 grep "diff" samples/cp2k/cp2k-perf.txt | grep -v "diff=0.000"
 ```
 
-**NOTE**: by default, a combination of a C/C++ and a Fortran compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a Fortran compiler can be relaxed (`make FC=`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). Fortran code can make use of LIBXSMM in three different ways:
+**NOTE**: by default, a combination of a C/C++ and a FORTRAN compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). FORTRAN code can make use of LIBXSMM in three different ways:
 
 * By relying on the module file, and by linking against 'libxsmmf' and 'libxsmm' (this order),
 * By including the interface 'libxsmm.f', and by linking solely against 'libxsmm', or by
 * Optionally declaring `libxsmm_?gemm` (BLAS signature), and by linking against 'libxsmm'.
 
-At the expense of a limited functionality (`libxsmm_?gemm`), the latter method also works with Fortran&#160;77 (otherwise the Fortran&#160;2003 standard is necessary).
+At the expense of a limited functionality (`libxsmm_?gemm`), the latter method also works with FORTRAN&#160;77 (otherwise the FORTRAN&#160;2003 standard is necessary).
 
 ## Installation
 Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE3 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
@@ -213,7 +213,7 @@ This case obviously requires to build a shared library of LIBXSMM:
 make STATIC=0
 ```
 
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0: sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1: OpenMP-parallelized but without internal parallel region, and 2: OpenMP-parallelized with internal parallel region:
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region:
 
 ```
 LIBXSMM_GEMM=2 ./myapplication
@@ -237,6 +237,8 @@ LIBXSMM_TRACE=1 ./myapplication
 Syntactically up to three arguments separated by commas (which allows to omit arguments) are taken (*tid*,*i*,*n*): *tid* signifies the ID of the thread to be traced with 1...NTHREADS being valid and where LIBXSMM_TRACE=1 is filtering for the "main thread" (in fact the first thread running into the trace facility); grabbing all threads (no filter) can be achieved by supplying a negative id (which is also the default when omitted). The second argument is pruning higher levels of the call-tree with *i=1* being the default (level zero is the highest at the same level as the main function). The last argument is taking the number of inclusive call levels with *n=-1* being the default (signifying no filter).
 
 Please note that the trace facility is severely impacting the performance (even with LIBXSMM_TRACE=0), and this is not just because of console output but rather since inlining (internal) function  might be prevented along with additional call overhead on each function entry and exit. Therefore debug symbols can be also enabled separately (`make SYM=1`; implied by TRACE=1 or DBG=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible (console) or other non-private I/O (files).
+
+An additional assistance during development, the library emits a message when terminating (debug build only; DBG=1). The JIT based code path (according to the CPUID) as well as the number of JIT'ted kernels is printed at termination time. For completeness, the number of registered static kernels is printed as well (this happens when no JIT/AVX based code path was available). Example (stderr): `LIBXSMM_JIT=hsw NJIT=14 NSTATIC=0`.
 
 ## Performance
 ### Tuning
