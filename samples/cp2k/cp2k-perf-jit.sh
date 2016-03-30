@@ -20,7 +20,7 @@ case "$1" in
 esac
 
 if [ "" = "${!RUNS}" ]; then
-  RUNS=RUNS2
+  RUNS=RUNS7
 fi
 
 if [ "" != "$1" ]; then
