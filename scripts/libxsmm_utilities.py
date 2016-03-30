@@ -90,7 +90,7 @@ def load_mnklist(argv, threshold, format = 0, resultset = set()):
     else:
         sys.tracebacklimit = 0
         raise ValueError("load_mnklist: unexpected format!")
-    return set(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]), resultset))
+    return set(filter(lambda mnk: (0 < mnk[0]) and (0 < mnk[1]) and (0 < mnk[2]) and (threshold >= (mnk[0] * mnk[1] * mnk[2])), resultset))
 
 
 def max_mnk(mnklist, init = 0, index = None):
