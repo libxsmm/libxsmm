@@ -47,7 +47,7 @@ if __name__ == "__main__":
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
             mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
             ldxsig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), " + kstr + ", LIBXSMM_LD(" + mstr + ", " + nstr + ")"
-            if (2 != precision): # only double-precision
+            if (2 != precision): # only single-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
@@ -56,8 +56,8 @@ if __name__ == "__main__":
                 print("  result[indx].code.xmm.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
                 print("  result[indx].descriptor = desc;")
-                print("} LIBXSMM_DEBUG(else ++cdp;)")
-            if (1 != precision): # only single-precision
+                print("} LIBXSMM_DEBUG(else ++csp;)")
+            if (1 != precision): # only double-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
@@ -66,7 +66,7 @@ if __name__ == "__main__":
                 print("  result[indx].code.xmm.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
                 print("  result[indx].code_size = 0; /* statically generated code */")
                 print("  result[indx].descriptor = desc;")
-                print("} LIBXSMM_DEBUG(else ++csp;)")
+                print("} LIBXSMM_DEBUG(else ++cdp;)")
     elif (1 < argc):
         print("/* no static code */")
     else:
