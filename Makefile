@@ -249,6 +249,11 @@ ifeq (1,$(PREFETCH_ID))
 	# select "pfsigonly" for statically generated code.
 	PREFETCH_SCHEME = pfsigonly
 	PREFETCH_TYPE = -1
+	ifneq (0,$(MIC))
+		ifneq (0,$(MPSS))
+			PREFETCH_SCHEME_MIC = AL2_BL2viaC
+		endif
+	endif
 else ifeq (2,$(PREFETCH_ID))
 	PREFETCH_SCHEME = pfsigonly
 	PREFETCH_TYPE = 1
@@ -273,6 +278,9 @@ else ifeq (8,$(PREFETCH_ID))
 else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_SCHEME = AL2jpst_BL2viaC
 	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
+endif
+ifeq (,$(PREFETCH_SCHEME_MIC))
+	PREFETCH_SCHEME_MIC = PREFETCH_SCHEME
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
@@ -432,10 +440,10 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME_MIC) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME_MIC) DP
 endif
 endif
 endif
