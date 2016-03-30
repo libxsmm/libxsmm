@@ -1,1 +1,4 @@
-
+tex2pdf.*
+file*.tex
+*.docx
+*.pdf
