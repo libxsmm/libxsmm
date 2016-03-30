@@ -85,9 +85,13 @@
 # endif
 #endif
 
-/* allow external definition to enable testing */
+/* allow external definition to enable testing corner cases (exhausted registry space) */
 #if !defined(LIBXSMM_REGSIZE)
-# define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number */
+# if defined(LIBXSMM_HASH_BASIC) /* consider larger registry to better deal with low-quality hash */
+#   define LIBXSMM_REGSIZE /*1048576*/524288 /* no Mersenne Prime number required, but POT number */
+# endif
+#   define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
+# endif
 # define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
 #else
 # define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
