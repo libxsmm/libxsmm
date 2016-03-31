@@ -92,7 +92,7 @@
 #if !defined(LIBXSMM_REGSIZE)
 # if defined(LIBXSMM_HASH_BASIC) /* consider larger registry to better deal with low-quality hash */
 #   define LIBXSMM_REGSIZE /*1048576*/524288 /* no Mersenne Prime number required, but POT number */
-# endif
+# else
 #   define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
 # endif
 # define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
@@ -382,6 +382,22 @@ return internal_find_code_result.xmm
   M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, dmm, HASH_FUNCTION, DIFF_FUNCTION)
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
+  const libxsmm_gemm_descriptor* desc, libxsmm_xmmfunction src,
+  internal_regentry* dst, unsigned int* count)
+{
+  assert(0 != desc && 0 != src.dmm && 0 != dst && 0 != count);
+  if (0 == dst->code.pmm) { /* no further effort to handle collision */
+    dst->code.xmm = src;
+    dst->code_size = 0; /* statically generated code */
+    dst->descriptor = *desc;
+  }
+  else {
+    ++(*count);
+  }
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 {
   /*const*/internal_regentry* result;
@@ -507,8 +523,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #if (0 != LIBXSMM_JIT) && !defined(__MIC__)
           if (LIBXSMM_STATIC_TARGET_ARCH >= internal_target_arch)
 #endif
-          {
-            LIBXSMM_DEBUG(unsigned int csp = 0, cdp = 0;)
+          { /* opening a scope for eventually declaring variables */
+            unsigned int csp = 0, cdp = 0;
             /* setup the dispatch table for the statically generated code */
 #           include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */
