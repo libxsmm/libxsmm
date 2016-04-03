@@ -346,10 +346,12 @@ endif
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
-                     $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
+                     $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@$(ROOTDIR)/.hooks/install.sh
+	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
+		$(ROOTDIR)/.hooks/install.sh ; \
+	fi
 ifeq (0,$(OFFLOAD))
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
