@@ -13,13 +13,12 @@ if [ "$1" = "" ]; then
   DEST=.
 fi
 
-SHELLFILE=${HERE}/${NAME}
 STATEFILE=${DEST}/.state
 STATE=$(${TR} '?' '\n' | ${SED} -e 's/^  *//')
 
 if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - > /dev/null; ${ECHO} $?) ]; then
   ${ECHO} "${STATE}" > ${STATEFILE}
-  ${ECHO} ${SHELLFILE}
-  ${TOUCH} ${SHELLFILE}
+  ${ECHO} $0
+  ${TOUCH} $0
 fi
 
