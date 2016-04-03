@@ -296,9 +296,11 @@ endif
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                     $(ROOTDIR)/.hooks/install.sh $(ROOTDIR)/version.txt \
+                     $(ROOTDIR)/version.txt \
                      $(HEADERS)
-	@$(ROOTDIR)/.hooks/install.sh
+	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
+		$(ROOTDIR)/.hooks/install.sh ; \
+	fi
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
