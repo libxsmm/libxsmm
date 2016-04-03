@@ -394,7 +394,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
     dst->descriptor = *desc;
     ++(*registered);
   }
-#if 1
+#if 0
   else if (0 == (dst->code.imm & LIBXSMM_HASH_COLLISION)) { /* current entry is not yet a collision */
     /* start at a re-hashed index position */
     const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
