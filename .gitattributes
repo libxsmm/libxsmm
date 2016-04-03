@@ -1,0 +1,12 @@
+.gitattributes export-ignore  
+.gitignore export-ignore
+.hooks
+.travis.yml
+.codecov
+.env
+README.sh
+samples/seissol/*.bound
+samples/seissol/*.neigh
+samples/seissol/*.orient
+samples/seissol/*.sides
+samples/seissol/*.size
