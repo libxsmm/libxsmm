@@ -5,6 +5,7 @@
 .codecov export-ignore
 .env export-ignore
 README.sh export-ignore
+documentation/*.pptx export-ignore
 samples/seissol/*.bound export-ignore
 samples/seissol/*.neigh export-ignore
 samples/seissol/*.orient export-ignore
