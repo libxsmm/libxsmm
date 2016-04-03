@@ -383,18 +383,42 @@ return internal_find_code_result.xmm
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
-  const libxsmm_gemm_descriptor* desc, libxsmm_xmmfunction src,
-  internal_regentry* dst, unsigned int* count)
+  const libxsmm_gemm_descriptor* desc, unsigned int index, unsigned int hash, libxsmm_xmmfunction src,
+  internal_regentry* dst, unsigned int* registered, unsigned int* total)
 {
-  assert(0 != desc && 0 != src.dmm && 0 != dst && 0 != count);
-  if (0 == dst->code.pmm) { /* no further effort to handle collision */
+  assert(0 != desc && 0 != src.dmm && 0 != dst && 0 != registered && 0 != total);
+
+  if (0 == dst->code.pmm) { /* no collision (registry slot is available) */
     dst->code.xmm = src;
     dst->code_size = 0; /* statically generated code */
     dst->descriptor = *desc;
+    ++(*registered);
   }
-  else {
-    ++(*count);
+#if 1
+  else if (0 == (dst->code.imm & LIBXSMM_HASH_COLLISION)) { /* current entry is not yet a collision */
+    /* start at a re-hashed index position */
+    const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
+    internal_regentry *const registry = dst - index;
+    unsigned int i0, i, next;
+
+    /* mark current entry as a collision */
+    dst->code.imm |= LIBXSMM_HASH_COLLISION;
+
+    /* start linearly searching for an available slot */
+    for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
+      next != i0 && 0 != registry[i].code.pmm; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
+
+    if (next != i0) { /* registry not exhaused */
+      dst = registry + i;
+      assert(0 == dst->code.pmm);
+      dst->code.xmm = src;
+      dst->code_size = 0; /* statically generated code */
+      dst->descriptor = *desc;
+      ++(*registered);
+    }
   }
+#endif
+  ++(*total);
 }
 
 
@@ -524,15 +548,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
           if (LIBXSMM_STATIC_TARGET_ARCH >= internal_target_arch)
 #endif
           { /* opening a scope for eventually declaring variables */
-            unsigned int csp = 0, cdp = 0;
+            unsigned int csp_tot = 0, csp_reg = 0, cdp_tot = 0, cdp_reg = 0;
             /* setup the dispatch table for the statically generated code */
 #           include <libxsmm_dispatch.h>
 #if !defined(NDEBUG) /* library code is expected to be mute */
-            if (0 < csp) {
-              fprintf(stderr, "LIBXSMM: %u SP-kernels are not registered due to hash key collisions!\n", csp);
+            if (csp_reg < csp_tot) {
+              fprintf(stderr, "LIBXSMM: %u of %u SP-kernels are not registered due to hash key collisions!\n", csp_tot - csp_reg, csp_tot);
             }
-            if (0 < cdp) {
-              fprintf(stderr, "LIBXSMM: %u DP-kernels are not registered due to hash key collisions!\n", cdp);
+            if (cdp_reg < cdp_tot) {
+              fprintf(stderr, "LIBXSMM: %u of %u DP-kernels are not registered due to hash key collisions!\n", cdp_tot - cdp_reg, cdp_tot);
             }
 #endif
           }

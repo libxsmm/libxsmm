@@ -54,14 +54,14 @@ if __name__ == "__main__":
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
                 print("func.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, func, result + indx, &csp);")
+                print("internal_register_static_code(&desc, indx, hash, func, result + indx, &csp_reg, &csp_tot);")
             if (1 != precision): # only double-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
                 print("func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, func, result + indx, &cdp);")
+                print("internal_register_static_code(&desc, indx, hash, func, result + indx, &cdp_reg, &cdp_tot);")
     elif (1 < argc):
         print("/* no static code */")
     else:
