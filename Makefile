@@ -399,6 +399,7 @@ endif
 endif
 endif
 ifeq (noarch,$(GENTARGET))
+ifneq (,$(TARGET))
 ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >> $@
@@ -425,7 +426,8 @@ ifneq (1,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) snb $(PREFETCH_SCHEME) DP
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) wsm $(PREFETCH_SCHEME) DP
 endif
-else
+endif # target
+else # noarch
 ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_$(GENTARGET)_sp" >> $@
 endif
@@ -440,7 +442,7 @@ endif
 ifneq (1,$(PRECISION))
 	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
-endif
+endif # noarch
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
