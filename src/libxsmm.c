@@ -312,16 +312,18 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
               internal_find_code_result.pmm = 0; \
             } \
           } \
-          /* collision discovered but code version exists; perform initial deep check */ \
+          /* collision discovered but code version exists; perform deep check */ \
           else if (0 != (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor))) { \
             /* continue linearly searching code starting at re-hashed index position */ \
             const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
             unsigned int next; \
             internal_regentry *const registry = (ENTRY) - i; /* recalculate base address */ \
             for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
-              i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); next != i0/*no code found*/ && \
+              i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); \
               /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
-              (0 == (ENTRY = (registry + i))->code.pmm || 0 != (diff = (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor)))); \
+              (0 == (ENTRY = (registry + i))->code.pmm || 0 != (diff = (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor)))) \
+                /* entire registry was searched and no code version was found */ \
+                && next != i0; \
               i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
             if (0 == diff) { /* found exact code version; continue with atomic load */ \
               internal_find_code_result.pmm = (ENTRY)->code.pmm; \
@@ -396,37 +398,25 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
   internal_regentry* dst, unsigned int* registered, unsigned int* total)
 {
   assert(0 != desc && 0 != src.dmm && 0 != dst && 0 != registered && 0 != total);
-
-  if (0 == dst->code.pmm) { /* no collision (registry slot is available) */
-    dst->code.xmm = src;
-    dst->code_size = 0; /* statically generated code */
-    dst->descriptor = *desc;
-    ++(*registered);
-  }
-#if 0
-  else if (0 == (dst->code.imm & LIBXSMM_HASH_COLLISION)) { /* current entry is not yet a collision */
+  if (0 != dst->code.pmm) { /* collision? */
     /* start at a re-hashed index position */
     const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
     internal_regentry *const registry = dst - index;
     unsigned int i0, i, next;
 
-    /* mark current entry as a collision */
+    /* mark current entry as a collision (this might be already the case) */
     dst->code.imm |= LIBXSMM_HASH_COLLISION;
 
     /* start linearly searching for an available slot */
     for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
-      next != i0 && 0 != registry[i].code.pmm; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
-
-    if (next != i0) { /* registry not exhausted */
-      dst = registry + i;
-      assert(0 == dst->code.pmm);
-      dst->code.xmm = src;
-      dst->code_size = 0; /* statically generated code */
-      dst->descriptor = *desc;
-      ++(*registered);
-    }
+      0 != (dst = registry + i)->code.pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
   }
-#endif
+  if (0 == dst->code.pmm) { /* registry not (yet) exhausted */
+    dst->code.xmm = src;
+    dst->code_size = 0; /* statically generated code */
+    dst->descriptor = *desc;
+    ++(*registered);
+  }
   ++(*total);
 }
 
