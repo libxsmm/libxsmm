@@ -324,12 +324,14 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
               (0 == (ENTRY = (registry + i))->code.pmm || 0 != (diff = (DIFF_FUNCTION)(DESCRIPTOR, &((ENTRY)->descriptor)))); \
               i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE)); \
             if (0 == diff) { /* found exact code version; continue with atomic load */ \
-              continue; \
+              internal_find_code_result.pmm = (ENTRY)->code.pmm; \
+              /* clear the uppermost bit of the address */ \
+              internal_find_code_result.imm &= ~LIBXSMM_HASH_COLLISION; \
             } \
             else { /* no code found */ \
               internal_find_code_result.pmm = 0; \
-              break; \
             } \
+            break; \
           } \
           else { /* clear the uppermost bit of the address */ \
             internal_find_code_result.imm &= ~LIBXSMM_HASH_COLLISION; \
@@ -415,7 +417,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
     for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
       next != i0 && 0 != registry[i].code.pmm; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
 
-    if (next != i0) { /* registry not exhaused */
+    if (next != i0) { /* registry not exhausted */
       dst = registry + i;
       assert(0 == dst->code.pmm);
       dst->code.xmm = src;
