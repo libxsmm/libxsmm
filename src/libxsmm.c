@@ -557,6 +557,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
             if (cdp_reg < cdp_tot) {
               fprintf(stderr, "LIBXSMM: %u of %u DP-kernels are not registered due to hash key collisions!\n", cdp_tot - cdp_reg, cdp_tot);
             }
+#else
+            LIBXSMM_UNUSED(csp_tot); LIBXSMM_UNUSED(csp_reg); LIBXSMM_UNUSED(cdp_tot); LIBXSMM_UNUSED(cdp_reg);
 #endif
           }
           atexit(libxsmm_finalize);
