@@ -462,7 +462,7 @@ ifneq (0,$(INTEL))
 	ifeq (0,$(EXP))
 		CXXFLAGS += -fno-exceptions
 	endif
-	OMPFLAG = -fopenmp -override_limits
+	OMPFLAG = -fopenmp -qoverride_limits
 	ifneq (0,$(OMP))
 		CXXFLAGS += $(OMPFLAG)
 		CFLAGS += $(OMPFLAG)
