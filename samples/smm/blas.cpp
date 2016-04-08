@@ -88,12 +88,7 @@ int main(int argc, char* argv[])
     const unsigned long size = LIBXSMM_DEFAULT(2048/*default: 2 GByte*/,
       4 < argc ? std::strtoul(argv[4], 0, 10) : 0) << 20;
 
-    const int csize = m * n;
-    if ((MAX_SIZE) < csize) {
-      throw std::runtime_error("The size M x N is exceeding MAX_SIZE!");
-    }
-
-    const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const int s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
@@ -221,51 +216,56 @@ int main(int argc, char* argv[])
       }
 #endif
 
-      { // streaming
-        fprintf(stdout, "Streamed (A,B)...\n");
-        const unsigned long long start = libxsmm_timer_tick();
+      if ((MAX_SIZE) >= csize) {
+        { // streaming
+          fprintf(stdout, "Streamed (A,B)...\n");
+          const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#         pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
-          // make sure that stacksize is covering the problem size
-          T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
-          // do nothing else with tmp; just a benchmark
-          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
-            LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+          for (int i = 0; i < s; ++i) {
+            // make sure that stacksize is covering the problem size
+            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            // do nothing else with tmp; just a benchmark
+            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+          }
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration) {
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
 
-      { // cached
-        fprintf(stdout, "Cached...\n");
-        const unsigned long long start = libxsmm_timer_tick();
+        { // cached
+          fprintf(stdout, "Cached...\n");
+          const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#         pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
-          // make sure that stacksize is covering the problem size
-          T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-          T *const tmp = LIBXSMM_ALIGN_LDST(tls);
-          // do nothing else with tmp; just a benchmark
-          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
-            LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+          for (int i = 0; i < s; ++i) {
+            // make sure that stacksize is covering the problem size
+            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
+            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            // do nothing else with tmp; just a benchmark
+            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
+              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+          }
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration) {
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
-        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-        }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+      else {
+        fprintf(stderr, "Warning: size M x N is exceeding MAX_SIZE!\n");
       }
 
       // finalize LIBXSMM
