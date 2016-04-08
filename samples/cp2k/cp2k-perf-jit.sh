@@ -2,7 +2,7 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 ECHO=$(which echo)
-SCRT=../../scripts/libxsmm_utilities.py
+SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=cp2k-perf.txt
 
 RUNS0=$(${SCRT} -1 $((64*64*64-0)) 19   23, 6, 14 16 29, 5 16 13 24 26, 9 16 22, 32, 64, 78, 16 29 55                                                       0 0)
