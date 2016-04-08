@@ -2,6 +2,7 @@ MPARM = 1
 NPARM = 2
 KPARM = 3
 FLOPS = 6
+BWFCT = 1
 
 HIM = -1
 HIN = HIM
@@ -28,7 +29,7 @@ NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * colu
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
 TIME(M, N, K, F) = NFLOPS(M, N, K) * 1E-9 / column(F)
-BW(M, N, K, F, ELEMSIZE) = (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F) * 1024 * 1024 * 1024)
+BW(M, N, K, F, ELEMSIZE) = (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F) * 1024 * 1024 * 1024 * BWFCT)
 
 stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; NSAMPLES = STATS_records; GEOFLOPS = exp(STATS_sum/STATS_records)
@@ -200,3 +201,26 @@ set yrange [0:*]
 set autoscale fix
 plot  BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle smooth sbezier with lines linecolor "grey", \
                         "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle smooth unique with points pointtype 7 pointsize 0.2
+
+if (NSAMPLES<=24) {
+reset
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Selected Problem Instances" }
+set style fill solid 0.4 border -1
+set style data histograms
+set style histogram cluster #gap 2
+#set boxwidth 0.5 relative
+set grid y2tics lc "grey"
+set key left #spacing 0.5
+set xtics rotate by -45 scale 0; set bmargin 6
+set ytics nomirror
+set y2tics nomirror
+set ylabel "GB/s"
+set y2label "GFLOP/s"
+set yrange [0:*]
+set y2range [0:*]
+set autoscale fix
+plot  BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y1 title "Memory Bandwidth" smooth sbezier with lines linecolor "grey", \
+                        "" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y1 notitle smooth unique with points pointtype 7 pointsize 0.2, \
+                        "" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y2 title "Compute Performance"
+}
