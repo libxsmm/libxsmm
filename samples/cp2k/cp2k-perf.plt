@@ -211,7 +211,7 @@ set style data histograms
 set style histogram cluster #gap 2
 #set boxwidth 0.5 relative
 set grid y2tics lc "grey"
-set key left #spacing 0.5
+set key left invert #spacing 0.5
 set xtics rotate by -45 scale 0; set bmargin 6
 set ytics nomirror
 set y2tics nomirror
@@ -221,6 +221,5 @@ set yrange [0:*]
 set y2range [0:*]
 set autoscale fix
 plot  BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y1 title "Memory Bandwidth" smooth sbezier with lines linecolor "grey", \
-                        "" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y1 notitle smooth unique with points pointtype 7 pointsize 0.2, \
                         "" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y2 title "Compute Performance"
 }
