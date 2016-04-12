@@ -2,7 +2,6 @@ MPARM = 1
 NPARM = 2
 KPARM = 3
 FLOPS = 6
-BWFCT = 1
 
 HIM = -1
 HIN = HIM
@@ -29,7 +28,7 @@ NBYTES(M, N, K, ELEMSIZE) = ELEMSIZE * (column(M) * column(K) + column(K) * colu
 AI(M, N, K, ELEMSIZE) = NFLOPS(M, N, K) / NBYTES(M, N, K, ELEMSIZE)
 
 TIME(M, N, K, F) = NFLOPS(M, N, K) * 1E-9 / column(F)
-BW(M, N, K, F, ELEMSIZE) = (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F) * 1024 * 1024 * 1024 * BWFCT)
+BW(M, N, K, F, ELEMSIZE) = (column(M) * column(K) + column(K) * column(N)) * ELEMSIZE / (TIME(M, N, K, F) * 1024 * 1024 * 1024)
 
 stats BASENAME."-perf.dat" using (column(MPARM)*column(NPARM)*column(KPARM)) nooutput; MNK = STATS_stddev**(1.0/3.0); MAXMNK = int(STATS_max)
 stats BASENAME."-perf.dat" using (log(column(FLOPS))) nooutput; NSAMPLES = STATS_records; GEOFLOPS = exp(STATS_sum/STATS_records)
