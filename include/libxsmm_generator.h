@@ -58,74 +58,60 @@
     } \
   }
 
-#if !defined(LIBXSMM_GENERATOR_NOBULK_INIT) && !defined(__STDC_VERSION__) || (199901L > (__STDC_VERSION__))
-/* avoid warning about non-standard extension (nameless struct/union) */
-# define LIBXSMM_GENERATOR_NOBULK_INIT
+#if defined(LIBXSMM_GENERATOR_BIGDESC)
+/* TODO: support libxsmm_blasint in the backend, or make sure to fallback earlier */
+# define LIBXSMM_GENERATOR_SIZE_TYPE unsigned int
+# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+                                          * M,N,K:       3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+                                          * flags:       1 * sizeof(unsigned char)
+                                          * alpha,beta:  2 * sizeof(signed char)
+                                          * prefetch:    1 * sizeof(unsigned char)
+                                          */
+#else
+/* TODO: make sure to fallback earlier if index space is exhaused */
+# define LIBXSMM_GENERATOR_SIZE_TYPE unsigned short
+# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 16 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+                                          * M,N,K:       3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+                                          * flags:       1 * sizeof(unsigned char)
+                                          * alpha,beta:  2 * sizeof(signed char)
+                                          * prefetch:    1 * sizeof(unsigned char)
+                                          */
 #endif
 
 /**
  * Construct a GEMM descriptor after it has been declared. The descriptor flags will sanitized to remove any
  * alignment request which cannot be satisfied (avoids to build an unnecessary code version).
  */
-#if defined(LIBXSMM_GENERATOR_NOBULK_INIT)
-# define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-    (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); \
-    (DESCRIPTOR).ldc = (unsigned int)(LDC); (DESCRIPTOR).m = (unsigned int)(M); \
-    (DESCRIPTOR).n = (unsigned int)(N); (DESCRIPTOR).k = (unsigned int)(K); \
-    (DESCRIPTOR).flags = (unsigned char)LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC); \
-    (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-    (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
-    LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA)
-#else
-# define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-    (DESCRIPTOR).x[0] = (LDA) | ((unsigned long long)(LDB) << 32); \
-    (DESCRIPTOR).x[1] = (LDC) | ((unsigned long long)(M) << 32); \
-    (DESCRIPTOR).x[2] = (N) | ((unsigned long long)(K) << 32); \
-    (DESCRIPTOR).flags = (unsigned char)LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC); \
-    (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-    (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
-    LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA)
-#endif
+#define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
+  (DESCRIPTOR).lda = (LIBXSMM_GENERATOR_SIZE_TYPE)(LDA); (DESCRIPTOR).ldb = (LIBXSMM_GENERATOR_SIZE_TYPE)(LDB); \
+  (DESCRIPTOR).ldc = (LIBXSMM_GENERATOR_SIZE_TYPE)(LDC); (DESCRIPTOR).m = (LIBXSMM_GENERATOR_SIZE_TYPE)(M); \
+  (DESCRIPTOR).n = (LIBXSMM_GENERATOR_SIZE_TYPE)(N); (DESCRIPTOR).k = (LIBXSMM_GENERATOR_SIZE_TYPE)(K); \
+  (DESCRIPTOR).flags = (unsigned char)LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC); \
+  (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
+  (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA)
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
-/** The libxsmm_gemm_descriptor structure must be ordered by the size of the members (packed). */
-#define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(unsigned int)
-                                         * M,N,K:       3 * sizeof(unsigned int)
-                                         * flags:       1 * sizeof(unsigned char)
-                                         * alpha,beta:  2 * sizeof(signed char)
-                                         * prefetch:    1 * sizeof(unsigned char)
-                                         */
-
 /**
- * Structure storing the GEMM argument description.
- * The binary data layout must be fixed across
- * translation units regardless of the
- * alignment and the padding.
+ * Structure storing the GEMM argument description. The binary data layout must be fixed across translation units
+ * regardless of the alignment and the padding. This structure must be ordered by the size of the members (packed).
  */
-#if defined(LIBXSMM_GENERATOR_NOBULK_INIT)
 typedef struct libxsmm_gemm_descriptor {
-#else
-typedef union libxsmm_gemm_descriptor { unsigned long long x[(LIBXSMM_GEMM_DESCRIPTOR_SIZE)/8]; struct {
-#endif
   /** Leading dimensions are general offsets. */
-  unsigned int lda, ldb, ldc;
+  LIBXSMM_GENERATOR_SIZE_TYPE lda, ldb, ldc;
   /** Extents of the matrix. */
-  unsigned int m, n, k;
+  LIBXSMM_GENERATOR_SIZE_TYPE m, n, k;
   /** Collection of various flags. */
   unsigned char flags;
   /** Integer unless FLAG_*_F is raised. */
   signed char alpha, beta;
   /** Prefetch strategy enumeration. */
   unsigned char prefetch;
-#if defined(LIBXSMM_GENERATOR_NOBULK_INIT)
 } libxsmm_gemm_descriptor;
-#else
-}; } libxsmm_gemm_descriptor;
-#endif
 
 /** Extended flag set complementing libxsmm_gemm_flags. */
 typedef enum libxsmm_gemm_xflags {
