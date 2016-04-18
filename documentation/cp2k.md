@@ -44,7 +44,7 @@ To further adjust CP2K at build time of the application, additional key-value pa
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful with performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
-Please note that the arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "x"-configuration (Linux-x86-64-intel.x) by using even more of the above key-value pairs (`OMP`, `ACC`, etc.).
+The arch-files for the versions "popt", "sopt", and "ssmp" are provided for convenience and are actually based on the "x"-configuration; these files are using even more of the above key-value pairs (`OMP`, `ACC`, etc.) inside of the arch-file but include Linux-x86-64-intel.x otherwise. Please note that the entire set of arch-files (`arch/Linux-x86-64-intel.*`) can be also used with the CP2K/master code branch (trunk) by simply copying these files into the arch file folder (Linux-x86-64-intel.x deals with this case internally).
 
 ## Running the Application
 Running the application may go beyond a single node, however for first example the pinning scheme and thread affinitization is introduced. Running an MPI/OpenMP-hybrid application, a number of processes (MPI ranks) which is half the number of cores might be a good starting point (below command could be for an HT-enabled dual-socket system with 16 cores per processor and 64 hardware threads).
