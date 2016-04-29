@@ -226,7 +226,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
 #   define INTERNAL_FIND_CODE_CACHE_FINALIZE(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
     if ((CACHE_ID) != internal_teardown) { \
-      memset(CACHE_KEYS, 0, sizeof(CACHE_KEYS)); \
+      memset(CACHE_KEYS, -1, sizeof(CACHE_KEYS)); \
       CACHE_ID = internal_teardown; \
     } \
     i = ((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1)) % (LIBXSMM_CACHESIZE); \
@@ -237,7 +237,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #   define INTERNAL_FIND_CODE_CACHE_FINALIZE(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
     assert(/*is pot*/(LIBXSMM_CACHESIZE) == (1 << LIBXSMM_LOG2(LIBXSMM_CACHESIZE))); \
     if ((CACHE_ID) != internal_teardown) { \
-      memset(CACHE_KEYS, 0, sizeof(CACHE_KEYS)); \
+      memset(CACHE_KEYS, -1, sizeof(CACHE_KEYS)); \
       CACHE_ID = internal_teardown; \
     } \
     i = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1), LIBXSMM_CACHESIZE); \
