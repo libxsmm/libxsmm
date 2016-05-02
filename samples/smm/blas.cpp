@@ -206,8 +206,8 @@ int main(int argc, char* argv[])
           const T *const x = c + h * csize, *const y = c_array[h];
           for (int i = 0; i < m; ++i) {
             for (int j = 0; j < n; ++j) {
-              const int k = i * n + j;
-              const double d1 = static_cast<double>(x[k] - y[k]);
+              const int index = i * n + j;
+              const double d1 = static_cast<double>(x[index] - y[index]);
               d2 += d1 * d1;
             }
           }
