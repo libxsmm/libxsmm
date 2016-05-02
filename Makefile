@@ -280,7 +280,7 @@ else ifeq (9,$(PREFETCH_ID))
 	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC))
-	PREFETCH_SCHEME_MIC = PREFETCH_SCHEME
+	PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
