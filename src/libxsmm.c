@@ -558,7 +558,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
       }
 #endif
       if (EXIT_SUCCESS == init_code) {
-        assert(0 == internal_registry_keys/*should never happen*/);
+        assert(0 == internal_registry_keys && 0 == internal_registry/*should never happen*/);
         result = (internal_regentry*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regentry));
         internal_registry_keys = (internal_regkey*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey));
 
