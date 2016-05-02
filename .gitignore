@@ -20,6 +20,7 @@ _*.txt
 *.stackdump
 *.opensdf
 *.opendb
+*.VC.db
 *.dylib
 *.docx
 *.user
