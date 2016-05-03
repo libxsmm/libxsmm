@@ -53,16 +53,16 @@ if __name__ == "__main__":
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
+                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);")
                 print("func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, indx, hash, func, result + indx, &cdp_reg, &cdp_tot);")
+                print("internal_register_static_code(&desc, indx, hash, func, result, &cdp_reg, &cdp_tot);")
             if (2 != precision): # only single-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, LIBXSMM_HASH_FUNCTION, desc);")
+                print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);")
                 print("func.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, indx, hash, func, result + indx, &csp_reg, &csp_tot);")
+                print("internal_register_static_code(&desc, indx, hash, func, result, &csp_reg, &csp_tot);")
     elif (1 < argc):
         print("/* no static code */")
     else:
