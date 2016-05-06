@@ -281,6 +281,7 @@ else ifeq (9,$(PREFETCH_ID))
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC))
   PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
+  PREFETCH_TYPE = -1
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
