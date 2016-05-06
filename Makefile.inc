@@ -129,40 +129,40 @@ INTEL ?= $(shell echo $$((2==$(words $(filter icpc icc, \
   $(shell $(CC) --version 2> /dev/null | head -n1 | cut -d" " -f1))))))
 
 FORTRAN ?= $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0)
-ifeq (0,$(FORTRAN))
-  FC = $(NULL)
-endif
-
-ifneq (0,$(INTEL))
-  ifeq (0,$(OFFLOAD))
-    CXXFLAGS += -no-offload
-    CFLAGS += -no-offload
-    ifneq (0,$(FORTRAN))
-      ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
-        FCFLAGS += -no-offload
+ifneq (0,$(FORTRAN))
+  ifneq (0,$(INTEL))
+    ifeq (0,$(OFFLOAD))
+      CXXFLAGS += -no-offload
+      CFLAGS += -no-offload
+      ifneq (0,$(FORTRAN))
+        ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
+          FCFLAGS += -no-offload
+        endif
       endif
     endif
+    XLIB_BEGIN = -Wl,--as-needed
+    XLIB_END = -Wl,--no-as-needed
+    # disable CPUID check
+    COMPATIBLE = 1
+  else
+    ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
+      CXX = g++
+    else ifneq (0,$(shell $(CXX) --version > /dev/null 2> /dev/null; echo $$?))
+      CXX = g++
+    endif
+    ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
+      CC = gcc
+    else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo $$?))
+      CC = gcc
+    endif
+    ifeq (0,$(FORTRAN))
+      FC = $(shell which gfortran 2> /dev/null)
+    else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo $$?))
+      FC = $(shell which gfortran 2> /dev/null)
+    endif
   endif
-  XLIB_BEGIN = -Wl,--as-needed
-  XLIB_END = -Wl,--no-as-needed
-  # disable CPUID check
-  COMPATIBLE = 1
 else
-  ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
-    CXX = g++
-  else ifneq (0,$(shell $(CXX) --version > /dev/null 2> /dev/null; echo $$?))
-    CXX = g++
-  endif
-  ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
-    CC = gcc
-  else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo $$?))
-    CC = gcc
-  endif
-  ifeq (0,$(FORTRAN))
-    FC = $(shell which gfortran 2> /dev/null)
-  else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo $$?))
-    FC = $(shell which gfortran 2> /dev/null)
-  endif
+  FC = $(NULL)
 endif
 
 # linker setup
@@ -196,7 +196,7 @@ else
   CC_VERSION = 0
 endif
 
-ifneq (0,$(FORTRAN))
+ifneq (,$(strip $(FC)))
   FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
@@ -212,7 +212,7 @@ else
   FC_VERSION = 0
 endif
 
-ifneq (0,$(FORTRAN))
+ifneq (,$(strip $(FC)))
   ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
     ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
       ifneq (gfortran,$(notdir $(FC)))
@@ -241,6 +241,11 @@ ifneq (0,$(FORTRAN))
         FC_VERSION = 0
         FC = $(NULL)
       endif
+    endif
+  else ifneq (0,$(INTEL))
+    ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION)))"))
+      FC_VERSION = 0
+      FC = $(NULL)
     endif
   endif
 endif
