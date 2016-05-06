@@ -693,6 +693,17 @@ else # GCC assumed
 	MIC = 0
 endif
 
+ifneq (0,$(SYM))
+	ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
+		VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+		ifneq (,$(VTUNEROOT))
+			DFLAGS += -DLIBXSMM_VTUNE
+			IFLAGS += -I$(VTUNEROOT)/include
+			LDFLAGS += $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)
+		endif
+	endif
+endif
+
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo $$?))
 	LIBRT = -lrt
 endif
@@ -742,7 +753,7 @@ endif
 
 ifeq (1,$(MKL)) # sequential
 	DFLAGS += -D__MKL=1
-	IFLAGS +=-I$(MKLROOT)/include
+	IFLAGS += -I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
 		ifneq (0,$(OFFLOAD))
@@ -768,7 +779,7 @@ ifeq (1,$(MKL)) # sequential
 	endif
 else ifneq (0,$(MKL)) # multi-threaded
 	DFLAGS += -D__MKL=$(MKL)
-	IFLAGS +=-I$(MKLROOT)/include
+	IFLAGS += -I$(MKLROOT)/include
 	ifeq (0,$(MKL_STATIC)) # shared
 		ifneq (0,$(INTEL))
 			LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread

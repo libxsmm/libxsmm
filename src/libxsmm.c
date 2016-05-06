@@ -60,6 +60,9 @@
 # include <unistd.h>
 # include <fcntl.h>
 #endif
+#if defined(LIBXSMM_VTUNE)
+# include <jitprofiling.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
