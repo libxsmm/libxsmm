@@ -364,7 +364,10 @@ ifneq (0,$(INTEL))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
     CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
-    FCFLAGS += $(OPTFLAG) -fp-model fast=2 -align array64byte
+    FCFLAGS += $(OPTFLAG) -fp-model fast=2
+    ifneq (0,$(shell echo "$$((130000 <= $(FC_VERSION)))"))
+      FCFLAGS += -align array64byte
+    endif
     ifneq (0,$(IPO))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
