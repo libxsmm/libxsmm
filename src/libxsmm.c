@@ -164,9 +164,11 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #endif
 
 #if defined(__GNUC__)
+# define LIBXSMM_INIT
   /* libxsmm_init already executed via GCC constructor attribute */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) assert(0 != (VARIABLE))
 #else /* lazy initialization */
+# define LIBXSMM_INIT libxsmm_init();
   /* use return value of internal_init to refresh local representation */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) VARIABLE = internal_init()
 #endif
@@ -757,6 +759,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch()
 {
+  LIBXSMM_INIT
 #if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return internal_target_arch;
 #else /* no JIT support */
@@ -765,8 +768,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch()
 }
 
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(int archid)
+{
+}
+
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid()
 {
+  LIBXSMM_INIT
   return internal_target_archid;
 }
 
@@ -774,11 +783,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid()
 /* function serves as a helper for implementing the Fortran interface */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_archid(char* name, int length)
 {
-  const char* c = internal_target_archid ? internal_target_archid : "";
+  const char *const archid = libxsmm_get_target_archid();
+  const char* c = archid ? archid : "";
   int i;
   assert(0 != name); /* valid here since function is not in the public interface */
   for (i = 0; i < length && 0 != *c; ++i, ++c) name[i] = *c;
   for (; i < length; ++i) name[i] = ' ';
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char* name)
+{
 }
 
 
