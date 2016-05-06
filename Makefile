@@ -536,19 +536,23 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
 .PHONY: module_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-ifneq (,$(strip $(FC)))
+ifneq (0,$(FORTRAN))
 module_mic: $(BLDDIR)/mic/libxsmm-mod.o
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/mic/libxsmm-mod.o $(FMFLAGS) $(INCDIR)/mic
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
+else
+.PHONY: $(BLDDIR)/mic/libxsmm-mod.o
 endif
 endif
 endif
 
 .PHONY: module_hst
-ifneq (,$(strip $(FC)))
+ifneq (0,$(FORTRAN))
 module_hst: $(BLDDIR)/intel64/libxsmm-mod.o
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/intel64/libxsmm-mod.o $(FMFLAGS) $(INCDIR)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+else
+.PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 
 .PHONY: module
@@ -612,7 +616,7 @@ endif
 .PHONY: flib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
-ifneq (,$(strip $(FC)))
+ifneq (0,$(FORTRAN))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
@@ -626,7 +630,7 @@ endif
 endif
 
 .PHONY: flib_hst
-ifneq (,$(strip $(FC)))
+ifneq (0,$(FORTRAN))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.$(LIBEXT)

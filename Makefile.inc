@@ -129,6 +129,9 @@ INTEL ?= $(shell echo $$((2==$(words $(filter icpc icc, \
   $(shell $(CC) --version 2> /dev/null | head -n1 | cut -d" " -f1))))))
 
 FORTRAN ?= $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0)
+ifneq (0,$(FORTRAN))
+  FC = $(NULL)
+endif
 
 ifneq (0,$(INTEL))
   ifeq (0,$(OFFLOAD))
