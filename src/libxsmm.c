@@ -866,23 +866,39 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         memcpy(code->function.pmm, generated_code.generated_code, generated_code.code_size);
 
         if (0/*ok*/ == mprotect(code->function.pmm, generated_code.code_size, PROT_EXEC | PROT_READ)) {
-# if !defined(NDEBUG) && defined(_DEBUG)
-          /* write buffer for manual decode as binary to a file */
-          char objdump_name[512];
-          FILE* byte_code;
-          sprintf(objdump_name, "kernel_%s_f%i_%c%c_m%u_n%u_k%u_lda%u_ldb%u_ldc%u_a%i_b%i_pf%i.bin",
-            internal_target_archid /* best available/supported code path */,
+# if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
+          char jit_code_name[512];
+          sprintf(jit_code_name, "libxsmm_%s_f%i_%c%c_%u_%u_%u_ld%u_%u_%u_a%i_b%i_pf%i.jit",
+            internal_target_archid /* code path name */,
             0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 64 : 32,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
             desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
             desc->alpha, desc->beta, desc->prefetch);
-          byte_code = fopen(objdump_name, "wb");
-          if (0 != byte_code) {
-            fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
-            fclose(byte_code);
+# endif
+# if !defined(NDEBUG) && defined(_DEBUG)
+          { /* dump byte-code into file */
+            FILE *const byte_code = fopen(jit_code_name, "wb");
+            if (0 != byte_code) {
+              fwrite(generated_code.generated_code, 1, generated_code.code_size, byte_code);
+              fclose(byte_code);
+            }
           }
 # endif /*!defined(NDEBUG) && defined(_DEBUG)*/
+# if defined(LIBXSMM_VTUNE)
+          if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+            iJIT_Method_Load vtune_jit_method;
+            vtune_jit_method.method_id = iJIT_GetNewMethodID();
+            vtune_jit_method.method_name = jit_code_name;
+            vtune_jit_method.method_load_address = code->function.pmm;
+            vtune_jit_method.method_size = generated_code.code_size;
+            vtune_jit_method.line_number_size = 0;
+            vtune_jit_method.line_number_table = NULL;
+            vtune_jit_method.class_file_name = NULL;
+            vtune_jit_method.source_file_name = NULL;
+            iJIT_NotifyEvent(iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED, &vtune_jit_method);
+          }
+# endif
           /* free temporary/initial code buffer */
           free(generated_code.generated_code);
           /* finalize code generation */
