@@ -235,6 +235,11 @@
           MODULE PROCEDURE libxsmm_blas_sgemm, libxsmm_blas_dgemm
         END INTERFACE
 
+        ! Overloaded MATMUL-style routines (single/double precision).
+        INTERFACE libxsmm_matmul
+          MODULE PROCEDURE libxsmm_smatmul, libxsmm_dmatmul
+        END INTERFACE
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
@@ -356,6 +361,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
           PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
+          INTEGER(C_INT) :: oprefetch
           INTERFACE
             TYPE(C_FUNPTR) PURE FUNCTION sdispatch(                     &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
@@ -367,9 +373,12 @@
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
             END FUNCTION
           END INTERFACE
-          IF (.NOT.PRESENT(prefetch).OR.                                &
-     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
-     &    THEN
+          IF (.NOT.PRESENT(prefetch)) THEN
+            oprefetch = LIBXSMM_PREFETCH_NONE
+          ELSE
+            oprefetch = prefetch
+          END IF
+          IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
@@ -396,6 +405,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
           PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
+          INTEGER(C_INT) :: oprefetch
           INTERFACE
             PURE FUNCTION ddispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
@@ -408,9 +418,12 @@
               TYPE(C_FUNPTR) :: fn
             END FUNCTION
           END INTERFACE
-          IF (.NOT.PRESENT(prefetch).OR.                                &
-     &        LIBXSMM_PREFETCH_NONE.EQ.prefetch)                        &
-     &    THEN
+          IF (.NOT.PRESENT(prefetch)) THEN
+            oprefetch = LIBXSMM_PREFETCH_NONE
+          ELSE
+            oprefetch = prefetch
+          END IF
+          IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
@@ -727,5 +740,57 @@
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smatmul
+        SUBROUTINE libxsmm_smatmul(c, a, b, alpha, beta, transb)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          CHARACTER, INTENT(IN), OPTIONAL :: transb
+          CHARACTER :: otransb
+          IF (.NOT.PRESENT(transb)) THEN
+            otransb = 'N'
+          ELSE
+            otransb = transb
+          END IF
+          IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+            CALL libxsmm_sgemm('N', transb,                             &
+     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
+     &        alpha, a, SIZE(a, 1),                                     &
+     &        b, SIZE(b, 1), beta, c, SIZE(c, 1))
+          ELSE
+            ! TODO: transpose is currently not supported by LIBXSMM
+            CALL libxsmm_sgemm('N', 'N',                                &
+     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
+     &        alpha, a, SIZE(a, 1),                                     &
+     &        TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+          END IF
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmatmul
+        SUBROUTINE libxsmm_dmatmul(c, a, b, alpha, beta, transb)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          CHARACTER, INTENT(IN), OPTIONAL :: transb
+          CHARACTER :: otransb
+          IF (.NOT.PRESENT(transb)) THEN
+            otransb = 'N'
+          ELSE
+            otransb = transb
+          END IF
+          IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+            CALL libxsmm_dgemm('N', transb,                             &
+     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
+     &        alpha, a, SIZE(a, 1),                                     &
+     &        b, SIZE(b, 1), beta, c, SIZE(c, 1))
+          ELSE
+            ! TODO: transpose is currently not supported by LIBXSMM
+            CALL libxsmm_dgemm('N', 'N',                                &
+     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
+     &        alpha, a, SIZE(a, 1),                                     &
+     &        TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+          END IF
         END SUBROUTINE
       END MODULE
