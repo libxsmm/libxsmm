@@ -121,8 +121,16 @@
 /* flag fused into the memory address of a code version in case of collision */
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 1))
 
+#if 16 >= (LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE 16
+#elif 32 >= (LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE 32
+#else
+# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE LIBXSMM_GEMM_DESCRIPTOR_SIZE
+#endif
+
 typedef union LIBXSMM_RETARGETABLE internal_regkey {
-  char simd[32];
+  char simd[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE];
   libxsmm_gemm_descriptor descriptor;
 } internal_regkey;
 
@@ -216,14 +224,14 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 
 #if defined(LIBXSMM_CACHESIZE) && (0 < (LIBXSMM_CACHESIZE))
 # define INTERNAL_FIND_CODE_CACHE_DECL(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT) \
-  static LIBXSMM_TLS union { libxsmm_gemm_descriptor desc; char padding[32]; } CACHE_KEYS[LIBXSMM_CACHESIZE]; \
+  static LIBXSMM_TLS union { libxsmm_gemm_descriptor desc; char padding[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE]; } CACHE_KEYS[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS libxsmm_xmmfunction CACHE[LIBXSMM_CACHESIZE]; \
   static LIBXSMM_TLS unsigned int CACHE_ID = (unsigned int)(-1); \
   static LIBXSMM_TLS unsigned int CACHE_HIT = LIBXSMM_CACHESIZE
 # define INTERNAL_FIND_CODE_CACHE_BEGIN(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
-  assert(32 >= LIBXSMM_GEMM_DESCRIPTOR_SIZE); \
+  assert(LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE >= LIBXSMM_GEMM_DESCRIPTOR_SIZE); \
   /* search small cache starting with the last hit on record */ \
-  i = libxsmm_gemm_diffn(DESCRIPTOR, &(CACHE_KEYS)->desc, CACHE_HIT, LIBXSMM_CACHESIZE, 32); \
+  i = libxsmm_gemm_diffn(DESCRIPTOR, &(CACHE_KEYS)->desc, CACHE_HIT, LIBXSMM_CACHESIZE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE); \
   if ((LIBXSMM_CACHESIZE) > i && (CACHE_ID) == internal_teardown) { /* cache hit, and valid */ \
     (RESULT).function.xmm = (CACHE)[i]; \
     CACHE_HIT = i; \
