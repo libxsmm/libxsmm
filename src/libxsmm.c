@@ -457,6 +457,26 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_get_prefetch(const libxsmm_gemm_descriptor* desc)
+{
+  assert(0 != desc);
+  switch (desc->prefetch) {
+    case LIBXSMM_PREFETCH_SIGONLY:            return 2;
+    case LIBXSMM_PREFETCH_BL2_VIA_C:          return 3;
+    case LIBXSMM_PREFETCH_AL2:                return 4;
+    case LIBXSMM_PREFETCH_AL2_AHEAD:          return 5;
+    case LIBXSMM_PREFETCH_AL2BL2_VIA_C:       return 6;
+    case LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 7;
+    case LIBXSMM_PREFETCH_AL2_JPST:           return 8;
+    case LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST:  return 9;
+    default: {
+      assert(LIBXSMM_PREFETCH_NONE == desc->prefetch);
+      return 0;
+    }
+  }
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* archid,
   const libxsmm_gemm_descriptor* desc, unsigned int buffer_size, char* name)
 {
@@ -467,7 +487,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* arch
     0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
     desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
-    desc->alpha, desc->beta, desc->prefetch);
+    desc->alpha, desc->beta, internal_get_prefetch(desc));
 }
 
 
