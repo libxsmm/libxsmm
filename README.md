@@ -241,6 +241,23 @@ Please note that the trace facility is severely impacting the performance (even 
 An additional assistance during development, the library emits a message when terminating (debug build only; DBG=1). The JIT based code path (according to the CPUID) as well as the number of JIT'ted kernels is printed at termination time. For completeness, the number of registered static kernels is printed as well (this happens when no JIT/AVX based code path was available). Example (stderr): `LIBXSMM_JIT=hsw NJIT=14 NSTATIC=0`.
 
 ## Performance
+### Profiling
+To analyze which kind of kernels have been called, and from where these kernels have been invoked (call stack), the library allows profiling its JIT code as supported by Intel VTune Amplifier. To enable this support, VTune's root directory needs to be set at build-time of the library. Enabling symbols (SYM=1 or DBG=1) is actually triggering the use of VTune's JIT Profiling API:
+
+```
+source /path/to/vtune_amplifier/amplxe-vars.sh
+make SYM=1
+```
+
+The root directory is automatically determined from an environment variable (VTUNE_AMPLIFIER_\*_DIR), which is present after source'ing the Intel VTune environment but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are actually not required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example when "call stacks" are collected, it is possible to find out where the JIT code has been invoked by the application:
+
+```
+amplxe-cl -r result-directory -data-limit 0 -collect advanced-hotspots \
+  -knob collection-detail=stack-sampling -- ./myapplication
+```
+
+Intel VTune Amplifier presents invoked JIT code like functions, which belong to a module called "[Dynamic code]". However the "function name" is supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::jit" encodes an Intel AVX2 ("hsw") double-precision kernel ("d") which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
+
 ### Tuning
 Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
