@@ -476,7 +476,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const intern
 {
   assert(0 != code && 0 != code->id && 0 != code->size && 0 != desc);
   desc->method_id = code->id;
-  desc->method_name = name;
+  /* incorrect constness (method_name) */
+  desc->method_name = (char*)name;
   desc->method_load_address = code->function.pmm;
   desc->method_size = code->size;
   desc->line_number_size = 0;
@@ -764,7 +765,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
                 if (0 != code.id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
                   char jit_code_name[256];
                   iJIT_Method_Load vtune_jit_desc;
-                  internal_get_code_name(internal_target_archid, internal_registry_keys + i,
+                  internal_get_code_name(internal_target_archid,
+                    &internal_registry_keys[i].descriptor,
                     sizeof(jit_code_name), jit_code_name);
                   internal_get_vtune_jitdesc(&code, jit_code_name, &vtune_jit_desc);
                   iJIT_NotifyEvent(iJVM_EVENT_TYPE_METHOD_UNLOAD_START, &vtune_jit_desc);
