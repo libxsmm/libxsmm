@@ -467,6 +467,25 @@ endif
 	@mv $(TMPFILE) $@
 endif
 
+ifneq (0,$(JIT))
+  ifneq (0,$(SYM))
+  ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
+    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+    ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      DFLAGS += -DLIBXSMM_VTUNE
+      IFLAGS += -I$(VTUNEROOT)/include
+$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
+	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
+	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
+    else
+.PHONY: $(LIBJITPROFILING)
+    endif
+  endif
+  endif
+endif
+
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(4) -c $(2) -o $(1)
@@ -585,25 +604,6 @@ else
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC)
 endif
 endif
-endif
-
-ifneq (0,$(JIT))
-  ifneq (0,$(SYM))
-  ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
-    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
-    ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-      DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I$(VTUNEROOT)/include
-$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
-	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
-	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
-    else
-.PHONY: $(LIBJITPROFILING)
-    endif
-  endif
-  endif
 endif
 
 .PHONY: clib_hst
