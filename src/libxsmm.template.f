@@ -743,54 +743,95 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smatmul
-        SUBROUTINE libxsmm_smatmul(c, a, b, alpha, beta, transb)
+        SUBROUTINE libxsmm_smatmul(c, a, b, alpha, beta, transa, transb)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          CHARACTER, INTENT(IN), OPTIONAL :: transb
-          CHARACTER :: otransb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER :: otransa, otransb
+          IF (.NOT.PRESENT(transa)) THEN
+            otransa = 'N'
+          ELSE
+            otransa = transa
+          END IF
           IF (.NOT.PRESENT(transb)) THEN
             otransb = 'N'
           ELSE
             otransb = transb
           END IF
-          IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-            CALL libxsmm_sgemm('N', transb,                             &
-     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
-     &        alpha, a, SIZE(a, 1),                                     &
-     &        b, SIZE(b, 1), beta, c, SIZE(c, 1))
-          ELSE
-            ! TODO: transpose is currently not supported by LIBXSMM
-            CALL libxsmm_sgemm('N', 'N',                                &
-     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
-     &        alpha, a, SIZE(a, 1),                                     &
-     &        TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+          ! TODO: transpose is currently not supported by LIBXSMM
+          IF (('N'.EQ.otransa).OR.('n'.EQ.otransa)) THEN
+            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+              CALL libxsmm_sgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                     &
+     &          alpha, a, SIZE(a, 1),                                   &
+     &          b, SIZE(b, 1), beta, c, SIZE(c, 1))
+            ELSE ! A x B^T
+              CALL libxsmm_sgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                     &
+     &          alpha, a, SIZE(a, 1),                                   &
+     &          TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+            END IF
+          ELSE ! A^T
+            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+              CALL libxsmm_sgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 1),                     &
+     &          alpha, TRANSPOSE(a), SIZE(a, 2),                        &
+     &          b, SIZE(b, 1), beta, c, SIZE(c, 1))
+            ELSE ! A^T x B^T -> C = (B x A)^T
+              CALL libxsmm_sgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 1),                     &
+     &          alpha, b, SIZE(b, 1),                                   &
+     &          a, SIZE(a, 1), beta, c, SIZE(c, 1))
+              c = TRANSPOSE(RESHAPE(c, (/ SIZE(c, 2), SIZE(c, 1) /)))
+            END IF
           END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmatmul
-        SUBROUTINE libxsmm_dmatmul(c, a, b, alpha, beta, transb)
+        SUBROUTINE libxsmm_dmatmul(c, a, b, alpha, beta, transa, transb)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          CHARACTER, INTENT(IN), OPTIONAL :: transb
-          CHARACTER :: otransb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER :: otransa, otransb
+          IF (.NOT.PRESENT(transa)) THEN
+            otransa = 'N'
+          ELSE
+            otransa = transa
+          END IF
           IF (.NOT.PRESENT(transb)) THEN
             otransb = 'N'
           ELSE
             otransb = transb
           END IF
-          IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-            CALL libxsmm_dgemm('N', transb,                             &
-     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
-     &        alpha, a, SIZE(a, 1),                                     &
-     &        b, SIZE(b, 1), beta, c, SIZE(c, 1))
-          ELSE
-            ! TODO: transpose is currently not supported by LIBXSMM
-            CALL libxsmm_dgemm('N', 'N',                                &
-     &        SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                       &
-     &        alpha, a, SIZE(a, 1),                                     &
-     &        TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+          ! TODO: transpose is currently not supported by LIBXSMM
+          IF (('N'.EQ.otransa).OR.('n'.EQ.otransa)) THEN
+            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+              CALL libxsmm_dgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                     &
+     &          alpha, a, SIZE(a, 1),                                   &
+     &          b, SIZE(b, 1), beta, c, SIZE(c, 1))
+            ELSE ! A x B^T
+              CALL libxsmm_dgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 2),                     &
+     &          alpha, a, SIZE(a, 1),                                   &
+     &          TRANSPOSE(b), SIZE(b, 2), beta, c, SIZE(c, 1))
+            END IF
+          ELSE ! A^T
+            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
+              CALL libxsmm_dgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 1),                     &
+     &          alpha, TRANSPOSE(a), SIZE(a, 2),                        &
+     &          b, SIZE(b, 1), beta, c, SIZE(c, 1))
+            ELSE ! A^T x B^T -> C = (B x A)^T
+              CALL libxsmm_dgemm('N', 'N',                              &
+     &          SIZE(c, 1), SIZE(c, 2), SIZE(a, 1),                     &
+     &          alpha, b, SIZE(b, 1),                                   &
+     &          a, SIZE(a, 1), beta, c, SIZE(c, 1))
+              c = TRANSPOSE(RESHAPE(c, (/ SIZE(c, 2), SIZE(c, 1) /)))
+            END IF
           END IF
         END SUBROUTINE
       END MODULE
+
