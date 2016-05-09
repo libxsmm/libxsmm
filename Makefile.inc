@@ -765,7 +765,7 @@ ifeq (1,$(MKL)) # sequential
   ifeq (0,$(MKL_STATIC)) # shared
     LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
     ifneq (0,$(OFFLOAD))
-      LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
+      LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
     LDFLAGS += -Wl,--start-group \
@@ -774,7 +774,7 @@ ifeq (1,$(MKL)) # sequential
       $(MKLROOT)/lib/intel64/libmkl_sequential.$(SLIBEXT) \
     -Wl,--end-group
     ifneq (0,$(OFFLOAD))
-      LDFLAGS += -offload-option,mic,ld,"--start-group \
+      LDFLAGS += -qoffload-option,mic,ld,"--start-group \
         $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/mic/libmkl_sequential.$(SLIBEXT) \
@@ -783,7 +783,7 @@ ifeq (1,$(MKL)) # sequential
   endif
   LDFLAGS += -lpthread -lm $(LIBDL)
   ifneq (0,$(OFFLOAD))
-    LDFLAGS += -offload-option,mic,ld,"-lm $(LIBDL)"
+    LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
   DFLAGS += -D__MKL=$(MKL)
@@ -792,7 +792,7 @@ else ifneq (0,$(MKL)) # multi-threaded
     ifneq (0,$(INTEL))
       LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -offload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
+        LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
       endif
     else # assuming GNU toolchain
       LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
@@ -805,7 +805,7 @@ else ifneq (0,$(MKL)) # multi-threaded
         $(MKLROOT)/lib/intel64/libmkl_intel_thread.$(SLIBEXT) \
       -Wl,--end-group
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -offload-option,mic,ld,"--start-group \
+        LDFLAGS += -qoffload-option,mic,ld,"--start-group \
           $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
           $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
           $(MKLROOT)/lib/mic/libmkl_intel_thread.$(SLIBEXT) \
@@ -823,11 +823,11 @@ else ifneq (0,$(MKL)) # multi-threaded
     ifeq (0,$(OMP))
       LDFLAGS += -liomp5
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -offload-option,mic,ld,"-liomp5"
+        LDFLAGS += -qoffload-option,mic,ld,"-liomp5"
       endif
     endif
     ifneq (0,$(OFFLOAD))
-      LDFLAGS += -offload-option,mic,ld,"-lm $(LIBDL)"
+      LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
     endif
   endif
   LDFLAGS += -lpthread -lm $(LIBDL)
