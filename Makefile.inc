@@ -249,7 +249,7 @@ ifneq (0,$(FORTRAN))
         endif
       endif
     else ifneq (0,$(INTEL))
-      ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
         FC_VERSION = 0
         FC = $(NULL)
         FORTRAN = 0
