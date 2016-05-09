@@ -131,11 +131,11 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
 FORTRAN ?= $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0)
 ifneq (0,$(INTEL))
   ifeq (0,$(OFFLOAD))
-    CXXFLAGS += -no-offload
-    CFLAGS += -no-offload
+    CXXFLAGS += -qno-offload
+    CFLAGS += -qno-offload
     ifneq (0,$(FORTRAN))
       ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
-        FCFLAGS += -no-offload
+        FCFLAGS += -qno-offload
       endif
     endif
   endif
