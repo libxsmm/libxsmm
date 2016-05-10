@@ -185,7 +185,7 @@ make PREFIX=/path/to/libxsmm-install install
 ### Call Wrapper
 Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS&#160;X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
 
-There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
+There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` or `dgemm_` symbol by making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
 
 ```
 gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a
@@ -193,13 +193,7 @@ gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a
 gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a
 ```
 
-Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain. The symbol names to be wrapped unfortunately depend on the BLAS library, and the following two cases are supported: `sgemm_` and `dgemm_` are generally the generic choice and they have been tested with reference LAPACK/BLAS and OpenBLAS. For Intel&#160;MKL, `mkl_sgemm_` and `mkl_dgemm_` must be specified:
-
-```
-ld [...] -Wl,--wrap=mkl_sgemm_ /path/to/libxsmm.a
-ld [...] -Wl,--wrap=mkl_dgemm_ /path/to/libxsmm.a
-ld [...] -Wl,--wrap=mkl_sgemm_,--wrap=mkl_dgemm_ /path/to/libxsmm.a
-```
+Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC-compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain.
 
 If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
 
