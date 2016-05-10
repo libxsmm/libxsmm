@@ -101,6 +101,9 @@ IPO ?= 0
 ILP64 ?= 0
 BLAS ?= 0
 
+# Prefer to link statically against BLAS library
+BLAS_STATIC ?= 1
+
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
@@ -750,7 +753,6 @@ endif
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
   MKL_DIRECT ?= 0
-  MKL_STATIC ?= 1
 else
   MKL = 0
 endif
@@ -762,7 +764,7 @@ endif
 ifeq (1,$(MKL)) # sequential
   DFLAGS += -D__MKL=1
   IFLAGS += -I$(MKLROOT)/include
-  ifeq (0,$(MKL_STATIC)) # shared
+  ifeq (0,$(BLAS_STATIC)) # shared
     LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
@@ -788,7 +790,7 @@ ifeq (1,$(MKL)) # sequential
 else ifneq (0,$(MKL)) # multi-threaded
   DFLAGS += -D__MKL=$(MKL)
   IFLAGS += -I$(MKLROOT)/include
-  ifeq (0,$(MKL_STATIC)) # shared
+  ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
       LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
       ifneq (0,$(OFFLOAD))
