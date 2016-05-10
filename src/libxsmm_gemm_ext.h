@@ -72,6 +72,16 @@
 #endif
 
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+
+
 /** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
 /** INTERNAL: number of threads per core */

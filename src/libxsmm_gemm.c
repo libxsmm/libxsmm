@@ -46,19 +46,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
+#if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
+LIBXSMM_RETARGETABLE libxsmm_sgemm_function libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
+LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
+#else
 LIBXSMM_RETARGETABLE libxsmm_sgemm_function libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(sgemm);
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(dgemm);
-
+#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_tile_sizes[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
   { { 72, 32, 16 }, { 72, 32, 16 } }, /*generic*/
@@ -134,22 +128,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
   if (NULL != sgemm_function) {
     libxsmm_internal_sgemm = sgemm_function;
   }
-#if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  else {
-    assert(LIBXSMM_FSYMBOL(__real_sgemm));
-    libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
-  }
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 
   if (NULL != dgemm_function) {
     libxsmm_internal_dgemm = dgemm_function;
   }
-#if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  else {
-    assert(LIBXSMM_FSYMBOL(__real_dgemm));
-    libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
-  }
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 }
 
 

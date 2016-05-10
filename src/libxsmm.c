@@ -1087,13 +1087,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: __real_sgemm should be never called!\n");
-    once = 1;
-  }
-#endif
+  sgemm_(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -1104,13 +1098,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: __real_dgemm should be never called!\n");
-    once = 1;
-  }
-#endif
+  dgemm_(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 #endif /*defined(__STATIC)*/
