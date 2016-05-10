@@ -135,11 +135,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
     libxsmm_internal_sgemm = sgemm_function;
   }
 #if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  else if (NULL != LIBXSMM_FSYMBOL(__real_sgemm)) {
+  else {
+    assert(LIBXSMM_FSYMBOL(__real_sgemm));
     libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
-  }
-  else if (NULL != LIBXSMM_FSYMBOL(__real_mkl_sgemm)) {
-    libxsmm_internal_sgemm = LIBXSMM_FSYMBOL(__real_mkl_sgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 
@@ -147,11 +145,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
     libxsmm_internal_dgemm = dgemm_function;
   }
 #if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  else if (NULL != LIBXSMM_FSYMBOL(__real_dgemm)) {
+  else {
+    assert(LIBXSMM_FSYMBOL(__real_dgemm));
     libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
-  }
-  else if (NULL != LIBXSMM_FSYMBOL(__real_mkl_dgemm)) {
-    libxsmm_internal_dgemm = LIBXSMM_FSYMBOL(__real_mkl_dgemm);
   }
 #endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 }

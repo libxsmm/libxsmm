@@ -31,8 +31,8 @@
 #include "libxsmm_intrinsics_x86.h"
 #include "libxsmm_cpuid_x86.h"
 #include "libxsmm_gemm_diff.h"
+#include "libxsmm_gemm_ext.h"
 #include "libxsmm_hash.h"
-#include "libxsmm_gemm.h"
 
 #if defined(__TRACE)
 # include "libxsmm_trace.h"
@@ -1075,4 +1075,44 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 {
   INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
+
+
+#if defined(LIBXSMM_GEMM_EXTWRAP)
+#if defined(__STATIC)
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  static LIBXSMM_TLS int once = 0;
+  if (0 == once) {
+    fprintf(stderr, "LIBXSMM: __real_sgemm should be never called!\n");
+    once = 1;
+  }
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_dgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  static LIBXSMM_TLS int once = 0;
+  if (0 == once) {
+    fprintf(stderr, "LIBXSMM: __real_dgemm should be never called!\n");
+    once = 1;
+  }
+#endif
+}
+
+#endif /*defined(__STATIC)*/
+#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 

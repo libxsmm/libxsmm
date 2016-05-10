@@ -95,13 +95,8 @@ endif
 endif
 
 ifneq (0,$(WRAP))
-ifeq (0,$(MKL))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
-else
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=mkl_dgemm_
-endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
