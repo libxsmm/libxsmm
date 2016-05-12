@@ -51,6 +51,8 @@
 #   define LIBXSMM_GEMM_DIFF_AVX2
 # elif (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #   define LIBXSMM_GEMM_DIFF_AVX
+# else
+#   define LIBXSMM_GEMM_DIFF_NOWARNING
 # endif
 #endif
 
@@ -160,10 +162,10 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
 # endif
   }
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX instruction code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
     once = 1;
   }
 # endif
@@ -196,10 +198,10 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, co
 # endif
   }
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX2 instruction code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
     once = 1;
   }
 # endif
@@ -262,8 +264,7 @@ unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, con
   for (i = hint; i < end; ++i) {
     const unsigned int j = i % ndescs; /* wrap around index */
     /* negative stride runs backwards */
-    const char *const d = desc + j * nbytes;
-    if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)d)) {
+    if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)(desc + j * nbytes))) {
       return j;
     }
   }
@@ -271,8 +272,7 @@ unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, con
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
   for (i = hint; i < end; ++i) {
     const unsigned int j = LIBXSMM_MOD2(i, ndescs); /* wrap around index */
-    const char *const d = desc + j * nbytes;
-    if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)d)) {
+    if (0 == libxsmm_gemm_diff(reference, (const libxsmm_gemm_descriptor*)(desc + j * nbytes))) {
       return j;
     }
   }
@@ -325,10 +325,10 @@ unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, co
   }
   return ndescs;
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX instruction code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
     once = 1;
   }
 # endif
@@ -372,10 +372,10 @@ unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, c
   }
   return ndescs;
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX2 instruction code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
     once = 1;
   }
 # endif
@@ -421,10 +421,10 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
   }
   return ndescs;
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
   static LIBXSMM_TLS int once = 0;
   if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX-512 instruction code path!\n");
+    fprintf(stderr, "LIBXSMM: unable to enter AVX-512 code path!\n");
     once = 1;
   }
 # endif

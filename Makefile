@@ -68,7 +68,7 @@ ALIGNED_LOADS ?= 0
 # Supported: 1.0
 ALPHA ?= 1
 ifneq (1,$(ALPHA))
-$(error ALPHA needs to be 1)
+  $(error ALPHA needs to be 1)
 endif
 
 # Beta argument of GEMM
@@ -78,12 +78,12 @@ endif
 BETA ?= 1
 ifneq (0,$(BETA))
 ifneq (1,$(BETA))
-$(error BETA needs to be eiter 0 or 1)
+  $(error BETA needs to be eiter 0 or 1)
 endif
 endif
 
 ifneq (1,$(CACHE))
-	DFLAGS = -DLIBXSMM_CACHESIZE=$(CACHE)
+  DFLAGS = -DLIBXSMM_CACHESIZE=$(CACHE)
 endif
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
@@ -115,8 +115,8 @@ STATIC ?= 1
 # JIT backend is enabled by default
 JIT ?= 1
 ifneq (0,$(JIT))
-	AVX ?= 0
-	SSE ?= 1
+  AVX ?= 0
+  SSE ?= 1
 endif
 
 # OpenMP is disabled by default and LIBXSMM is
@@ -125,13 +125,13 @@ OMP ?= 0
 
 BLAS_WARNING ?= 0
 ifeq (0,$(STATIC))
-	ifeq (Windows_NT,$(OS))
-		BLAS_WARNING = 1
-		BLAS ?= 2
-	else ifeq (Darwin,$(shell uname))
-		BLAS_WARNING = 1
-		BLAS ?= 2
-	endif
+  ifeq (Windows_NT,$(OS))
+    BLAS_WARNING = 1
+    BLAS ?= 2
+  else ifeq (Darwin,$(shell uname))
+    BLAS_WARNING = 1
+    BLAS ?= 2
+  endif
 endif
 
 # include common Makefile artifacts
@@ -141,24 +141,24 @@ include $(ROOTDIR)/Makefile.inc
 TESTSIZE ?= 1
 
 ifeq (1,$(AVX))
-	GENTARGET = snb
+  GENTARGET = snb
 else ifeq (2,$(AVX))
-	GENTARGET = hsw
+  GENTARGET = hsw
 else ifeq (3,$(AVX))
-	GENTARGET = knl
+  GENTARGET = knl
 else ifneq (0,$(SSE))
-	GENTARGET = wsm
+  GENTARGET = wsm
 else
-	GENTARGET = noarch
+  GENTARGET = noarch
 endif
 
 ifeq (0,$(STATIC))
-	GENERATOR = @$(ENV) \
-		LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
-		PATH="$(OUTDIR):$(PATH)" \
-	$(BINDIR)/libxsmm_gemm_generator
+  GENERATOR = @$(ENV) \
+    LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
+    PATH="$(OUTDIR):$(PATH)" \
+  $(BINDIR)/libxsmm_gemm_generator
 else
-	GENERATOR = $(BINDIR)/libxsmm_gemm_generator
+  GENERATOR = $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -194,7 +194,9 @@ EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_gemm_extomp.o
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
           $(KERNELOBJS_HST) $(KERNELOBJS_MIC) $(WRAPOBJS_HST) $(WRAPOBJS_MIC) \
           $(EXTOBJS_HST) $(EXTOBJS_MIC)
-FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
+ifneq (,$(strip $(FC)))
+  FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
+endif
 
 .PHONY: libxsmm
 libxsmm: lib
@@ -222,65 +224,65 @@ PREFETCH_SCHEME = nopf
 PREFETCH_TYPE = 0
 
 ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 9))))
-	PREFETCH_ID = $(PREFETCH)
+  PREFETCH_ID = $(PREFETCH)
 else ifeq (1,$(PREFETCH)) # auto
-	PREFETCH_ID = 1
+  PREFETCH_ID = 1
 else ifeq (pfsigonly,$(PREFETCH))
-	PREFETCH_ID = 2
+  PREFETCH_ID = 2
 else ifeq (BL2viaC,$(PREFETCH))
-	PREFETCH_ID = 3
+  PREFETCH_ID = 3
 else ifeq (AL2,$(PREFETCH))
-	PREFETCH_ID = 4
+  PREFETCH_ID = 4
 else ifeq (curAL2,$(PREFETCH))
-	PREFETCH_ID = 5
+  PREFETCH_ID = 5
 else ifeq (AL2_BL2viaC,$(PREFETCH))
-	PREFETCH_ID = 6
+  PREFETCH_ID = 6
 else ifeq (curAL2_BL2viaC,$(PREFETCH))
-	PREFETCH_ID = 7
+  PREFETCH_ID = 7
 else ifeq (AL2jpst,$(PREFETCH))
-	PREFETCH_ID = 8
+  PREFETCH_ID = 8
 else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
-	PREFETCH_ID = 9
+  PREFETCH_ID = 9
 endif
 
 # Mapping build options to libxsmm_prefetch_type (see include/libxsmm_typedefs.h)
 ifeq (1,$(PREFETCH_ID))
-	# Prefetch "auto" is a pseudo strategy introduced by the frontend;
-	# select "pfsigonly" for statically generated code.
-	PREFETCH_SCHEME = pfsigonly
-	PREFETCH_TYPE = -1
-	ifneq (0,$(MIC))
-		ifneq (0,$(MPSS))
-			PREFETCH_SCHEME_MIC = AL2_BL2viaC
-		endif
-	endif
+  # Prefetch "auto" is a pseudo strategy introduced by the frontend;
+  # select "pfsigonly" for statically generated code.
+  PREFETCH_SCHEME = pfsigonly
+  PREFETCH_TYPE = -1
+  ifneq (0,$(MIC))
+    ifneq (0,$(MPSS))
+      PREFETCH_SCHEME_MIC = AL2_BL2viaC
+    endif
+  endif
 else ifeq (2,$(PREFETCH_ID))
-	PREFETCH_SCHEME = pfsigonly
-	PREFETCH_TYPE = 1
+  PREFETCH_SCHEME = pfsigonly
+  PREFETCH_TYPE = 1
 else ifeq (3,$(PREFETCH_ID))
-	PREFETCH_SCHEME = BL2viaC
-	PREFETCH_TYPE = 8
+  PREFETCH_SCHEME = BL2viaC
+  PREFETCH_TYPE = 8
 else ifeq (4,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2
-	PREFETCH_TYPE = 2
+  PREFETCH_SCHEME = AL2
+  PREFETCH_TYPE = 2
 else ifeq (5,$(PREFETCH_ID))
-	PREFETCH_SCHEME = curAL2
-	PREFETCH_TYPE = 16
+  PREFETCH_SCHEME = curAL2
+  PREFETCH_TYPE = 16
 else ifeq (6,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((8 | 2)))
+  PREFETCH_SCHEME = AL2_BL2viaC
+  PREFETCH_TYPE = $(shell echo $$((8 | 2)))
 else ifeq (7,$(PREFETCH_ID))
-	PREFETCH_SCHEME = curAL2_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((8 | 16)))
+  PREFETCH_SCHEME = curAL2_BL2viaC
+  PREFETCH_TYPE = $(shell echo $$((8 | 16)))
 else ifeq (8,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2jpst
-	PREFETCH_TYPE = 4
+  PREFETCH_SCHEME = AL2jpst
+  PREFETCH_TYPE = 4
 else ifeq (9,$(PREFETCH_ID))
-	PREFETCH_SCHEME = AL2jpst_BL2viaC
-	PREFETCH_TYPE = $(shell echo $$((8 | 4)))
+  PREFETCH_SCHEME = AL2jpst_BL2viaC
+  PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC))
-	PREFETCH_SCHEME_MIC = PREFETCH_SCHEME
+  PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
@@ -288,8 +290,8 @@ FLAGS = $(shell echo $$((((0!=$(ALIGNED_LOADS))*4) | ((0!=$(ALIGNED_STORES))*8))
 
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
-	SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
-	SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
+  SUPPRESS_UNUSED_VARIABLE_WARNINGS += LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch);
+  SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(C_prefetch);~
 endif
 
 .PHONY: cheader
@@ -465,6 +467,25 @@ endif
 	@mv $(TMPFILE) $@
 endif
 
+ifneq (0,$(JIT))
+  ifneq (0,$(SYM))
+  ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
+    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+    ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      DFLAGS += -DLIBXSMM_VTUNE
+      IFLAGS += -I$(VTUNEROOT)/include
+$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
+	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
+	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
+    else
+.PHONY: $(LIBJITPROFILING)
+    endif
+  endif
+  endif
+endif
+
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(4) -c $(2) -o $(1)
@@ -477,46 +498,46 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, \
-	-mmic)))
+  $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, \
+  -mmic)))
 $(foreach OBJ,$(KERNELOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, \
-	-mmic)))
+  $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, \
+  -mmic)))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, \
-	-mmic $(EXTOMPFLAG))))
+  $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, \
+  -mmic $(EXTOMPFLAG))))
 ifeq (0,$(STATIC))
 $(foreach OBJ,$(WRAPOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, \
-	-mmic)))
+  $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, \
+  -mmic)))
 endif
 endif
 endif
 
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, $(TARGET))))
+  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h $(BLDDIR)/libxsmm_dispatch.h, $(TARGET))))
 $(foreach OBJ,$(KERNELOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, $(TARGET))))
+  $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, $(TARGET))))
 $(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, $(TARGET) $(EXTOMPFLAG))))
+  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, $(TARGET) $(EXTOMPFLAG))))
 $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, $(NULL))))
+  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, $(NULL))))
 $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, $(NULL))))
+  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, $(NULL))))
 
 ifeq (0,$(STATIC))
 $(foreach OBJ,$(WRAPOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-	$(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-	$(INCDIR)/libxsmm.h, $(TARGET))))
+  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(INCDIR)/libxsmm.h, $(TARGET))))
 endif
 
 .PHONY: compile_mic
@@ -539,7 +560,9 @@ ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 module_mic: $(BLDDIR)/mic/libxsmm-mod.o
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/mic/libxsmm-mod.o $(FMFLAGS) $(INCDIR)/mic
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
+else
+.PHONY: $(BLDDIR)/mic/libxsmm-mod.o
 endif
 endif
 endif
@@ -548,7 +571,9 @@ endif
 ifneq (,$(strip $(FC)))
 module_hst: $(BLDDIR)/intel64/libxsmm-mod.o
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $(BLDDIR)/intel64/libxsmm-mod.o $(FMFLAGS) $(INCDIR)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+else
+.PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 
 .PHONY: module
@@ -583,11 +608,11 @@ endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) -shared $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING) -shared $(LDFLAGS) $(CLDFLAGS)
 else
-	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST)
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(OBJJITPROFILING)
 endif
 
 .PHONY: flib_mic
@@ -602,6 +627,8 @@ else
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/.make
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
 endif
+else
+.PHONY: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 endif
 endif
 endif
@@ -616,6 +643,7 @@ else
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
+.PHONY: $(OUTDIR)/libxsmmf.$(LIBEXT)
 endif
 
 .PHONY: ext_mic
@@ -961,6 +989,7 @@ test-dgemm: dgemm
 test-wrap: test-dgemm
 
 .PHONY: test-smm
+ifneq (,$(strip $(FC)))
 test-smm: $(SPLDIR)/smm/smm-test.txt
 $(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	$(info =======================)
@@ -970,16 +999,20 @@ $(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
+endif
 
 .PHONY: perf-smm
+ifneq (,$(strip $(FC)))
 perf-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	@cd $(SPLDIR)/smm && $(MAKE) --no-print-directory \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@
+endif
 
 .PHONY: test-nek
+ifneq (,$(strip $(FC)))
 test-nek: $(SPLDIR)/nek/axhm-perf.txt $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/rstr-perf.txt
 $(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_hst
 	$(info =======================)
@@ -1005,6 +1038,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) rstr
 	@$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
+endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	$(eval TMPFILE = $(shell mktemp fileXXXXXX))

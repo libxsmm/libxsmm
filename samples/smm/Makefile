@@ -67,9 +67,13 @@ XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/blas $(OUTDIR)/dispatched $(OUTDIR)/inl
 .PHONY: all
 all: $(XFILES)
 
+ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(FTNOBJS) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)
+endif
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make
 	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -89,6 +93,7 @@ $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
+ifneq (,$(strip $(FC)))
 $(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
 
@@ -100,6 +105,7 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(
 
 $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+endif
 
 .PHONY: clean-minimal
 clean-minimal:

@@ -1,13 +1,13 @@
 # LIBXSMM
-LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the [Intel&#160;Xeon&#160;Phi processor family&#160;("KNL")](https://software.intel.com/en-us/articles/what-disclosures-has-intel-made-about-knights-landing) and future Intel&#160;Xeon processors. Historically the library was solely targeting the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.4.zip)] [![cistatus](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip) [![coverage](https://codecov.io/github/hfp/libxsmm/coverage.svg?branch=master)](https://codecov.io/github/hfp/libxsmm?branch=master)
+LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the [Intel&#160;Xeon&#160;Phi processor family&#160;("KNL")](https://software.intel.com/en-us/articles/what-disclosures-has-intel-made-about-knights-landing) and future Intel&#160;Xeon processors. Historically the library was solely targeting the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.4.1.zip)] [![cistatus](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip)
 
 **What is the background of the name "LIBXSMM"?** The "MM" stands for Matrix Multiplication, and the "S" clarifies the working domain i.e., Small Matrix Multiplication. The latter also means the name is neither a variation of "MXM" nor an eXtreme Small Matrix Multiplication but rather about Intel Architecture (x86) - and no, the library is 64&#8209;bit (only). The spelling of the name might follow the syllables of libx\\/smm, libx'smm, or libx&#8209;smm.
 
-**What is a small matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M N K)<sup>1/3</sup> \<= 80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the L2 cache. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
+**What is a small matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M N K)<sup>1/3</sup> \<= 80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
 
 **What about "medium-sized" matrix multiplication?** A more recent addition are GEMM routines which are parallelized using OpenMP (`libxsmm_omp_?gemm`). These routines are leveraging the same specialized kernel routines as the small matrix multiplications, in-memory code generation (JIT), and automatic code/parameter dispatch but implementing a tile-based multiplication scheme i.e., a scheme suitable for larger problem sizes.
 
-**How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against [Intel&#160;MKL&#160;11.2](https://registrationcenter.intel.com/en/forms/?productid=2558) (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (`env MKL_VERBOSE=1 ./workload > verbose.txt`). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (`grep -a "MKL_VERBOSE DGEMM" verbose.txt | cut -d, -f3-5`).
+**How to determine whether an application can benefit from using LIBXSMM or not?** Given the application uses BLAS to carry out matrix multiplications, one may link against [Intel&#160;MKL&#160;11.2](https://registrationcenter.intel.com/en/forms/?productid=2558) (or higher), set the environment variable MKL_VERBOSE=1, and run the application using a representative workload (`env MKL_VERBOSE=1 ./workload > verbose.txt`). The collected output is the starting point for evaluating the problem sizes as imposed by the workload (`grep -a "MKL_VERBOSE DGEMM(N,N" verbose.txt | cut -d'(' -f2 | cut -d, -f3-5 | sed -e "s/0x..*//" -e "/..*,0$/d" -e "/..*,$/d" -e "/^$/d"`).
 
 ## Interface
 The interface of the library is *generated* according to the [Build Instructions](#build-instructions), and is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/libxsmm.template.f).
@@ -185,7 +185,7 @@ make PREFIX=/path/to/libxsmm-install install
 ### Call Wrapper
 Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS&#160;X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
 
-There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
+There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` or `dgemm_` symbol by making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
 
 ```
 gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a
@@ -193,13 +193,7 @@ gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a
 gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a
 ```
 
-Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain. The symbol names to be wrapped unfortunately depend on the BLAS library, and the following two cases are supported: `sgemm_` and `dgemm_` are generally the generic choice and they have been tested with reference LAPACK/BLAS and OpenBLAS. For Intel&#160;MKL, `mkl_sgemm_` and `mkl_dgemm_` must be specified:
-
-```
-ld [...] -Wl,--wrap=mkl_sgemm_ /path/to/libxsmm.a
-ld [...] -Wl,--wrap=mkl_dgemm_ /path/to/libxsmm.a
-ld [...] -Wl,--wrap=mkl_sgemm_,--wrap=mkl_dgemm_ /path/to/libxsmm.a
-```
+Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC-compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain.
 
 If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
 
@@ -241,6 +235,23 @@ Please note that the trace facility is severely impacting the performance (even 
 An additional assistance during development, the library emits a message when terminating (debug build only; DBG=1). The JIT based code path (according to the CPUID) as well as the number of JIT'ted kernels is printed at termination time. For completeness, the number of registered static kernels is printed as well (this happens when no JIT/AVX based code path was available). Example (stderr): `LIBXSMM_JIT=hsw NJIT=14 NSTATIC=0`.
 
 ## Performance
+### Profiling
+To analyze which kind of kernels have been called, and from where these kernels have been invoked (call stack), the library allows profiling its JIT code as supported by Intel VTune Amplifier. To enable this support, VTune's root directory needs to be set at build-time of the library. Enabling symbols (SYM=1 or DBG=1) triggers using VTune's JIT Profiling API:
+
+```
+source /path/to/vtune_amplifier/amplxe-vars.sh
+make SYM=1
+```
+
+The root directory is automatically determined from an environment variable (VTUNE_AMPLIFIER_\*_DIR), which is present after source'ing the Intel VTune environment but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are actually not required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example when "call stacks" are collected, it is possible to find out where the JIT code has been invoked by the application:
+
+```
+amplxe-cl -r result-directory -data-limit 0 -collect advanced-hotspots \
+  -knob collection-detail=stack-sampling -- ./myapplication
+```
+
+Intel VTune Amplifier presents invoked JIT code like functions, which belong to a module named "[Dynamic code]". However the "function name" is supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::jit" encodes an Intel AVX2 ("hsw") double-precision kernel ("d") which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
+
 ### Tuning
 Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
@@ -303,7 +314,7 @@ There might be situations in which it is up-front not clear which problem sizes 
 2. There is no support for the Intel&#160;SSE (Intel&#160;Xeon 5500/5600 series) and IMCI (Intel&#160;Xeon&#160;Phi coprocessor code-named Knights Corner) instruction set extensions. However, statically generated SSE-kernels can be leveraged without disabling support for JIT'ting AVX kernels.
 3. There is no support for the Windows calling convention (only kernels with PREFETCH=0 signature).
 
-The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_JIT=0`). The latter is an environment variable which is also allowing to set a code path independent of the CPUID (LIBXSMM_JIT=0|1|snb|hsw|knl). Please note that LIBXSMM_JIT=1 is only supported for symmetry, and this environment setup cannot enable the JIT backend if it was disabled at build time (JIT=0).
+The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_JIT=0`). The latter is an environment variable which is also allowing to set a code path independent of the CPUID (LIBXSMM_JIT=0|1|snb|hsw|knl|skx). Please note that LIBXSMM_JIT=1 is only supported for symmetry, and this environment setup cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
 One can use the aforementioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling `libxsmm_?mmdispatch`) are not subject to a problem size threshold. In any case, JIT code generation can be used for accompanying statically generated code.
 
@@ -369,7 +380,7 @@ Please note that comparing performance results depends on whether or not streami
 
 **\[2] [https://github.com/SeisSol/SeisSol/](https://github.com/SeisSol/SeisSol/)**: SeisSol is one of the leading codes for earthquake scenarios, in particular for simulating dynamic rupture processes. LIBXSMM provides highly optimized assembly kernels which form the computational back-bone of SeisSol (see https://github.com/TUM-I5/seissol_kernels/).
 
-**\[3] [https://github.com/Nek5000/NekBox](https://github.com/Nek5000/NekBox)**: NekBox is a version of the highly scalable and portable spectral element [Nek5000](https://nek5000.mcs.anl.gov/) code which is specialized for box geometries, and intended for prototyping new methods as well as leveraging FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM provides optimized kernels aiming to conveniently substitute the [MAXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
+**\[3] [https://github.com/Nek5000/NekBox](https://github.com/Nek5000/NekBox)**: NekBox is a version of the highly scalable and portable spectral element [Nek5000](https://nek5000.mcs.anl.gov/) code which is specialized for box geometries, and intended for prototyping new methods as well as leveraging FORTRAN beyond the FORTRAN&#160;77 standard. LIBXSMM provides optimized kernels aiming to conveniently substitute the [MXM_STD](https://github.com/Nek5000/NekBox/blob/box/mxm_std.F90) code.
 
 ## References
 **\[1] [http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html](http://sc15.supercomputing.org/sites/all/themes/SC15images/tech_poster/tech_poster_pages/post137.html)**: LIBXSMM: A High Performance Library for Small Matrix Multiplications (poster and two-page extended abstract). SC'15: The International Conference for High Performance Computing, Networking, Storage and Analysis, Austin (Texas).

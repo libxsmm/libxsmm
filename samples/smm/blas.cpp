@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
       { // MKL-batched
         fprintf(stdout, "MKL-Batched (A,B,C)...\n");
         const char transa_array[] = { 0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T' };
@@ -206,8 +206,8 @@ int main(int argc, char* argv[])
           const T *const x = c + h * csize, *const y = c_array[h];
           for (int i = 0; i < m; ++i) {
             for (int j = 0; j < n; ++j) {
-              const int k = i * n + j;
-              const double d1 = static_cast<double>(x[k] - y[k]);
+              const int index = i * n + j;
+              const double d1 = static_cast<double>(x[index] - y[index]);
               d2 += d1 * d1;
             }
           }

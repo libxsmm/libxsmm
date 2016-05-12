@@ -29,14 +29,25 @@ BLAS = 1
 OMP = 1
 SYM = 1
 
-ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
-	DEPSTATIC ?= 1
-else
-	DEPSTATIC ?= 0
-endif
+BLAS_STATIC = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
+
+ifneq (,$(strip $(wildcard $(LIBNAME).$(SLIBEXT))))
+  DEPSTATIC = 1
+else
+  DEPSTATIC = 0
+endif
+
+WRAP ?= 0
+ifneq (Darwin,$(UNAME))
+ifneq (Windows_NT,$(UNAME))
+ifneq (0,$(DEPSTATIC))
+  WRAP = 1
+endif
+endif
+endif
 
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
@@ -85,23 +96,9 @@ else ifeq (Windows_NT,$(UNAME))
 	$(info ================================================================================)
 endif
 
-WRAP ?= 0
-ifneq (Darwin,$(UNAME))
-ifneq (Windows_NT,$(UNAME))
-ifneq (0,$(DEPSTATIC))
-	WRAP = 1
-endif
-endif
-endif
-
 ifneq (0,$(WRAP))
-ifeq (0,$(MKL))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
-else
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=mkl_dgemm_
-endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
