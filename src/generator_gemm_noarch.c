@@ -36,14 +36,39 @@
 
 
 void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*         io_generated_code,
-                                            const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                            const char*                     i_arch ) {
+                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                           const char*                     i_arch ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
 
   LIBXSMM_UNUSED(i_arch);
 
+#ifdef LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
+  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    double l_alpha = 1.0;
+    double l_beta = 1.0;
+    if ( i_xgemm_desc->beta == 0 ) {
+      l_beta = 0.0;
+    }
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, 
+       "cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, %u, %u, %u, %f, A, %u, B, %u, %f, C, %u);\n",
+       i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k, l_alpha, i_xgemm_desc->m, i_xgemm_desc->k,
+       l_beta, i_xgemm_desc->m);
+       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  } else {
+    float l_alpha = 1.0f;
+    float l_beta = 1.0f;
+    if ( i_xgemm_desc->beta == 0 ) {
+      l_beta = 0.0f;
+    }
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, 
+       "cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, %u, %u, %u, %f, A, %u, B, %u, %f, C, %u);\n",
+       i_xgemm_desc->m, i_xgemm_desc->n, i_xgemm_desc->k, l_alpha, i_xgemm_desc->m, i_xgemm_desc->k,
+       l_beta, i_xgemm_desc->m);
+       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  } 
+#else
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_m = 0;\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n");
@@ -75,5 +100,6 @@ void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*         io_ge
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  }\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+#endif
 }
 
