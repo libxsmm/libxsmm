@@ -140,9 +140,6 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = NULL;
@@ -153,7 +150,9 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
 
 #ifdef LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
   if ( (strcmp(i_arch, "noarch") == 0) ) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#include <mkl.h>\n");
+    char l_new_code[512];
+    const int l_max_code_length = sizeof(l_new_code) - 1;
+    const int l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#include <mkl.h>\n");
     libxsmm_append_code_as_string( &l_generated_code, l_new_code, l_code_length );
   }
 #endif
