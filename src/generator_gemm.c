@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <libxsmm_generator.h>
+#include <libxsmm_macros.h>
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse3_avx_avx2.h"
@@ -139,6 +140,9 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                        const char*                     i_arch ) {
+  char l_new_code[512];
+  int l_max_code_length = 511;
+  int l_code_length = 0;
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = NULL;
@@ -147,6 +151,12 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
   l_generated_code.code_type = 0;
   l_generated_code.last_error = 0;
 
+#ifdef LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
+  if ( (strcmp(i_arch, "noarch") == 0) ) {
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "#include <mkl.h>\n");
+    libxsmm_append_code_as_string( &l_generated_code, l_new_code, l_code_length );
+  }
+#endif
   /* add signature to code string */
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
