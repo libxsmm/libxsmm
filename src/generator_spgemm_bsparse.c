@@ -99,7 +99,7 @@ void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_genera
   if ( i_xgemm_desc->beta == 0 ) {
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++) {\n", i_xgemm_desc->n);
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++) {\n", (unsigned int)i_xgemm_desc->n);
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     if ( i_xgemm_desc->m > 1 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    #pragma simd\n");
@@ -108,9 +108,9 @@ void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_genera
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
     if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0; }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0; }\n", (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->ldc);
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0f; }\n", i_xgemm_desc->m, i_xgemm_desc->ldc);
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0f; }\n", (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->ldc);
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  }\n");
@@ -156,7 +156,7 @@ void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_genera
   }
 
   /* generate the actuel kernel */
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_m = 0; l_m < %u; l_m++) {\n", i_xgemm_desc->m);
+  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_m = 0; l_m < %u; l_m++) {\n", (unsigned int)i_xgemm_desc->m);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
@@ -175,7 +175,7 @@ void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_genera
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   /* add flop counter */
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "\n#ifndef NDEBUG\n#ifdef _OPENMP\n#pragma omp atomic\n#endif\nlibxsmm_num_total_flops += %u;\n#endif\n", l_flop_count * i_xgemm_desc->m);
+  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "\n#ifndef NDEBUG\n#ifdef _OPENMP\n#pragma omp atomic\n#endif\nlibxsmm_num_total_flops += %u;\n#endif\n", l_flop_count * (unsigned int)i_xgemm_desc->m);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
