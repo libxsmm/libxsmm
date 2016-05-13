@@ -433,7 +433,7 @@ void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io
                                                const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if ( io_generated_code->code_type == 0 ) {
     char l_new_code[512];
-    int l_max_code_length = 511;
+    const unsigned int l_max_code_length = sizeof(l_new_code) - 1;
     int l_code_length = 0;
 
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifndef NDEBUG\n" );
@@ -444,7 +444,7 @@ void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    l_code_length = LIBXSMM_SNPRINTF( l_new_code, 511, "libxsmm_num_total_flops += %u;\n", 2 * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
+    l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "libxsmm_num_total_flops += %u;\n", 2u * i_xgemm_desc->m * i_xgemm_desc->n * i_xgemm_desc->k);
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
