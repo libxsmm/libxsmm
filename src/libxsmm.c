@@ -64,13 +64,13 @@
 # include <jitprofiling.h>
 # define LIBXSMM_VTUNE_JITVERSION 2
 # if (2 == LIBXSMM_VTUNE_JITVERSION)
-#   define LIBXSMM_VTUNE_JITDESC_TYPE iJIT_Method_Load_V2
-#   define LIBXSMM_VTUNE_JITVLOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
+#   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
+#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
 # else
-#   define LIBXSMM_VTUNE_JITDESC_TYPE iJIT_Method_Load
-#   define LIBXSMM_VTUNE_JITVLOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
+#   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
+#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
 # endif
-# define LIBXSMM_VTUNE_JITVUNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
+# define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -502,7 +502,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* arch
 
 
 #if defined(LIBXSMM_VTUNE)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const internal_regentry* code, const char* name, LIBXSMM_VTUNE_JITDESC_TYPE* desc)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const internal_regentry* code, const char* name, LIBXSMM_VTUNE_JIT_DESC_TYPE* desc)
 {
   assert(0 != code && 0 != code->id && 0 != code->size && 0 != desc);
   desc->method_id = code->id;
@@ -757,7 +757,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       registry = internal_registry;
 
       if (0 != registry) {
-        void *const registry_keys = internal_registry_keys;
+        internal_regkey *const registry_keys = internal_registry_keys;
         /* serves as an id to invalidate the thread-local cache; never decremented */
         ++internal_teardown;
 #if defined(__TRACE)
@@ -797,11 +797,11 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 #if defined(LIBXSMM_VTUNE)
                 if (0 != code.id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
                   char jit_code_name[256];
-                  LIBXSMM_VTUNE_JITDESC_TYPE vtune_jit_desc;
+                  LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
                   internal_get_code_name(internal_target_archid, &registry_keys[i].descriptor,
                     sizeof(jit_code_name), jit_code_name);
                   internal_get_vtune_jitdesc(&code, jit_code_name, &vtune_jit_desc);
-                  iJIT_NotifyEvent(LIBXSMM_VTUNE_JITVUNLOAD, &vtune_jit_desc);
+                  iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &vtune_jit_desc);
                 }
 #endif
 #if defined(_WIN32)
@@ -834,8 +834,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           }
 #endif
         }
+        free((void*)registry_keys);
         free((void*)registry);
-        free(registry_keys);
       }
     }
 #if !defined(LIBXSMM_OPENMP) /* release locks */
@@ -971,10 +971,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 # endif /*!defined(NDEBUG) && defined(_DEBUG)*/
 # if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-            LIBXSMM_VTUNE_JITDESC_TYPE vtune_jit_desc;
+            LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
             code->id = iJIT_GetNewMethodID();
             internal_get_vtune_jitdesc(code, jit_code_name, &vtune_jit_desc);
-            iJIT_NotifyEvent(LIBXSMM_VTUNE_JITVLOAD, &vtune_jit_desc);
+            iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
           }
           else {
             code->id = 0;
