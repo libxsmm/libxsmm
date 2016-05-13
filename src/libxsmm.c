@@ -495,7 +495,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* arch
     0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 'd' : 's',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
-    desc->m, desc->n, desc->k, desc->lda, desc->ldb, desc->ldc,
+    (unsigned int)desc->m, (unsigned int)desc->n, (unsigned int)desc->k,
+    (unsigned int)desc->lda, (unsigned int)desc->ldb, (unsigned int)desc->ldc,
     desc->alpha, desc->beta, internal_get_prefetch(desc));
 }
 
@@ -868,6 +869,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid()
 
 
 /* function serves as a helper for implementing the Fortran interface */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_archid(char* name, int length);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_archid(char* name, int length)
 {
   const char *const archid = libxsmm_get_target_archid();

@@ -76,7 +76,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
   libxsmm_internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
   LIBXSMM_UNUSED(prefetch);
 
-#if !defined(__MIC__)
+#if defined(__MIC__)
+  LIBXSMM_UNUSED(archid);
+#else
   if (0 == strcmp("knl", archid))
 #endif
   {
