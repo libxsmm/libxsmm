@@ -207,7 +207,7 @@ This case obviously requires to build a shared library of LIBXSMM:
 make STATIC=0
 ```
 
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region:
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region. However in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm` (in this order).
 
 ```
 LIBXSMM_GEMM=2 ./myapplication

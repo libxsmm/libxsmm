@@ -114,6 +114,11 @@ else
   libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
 
+# Pickup OpenMP library name if passed as OMP=libname|name
+ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
+  OMPLIB = $(patsubst lib%,%,$(OMP))
+endif
+
 # Automatically pickup the environment (make -e not needed),
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
@@ -487,6 +492,9 @@ ifneq (0,$(INTEL))
     CXXFLAGS += -fno-exceptions
   endif
   OMPFLAG = -fopenmp -qoverride_limits
+  ifeq (,$(strip $(OMPLIB)))
+    OMPLIB = iomp5
+  endif
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
@@ -675,6 +683,9 @@ else # GCC assumed
     CXXFLAGS += -fno-exceptions
   endif
   OMPFLAG = -fopenmp
+  ifeq (,$(strip $(OMPLIB)))
+    OMPLIB = gomp
+  endif
   ifneq (0,$(OMP))
     # clang: OMP=libomp
     ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
@@ -683,7 +694,7 @@ else # GCC assumed
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -lgomp 2>&1 | grep -q "\-lgomp"; echo $$?))
+    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo $$?))
       CXXFLAGS += $(OMPFLAG)
       CFLAGS += $(OMPFLAG)
       FCFLAGS += $(OMPFLAG)
@@ -823,9 +834,9 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(INTEL))
     ifeq (0,$(OMP))
-      LDFLAGS += -liomp5
+      LDFLAGS += -l$(OMPLIB)
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"-liomp5"
+        LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
       endif
     endif
     ifneq (0,$(OFFLOAD))
