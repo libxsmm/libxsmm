@@ -922,6 +922,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char*
       internal_target_arch = LIBXSMM_X86_SSE3;
       internal_target_archid = name;
     }
+    else if (0 == strcmp("x86", name)) {
+      internal_target_arch = LIBXSMM_X86_GENERIC;
+      internal_target_archid = name;
+    }
+    else if (0 == strcmp("generic", name)) {
+      internal_target_arch = LIBXSMM_TARGET_ARCH_GENERIC;
+      internal_target_archid = name;
+    }
   }
   if (0 == internal_target_archid) {
     internal_target_arch = libxsmm_cpuid_x86(&internal_target_archid);
