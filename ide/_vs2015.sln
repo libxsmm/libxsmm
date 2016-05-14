@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm", "libxsmm.vcxproj", "{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}"
 EndProject
@@ -71,6 +71,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "descriptor", "..\tests\desc
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xgemm", "..\samples\xgemm\xgemm.vcxproj", "{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jit", "..\tests\jit.vcxproj", "{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
@@ -241,6 +246,18 @@ Global
 		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|Win32.Build.0 = symbols|Win32
 		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|x64.ActiveCfg = symbols|x64
 		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893}.symbols|x64.Build.0 = symbols|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.debug|Win32.ActiveCfg = debug|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.debug|Win32.Build.0 = debug|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.debug|x64.ActiveCfg = debug|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.debug|x64.Build.0 = debug|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.release|Win32.ActiveCfg = release|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.release|Win32.Build.0 = release|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.release|x64.ActiveCfg = release|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.release|x64.Build.0 = release|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.symbols|Win32.ActiveCfg = symbols|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.symbols|Win32.Build.0 = symbols|Win32
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.symbols|x64.ActiveCfg = symbols|x64
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -259,5 +276,6 @@ Global
 		{25D60DA9-C699-4530-AD01-A1908DE9735F} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{E4DB8253-79E9-4E5D-BF01-90ABA3A76893} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
+		{7FF12743-03DC-4FAD-85C8-09EE71FBB1AD} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 EndGlobal

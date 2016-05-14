@@ -266,16 +266,14 @@
           END FUNCTION
 
           ! Set target architecture (archid: see PARAMETER enumeration)
-          ! for subsequent code generation (JIT); ignores CPUID flags.
-          ! TODO: finalize documentation
+          ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_arch(archid) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: archid
           END SUBROUTINE
 
           ! Set target architecture (id=0|wsm|snb|hsw|knl|skx, 0/NULL: CPUID)
-          ! for subsequent code generation (JIT); ignores CPUID flags.
-          ! TODO: finalize documentation
+          ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_archid(name) BIND(C)
             IMPORT :: C_CHAR
             CHARACTER(C_CHAR), INTENT(IN) :: name(*)
