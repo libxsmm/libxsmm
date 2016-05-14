@@ -930,7 +930,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char*
   else if (1 >= jit) {
     const char* archid = internal_target_archid;
     if (libxsmm_cpuid_x86(&archid) < internal_target_arch) {
-      fprintf(stderr, "LIBXSMM: \"%s\"-code will fail to run on \"%s\"!\n", internal_target_archid, archid);
+      fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n", internal_target_archid, archid);
     }
   }
 #endif
