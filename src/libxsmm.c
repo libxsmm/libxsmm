@@ -854,6 +854,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(int archid)
       internal_target_archid = "unknown";
     }
   }
+
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  {
+    const char* archid = internal_target_archid;
+    if (libxsmm_cpuid_x86(&archid) < internal_target_arch) {
+      fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n", internal_target_archid, archid);
+    }
+  }
+#endif
 }
 
 
@@ -879,8 +888,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_archid(char* name, int len
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char* name)
 {
+  int jit = 0;
   if (name && *name) {
-    const int jit = atoi(name);
+    jit = atoi(name);
     if (0 == strcmp("0", name)) { /* suppress running libxsmm_cpuid_x86 */
       internal_target_arch = LIBXSMM_TARGET_ARCH_GENERIC;
       internal_target_archid = "generic";
@@ -916,6 +926,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char*
   if (0 == internal_target_archid) {
     internal_target_arch = libxsmm_cpuid_x86(&internal_target_archid);
   }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else if (1 >= jit) {
+    const char* archid = internal_target_archid;
+    if (libxsmm_cpuid_x86(&archid) < internal_target_arch) {
+      fprintf(stderr, "LIBXSMM: \"%s\"-code will fail to run on \"%s\"!\n", internal_target_archid, archid);
+    }
+  }
+#endif
   assert(0 != internal_target_archid);
 }
 
@@ -929,153 +947,151 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   assert(0 != internal_target_archid);
   assert(0 == code->function.pmm);
 
-  if (LIBXSMM_X86_AVX <= internal_target_arch) {
-    /* allocate temporary buffer which is large enough to cover the generated code */
-    generated_code.generated_code = malloc(131072);
-    generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-    generated_code.code_size = 0;
-    generated_code.code_type = 2;
-    generated_code.last_error = 0;
+  /* allocate temporary buffer which is large enough to cover the generated code */
+  generated_code.generated_code = malloc(131072);
+  generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+  generated_code.code_size = 0;
+  generated_code.code_type = 2;
+  generated_code.last_error = 0;
 
-    /* generate kernel */
-    libxsmm_generator_gemm_kernel(&generated_code, desc, internal_target_archid);
+  /* generate kernel */
+  libxsmm_generator_gemm_kernel(&generated_code, desc, internal_target_archid);
 
-    /* handle an eventual error in the else-branch */
-    if (0 == generated_code.last_error) {
+  /* handle an eventual error in the else-branch */
+  if (0 == generated_code.last_error) {
 # if defined(__APPLE__) && defined(__MACH__)
-      const int fd = 0;
+    const int fd = 0;
 # else
-      const int fd = open("/dev/zero", O_RDWR);
+    const int fd = open("/dev/zero", O_RDWR);
 # endif
-      if (0 <= fd) {
-        /* create executable buffer */
-        code->function.pmm = mmap(0, generated_code.code_size,
-          /* must be a superset of what mprotect populates (see below) */
-          PROT_READ | PROT_WRITE | PROT_EXEC,
+    if (0 <= fd) {
+      /* create executable buffer */
+      code->function.pmm = mmap(0, generated_code.code_size,
+        /* must be a superset of what mprotect populates (see below) */
+        PROT_READ | PROT_WRITE | PROT_EXEC,
 # if defined(__APPLE__) && defined(__MACH__)
-          LIBXSMM_INTERNAL_MAP | MAP_ANON, fd, 0);
+        LIBXSMM_INTERNAL_MAP | MAP_ANON, fd, 0);
 # elif !defined(__CYGWIN__)
-          LIBXSMM_INTERNAL_MAP | MAP_32BIT, fd, 0);
-        close(fd);
+        LIBXSMM_INTERNAL_MAP | MAP_32BIT, fd, 0);
+      close(fd);
 # else
-          LIBXSMM_INTERNAL_MAP, fd, 0);
-        close(fd);
+        LIBXSMM_INTERNAL_MAP, fd, 0);
+      close(fd);
 # endif
-        if (MAP_FAILED != code->function.pmm) {
-          /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
+      if (MAP_FAILED != code->function.pmm) {
+        /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 # if defined(MADV_NOHUGEPAGE)
 #  if defined(NDEBUG)
-          madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE);
+        madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE);
 #  else /* library code is expected to be mute */
-          /* proceed even in case of an error, we then just take what we got (THP) */
-          if (0 != madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE)) {
-            static LIBXSMM_TLS int once = 0;
-            if (0 == once) {
-              const int error = errno;
-              fprintf(stderr, "LIBXSMM: %s (madvise error #%i at %p)!\n",
-                strerror(error), error, code->function.pmm);
-              once = 1;
-            }
-          }
-#  endif /*defined(NDEBUG)*/
-# elif !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
-          LIBXSMM_MESSAGE("================================================================================")
-          LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
-          LIBXSMM_MESSAGE("================================================================================")
-# endif /*MADV_NOHUGEPAGE*/
-          /* copy temporary buffer into the prepared executable buffer */
-          memcpy(code->function.pmm, generated_code.generated_code, generated_code.code_size);
-
-          if (0/*ok*/ == mprotect(code->function.pmm, generated_code.code_size, PROT_EXEC | PROT_READ)) {
-# if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-            char jit_code_name[256];
-            internal_get_code_name(internal_target_archid, desc, sizeof(jit_code_name), jit_code_name);
-# endif
-            /* finalize code generation */
-            code->size = generated_code.code_size;
-            /* free temporary/initial code buffer */
-            free(generated_code.generated_code);
-# if !defined(NDEBUG) && defined(_DEBUG)
-            { /* dump byte-code into file */
-              FILE *const byte_code = fopen(jit_code_name, "wb");
-              if (0 != byte_code) {
-                fwrite(code->function.pmm, 1, code->size, byte_code);
-                fclose(byte_code);
-              }
-            }
-# endif /*!defined(NDEBUG) && defined(_DEBUG)*/
-# if defined(LIBXSMM_VTUNE)
-            if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-              LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-              code->id = iJIT_GetNewMethodID();
-              internal_get_vtune_jitdesc(code, jit_code_name, &vtune_jit_desc);
-              iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
-            }
-            else {
-              code->id = 0;
-            }
-# endif
-          }
-          else { /* there was an error with mprotect */
-# if defined(NDEBUG)
-            munmap(code->function.pmm, generated_code.code_size);
-# else /* library code is expected to be mute */
-            static LIBXSMM_TLS int once = 0;
-            if (0 == once) {
-              const int error = errno;
-              fprintf(stderr, "LIBXSMM: %s (mprotect error #%i at %p+%u)!\n",
-                strerror(error), error, code->function.pmm, generated_code.code_size);
-              once = 1;
-            }
-            if (0 != munmap(code->function.pmm, generated_code.code_size)) {
-              static LIBXSMM_TLS int once_mmap_error = 0;
-              if (0 == once_mmap_error) {
-                const int error = errno;
-                fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
-                  strerror(error), error, code->function.pmm, generated_code.code_size);
-                once_mmap_error = 1;
-              }
-            }
-# endif
-            free(generated_code.generated_code);
-          }
-        }
-        else {
-# if !defined(NDEBUG) /* library code is expected to be mute */
+        /* proceed even in case of an error, we then just take what we got (THP) */
+        if (0 != madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE)) {
           static LIBXSMM_TLS int once = 0;
           if (0 == once) {
             const int error = errno;
-            fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)!\n",
-              strerror(error), error);
+            fprintf(stderr, "LIBXSMM: %s (madvise error #%i at %p)!\n",
+              strerror(error), error, code->function.pmm);
             once = 1;
+          }
+        }
+#  endif /*defined(NDEBUG)*/
+# elif !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
+        LIBXSMM_MESSAGE("================================================================================")
+        LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
+        LIBXSMM_MESSAGE("================================================================================")
+# endif /*MADV_NOHUGEPAGE*/
+        /* copy temporary buffer into the prepared executable buffer */
+        memcpy(code->function.pmm, generated_code.generated_code, generated_code.code_size);
+
+        if (0/*ok*/ == mprotect(code->function.pmm, generated_code.code_size, PROT_EXEC | PROT_READ)) {
+# if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
+          char jit_code_name[256];
+          internal_get_code_name(internal_target_archid, desc, sizeof(jit_code_name), jit_code_name);
+# endif
+          /* finalize code generation */
+          code->size = generated_code.code_size;
+          /* free temporary/initial code buffer */
+          free(generated_code.generated_code);
+# if !defined(NDEBUG) && defined(_DEBUG)
+          { /* dump byte-code into file */
+            FILE *const byte_code = fopen(jit_code_name, "wb");
+            if (0 != byte_code) {
+              fwrite(code->function.pmm, 1, code->size, byte_code);
+              fclose(byte_code);
+            }
+          }
+# endif /*!defined(NDEBUG) && defined(_DEBUG)*/
+# if defined(LIBXSMM_VTUNE)
+          if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+            LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
+            code->id = iJIT_GetNewMethodID();
+            internal_get_vtune_jitdesc(code, jit_code_name, &vtune_jit_desc);
+            iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
+          }
+          else {
+            code->id = 0;
+          }
+# endif
+        }
+        else { /* there was an error with mprotect */
+# if defined(NDEBUG)
+          munmap(code->function.pmm, generated_code.code_size);
+# else /* library code is expected to be mute */
+          static LIBXSMM_TLS int once = 0;
+          if (0 == once) {
+            const int error = errno;
+            fprintf(stderr, "LIBXSMM: %s (mprotect error #%i at %p+%u)!\n",
+              strerror(error), error, code->function.pmm, generated_code.code_size);
+            once = 1;
+          }
+          if (0 != munmap(code->function.pmm, generated_code.code_size)) {
+            static LIBXSMM_TLS int once_mmap_error = 0;
+            if (0 == once_mmap_error) {
+              const int error = errno;
+              fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
+                strerror(error), error, code->function.pmm, generated_code.code_size);
+              once_mmap_error = 1;
+            }
           }
 # endif
           free(generated_code.generated_code);
-          /* clear MAP_FAILED value */
-          code->function.pmm = 0;
         }
       }
-# if !defined(NDEBUG)/* library code is expected to be mute */
       else {
+# if !defined(NDEBUG) /* library code is expected to be mute */
         static LIBXSMM_TLS int once = 0;
         if (0 == once) {
-          fprintf(stderr, "LIBXSMM: invalid file descriptor (%i)\n", fd);
+          const int error = errno;
+          fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)!\n",
+            strerror(error), error);
           once = 1;
         }
-      }
 # endif
+        free(generated_code.generated_code);
+        /* clear MAP_FAILED value */
+        code->function.pmm = 0;
+      }
     }
+# if !defined(NDEBUG)/* library code is expected to be mute */
     else {
-# if !defined(NDEBUG) /* library code is expected to be mute */
       static LIBXSMM_TLS int once = 0;
       if (0 == once) {
-        fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error),
-          generated_code.last_error);
+        fprintf(stderr, "LIBXSMM: invalid file descriptor (%i)\n", fd);
         once = 1;
       }
-# endif
-      free(generated_code.generated_code);
     }
+# endif
+  }
+  else {
+# if !defined(NDEBUG) /* library code is expected to be mute */
+    static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error),
+        generated_code.last_error);
+      once = 1;
+    }
+# endif
+    free(generated_code.generated_code);
   }
 # else
 #   if !defined(__MIC__)
