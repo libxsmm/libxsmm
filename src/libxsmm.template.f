@@ -320,7 +320,7 @@
         ! Returns a name for the target architecture as identified
         ! by libxsmm_get_target_arch().
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
-        PURE FUNCTION libxsmm_get_target_archid() RESULT(name)
+        FUNCTION libxsmm_get_target_archid() RESULT(name)
           CHARACTER(LEN=:), ALLOCATABLE :: name
           CHARACTER(LEN=16) :: tmp
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: get_target_archid
