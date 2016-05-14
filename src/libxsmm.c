@@ -515,7 +515,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const intern
   desc->class_file_name = NULL;
   desc->source_file_name = NULL;
 # if (2 == LIBXSMM_VTUNE_JITVERSION)
-  desc->module_name = "LIBXSMM";
+  desc->module_name = "libxsmm.jit";
 # endif
 }
 #endif

@@ -250,7 +250,7 @@ amplxe-cl -r result-directory -data-limit 0 -collect advanced-hotspots \
   -knob collection-detail=stack-sampling -- ./myapplication
 ```
 
-Intel VTune Amplifier presents invoked JIT code like functions, which belong to a module named "LIBXSMM". The function name as well as the module name are supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::jit" encodes an Intel AVX2 ("hsw") double-precision kernel ("d") which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
+Intel VTune Amplifier presents invoked JIT code like functions, which belong to a module named "libxsmm.jit". The function name as well as the module name are supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::jit" encodes an Intel AVX2 ("hsw") double-precision kernel ("d") which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
 
 ### Tuning
 Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
