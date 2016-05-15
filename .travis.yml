@@ -20,7 +20,7 @@ env:
   global:
   - UPLOAD_DIR=libxsmm
   matrix:
-  - LIBXSMM_JIT=0
+  - LIBXSMM_JIT=0 LIBXSMM_VERBOSE=1
   - DBG=1
 
 language: cpp
