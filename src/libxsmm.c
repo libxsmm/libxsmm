@@ -471,17 +471,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
   assert(0 <= precision && precision < 2);
 
   if (/* omit to print anything if it is superfluous */
-    0 != internal_statistic[precision][0/*SML*/].ntry &&
-    0 != internal_statistic[precision][0/*SML*/].njit &&
-    0 != internal_statistic[precision][0/*SML*/].nsta &&
-    0 != internal_statistic[precision][0/*SML*/].ncol &&
-    0 != internal_statistic[precision][1/*MED*/].ntry &&
-    0 != internal_statistic[precision][1/*MED*/].njit &&
-    0 != internal_statistic[precision][1/*MED*/].nsta &&
-    0 != internal_statistic[precision][1/*MED*/].ncol &&
-    0 != internal_statistic[precision][2/*BIG*/].ntry &&
-    0 != internal_statistic[precision][2/*BIG*/].njit &&
-    0 != internal_statistic[precision][2/*BIG*/].nsta &&
+    0 != internal_statistic[precision][0/*SML*/].ntry ||
+    0 != internal_statistic[precision][0/*SML*/].njit ||
+    0 != internal_statistic[precision][0/*SML*/].nsta ||
+    0 != internal_statistic[precision][0/*SML*/].ncol ||
+    0 != internal_statistic[precision][1/*MED*/].ntry ||
+    0 != internal_statistic[precision][1/*MED*/].njit ||
+    0 != internal_statistic[precision][1/*MED*/].nsta ||
+    0 != internal_statistic[precision][1/*MED*/].ncol ||
+    0 != internal_statistic[precision][2/*BIG*/].ntry ||
+    0 != internal_statistic[precision][2/*BIG*/].njit ||
+    0 != internal_statistic[precision][2/*BIG*/].nsta ||
     0 != internal_statistic[precision][2/*BIG*/].ncol)
   {
     char title[256], sml[256], med[256], big[256];
