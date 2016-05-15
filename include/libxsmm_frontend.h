@@ -297,17 +297,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
 #define LIBXSMM_MMCALL(FN, A, B, C, M, N, K) \
   LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LIBXSMM_LD(M, N), K, LIBXSMM_LD(M, N))
 
+/** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
+#define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
+
 /**
  * Execute a specialized function, or use a fallback code path depending on threshold (template).
  * LIBXSMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
 #define LIBXSMM_XGEMM(REAL, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  if (((unsigned long long)(LIBXSMM_MAX_MNK)) >= \
-     (((unsigned long long)(M)) * \
-      ((unsigned long long)(N)) * \
-      ((unsigned long long)(K)))) \
-  { \
+  if (((unsigned long long)(LIBXSMM_MAX_MNK)) >= LIBXSMM_MNK_SIZE(M, N, K)) { \
     const int libxsmm_xgemm_flags_ = (int)(FLAGS); \
     const int libxsmm_xgemm_lda_ = (int)(LDA), libxsmm_xgemm_ldb_ = (int)(LDB), libxsmm_xgemm_ldc_ = (int)(LDC); \
     const REAL libxsmm_xgemm_alpha_ = (REAL)(ALPHA), libxsmm_xgemm_beta_ = (REAL)(BETA); \
