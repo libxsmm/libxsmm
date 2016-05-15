@@ -465,36 +465,60 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_print_statistic(FILE* ostream, int precision, unsigned int indent)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* ostream, int precision, unsigned int linebreaks, unsigned int indent)
 {
-  char title[256], sml[256], med[256], big[256];
+  int printed = 0;
   assert(0 <= precision && precision < 2);
 
-  LIBXSMM_SNPRINTF(sml, sizeof(sml), "%u..%u",                      0, internal_statistic_sml);
-  LIBXSMM_SNPRINTF(med, sizeof(sml), "%u..%u", internal_statistic_sml, internal_statistic_med);
-  LIBXSMM_SNPRINTF(big, sizeof(sml), "%u..%u", internal_statistic_med, internal_statistic_mnk);
+  if (/* omit to print anything if it is superfluous */
+    0 != internal_statistic[precision][0/*SML*/].ntry &&
+    0 != internal_statistic[precision][0/*SML*/].njit &&
+    0 != internal_statistic[precision][0/*SML*/].nsta &&
+    0 != internal_statistic[precision][0/*SML*/].ncol &&
+    0 != internal_statistic[precision][1/*MED*/].ntry &&
+    0 != internal_statistic[precision][1/*MED*/].njit &&
+    0 != internal_statistic[precision][1/*MED*/].nsta &&
+    0 != internal_statistic[precision][1/*MED*/].ncol &&
+    0 != internal_statistic[precision][2/*BIG*/].ntry &&
+    0 != internal_statistic[precision][2/*BIG*/].njit &&
+    0 != internal_statistic[precision][2/*BIG*/].nsta &&
+    0 != internal_statistic[precision][2/*BIG*/].ncol)
   {
-    int n = 0;
-    assert(0 != internal_target_archid);
-    for (n = 0; 0 != internal_target_archid[n] && n < sizeof(title); ++n) title[n] = internal_target_archid[n] - 32;
-    LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
+    char title[256], sml[256], med[256], big[256];
+
+    LIBXSMM_SNPRINTF(sml, sizeof(sml), "%u..%u",                      0, internal_statistic_sml);
+    LIBXSMM_SNPRINTF(med, sizeof(sml), "%u..%u", internal_statistic_sml, internal_statistic_med);
+    LIBXSMM_SNPRINTF(big, sizeof(sml), "%u..%u", internal_statistic_med, internal_statistic_mnk);
+    {
+      unsigned int n = 0;
+      assert(0 != internal_target_archid);
+      for (n = 0; 0 != internal_target_archid[n] && n < sizeof(title); ++n) { /* toupper */
+        const char c = internal_target_archid[n];
+        title[n] = ('a' <= c || c <= 'z') ? (c - 32) : c;
+      }
+      LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
+      for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
+    }
+    fprintf(ostream, "%*s%-7s %7s %7s %7s %7s\n", indent, "", title, "TRY" ,"JIT", "STA", "COL");
+    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", sml,
+      internal_statistic[precision][0/*SML*/].ntry,
+      internal_statistic[precision][0/*SML*/].njit,
+      internal_statistic[precision][0/*SML*/].nsta,
+      internal_statistic[precision][0/*SML*/].ncol);
+    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", med,
+      internal_statistic[precision][1/*MED*/].ntry,
+      internal_statistic[precision][1/*MED*/].njit,
+      internal_statistic[precision][1/*MED*/].nsta,
+      internal_statistic[precision][1/*MED*/].ncol);
+    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", big,
+      internal_statistic[precision][2/*BIG*/].ntry,
+      internal_statistic[precision][2/*BIG*/].njit,
+      internal_statistic[precision][2/*BIG*/].nsta,
+      internal_statistic[precision][2/*BIG*/].ncol);
+    printed = 1;
   }
-  fprintf(ostream, "%*s%-7s %7s %7s %7s %7s\n", indent, "", title, "TRY" ,"JIT", "STA", "COL");
-  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", sml,
-    internal_statistic[precision][0/*SML*/].ntry,
-    internal_statistic[precision][0/*SML*/].njit,
-    internal_statistic[precision][0/*SML*/].nsta,
-    internal_statistic[precision][0/*SML*/].ncol);
-  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", med,
-    internal_statistic[precision][1/*MED*/].ntry,
-    internal_statistic[precision][1/*MED*/].njit,
-    internal_statistic[precision][1/*MED*/].nsta,
-    internal_statistic[precision][1/*MED*/].ncol);
-  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", big,
-    internal_statistic[precision][2/*BIG*/].ntry,
-    internal_statistic[precision][2/*BIG*/].njit,
-    internal_statistic[precision][2/*BIG*/].nsta,
-    internal_statistic[precision][2/*BIG*/].ncol);
+
+  return printed;
 }
 
 
@@ -858,9 +882,11 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           }
         }
         if (0 != internal_verbose) { /* print statistic on termination */
-          fprintf(stderr, "\n");
-          internal_print_statistic(stderr, 1/*SP*/, 0);
-          internal_print_statistic(stderr, 0/*DP*/, 0);
+          const unsigned int linebreak = 0 == internal_print_statistic(stderr, 1/*SP*/, 1, 0) ? 1 : 0;
+          if (0 == internal_print_statistic(stderr, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
+            assert(0 != internal_target_archid && 0 != *internal_target_archid);
+            fprintf(stderr, "LIBXSMM_JIT=%s\n", internal_target_archid);
+          }
         }
         free((void*)registry_keys);
         free((void*)registry);
