@@ -37,7 +37,8 @@
 # define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
 #else
 # if defined(__AVX512F__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
+#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 # elif defined(__AVX2__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 # elif defined(__AVX__)
@@ -52,7 +53,7 @@
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
 # endif
 # if defined(__INTEL_COMPILER) /*TODO: version check*/
-#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
+#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #   include <immintrin.h>
 # elif defined(_MSC_VER) /*TODO: version check*/
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
@@ -106,7 +107,7 @@
 #   if (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
   && 0 /*AVX-512 support in GCC appears to be incomplete (missing at least _mm512_mask_reduce_or_epi32)*/
 #     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,avx512f"))
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
+#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #     pragma GCC push_options
 #     pragma GCC target("sse3,sse4.1,sse4.2,avx,avx2,avx512f")
 #     include <immintrin.h>

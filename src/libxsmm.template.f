@@ -122,7 +122,8 @@
      &    LIBXSMM_X86_SSE4_2       = 1004,                              &
      &    LIBXSMM_X86_AVX          = 1005,                              &
      &    LIBXSMM_X86_AVX2         = 1006,                              &
-     &    LIBXSMM_X86_AVX512       = 1007
+     &    LIBXSMM_X86_AVX512_MIC   = 1007,                              &
+     &    LIBXSMM_X86_AVX512_CORE  = 1008
 
         ! Type of a function specialized for a given parameter set.
         ABSTRACT INTERFACE

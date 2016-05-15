@@ -44,7 +44,8 @@
 #define LIBXSMM_X86_SSE4_2       1004
 #define LIBXSMM_X86_AVX          1005
 #define LIBXSMM_X86_AVX2         1006
-#define LIBXSMM_X86_AVX512       1007
+#define LIBXSMM_X86_AVX512_MIC   1007
+#define LIBXSMM_X86_AVX512_CORE  1008
 
 
 /** Flag enumeration which can be binary ORed. */

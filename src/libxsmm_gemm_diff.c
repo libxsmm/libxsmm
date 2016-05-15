@@ -45,8 +45,10 @@
 #endif
 
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE /*|| any other implemented size*/)
-# if (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#   define LIBXSMM_GEMM_DIFF_AVX512
+# if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#   define LIBXSMM_GEMM_DIFF_AVX512_CORE
+# elif (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#   define LIBXSMM_GEMM_DIFF_AVX512_MIC
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #   define LIBXSMM_GEMM_DIFF_AVX2
 # elif (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -68,7 +70,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arc
   internal_gemm_diffn_function = libxsmm_gemm_diffn_imci;
   internal_gemm_diff_function = libxsmm_gemm_diff_imci;
 #else
-  if (LIBXSMM_X86_AVX512 <= target_arch) {
+  if (LIBXSMM_X86_AVX512_CORE <= target_arch) {
+    internal_gemm_diffn_function = libxsmm_gemm_diffn_avx512;
+    internal_gemm_diff_function = libxsmm_gemm_diff_avx2;
+  }
+  else if (LIBXSMM_X86_AVX512_MIC <= target_arch) {
     internal_gemm_diffn_function = libxsmm_gemm_diffn_avx512;
     internal_gemm_diff_function = libxsmm_gemm_diff_avx2;
   }
@@ -240,7 +246,9 @@ unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference, const 
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH)
+  return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
+#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
 #elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);

@@ -173,8 +173,10 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
               (strcmp( i_arch, "skx" ) == 0)    ) {
     if ((strcmp( i_arch, "knc" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_IMCI;
+    } else if ((strcmp( i_arch, "knl" ) == 0)) {
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_MIC;
     } else {
-      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512;
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CORE;
     }
     io_micro_kernel_config->vector_reg_count = 32;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -592,8 +594,9 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
-             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
+  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE    ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
@@ -661,8 +664,9 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI    ||
-             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512     ) {
+  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
+             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE    ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;

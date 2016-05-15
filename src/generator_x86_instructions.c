@@ -316,7 +316,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
-    if ( (i_instruction_set == LIBXSMM_X86_AVX512) && (i_use_masking != 0) ) {
+    if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC || i_instruction_set == LIBXSMM_X86_AVX512_CORE) && (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
@@ -784,9 +784,10 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1 ) {
   /* @TODO add checks in debug mode */
-  if ( (i_instruction_set != LIBXSMM_X86_IMCI)   &&
-       (i_instruction_set != LIBXSMM_X86_AVX512) &&
-       (i_use_broadcast != 0)                       ) {
+  if ( (i_instruction_set != LIBXSMM_X86_IMCI)        &&
+       (i_instruction_set != LIBXSMM_X86_AVX512_MIC)  &&
+       (i_instruction_set != LIBXSMM_X86_AVX512_CORE) &&
+       (i_use_broadcast != 0)                            ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
     return;
   }

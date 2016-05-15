@@ -196,7 +196,7 @@
 #if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
 
 /* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(const char* archid, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(int archid, int prefetch)
 {
   union { const void* pv; libxsmm_sgemm_function pf; } internal_sgemm = { NULL };
   union { const void* pv; libxsmm_dgemm_function pf; } internal_dgemm = { NULL };

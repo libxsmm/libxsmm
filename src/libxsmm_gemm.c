@@ -41,7 +41,6 @@
 #endif
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -68,7 +67,7 @@ LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp = 2;
 LIBXSMM_RETARGETABLE int libxsmm_internal_gemm = 0;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* archid, int prefetch,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(int archid, int prefetch,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   int config = 0;
@@ -79,7 +78,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
 #if defined(__MIC__)
   LIBXSMM_UNUSED(archid);
 #else
-  if (0 == strcmp("knl", archid))
+  if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
     libxsmm_internal_gemm_nthreads_per_core = 4;
@@ -137,7 +136,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(const char* ar
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(const char* archid, int prefetch)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(int archid, int prefetch)
 {
   /* internal pre-initialization step */
   libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);

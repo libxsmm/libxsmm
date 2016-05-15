@@ -67,13 +67,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
              AVX512ER(0x08000000) */
           if (0x1C010000 == (0x1C010000 & ebx)) {
-            target_arch = LIBXSMM_X86_AVX512;
+            target_arch = LIBXSMM_X86_AVX512_MIC;
             if (archid) *archid = "knl";
           }
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
              AVX512BW(0x40000000), AVX512VL(0x80000000) */
           else if (0xD0030000 == (0xD0030000 & ebx)) {
-            target_arch = LIBXSMM_X86_AVX512;
+            target_arch = LIBXSMM_X86_AVX512_CORE;
             if (archid) *archid = "skx";
           }
         }
