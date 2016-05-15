@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #if !defined(NDEBUG)
 # include <assert.h>
 # include <errno.h>
@@ -156,7 +157,16 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
 #endif
 } internal_regentry;
 
-LIBXSMM_DEBUG(LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_ncollisions = 0;)
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL struct LIBXSMM_RETARGETABLE {
+  unsigned int ntry, ncol, njit, nsta;
+} internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
+
+/** initialized during internal_init */
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_mnk = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_sml = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_med = 0;
+LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose = 0;
+
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regkey* internal_registry_keys = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regentry* internal_registry = 0;
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_teardown = 0;
@@ -277,7 +287,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #if (0 != LIBXSMM_JIT)
 # define INTERNAL_FIND_CODE_JIT(DESCRIPTOR, CODE, RESULT) \
   /* check if code generation or fix-up is needed, also check whether JIT is supported (CPUID) */ \
-  if (0 == (RESULT).function.pmm && LIBXSMM_X86_AVX <= internal_target_arch) { \
+  if (0 == (RESULT).function.pmm /* code version does not exist */ && LIBXSMM_X86_AVX <= internal_target_arch) { \
     /* instead of blocking others, a try-lock would allow to let others to fallback to BLAS (return 0) during lock-time */ \
     INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */ \
     /* re-read registry entry after acquiring the lock */ \
@@ -289,6 +299,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
       if (0 == diff) { \
         /* found a conflict-free registry-slot, and attempt to build the kernel */ \
         internal_build(DESCRIPTOR, &(RESULT)); \
+        internal_update_statistic(DESCRIPTOR, 1, 0); \
         if (0 != (RESULT).function.pmm) { /* synchronize registry entry */ \
           internal_registry_keys[i].descriptor = *(DESCRIPTOR); \
           *(CODE) = RESULT; \
@@ -303,7 +314,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
           const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
           i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)); \
           i0 = i; /* keep starting point of free-slot-search in mind */ \
-          LIBXSMM_DEBUG(++internal_ncollisions;) \
+          internal_update_statistic(DESCRIPTOR, 0, 1); \
           INTERNAL_FIND_CODE_WRITE(CODE, collision); /* fix-up existing entry */ \
           diff0 = diff; /* no more fix-up */ \
         } \
@@ -339,7 +350,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
     (CODE) += i; /* actual entry */ \
     do { \
       INTERNAL_FIND_CODE_READ(CODE, flux_entry.function.pmm); /* read registered code */ \
-      if (0 != flux_entry.function.pmm) { \
+      if (0 != flux_entry.function.pmm) { /* code version exists */ \
         if (0 == diff0) { \
           if (0 == (LIBXSMM_HASH_COLLISION & flux_entry.function.imm)) { /* check for no collision */ \
             /* calculate bitwise difference (deep check) */ \
@@ -431,13 +442,68 @@ return flux_entry.function.xmm
   M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, dmm)
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
-  const libxsmm_gemm_descriptor* desc, unsigned int index, unsigned int hash, libxsmm_xmmfunction src,
-  internal_regentry* registry, unsigned int* registered, unsigned int* total)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm_gemm_descriptor* desc,
+  unsigned ntry, unsigned ncol)
+{
+  assert(0 != desc);
+  {
+    const unsigned long long size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
+    const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
+    int bucket = 2/*big*/;
+
+    if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= size) {
+      bucket = 0;
+    }
+    else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= size) {
+      bucket = 1;
+    }
+
+    /* TODO: use atomic updates */
+    internal_statistic[precision][bucket].ncol += ncol;
+    internal_statistic[precision][bucket].ntry += ntry;
+  }
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_print_statistic(FILE* ostream, int precision, unsigned int indent)
+{
+  char title[256], sml[256], med[256], big[256];
+  assert(0 <= precision && precision < 2);
+
+  LIBXSMM_SNPRINTF(sml, sizeof(sml), "%u..%u",                      0, internal_statistic_sml);
+  LIBXSMM_SNPRINTF(med, sizeof(sml), "%u..%u", internal_statistic_sml, internal_statistic_med);
+  LIBXSMM_SNPRINTF(big, sizeof(sml), "%u..%u", internal_statistic_med, internal_statistic_mnk);
+  {
+    int n = 0;
+    assert(0 != internal_target_archid);
+    for (n = 0; 0 != internal_target_archid[n] && n < sizeof(title); ++n) title[n] = internal_target_archid[n] - 32;
+    LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
+  }
+  fprintf(ostream, "%*s%-7s %7s %7s %7s %7s\n", indent, "", title, "TRY" ,"JIT", "STA", "COL");
+  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", sml,
+    internal_statistic[precision][0/*SML*/].ntry,
+    internal_statistic[precision][0/*SML*/].njit,
+    internal_statistic[precision][0/*SML*/].nsta,
+    internal_statistic[precision][0/*SML*/].ncol);
+  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", med,
+    internal_statistic[precision][1/*MED*/].ntry,
+    internal_statistic[precision][1/*MED*/].njit,
+    internal_statistic[precision][1/*MED*/].nsta,
+    internal_statistic[precision][1/*MED*/].ncol);
+  fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", big,
+    internal_statistic[precision][2/*BIG*/].ntry,
+    internal_statistic[precision][2/*BIG*/].njit,
+    internal_statistic[precision][2/*BIG*/].nsta,
+    internal_statistic[precision][2/*BIG*/].ncol);
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
+  unsigned int index, unsigned int hash, libxsmm_xmmfunction src, internal_regentry* registry)
 {
   internal_regkey* dst_key = internal_registry_keys + index;
   internal_regentry* dst_entry = registry + index;
-  assert(0 != desc && 0 != src.dmm && 0 != dst_key && 0 != registry && 0 != registered && 0 != total);
+  assert(0 != desc && 0 != src.dmm && 0 != dst_key && 0 != registry);
 
   if (0 != dst_entry->function.pmm) { /* collision? */
     /* start at a re-hashed index position */
@@ -453,16 +519,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(
 
     /* corresponding key position */
     dst_key = internal_registry_keys + i;
+
+    internal_update_statistic(desc, 0, 1);
   }
 
   if (0 == dst_entry->function.pmm) { /* registry not (yet) exhausted */
     dst_entry->function.xmm = src;
     dst_entry->size = 0; /* statically generated code */
     dst_key->descriptor = *desc;
-    ++(*registered);
   }
 
-  ++(*total);
+  internal_update_statistic(desc, 1, 0);
 }
 
 
@@ -490,7 +557,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* arch
   const libxsmm_gemm_descriptor* desc, unsigned int buffer_size, char* name)
 {
   assert((0 != desc && 0 != name) || 0 == buffer_size);
-  snprintf(name, buffer_size, "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.jit",
+  LIBXSMM_SNPRINTF(name, buffer_size, "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.jit",
     archid /* code path name */,
     0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 'd' : 's',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
@@ -599,6 +666,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
         internal_registry_keys = (internal_regkey*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey));
 
         if (result && internal_registry_keys) {
+          const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
+          internal_statistic_mnk = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
+          internal_statistic_sml = (unsigned int)(0.1625 * internal_statistic_mnk + 0.5);
+          internal_statistic_med = (unsigned int)(0.2875 * internal_statistic_mnk + 0.5);
+          internal_verbose = (0 == env_verbose || 0 == *env_verbose)
+#if defined(NDEBUG)
+            ? 0 /* quiet */
+#else
+            ? 1 /* verbose */
+#endif
+            : atoi(env_verbose);
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].function.pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
            * which is beyond the static code path used to compile the library
@@ -607,19 +685,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
           if (LIBXSMM_STATIC_TARGET_ARCH >= internal_target_arch)
 #endif
           { /* opening a scope for eventually declaring variables */
-            unsigned int csp_tot = 0, csp_reg = 0, cdp_tot = 0, cdp_reg = 0;
             /* setup the dispatch table for the statically generated code */
 #           include <libxsmm_dispatch.h>
-#if !defined(NDEBUG) /* library code is expected to be mute */
-            if (csp_reg < csp_tot) {
-              fprintf(stderr, "LIBXSMM: %u of %u SP-kernels are not registered due to hash key collisions!\n", csp_tot - csp_reg, csp_tot);
-            }
-            if (cdp_reg < cdp_tot) {
-              fprintf(stderr, "LIBXSMM: %u of %u DP-kernels are not registered due to hash key collisions!\n", cdp_tot - cdp_reg, cdp_tot);
-            }
-#else
-            LIBXSMM_UNUSED(csp_tot); LIBXSMM_UNUSED(csp_reg); LIBXSMM_UNUSED(cdp_tot); LIBXSMM_UNUSED(cdp_reg);
-#endif
           }
           atexit(libxsmm_finalize);
 #if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
@@ -744,53 +811,56 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         internal_registry = 0;
 #endif
         internal_registry_keys = 0;
-        { /* open scope to allocate variables */
-          LIBXSMM_DEBUG(unsigned int njit = 0, nstatic = 0;)
-          for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
-            internal_regentry code = registry[i];
-            if (0 != code.function.pmm/*potentially allocated*/) {
-              if (0 != code.size/*JIT: actually allocated*/) {
-                /* make address valid by clearing an eventual collision flag */
-                code.function.imm &= ~LIBXSMM_HASH_COLLISION;
+        for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
+          internal_regentry code = registry[i];
+          if (0 != code.function.pmm/*potentially allocated*/) {
+            const libxsmm_gemm_descriptor *const desc = &registry_keys[i].descriptor;
+            const unsigned long long size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
+            const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
+            int bucket = 2;
+            if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= size) {
+              bucket = 0;
+            }
+            else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= size) {
+              bucket = 1;
+            }
+            if (0 != code.size/*JIT: actually allocated*/) {
+              /* make address valid by clearing an eventual collision flag */
+              code.function.imm &= ~LIBXSMM_HASH_COLLISION;
 #if defined(LIBXSMM_VTUNE)
-                if (0 != code.id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-                  char jit_code_name[256];
-                  LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-                  internal_get_code_name(internal_target_archid, &registry_keys[i].descriptor,
-                    sizeof(jit_code_name), jit_code_name);
-                  internal_get_vtune_jitdesc(&code, jit_code_name, &vtune_jit_desc);
-                  iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &vtune_jit_desc);
-                }
+              if (0 != code.id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+                char jit_code_name[256];
+                LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
+                internal_get_code_name(internal_target_archid, desc,
+                  sizeof(jit_code_name), jit_code_name);
+                internal_get_vtune_jitdesc(&code, jit_code_name, &vtune_jit_desc);
+                iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &vtune_jit_desc);
+              }
 #endif
 #if defined(_WIN32)
-                /* TODO: executable memory buffer under Windows */
+              /* TODO: executable memory buffer under Windows */
 #else
 # if defined(NDEBUG)
-                munmap(code.function.pmm, code.size);
+              munmap(code.function.pmm, code.size);
 # else /* library code is expected to be mute */
-                if (0 != munmap(code.function.pmm, code.size)) {
-                  const int error = errno;
-                  fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
-                    strerror(error), error, code.function.pmm, code.size);
-                }
+              if (0 != munmap(code.function.pmm, code.size)) {
+                const int error = errno;
+                fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
+                  strerror(error), error, code.function.pmm, code.size);
+              }
 # endif
 #endif
-                LIBXSMM_DEBUG(++njit;)
-              }
-              else {
-                LIBXSMM_DEBUG(++nstatic;)
-              }
+              ++internal_statistic[precision][bucket].njit;
+            }
+            else {
+              ++internal_statistic[precision][bucket].nsta;
             }
           }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM_JIT=%s NJIT=%u NSTATIC=%u", 0 != internal_target_archid ? internal_target_archid : "0", njit, nstatic);
-          if (0 != internal_ncollisions) {
-            fprintf(stderr, ": %u hash key collisions handled!\n", internal_ncollisions);
-          }
-          else {
-            fprintf(stderr, "\n");
-          }
-#endif
+        }
+        if (0 != internal_verbose) { /* print statistic on termination */
+          fprintf(stderr, "\n");
+          internal_print_statistic(stderr, 1/*SP*/, 0);
+          internal_print_statistic(stderr, 0/*DP*/, 0);
         }
         free((void*)registry_keys);
         free((void*)registry);

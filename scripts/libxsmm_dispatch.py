@@ -55,14 +55,19 @@ if __name__ == "__main__":
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);")
                 print("func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, indx, hash, func, result, &cdp_reg, &cdp_tot);")
+                print("internal_register_static_code(&desc, indx, hash, func, result);")
+        for mnk in mnklist:
+            mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
+            mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
+            ldxsig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), " + kstr + ", LIBXSMM_LD(" + mstr + ", " + nstr + ")"
+            # prefer registering double-precision kernels when approaching an exhausted registry
             if (2 != precision): # only single-precision
                 print("LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("  " + mnksig + ", " + ldxsig + ",")
                 print("  LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);")
                 print("func.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
-                print("internal_register_static_code(&desc, indx, hash, func, result, &csp_reg, &csp_tot);")
+                print("internal_register_static_code(&desc, indx, hash, func, result);")
     elif (1 < argc):
         print("/* no static code */")
     else:
