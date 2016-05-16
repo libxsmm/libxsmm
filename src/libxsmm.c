@@ -879,10 +879,13 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           }
         }
         if (0 != internal_verbose) { /* print statistic on termination */
-          const unsigned int linebreak = 0 == internal_print_statistic(stderr, 1/*SP*/, 1, 0) ? 1 : 0;
-          if (0 == internal_print_statistic(stderr, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-            assert(0 != internal_target_archid && 0 != *internal_target_archid);
-            fprintf(stderr, "LIBXSMM_JIT=%s\n", internal_target_archid);
+          fflush(stdout); /* synchronize with standard output */
+          {
+            const unsigned int linebreak = 0 == internal_print_statistic(stderr, 1/*SP*/, 1, 0) ? 1 : 0;
+            if (0 == internal_print_statistic(stderr, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
+              assert(0 != internal_target_archid && 0 != *internal_target_archid);
+              fprintf(stderr, "LIBXSMM_JIT=%s\n", internal_target_archid);
+            }
           }
         }
         free((void*)registry_keys);
