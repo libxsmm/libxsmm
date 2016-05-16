@@ -957,9 +957,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(int archid)
 
 #if !defined(NDEBUG) /* library code is expected to be mute */
   {
-    const char* archid = internal_target_archid;
-    if (libxsmm_cpuid_x86(&archid) < internal_target_arch) {
-      fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n", internal_target_archid, archid);
+    const char* name = internal_target_archid;
+    if (libxsmm_cpuid_x86(&name) < internal_target_arch) {
+      fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n", internal_target_archid, name);
     }
   }
 #endif
