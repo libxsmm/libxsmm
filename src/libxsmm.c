@@ -498,7 +498,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
       assert(0 != internal_target_archid);
       for (n = 0; 0 != internal_target_archid[n] && n < sizeof(title); ++n) { /* toupper */
         const char c = internal_target_archid[n];
-        title[n] = (char)(('a' <= c || c <= 'z') ? (c - 32) : c);
+        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c);
       }
       LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
