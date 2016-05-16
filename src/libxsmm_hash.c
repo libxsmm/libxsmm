@@ -356,7 +356,15 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t internal_crc32_t
 #define LIBXSMM_HASH_CRC32_U8(SEED, N, VALUE) _mm_crc32_u8(SEED, VALUE)
 #define LIBXSMM_HASH_CRC32_U16(SEED, N, VALUE) _mm_crc32_u16(SEED, VALUE)
 #define LIBXSMM_HASH_CRC32_U32(SEED, N, VALUE) _mm_crc32_u32(SEED, VALUE)
-#define LIBXSMM_HASH_CRC32_U64(SEED, N, VALUE) _mm_crc32_u64(SEED, VALUE)
+
+#if !defined(_WIN32) || defined(_WIN64)
+# define LIBXSMM_HASH_CRC32_U64(SEED, N, VALUE) _mm_crc32_u64(SEED, VALUE)
+#else
+# define LIBXSMM_HASH_CRC32_U64(SEED, N, VALUE) LIBXSMM_HASH_CRC32_U32( \
+    LIBXSMM_HASH_CRC32_U32((uint32_t)(SEED), N, (uint32_t)(VALUE)), \
+    N, (uint32_t)((VALUE) << 32))
+#endif
+
 #define LIBXSMM_HASH_NGEN(SEED, NGEN, VALUE) ((((SEED) << 5) + (VALUE)) % (NGEN))
 #define LIBXSMM_HASH_NPOT(SEED, NPOT, VALUE) LIBXSMM_MOD2(((SEED) << 5) + (VALUE), NPOT)
 
@@ -416,10 +424,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int seed, unsigned int n, unsigned short value)
 {
-  union { uint16_t value; uint8_t half[2]; } split; split.value = value;
-  LIBXSMM_UNUSED(n);
-  seed = internal_crc32_u8(seed, n, split.half[0]);
-  seed = internal_crc32_u8(seed, n, split.half[1]);
+  seed = internal_crc32_u8(seed, n, (uint8_t)value);
+  seed = internal_crc32_u8(seed, n, (uint8_t)(value << 8));
   return seed;
 }
 
@@ -436,10 +442,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int seed, unsigned int n, unsigned long long value)
 {
-  union { uint64_t value; uint32_t half[2]; } split; split.value = value;
-  LIBXSMM_UNUSED(n);
-  seed = internal_crc32_u32(seed, n, split.half[0]);
-  seed = internal_crc32_u32(seed, n, split.half[1]);
+  seed = internal_crc32_u32(seed, n, (uint32_t)value);
+  seed = internal_crc32_u32(seed, n, (uint32_t)(value << 32));
   return seed;
 }
 
