@@ -3,7 +3,7 @@ LIBXSMM is a library for small dense and small sparse matrix-matrix multiplicati
 
 **What is the background of the name "LIBXSMM"?** The "MM" stands for Matrix Multiplication, and the "S" clarifies the working domain i.e., Small Matrix Multiplication. The latter also means the name is neither a variation of "MXM" nor an eXtreme Small Matrix Multiplication but rather about Intel Architecture (x86) - and no, the library is 64&#8209;bit (only). The spelling of the name might follow the syllables of libx\\/smm, libx'smm, or libx&#8209;smm.
 
-**What is a small matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M N K)<sup>1/3</sup> \<= 80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
+**What is a small matrix multiplication?** When characterizing the problem size using the M, N, and K parameters, a problem size suitable for LIBXSMM falls approximately within (M&#160;N&#160;K)<sup>1/3</sup>&#160;\<=&#160;80 (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). However the code generator only generates code up to the specified [threshold](#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M and K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For problem sizes above the configurable threshold, LIBXSMM is falling back to BLAS.
 
 **What about "medium-sized" matrix multiplication?** A more recent addition are GEMM routines which are parallelized using OpenMP (`libxsmm_omp_?gemm`). These routines are leveraging the same specialized kernel routines as the small matrix multiplications, in-memory code generation (JIT), and automatic code/parameter dispatch but implementing a tile-based multiplication scheme i.e., a scheme suitable for larger problem sizes.
 
@@ -215,6 +215,23 @@ LIBXSMM_GEMM=2 ./myapplication
 
 Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
 
+### Verbose Mode
+The verbose mode allows for an insight into the code dispatch mechanism by receiving a small tabulated statistics as soon as the library terminates. The design point for this functionality is to not impact the performance of any critical code path i.e., verbose mode is always enabled and does not require symbols (SYM=1) or debug code (DBG=1). The statistics appears (`stderr`) when the environment variable LIBXSMM_VERBOSE is set to a non-zero value. For example:
+
+```
+LIBXSMM_VERBOSE=1 ./myapplication
+[... application output]
+
+HSW/SP      TRY     JIT     STA     COL
+  0..13       7       7       0       0
+ 13..23       0       0       0       0
+ 23..80       3       3       0       0
+```
+
+The tables are distinct between single-precision and double-precision, but either table is pruned if all counters are zero. If both tables are pruned, the library shows the code path which would have been used for JIT'ting the code: `LIBXSMM_JIT=hsw` (otherwise the code path is shown in the table's header). The actual counters are collected for three buckets: small kernels (MNK<sup>1/3</sup>&#160;\<=&#160;13), medium-sized kernels (13&#160;\<&#160;MNK<sup>1/3</sup>&#160;\<=&#160;23), and larger kernels (23&#160;\<&#160;MNK<sup>1/3</sup>&#160;\<=&#160;80) (the actual upper bound depends on LIBXSMM_MAX_MNK, which is selected at compile-time). Keep in mind that "larger" is supposedly still fairly small in terms of arithmetic intensity (which grows linearly with the kernel size). Unfortunately, the arithmetic intensity depends on the way a kernel is used (which operands are loaded/stored into main memory) and it is not performance-neutral to collect this information.
+
+The TRY counter represents all attempts to register statically generated kernels and all attempts to dynamically generate and register kernels. The JIT and STA counters distinct the aforementioned event into dynamically (JIT) and statically (STA) generated code but also count only actually registered kernels. In case the capacity (O(*n*)&#160;=&#160;10<sup>5</sup>) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (O(*n*)&#160;=&#160;10<sup>3</sup>) may ramp the number of hash key collisions (COL), which can degrade performance, which is prevented if the small thread-local cache is effectively utilized.
+
 ### Call Trace
 During the initial steps of employing the LIBXSMM API, one may rely on a debug version of the library (`make DBG=1`). The latter implies standard error (`stderr`) output in case of an error/warning condition inside of the library. Towards developing an application which is successfully using the library, being able to trace library calls might be useful as well (can be combined with DBG=1 or OPT=0):
 
@@ -230,9 +247,7 @@ LIBXSMM_TRACE=1 ./myapplication
 
 Syntactically up to three arguments separated by commas (which allows to omit arguments) are taken (*tid*,*i*,*n*): *tid* signifies the ID of the thread to be traced with 1...NTHREADS being valid and where LIBXSMM_TRACE=1 is filtering for the "main thread" (in fact the first thread running into the trace facility); grabbing all threads (no filter) can be achieved by supplying a negative id (which is also the default when omitted). The second argument is pruning higher levels of the call-tree with *i=1* being the default (level zero is the highest at the same level as the main function). The last argument is taking the number of inclusive call levels with *n=-1* being the default (signifying no filter).
 
-Please note that the trace facility is severely impacting the performance (even with LIBXSMM_TRACE=0), and this is not just because of console output but rather since inlining (internal) function  might be prevented along with additional call overhead on each function entry and exit. Therefore debug symbols can be also enabled separately (`make SYM=1`; implied by TRACE=1 or DBG=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible (console) or other non-private I/O (files).
-
-An additional assistance during development, the library emits a message when terminating (debug build only; DBG=1). The JIT based code path (according to the CPUID) as well as the number of JIT'ted kernels is printed at termination time. For completeness, the number of registered static kernels is printed as well (this happens when no JIT/AVX based code path was available). Example (stderr): `LIBXSMM_JIT=hsw NJIT=14 NSTATIC=0`.
+Although the `ltrace` (Linux utility) provides similar insight, the trace facility might be useful due to the aforementioned filtering expressions. Please note that the trace facility is severely impacting the performance (even with LIBXSMM_TRACE=0), and this is not just because of console output but rather since inlining (internal) function  might be prevented along with additional call overhead on each function entry and exit. Therefore debug symbols can be also enabled separately (`make SYM=1`; implied by TRACE=1 or DBG=1) which might be useful when profiling an application. No facility of the library (other than DBG or TRACE/LIBXSMM_TRACE) is performing visible (console) or other non-private I/O (files).
 
 ## Performance
 ### Profiling
