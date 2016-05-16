@@ -503,18 +503,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
       LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
     }
-    fprintf(ostream, "%*s%-7s %7s %7s %7s %7s\n", indent, "", title, "TRY" ,"JIT", "STA", "COL");
-    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", sml,
+    fprintf(ostream, "%*s%-10s %6s %6s %6s %6s\n", indent, "", title, "TRY" ,"JIT", "STA", "COL");
+    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", indent, "", sml,
       internal_statistic[precision][0/*SML*/].ntry,
       internal_statistic[precision][0/*SML*/].njit,
       internal_statistic[precision][0/*SML*/].nsta,
       internal_statistic[precision][0/*SML*/].ncol);
-    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", med,
+    fprintf(ostream, "%*s%10s %6u %6u %6u %6u\n", indent, "", med,
       internal_statistic[precision][1/*MED*/].ntry,
       internal_statistic[precision][1/*MED*/].njit,
       internal_statistic[precision][1/*MED*/].nsta,
       internal_statistic[precision][1/*MED*/].ncol);
-    fprintf(ostream, "%*s%7s %7u %7u %7u %7u\n", indent, "", big,
+    fprintf(ostream, "%*s%10s %6u %6u %6u %6u\n", indent, "", big,
       internal_statistic[precision][2/*BIG*/].ntry,
       internal_statistic[precision][2/*BIG*/].njit,
       internal_statistic[precision][2/*BIG*/].nsta,
