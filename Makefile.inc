@@ -747,6 +747,9 @@ ifeq (Darwin,$(UNAME))
   FLDFLAGS += -Wa,-q
   FCFLAGS += -Wa,-q
 endif
+ifeq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo $$?))
+  OMPLIB = $(NULL)
+endif
 
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
@@ -834,9 +837,11 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(INTEL))
     ifeq (0,$(OMP))
-      LDFLAGS += -l$(OMPLIB)
-      ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
+      ifneq (,$(strip $(OMPLIB)))
+        LDFLAGS += -l$(OMPLIB)
+        ifneq (0,$(OFFLOAD))
+          LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
+        endif
       endif
     endif
     ifneq (0,$(OFFLOAD))

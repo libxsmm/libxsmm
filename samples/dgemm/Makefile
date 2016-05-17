@@ -88,16 +88,21 @@ ifeq (Darwin,$(UNAME))
 	$(info ================================================================================)
 	$(info The static link-time wrapper mechanism is not supported under OS X!)
 	$(info ================================================================================)
-else ifeq (Windows_NT,$(UNAME))
-	$(info ================================================================================)
-	$(info The static link-time wrapper mechanism is not supported under Windows/Cygwin!)
-	$(info ================================================================================)
 endif
 
 ifneq (0,$(WRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT)) $(XLIB_BEGIN) -l$(OMPLIB) $(XLIB_END) \
+ifneq (0,$(OMP))
+	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
 		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
+else ifneq (,$(strip $(OMPLIB)))
+	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
+		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_ \
+		$(XLIB_BEGIN) -l$(OMPLIB) $(XLIB_END)
+else # should not happen
+	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
+		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
+endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
