@@ -42,10 +42,8 @@ endif
 
 WRAP ?= 0
 ifneq (Darwin,$(UNAME))
-ifneq (Windows_NT,$(UNAME))
 ifneq (0,$(DEPSTATIC))
   WRAP = 1
-endif
 endif
 endif
 
@@ -98,12 +96,8 @@ endif
 
 ifneq (0,$(WRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
-ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
-else # link against parallelized LIBXSMM/EXT, also attempt to link against OpenMP library
 	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT)) $(XLIB_BEGIN) -l$(OMPLIB) $(XLIB_END) \
 		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -Wl,--wrap=dgemm_
-endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
 endif
