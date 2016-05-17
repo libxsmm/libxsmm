@@ -94,14 +94,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
  * If 0 != LIBXSMM_JIT and LIBXSMM_X86_AVX <= result, then this instruction set extension
  * is targeted by the JIT code generator.
  */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_arch();
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void);
 /** Set target architecture (archid: see libxsmm_typedefs.h) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(int archid);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int archid);
 
-/** Returns a name for the target architecture as identified by libxsmm_get_target_arch(). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_archid();
+/** Returns a name for the target architecture as identified by libxsmm_get_target_archid(). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void);
 /** Set target architecture (name=0|wsm|snb|hsw|knl|skx, 0/NULL: CPUID) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(const char* name);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* name);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);

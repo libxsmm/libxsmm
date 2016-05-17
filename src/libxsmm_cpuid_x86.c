@@ -42,11 +42,10 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(void)
 {
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-  if (archid) *archid = "x86";
 
   LIBXSMM_CPUID_X86(0, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
@@ -68,23 +67,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid)
              AVX512ER(0x08000000) */
           if (0x1C010000 == (0x1C010000 & ebx)) {
             target_arch = LIBXSMM_X86_AVX512_MIC;
-            if (archid) *archid = "knl";
           }
           /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
              AVX512BW(0x40000000), AVX512VL(0x80000000) */
           else if (0xD0030000 == (0xD0030000 & ebx)) {
             target_arch = LIBXSMM_X86_AVX512_CORE;
-            if (archid) *archid = "skx";
           }
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
             target_arch = LIBXSMM_X86_AVX2;
-            if (archid) *archid = "hsw";
           }
           else {
             target_arch = LIBXSMM_X86_AVX;
-            if (archid) *archid = "snb";
           }
         }
       }

@@ -34,12 +34,8 @@
 #include <libxsmm.h>
 
 
-/**
- * Returns the target architecture and instruction set extension (code path),
- * and thereby (via argument list) optionally returns an internal name of the
- * target architecture.
- */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(const char** archid);
+/** Returns the target architecture and instruction set extension (code path). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(void);
 
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CPUID_X86_NOINLINE)
