@@ -920,6 +920,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           }
         }
         if (0 != internal_verbose) { /* print statistic on termination */
+          LIBXSMM_FLOCK(stderr);
+          LIBXSMM_FLOCK(stdout);
           fflush(stdout); /* synchronize with standard output */
           {
             const unsigned int linebreak = 0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0) ? 1 : 0;
@@ -927,6 +929,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
               fprintf(stderr, "LIBXSMM_TARGET=%s\n", target_arch);
             }
           }
+          LIBXSMM_FUNLOCK(stdout);
+          LIBXSMM_FUNLOCK(stderr);
         }
         free((void*)registry_keys);
         free((void*)registry);
