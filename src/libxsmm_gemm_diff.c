@@ -56,6 +56,8 @@
 # else
 #   define LIBXSMM_GEMM_DIFF_NOWARNING
 # endif
+#else /* remove as soon as LIBXSMM_GEMM_DESCRIPTOR_SIZE=16 is supported */
+# define LIBXSMM_GEMM_DIFF_NOWARNING
 #endif
 
 
