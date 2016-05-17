@@ -11,8 +11,7 @@
  */
 int main()
 {
-  const char* archid;
-  const int cpuid = libxsmm_cpuid_x86(&archid);
+  const int cpuid_archid = libxsmm_cpuid_x86();
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
   union { libxsmm_gemm_descriptor descriptor; char simd[LIBXSMM_ALIGNMENT]; } a, b;
   unsigned int i, result = EXIT_SUCCESS;
@@ -62,7 +61,7 @@ int main()
       fprintf(stderr, "using generic code path\n");
       result = 4;
     }
-    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid) {
+    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid_archid) {
       if (0 == libxsmm_gemm_diff_avx(&a.descriptor, &b.descriptor)) {
         fprintf(stderr, "using AVX code path\n");
         result = 9;
@@ -80,7 +79,7 @@ int main()
         result = 12;
       }
     }
-    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid) {
+    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid_archid) {
       if (0 == libxsmm_gemm_diff_avx2(&a.descriptor, &b.descriptor)) {
         fprintf(stderr, "using AVX2 code path\n");
         result = 13;
@@ -132,7 +131,7 @@ int main()
         result = 22;
       }
     }
-    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid) {
+    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid_archid) {
       if (1 != libxsmm_gemm_diffn_avx(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
@@ -146,7 +145,7 @@ int main()
         result = 24;
       }
     }
-    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid) {
+    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid_archid) {
       if (1 != libxsmm_gemm_diffn_avx2(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
@@ -160,7 +159,7 @@ int main()
         result = 26;
       }
     }
-    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX512_MIC/*incl. LIBXSMM_X86_AVX512_CORE*/ <= cpuid) {
+    if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX512_MIC/*incl. LIBXSMM_X86_AVX512_CORE*/ <= cpuid_archid) {
       if (1 != libxsmm_gemm_diffn_avx512(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
