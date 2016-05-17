@@ -90,18 +90,20 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
 
 /**
- * Returns the architecture and instruction set extension as determined by the CPUID flags.
- * If 0 != LIBXSMM_JIT and LIBXSMM_X86_AVX <= result, then this instruction set extension
- * is targeted by the JIT code generator.
+ * Returns the architecture and instruction set extension as determined by the CPUID flags, as set
+ * by the libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void);
-/** Set target architecture (archid: see libxsmm_typedefs.h) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int archid);
+/** Set target architecture (id: see libxsmm_typedefs.h) for subsequent code generation (JIT). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int id);
 
-/** Returns a name for the target architecture as identified by libxsmm_get_target_archid(). */
+/**
+ * Returns the name of the target architecture as determined by the CPUID flags, as set by the
+ * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
+ */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void);
-/** Set target architecture (name=0|wsm|snb|hsw|knl|skx, 0/NULL: CPUID) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* name);
+/** Set target architecture (arch="0|sse|snb|hsw|knl|skx", NULL/"0": CPUID) for subsequent code generation (JIT). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* arch);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);

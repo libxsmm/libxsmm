@@ -258,26 +258,25 @@
           SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
 
-          ! Returns the architecture and instruction set extension
-          ! as determined by the CPUID flags. 0 != LIBXSMM_JIT and
-          ! LIBXSMM_X86_AVX <= result, then this instruction set
-          ! extension is targeted by the JIT code generator.
+          ! Returns the architecture and instruction set extension as determined
+          ! by the CPUID flags, as set by the libxsmm_get_target_arch* functions,
+          ! or as set by the LIBXSMM_TARGET environment variable.
           INTEGER(C_INT) PURE FUNCTION libxsmm_get_target_archid() BIND(C)
             IMPORT :: C_INT
           END FUNCTION
 
-          ! Set target architecture (archid: see PARAMETER enumeration)
+          ! Set target architecture (id: see PARAMETER enumeration)
           ! for subsequent code generation (JIT).
-          SUBROUTINE libxsmm_set_target_archid(archid) BIND(C)
+          SUBROUTINE libxsmm_set_target_archid(id) BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: archid
+            INTEGER(C_INT), INTENT(IN), VALUE :: id
           END SUBROUTINE
 
-          ! Set target architecture (id=0|wsm|snb|hsw|knl|skx, 0/NULL: CPUID)
+          ! Set target architecture (arch="0|sse|snb|hsw|knl|skx", "0": CPUID)
           ! for subsequent code generation (JIT).
-          SUBROUTINE libxsmm_set_target_arch(name) BIND(C)
+          SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
-            CHARACTER(C_CHAR), INTENT(IN) :: name(*)
+            CHARACTER(C_CHAR), INTENT(IN) :: arch(*)
           END SUBROUTINE
 
           ! Non-pure function returning the current clock tick
@@ -318,22 +317,23 @@
       END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
-        ! Returns a name for the target architecture as identified
-        ! by libxsmm_get_target_arch().
+        ! Returns the name of the target architecture as determined by
+        ! the CPUID flags, as set by the libxsmm_get_target_arch* functions,
+        ! or as set by the LIBXSMM_TARGET environment variable.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
-        FUNCTION libxsmm_get_target_arch() RESULT(name)
-          CHARACTER(LEN=:), ALLOCATABLE :: name
+        FUNCTION libxsmm_get_target_arch() RESULT(arch)
+          CHARACTER(LEN=:), ALLOCATABLE :: arch
           CHARACTER(LEN=16) :: tmp
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: get_target_arch
           INTERFACE
-            PURE SUBROUTINE get_target_arch(name, length) BIND(C)
+            PURE SUBROUTINE get_target_arch(arch, length) BIND(C)
               IMPORT :: C_CHAR, C_INT
-              CHARACTER(C_CHAR), INTENT(OUT) :: name(*)
+              CHARACTER(C_CHAR), INTENT(OUT) :: arch(*)
               INTEGER(C_INT), VALUE, INTENT(IN) :: length
             END SUBROUTINE
           END INTERFACE
           CALL get_target_arch(tmp, LEN(tmp))
-          name = TRIM(tmp)
+          arch = TRIM(tmp)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr

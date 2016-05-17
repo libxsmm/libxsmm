@@ -468,11 +468,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int archid);
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int archid)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id);
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
 {
   const char* target_arch = 0;
-  switch (archid) {
+  switch (id) {
     case LIBXSMM_X86_AVX512_CORE: {
       target_arch = "skx";
     } break;
@@ -497,7 +497,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int arc
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
     } break;
-    default: if (LIBXSMM_X86_GENERIC <= archid) {
+    default: if (LIBXSMM_X86_GENERIC <= id) {
       target_arch = "x86";
     }
     else {
@@ -683,7 +683,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
     if (0 == result) {
       int init_code;
       /* set internal_target_archid */
-      libxsmm_set_target_arch(getenv("LIBXSMM_JIT"));
+      libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
       { /* select prefetch strategy for JIT */
         const char *const env_prefetch = getenv("LIBXSMM_PREFETCH");
         if (0 == env_prefetch || 0 == *env_prefetch) {
@@ -924,7 +924,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           {
             const unsigned int linebreak = 0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0) ? 1 : 0;
             if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-              fprintf(stderr, "LIBXSMM_JIT=%s\n", target_arch);
+              fprintf(stderr, "LIBXSMM_TARGET=%s\n", target_arch);
             }
           }
         }
@@ -945,14 +945,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void)
 #if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return internal_target_archid;
 #else /* no JIT support */
-  return LIBXSMM_TARGET_ARCH_GENERIC;
+  return LIBXSMM_MIN(internal_target_archid, LIBXSMM_X86_SSE4_2);
 #endif
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int archid)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int id)
 {
-  switch (archid) {
+  switch (id) {
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_MIC:
     case LIBXSMM_X86_AVX2:
@@ -961,9 +961,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int archid)
     case LIBXSMM_X86_SSE4_1:
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_TARGET_ARCH_GENERIC: {
-      internal_target_archid = archid;
+      internal_target_archid = id;
     } break;
-    default: if (LIBXSMM_X86_GENERIC <= archid) {
+    default: if (LIBXSMM_X86_GENERIC <= id) {
       internal_target_archid = LIBXSMM_X86_GENERIC;
     }
     else {
@@ -973,11 +973,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int archid)
 
 #if !defined(NDEBUG) /* library code is expected to be mute */
   {
-    const int cpuid_archid = libxsmm_cpuid_x86();
-    if (cpuid_archid < internal_target_archid) {
+    const int cpuid = libxsmm_cpuid_x86();
+    if (cpuid < internal_target_archid) {
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
         internal_get_target_arch(internal_target_archid),
-        internal_get_target_arch(cpuid_archid));
+        internal_get_target_arch(cpuid));
     }
   }
 #endif
@@ -992,54 +992,54 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void)
 
 
 /* function serves as a helper for implementing the Fortran interface */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* target_arch, int length);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* target_arch, int length)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* arch, int length);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* arch, int length)
 {
   const char* c = libxsmm_get_target_arch();
   int i;
-  assert(0 != target_arch); /* valid here since function is not in the public interface */
-  for (i = 0; i < length && 0 != *c; ++i, ++c) target_arch[i] = *c;
-  for (; i < length; ++i) target_arch[i] = ' ';
+  assert(0 != arch); /* valid here since function is not in the public interface */
+  for (i = 0; i < length && 0 != *c; ++i, ++c) arch[i] = *c;
+  for (; i < length; ++i) arch[i] = ' ';
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* name)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
 
-  if (name && *name) {
-    const int jit = atoi(name);
-    if (0 == strcmp("0", name)) {
+  if (arch && *arch) {
+    const int jit = atoi(arch);
+    if (0 == strcmp("0", arch)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
     else if (1 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("skx", name) || 0 == strcmp("avx3", name) || 0 == strcmp("avx512", name)) {
+    else if (0 == strcmp("skx", arch) || 0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
-    else if (0 == strcmp("knl", name) || 0 == strcmp("mic2", name)) {
+    else if (0 == strcmp("knl", arch) || 0 == strcmp("mic2", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
     }
-    else if (0 == strcmp("hsw", name) || 0 == strcmp("avx2", name)) {
+    else if (0 == strcmp("hsw", arch) || 0 == strcmp("avx2", arch)) {
       target_archid = LIBXSMM_X86_AVX2;
     }
-    else if (0 == strcmp("snb", name) || 0 == strcmp("avx", name)) {
+    else if (0 == strcmp("snb", arch) || 0 == strcmp("avx", arch)) {
       target_archid = LIBXSMM_X86_AVX;
     }
-    else if (0 == strcmp("wsm", name) || 0 == strcmp("nhm", name) || 0 == strcmp("sse4", name) || 0 == strcmp("sse4_2", name) || 0 == strcmp("sse4.2", name)) {
+    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
       target_archid = LIBXSMM_X86_SSE4_2;
     }
-    else if (0 == strcmp("sse4_1", name) || 0 == strcmp("sse4.1", name)) {
+    else if (0 == strcmp("sse4_1", arch) || 0 == strcmp("sse4.1", arch)) {
       target_archid = LIBXSMM_X86_SSE4_1;
     }
-    else if (0 == strcmp("sse3", name) || 0 == strcmp("sse", name)) {
+    else if (0 == strcmp("sse3", arch) || 0 == strcmp("sse", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
-    else if (0 == strcmp("x86", name) || 0 == strcmp("sse2", name)) {
+    else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
       target_archid = LIBXSMM_X86_GENERIC;
     }
-    else if (0 == strcmp("generic", name) || 0 == strcmp("none", name)) {
+    else if (0 == strcmp("generic", arch) || 0 == strcmp("none", arch)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
   }
@@ -1049,11 +1049,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* n
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
-    const int cpuid_archid = libxsmm_cpuid_x86();
-    if (cpuid_archid < target_archid) {
+    const int cpuid = libxsmm_cpuid_x86();
+    if (cpuid < target_archid) {
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
         internal_get_target_arch(target_archid),
-        internal_get_target_arch(cpuid_archid));
+        internal_get_target_arch(cpuid));
     }
   }
 #endif
