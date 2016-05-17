@@ -743,7 +743,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
            * which is beyond the static code path used to compile the library
            */
 #if (0 != LIBXSMM_JIT) && !defined(__MIC__)
-          if (LIBXSMM_X86_AVX > internal_target_archid)
+          if (LIBXSMM_STATIC_TARGET_ARCH <= internal_target_archid && LIBXSMM_X86_AVX > internal_target_archid)
 #endif
           { /* opening a scope for eventually declaring variables */
             /* setup the dispatch table for the statically generated code */
@@ -1005,13 +1005,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* target_arch, in
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* name)
 {
-  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN, jit = 0;
+  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+
   if (name && *name) {
-    jit = atoi(name);
-    if (0 == strcmp("0", name)) { /* suppress running libxsmm_cpuid_x86 */
+    const int jit = atoi(name);
+    if (0 == strcmp("0", name)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
-    else if (1 < jit) { /* suppress libxsmm_cpuid_x86 and override archid */
+    else if (1 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
     else if (0 == strcmp("skx", name) || 0 == strcmp("avx3", name) || 0 == strcmp("avx512", name)) {
@@ -1026,19 +1027,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* n
     else if (0 == strcmp("snb", name) || 0 == strcmp("avx", name)) {
       target_archid = LIBXSMM_X86_AVX;
     }
-    else if (0 == strcmp("wsm", name) || 0 == strcmp("nhm", name) || 0 == strcmp("sse4_2", name)) {
+    else if (0 == strcmp("wsm", name) || 0 == strcmp("nhm", name) || 0 == strcmp("sse4", name) || 0 == strcmp("sse4_2", name) || 0 == strcmp("sse4.2", name)) {
       target_archid = LIBXSMM_X86_SSE4_2;
     }
-    else if (0 == strcmp("sse4_1", name)) {
+    else if (0 == strcmp("sse4_1", name) || 0 == strcmp("sse4.1", name)) {
       target_archid = LIBXSMM_X86_SSE4_1;
     }
-    else if (0 == strcmp("sse3", name)) {
+    else if (0 == strcmp("sse3", name) || 0 == strcmp("sse", name)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
-    else if (0 == strcmp("x86", name)) {
+    else if (0 == strcmp("x86", name) || 0 == strcmp("sse2", name)) {
       target_archid = LIBXSMM_X86_GENERIC;
     }
-    else if (0 == strcmp("generic", name)) {
+    else if (0 == strcmp("generic", name) || 0 == strcmp("none", name)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
   }
