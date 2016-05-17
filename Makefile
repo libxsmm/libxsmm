@@ -643,6 +643,7 @@ else
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
+else
 .PHONY: $(OUTDIR)/libxsmmf.$(LIBEXT)
 endif
 
