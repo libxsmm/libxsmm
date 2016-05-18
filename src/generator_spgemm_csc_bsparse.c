@@ -67,7 +67,7 @@
  * @section DESCRIPTION
  * <DESCRIPTION>
  */
-#include "generator_spgemm_bsparse.h"
+#include "generator_spgemm_csc_bsparse.h"
 #include "generator_common.h"
 #include <libxsmm_macros.h>
 #include <stdio.h>
@@ -75,12 +75,12 @@
 #include <string.h>
 
 
-void libxsmm_generator_spgemm_bsparse( libxsmm_generated_code*         io_generated_code,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch,
-                                       const unsigned int*             i_row_idx,
-                                       const unsigned int*             i_column_idx,
-                                       const double*                   i_values ) {
+void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_generated_code,
+                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                           const char*                     i_arch,
+                                           const unsigned int*             i_row_idx,
+                                           const unsigned int*             i_column_idx,
+                                           const double*                   i_values ) {
   unsigned int l_n;
   unsigned int l_z;
   unsigned int l_column_elements;

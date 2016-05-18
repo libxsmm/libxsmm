@@ -803,6 +803,24 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not allocate temporay memory for reading CSC file!\n");
       break;
+    case LIBXSMM_ERR_CSR_ALLOC_DATA:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not allocate temporay memory for reading CSR file!\n");
+      break;
+    case LIBXSMM_ERR_CSR_INPUT:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: could not open the specified CSR input file!\n" );
+      break;
+    case LIBXSMM_ERR_CSR_READ_LEN:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSR file!\n" );
+      break;
+    case LIBXSMM_ERR_CSR_READ_DESC:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading descriptor of CSR file!\n" );
+      break;
+    case LIBXSMM_ERR_CSR_READ_ELEMS:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: error when reading line of CSR file!\n" );
+      break;
+    case LIBXSMM_ERR_CSR_LEN:
+      LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSR file!\n" );
+      break;
     /* default, we didn't don't know what happend */
     default:
       LIBXSMM_SNPRINTF( libxsmm_global_error_message, l_max_error_length, " LIBXSMM ERROR: an unknown error occured!\n" );

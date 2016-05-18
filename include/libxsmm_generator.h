@@ -166,7 +166,8 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
                                const char*                     i_routine_name,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
                                const char*                     i_arch,
-                               const char*                     i_csc_file_in );
+                               const char*                     i_file_in,
+                               const int                       i_is_csr );
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_spgemm_kernel( libxsmm_generated_code*         io_generated_code,

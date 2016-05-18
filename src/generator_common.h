@@ -196,6 +196,12 @@
 #define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90027
 #define LIBXSMM_ERR_EXCEED_JMPLBL        90028
 #define LIBXSMM_ERR_CSC_ALLOC_DATA       90029
+#define LIBXSMM_ERR_CSR_INPUT            90030
+#define LIBXSMM_ERR_CSR_READ_LEN         90031
+#define LIBXSMM_ERR_CSR_READ_DESC        90032
+#define LIBXSMM_ERR_CSR_READ_ELEMS       90033
+#define LIBXSMM_ERR_CSR_LEN              90034
+#define LIBXSMM_ERR_CSR_ALLOC_DATA       90035
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
