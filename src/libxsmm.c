@@ -461,9 +461,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm
       bucket = 1;
     }
 
-    /* TODO: use atomic updates */
-    internal_statistic[precision][bucket].ncol += ncol;
+#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+# if (0 != LIBXSMM_GCCATOMICS)
+    /*dst =*/ __atomic_add_fetch(&internal_statistic[precision][bucket].ntry, ntry, __ATOMIC_RELAXED);
+    /*dst =*/ __atomic_add_fetch(&internal_statistic[precision][bucket].ncol, ncol, __ATOMIC_RELAXED);
+# else
+    /*dst =*/ __sync_add_and_fetch(&internal_statistic[precision][bucket].ntry, ntry);
+    /*dst =*/ __sync_add_and_fetch(&internal_statistic[precision][bucket].ncol, ncol);
+# endif
+#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32) /*TODO*/
     internal_statistic[precision][bucket].ntry += ntry;
+    internal_statistic[precision][bucket].ncol += ncol;
+#else
+    internal_statistic[precision][bucket].ntry += ntry;
+    internal_statistic[precision][bucket].ncol += ncol;
+#endif
   }
 }
 
