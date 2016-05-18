@@ -89,12 +89,12 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_gen
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
-    if ( i_xgemm_desc->ldb < i_xgemm_desc->k ) {
+    if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
     /* check LDC */
-    if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
@@ -102,12 +102,12 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_gen
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
-    if ( i_xgemm_desc->lda < i_xgemm_desc->m ) {
+    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
     /* check LDC */
-    if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
