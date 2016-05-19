@@ -416,7 +416,7 @@ ifneq (0,$(INTEL))
     CFLAGS += -finstrument-functions
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(TRACE)
-    ifneq (0,$(STATIC))
+    ifneq (0,$(DEPSTATIC))
       LDFLAGS += -rdynamic
     endif
   endif
@@ -620,7 +620,7 @@ else # GCC assumed
       endif
     endif
     ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(STATIC))
+      ifneq (0,$(DEPSTATIC))
         ifeq (3,$(GCC))
           LDFLAGS += -rdynamic
         endif
