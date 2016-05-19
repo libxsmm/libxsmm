@@ -50,6 +50,7 @@
 # define LIBXSMM_GEMM_DIFF_AVX512_MIC
 # define LIBXSMM_GEMM_DIFF_AVX2
 # define LIBXSMM_GEMM_DIFF_AVX
+# define LIBXSMM_GEMM_DIFF_SSE
 /*# define LIBXSMM_GEMM_DIFF_KNC*/
 #endif
 
@@ -81,6 +82,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arc
     internal_gemm_diffn_function = libxsmm_gemm_diffn_avx;
     internal_gemm_diff_function = libxsmm_gemm_diff_avx;
   }
+  else if (LIBXSMM_X86_SSE3 <= target_arch) {
+    internal_gemm_diff_function = libxsmm_gemm_diff_sse;
+  }
 #endif
 }
 
@@ -104,6 +108,8 @@ unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const l
   return libxsmm_gemm_diff_avx2(reference, desc);
 #elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx(reference, desc);
+#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+  return libxsmm_gemm_diff_sse(reference, desc);
 #else /* pointer based function call */
   assert(0 != internal_gemm_diff_function);
   return (*internal_gemm_diff_function)(reference, desc);
@@ -127,6 +133,37 @@ unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, cons
     result |= (ia[i] ^ ib[i]);
   }
   return result;
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
+unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+{
+  assert(0 != reference && 0 != desc);
+#if defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+  assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+  assert(4 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
+# if (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  {
+    const __m128i a128 = _mm_lddqu_si128((const __m128i*)reference);
+    const __m128i b128 = _mm_lddqu_si128((const __m128i*)desc);
+    const __m128i c128 = _mm_cmpeq_epi8(a128, b128);
+    return 0xFFFF != _mm_movemask_epi8(c128);
+  }
+# else
+  return libxsmm_gemm_diff_sw(reference, desc);
+# endif
+#else
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_SSE) /* library code is expected to be mute */
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter SSE code path!\n");
+      once = 1;
+    }
+  }
+# endif
+  return libxsmm_gemm_diff_sw(reference, desc);
 #endif
 }
 
@@ -164,22 +201,10 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
     r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
   }
-# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-  {
-#   if 0
-    const __m256i a256 = _mm256_lddqu_si256((const __m256i*)reference);
-    const __m256i b256 = _mm256_lddqu_si256((const __m256i*)desc);
-#   else
-    const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);
-    const __m256i b256 = _mm256_loadu_si256((const __m256i*)desc);
-#   endif
-    /* avoid warning about eval. in unspecified order: r0, r1 */
-    const int r0 = _mm256_testnzc_si256(a256, b256);
-    const int r1 = _mm256_testnzc_si256(b256, a256);
-    return r0 | r1;
-  }
 # else
-  return libxsmm_gemm_diff_sw(reference, desc);
+  { /* no difference between SSE and AVX based implementation */
+    return libxsmm_gemm_diff_sse(reference, desc);
+  }
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX) /* library code is expected to be mute */
@@ -190,7 +215,7 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
     }
   }
 # endif
-  return libxsmm_gemm_diff_sw(reference, desc);
+  return libxsmm_gemm_diff_sse(reference, desc);
 #endif
 }
 
@@ -255,10 +280,6 @@ unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, co
       _mm512_mask_loadunpacklo_epi32(_mm512_set1_epi32(0), mask, desc),
       mask, ((const char*)desc) + 32);
     return _mm512_reduce_or_epi32(_mm512_xor_si512(a512, b512));
-  }
-#elif defined(__MIC__) && (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-  { /* TODO: implement for 16 Byte descriptor */
-    return libxsmm_gemm_diff_sw(reference, desc);
   }
 #else
   return libxsmm_gemm_diff_sw(reference, desc);

@@ -74,6 +74,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff(
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_sw(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 /** Collection of implementations which are using specific instruction set extensions. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_sse(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_diff_avx2(
