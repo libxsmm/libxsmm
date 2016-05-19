@@ -169,18 +169,31 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
         l_tmp[l_n] = 0.0;
       }
 
+      for ( l_n = 0; l_n < l_row_count+1; l_n++) {
+         printf("%i ", l_column_idx[l_n]);
+      }
+      printf("\n");
+      for ( l_n = 0; l_n < l_element_count; l_n++) {
+         printf("%i ", l_row_idx[l_n]);
+      }
+      printf("\n");
+      for ( l_n = 0; l_n < l_element_count; l_n++) {
+         printf("%f ", l_values[l_n]);
+      }
+      printf("\n");
+
       for ( l_n = 0; l_n < l_column_count; l_n++) {
         const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
         assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
 
         for ( l_m = 0; l_m < l_column_elems; l_m++) {
-          l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
+          l_tmp[(l_row_idx[l_column_idx[l_n] + l_m]*l_column_count) + l_n] = l_values[l_column_idx[l_n] + l_m];
         }
       }
 
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
-          printf("%f ", l_tmp[(l_m * l_row_count) + l_n]);
+          printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);
         }
         printf("\n");
       }
@@ -212,18 +225,31 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
         l_tmp[l_n] = 0.0;
       }
 
-      for ( l_n = 0; l_n < l_column_count; l_n++) {
-        const unsigned int l_column_elems = l_column_idx[l_n+1] - l_column_idx[l_n];
-        assert(l_column_idx[l_n+1] >= l_column_idx[l_n]);
+      for ( l_n = 0; l_n < l_row_count+1; l_n++) {
+         printf("%i ", l_row_idx[l_n]);
+      }
+      printf("\n");
+      for ( l_n = 0; l_n < l_element_count; l_n++) {
+         printf("%i ", l_column_idx[l_n]);
+      }
+      printf("\n");
+      for ( l_n = 0; l_n < l_element_count; l_n++) {
+         printf("%f ", l_values[l_n]);
+      }
+      printf("\n");
 
-        for ( l_m = 0; l_m < l_column_elems; l_m++) {
-          l_tmp[(l_n * l_row_count) + l_row_idx[l_column_idx[l_n] + l_m]] = l_values[l_column_idx[l_n] + l_m];
+      for ( l_n = 0; l_n < l_row_count; l_n++) {
+        const unsigned int l_row_elems = l_row_idx[l_n+1] - l_row_idx[l_n];
+        assert(l_row_idx[l_n+1] >= l_row_idx[l_n]);
+
+        for ( l_m = 0; l_m < l_row_elems; l_m++) {
+          l_tmp[(l_n * l_column_count) + l_column_idx[l_row_idx[l_n] + l_m]] = l_values[l_row_idx[l_n] + l_m];
         }
       }
 
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
-          printf("%f ", l_tmp[(l_m * l_row_count) + l_n]);
+          printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);
         }
         printf("\n");
       }
