@@ -44,20 +44,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE /*|| any other implemented size*/)
-# if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#   define LIBXSMM_GEMM_DIFF_AVX512_CORE
-# elif (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#   define LIBXSMM_GEMM_DIFF_AVX512_MIC
-# elif (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#   define LIBXSMM_GEMM_DIFF_AVX2
-# elif (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#   define LIBXSMM_GEMM_DIFF_AVX
-# else
-#   define LIBXSMM_GEMM_DIFF_NOWARNING
-# endif
-#else /* remove as soon as LIBXSMM_GEMM_DESCRIPTOR_SIZE=16 is supported */
-# define LIBXSMM_GEMM_DIFF_NOWARNING
+/* individually enable intrinsic code paths */
+#if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# define LIBXSMM_GEMM_DIFF_AVX512_CORE
+# define LIBXSMM_GEMM_DIFF_AVX512_MIC
+# define LIBXSMM_GEMM_DIFF_AVX2
+# define LIBXSMM_GEMM_DIFF_AVX
+/*# define LIBXSMM_GEMM_DIFF_KNC*/
 #endif
 
 
@@ -94,6 +87,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arc
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_finalize(void)
 {
+  internal_gemm_diff_function = libxsmm_gemm_diff_sw;
+  internal_gemm_diffn_function = libxsmm_gemm_diffn_sw;
 }
 
 
@@ -139,12 +134,12 @@ unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, cons
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
 unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
-#if defined(LIBXSMM_GEMM_DIFF_AVX)
+  assert(0 != reference && 0 != desc);
+#if defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(0 != reference && 0 != desc);
-  {
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  {
     int r0, r1;
     __m256i a256, b256;
 #   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
@@ -167,14 +162,21 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
     r0 = _mm256_testnzc_si256(a256, b256);
     r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
-# endif
   }
+# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diff_sw(reference, desc);
+  }
+# else
+  return libxsmm_gemm_diff_sw(reference, desc);
+# endif
 #else
-# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
-    once = 1;
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX) /* library code is expected to be mute */
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
+      once = 1;
+    }
   }
 # endif
   return libxsmm_gemm_diff_sw(reference, desc);
@@ -185,12 +187,12 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
 unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
-#if defined(LIBXSMM_GEMM_DIFF_AVX2)
+  assert(0 != reference && 0 != desc);
+#if defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(0 != reference && 0 != desc);
-  {
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  {
     const int yes = 0x80000000, no = 0x0;
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
@@ -203,14 +205,21 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, co
     const int r0 = _mm256_testnzc_si256(a256, b256);
     const int r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
-# endif
   }
+# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diff_avx(reference, desc);
+  }
+# else
+  return libxsmm_gemm_diff_avx(reference, desc);
+# endif
 #else
-# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    once = 1;
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX2) /* library code is expected to be mute */
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
+      once = 1;
+    }
   }
 # endif
   return libxsmm_gemm_diff_avx(reference, desc);
@@ -221,10 +230,10 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, co
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
-#if defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE/*|| any other implemented size*/)
+  assert(0 != reference && 0 != desc);
+#if defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(0 ==  LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(0 != reference && 0 != desc);
   {
     const __mmask16 mask = (0xFFFF >> (16 - (LIBXSMM_GEMM_DESCRIPTOR_SIZE >> 2/*LOG2(sizeof(int))*/)));
     const __m512i a512 = _mm512_mask_loadunpackhi_epi32(
@@ -234,6 +243,10 @@ unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, co
       _mm512_mask_loadunpacklo_epi32(_mm512_set1_epi32(0), mask, desc),
       mask, ((const char*)desc) + 32);
     return _mm512_reduce_or_epi32(_mm512_xor_si512(a512, b512));
+  }
+#elif defined(__MIC__) && (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diff_sw(reference, desc);
   }
 #else
   return libxsmm_gemm_diff_sw(reference, desc);
@@ -295,11 +308,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
 unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if defined(LIBXSMM_GEMM_DIFF_AVX)
+#if defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
-# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
     const unsigned int end = hint + ndescs;
     const char *const desc = (const char*)descs;
     __m256i a256;
@@ -331,15 +344,23 @@ unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, co
         return j;
       }
     }
-# endif
+    return ndescs;
   }
-  return ndescs;
+# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  assert(16 == nbytes); /* padded descriptor array */
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
+  }
+# else
+  return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
+# endif
 #else
-# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
-    once = 1;
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX) /* library code is expected to be mute */
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
+      once = 1;
+    }
   }
 # endif
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
@@ -351,11 +372,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
 unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if defined(LIBXSMM_GEMM_DIFF_AVX2)
+#if defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
-# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
     const unsigned int end = hint + ndescs;
     const char *const desc = (const char*)descs;
     unsigned int i;
@@ -378,15 +399,23 @@ unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, c
         return j;
       }
     }
-# endif
+    return ndescs;
   }
-  return ndescs;
+# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  assert(16 == nbytes); /* padded descriptor array */
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
+  }
+# else
+  return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
+# endif
 #else
-# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    once = 1;
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX2) /* library code is expected to be mute */
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
+      once = 1;
+    }
   }
 # endif
   return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
@@ -398,11 +427,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
 unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if defined(LIBXSMM_GEMM_DIFF_AVX512)
+#if (defined(LIBXSMM_GEMM_DIFF_AVX512_MIC)  && LIBXSMM_X86_AVX512_MIC  <= LIBXSMM_MAX_STATIC_TARGET_ARCH) || \
+    (defined(LIBXSMM_GEMM_DIFF_AVX512_CORE) && LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
+# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
-# if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
     const unsigned int hint_even = (hint & 0xFFFFFFFE), end = hint_even + ndescs;
     const char *const desc = (const char*)descs;
     unsigned int i;
@@ -427,15 +457,23 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
         return j + 1;
       }
     }
-# endif
+    return ndescs;
   }
-  return ndescs;
+# elif (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  assert(16 == nbytes); /* padded descriptor array */
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
+  }
+# else
+  return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
+# endif
 #else
-# if !defined(NDEBUG) && !defined(LIBXSMM_GEMM_DIFF_NOWARNING) /* library code is expected to be mute */
-  static LIBXSMM_TLS int once = 0;
-  if (0 == once) {
-    fprintf(stderr, "LIBXSMM: unable to enter AVX-512 code path!\n");
-    once = 1;
+# if !defined(NDEBUG) && (defined(LIBXSMM_GEMM_DIFF_AVX512_MIC) || defined(LIBXSMM_GEMM_DIFF_AVX512_CORE))
+  { static LIBXSMM_TLS int once = 0;
+    if (0 == once) {
+      fprintf(stderr, "LIBXSMM: unable to enter AVX-512 code path!\n");
+      once = 1;
+    }
   }
 # endif
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
@@ -447,7 +485,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
 unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE/*|| any other implemented size*/) && 0/*disabled*/
+#if defined(LIBXSMM_GEMM_DIFF_KNC) && defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
   assert(32 == nbytes); /* padded descriptor array */
   {
@@ -471,8 +509,14 @@ unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference, c
         return j + 1;
       }
     }
+    return ndescs;
   }
-  return ndescs;
+#elif defined(LIBXSMM_GEMM_DIFF_KNC) && defined(__MIC__) && (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
+  assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
+  assert(16 == nbytes); /* padded descriptor array */
+  { /* TODO: implement for 16 Byte descriptor */
+    return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
+  }
 #else
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
 #endif
