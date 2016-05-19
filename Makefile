@@ -82,10 +82,6 @@ ifneq (1,$(BETA))
 endif
 endif
 
-ifneq (1,$(CACHE))
-  DFLAGS = -DLIBXSMM_CACHESIZE=$(CACHE)
-endif
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
@@ -132,6 +128,10 @@ ifeq (0,$(STATIC))
     BLAS_WARNING = 1
     BLAS ?= 2
   endif
+endif
+
+ifneq (1,$(CACHE))
+  DFLAGS += -DLIBXSMM_CACHESIZE=$(CACHE)
 endif
 
 # include common Makefile artifacts
