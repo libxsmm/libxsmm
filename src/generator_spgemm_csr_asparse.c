@@ -97,24 +97,24 @@ void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_ge
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {}
 
-    if ( (i_xgemm_desc->n > 1)          &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma vector aligned\n");
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    }
+
   } else if ( ( strcmp( i_arch, "knc" ) == 0 ) ||
               ( strcmp( i_arch, "knl" ) == 0 ) ||
               ( strcmp( i_arch, "skx" ) == 0 )    ) {
-    if ( (i_xgemm_desc->n > 1)          &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(32)\n  #pragma vector aligned\n");
+    if ( (i_xgemm_desc->n > 1) ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(16)\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
+  }
+
+  if ( (i_xgemm_desc->n > 1)          &&
+       ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
+       ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma vector aligned\n");
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 
   /* generate the actuel kernel */
