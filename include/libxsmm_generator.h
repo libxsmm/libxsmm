@@ -147,18 +147,18 @@ const char* libxsmm_strerror(unsigned int i_error_code);
 /* @TODO change int based architecture value */
 void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                       const char*                     i_routine_name,
-                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                       const char*                     i_arch );
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                       const char*                     i_routine_name,
-                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                       const char*                     i_arch );
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
-                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                     const char*                     i_arch );
 
 /* @TODO change int based architecture value */
@@ -170,12 +170,20 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
                                const int                       i_is_csr );
 
 /* @TODO change int based architecture value */
-void libxsmm_generator_spgemm_kernel( libxsmm_generated_code*         io_generated_code,
-                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                      const char*                     i_arch,
-                                      const unsigned int*             i_row_idx,
-                                      const unsigned int*             i_column_idx,
-                                      const double*                   i_values );
+void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*         io_generated_code,
+                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                          const char*                     i_arch,
+                                          const unsigned int*             i_row_idx,
+                                          const unsigned int*             i_column_idx,
+                                          const double*                   i_values );
+
+/* @TODO change int based architecture value */
+void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_generated_code,
+                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                          const char*                     i_arch,
+                                          const unsigned int*             i_row_idx,
+                                          const unsigned int*             i_column_idx,
+                                          const double*                   i_values );
 
 #endif /*LIBXSMM_GENERATOR_H*/
 
