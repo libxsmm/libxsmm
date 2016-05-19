@@ -196,7 +196,7 @@ int main()
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
-    {
+    if (EXIT_SUCCESS == result) {
 #if defined(LIBXSMM_GENERATOR_BIGDESC)
       union { libxsmm_gemm_descriptor desc; char padding[32]; } local[8];
 #else
