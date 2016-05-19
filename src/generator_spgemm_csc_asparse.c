@@ -76,7 +76,7 @@
 
 
 void libxsmm_sparse_csc_asparse_innerloop_scalar( libxsmm_generated_code*         io_generated_code,
-                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                  const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                   const unsigned int              i_k,
                                                   const unsigned int              i_z,
                                                   const unsigned int*             i_row_idx,
