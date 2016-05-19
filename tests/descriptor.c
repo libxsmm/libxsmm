@@ -121,13 +121,13 @@ int main()
       if (1 != libxsmm_gemm_diffn_sw(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using generic diff-search\n");
+        fprintf(stderr, "using generic diffn-search\n");
         result = 21;
       }
       else if (6 != libxsmm_gemm_diffn_sw(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using generic diff-search\n");
+        fprintf(stderr, "using generic diffn-search\n");
         result = 22;
       }
     }
@@ -135,13 +135,13 @@ int main()
       if (1 != libxsmm_gemm_diffn_avx(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX-based diff-search\n");
+        fprintf(stderr, "using AVX-based diffn-search\n");
         result = 23;
       }
       else if (6 != libxsmm_gemm_diffn_avx(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX-based diff-search\n");
+        fprintf(stderr, "using AVX-based diffn-search\n");
         result = 24;
       }
     }
@@ -149,13 +149,13 @@ int main()
       if (1 != libxsmm_gemm_diffn_avx2(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX2-based diff-search\n");
+        fprintf(stderr, "using AVX2-based diffn-search\n");
         result = 25;
       }
       else if (6 != libxsmm_gemm_diffn_avx2(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX2-based diff-search\n");
+        fprintf(stderr, "using AVX2-based diffn-search\n");
         result = 26;
       }
     }
@@ -163,13 +163,13 @@ int main()
       if (1 != libxsmm_gemm_diffn_avx512(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX512-based diff-search\n");
+        fprintf(stderr, "using AVX512-based diffn-search\n");
         result = 27;
       }
       else if (6 != libxsmm_gemm_diffn_avx512(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using AVX512-based diff-search\n");
+        fprintf(stderr, "using AVX512-based diffn-search\n");
         result = 28;
       }
     }
@@ -177,13 +177,13 @@ int main()
       if (1 != libxsmm_gemm_diffn(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using dispatched diff-search\n");
+        fprintf(stderr, "using dispatched diffn-search\n");
         result = 29;
       }
       else if (6 != libxsmm_gemm_diffn(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
-        fprintf(stderr, "using dispatched diff-search\n");
+        fprintf(stderr, "using dispatched diffn-search\n");
         result = 30;
       }
     }
@@ -218,13 +218,13 @@ int main()
       else if (1 != libxsmm_gemm_diffn_imci(&a.descriptor, &local[0].desc, 0/*hint*/,
         sizeof(local) / sizeof(*local), sizeof(*local)))
       {
-        fprintf(stderr, "using IMCI-based diff-search\n");
+        fprintf(stderr, "using IMCI-based diffn-search\n");
         result = 35;
       }
       else if (6 != libxsmm_gemm_diffn_imci(&b.descriptor, &local[0].desc, 2/*hint*/,
         sizeof(local) / sizeof(*local), sizeof(*local)))
       {
-        fprintf(stderr, "using IMCI-based diff-search\n");
+        fprintf(stderr, "using IMCI-based diffn-search\n");
         result = 36;
       }
     }
