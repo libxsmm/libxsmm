@@ -34,6 +34,7 @@
 #include "generator_spgemm_csr_reader.h"
 #include "generator_spgemm_csc_asparse.h"
 #include "generator_spgemm_csc_bsparse.h"
+#include "generator_spgemm_csr_asparse.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -98,7 +99,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_gen
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
-    /*libxsmm_generator_spgemm_csr_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );*/
+    libxsmm_generator_spgemm_csr_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
