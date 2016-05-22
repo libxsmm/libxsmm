@@ -220,26 +220,6 @@
 # define LIBXSMM_UNUSED_ARG
 #endif
 
-#if defined(LIBXSMM_NOSYNC)
-# undef _REENTRANT
-#elif !defined(_REENTRANT)
-# define _REENTRANT
-#endif
-
-#if defined(_REENTRANT)
-# if (defined(_WIN32) && !defined(__GNUC__))
-#   define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-# elif defined(__GNUC__)
-#   define LIBXSMM_TLS __thread
-# elif defined(__cplusplus)
-#   define LIBXSMM_TLS thread_local
-# else
-#   error Missing TLS support!
-# endif
-#else
-# define LIBXSMM_TLS
-#endif
-
 #if defined(__GNUC__)
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
@@ -253,34 +233,6 @@
 # define LIBXSMM_DEBUG(...)
 #else
 # define LIBXSMM_DEBUG(...) __VA_ARGS__
-#endif
-
-/** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
-#if defined(__GNUC__)
-# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
-    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION))
-#else
-# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
-    int libxsmm_cpuid_x86_[4]; \
-    __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
-    EAX = libxsmm_cpuid_x86_[0]; \
-    EBX = libxsmm_cpuid_x86_[1]; \
-    ECX = libxsmm_cpuid_x86_[2]; \
-    EDX = libxsmm_cpuid_x86_[3]; \
-  }
-#endif
-
-/** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
-#if defined(__GNUC__)
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
-    ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
-  )
-#else
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
-    unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
-    EAX = (int)libxsmm_xgetbv_; \
-    EDX = (int)(libxsmm_xgetbv_ >> 32); \
-  }
 #endif
 
 #if defined(_WIN32)
@@ -300,20 +252,6 @@
 #   define LIBXSMM_FLOCK(FILE)
 #   define LIBXSMM_FUNLOCK(FILE)
 # endif
-#endif
-
-#if defined(_WIN32) /*TODO*/
-# define LIBXSMM_LOCK_TYPE HANDLE
-# define LIBXSMM_LOCK_CONSTRUCT 0
-# define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
-# define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-#else /* PThreads: include <pthread.h> */
-# define LIBXSMM_LOCK_TYPE pthread_mutex_t
-# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(&(LOCK))
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(&(LOCK))
-# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(&(LOCK))
 #endif
 
 /** Below group is to fixup some platform/compiler specifics. */

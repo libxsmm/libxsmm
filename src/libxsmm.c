@@ -33,6 +33,7 @@
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_gemm_ext.h"
 #include "libxsmm_hash.h"
+#include "libxsmm_sync.h"
 
 #if defined(__TRACE)
 # include "libxsmm_trace.h"
@@ -75,15 +76,6 @@
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
-#endif
-#if defined(__GNUC__)
-# if !defined(LIBXSMM_GCCATOMICS)
-#   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#     define LIBXSMM_GCCATOMICS 1
-#   else
-#     define LIBXSMM_GCCATOMICS 0
-#   endif
-# endif
 #endif
 
 /**
@@ -219,30 +211,9 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock[LOCKINDEX]); }
 #endif
 
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-#   define INTERNAL_FIND_CODE_DECLARE(CODE) internal_regentry* CODE = __atomic_load_n(&internal_registry, __ATOMIC_RELAXED); unsigned int i
-#   define INTERNAL_FIND_CODE_READ(CODE, DST) DST = __atomic_load_n(&(CODE)->function.pmm, __ATOMIC_SEQ_CST)
-#   define INTERNAL_FIND_CODE_WRITE(CODE, SRC) __atomic_store_n(&(CODE)->function.pmm, SRC, __ATOMIC_SEQ_CST);
-# else
-#   define INTERNAL_FIND_CODE_DECLARE(CODE) internal_regentry* CODE = __sync_or_and_fetch(&internal_registry, 0); unsigned int i
-#   define INTERNAL_FIND_CODE_READ(CODE, DST) DST = __sync_or_and_fetch(&(CODE)->function.pmm, 0)
-#   define INTERNAL_FIND_CODE_WRITE(CODE, SRC) { \
-      /*const*/void* old = (CODE)->function.pmm; \
-      while (!__sync_bool_compare_and_swap(&(CODE)->function.pmm, old, SRC)) { \
-        old = (CODE)->function.pmm; \
-      } \
-    }
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32) /*TODO*/
-# define INTERNAL_FIND_CODE_DECLARE(CODE) internal_regentry* CODE = internal_registry; unsigned int i
-# define INTERNAL_FIND_CODE_READ(CODE, DST) DST = (CODE)->function.pmm
-# define INTERNAL_FIND_CODE_WRITE(CODE, SRC) (CODE)->function.pmm = (SRC)
-#else
-# define INTERNAL_FIND_CODE_DECLARE(CODE) internal_regentry* CODE = internal_registry; unsigned int i
-# define INTERNAL_FIND_CODE_READ(CODE, DST) DST = (CODE)->function.pmm
-# define INTERNAL_FIND_CODE_WRITE(CODE, SRC) (CODE)->function.pmm = (SRC)
-#endif
+#define INTERNAL_FIND_CODE_DECLARE(CODE) internal_regentry* CODE = LIBXSMM_ATOMIC_LOAD(internal_registry, LIBXSMM_ATOMIC_RELAXED); unsigned int i
+#define INTERNAL_FIND_CODE_READ(CODE, DST) DST = LIBXSMM_ATOMIC_LOAD((CODE)->function.pmm, LIBXSMM_ATOMIC_SEQ_CST)
+#define INTERNAL_FIND_CODE_WRITE(CODE, SRC) LIBXSMM_ATOMIC_STORE((CODE)->function.pmm, SRC, LIBXSMM_ATOMIC_SEQ_CST)
 
 #if defined(LIBXSMM_CACHESIZE) && (0 < (LIBXSMM_CACHESIZE))
 # define INTERNAL_FIND_CODE_CACHE_DECL(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT) \
@@ -461,21 +432,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm
       bucket = 1;
     }
 
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-    /*dst =*/ __atomic_add_fetch(&internal_statistic[precision][bucket].ntry, ntry, __ATOMIC_RELAXED);
-    /*dst =*/ __atomic_add_fetch(&internal_statistic[precision][bucket].ncol, ncol, __ATOMIC_RELAXED);
-# else
-    /*dst =*/ __sync_add_and_fetch(&internal_statistic[precision][bucket].ntry, ntry);
-    /*dst =*/ __sync_add_and_fetch(&internal_statistic[precision][bucket].ncol, ncol);
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32) /*TODO*/
-    internal_statistic[precision][bucket].ntry += ntry;
-    internal_statistic[precision][bucket].ncol += ncol;
-#else
-    internal_statistic[precision][bucket].ntry += ntry;
-    internal_statistic[precision][bucket].ncol += ncol;
-#endif
+    LIBXSMM_ATOMIC_ADD_FETCH(internal_statistic[precision][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
+    LIBXSMM_ATOMIC_ADD_FETCH(internal_statistic[precision][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
   }
 }
 
@@ -681,17 +639,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 # pragma omp critical(internal_reglock)
 #endif
   {
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-    result = __atomic_load_n(&internal_registry, __ATOMIC_SEQ_CST);
-# else
-    result = __sync_or_and_fetch(&internal_registry, 0);
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
-    result = internal_registry; /*TODO*/
-#else
-    result = internal_registry;
-#endif
+    result = LIBXSMM_ATOMIC_LOAD(internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
     if (0 == result) {
       int init_code;
       /* set internal_target_archid */
@@ -762,20 +710,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #           include <libxsmm_dispatch.h>
           }
           atexit(libxsmm_finalize);
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-          __atomic_store_n(&internal_registry, result, __ATOMIC_SEQ_CST);
-# else
-          {
-            internal_regentry* old = internal_registry;
-            while (!__sync_bool_compare_and_swap(&internal_registry, old, result)) old = internal_registry;
-          }
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
-          internal_registry = result; /*TODO*/
-#else
-          internal_registry = result;
-#endif
+          LIBXSMM_ATOMIC_STORE(internal_registry, result, LIBXSMM_ATOMIC_SEQ_CST);
         }
         else {
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
@@ -806,17 +741,7 @@ LIBXSMM_ATTRIBUTE(constructor)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_init(void)
 {
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-  const void *const registry = __atomic_load_n(&internal_registry, __ATOMIC_RELAXED);
-# else
-  const void *const registry = __sync_or_and_fetch(&internal_registry, 0);
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
-  const void *const registry = internal_registry; /*TODO*/
-#else
-  const void *const registry = internal_registry;
-#endif
+  const void *const registry = LIBXSMM_ATOMIC_LOAD(internal_registry, LIBXSMM_ATOMIC_RELAXED);
   if (0 == registry) {
     internal_init();
   }
@@ -830,17 +755,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 {
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-  internal_regentry* registry = __atomic_load_n(&internal_registry, __ATOMIC_SEQ_CST);
-# else
-  internal_regentry* registry = __sync_or_and_fetch(&internal_registry, 0);
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
-  internal_regentry* registry = internal_registry; /*TODO*/
-#else
-  internal_regentry* registry = internal_registry;
-#endif
+  internal_regentry* registry = LIBXSMM_ATOMIC_LOAD(internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
 
   if (0 != registry) {
     int i;
@@ -870,21 +785,10 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
         libxsmm_gemm_finalize();
         libxsmm_gemm_diff_finalize();
         libxsmm_hash_finalize();
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
-        __atomic_store_n(&internal_registry, 0, __ATOMIC_SEQ_CST);
-# else
-        { /* use store side-effect of built-in (dummy assignment to mute warning) */
-          internal_regentry *const dummy = __sync_and_and_fetch(&internal_registry, 0);
-          LIBXSMM_UNUSED(dummy);
-        }
-# endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32)
-        internal_registry = 0; /*TODO*/
-#else
-        internal_registry = 0;
-#endif
+
+        LIBXSMM_ATOMIC_STORE_ZERO(internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
         internal_registry_keys = 0;
+
         for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
           internal_regentry code = registry[i];
           if (0 != code.function.pmm/*potentially allocated*/) {
