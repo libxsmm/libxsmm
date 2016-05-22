@@ -1,3 +1,7 @@
+ifeq (d,$(filter d,$(MAKEFLAGS)))
+  SHELL = bash -xv
+endif
+
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
   ENV ?= $(NULL)
@@ -713,7 +717,8 @@ else # GCC assumed
   endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
-    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo $$?))
+    # tac: avoid Unicode for some grep versions, which are not Unicode-enabled
+    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | tac | grep -q "\-ldummydoesnotexist"; echo $$?))
       SLDFLAGS += -static
     endif
   endif
