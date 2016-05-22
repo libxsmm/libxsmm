@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_intrinsics_x86.h"
+#include "libxsmm_sync.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
