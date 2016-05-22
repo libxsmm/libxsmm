@@ -90,9 +90,9 @@
       while (!__sync_bool_compare_and_swap(&(DST), old, VALUE)) old = DST; \
     }
 #   define LIBXSMM_ATOMIC_STORE_ZERO(DST, KIND) { \
-      /* use store side-effect of built-in (dummy assignment to mute warning) */
-      void *const dummy = __sync_and_and_fetch(&(DST), 0);
-      LIBXSMM_UNUSED(dummy);
+      /* use store side-effect of built-in (dummy assignment to mute warning) */ \
+      void *const dummy = __sync_and_and_fetch(&(DST), 0); \
+      LIBXSMM_UNUSED(dummy); \
     }
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST, VALUE, KIND) /*DST = */__sync_add_and_fetch(&(DST), VALUE)
 # endif
