@@ -432,7 +432,9 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(TRACE)
     ifneq (0,$(DEPSTATIC))
-      LDFLAGS += -Wl,--export-dynamic
+      ifneq (Darwin,$(UNAME))
+        LDFLAGS += -Wl,--export-dynamic
+      endif
     endif
   endif
   ifneq (0,$(shell echo $$((3 > $(DBG)))))
@@ -635,7 +637,9 @@ else # GCC assumed
       endif
     endif
     ifneq (0,$(DEPSTATIC))
-      LDFLAGS += -Wl,--export-dynamic
+      ifneq (Darwin,$(UNAME))
+        LDFLAGS += -Wl,--export-dynamic
+      endif
     endif
     ifeq (Windows_NT,$(UNAME))
       LDFLAGS += -ldbghelp
