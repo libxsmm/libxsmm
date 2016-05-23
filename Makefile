@@ -589,8 +589,8 @@ build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_GEN_LIB) -shared $(LDFLAGS) $(CLDFLAGS) -Wl,-soname,$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
@@ -607,8 +607,8 @@ clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KERNELOBJS_MIC)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC) -mmic -shared $(LDFLAGS) $(CLDFLAGS) -Wl,-soname,$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC)
 endif
@@ -620,8 +620,8 @@ clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
 	$(LD) -o $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING) -shared $(LDFLAGS) $(CLDFLAGS) -Wl,-soname=$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(OBJJITPROFILING)
 endif
@@ -634,8 +634,8 @@ flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/mic/libxsmm-mod.o $(call libdir,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) -mmic -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) -Wl,-soname=$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/.make
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
@@ -652,8 +652,8 @@ flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.$(LIBEXT)
 	$(FC) -o $@ $(BLDDIR)/intel64/libxsmm-mod.o $(call libdir,$(OUTDIR)/libxsmm.$(LIBEXT)) -shared $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) -Wl,-soname=$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
@@ -669,8 +669,8 @@ ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
 	$(LD) -o $@ $(EXTOBJS_MIC) $(WRAPOBJS_MIC) $(call libdir,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) -mmic -shared $(EXTOMPFLAG) $(LDFLAGS) $(CLDFLAGS) -Wl,-soname=$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
 	$(AR) -rs $@ $(EXTOBJS_MIC)
@@ -684,8 +684,8 @@ ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(WRAPOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
 ifneq (Darwin,$(UNAME))
 	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(EXTOMPFLAG) $(LDFLAGS) $(CLDFLAGS) -Wl,-soname=$(notdir $@).$(VERSION_MAJOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR).$(VERSION_MINOR)
-	@ln -fs $@ $@.$(VERSION_MAJOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
 	$(LD) -o $@ $(EXTOBJS_HST) $(WRAPOBJS_HST) $(call libdir,$(OUTDIR)/libxsmm.$(DLIBEXT)) -shared $(LDFLAGS) $(CLDFLAGS)
 endif
