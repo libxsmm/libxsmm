@@ -113,7 +113,7 @@ ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
   libdir = $(abspath $1)
 else ifneq (0,$(ABSLIBS))
-  libdir = $(abspath $1)
+  libdir = $(abspath $1) -Wl,-rpath=$(dir $(abspath $1))
 else
   libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
@@ -421,7 +421,7 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(TRACE)
     ifneq (0,$(DEPSTATIC))
-      LDFLAGS += -rdynamic
+      LDFLAGS += -Wl,--export-dynamic
     endif
   endif
   ifneq (0,$(shell echo $$((3 > $(DBG)))))
@@ -623,13 +623,10 @@ else # GCC assumed
         endif
       endif
     endif
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(DEPSTATIC))
-        ifeq (3,$(GCC))
-          LDFLAGS += -rdynamic
-        endif
-      endif
-    else
+    ifneq (0,$(DEPSTATIC))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
+    ifeq (Windows_NT,$(UNAME))
       LDFLAGS += -ldbghelp
     endif
     DFLAGS += -D__TRACE=$(TRACE)
