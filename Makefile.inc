@@ -113,7 +113,11 @@ ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
   libdir = $(abspath $1)
 else ifneq (0,$(ABSLIBS))
-  libdir = $(abspath $1) -Wl,-rpath=$(dir $(abspath $1))
+  ifneq (Darwin,$(UNAME))
+    libdir = $(abspath $1) -Wl,--rpath=$(dir $(abspath $1))
+  else
+    libdir = $(abspath $1)
+  endif
 else
   libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
