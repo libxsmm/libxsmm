@@ -725,8 +725,8 @@ else # GCC assumed
   endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
-    # tac: avoid Unicode for some grep versions, which are not Unicode-enabled
-    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | tac | grep -q "\-ldummydoesnotexist"; echo $$?))
+    # cat: avoid Unicode for some grep versions, which are not Unicode-enabled
+    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | cat | grep -q "\-ldummydoesnotexist"; echo $$?))
       SLDFLAGS += -static
     endif
   endif
