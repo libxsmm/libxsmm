@@ -118,6 +118,13 @@ else
   libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
 
+# Embedd soname into shared library
+ifneq (Darwin,$(UNAME))
+  soname = -Wl,-soname=$(subst $(NULL) ,.,$(strip $(notdir $1) $2 $3 $4))
+else
+  soname = # TODO
+endif
+
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
   OMPLIB = $(patsubst lib%,%,$(OMP))
