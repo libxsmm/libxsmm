@@ -207,7 +207,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 #else
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
     const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, sizeof(internal_reglock) / sizeof(*internal_reglock)); \
-    LIBXSMM_LOCK_ACQUIRE(internal_reglock[LOCKINDEX])
+    LIBXSMM_LOCK_TRYLOCK(internal_reglock[LOCKINDEX])
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock[LOCKINDEX]); }
 #endif
 
@@ -262,7 +262,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
 # define INTERNAL_FIND_CODE_JIT(DESCRIPTOR, CODE, RESULT) \
   /* check if code generation or fix-up is needed, also check whether JIT is supported (CPUID) */ \
   if (0 == (RESULT).function.pmm /* code version does not exist */ && LIBXSMM_X86_AVX <= internal_target_archid) { \
-    /* instead of blocking others, a try-lock would allow to let others to fallback to BLAS (return 0) during lock-time */ \
+    /* instead of blocking others, a try-lock allows to let other threads fallback to BLAS during lock-duration */ \
     INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */ \
     /* re-read registry entry after acquiring the lock */ \
     if (0 == diff) { \
