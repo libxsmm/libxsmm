@@ -580,7 +580,12 @@ else # GCC assumed
     endif
   else ifneq (0,$(PEDANTIC))
     CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FCFLAGS += -std=f2003 -pedantic -Wunused-variable
+    FCFLAGS += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
+               -Wcharacter-truncation -Wline-truncation \
+               -Wconversion -Wconversion-extra -Wextra \
+               -Wimplicit-interface -Wimplicit-procedure \
+               -Wintrinsics-std -Wreal-q-constant \
+               -Wrealloc-lhs -Wrealloc-lhs-all
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FMFLAGS += -Wuse-without-only
     endif
