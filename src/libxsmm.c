@@ -774,6 +774,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
       if (0 != registry) {
         internal_regkey *const registry_keys = internal_registry_keys;
         const char *const target_arch = internal_get_target_arch(internal_target_archid);
+        unsigned int heapmem = (LIBXSMM_REGSIZE) * (sizeof(internal_regentry) + sizeof(internal_regkey));
+
         /* serves as an id to invalidate the thread-local cache; never decremented */
         ++internal_teardown;
 #if defined(__TRACE)
@@ -831,6 +833,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 # endif
 #endif
               ++internal_statistic[precision][bucket].njit;
+              heapmem += code.size;
             }
             else {
               ++internal_statistic[precision][bucket].nsta;
@@ -844,8 +847,9 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           {
             const unsigned int linebreak = 0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0) ? 1 : 0;
             if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-              fprintf(stderr, "LIBXSMM_TARGET=%s\n", target_arch);
+              fprintf(stderr, "LIBXSMM_TARGET=%s ", target_arch);
             }
+            fprintf(stderr, "HEAP: %.f MB\n", 1.0 * heapmem / (1 << 20));
           }
           LIBXSMM_FUNLOCK(stdout);
           LIBXSMM_FUNLOCK(stderr);
