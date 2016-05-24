@@ -31,10 +31,9 @@
 
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
-     &                                    C_FUNPTR, C_F_PROCPOINTER,    &
-     &                                    C_PTR, C_NULL_PTR, C_LOC,     &
-     &                                    C_INT, C_FLOAT, C_DOUBLE,     &
-     &                                    C_LONG_LONG, C_CHAR
+     &    C_FLOAT, C_DOUBLE, C_CHAR,  C_INT, C_LONG_LONG,               &
+     &    C_F_POINTER, C_F_PROCPOINTER, C_LOC,                          &
+     &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
         PRIVATE ::  construct_smmfunction,                              &
@@ -76,8 +75,8 @@
      &    MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
 
         ! Parameters representing the GEMM performed by the simplified interface.
-        REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = $ALPHA
-        REAL(C_DOUBLE), PARAMETER :: LIBXSMM_BETA = $BETA
+        REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = REAL($ALPHA, C_DOUBLE)
+        REAL(C_DOUBLE), PARAMETER :: LIBXSMM_BETA = REAL($BETA, C_DOUBLE)
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -261,9 +260,9 @@
           ! Returns the architecture and instruction set extension as determined
           ! by the CPUID flags, as set by the libxsmm_get_target_arch* functions,
           ! or as set by the LIBXSMM_TARGET environment variable.
-          PURE FUNCTION libxsmm_get_target_archid() RESULT(id) BIND(C)
+          PURE FUNCTION libxsmm_get_target_archid() BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT) :: id
+            INTEGER(C_INT) :: libxsmm_get_target_archid
           END FUNCTION
 
           ! Set target architecture (id: see PARAMETER enumeration)
@@ -322,33 +321,35 @@
         ! the CPUID flags, as set by the libxsmm_get_target_arch* functions,
         ! or as set by the LIBXSMM_TARGET environment variable.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_arch
-        FUNCTION libxsmm_get_target_arch() RESULT(arch)
-          CHARACTER(LEN=:), ALLOCATABLE :: arch
-          CHARACTER(LEN=16) :: tmp
+        FUNCTION libxsmm_get_target_arch()
+          !CHARACTER(LEN=:), POINTER :: libxsmm_get_target_arch
+          CHARACTER, POINTER :: libxsmm_get_target_arch(:)
+          INTEGER(C_INT) :: length(1)
+          TYPE(C_PTR) :: arch
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: get_target_arch
           INTERFACE
-            PURE SUBROUTINE get_target_arch(arch, length) BIND(C)
-              IMPORT :: C_CHAR, C_INT
-              CHARACTER(C_CHAR), INTENT(OUT) :: arch(*)
-              INTEGER(C_INT), VALUE, INTENT(IN) :: length
-            END SUBROUTINE
+            FUNCTION get_target_arch(length) BIND(C)
+              IMPORT :: C_INT, C_PTR
+              INTEGER(C_INT), INTENT(OUT) :: length
+              TYPE(C_PTR) :: get_target_arch
+            END FUNCTION
           END INTERFACE
-          CALL get_target_arch(tmp, LEN(tmp))
-          arch = TRIM(tmp)
+          arch = get_target_arch(length(1))
+          CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr
-        FUNCTION srealptr(a) RESULT(p)
+        FUNCTION srealptr(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_FLOAT), POINTER :: p
-          p => a(LBOUND(a,1),LBOUND(a,2))
+          REAL(C_FLOAT), POINTER :: srealptr
+          srealptr => a(LBOUND(a,1),LBOUND(a,2))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: drealptr
-        FUNCTION drealptr(a) RESULT(p)
+        FUNCTION drealptr(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_DOUBLE), POINTER :: p
-          p => a(LBOUND(a,1),LBOUND(a,2))
+          REAL(C_DOUBLE), POINTER :: drealptr
+          drealptr => a(LBOUND(a,1),LBOUND(a,2))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
@@ -365,7 +366,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
-            TYPE(C_FUNPTR) PURE FUNCTION sdispatch(                     &
+            PURE FUNCTION sdispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
      &      BIND(C, NAME="libxsmm_smmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_FLOAT
@@ -373,6 +374,7 @@
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               REAL(C_FLOAT), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
+              TYPE(C_FUNPTR) :: sdispatch
             END FUNCTION
           END INTERFACE
           IF (.NOT.PRESENT(prefetch)) THEN
@@ -411,13 +413,13 @@
           INTERFACE
             PURE FUNCTION ddispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      RESULT(fn) BIND(C, NAME="libxsmm_dmmdispatch")
+     &      BIND(C, NAME="libxsmm_dmmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
               INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-              TYPE(C_FUNPTR) :: fn
+              TYPE(C_FUNPTR) :: ddispatch
             END FUNCTION
           END INTERFACE
           IF (.NOT.PRESENT(prefetch)) THEN
@@ -751,6 +753,7 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           CHARACTER :: otransa, otransb
+          INTEGER :: s(2)
           IF (.NOT.PRESENT(transa)) THEN
             otransa = 'N'
           ELSE
@@ -797,7 +800,8 @@
      &          alpha, b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
      &                 a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
      &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-              c = TRANSPOSE(RESHAPE(c, (/ SIZE(c, 2), SIZE(c, 1) /)))
+              s(1) = SIZE(c, 2); s(2) = SIZE(c, 1)
+              c = TRANSPOSE(RESHAPE(c, s))
             END IF
           END IF
         END SUBROUTINE
@@ -809,6 +813,7 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           CHARACTER :: otransa, otransb
+          INTEGER(C_INT) :: s(2)
           IF (.NOT.PRESENT(transa)) THEN
             otransa = 'N'
           ELSE
@@ -855,7 +860,8 @@
      &          alpha, b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
      &                 a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
      &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-              c = TRANSPOSE(RESHAPE(c, (/ SIZE(c, 2), SIZE(c, 1) /)))
+              s(1) = SIZE(c, 2); s(2) = SIZE(c, 1)
+              c = TRANSPOSE(RESHAPE(c, s))
             END IF
           END IF
         END SUBROUTINE

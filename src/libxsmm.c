@@ -918,14 +918,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void)
 
 
 /* function serves as a helper for implementing the Fortran interface */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* arch, int length);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void get_target_arch(char* arch, int length)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length)
 {
-  const char* c = libxsmm_get_target_arch();
-  int i;
-  assert(0 != arch); /* valid here since function is not in the public interface */
-  for (i = 0; i < length && 0 != *c; ++i, ++c) arch[i] = *c;
-  for (; i < length; ++i) arch[i] = ' ';
+  const char *const arch = libxsmm_get_target_arch();
+  /* valid here since function is not in the public interface */
+  assert(0 != arch && 0 != length);
+  *length = strlen(arch);
+  return arch;
 }
 
 
