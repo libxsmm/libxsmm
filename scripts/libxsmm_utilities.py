@@ -177,14 +177,15 @@ def version_numbers(version):
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    arg1 = int(sys.argv[1])
+    if (1 < argc): arg1 = int(sys.argv[1])
+    else: arg1 = 0
     if (-1 == arg1 and 5 < argc):
         threshold = int(sys.argv[2])
         mnk_size = int(sys.argv[3])
         dims = load_mnklist(sys.argv[4:4+mnk_size], threshold, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
         print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))))
-    elif (0 <= arg1 and 2 == argc):
+    elif (0 <= arg1):
         version, branch = version_branch()
         major, minor, update, patch = version_numbers(version)
         if (1 == arg1):
