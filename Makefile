@@ -1063,18 +1063,19 @@ endif
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
 	@mv $(TMPFILE) $(TMPFILE).tex
-	@pandoc -D latex | sed \
+	@pandoc -D latex \
+	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
 		$(TMPFILE).tex
-	@sed \
+	@iconv -t utf-8 $(ROOTDIR)/README.md \
+	| sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
 		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		$(ROOTDIR)/README.md | \
-	pandoc \
+	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
@@ -1090,18 +1091,19 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
 	@mv $(TMPFILE) $(TMPFILE).tex
-	@pandoc -D latex | sed \
+	@pandoc -D latex \
+	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
 		$(TMPFILE).tex
-	@sed \
+	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
+	| sed \
 		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
 		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
 		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		$(ROOTDIR)/documentation/cp2k.md | \
-	pandoc \
+	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
