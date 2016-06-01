@@ -8,17 +8,17 @@ Please note that the [mxm_std.f](https://github.com/hfp/libxsmm/blob/master/samp
 Small tensor-product multiple (stpm) replicates the axhelm kernel, which computes the Laplacian with spectral elements.
 Usage:
 
-´´´
+```
 ./stpm m n k size1 size
-´´´
+```
 
 The elements are m-by-n-by-k, mode picks the libxsmm interace used, and size scales the number of spectral elements.
 
 ## rstr
 Restriction operator transforms elements from one size to another. This occurs in multi-grid, the convection operator, and, when the sizes are the same, the local schwarz solves. Usage:
 
-´´´
+```
 ./rstr m n k mm nn kk size1 size
-´´´
+```
 
 The input elements are m-by-n-by-k and the output elements are mm-by-nn-by-kk. When m=mm, n=nn, k=kk, this half of a Schwarz solve.
