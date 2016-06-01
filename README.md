@@ -96,7 +96,7 @@ make clean
 make realclean
 ```
 
-The library can be configured to accept row-major or column-major (default) order matrices. The row-major storage scheme is accomplished by setting ROW_MAJOR=1 (0 for column-major, and row-major otherwise):
+The library can be configured to accept row-major or column-major (default) order matrices. The [row-major storage scheme](https://github.com/hfp/libxsmm/wiki/Q&A#what-is-the-purpose-of-row_major-vs-col_major) is accomplished by setting ROW_MAJOR=1 (0 for column-major, and row-major otherwise):
 
 ```
 make ROW_MAJOR=1
