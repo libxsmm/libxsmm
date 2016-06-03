@@ -15,21 +15,22 @@ TMPFILE=$(mktemp fileXXXXXX)
 mv ${TMPFILE} ${TMPFILE}.tex
 
 # dump pandoc template for latex, and adjust the template
-pandoc -D latex | sed \
+pandoc -D latex \
+| sed \
   -e 's/\(\\documentclass\[.\+\]{.\+}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
   -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
   ${TMPFILE}.tex
 
 # cleanup markup and pipe into pandoc using the template
 # LIBXSMM documentation
-sed \
+iconv -t utf-8 README.md \
+| sed \
   -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
   -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-  README.md | tee >( \
-pandoc \
+| tee >( pandoc \
   --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
@@ -39,21 +40,21 @@ pandoc \
   -V linkcolor=black \
   -V citecolor=black \
   -V urlcolor=black \
-  -o ${DOCDIR}/libxsmm.pdf) | \
-pandoc \
+  -o ${DOCDIR}/libxsmm.pdf) \
+| pandoc \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -o ${DOCDIR}/libxsmm.docx
 
 # cleanup markup and pipe into pandoc using the template
 # CP2K recipe
-sed \
+iconv -t utf-8 ${HERE}/documentation/cp2k.md \
+| sed \
   -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
   -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
   -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-  ${HERE}/documentation/cp2k.md | tee >( \
-pandoc \
+| tee >( pandoc \
   --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
@@ -63,8 +64,8 @@ pandoc \
   -V linkcolor=black \
   -V citecolor=black \
   -V urlcolor=black \
-  -o ${DOCDIR}/cp2k.pdf) | \
-pandoc \
+  -o ${DOCDIR}/cp2k.pdf) \
+| pandoc \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -o ${DOCDIR}/cp2k.docx
 

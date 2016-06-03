@@ -113,9 +113,20 @@ ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
   libdir = $(abspath $1)
 else ifneq (0,$(ABSLIBS))
-  libdir = $(abspath $1)
+  ifneq (Darwin,$(UNAME))
+    libdir = $(abspath $1) -Wl,--rpath=$(dir $(abspath $1))
+  else
+    libdir = $(abspath $1)
+  endif
 else
   libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
+endif
+
+# Embedd soname into shared library
+ifneq (Darwin,$(UNAME))
+  soname = -Wl,-soname=$(subst $(NULL) ,.,$(strip $(notdir $1) $2 $3 $4))
+else
+  soname = # TODO
 endif
 
 # Pickup OpenMP library name if passed as OMP=libname|name
@@ -421,7 +432,9 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(TRACE)
     ifneq (0,$(DEPSTATIC))
-      LDFLAGS += -rdynamic
+      ifneq (Darwin,$(UNAME))
+        LDFLAGS += -Wl,--export-dynamic
+      endif
     endif
   endif
   ifneq (0,$(shell echo $$((3 > $(DBG)))))
@@ -567,7 +580,12 @@ else # GCC assumed
     endif
   else ifneq (0,$(PEDANTIC))
     CFLAGS += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FCFLAGS += -std=f2003 -pedantic -Wunused-variable
+    FCFLAGS += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
+               -Wcharacter-truncation -Wline-truncation \
+               -Wconversion -Wconversion-extra -Wextra \
+               -Wimplicit-interface -Wimplicit-procedure \
+               -Wintrinsics-std -Wreal-q-constant \
+               -Wrealloc-lhs -Wrealloc-lhs-all
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FMFLAGS += -Wuse-without-only
     endif
@@ -623,13 +641,12 @@ else # GCC assumed
         endif
       endif
     endif
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(DEPSTATIC))
-        ifeq (3,$(GCC))
-          LDFLAGS += -rdynamic
-        endif
+    ifneq (0,$(DEPSTATIC))
+      ifneq (Darwin,$(UNAME))
+        LDFLAGS += -Wl,--export-dynamic
       endif
-    else
+    endif
+    ifeq (Windows_NT,$(UNAME))
       LDFLAGS += -ldbghelp
     endif
     DFLAGS += -D__TRACE=$(TRACE)
@@ -717,8 +734,8 @@ else # GCC assumed
   endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
-    # tac: avoid Unicode for some grep versions, which are not Unicode-enabled
-    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | tac | grep -q "\-ldummydoesnotexist"; echo $$?))
+    # cat: avoid Unicode for some grep versions, which are not Unicode-enabled
+    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | cat | grep -q "\-ldummydoesnotexist"; echo $$?))
       SLDFLAGS += -static
     endif
   endif

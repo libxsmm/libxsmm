@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 ###############################################################################
 ## Copyright (c) 2015-2016, Intel Corporation                                ##
 ## All rights reserved.                                                      ##
@@ -145,7 +145,7 @@ def align_value(n, typesize, alignment):
 
 
 def version_branch():
-    versionfile = os.path.join(os.path.sep, os.path.dirname(sys.argv[0]), "..", "version.txt")
+    versionfile = os.path.join(os.path.dirname(sys.argv[0]), "..", "version.txt")
     version = "1.0"
     file = open(versionfile, "r")
     try:
@@ -177,15 +177,29 @@ def version_numbers(version):
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    arg1 = int(sys.argv[1])
-    if (5 < argc and -1 == arg1):
+    if (1 < argc): arg1 = int(sys.argv[1])
+    else: arg1 = 0
+    if (-1 == arg1 and 5 < argc):
         threshold = int(sys.argv[2])
         mnk_size = int(sys.argv[3])
         dims = load_mnklist(sys.argv[4:4+mnk_size], threshold, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], threshold, -2, dims)
         print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))))
-    elif (4 == argc and 0 < arg1):
-        print(align_value(arg1, int(sys.argv[2]), sanitize_alignment(int(sys.argv[3]))))
+    elif (0 <= arg1):
+        version, branch = version_branch()
+        major, minor, update, patch = version_numbers(version)
+        if (1 == arg1):
+            print(major)
+        elif (2 == arg1):
+            print(minor)
+        elif (3 == arg1):
+            print(update)
+        elif (4 == arg1):
+            print(patch)
+        elif ("" != branch):
+            print(branch + "-" + version)
+        else:
+            print(version)
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong (" + str(argc - 1) + ") number of arguments (\"" + \
