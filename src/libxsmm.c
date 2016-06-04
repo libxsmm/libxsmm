@@ -1229,8 +1229,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( 
                                                                                 const double*       i_values )
 {
   const char *const target_arch = internal_get_target_arch(internal_target_archid);
-  libxsmm_xmmfunction l_jit;
-  void* l_code = NULL;
+  union {
+    libxsmm_xmmfunction xmm;
+    /*const*/void* pmm;
+  } l_code = { 0 };
   libxsmm_generated_code l_generated_code;
 
   /* some checks */
@@ -1250,21 +1252,31 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( 
 
   /* handle an eventual error in the else-branch */
   if (0 == l_generated_code.last_error) {
+# if defined(__APPLE__) && defined(__MACH__)
+    const int fd = 0;
+# else
     const int fd = open("/dev/zero", O_RDWR);
-
+# endif
     if (0 <= fd) {
       /* create executable buffer */
-      l_code = mmap(0, l_generated_code.code_size,
+      l_code.pmm = mmap(0, l_generated_code.code_size,
         /* must be a superset of what mprotect populates (see below) */
         PROT_READ | PROT_WRITE | PROT_EXEC,
-        MAP_PRIVATE | MAP_32BIT, fd, 0);
+# if defined(__APPLE__) && defined(__MACH__)
+        LIBXSMM_INTERNAL_MAP | MAP_ANON, fd, 0);
+# elif !defined(__CYGWIN__)
+        LIBXSMM_INTERNAL_MAP | MAP_32BIT, fd, 0);
       close(fd);
+# else
+        LIBXSMM_INTERNAL_MAP, fd, 0);
+      close(fd);
+# endif
 
-      if (MAP_FAILED != l_code) {
+      if (MAP_FAILED != l_code.pmm) {
         /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
 #if defined(MADV_NOHUGEPAGE)
         /* proceed even in case of an error, we then just take what we got (THP) */
-        if (0 != madvise(l_code, l_generated_code.code_size, MADV_NOHUGEPAGE)) {
+        if (0 != madvise(l_code.pmm, l_generated_code.code_size, MADV_NOHUGEPAGE)) {
           fprintf(stderr, "LIBXSMM: %s (madvise)!\n", strerror(errno));
         }
 #else
@@ -1273,9 +1285,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( 
         LIBXSMM_MESSAGE("====================================================================")
 #endif /*MADV_NOHUGEPAGE*/
         /* copy temporary buffer into the prepared executable buffer */
-        memcpy(l_code, l_generated_code.generated_code, l_generated_code.code_size);
+        memcpy(l_code.pmm, l_generated_code.generated_code, l_generated_code.code_size);
 
-        if (0/*ok*/ == mprotect(l_code, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
+        if (0/*ok*/ == mprotect(l_code.pmm, l_generated_code.code_size, PROT_EXEC | PROT_READ)) {
           /* write buffer for manual decode as binary to a file */
           char l_objdump_name[512];
           FILE* l_byte_code;
@@ -1291,7 +1303,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( 
         }
         else { /* there was an error with mprotect */
           fprintf(stderr, "LIBXSMM: %s (mprotect)!\n", strerror(errno));
-          if (0 != munmap(l_code, l_generated_code.code_size)) {
+          if (0 != munmap(l_code.pmm, l_generated_code.code_size)) {
             fprintf(stderr, "LIBXSMM: %s (munmap)!\n", strerror(errno));
           }
           free(l_generated_code.generated_code);
@@ -1311,7 +1323,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( 
     free(l_generated_code.generated_code);
   }
 
-  l_jit.dmm = (libxsmm_dmmfunction)l_code;
-  return l_jit.dmm; 
+  return l_code.xmm.dmm;
 }
 
