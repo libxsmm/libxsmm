@@ -78,6 +78,10 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_soa_width;
   unsigned int l_max_cols = 0;
 
+  libxsmm_micro_kernel_config l_micro_kernel_config;
+  libxsmm_loop_label_tracker l_loop_label_tracker;
+  libxsmm_gp_reg_mapping l_gp_reg_mapping;
+
   LIBXSMM_UNUSED(i_values);
 
   /* check that we have enough registers (N=20) for now */
@@ -92,10 +96,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   } else {
     l_soa_width = 16;
   }
-
-  libxsmm_micro_kernel_config l_micro_kernel_config;
-  libxsmm_loop_label_tracker l_loop_label_tracker;
-  libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
