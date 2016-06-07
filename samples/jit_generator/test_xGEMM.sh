@@ -55,6 +55,20 @@ fi
 # set SDE to run AVX512 code
 SDE_KNL="sde64 -knl -mix -- "
 
+rm -rf xgemm*
+if [ "${ARCH}" == 'snb' ]; then
+  icc -std=c99 -O2 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
+#  gcc -std=c99 -O2 -mavx -fstrict-aliasing -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
+elif [ "${ARCH}" == 'hsw' ]; then
+  icc -std=c99 -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
+#  gcc -std=c99 -O2 -fstrict-aliasing -mavx2 -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
+elif [ "${ARCH}" == 'knl' ]; then
+  icc -std=c99 -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
+#  gcc -std=c99 -O2 -fstrict-aliasing -,avx512f -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
+else
+  echo "unsupported architecture!"
+fi
+
 N="9"
 #N="1 2 3 4 5 6 7 8 9 10 30 31 60 62"
 for m in ${M}
@@ -69,19 +83,8 @@ do
       lda=$m
       ldb=$k
       ldc=$m 
-      rm -rf xgemm
-      if [ "${ARCH}" == 'snb' ]; then
-        icc -std=c99 -O3 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
-        ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
-      elif [ "${ARCH}" == 'hsw' ]; then
-        icc -std=c99 -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
-        ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
-      elif [ "${ARCH}" == 'knl' ]; then
-        icc -std=c99 -O2 -ansi-alias -xMIC-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmmgen -lrt -o xgemm
-        ${SDE_KNL} ./xgemm $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
-      else
-        echo "unsupported architecture!"
-      fi
+      ./xgemm_icc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+#      ./xgemm_gcc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
     done
   done
 done
