@@ -41,6 +41,16 @@
 #include <mkl.h>
 #endif
 
+#ifndef __INTEL_COMPILER
+/* based on: http://www.mcs.anl.gov/~kazutomo/rdtsc.html */
+static __inline__ unsigned long long _rdtsc(void)
+{
+    unsigned hi, lo;
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+#endif
+
 /*#define STREAM_A_B*/
 #ifdef STREAM_A_B
 #define STREAM_A_B_SIZE 1000
