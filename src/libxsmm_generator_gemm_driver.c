@@ -39,7 +39,7 @@
 LIBXSMM_INLINE void print_help(void) {
   printf("\nwrong usage -> exit!\n\n\n");
   printf("Usage (sparse*dense=dense, dense*sparse=dense):\n");
-  printf("    sparse, sparse_csr\n");
+  printf("    sparse, sparse_csr, sparse_csr_soa\n");
   printf("    filename to append\n");
   printf("    routine name\n");
   printf("    M\n");
@@ -72,7 +72,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    ARCH: noarch, wsm, snb, hsw, knc, knl\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
+  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC, AL2_BL2viaC_CL2\n");
   printf("    PRECISION: SP, DP\n");
   printf("\n\n\n\n");
 }
@@ -136,19 +136,21 @@ int main(int argc, char* argv []) {
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
-  if ( (strcmp(l_type, "sparse")     != 0) && 
-       (strcmp(l_type, "sparse_csr") != 0) && 
-       (strcmp(l_type, "dense")      != 0) &&
-       (strcmp(l_type, "dense_asm")  != 0)    ) {
+  if ( (strcmp(l_type, "sparse")         != 0) && 
+       (strcmp(l_type, "sparse_csr")     != 0) && 
+       (strcmp(l_type, "sparse_csr_soa") != 0) && 
+       (strcmp(l_type, "dense")          != 0) &&
+       (strcmp(l_type, "dense_asm")      != 0)    ) {
     print_help();
     return -1;
   }
 
   /* check for the right number of arguments depending on type */
-  if ( ( (strcmp(l_type, "sparse") == 0) && (argc != 18) )     ||
-       ( (strcmp(l_type, "sparse_csr") == 0) && (argc != 18) ) || 
-       ( (strcmp(l_type, "dense")  == 0) && (argc != 17) )     ||
-       ( (strcmp(l_type, "dense_asm")  == 0) && (argc != 17) )     ) {
+  if ( ( (strcmp(l_type, "sparse") == 0) && (argc != 18) )         ||
+       ( (strcmp(l_type, "sparse_csr") == 0) && (argc != 18) )     ||
+       ( (strcmp(l_type, "sparse_csr_soa") == 0) && (argc != 18) ) || 
+       ( (strcmp(l_type, "dense")  == 0) && (argc != 17) )         ||
+       ( (strcmp(l_type, "dense_asm")  == 0) && (argc != 17) )        ) {
     print_help();
     return -1;
   }
@@ -180,6 +182,9 @@ int main(int argc, char* argv []) {
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+  }
+  else if (strcmp("AL2_BL2viaC_CL2", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;
   }
   else {
     print_help();
@@ -227,7 +232,7 @@ int main(int argc, char* argv []) {
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
 
-  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ) {
+  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 || strcmp(l_type, "sparse_csr_soa") == 0 ) {
     /* read additional paramter for CSC/CSR description */
     l_matrix_file_in = argv[17];
 
@@ -249,6 +254,9 @@ int main(int argc, char* argv []) {
 
     if ( strcmp(l_type, "sparse_csr") == 0 ) {
       l_is_csr = 1;
+    }
+    if ( strcmp(l_type, "sparse_csr_soa") == 0 ) {
+      l_is_csr = 2;
     }
 
     libxsmm_generator_spgemm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in, l_is_csr );

@@ -26,63 +26,29 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_TYPEDEFS_H
-#define LIBXSMM_TYPEDEFS_H
 
-/**
- * Enumerates the available target architectures and instruction
- * set extensions as returned by libxsmm_get_target_archid().
- */
-#define LIBXSMM_TARGET_ARCH_UNKNOWN 0
-#define LIBXSMM_TARGET_ARCH_GENERIC 1
-#define LIBXSMM_X86_GENERIC      1000
-#define LIBXSMM_X86_IMCI         1001
-#define LIBXSMM_X86_SSE3         1002
-#define LIBXSMM_X86_SSE4_1       1003
-#define LIBXSMM_X86_SSE4_2       1004
-#define LIBXSMM_X86_AVX          1005
-#define LIBXSMM_X86_AVX2         1006
-#define LIBXSMM_X86_AVX512_MIC   1007
-#define LIBXSMM_X86_AVX512_CORE  1008
+#ifndef GENERATOR_SPGEMM_CSR_BSPARSE_SOA_H
+#define GENERATOR_SPGEMM_CSR_BSPARSE_SOA_H
 
+#include <libxsmm_generator.h>
 
-/** Flag enumeration which can be binary ORed. */
-typedef enum libxsmm_gemm_flags {
-  /** Transpose matrix A. */
-  LIBXSMM_GEMM_FLAG_TRANS_A = 1,
-  /** Transpose matrix B. */
-  LIBXSMM_GEMM_FLAG_TRANS_B = 2,
-  /** Generate aligned load instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
-  /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 8
-} libxsmm_gemm_flags;
+/* @TODO change int based architecture value */
+void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         io_generated_code,
+                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                               const char*                     i_arch,
+                                               const unsigned int*             i_row_idx,
+                                               const unsigned int*             i_column_idx,
+                                               const double*                   i_values );
 
-/** Enumeration of the available prefetch strategies. */
-typedef enum libxsmm_prefetch_type {
-  /** Automatically select strategy (frontend). */
-  LIBXSMM_PREFETCH_AUTO               = -1,
-  /** No prefetching and no prefetch fn. signature. */
-  LIBXSMM_PREFETCH_NONE               = 0,
-  /** Only function prefetch signature. */
-  LIBXSMM_PREFETCH_SIGONLY            = 1,
-  /** Prefetch PA using accesses to A. */
-  LIBXSMM_PREFETCH_AL2                = 2,
-  /** Prefetch PA (aggressive). */
-  LIBXSMM_PREFETCH_AL2_JPST           = 4,
-  /** Prefetch PB using accesses to C. */
-  LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
-  /** Prefetch A ahead. */
-  LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
-  /** Prefetch PC using accesses to C. */
-  LIBXSMM_PREFETCH_CL2                = 32,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
-  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2 | LIBXSMM_PREFETCH_CL2,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
-} libxsmm_prefetch_type;
+/* @TODO change int based architecture value */
+void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*         io_generated_code,
+                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                      const char*                     i_arch,
+                                                      const unsigned int*             i_row_idx,
+                                                      const unsigned int*             i_column_idx,
+                                                      const double*                   i_values );
 
-#endif /*LIBXSMM_TYPEDEFS_H*/
+#endif /* GENERATOR_SPGEMM_CSR_BSPARSE_SOA_H */
 
