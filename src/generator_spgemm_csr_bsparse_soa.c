@@ -272,10 +272,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 
-#if 0
-
-#endif
-
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  }\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
@@ -284,6 +280,8 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "\n#ifndef NDEBUG\n#ifdef _OPENMP\n#pragma omp atomic\n#endif\nlibxsmm_num_total_flops += %u;\n#endif\n", l_flop_count * (unsigned int)i_xgemm_desc->m);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 #endif
+#else /* TODO: remove this as soon as the above code goes into production */
+  LIBXSMM_UNUSED(l_code_length); LIBXSMM_UNUSED(l_max_code_length); LIBXSMM_UNUSED(l_new_code);
 #endif
 }
 
