@@ -1230,7 +1230,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_so
   union {
     libxsmm_xmmfunction xmm;
     /*const*/void* pmm;
-  } l_code = { 0 };
+  } l_code = { {0} };
   libxsmm_generated_code l_generated_code;
 
   /* some checks */
