@@ -78,15 +78,6 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const f
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 
-/** Code generation routine for CSR format which multiplies a dense SOA matrices (each element holds a 
-    SIMD-width wide vector) with a sparse matrix 
-    There is no code cache, so user code has to manage the code pointers. Additionally, code memory 
-    cannot be freed! */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_jit_dcsr_soa( const               libxsmm_gemm_descriptor* descriptor,
-                                                                                const unsigned int* i_row_ptr,
-                                                                                const unsigned int* i_column_idx,
-                                                                                const double*       i_values );
-
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_smmfunction smm;
@@ -127,6 +118,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
+
+/**
+ * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
+ * wide vector) and a sparse matrix. There is no code cache, and user code has to manage the code pointers.
+ * Call libxsmm_destroy in order to deallocate the JIT'ted code.
+ */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+
+/** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
