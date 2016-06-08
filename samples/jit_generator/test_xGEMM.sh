@@ -27,6 +27,7 @@
 #
 MAKE=${MAKE:-make}
 
+REPS=100000
 M="4 10 20 35 56 84"
 M="4 12 20 36 56 84"
 #M="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100"
@@ -35,8 +36,8 @@ M="4 12 20 36 56 84"
 
 cd ./../../
 
-#${MAKE} realclean
-${MAKE} generator
+${MAKE} realclean
+${MAKE}
 
 #exit if compiler fails
 rc=$?; if [ $rc != 0 ]; then exit $rc; fi
@@ -60,7 +61,7 @@ if [ "${ARCH}" == 'snb' ]; then
   icc -std=c99 -O2 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
 #  gcc -std=c99 -O2 -mavx -fstrict-aliasing -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
 elif [ "${ARCH}" == 'hsw' ]; then
-  icc -std=c99 -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
+  icc -std=c99 -O2 -ansi-alias -xCORE-AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
 #  gcc -std=c99 -O2 -fstrict-aliasing -mavx2 -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
 elif [ "${ARCH}" == 'knl' ]; then
   icc -std=c99 -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
@@ -83,8 +84,8 @@ do
       lda=$m
       ldb=$k
       ldc=$m 
-      ./xgemm_icc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
-#      ./xgemm_gcc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}
+      ./xgemm_icc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
+#      ./xgemm_gcc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
     done
   done
 done
