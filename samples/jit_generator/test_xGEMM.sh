@@ -38,6 +38,7 @@ cd ./../../
 
 ${MAKE} realclean
 ${MAKE}
+#${MAKE} CC=gcc CXX=g++ FC=gfortran
 
 #exit if compiler fails
 rc=$?; if [ $rc != 0 ]; then exit $rc; fi
@@ -65,7 +66,7 @@ elif [ "${ARCH}" == 'hsw' ]; then
 #  gcc -std=c99 -O2 -fstrict-aliasing -mavx2 -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
 elif [ "${ARCH}" == 'knl' ]; then
   icc -std=c99 -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
-#  gcc -std=c99 -O2 -fstrict-aliasing -,avx512f -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
+#  gcc -std=c99 -O2 -fstrict-aliasing -mavx512f -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
 else
   echo "unsupported architecture!"
 fi
