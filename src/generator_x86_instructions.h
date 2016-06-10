@@ -152,6 +152,33 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_2,
                                               const unsigned int      i_shuffle_operand );
 
+/**
+ * Generates shuffle instructions with 2 or 3 vector registers, memory operands are not supported as first operand
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_vmove_instr actual operation variant (gather/scatter and single/double)
+ * @param i_vector_name the vector register name prefix (x,y or z)
+ * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
+ * @param i_vec_reg_idx the index vector registers (ymm0-15 AVX2) (zmm0-zmm32 AVX512)
+ * @param i_scale the scaling of the indecies in i_vec_reg_idx
+ * @param i_displacement the offset to the base address
+ * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_mask_reg_number the mask register (ignored when using AVX2)
+ * @param i_is_gather "true" generate a gather instruction, "false" generator a scatter instruction 
+ */
+void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_instruction_set,
+                                                const unsigned int      i_vmove_instr,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_vec_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const unsigned int      i_vec_reg_number,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_gather );
+
 /* @TODO check if we can merge this alu_imm */
 /**
  * Generates prefetch instructions with displacements, SIB addressing is not
@@ -225,6 +252,21 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
                                         const unsigned int      i_mask_reg_number );
+
+/**
+ * Allows for mask move instructions in AVX512
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_mask_instr actual mask compute instruction instruction
+ * @param i_mask_reg_number_0 the first operand register number (att syntax) (k1=1...k7=7)
+ * @param i_mask_reg_number_1 the second operand register number (att syntax) (k1=1...k7=7)
+ * @param i_mask_reg_number_2 the third operand register number (att syntax) (k1=1...k7=7)
+ */
+void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_mask_instr,
+                                               const unsigned int      i_mask_reg_number_0,
+                                               const unsigned int      i_mask_reg_number_1,
+                                               const unsigned int      i_mask_reg_number_2 );
 
 /**
  * Generates regular all instructions with immediates

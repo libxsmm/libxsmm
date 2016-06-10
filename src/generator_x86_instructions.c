@@ -1430,6 +1430,26 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
   }
 }
 
+void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,
+                                                const unsigned int      i_instruction_set,
+                                                const unsigned int      i_vmove_instr,
+                                                const char              i_vector_name,
+                                                const unsigned int      i_gp_reg_base,
+                                                const unsigned int      i_vec_reg_idx,
+                                                const unsigned int      i_scale,
+                                                const int               i_displacement,
+                                                const unsigned int      i_vec_reg_number,
+                                                const unsigned int      i_mask_reg_number,
+                                                const unsigned int      i_is_gather ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented!\n");
+    exit(-1);
+  }
+}
+
 void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_prefetch_instr,
                                        const unsigned int      i_gp_reg_base,
@@ -1926,6 +1946,20 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%s%c, %%k%u\n", l_instr_name, l_gp_reg_name, l_prefix, i_mask_reg_number );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
+                                               const unsigned int      i_mask_instr,
+                                               const unsigned int      i_mask_reg_number_0,
+                                               const unsigned int      i_mask_reg_number_1,
+                                               const unsigned int      i_mask_reg_number_2 ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    /* @TODO-GREG call encoding here */
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_mask_compute_reg yet needs to be implemented!\n");
+    exit(-1);
   }
 }
 
