@@ -1445,8 +1445,31 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
-    fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented!\n");
-    exit(-1);
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_instr_name[16];
+    char l_gp_reg_base_name[4];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
+    libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
+
+    if ( i_is_gather != 0 ) {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for scatters!\n");
+      exit(-1);
+    } else {
+      if ( i_instruction_set == LIBXSMM_X86_AVX512_MIC || i_instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+        if ( io_generated_code->code_type == 0 ) {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%zmm%u,%u), %%%%zmm%u%%{%%%%k%u%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number);
+        } else {
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%zmm%u,%u), %%zmm%u{%%k%u}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number );
+      }
+        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      } else {
+        fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for non-AVX512F!\n");
+        exit(-1);
+      }
+    }
   }
 }
 
@@ -1951,15 +1974,26 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 
 void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_mask_instr,
-                                               const unsigned int      i_mask_reg_number_0,
-                                               const unsigned int      i_mask_reg_number_1,
-                                               const unsigned int      i_mask_reg_number_2 ) {
+                                               const unsigned int      i_mask_reg_number_src_0,
+                                               const unsigned int      i_mask_reg_number_src_1,
+                                               const unsigned int      i_mask_reg_number_dest ) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     /* @TODO-GREG call encoding here */
   } else {
-    fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_mask_compute_reg yet needs to be implemented!\n");
-    exit(-1);
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_instr_name[16];
+
+    libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%k%u, %%%%k%u, %%%%k%u\\n\\t\"\n", l_instr_name, i_mask_reg_number_src_0, i_mask_reg_number_src_1, i_mask_reg_number_dest );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%k%u, %%k%u, %%k%u\n", l_instr_name, i_mask_reg_number_src_0, i_mask_reg_number_src_1, i_mask_reg_number_dest );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
 

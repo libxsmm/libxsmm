@@ -391,6 +391,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_KMOVW:
       libxsmm_strncpy(o_instr_name, "kmovw", i_instr_name_max_length, 5 );
       break;
+    case LIBXSMM_X86_INSTR_KXNORW:
+      libxsmm_strncpy(o_instr_name, "kxnorw", i_instr_name_max_length, 6 );
+      break;
     /* default, we didn't had a match */
     default:
       fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);

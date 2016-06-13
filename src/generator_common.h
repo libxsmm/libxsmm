@@ -98,6 +98,16 @@
 #define LIBXSMM_X86_INSTR_VPACKSTORELPS  10023
 #define LIBXSMM_X86_INSTR_VPACKSTOREHPS  10024
 
+/* Gather/Scatter instructions */
+#define LIBXSMM_X86_INSTR_VGATHERDPS     11000
+#define LIBXSMM_X86_INSTR_VGATHERDPD     11001
+#define LIBXSMM_X86_INSTR_VGATHERQPS     11002
+#define LIBXSMM_X86_INSTR_VGATHERQPD     11003
+#define LIBXSMM_X86_INSTR_VSCATTERDPS    11004
+#define LIBXSMM_X86_INSTR_VSCATTERDPD    11005
+#define LIBXSMM_X86_INSTR_VSCATTERQPS    11006
+#define LIBXSMM_X86_INSTR_VSCATTERQPD    11007
+
 /* Vector compute instructions */
 /* AVX1,AVX2,AVX512 */
 #define LIBXSMM_X86_INSTR_VXORPD         20000
@@ -164,6 +174,9 @@
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
 #define LIBXSMM_X86_INSTR_KMOVW          40001
+
+/* Mask compute instructions */
+#define LIBXSMM_X86_INSTR_KXNORW         45000
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL              90000
