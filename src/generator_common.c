@@ -277,6 +277,32 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VPREFETCH0:
       libxsmm_strncpy(o_instr_name, "vprefetch0", i_instr_name_max_length, 10 );
       break;
+    /* Gather/scatter single precision */
+    case LIBXSMM_X86_INSTR_VGATHERDPS:
+      libxsmm_strncpy(o_instr_name, "vgatherdps", i_instr_name_max_length, 10 );
+      break;
+    case LIBXSMM_X86_INSTR_VGATHERQPS:
+      libxsmm_strncpy(o_instr_name, "vgatherqps", i_instr_name_max_length, 10 );
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERDPS:
+      libxsmm_strncpy(o_instr_name, "vscatterdps", i_instr_name_max_length, 11 );
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERQPS:
+      libxsmm_strncpy(o_instr_name, "vscatterqps", i_instr_name_max_length, 11 );
+      break;
+    /* Gather/scatter double precision */
+    case LIBXSMM_X86_INSTR_VGATHERDPD:
+      libxsmm_strncpy(o_instr_name, "vgatherdpd", i_instr_name_max_length, 10 );
+      break;
+    case LIBXSMM_X86_INSTR_VGATHERQPD:
+      libxsmm_strncpy(o_instr_name, "vgatherqpd", i_instr_name_max_length, 10 );
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERDPD:
+      libxsmm_strncpy(o_instr_name, "vscatterdpd", i_instr_name_max_length, 11 );
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERQPD:
+      libxsmm_strncpy(o_instr_name, "vscatterqpd", i_instr_name_max_length, 11 );
+      break;
     /* AVX double precision */
     case LIBXSMM_X86_INSTR_VXORPD:
       libxsmm_strncpy(o_instr_name, "vxorpd", i_instr_name_max_length, 6 );
@@ -481,6 +507,32 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       break;
     case LIBXSMM_X86_INSTR_VPACKSTOREHPS:
       l_return = 1;
+      break;
+    /* Gather/Scatter single precision */
+    case LIBXSMM_X86_INSTR_VGATHERDPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VGATHERQPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERDPS:
+      l_return = 1;
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERQPS:
+      l_return = 1;
+      break;
+    /* Gather/Scatter double precision */
+    case LIBXSMM_X86_INSTR_VGATHERDPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VGATHERQPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERDPD:
+      l_return = 0;
+      break;
+    case LIBXSMM_X86_INSTR_VSCATTERQPD:
+      l_return = 0;
       break;
     /* AVX double precision */
     case LIBXSMM_X86_INSTR_VXORPD:
