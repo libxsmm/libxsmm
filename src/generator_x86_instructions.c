@@ -1459,7 +1459,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
        case LIBXSMM_X86_INSTR_VGATHERDPS:
           break;
        default:
-          fprintf(stderr,"libxsmm_x86_instruction_vec_move_gathscat: Strange kmov instruction");
+          fprintf(stderr,"libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction");
           exit(-1);
           break;
     }
