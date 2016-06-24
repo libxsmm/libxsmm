@@ -2057,9 +2057,9 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
           break;
     }
     buf[i++] = 0xc5;
-    buf[i++] = 0xfc - i_mask_number_src_1*8;
+    buf[i++] = 0xfc - i_mask_reg_number_src_1*8;
     buf[i++] = 0x46;
-    buf[i++] = 0xc0 + i_mask_number_src_0 + i_mask_number_dest*8;
+    buf[i++] = 0xc0 + i_mask_reg_number_src_0 + i_mask_reg_number_dest*8;
 
     io_generated_code->code_size = i;
     /* *loc = i; */
