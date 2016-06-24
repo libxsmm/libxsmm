@@ -1449,6 +1449,8 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
     /* unsigned int l_maxsize = 1024; */
+    int l_sizereg;
+    int l_instr_offset;
 
     if ( l_maxsize - i < 20 )
     {
@@ -1457,6 +1459,12 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     }
     switch ( i_vmove_instr ) {
        case LIBXSMM_X86_INSTR_VGATHERDPS:
+          l_sizereg = 4;
+          l_instr_offset = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VGATHERDPD:
+          l_sizereg = 8;
+          l_instr_offset = 0x80;
           break;
        default:
           fprintf(stderr,"libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction");
@@ -1491,12 +1499,12 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
 
     buf[i++] = 0x62;
     buf[i++] = 0xf2 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10;
-    buf[i++] = 0x7d;
+    buf[i++] = 0x7d + l_instr_offset;
     buf[i++] = 0x48 - l_2or3grp0 * 0x08 + i_mask_reg_number;
     buf[i++] = 0x92;
     buf[i++] = 0x04 + l_vecval1*8;
     buf[i++] = 0x00 + l_sca + l_regbas0 + l_vecval0*8;
-    i += add_offset ( 5, 7, i_displacement, 0, 4, buf );
+    i += add_offset ( 5, 7, i_displacement, 0, l_sizereg, buf );
 
     io_generated_code->code_size = i;
     /* *loc = i; */
