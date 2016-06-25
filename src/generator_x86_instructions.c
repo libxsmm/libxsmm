@@ -1454,7 +1454,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
-    if ( i_is_gather != 0 ) {
+    if ( i_is_gather == 0 ) {
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for scatters!\n");
       exit(-1);
     } else {
