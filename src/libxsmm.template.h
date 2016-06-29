@@ -130,6 +130,28 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_so
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code);
 
+/** Transpose a matrix explicitly (out-of-place form). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
+
+/** Transpose a matrix explicitly (out-of-place form; single-precision). */
+LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+#if defined(LIBXSMM_BUILD)
+;
+#else
+{ libxsmm_transpose_oop(out, in, sizeof(float), m, n, ld, ldo); }
+#endif
+
+/** Transpose a matrix explicitly (out-of-place form; double-precision). */
+LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+#if defined(LIBXSMM_BUILD)
+;
+#else
+{ libxsmm_transpose_oop(out, in, sizeof(double), m, n, ld, ldo); }
+#endif
+
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -285,6 +307,20 @@ public:
     LIBXSMM_MMCALL_PRF(m_function, a, b, c, pa, pb, pc);
   }
 };
+
+/** Transpose a matrix explicitly (out-of-place form). */
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_transpose(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
+  libxsmm_transpose_oop(out, in, sizeof(T), m, n, ld, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_transpose(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
+  libxsmm_transpose(out, in, m, n, ld, ld);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_transpose(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  libxsmm_transpose(out, in, m, n, LIBXSMM_LD(m, n));
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_transpose(T* out, const T* in, libxsmm_blasint n) {
+  libxsmm_transpose(out, in, n, n);
+}
 
 /** Dispatched general dense matrix multiplication (single-precision). */
 inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
