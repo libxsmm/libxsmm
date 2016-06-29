@@ -17,14 +17,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void* out, const 
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   const libxsmm_blasint m = m1 - m0, n = n1 - n0;
+  libxsmm_blasint i, j;
 
   if (m * n * typesize <= 16384) {
     switch(typesize) {
       case 1: {
         const char *const a = (const char*)in;
         char *const b = (char*)out;
-        for (libxsmm_blasint i = m0; i < m1; ++i) {
-          for (libxsmm_blasint j = n0; j < n1; ++j) {
+        for (i = m0; i < m1; ++i) {
+          for (j = n0; j < n1; ++j) {
             b[i*ldo+j] = a[j*ld+i];
           }
         }
@@ -32,8 +33,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void* out, const 
       case 2: {
         const short *const a = (const short*)in;
         short *const b = (short*)out;
-        for (libxsmm_blasint i = m0; i < m1; ++i) {
-          for (libxsmm_blasint j = n0; j < n1; ++j) {
+        for (i = m0; i < m1; ++i) {
+          for (j = n0; j < n1; ++j) {
             b[i*ldo+j] = a[j*ld+i];
           }
         }
@@ -41,8 +42,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void* out, const 
       case 4: {
         const float *const a = (const float*)in;
         float *const b = (float*)out;
-        for (libxsmm_blasint i = m0; i < m1; ++i) {
-          for (libxsmm_blasint j = n0; j < n1; ++j) {
+        for (i = m0; i < m1; ++i) {
+          for (j = n0; j < n1; ++j) {
             b[i*ldo+j] = a[j*ld+i];
           }
         }
@@ -50,8 +51,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void* out, const 
       case 8: {
         const double *const a = (const double*)in;
         double *const b = (double*)out;
-        for (libxsmm_blasint i = m0; i < m1; ++i) {
-          for (libxsmm_blasint j = n0; j < n1; ++j) {
+        for (i = m0; i < m1; ++i) {
+          for (j = n0; j < n1; ++j) {
             b[i*ldo+j] = a[j*ld+i];
           }
         }
