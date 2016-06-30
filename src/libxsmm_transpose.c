@@ -118,13 +118,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-  if (ld < LIBXSMM_LD(m, n) && ldo < LIBXSMM_LD(n, m)) {
+  if (ld < m && ldo < n) {
     fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
   }
-  else if (ld < LIBXSMM_LD(m, n)) {
+  else if (ld < m) {
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
   }
-  else if (ldo < LIBXSMM_LD(n, m)) {
+  else if (ldo < n) {
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
