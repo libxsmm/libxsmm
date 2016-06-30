@@ -49,23 +49,21 @@ if __name__ == "__main__":
         else: offload = 0
         if (5 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) 
         else: alignment = 64
-        if (6 < argc): row_major = int(sys.argv[6]) 
-        else: row_major = 0
-        if (7 < argc): prefetch = int(sys.argv[7])
+        if (6 < argc): prefetch = int(sys.argv[6])
         else: prefetch = 0
-        if (8 < argc): threshold = int(sys.argv[8])
+        if (7 < argc): threshold = int(sys.argv[7])
         else: threshold = 0
-        if (9 < argc): sync = int(sys.argv[9])
+        if (8 < argc): sync = int(sys.argv[8])
         else: sync = 0
-        if (10 < argc): jit = int(sys.argv[10])
+        if (9 < argc): jit = int(sys.argv[9])
         else: jit = 0
-        if (11 < argc): flags = int(sys.argv[11])
+        if (10 < argc): flags = int(sys.argv[10])
         else: flags = 0
-        if (12 < argc): alpha = int(sys.argv[12])
+        if (11 < argc): alpha = int(sys.argv[11])
         else: alpha = 1
-        if (13 < argc): beta = int(sys.argv[13])
+        if (12 < argc): beta = int(sys.argv[12])
         else: beta = 1
-        if (14 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], threshold))
+        if (13 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], threshold))
         else: mnklist = list()
 
         template = Template(open(filename, "r").read())
@@ -93,8 +91,6 @@ if __name__ == "__main__":
             "UPDATE":     update, \
             "PATCH":      patch, \
             "ALIGNMENT":  alignment, \
-            "ROW_MAJOR":  [0, 1][0!=row_major], \
-            "COL_MAJOR":  [1, 0][0!=row_major], \
             "PREFETCH":   [-1, prefetch][0<=prefetch], \
             "MAX_MNK":    maxmnk, \
             "MAX_M":      [maxdim, maxm][avgm<maxm], \

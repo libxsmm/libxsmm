@@ -318,7 +318,7 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 	$(info ================================================================================)
@@ -365,13 +365,13 @@ $(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
 	fi
 ifeq (0,$(OFFLOAD))
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
 	sed '/ATTRIBUTES OFFLOAD:MIC/d' > $@
 else
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(ROW_MAJOR) $(PREFETCH_TYPE) \
+		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 endif

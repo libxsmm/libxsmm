@@ -17,7 +17,6 @@
 
 int main()
 {
-#if 0 != LIBXSMM_COL_MAJOR
   const libxsmm_blasint m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
   REAL_TYPE a[K*LDA], b[N*LDB], c[N*LDC], d[N*LDC];
   const REAL_TYPE alpha = 1, beta = 1;
@@ -64,9 +63,5 @@ int main()
   }
 
   return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
-#else
-  fprintf(stderr, "Please rebuild LIBXSMM with ROW_MAJOR=0\n");
-  return EXIT_SUCCESS;
-#endif
 }
 

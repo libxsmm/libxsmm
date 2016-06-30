@@ -46,8 +46,6 @@
 
 /** Parameters the library and static kernels were built for. */
 #define LIBXSMM_ALIGNMENT $ALIGNMENT
-#define LIBXSMM_ROW_MAJOR $ROW_MAJOR
-#define LIBXSMM_COL_MAJOR $COL_MAJOR
 #define LIBXSMM_PREFETCH $PREFETCH
 #define LIBXSMM_MAX_MNK $MAX_MNK
 #define LIBXSMM_MAX_M $MAX_M

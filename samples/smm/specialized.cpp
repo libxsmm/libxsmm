@@ -114,9 +114,8 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i (%s, %s) size=%i memory=%.f MB\n\n", m, n, k,
-        0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
-        s, 1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
+      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.f MB (%s)\n\n", m, n, k, s,
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       const libxsmm_mmfunction<T> xmm(m, n, k);
       if (!xmm) {

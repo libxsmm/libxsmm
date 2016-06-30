@@ -38,10 +38,8 @@ int main(int argc, char* argv[])
   libxsmm_blasint i, j;
   double duration;
 
-  fprintf(stdout, "m=%i n=%i lda=%i ldb=%i (%s, %s) memory=%.f MB\n", m, n, lda, ldb,
-    0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major",
-    8 == sizeof(REAL_TYPE) ? "DP" : "SP",
-    1.0 * size / (1 << 20));
+  fprintf(stdout, "m=%i n=%i lda=%i ldb=%i memory=%.f MB (%s)\n", m, n, lda, ldb,
+    1.0 * size / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP");
 
   for (j = 0; j < LIBXSMM_LD(m, n); ++j) {
     for (i = 0; i < LIBXSMM_LD(n, m); ++i) {
