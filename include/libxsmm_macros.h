@@ -193,7 +193,7 @@
 # if defined(_MSC_VER)
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 # elif (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
+#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0);
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION)
 # endif
