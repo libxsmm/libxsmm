@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
   for (i = 0; i < n; ++i) {
     for (j = 0; j < m; ++j) {
-      if (0 < fabs(a[j*lda+i] - initial_value(i, j, lda))) {
+      if (0 < fabs(a[i*lda+j] - initial_value(i, j, lda))) {
         i = n + 1;
         break;
       }
