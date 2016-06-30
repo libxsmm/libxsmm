@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
     fprintf(stderr, "Validation failed!\n");
   }
 
-#if defined(__MKL)
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   {
     double mkl_duration;
     start = libxsmm_timer_tick();
