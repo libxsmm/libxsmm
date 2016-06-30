@@ -130,10 +130,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
 #endif
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   if (8 == typesize) {
-    mkl_domatcopy)('C', 'T', m, n, 1, (const double*)in, ld, (double*)out, ldo);
+    mkl_domatcopy('C', 'T', m, n, 1, (const double*)in, ld, (double*)out, ldo);
   }
   else if (4 == typesize) {
-    mkl_somatcopy)('C', 'T', m, n, 1, (const float*)in, ld, (float*)out, ldo);
+    mkl_somatcopy('C', 'T', m, n, 1, (const float*)in, ld, (float*)out, ldo);
   }
   else
 #endif
