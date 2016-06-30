@@ -96,12 +96,6 @@ make clean
 make realclean
 ```
 
-The library can be configured to accept row-major or column-major (default) order matrices. The [row-major storage scheme](https://github.com/hfp/libxsmm/wiki/Q&A#what-is-the-purpose-of-row_major-vs-col_major) is accomplished by setting ROW_MAJOR=1 (0 for column-major, and row-major otherwise):
-
-```
-make ROW_MAJOR=1
-```
-
 By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically specialize for particular matrix sizes (M, N, and K values):
 
 ```
