@@ -130,11 +130,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_so
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code);
 
-/** Transpose a matrix explicitly (out-of-place form). */
+/** Transpose a matrix (out-of-place form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
-/** Transpose a matrix explicitly (out-of-place form; single-precision). */
+/** Transpose a matrix (out-of-place form, single-precision). */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
@@ -143,7 +143,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* ou
 { libxsmm_transpose_oop(out, in, sizeof(float), m, n, ld, ldo); }
 #endif
 
-/** Transpose a matrix explicitly (out-of-place form; double-precision). */
+/** Transpose a matrix (out-of-place form, double-precision). */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
@@ -308,7 +308,7 @@ public:
   }
 };
 
-/** Transpose a matrix explicitly (out-of-place form). */
+/** Transpose a matrix (out-of-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_transpose(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
   libxsmm_transpose_oop(out, in, sizeof(T), m, n, ld, ldo);
 }
@@ -420,3 +420,4 @@ inline LIBXSMM_RETARGETABLE void libxsmm_blas_gemm(const char* transa, const cha
 
 #endif /*__cplusplus*/
 #endif /*LIBXSMM_H*/
+
