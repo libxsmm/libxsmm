@@ -28,22 +28,22 @@ int main(int argc, char* argv[])
 {
   const libxsmm_blasint m = 1 < argc ? atoi(argv[1]) : 4096;
   const libxsmm_blasint n = 2 < argc ? atoi(argv[2]) : m;
-  const libxsmm_blasint lda = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, LIBXSMM_LD(n, m));
-  const libxsmm_blasint ldb = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, LIBXSMM_LD(m, n));
+  const libxsmm_blasint lda = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, m);
+  const libxsmm_blasint ldb = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, n);
 
-  REAL_TYPE *const a = (REAL_TYPE*)malloc(lda * LIBXSMM_LD(m, n) * sizeof(REAL_TYPE));
-  REAL_TYPE *const b = (REAL_TYPE*)malloc(ldb * LIBXSMM_LD(n, m) * sizeof(REAL_TYPE));
+  REAL_TYPE *const a = (REAL_TYPE*)malloc(lda * n * sizeof(REAL_TYPE));
+  REAL_TYPE *const b = (REAL_TYPE*)malloc(ldb * m * sizeof(REAL_TYPE));
   const unsigned int size = m * n * sizeof(REAL_TYPE);
   unsigned long long start;
   libxsmm_blasint i, j;
   double duration;
 
-  fprintf(stdout, "m=%i n=%i lda=%i ldb=%i memory=%.f MB (%s)\n", m, n, lda, ldb,
+  fprintf(stdout, "m=%i n=%i lda=%i ldb=%i size=%.fMB (%s)\n", m, n, lda, ldb,
     1.0 * size / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP");
 
-  for (j = 0; j < LIBXSMM_LD(m, n); ++j) {
-    for (i = 0; i < LIBXSMM_LD(n, m); ++i) {
-      a[j*lda+i] = initial_value(i, j, lda);
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
+      a[i*lda+j] = initial_value(i, j, lda);
     }
   }
 
@@ -52,16 +52,16 @@ int main(int argc, char* argv[])
   libxsmm_transpose_oop(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
-  for (j = 0; j < LIBXSMM_LD(m, n); ++j) {
-    for (i = 0; i < LIBXSMM_LD(n, m); ++i) {
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
       if (0 < fabs(a[j*lda+i] - initial_value(i, j, lda))) {
-        j = LIBXSMM_LD(m, n) + 1;
+        i = n + 1;
         break;
       }
     }
   }
 
-  if (j <= LIBXSMM_LD(m, n)) {
+  if (i <= n) {
     if (0 < duration) {
       fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size / (duration * (1 << 30)));
     }
@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
   {
     double mkl_duration;
     start = libxsmm_timer_tick();
-    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(LIBXSMM_LD('R', 'C'), 'T', m, n, 1, a, lda, b, ldb);
-    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(LIBXSMM_LD('R', 'C'), 'T', n, m, 1, b, ldb, a, lda);
+    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1, a, lda, b, ldb);
+    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', n, m, 1, b, ldb, a, lda);
     mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     if (0 < mkl_duration) {
       fprintf(stdout, "\tMKL: %.1fx\n", duration / mkl_duration);

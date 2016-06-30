@@ -281,11 +281,10 @@
           PURE SUBROUTINE libxsmm_transpose_oop(output,                 &
      &    input, typesize, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-            TYPE(C_PTR), INTENT(OUT) :: output
-            TYPE(C_PTR), INTENT(IN), VALUE :: input
-            INTEGER(C_INT), INTENT(IN), VALUE :: typesize
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
+            TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+            INTEGER(C_INT), INTENT(IN), VALUE :: typesize
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, single-precision).
