@@ -142,3 +142,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
   }
 }
 
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmm_transpose_oop(out, in, sizeof(float), m, n, ld, ldo);
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmm_transpose_oop(out, in, sizeof(double), m, n, ld, ldo);
+}
+
