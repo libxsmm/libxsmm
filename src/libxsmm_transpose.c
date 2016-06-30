@@ -132,6 +132,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
-  inernal_transpose_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
+  inernal_transpose_oop(out, in, typesize, 0, LIBXSMM_LD(m, n), 0, LIBXSMM_LD(n, m), ld, ldo);
 }
 

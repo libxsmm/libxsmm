@@ -77,8 +77,8 @@ int main(int argc, char* argv[])
   {
     double mkl_duration;
     start = libxsmm_timer_tick();
-    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('R', 'T', m, n, 1, a, lda, b, ldb);
-    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('R', 'T', n, m, 1, b, ldb, a, lda);
+    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(LIBXSMM_LD('R', 'C'), 'T', m, n, 1, a, lda, b, ldb);
+    LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(LIBXSMM_LD('R', 'C'), 'T', n, m, 1, b, ldb, a, lda);
     mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     if (0 < mkl_duration) {
       fprintf(stdout, "\tMKL: %.1fx\n", duration / mkl_duration);
