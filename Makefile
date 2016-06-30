@@ -124,6 +124,10 @@ endif
 # always agnostic wrt the threading runtime
 OMP ?= 0
 
+ifneq (,$(MKL))
+  BLAS = $(MKL)
+endif
+
 BLAS_WARNING ?= 0
 ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(OS))
