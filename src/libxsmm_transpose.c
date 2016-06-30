@@ -3,10 +3,13 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <stdio.h>
 #if !defined(NDEBUG)
 # include <assert.h>
 #endif
-#include <stdio.h>
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl_trans.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -125,6 +128,17 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
-  inernal_transpose_oop(out, in, typesize, 0, LIBXSMM_LD(m, n), 0, LIBXSMM_LD(n, m), ld, ldo);
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  if (8 == typesize) {
+    mkl_domatcopy)(LIBXSMM_LD('R', 'C'), 'T', m, n, 1, (const double*)in, lda, (double*)out, ldb);
+  }
+  else if (4 == typesize) {
+    mkl_somatcopy)(LIBXSMM_LD('R', 'C'), 'T', m, n, 1, (const float*)in, lda, (float*)out, ldb);
+  }
+  else
+#endif
+  {
+    inernal_transpose_oop(out, in, typesize, 0, LIBXSMM_LD(m, n), 0, LIBXSMM_LD(n, m), ld, ldo);
+  }
 }
 
