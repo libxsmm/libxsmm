@@ -132,8 +132,8 @@ int main(int argc, char* argv[])
 # endif
 #endif
     {
-#if defined(MKL_ENABLE_AVX512_MIC)
-      mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#if defined(MKL_ENABLE_AVX512)
+      mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
       // initialize LIBXSMM
       libxsmm_init();

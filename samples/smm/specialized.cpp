@@ -108,8 +108,8 @@ int main(int argc, char* argv[])
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
 #endif
     {
-#if defined(MKL_ENABLE_AVX512_MIC)
-      mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#if defined(MKL_ENABLE_AVX512)
+      mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
       // initialize LIBXSMM
       libxsmm_init();
