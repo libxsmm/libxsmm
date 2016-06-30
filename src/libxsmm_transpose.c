@@ -23,8 +23,8 @@
 
 
 /* Based on cache-oblivious scheme as published by Frigo et.al. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+  unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   const libxsmm_blasint m = m1 - m0, n = n1 - n0;
