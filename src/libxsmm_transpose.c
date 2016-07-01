@@ -36,8 +36,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
         const char *const a = (const char*)in;
         char *const b = (char*)out;
         for (i = n0; i < n1; ++i) {
-#if 0 < LIBXSMM_TRANSPOSE_N
+#if (0 < LIBXSMM_TRANSPOSE_N)
           LIBXSMM_ASSUME(m <= LIBXSMM_TRANSPOSE_N)
+          LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_LOOP_COUNT(LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N)
 #endif
           for (j = 0; j < m; ++j) {
@@ -50,8 +51,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
         const short *const a = (const short*)in;
         short *const b = (short*)out;
         for (i = n0; i < n1; ++i) {
-#if 0 < LIBXSMM_TRANSPOSE_N
+#if (0 < LIBXSMM_TRANSPOSE_N)
           LIBXSMM_ASSUME(m <= LIBXSMM_TRANSPOSE_N)
+          LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_LOOP_COUNT(LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N)
 #endif
           for (j = 0; j < m; ++j) {
@@ -64,8 +66,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
         const float *const a = (const float*)in;
         float *const b = (float*)out;
         for (i = n0; i < n1; ++i) {
-#if 0 < LIBXSMM_TRANSPOSE_N
+#if (0 < LIBXSMM_TRANSPOSE_N)
           LIBXSMM_ASSUME(m <= LIBXSMM_TRANSPOSE_N)
+          LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_LOOP_COUNT(LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N)
 #endif
           for (j = 0; j < m; ++j) {
@@ -78,8 +81,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
         const double *const a = (const double*)in;
         double *const b = (double*)out;
         for (i = n0; i < n1; ++i) {
-#if 0 < LIBXSMM_TRANSPOSE_N
+#if (0 < LIBXSMM_TRANSPOSE_N)
           LIBXSMM_ASSUME(m <= LIBXSMM_TRANSPOSE_N)
+          LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_LOOP_COUNT(LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N, LIBXSMM_TRANSPOSE_N)
 #endif
           for (j = 0; j < m; ++j) {
@@ -97,7 +101,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
     inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
   }
   else {
-#if 0 < LIBXSMM_TRANSPOSE_N
+#if (0 < LIBXSMM_TRANSPOSE_N)
     if (LIBXSMM_TRANSPOSE_N < m) {
       const libxsmm_blasint mi = m0 + LIBXSMM_TRANSPOSE_N;
       inernal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
