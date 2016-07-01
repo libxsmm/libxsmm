@@ -190,7 +190,7 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
+# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N);
 # define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION);
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
