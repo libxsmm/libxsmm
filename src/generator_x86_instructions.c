@@ -1496,6 +1496,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     }
 
     int l_regbas0 = i_gp_reg_base % 8;
+    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
     int l_vecval0 = i_vec_reg_number % 8;
     int l_vecgrp0 = i_vec_reg_number / 8;
     int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
@@ -1511,7 +1512,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     else if (i_scale==8) l_sca=0xc0;
 
     buf[i++] = 0x62;
-    buf[i++] = 0xf2 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10;
+    buf[i++] = 0xf2 - l_gp8 * 0x20 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10;
     buf[i++] = 0x7d + l_instr_offset;
     buf[i++] = 0x48 - l_2or3grp0 * 0x08 + i_mask_reg_number;
     buf[i++] = 0x92 + l_instr_offset2;
