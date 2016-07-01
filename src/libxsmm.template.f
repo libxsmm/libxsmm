@@ -68,6 +68,10 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_SYNC = $SYNC
         INTEGER(C_INT), PARAMETER :: LIBXSMM_JIT = $JIT
 
+        ! Parameters supplied for backward compatibility (deprecated).
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = 0
+
         ! Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND =             &
      &    MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
