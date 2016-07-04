@@ -44,7 +44,7 @@
 }
 
 
-/* Based on cache-oblivious scheme as published by Frigo et.al. */
+/* Based on cache-oblivious scheme as published by Frigo et.al. Further optimization for compile-time bounded loops. */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
@@ -143,5 +143,19 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, c
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   libxsmm_transpose_oop(out, in, sizeof(double), m, n, ld, ldo);
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inp,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+{
+  libxsmm_transpose_inp(inp, sizeof(float), m, n, ld);
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* inp,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+{
+  libxsmm_transpose_inp(inp, sizeof(double), m, n, ld);
 }
 
