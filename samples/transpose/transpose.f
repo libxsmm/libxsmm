@@ -42,58 +42,71 @@ PROGRAM transpose
   INTEGER(8) :: start
 
   CHARACTER(32) :: argv
+  CHARACTER :: trans
   INTEGER :: argc
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(1, argv)
+    CALL GET_COMMAND_ARGUMENT(1, trans)
+  ELSE
+    trans = 'o'
+  END IF
+  IF (2 <= argc) THEN
+    CALL GET_COMMAND_ARGUMENT(2, argv)
     READ(argv, "(I32)") m
   ELSE
     m = 4096
   END IF
-  IF (2 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(2, argv)
+  IF (3 <= argc) THEN
+    CALL GET_COMMAND_ARGUMENT(3, argv)
     READ(argv, "(I32)") n
   ELSE
     n = m
   END IF
-  IF (3 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(3, argv)
+  IF (4 <= argc) THEN
+    CALL GET_COMMAND_ARGUMENT(4, argv)
     READ(argv, "(I32)") lda
   ELSE
     lda = m
   END IF
-  IF (4 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(4, argv)
+  IF (5 <= argc) THEN
+    CALL GET_COMMAND_ARGUMENT(5, argv)
     READ(argv, "(I32)") ldb
   ELSE
     ldb = n
   END IF
 
   size = m * n * T ! size in Byte
-  WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " lda=", lda, " ldb=", ldb, &
-    " size=", (size / ISHFT(1, 20)), "MB"
+  WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)") "m=", m, " n=", n, " lda=", lda, " ldb=", ldb, &
+    " size=", (size / ISHFT(1, 20)), "MB (", MERGE("DP", "SP", 8.EQ.T), ", ", &
+    TRIM(MERGE("out-of-place", "in-place    ", 'o'.EQ.trans)), ")"
 
   ! Allocate matrices
-  ALLOCATE(a(lda,n))
-  ALLOCATE(b(ldb,m))
+  ALLOCATE(a(lda,MERGE(n,lda,('o'.EQ.trans).OR.('O'.EQ.trans))))
+  ALLOCATE(b(ldb,MERGE(m,ldb,('o'.EQ.trans).OR.('O'.EQ.trans))))
 
   DO j = 1, n
     DO i = 1, m
-      a(i,j) = initial_value(i - 1, j - 1, lda)
+      a(i,j) = initial_value(i - 1, j - 1, m)
     END DO
   END DO
 
-  start = libxsmm_timer_tick();
-  CALL libxsmm_transpose_oop(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
-  !CALL libxsmm_transpose_oop(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-  CALL libxsmm_dtranspose_oop(a, b, n, m, ldb, lda)
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+  IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
+    start = libxsmm_timer_tick();
+    CALL libxsmm_transpose_oop(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
+    !CALL libxsmm_transpose_oop(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
+    CALL libxsmm_dtranspose_oop(a, b, n, m, ldb, lda)
+    duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+  ELSE ! in-place
+    start = libxsmm_timer_tick();
+    ! TODO: in-place
+    duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+  END IF
 
   diff = 0
   DO j = 1, n
     DO i = 1, m
-      diff = MAX(diff, ABS(a(i,j) - initial_value(i - 1, j - 1, lda)))
+      diff = MAX(diff, ABS(a(i,j) - initial_value(i - 1, j - 1, m)))
     END DO
   END DO
 
