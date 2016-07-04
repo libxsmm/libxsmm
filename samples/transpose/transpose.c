@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   }
   else {
     if (('i' != t && 'I' != t)) {
-      fprintf(stderr, "In-place transpose assumed!");
+      fprintf(stderr, "In-place transpose assumed!\n");
     }
     start = libxsmm_timer_tick();
     /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), m, n, lda);

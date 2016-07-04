@@ -152,7 +152,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* o
 
 /** Transpose a matrix (in-place form). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_inp(void* inp, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Transpose a matrix (in-place form, single-precision). */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inp,
