@@ -21,22 +21,22 @@
 # define LIBXSMM_TRANSPOSE_CHUNK 32
 #endif
 
-#define INTERNAL_TRANSPOSE_OOP(TYPE, OUT, IN, M0, M1, N0, N1) { \
+#define INTERNAL_TRANSPOSE_OOP(TYPE, OUT, IN, M0, M1, N0, N1, N) { \
   const TYPE *const a = (const TYPE*)IN; \
   TYPE *const b = (TYPE*)OUT; \
   libxsmm_blasint i, j; \
-  if (LIBXSMM_TRANSPOSE_CHUNK == m) { \
-    for (i = N0; i < N1; ++i) { \
+  if (LIBXSMM_TRANSPOSE_CHUNK == N) { \
+    for (i = M0; i < M1; ++i) { \
       LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = M0; j < M0 + LIBXSMM_TRANSPOSE_CHUNK; ++j) { \
+      for (j = N0; j < N0 + LIBXSMM_TRANSPOSE_CHUNK; ++j) { \
         b[i*ldo+j/*consecutive*/] = a[j*ld+i/*strided*/]; \
       } \
     } \
   } \
   else { \
-    for (i = N0; i < N1; ++i) { \
+    for (i = M0; i < M1; ++i) { \
       LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = M0; j < M1; ++j) { \
+      for (j = N0; j < N1; ++j) { \
         b[i*ldo+j/*consecutive*/] = a[j*ld+i/*strided*/]; \
       } \
     } \
@@ -54,20 +54,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
   if (m * n * typesize <= (LIBXSMM_TRANSPOSE_CACHESIZE / 2)) {
     switch(typesize) {
       case 1: {
-        INTERNAL_TRANSPOSE_OOP(char, out, in, m0, m1, n0, n1);
+        INTERNAL_TRANSPOSE_OOP(char, out, in, m0, m1, n0, n1, n);
       } break;
       case 2: {
-        INTERNAL_TRANSPOSE_OOP(short, out, in, m0, m1, n0, n1);
+        INTERNAL_TRANSPOSE_OOP(short, out, in, m0, m1, n0, n1, n);
       } break;
       case 4: {
-        INTERNAL_TRANSPOSE_OOP(float, out, in, m0, m1, n0, n1);
+        INTERNAL_TRANSPOSE_OOP(float, out, in, m0, m1, n0, n1, n);
       } break;
       case 8: {
-        INTERNAL_TRANSPOSE_OOP(double, out, in, m0, m1, n0, n1);
+        INTERNAL_TRANSPOSE_OOP(double, out, in, m0, m1, n0, n1, n);
       } break;
       case 16: {
         typedef struct dvec2_t { double value[2]; } dvec2_t;
-        INTERNAL_TRANSPOSE_OOP(dvec2_t, out, in, m0, m1, n0, n1);
+        INTERNAL_TRANSPOSE_OOP(dvec2_t, out, in, m0, m1, n0, n1, n);
       } break;
       default: {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -77,24 +77,24 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
       }
     }
   }
-  else if (n >= m) {
-    const libxsmm_blasint ni = (n0 + n1) / 2;
-    inernal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
-    inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
+  else if (m >= n) {
+    const libxsmm_blasint mi = (m0 + m1) / 2;
+    inernal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
+    inernal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
   }
   else {
 #if (0 < LIBXSMM_TRANSPOSE_CHUNK)
-    if (LIBXSMM_TRANSPOSE_CHUNK < m) {
-      const libxsmm_blasint mi = m0 + LIBXSMM_TRANSPOSE_CHUNK;
-      inernal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
-      inernal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
+    if (LIBXSMM_TRANSPOSE_CHUNK < n) {
+      const libxsmm_blasint ni = n0 + LIBXSMM_TRANSPOSE_CHUNK;
+      inernal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
     else
 #endif
     {
-      const libxsmm_blasint mi = (m0 + m1) / 2;
-      inernal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
-      inernal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
+      const libxsmm_blasint ni = (n0 + n1) / 2;
+      inernal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
   }
 }
@@ -127,7 +127,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, cons
   else
 #endif
   {
-    inernal_transpose_oop(out, in, typesize, 0, n, 0, m, ld, ldo);
+    inernal_transpose_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
   }
 }
 
@@ -149,13 +149,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, c
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inp,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  libxsmm_transpose_inp(inp, sizeof(float), m, n, ld);
+  /*libxsmm_transpose_inp(inp, sizeof(float), m, n, ld);*/
 }
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* inp,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  libxsmm_transpose_inp(inp, sizeof(double), m, n, ld);
+  /*libxsmm_transpose_inp(inp, sizeof(double), m, n, ld);*/
 }
 
