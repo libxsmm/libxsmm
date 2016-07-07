@@ -75,7 +75,7 @@ CACHE ?= 1
 # 7: curAL2_BL2viaC
 # 8: AL2jpst
 # 9: AL2jpst_BL2viaC
-PREFETCH ?= 0
+PREFETCH ?= 1
 
 # Preferred precision when registering statically generated code versions
 # 0: SP and DP code versions to be registered
