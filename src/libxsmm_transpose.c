@@ -146,16 +146,24 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, c
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inp,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_inp(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  /*libxsmm_transpose_inp(inp, sizeof(float), m, n, ld);*/
+  LIBXSMM_UNUSED(inout); LIBXSMM_UNUSED(typesize); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(ld);
+  assert(0/*Not yet implemented!*/);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* inp,
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  /*libxsmm_transpose_inp(inp, sizeof(double), m, n, ld);*/
+  libxsmm_transpose_inp(inout, sizeof(float), m, n, ld);
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+{
+  libxsmm_transpose_inp(inout, sizeof(double), m, n, ld);
 }
 
