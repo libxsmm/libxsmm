@@ -20,7 +20,7 @@
 
 LIBXSMM_INLINE REAL_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
-  return (REAL_TYPE)(j * ld + i);
+  return (REAL_TYPE)(i * ld + j);
 }
 
 
