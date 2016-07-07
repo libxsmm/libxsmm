@@ -124,6 +124,7 @@ if __name__ == "__main__":
             if (mnklist and 0 != precision): substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:
+            substitute["BLASINT_KIND"] = ["C_INT", "C_LONG_LONG"][0!=ilp64]
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:

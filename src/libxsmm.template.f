@@ -74,7 +74,7 @@
 
         ! Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND =             &
-     &    MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
+     &    $BLASINT_KIND ! MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
 
         ! Parameters representing the GEMM performed by the simplified interface.
         REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = REAL($ALPHA, C_DOUBLE)
