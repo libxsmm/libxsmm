@@ -51,10 +51,16 @@
 #define LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA) \
   if (0 != ((FLAGS) & (LIBXSMM_GEMM_FLAG_ALPHA_F | LIBXSMM_GEMM_FLAG_BETA_F))) { \
     if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F)) { \
-      if (0 < (ALPHA) || 0 > (ALPHA)) (DESCRIPTOR).alpha = (signed char)(1.0 / (ALPHA)); \
+      if (0 < (ALPHA) || 0 > (ALPHA)) { \
+        const double dalpha = ALPHA; \
+        (DESCRIPTOR).alpha = (signed char)(1.0 / dalpha); \
+      } \
     } \
     if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)) { \
-      if (0 < (BETA) || 0 > (BETA)) (DESCRIPTOR).beta = (signed char)(1.0 / (BETA)); \
+      if (0 < (BETA) || 0 > (BETA)) { \
+        const double dbeta = BETA; \
+        (DESCRIPTOR).beta = (signed char)(1.0 / dbeta); \
+      } \
     } \
   }
 
