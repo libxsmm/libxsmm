@@ -122,41 +122,54 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory,
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsigned int size, unsigned int alignment,
-  const void* extra, unsigned int extra_size)
+  int flags, const void* extra, unsigned int extra_size)
 {
   int result = EXIT_SUCCESS;
-
   if (memory) {
     if (0 < size) {
       const unsigned int auto_alignment = libxsmm_alignment(size, alignment);
       const unsigned int alloc_size = size + extra_size + sizeof(internal_alloc_info) + auto_alignment - 1;
-#if defined(LIBXSMM_ALLOC_MMAP)
-# if defined(_WIN32)
-      char* buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE, PAGE_NOACCESS);
-      char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info), auto_alignment);
-      if (0 != buffer) {
-        buffer = (char*)VirtualAlloc(buffer, aligned - buffer, MEM_COMMIT, PAGE_READWRITE);
+      void* alloc_failed = 0;
+      char* buffer = 0;
+#if !defined(LIBXSMM_ALLOC_MMAP)
+      if (0 == flags || LIBXSMM_ALLOC_FLAG_DEFAULT == flags) {
+        buffer = malloc(alloc_size);
       }
-      if (0 != buffer)
-# else
-#   if 0 /*TODO*/
-      char* buffer = (char*)mmap(0, alloc_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-      char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info), auto_alignment);
-      if (MAP_FAILED != buffer) {
-        buffer = (char*)mmap(buffer, aligned - buffer, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-      }
-#   else
-      char *const buffer = (char*)mmap(0, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-      char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info), auto_alignment);
-#   endif
-      if (MAP_FAILED != buffer)
-# endif
-#else
-      char *const buffer = malloc(alloc_size);
-      char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info), auto_alignment);
-      if (0 != buffer)
+      else
 #endif
       {
+#if defined(_WIN32)
+        switch (flags) {
+          case LIBXSMM_ALLOC_FLAG_RW:
+          case 0: {
+            buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+          } break;
+          case LIBXSMM_ALLOC_FLAG_RWX: {
+            buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+          } break;
+        }
+#else
+        const int xflags = (LIBXSMM_ALLOC_FLAG_RW == flags || 0 == flags) ? (PROT_READ | PROT_WRITE)
+          : (LIBXSMM_ALLOC_FLAG_RWX == flags ? (PROT_READ | PROT_WRITE | PROT_EXEC) : PROT_NONE);
+        alloc_failed = MAP_FAILED;
+        if (PROT_NONE != xflags) {
+          buffer = (char*)mmap(0, alloc_size, xflags,
+# if defined(__APPLE__) && defined(__MACH__)
+            MAP_ANON,
+# elif !defined(__CYGWIN__)
+            MAP_ANONYMOUS | MAP_PRIVATE | MAP_32BIT,
+# else
+            MAP_ANONYMOUS | MAP_PRIVATE,
+# endif
+            -1, 0);
+        }
+        else {
+          buffer = alloc_failed;
+        }
+#endif
+      }
+      if (alloc_failed != buffer) {
+        char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info), auto_alignment);
         internal_alloc_info *const info = (internal_alloc_info*)(aligned - sizeof(internal_alloc_info));
         assert((aligned + size) <= (buffer + alloc_size));
 #if !defined(NDEBUG)
@@ -224,7 +237,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_malloc(unsigned int size)
 {
   void* result = 0;
-  return 0 == libxsmm_allocate(&result, size, 0, 0/*extra*/, 0/*extra_size*/) ? result : 0;
+  return 0 == libxsmm_allocate(&result, size, 0/*auto*/, LIBXSMM_ALLOC_FLAG_DEFAULT,
+    0/*extra*/, 0/*extra_size*/) ? result : 0;
 }
 
 
