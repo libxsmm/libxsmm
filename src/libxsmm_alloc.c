@@ -34,7 +34,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
-#include <malloc.h>
 #if !defined(NDEBUG)
 # include <string.h>
 #endif
