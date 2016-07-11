@@ -53,6 +53,7 @@
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
+    <ClInclude Include="..\src\libxsmm_alloc.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_gemm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
@@ -89,6 +90,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm.c" />
+    <ClCompile Include="..\src\libxsmm_alloc.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>

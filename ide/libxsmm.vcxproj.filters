@@ -114,6 +114,9 @@
     <ClInclude Include="..\src\libxsmm_sync.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_alloc.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\build\mm_2_2_2.c">
@@ -219,6 +222,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_alloc.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

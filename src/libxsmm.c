@@ -32,6 +32,7 @@
 #include "libxsmm_cpuid_x86.h"
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_gemm_ext.h"
+#include "libxsmm_alloc.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_sync.h"
 
@@ -692,8 +693,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #endif
       if (EXIT_SUCCESS == init_code) {
         assert(0 == internal_registry_keys && 0 == internal_registry/*should never happen*/);
-        result = (internal_regentry*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regentry));
-        internal_registry_keys = (internal_regkey*)malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey));
+        result = (internal_regentry*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regentry));
+        internal_registry_keys = (internal_regkey*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey));
         if (result && internal_registry_keys) {
           const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
           internal_statistic_mnk = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
