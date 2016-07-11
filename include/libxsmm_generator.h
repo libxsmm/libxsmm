@@ -122,10 +122,12 @@ typedef struct libxsmm_gemm_descriptor {
 /** Extended flag set complementing libxsmm_gemm_flags. */
 typedef enum libxsmm_gemm_xflags {
   LIBXSMM_GEMM_FLAG_F32PREC = 16,
+  /** Prevents code deallocation (non-JIT) */
+  LIBXSMM_GEMM_FLAG_STATIC  = 32,
   /** Fractional: 1/alpha, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_ALPHA_F = 32,
+  LIBXSMM_GEMM_FLAG_ALPHA_F = 64,
   /** Fractional: 1/beta, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_BETA_F  = 64
+  LIBXSMM_GEMM_FLAG_BETA_F  = 128
 } libxsmm_gemm_xflags;
 
 /** Structure referring to the generated code with some attached information. */

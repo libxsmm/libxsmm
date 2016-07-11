@@ -143,7 +143,6 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
     /*const*/void* pmm;
     uintptr_t imm;
   } function;
-  /* statically generated code (=0), dynamically generated code (>0). */
   unsigned int size;
 #if defined(LIBXSMM_VTUNE)
   unsigned int id;
@@ -564,8 +563,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(const lib
 
   if (0 == dst_entry->function.pmm) { /* registry not (yet) exhausted */
     dst_entry->function.xmm = src;
-    dst_entry->size = 0; /* statically generated code */
     dst_key->descriptor = *desc;
+    dst_key->descriptor.flags |= LIBXSMM_GEMM_FLAG_STATIC;
   }
 
   internal_update_statistic(desc, 1, 0);
@@ -807,7 +806,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= size) {
               bucket = 1;
             }
-            if (0 != code.size/*JIT: actually allocated*/) {
+            if (0 == (LIBXSMM_GEMM_FLAG_STATIC & desc->flags)/*JIT: actually allocated*/) {
               /* make address valid by clearing an eventual collision flag */
               code.function.imm &= ~LIBXSMM_HASH_COLLISION;
 #if defined(LIBXSMM_VTUNE)
