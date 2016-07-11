@@ -172,7 +172,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
           for (i = 0; i < extra_size; ++i) buffer[i] = src[i];
         }
 #if !defined(NDEBUG)
-        else if (0 == extra && 0 != size) {
+        else if (0 == extra && 0 != extra_size) {
           result = EXIT_FAILURE;
         }
 #endif

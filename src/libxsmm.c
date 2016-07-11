@@ -719,8 +719,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: failed to allocate code registry!\n");
 #endif
-          free(internal_registry_keys);
-          free(result);
+          libxsmm_free(internal_registry_keys);
+          libxsmm_free(result);
         }
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
@@ -855,8 +855,8 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           LIBXSMM_FUNLOCK(stdout);
           LIBXSMM_FUNLOCK(stderr);
         }
-        free((void*)registry_keys);
-        free((void*)registry);
+        libxsmm_free(registry_keys);
+        libxsmm_free(registry);
       }
     }
 #if !defined(LIBXSMM_OPENMP) /* release locks */
