@@ -371,7 +371,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
 #if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
     LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
 #else
-    const unsigned int alloc_size = ((const char*)memory) - ((const char*)buffer);
+    const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
     int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
     if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
     if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
