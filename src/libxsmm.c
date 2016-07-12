@@ -60,18 +60,6 @@
 # include <unistd.h>
 # include <fcntl.h>
 #endif
-#if defined(LIBXSMM_VTUNE)
-# include <jitprofiling.h>
-# define LIBXSMM_VTUNE_JITVERSION 2
-# if (2 == LIBXSMM_VTUNE_JITVERSION)
-#   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
-#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
-# else
-#   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
-#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
-# endif
-# define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -140,10 +128,6 @@ typedef struct LIBXSMM_RETARGETABLE internal_regentry {
     /*const*/void* pmm;
     uintptr_t imm;
   } function;
-  unsigned int size;
-#if defined(LIBXSMM_VTUNE)
-  unsigned int id;
-#endif
 } internal_regentry;
 
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL struct LIBXSMM_RETARGETABLE {
@@ -603,26 +587,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* targ
 }
 
 
-#if defined(LIBXSMM_VTUNE)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const internal_regentry* code, const char* name, LIBXSMM_VTUNE_JIT_DESC_TYPE* desc)
-{
-  assert(0 != code && 0 != code->id && 0 != code->size && 0 != desc);
-  desc->method_id = code->id;
-  /* incorrect constness (method_name) */
-  desc->method_name = (char*)name;
-  desc->method_load_address = code->function.pmm;
-  desc->method_size = code->size;
-  desc->line_number_size = 0;
-  desc->line_number_table = NULL;
-  desc->class_file_name = NULL;
-  desc->source_file_name = NULL;
-# if (2 == LIBXSMM_VTUNE_JITVERSION)
-  desc->module_name = "libxsmm.jit";
-# endif
-}
-#endif
-
-
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_regentry* internal_init(void)
 {
   /*const*/internal_regentry* result;
@@ -794,31 +758,25 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
           internal_regentry code = registry[i];
           if (0 != code.function.pmm/*potentially allocated*/) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].descriptor;
-            const unsigned long long size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
+            const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
             int bucket = 2;
-            if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= size) {
+            if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
               bucket = 0;
             }
-            else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= size) {
+            else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= kernel_size) {
               bucket = 1;
             }
-            if (0 == (LIBXSMM_GEMM_FLAG_STATIC & desc->flags)/*JIT: actually allocated*/) {
-              /* make address valid by clearing an eventual collision flag */
-              code.function.imm &= ~LIBXSMM_HASH_COLLISION;
-#if defined(LIBXSMM_VTUNE)
-              if (0 != code.id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-                char jit_code_name[256];
-                LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-                internal_get_code_name(target_arch, desc,
-                  sizeof(jit_code_name), jit_code_name);
-                internal_get_vtune_jitdesc(&code, jit_code_name, &vtune_jit_desc);
-                iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &vtune_jit_desc);
-              }
-#endif
+            /* make address valid by eventually clearing the collision flag */
+            code.function.imm &= ~LIBXSMM_HASH_COLLISION;
+            if (0 == (LIBXSMM_GEMM_FLAG_STATIC & desc->flags)/*dynamically allocated/generated (JIT)*/) {
+              void* buffer = 0;
+              const int result = libxsmm_alloc_info(code.function.pmm, 0/*size*/, 0/*flags*/, &buffer);
               libxsmm_deallocate(code.function.pmm);
-              ++internal_statistic[precision][bucket].njit;
-              heapmem += code.size;
+              if (EXIT_SUCCESS == result) {
+                ++internal_statistic[precision][bucket].njit;
+                heapmem += ((char*)buffer) - ((char*)code.function.pmm);
+              }
             }
             else {
               ++internal_statistic[precision][bucket].nsta;
@@ -999,40 +957,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       LIBXSMM_ALLOC_FLAG_RWX,
       0/*extra*/, 0/*extra_size*/))
     {
+      char jit_code_name[256];
+      internal_get_code_name(target_arch, desc, sizeof(jit_code_name), jit_code_name);
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->function.pmm, generated_code.generated_code, generated_code.code_size);
+      free(generated_code.generated_code); /* free temporary/initial code buffer */
       /* revoke unneccessary memory protection flags; continue on error */
-      libxsmm_alloc_revoke(code->function.pmm, LIBXSMM_ALLOC_FLAG_RW);
-      {
-#if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-        char jit_code_name[256];
-        internal_get_code_name(target_arch, desc, sizeof(jit_code_name), jit_code_name);
-#endif
-        /* finalize code generation */
-        code->size = generated_code.code_size;
-        /* free temporary/initial code buffer */
-        free(generated_code.generated_code);
-#if !defined(NDEBUG) && defined(_DEBUG)
-        { /* dump byte-code into file */
-          FILE *const byte_code = fopen(jit_code_name, "wb");
-          if (0 != byte_code) {
-            fwrite(code->function.pmm, 1, code->size, byte_code);
-            fclose(byte_code);
-          }
-        }
-#endif /*!defined(NDEBUG) && defined(_DEBUG)*/
-#if defined(LIBXSMM_VTUNE)
-        if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-          LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-          code->id = iJIT_GetNewMethodID();
-          internal_get_vtune_jitdesc(code, jit_code_name, &vtune_jit_desc);
-          iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
-        }
-        else {
-          code->id = 0;
-        }
-#endif
-      }
+      libxsmm_alloc_attribute(code->function.pmm, LIBXSMM_ALLOC_FLAG_RW, jit_code_name);
     }
     else {
       free(generated_code.generated_code);

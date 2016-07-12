@@ -48,8 +48,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gcd(unsigned int a, u
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_lcm(unsigned int a, unsigned int b);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_alignment(unsigned int size, unsigned int alignment);
 
-/** Receive the size or the extra attachment of the given buffer. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, unsigned int* size, void** extra);
+/** Receive the size, the flags, or the extra attachment of the given buffer. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, unsigned int* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsigned int size, unsigned int alignment, int flags,
@@ -57,8 +57,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
   const void* extra, unsigned int extra_size);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory);
 
-/** Revoke memory protection flags; the given flags given flags will be revoked. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_revoke(const void* memory, int flags);
+/** Attribute memory allocation such as to revoke protection flags. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* memory, int flags, const char* name);
 
 /** Allocate memory (malloc/free interface). */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void* libxsmm_malloc(unsigned int size)
