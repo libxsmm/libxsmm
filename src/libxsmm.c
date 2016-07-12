@@ -816,19 +816,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
                 iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &vtune_jit_desc);
               }
 #endif
-#if defined(_WIN32)
-              /* TODO: executable memory buffer under Windows */
-#else
-# if defined(NDEBUG)
-              munmap(code.function.pmm, code.size);
-# else /* library code is expected to be mute */
-              if (0 != munmap(code.function.pmm, code.size)) {
-                const int error = errno;
-                fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
-                  strerror(error), error, code.function.pmm, code.size);
-              }
-# endif
-#endif
+              libxsmm_deallocate(code.function.pmm);
               ++internal_statistic[precision][bucket].njit;
               heapmem += code.size;
             }
@@ -1005,44 +993,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 
   /* handle an eventual error in the else-branch */
   if (0 == generated_code.last_error) {
-    /* create executable buffer */
-    code->function.pmm = mmap(0, generated_code.code_size,
+    /* attempt to create executable buffer, and check for success */
+    if (0 == libxsmm_allocate(&code->function.pmm, generated_code.code_size, 0/*auto*/,
       /* must be a superset of what mprotect populates (see below) */
-      PROT_READ | PROT_WRITE | PROT_EXEC,
-#if defined(__APPLE__) && defined(__MACH__)
-      MAP_ANON,
-#elif !defined(__CYGWIN__)
-      MAP_ANONYMOUS | MAP_PRIVATE | MAP_32BIT,
-#else
-      MAP_ANONYMOUS | MAP_PRIVATE,
-#endif
-      -1, 0);
-    if (MAP_FAILED != code->function.pmm) {
-      /* explicitly disable THP for this memory region, kernel 2.6.38 or higher */
-#if defined(MADV_NOHUGEPAGE)
-# if defined(NDEBUG)
-      madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE);
-# else /* library code is expected to be mute */
-      /* proceed even in case of an error, we then just take what we got (THP) */
-      if (0 != madvise(code->function.pmm, generated_code.code_size, MADV_NOHUGEPAGE)) {
-        static LIBXSMM_TLS int once = 0;
-        if (0 == once) {
-          const int error = errno;
-          fprintf(stderr, "LIBXSMM: %s (madvise error #%i at %p)!\n",
-            strerror(error), error, code->function.pmm);
-          once = 1;
-        }
-      }
-# endif /*defined(NDEBUG)*/
-#elif !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
-      LIBXSMM_MESSAGE("================================================================================")
-      LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
-      LIBXSMM_MESSAGE("================================================================================")
-#endif /*MADV_NOHUGEPAGE*/
+      LIBXSMM_ALLOC_FLAG_RWX,
+      0/*extra*/, 0/*extra_size*/))
+    {
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->function.pmm, generated_code.generated_code, generated_code.code_size);
-
-      if (0/*ok*/ == mprotect(code->function.pmm, generated_code.code_size, PROT_EXEC | PROT_READ)) {
+      /* revoke unneccessary memory protection flags; continue on error */
+      libxsmm_alloc_revoke(code->function.pmm, LIBXSMM_ALLOC_FLAG_RW);
+      {
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
         char jit_code_name[256];
         internal_get_code_name(target_arch, desc, sizeof(jit_code_name), jit_code_name);
@@ -1072,52 +1033,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
         }
 #endif
       }
-      else { /* there was an error with mprotect */
-#if defined(NDEBUG)
-        munmap(code->function.pmm, generated_code.code_size);
-#else /* library code is expected to be mute */
-        static LIBXSMM_TLS int once = 0;
-        if (0 == once) {
-          const int error = errno;
-          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i at %p+%u)!\n",
-            strerror(error), error, code->function.pmm, generated_code.code_size);
-          once = 1;
-        }
-        if (0 != munmap(code->function.pmm, generated_code.code_size)) {
-          static LIBXSMM_TLS int once_mmap_error = 0;
-          if (0 == once_mmap_error) {
-            const int error = errno;
-            fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p+%u)!\n",
-              strerror(error), error, code->function.pmm, generated_code.code_size);
-            once_mmap_error = 1;
-          }
-        }
-#endif
-        free(generated_code.generated_code);
-      }
     }
     else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-      static LIBXSMM_TLS int once = 0;
-      if (0 == once) {
-        const int error = errno;
-        fprintf(stderr, "LIBXSMM: %s (mmap error #%i)!\n",
-          strerror(error), error);
-        once = 1;
-      }
-#endif
       free(generated_code.generated_code);
-      /* clear MAP_FAILED value */
-      code->function.pmm = 0;
     }
   }
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+    static LIBXSMM_TLS int error_jit = 0;
+    if (0 == error_jit) {
       fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error),
         generated_code.last_error);
-      once = 1;
+      error_jit = 1;
     }
 #endif
     free(generated_code.generated_code);
