@@ -151,6 +151,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
       const unsigned int alloc_size = size + extra_size + sizeof(internal_alloc_info_type) + auto_alignment - 1;
       void* alloc_failed = 0;
       char* buffer = 0;
+#if !defined(NDEBUG)
+      static LIBXSMM_TLS int alloc_error = 0;
+#endif
 #if !defined(LIBXSMM_ALLOC_MMAP)
       if (0 == flags || LIBXSMM_ALLOC_FLAG_DEFAULT == flags) {
         buffer = malloc(alloc_size);
@@ -184,7 +187,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
             -1, 0);
 # if defined(MADV_NOHUGEPAGE)
           /* disable THP for smaller allocations; req. Linux kernel 2.6.38 (or higher) */
-          if (LIBXSMM_ALLOC_ALIGNMAX > alloc_size) {
+          if (LIBXSMM_ALLOC_ALIGNMAX > alloc_size && alloc_failed != buffer) {
 #   if defined(NDEBUG)
             /* proceed even in case of an error, we then just take what we got (THP) */
             madvise(buffer, alloc_size, MADV_NOHUGEPAGE);
@@ -199,6 +202,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
             }
 #   endif /*defined(NDEBUG)*/
           }
+#   if !defined(NDEBUG) /* library code is expected to be mute */
+          else if (alloc_failed == buffer && 0 == alloc_error) {
+            fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %u with flags=%i)!\n",
+              strerror(errno), errno, alloc_size, xflags);
+            alloc_error = 1;
+          }
+#   endif
 # elif !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
           LIBXSMM_MESSAGE("================================================================================")
           LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
@@ -238,6 +248,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
         *memory = aligned;
       }
       else {
+#if !defined(NDEBUG) /* library code is expected to be mute */
+        if (0 == alloc_error) {
+          fprintf(stderr, "LIBXSMM: memory allocation error for size %u with flags=%i!\n", alloc_size, flags);
+          alloc_error = 1;
+        }
+#endif
         result = EXIT_FAILURE;
       }
     }
