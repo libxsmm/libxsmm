@@ -49,13 +49,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_lcm(unsigned int a, u
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_alignment(unsigned int size, unsigned int alignment);
 
 /** Receive the size or the extra attachment of the given buffer. */
-int libxsmm_alloc_info(const void* memory, unsigned int* size, void** extra);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, unsigned int* size, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsigned int size, unsigned int alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, unsigned int extra_size);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory);
+
+/** Revoke memory protection flags; the given flags given flags will be revoked. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_revoke(const void* memory, int flags);
 
 /** Allocate memory (malloc/free interface). */
 LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void* libxsmm_malloc(unsigned int size)
