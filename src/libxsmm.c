@@ -1044,7 +1044,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
-  internal_code_type code = { 0 };
+  internal_code_type code = { {0} };
   internal_desc_extra_type desc_extra;
   memset(&desc_extra, 0, sizeof(desc_extra));
   desc_extra.row_ptr = row_ptr;
