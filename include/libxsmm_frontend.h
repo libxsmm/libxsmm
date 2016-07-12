@@ -56,11 +56,7 @@
 #endif
 
 /** Helper macro for GEMM argument permutation depending on storage scheme. */
-#if (0 != LIBXSMM_COL_MAJOR)
-# define LIBXSMM_LD(M, N) (M)
-#else
-# define LIBXSMM_LD(M, N) (N)
-#endif
+#define LIBXSMM_LD(M, N) (M)
 
 /** Used to sanitize GEMM arguments (LDx vs. M/N/K). */
 #if defined(LIBXSMM_SANITIZE_GEMM)

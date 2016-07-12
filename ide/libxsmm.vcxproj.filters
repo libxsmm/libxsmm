@@ -90,16 +90,31 @@
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_asparse.h">
+    <ClInclude Include="..\src\libxsmm_cpuid_x86.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_spgemm_bsparse.h">
+    <ClInclude Include="..\src\generator_spgemm_csc_asparse.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_cpuid_x86.h">
+    <ClInclude Include="..\src\generator_spgemm_csr_asparse.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csr_reader.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_sync.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_alloc.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -185,16 +200,31 @@
     <ClCompile Include="..\src\generator_spgemm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_asparse.c">
+    <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_spgemm_bsparse.c">
+    <ClCompile Include="..\src\libxsmm_transpose.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csc_asparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
+    <ClCompile Include="..\src\generator_spgemm_csr_asparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csr_reader.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_alloc.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -218,7 +248,6 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\Makefile" />
-    <None Include="..\make.sh" />
     <None Include="..\README.md" />
     <None Include="..\README.sh" />
     <None Include="..\.travis.yml" />

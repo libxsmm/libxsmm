@@ -45,17 +45,22 @@
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h" />
-    <ClInclude Include="..\src\generator_spgemm_asparse.h" />
-    <ClInclude Include="..\src\generator_spgemm_bsparse.h" />
+    <ClInclude Include="..\src\generator_spgemm_csc_asparse.h" />
+    <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h" />
+    <ClInclude Include="..\src\generator_spgemm_csr_asparse.h" />
+    <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
+    <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
+    <ClInclude Include="..\src\libxsmm_alloc.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_gemm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
     <ClInclude Include="..\src\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\src\libxsmm_sync.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
   <ItemGroup>
@@ -77,11 +82,15 @@
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c" />
     <ClCompile Include="..\src\generator_spgemm.c" />
-    <ClCompile Include="..\src\generator_spgemm_asparse.c" />
-    <ClCompile Include="..\src\generator_spgemm_bsparse.c" />
+    <ClCompile Include="..\src\generator_spgemm_csc_asparse.c" />
+    <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c" />
+    <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
+    <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c" />
+    <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm.c" />
+    <ClCompile Include="..\src\libxsmm_alloc.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
@@ -111,6 +120,7 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
+    <ClCompile Include="..\src\libxsmm_transpose.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.codecov" />
@@ -118,7 +128,6 @@
     <None Include="..\.gitignore" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
-    <None Include="..\make.sh" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
     <None Include="..\README.md" />

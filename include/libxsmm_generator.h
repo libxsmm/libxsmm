@@ -51,10 +51,16 @@
 #define LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA) \
   if (0 != ((FLAGS) & (LIBXSMM_GEMM_FLAG_ALPHA_F | LIBXSMM_GEMM_FLAG_BETA_F))) { \
     if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F)) { \
-      if (0 < (ALPHA) || 0 > (ALPHA)) (DESCRIPTOR).alpha = (signed char)(1.0 / (ALPHA)); \
+      if (0 < (ALPHA) || 0 > (ALPHA)) { \
+        const double dalpha = ALPHA; \
+        (DESCRIPTOR).alpha = (signed char)(1.0 / dalpha); \
+      } \
     } \
     if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)) { \
-      if (0 < (BETA) || 0 > (BETA)) (DESCRIPTOR).beta = (signed char)(1.0 / (BETA)); \
+      if (0 < (BETA) || 0 > (BETA)) { \
+        const double dbeta = BETA; \
+        (DESCRIPTOR).beta = (signed char)(1.0 / dbeta); \
+      } \
     } \
   }
 
@@ -116,10 +122,12 @@ typedef struct libxsmm_gemm_descriptor {
 /** Extended flag set complementing libxsmm_gemm_flags. */
 typedef enum libxsmm_gemm_xflags {
   LIBXSMM_GEMM_FLAG_F32PREC = 16,
+  /** Prevents code deallocation (non-JIT) */
+  LIBXSMM_GEMM_FLAG_STATIC  = 32,
   /** Fractional: 1/alpha, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_ALPHA_F = 32,
+  LIBXSMM_GEMM_FLAG_ALPHA_F = 64,
   /** Fractional: 1/beta, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_BETA_F  = 64
+  LIBXSMM_GEMM_FLAG_BETA_F  = 128
 } libxsmm_gemm_xflags;
 
 /** Structure referring to the generated code with some attached information. */

@@ -117,12 +117,16 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
+# define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(...) LIBXSMM_PRAGMA(vector nontemporal(__VA_ARGS__))
+# define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
 # define LIBXSMM_PRAGMA_FORCEINLINE LIBXSMM_PRAGMA(forceinline)
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min(MIN) max(MAX) avg(AVG))
 # define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(unroll(N))
 # define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA(unroll)
 /*# define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))*/
 #else
+# define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(...)
+# define LIBXSMM_PRAGMA_NONTEMPORAL
 # define LIBXSMM_PRAGMA_FORCEINLINE
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_N(N)
@@ -186,14 +190,14 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
-# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
+# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N);
+# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION);
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
 # if defined(_MSC_VER)
-#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
+#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION);
 # elif (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
+#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0);
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION)
 # endif

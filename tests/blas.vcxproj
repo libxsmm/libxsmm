@@ -27,11 +27,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="rowmajor.c" />
+    <ClCompile Include="blas.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>rowmajor</ProjectName>
-    <ProjectGuid>{CFE44381-4153-4318-A6BC-12ACD0D2F5C0}</ProjectGuid>
+    <ProjectName>blas</ProjectName>
+    <ProjectGuid>{CDCBFA7A-54BC-4D49-B57A-8B9E9A107320}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

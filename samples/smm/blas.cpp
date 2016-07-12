@@ -132,15 +132,14 @@ int main(int argc, char* argv[])
 # endif
 #endif
     {
-#if defined(MKL_ENABLE_AVX512_MIC)
-      mkl_enable_instructions(MKL_ENABLE_AVX512_MIC);
+#if defined(MKL_ENABLE_AVX512)
+      mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i (%s, %s) size=%i memory=%.f MB\n\n", m, n, k,
-        0 != LIBXSMM_ROW_MAJOR ? "row-major" : "column-major", 8 == sizeof(T) ? "DP" : "SP",
-        s, 1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20));
+      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.f MB (%s)\n\n", m, n, k, s,
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)

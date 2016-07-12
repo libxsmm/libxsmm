@@ -96,12 +96,6 @@ make clean
 make realclean
 ```
 
-The library can be configured to accept row-major or column-major (default) order matrices. The [row-major storage scheme](https://github.com/hfp/libxsmm/wiki/Q&A#what-is-the-purpose-of-row_major-vs-col_major) is accomplished by setting ROW_MAJOR=1 (0 for column-major, and row-major otherwise):
-
-```
-make ROW_MAJOR=1
-```
-
 By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically specialize for particular matrix sizes (M, N, and K values):
 
 ```
@@ -188,9 +182,11 @@ Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), t
 There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` or `dgemm_` symbol by making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
 
 ```
-gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a
-gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a
-gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a
+gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
+gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
+gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
+gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmmext.a /path/to/libxsmm.a \
+                                          /path/to/your_regular_blas.a
 ```
 
 Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an applications which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC-compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain.
@@ -207,7 +203,7 @@ This case obviously requires to build a shared library of LIBXSMM:
 make STATIC=0
 ```
 
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region. However in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm` (in this order).
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region. However in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm` (in this order; see link-line above).
 
 ```
 LIBXSMM_GEMM=2 ./myapplication

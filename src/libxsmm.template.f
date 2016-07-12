@@ -55,8 +55,6 @@
 
         ! Parameters the library and static kernels were built for.
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = $ROW_MAJOR
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = $COL_MAJOR
         INTEGER(C_INT), PARAMETER :: LIBXSMM_PREFETCH = $PREFETCH
         INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_MNK = $MAX_MNK
         INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_M = $MAX_M
@@ -70,9 +68,13 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_SYNC = $SYNC
         INTEGER(C_INT), PARAMETER :: LIBXSMM_JIT = $JIT
 
+        ! Parameters supplied for backward compatibility (deprecated).
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = 0
+
         ! Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND =             &
-     &    MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
+     &    $BLASINT_KIND ! MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
 
         ! Parameters representing the GEMM performed by the simplified interface.
         REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = REAL($ALPHA, C_DOUBLE)
@@ -279,13 +281,43 @@
             CHARACTER(C_CHAR), INTENT(IN) :: arch(*)
           END SUBROUTINE
 
-          ! Non-pure function returning the current clock tick
+          ! Transpose a matrix (out-of-place form).
+          PURE SUBROUTINE libxsmm_transpose_oop(output,                 &
+     &    input, typesize, m, n, ld, ldo) BIND(C)
+            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
+            TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+            INTEGER(C_INT), INTENT(IN), VALUE :: typesize
+          END SUBROUTINE
+
+          ! Transpose a matrix (out-of-place form, single-precision).
+          PURE SUBROUTINE libxsmm_stranspose_oop(output,                &
+     &    input, m, n, ld, ldo) BIND(C)
+            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
+            REAL(C_FLOAT), INTENT(OUT) :: output(ldo,*)
+            REAL(C_FLOAT), INTENT(IN) :: input(ld,*)
+          END SUBROUTINE
+
+          ! Transpose a matrix (out-of-place form, double-precision).
+          PURE SUBROUTINE libxsmm_dtranspose_oop(output,                &
+     &    input, m, n, ld, ldo) BIND(C)
+            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
+            REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
+            REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
+          END SUBROUTINE
+
+          ! Impure function returning the current clock tick
           ! using a platform-specific resolution.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
 
-          ! Non-pure function (timer freq. may vary) returning
+          ! Impure function (timer freq. may vary) returning
           ! the duration between two ticks (seconds).
           REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(               &
      &    tick0, tick1) BIND(C)
@@ -484,44 +516,28 @@
         PURE SUBROUTINE libxsmm_smmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          IF (0.NE.LIBXSMM_COL_MAJOR) THEN
-            CALL fn%fn0(a, b, c)
-          ELSE
-            CALL fn%fn0(b, a, c)
-          END IF
+          CALL fn%fn0(a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abx
         PURE SUBROUTINE libxsmm_dmmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          IF (0.NE.LIBXSMM_COL_MAJOR) THEN
-            CALL fn%fn0(a, b, c)
-          ELSE
-            CALL fn%fn0(b, a, c)
-          END IF
+          CALL fn%fn0(a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prx
         PURE SUBROUTINE libxsmm_smmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          IF (0.NE.LIBXSMM_COL_MAJOR) THEN
-            CALL fn%fn1(a, b, c, pa, pb, pc)
-          ELSE
-            CALL fn%fn1(b, a, c, pb, pa, pc)
-          END IF
+          CALL fn%fn1(a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prx
         PURE SUBROUTINE libxsmm_dmmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          IF (0.NE.LIBXSMM_COL_MAJOR) THEN
-            CALL fn%fn1(a, b, c, pa, pb, pc)
-          ELSE
-            CALL fn%fn1(b, a, c, pb, pa, pc)
-          END IF
+          CALL fn%fn1(a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
