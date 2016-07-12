@@ -217,7 +217,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
         alloc_failed = MAP_FAILED;
         buffer = (char*)mmap(0, alloc_size, xflags,
 # if defined(__APPLE__) && defined(__MACH__)
-          MAP_ANON,
+          MAP_ANON | MAP_PRIVATE,
 # elif !defined(__CYGWIN__)
           MAP_ANONYMOUS | MAP_PRIVATE | MAP_32BIT,
 # else
