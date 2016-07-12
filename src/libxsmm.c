@@ -775,11 +775,12 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             code.imm &= ~LIBXSMM_HASH_COLLISION;
             if (0 == (LIBXSMM_GEMM_FLAG_STATIC & desc->flags)/*dynamically allocated/generated (JIT)*/) {
               void* buffer = 0;
-              const int result = libxsmm_alloc_info(code.pmm, 0/*size*/, 0/*flags*/, &buffer);
+              unsigned int size = 0;
+              const int result = libxsmm_alloc_info(code.pmm, &size, 0/*flags*/, &buffer);
               libxsmm_deallocate(code.pmm);
               if (EXIT_SUCCESS == result) {
                 ++internal_statistic[precision][bucket].njit;
-                heapmem += ((char*)buffer) - ((char*)code.pmm);
+                heapmem += size + (((char*)code.pmm) - (char*)buffer);
               }
             }
             else {

@@ -133,7 +133,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
   desc->method_id = code_id;
   /* incorrect constness (method_name) */
   desc->method_name = (char*)code_name;
-  desc->method_load_address = code;
+  /* incorrect constness (method_load_address) */
+  desc->method_load_address = (void*)code;
   desc->method_size = code_size;
   desc->line_number_size = 0;
   desc->line_number_table = NULL;
@@ -311,7 +312,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
-    internal_alloc_extra_type* internal;
+    internal_alloc_extra_type* internal = 0;
     unsigned int size = 0;
     void* buffer = 0;
     int flags = 0;
@@ -358,7 +359,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
   unsigned int size = 0;
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
   int alloc_flags = 0;
-  int result = internal_alloc_info(memory, &size, &alloc_flags, &buffer, 0/*internal*/);
+  internal_alloc_extra_type* internal = 0;
+  int result = internal_alloc_info(memory, &size, &alloc_flags, &buffer, &internal);
 #else
   int result = internal_alloc_info(memory, &size, 0/*flags*/, &buffer, 0/*internal*/);
 #endif
@@ -369,7 +371,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
 #if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
     LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
 #else
-    const unsigned int alloc_size = ((const char*)memory) - ((const char*)buffer);
+    const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
     int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
     if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
     if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
@@ -394,14 +396,16 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
       }
 # endif
 # if defined(LIBXSMM_VTUNE)
+      assert(0 != internal);
       if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
         LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
         const unsigned int code_id = iJIT_GetNewMethodID();
-        internal_get_vtune_jitdesc(code, code_id, size, name, &vtune_jit_desc);
+        internal_get_vtune_jitdesc(memory, code_id, size, name, &vtune_jit_desc);
         iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
+        internal->code_id = code_id;
       }
       else {
-        code->id = 0;
+        internal->code_id = 0;
       }
 # endif
     }
