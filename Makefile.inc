@@ -417,7 +417,7 @@ ifneq (0,$(INTEL))
       DFLAGS += -DNDEBUG
     endif
   else # debugging enabled
-    ifneq (0,$(shell echo $$((1 < $(DBG)))))
+    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 >$(DBG)))))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
@@ -618,7 +618,7 @@ else # GCC assumed
       DFLAGS += -DNDEBUG
     endif
   else
-    ifneq (0,$(shell echo $$((1 < $(DBG)))))
+    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 >$(DBG)))))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
