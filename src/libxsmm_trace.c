@@ -49,7 +49,14 @@ int mkstemp(char* filename_template);
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 # include <Windows.h>
+# if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 4091)
+# endif
 # include <DbgHelp.h>
+# if defined(_MSC_VER)
+#   pragma warning(pop)
+# endif
 #else
 # include <execinfo.h>
 # include <sys/stat.h>

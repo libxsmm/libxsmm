@@ -44,6 +44,10 @@ if __name__ == "__main__":
         print("libxsmm_gemm_descriptor desc;")
         print("libxsmm_xmmfunction func;")
         print("unsigned int hash, indx;")
+        print("#if defined(_MSC_VER)")
+        print("# pragma warning(push)")
+        print("# pragma warning(disable: 4127)")
+        print("#endif")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
             mnksig = "LIBXSMM_LD(" + mstr + ", " + nstr + "), LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr
@@ -68,6 +72,9 @@ if __name__ == "__main__":
                 print("LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);")
                 print("func.smm = (libxsmm_smmfunction)libxsmm_smm_" + mnkstr + ";")
                 print("internal_register_static_code(&desc, indx, hash, func, result);")
+        print("#if defined(_MSC_VER)")
+        print("# pragma warning(pop)")
+        print("#endif")
     elif (1 < argc):
         print("/* no static code */")
     else:
