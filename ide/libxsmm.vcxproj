@@ -32,7 +32,6 @@
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
-    <ClInclude Include="..\include\libxsmm_prefetch.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />

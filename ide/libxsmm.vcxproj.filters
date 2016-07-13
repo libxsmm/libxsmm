@@ -30,9 +30,6 @@
     <ClInclude Include="..\include\libxsmm_generator.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_prefetch.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_timer.h">
       <Filter>include</Filter>
     </ClInclude>

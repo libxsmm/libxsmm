@@ -780,7 +780,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
               libxsmm_deallocate(code.pmm);
               if (EXIT_SUCCESS == result) {
                 ++internal_statistic[precision][bucket].njit;
-                heapmem += size + (((char*)code.pmm) - (char*)buffer);
+                heapmem += (unsigned int)(size + (((char*)code.pmm) - (char*)buffer));
               }
             }
             else {
@@ -872,7 +872,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length)
   const char *const arch = libxsmm_get_target_arch();
   /* valid here since function is not in the public interface */
   assert(0 != arch && 0 != length);
-  *length = strlen(arch);
+  *length = (int)strlen(arch);
   return arch;
 }
 
@@ -938,7 +938,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* a
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* descriptor,
   const internal_desc_extra_type* desc_extra, internal_code_type* code)
 {
-#if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   const char *const target_arch = internal_get_target_arch(internal_target_archid);
   libxsmm_generated_code generated_code;
   assert(0 != descriptor && 0 != code);
@@ -976,7 +976,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
       free(generated_code.generated_code); /* free temporary/initial code buffer */
-      /* revoke unneccessary memory protection flags; continue on error */
+      /* revoke unnecessary memory protection flags; continue on error */
       libxsmm_alloc_attribute(code->pmm, LIBXSMM_ALLOC_FLAG_RW, jit_code_name);
     }
     else {
@@ -1000,7 +1000,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   LIBXSMM_MESSAGE("LIBXSMM: The JIT BACKEND is currently not supported under Microsoft Windows!")
   LIBXSMM_MESSAGE("================================================================================")
 # endif
-  LIBXSMM_UNUSED(descriptor); LIBXSMM_UNUSED(code);
+  LIBXSMM_UNUSED(descriptor); LIBXSMM_UNUSED(desc_extra);  LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
   assert(LIBXSMM_X86_AVX > internal_target_archid);
 #endif

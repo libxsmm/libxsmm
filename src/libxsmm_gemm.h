@@ -51,7 +51,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
 
 /**
  * INTERNAL pre-initialization step called by libxsmm_gemm_init,
- * e.g. configures the tile sizes for multithreaded GEMM functions.
+ * e.g. configures the tile sizes for multi-threaded GEMM functions.
  */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_configure(int archid, int prefetch,
   /** If NULL is given, the routine attempts to find the SGEMM function. */
