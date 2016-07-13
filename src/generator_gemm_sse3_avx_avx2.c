@@ -61,7 +61,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
-  /* machting calling convention on Linux */
+  /* matching calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
@@ -103,7 +103,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
       unsigned int l_m_blocking = 0;
 
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
-      /* define the micro kernel code gen properties, espically m-blocking affects the vector instruction length */
+      /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
       l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
