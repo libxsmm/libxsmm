@@ -816,7 +816,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
-#if !defined(_WIN32) && !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return internal_target_archid;
 #else /* no JIT support */
   return LIBXSMM_MIN(internal_target_archid, LIBXSMM_X86_SSE4_2);
@@ -971,8 +971,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       LIBXSMM_ALLOC_FLAG_RWX,
       0/*extra*/, 0/*extra_size*/))
     {
+#if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
       char jit_code_name[256];
       internal_get_code_name(target_arch, descriptor, sizeof(jit_code_name), jit_code_name);
+#else
+      const char *const jit_code_name = 0;
+#endif
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
       free(generated_code.generated_code); /* free temporary/initial code buffer */
