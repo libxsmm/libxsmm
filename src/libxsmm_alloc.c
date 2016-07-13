@@ -368,26 +368,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
   static LIBXSMM_TLS int revoke_error = 0;
 #endif
   if (0 != buffer && EXIT_SUCCESS == result) {
-#if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
-    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
-#else
-    const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
-    int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
-    if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
-    if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
-    if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
-# if !defined(NDEBUG) /* library code is expected to be mute */
-      if (0 == revoke_error) {
-        fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%u with flags=%i)!\n",
-          strerror(errno), errno, buffer, alloc_size, xflags);
-        revoke_error = 1;
-      }
-# endif
-      result = EXIT_FAILURE;
-    }
-#endif
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-    if (0 != (LIBXSMM_ALLOC_FLAG_X & alloc_flags) && EXIT_SUCCESS == result && name && *name) {
+    if (0 != (LIBXSMM_ALLOC_FLAG_X & alloc_flags) && name && *name) {
 # if !defined(NDEBUG) && defined(_DEBUG) /* dump byte-code into a file */
       FILE *const code_file = fopen(name, "wb");
       if (0 != code_file) {
@@ -408,6 +390,26 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
         internal->code_id = 0;
       }
 # endif
+    }
+#else
+    LIBXSMM_UNUSED(name);
+#endif
+#if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
+    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
+#else
+    const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
+    int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
+    if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
+    if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
+    if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
+# if !defined(NDEBUG) /* library code is expected to be mute */
+      if (0 == revoke_error) {
+        fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%u with flags=%i)!\n",
+          strerror(errno), errno, buffer, alloc_size, xflags);
+        revoke_error = 1;
+      }
+# endif
+      result = EXIT_FAILURE;
     }
 #endif
   }
