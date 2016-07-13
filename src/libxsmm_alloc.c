@@ -324,6 +324,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
     else
 #endif
     if (EXIT_SUCCESS == result) {
+#if defined(LIBXSMM_VTUNE)
+      assert(0 != internal);
+      if (0 != (LIBXSMM_ALLOC_FLAG_X & flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+        iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &internal->code_id);
+      }
+#endif
 #if defined(_WIN32)
       result = FALSE != VirtualFree(buffer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
@@ -338,12 +344,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
         }
 # endif
         result = EXIT_FAILURE;
-      }
-#endif
-#if defined(LIBXSMM_VTUNE)
-      assert(0 != internal);
-      if (0 != (LIBXSMM_ALLOC_FLAG_X & flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-        iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &internal->code_id);
       }
 #endif
     }
