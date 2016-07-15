@@ -117,8 +117,9 @@ int main(int argc, char *argv[])
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
 
-  fprintf(stdout, "GFLOPS MKL: %f\n", (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total);
-  fprintf(stdout, "GB/s   MKL: %f\n", ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total);
+  fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, l_total/(double)reps );
+  fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
   gettimeofday(&l_start, NULL);
   for ( j = 0; j < reps; j++ ) {
@@ -130,16 +131,17 @@ int main(int argc, char *argv[])
   }
   l_total = sec(l_start, l_end);
 
-  fprintf(stdout, "GFLOPS libxsmm: %f\n", (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total);
-  fprintf(stdout, "GB/s   libxsmm: %f\n", ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total);
+  fprintf(stdout, "time[s] libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, l_total/(double)reps );
+  fprintf(stdout, "GFLOPS  libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
   // test result
-  double max_error = 0;
+  double max_error = 0.0;
   for ( i = 0; i < ldc*m; i++) {
     if (max_error < fabs(c1[i] - c2[i])) {
       max_error = fabs(c1[i] - c2[i]);
     }
   }
-  printf("max error: %f\n", max_error);
+  printf("max error: %f\n\n", max_error);
 }
 
