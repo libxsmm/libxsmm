@@ -65,17 +65,17 @@
 # define LIBXSMM_ALLOC_ALIGNMAX (2 * 1024 *1024)
 #endif
 #if !defined(LIBXSMM_ALLOC_ALIGNFCT)
-# define LIBXSMM_ALLOC_ALIGNFCT 2
+# define LIBXSMM_ALLOC_ALIGNFCT 8
 #endif
 #if !defined(LIBXSMM_ALLOC_MMAP)
-/*# define LIBXSMM_ALLOC_MMAP*/
+# define LIBXSMM_ALLOC_MMAP
 #endif
 
 
 typedef struct LIBXSMM_RETARGETABLE internal_alloc_extra_type {
 #if defined(LIBXSMM_VTUNE)
   unsigned int code_id;
-#else /* avoid warning about empty struct */
+#else /* avoid warning about empty structure */
   int dummy;
 #endif
 } internal_alloc_extra_type;
@@ -83,16 +83,16 @@ typedef struct LIBXSMM_RETARGETABLE internal_alloc_extra_type {
 
 typedef struct LIBXSMM_RETARGETABLE internal_alloc_info_type {
   void* pointer;
-  unsigned int size;
+  size_t size;
   int flags;
   internal_alloc_extra_type internal;
 } internal_alloc_info_type;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gcd(unsigned int a, unsigned int b)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_gcd(size_t a, size_t b)
 {
   while (0 != b) {
-    const unsigned int r = a % b;
+    const size_t r = a % b;
     a = b;
     b = r;
   }
@@ -100,15 +100,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gcd(unsigned int a, u
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_lcm(unsigned int a, unsigned int b)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_lcm(size_t a, size_t b)
 {
   return (a * b) / libxsmm_gcd(a, b);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_alignment(unsigned int size, unsigned int alignment)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_alignment(size_t size, size_t alignment)
 {
-  unsigned int result = sizeof(void*);
+  size_t result = sizeof(void*);
   if ((LIBXSMM_ALLOC_ALIGNFCT * LIBXSMM_ALLOC_ALIGNMAX) <= size) {
     result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_ALLOC_ALIGNMAX);
   }
@@ -126,7 +126,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_alignment(unsigned in
 
 #if defined(LIBXSMM_VTUNE)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* code,
-  unsigned int code_id, unsigned int code_size, const char* code_name,
+  unsigned int code_id, size_t code_size, const char* code_name,
   LIBXSMM_VTUNE_JIT_DESC_TYPE* desc)
 {
   assert(0 != code && 0 != code_id && 0 != code_size && 0 != desc);
@@ -147,7 +147,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, unsigned int* size, int* flags,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, size_t* size, int* flags,
   void** extra, internal_alloc_extra_type** internal)
 {
   int result = EXIT_SUCCESS;
@@ -184,20 +184,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, 
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, unsigned int* size, int* flags, void** extra)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra)
 {
   return internal_alloc_info(memory, size, flags, extra, 0/*internal*/);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsigned int size, unsigned int alignment,
-  int flags, const void* extra, unsigned int extra_size)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t size, size_t alignment,
+  int flags, const void* extra, size_t extra_size)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
     if (0 < size) {
-      const unsigned int auto_alignment = libxsmm_alignment(size, alignment);
-      const unsigned int alloc_size = size + extra_size + sizeof(internal_alloc_info_type) + auto_alignment - 1;
+      const size_t internal_size = size + extra_size + sizeof(internal_alloc_info_type);
+      size_t alloc_alignment = 0, alloc_size = 0;
       void* alloc_failed = 0;
       char* buffer = 0;
 #if !defined(NDEBUG)
@@ -205,6 +205,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
 #endif
 #if !defined(LIBXSMM_ALLOC_MMAP)
       if (0 == flags || LIBXSMM_ALLOC_FLAG_DEFAULT == flags) {
+        alloc_alignment = libxsmm_alignment(size, alignment);
+        alloc_size = internal_size + alloc_alignment - 1;
         buffer = malloc(alloc_size);
       }
       else
@@ -212,9 +214,49 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
       {
 #if defined(_WIN32)
         const int xflags = (0 != (LIBXSMM_ALLOC_FLAG_X & flags) ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
-        buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, xflags);
+        if ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size) {
+          alloc_alignment = libxsmm_alignment(size, alignment);
+          alloc_size = internal_size + alloc_alignment - 1;
+          buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, xflags);
+        }
+        else {
+          HANDLE process_token;
+          const SIZE_T alloc_alignmax = GetLargePageMinimum();
+          /* respect user-requested alignment */
+          alloc_alignment = 0 == alignment ? alloc_alignmax : libxsmm_lcm(alignment, alloc_alignmax);
+          alloc_size = LIBXSMM_UP2(internal_size, alloc_alignment); /* assume that alloc_alignment is POT */
+
+          if (TRUE == OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &process_token)) {
+            TOKEN_PRIVILEGES tp;
+            if (TRUE == LookupPrivilegeValue(NULL, TEXT("SeLockMemoryPrivilege"), &tp.Privileges[0].Luid)) {
+              tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED; tp.PrivilegeCount = 1; /* enable privilege */
+              if ( TRUE == AdjustTokenPrivileges(process_token, FALSE, &tp, 0, (PTOKEN_PRIVILEGES)NULL, 0)
+                && ERROR_SUCCESS == GetLastError()/*may has failed (regardless of TRUE)*/)
+              {
+                buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES, xflags);
+              }
+              tp.Privileges[0].Attributes = 0; /* disable privilege */
+              AdjustTokenPrivileges(process_token, FALSE, &tp, 0, (PTOKEN_PRIVILEGES)NULL, 0);
+            }
+            CloseHandle(process_token);
+          }
+
+          if (alloc_failed == buffer) { /* retry allocation with regular page size */
+            alloc_alignment = libxsmm_alignment(size, alignment);
+            alloc_size = internal_size + alloc_alignment - 1;
+            buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, xflags);
+          }
+        }
+# if !defined(NDEBUG) /* library code is expected to be mute */
+        if (alloc_failed == buffer && 0 == alloc_error) { /* OS-specific error message */
+          fprintf(stderr, "LIBXSMM: VirtualAlloc error #%i for size %llu with flags=%i!\n", GetLastError(), alloc_size, xflags);
+          alloc_error = 1;
+        }
+# endif
 #else
         const int xflags = (0 != (LIBXSMM_ALLOC_FLAG_X & flags) ? (PROT_READ | PROT_WRITE | PROT_EXEC) : (PROT_READ | PROT_WRITE));
+        alloc_alignment = libxsmm_alignment(size, alignment);
+        alloc_size = internal_size + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
         buffer = (char*)mmap(0, alloc_size, xflags,
 # if defined(__APPLE__) && defined(__MACH__)
@@ -226,8 +268,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
 # endif
           -1, 0);
 # if defined(MADV_NOHUGEPAGE)
-        /* disable THP for smaller allocations; req. Linux kernel 2.6.38 (or higher) */
-        if (LIBXSMM_ALLOC_ALIGNMAX > alloc_size && alloc_failed != buffer) {
+        /* disable THP for smaller allocations; requires Linux kernel 2.6.38 (or higher) */
+        if (LIBXSMM_ALLOC_ALIGNMAX > size && alloc_failed != buffer) {
 #   if defined(NDEBUG)
           /* proceed even in case of an error, we then just take what we got (THP) */
           madvise(buffer, alloc_size, MADV_NOHUGEPAGE);
@@ -257,15 +299,15 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
 #endif
       }
       if (alloc_failed != buffer) {
-        char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info_type), auto_alignment);
+        char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info_type), alloc_alignment);
         internal_alloc_info_type *const info = (internal_alloc_info_type*)(aligned - sizeof(internal_alloc_info_type));
         assert((aligned + size) <= (buffer + alloc_size));
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && !defined(_WIN32)
         memset(buffer, 0, alloc_size);
 #endif
         if (0 < extra_size && 0 != extra) {
           const char *const src = (const char*)extra;
-          unsigned int i;
+          size_t i;
 #if (1900 <= _MSC_VER)
 #         pragma warning(suppress: 6386)
 #endif
@@ -287,7 +329,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, unsign
       else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
         if (0 == alloc_error) {
-          fprintf(stderr, "LIBXSMM: memory allocation error for size %u with flags=%i!\n", alloc_size, flags);
+          fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n", alloc_size, flags);
           alloc_error = 1;
         }
 #endif
@@ -313,7 +355,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
   int result = EXIT_SUCCESS;
   if (memory) {
     internal_alloc_extra_type* internal = 0;
-    unsigned int size = 0;
+    size_t size = 0;
     void* buffer = 0;
     int flags = 0;
     result = internal_alloc_info(memory, &size, &flags, &buffer, &internal);
@@ -333,7 +375,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 #if defined(_WIN32)
       result = FALSE != VirtualFree(buffer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
-      const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
+      const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
       if (0 != munmap(buffer, alloc_size)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
         static LIBXSMM_TLS int munmap_error = 0;
@@ -356,7 +398,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* memory, int flags, const char* name)
 {
   void* buffer = 0;
-  unsigned int size = 0;
+  size_t size = 0;
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
   int alloc_flags = 0;
   internal_alloc_extra_type* internal = 0;
@@ -391,34 +433,36 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
       }
 # endif
     }
-#else
+#else /* no VTune JIT Profiling and no debug code */
     LIBXSMM_UNUSED(name);
 #endif
+    { /* protect memory region according to the requested flags */
 #if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
-    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
+      LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
 #else
-    const unsigned int alloc_size = size + (((const char*)memory) - ((const char*)buffer));
-    int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
-    if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
-    if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
-    if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
+      const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
+      int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
+      if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
+      if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
+      if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
-      if (0 == revoke_error) {
-        fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%u with flags=%i)!\n",
-          strerror(errno), errno, buffer, alloc_size, xflags);
-        revoke_error = 1;
-      }
+        if (0 == revoke_error) {
+          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%u with flags=%i)!\n",
+            strerror(errno), errno, buffer, alloc_size, xflags);
+          revoke_error = 1;
+        }
 # endif
-      result = EXIT_FAILURE;
-    }
+        result = EXIT_FAILURE;
+      }
 #endif
+    }
   }
   assert(EXIT_SUCCESS == result);
   return result;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_malloc(unsigned int size)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_malloc(size_t size)
 {
   void* result = 0;
   return 0 == libxsmm_allocate(&result, size, 0/*auto*/, LIBXSMM_ALLOC_FLAG_DEFAULT,

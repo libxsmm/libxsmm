@@ -775,7 +775,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
             code.imm &= ~LIBXSMM_HASH_COLLISION;
             if (0 == (LIBXSMM_GEMM_FLAG_STATIC & desc->flags)/*dynamically allocated/generated (JIT)*/) {
               void* buffer = 0;
-              unsigned int size = 0;
+              size_t size = 0;
               const int result = libxsmm_alloc_info(code.pmm, &size, 0/*flags*/, &buffer);
               libxsmm_deallocate(code.pmm);
               if (EXIT_SUCCESS == result) {
