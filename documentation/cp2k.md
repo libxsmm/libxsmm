@@ -1,6 +1,9 @@
 # CP2K Open Source Molecular Dynamics
 This document is intended to be a recipe for building and running the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) which uses the Intel Development Tools and the Intel runtime environment. Differences compared to CP2K/trunk may be incorporated into the mainline version of CP2K at any time (and subsequently released). For example, starting with [CP2K 3.0](https://www.cp2k.org/version_history) an LIBXSMM integration is available which is (optionally) substituting CP2K's "libsmm" library.
 
+Some additional reference can found under:
+[https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ](https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ).
+
 ## Getting the Source Code
 The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub.
 
@@ -51,28 +54,32 @@ Running the application may go beyond a single node, however for first example t
 
 ```
 mpirun -np 16 \
-  -genv I_MPI_PIN_DOMAIN=auto \
+  -genv I_MPI_PIN_DOMAIN=auto -genv OMP_NUM_THREADS=4 \
   -genv KMP_AFFINITY=compact,granularity=fine,1 \
+  -genv KMP_PLACE_THREADS=2T \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
 For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or for example the workloads under `cp2k/tests/QS/benchmark_single_node` which are supposed to fit into a single node (in fact to fit into 16 GB of memory). For the latter set of workloads (and many others), LIBINT and LIBXC may be required.
 
-The following script generalizes the example from above by scattering all ranks across the entire machine, and filling each partition (rank) with threads accordingly. The variable NT denotes the number of threads per core with MAXNT denoting whether Hyperthreading is enabled (2 or 4 depending on the kind of system) or not (1). Similarly the MAXNTHREADS describes the maximum number of hardware threads available on a per node basis.
+The following script generalizes the example from above by scattering all ranks across the entire machine, and filling each partition (rank) with threads accordingly. The variable NT denotes the number of threads per core with MAXNT denoting whether Hyperthreading is enabled (2 or 4 depending on the kind of system) or not (1). Similarly the MAXNCORES describes the maximum number of cores (not threads) available on a per node basis.
 
 ```
-MAXNTHREADS=64
+NUMNODES=1
+MAXNCORES=32
 NRANKS=8
 MAXNT=2
-NT=2
+NT=1
 
-SHIFT=$((MAXNTHREADS/(NRANKS*MAXNT)*MAXNT))
-NTHREADS=$((SHIFT*NT/MAXNT))
+SHIFT=$((((2*MAXNCORES+NRANKS-1)/NRANKS)/2))
+XRANKS=$((MAXNCORES/SHIFT))
+if [ "1" = "$((XRANKS<=NRANKS))" ]; then NRANKS=${XRANKS}; fi
+NTHREADS=$((SHIFT*NT))
 
-mpirun -np ${NRANKS} \
-  -genv I_MPI_PROCESSOR_LIST=all:shift=${SHIFT} \
-  -genv KMP_AFFINITY=scatter,granularity=fine,1 \
-  -genv OMP_NUM_THREADS=${NTHREADS} \
+mpirun -np $((NRANKS*NUMNODES)) -perhost ${NRANKS} -host localhost \
+  -genv I_MPI_PIN_DOMAIN=auto -genv OMP_NUM_THREADS=${NTHREADS} \
+  -genv KMP_AFFINITY=compact,granularity=fine,1 \
+  -genv KMP_PLACE_THREADS=${NT}T \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
 
