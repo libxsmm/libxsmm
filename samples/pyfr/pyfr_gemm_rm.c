@@ -68,51 +68,51 @@ int main(int argc, char *argv[])
   reps = atoi(argv[4]);
   // this is col-major what you want to use 
   // for the sizes in question
-  lda = m;
-  ldb = k;
-  ldc = m;
+  lda = k;
+  ldb = n;
+  ldc = n;
 
   if (n % nblock != 0) {
     fprintf(stderr, "N needs to be divisable by %i\n", nblock);
     exit(-1);
   }
 
-  a  = (double*)_mm_malloc(lda*k*sizeof(double), 64);
-  b  = (double*)_mm_malloc(ldb*n*sizeof(double), 64);
-  c1 = (double*)_mm_malloc(ldc*n*sizeof(double), 64);
-  c2 = (double*)_mm_malloc(ldc*n*sizeof(double), 64);
+  a  = (double*)_mm_malloc(lda*m*sizeof(double), 64);
+  b  = (double*)_mm_malloc(ldb*k*sizeof(double), 64);
+  c1 = (double*)_mm_malloc(ldc*m*sizeof(double), 64);
+  c2 = (double*)_mm_malloc(ldc*m*sizeof(double), 64);
 
   #pragma omp parallel for
-  for (i = 0; i < lda*k; i++) {
+  for (i = 0; i < lda*m; i++) {
     a[i] = drand48();
   } 
 
   #pragma omp parallel for
-  for (i = 0; i < ldb*n; i++) {
+  for (i = 0; i < ldb*k; i++) {
     b[i] = drand48();
   } 
 
   #pragma omp parallel for
-  for (i = 0; i < ldc*n; i++) {
+  for (i = 0; i < ldc*m; i++) {
     c1[i] = 0;
     c2[i] = 0;
   }
 
   // JIT Kernel
-  kernel = libxsmm_dmmdispatch(m, nblock, k, NULL, NULL, NULL, NULL, NULL, NULL, &l_prefetch_op );
+  kernel = libxsmm_dmmdispatch(nblock, m, k, &ldb, &lda, &ldc, NULL, NULL, NULL, &l_prefetch_op );
 
   // init MKL
-  dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+  dgemm(&transb, &transa, &n, &m, &k, &alpha, b, &ldb, a, &lda, &beta, c1, &ldc);
  
   #pragma omp parallel for
-  for (i = 0; i < ldc*n; i++) {
+  for (i = 0; i < ldc*m; i++) {
     c1[i] = 0;
     c2[i] = 0;
   }
 
   gettimeofday(&l_start, NULL);
   for ( j = 0; j < reps; j++ ) {
-    dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
+    dgemm(&transb, &transa, &n, &m, &k, &alpha, b, &ldb, a, &lda, &beta, c1, &ldc);
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   for ( j = 0; j < reps; j++ ) {
     #pragma omp parallel for private(i)
     for ( i = 0; i < n; i+=nblock) {
-      kernel( a, b+(ldb*i), c2+(ldc*i), NULL, NULL, NULL );
+      kernel( b+i, a, c2+i, NULL, NULL, NULL );
     }
     gettimeofday(&l_end, NULL);
   }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
   // test result
   double max_error = 0;
-  for ( i = 0; i < ldc*n; i++) {
+  for ( i = 0; i < ldc*m; i++) {
     if (max_error < fabs(c1[i] - c2[i])) {
       max_error = fabs(c1[i] - c2[i]);
     }
