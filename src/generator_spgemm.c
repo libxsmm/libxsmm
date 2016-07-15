@@ -213,11 +213,11 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
       }
 
       for ( l_n = 0; l_n < l_row_count+1; l_n++) {
-         printf("%i ", l_column_idx[l_n]);
+         printf("%u ", l_column_idx[l_n]);
       }
       printf("\n");
       for ( l_n = 0; l_n < l_element_count; l_n++) {
-         printf("%i ", l_row_idx[l_n]);
+         printf("%u ", l_row_idx[l_n]);
       }
       printf("\n");
       for ( l_n = 0; l_n < l_element_count; l_n++) {
@@ -269,11 +269,11 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
       }
 
       for ( l_n = 0; l_n < l_row_count+1; l_n++) {
-         printf("%i ", l_row_idx[l_n]);
+         printf("%u ", l_row_idx[l_n]);
       }
       printf("\n");
       for ( l_n = 0; l_n < l_element_count; l_n++) {
-         printf("%i ", l_column_idx[l_n]);
+         printf("%u ", l_column_idx[l_n]);
       }
       printf("\n");
       for ( l_n = 0; l_n < l_element_count; l_n++) {

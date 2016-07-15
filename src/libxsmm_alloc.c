@@ -249,7 +249,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
         }
 # if !defined(NDEBUG) /* library code is expected to be mute */
         if (alloc_failed == buffer && 0 == alloc_error) { /* OS-specific error message */
-          fprintf(stderr, "LIBXSMM: VirtualAlloc error #%i for size %llu with flags=%i!\n", GetLastError(), alloc_size, xflags);
+          fprintf(stderr, "LIBXSMM: VirtualAlloc error #%lu for size %llu with flags=%i!\n",
+            (unsigned long)GetLastError(), (unsigned long long)alloc_size, xflags);
           alloc_error = 1;
         }
 # endif
@@ -329,7 +330,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
       else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
         if (0 == alloc_error) {
-          fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n", alloc_size, flags);
+          fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n",
+            (unsigned long long)alloc_size, flags);
           alloc_error = 1;
         }
 #endif

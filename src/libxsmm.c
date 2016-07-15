@@ -169,20 +169,20 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_target_archid = LI
 
 #if !defined(LIBXSMM_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_reglock[] = {
-  LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
-  LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
-  LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
-  LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT
+LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
+LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
+LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
+LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT
 };
 #endif
 
 #if defined(__GNUC__)
 # define LIBXSMM_INIT
-  /* libxsmm_init already executed via GCC constructor attribute */
+/* libxsmm_init already executed via GCC constructor attribute */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) assert(0 != (VARIABLE))
 #else /* lazy initialization */
 # define LIBXSMM_INIT libxsmm_init();
-  /* use return value of internal_init to refresh local representation */
+/* use return value of internal_init to refresh local representation */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) VARIABLE = internal_init()
 #endif
 
@@ -268,13 +268,14 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_regl
       else { /* 0 != diff */ \
         if (0 == diff0) { \
           /* flag existing entry as collision */ \
-          /*const*/ void * /*const*/ collision = (void*)((CODE)->imm | LIBXSMM_HASH_COLLISION); \
+          internal_code_type collision; \
           /* find new slot to store the code version */ \
           const unsigned int index = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE); \
+          collision.imm = (CODE)->imm | LIBXSMM_HASH_COLLISION; \
           i = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)); \
           i0 = i; /* keep starting point of free-slot-search in mind */ \
           internal_update_statistic(DESCRIPTOR, 0, 1); \
-          INTERNAL_FIND_CODE_WRITE(CODE, collision); /* fix-up existing entry */ \
+          INTERNAL_FIND_CODE_WRITE(CODE, collision.pmm); /* fix-up existing entry */ \
           diff0 = diff; /* no more fix-up */ \
         } \
         else { \
