@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   } 
 
   #pragma omp parallel for
-  for (i = 0; i < ldc*m; i++) {
+  for (i = 0; i < ldc*n; i++) {
     c1[i] = 0;
     c2[i] = 0;
   }
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
   dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
  
   #pragma omp parallel for
-  for (i = 0; i < ldc*m; i++) {
+  for (i = 0; i < ldc*n; i++) {
     c1[i] = 0;
     c2[i] = 0;
   }

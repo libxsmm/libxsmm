@@ -38,14 +38,20 @@ ifeq ($(AVX), 3)
 CXXFLAGS+=-xCOMMON-AVX512 -fma
 endif
 
-default: pyfr_gemm_cm
+default: pyfr_gemm_cm pyfr_gemm_rm
 
 pyfr_gemm_cm.o: pyfr_gemm_cm.c
 	$(CC) $(CFLAGS) pyfr_gemm_cm.c
 
+pyfr_gemm_rm.o: pyfr_gemm_rm.c
+	$(CC) $(CFLAGS) pyfr_gemm_rm.c
+
 pyfr_gemm_cm: pyfr_gemm_cm.o
 	$(CC) pyfr_gemm_cm.o $(LDFLAGS) -o pyfr_gemm_cm
 
+pyfr_gemm_rm: pyfr_gemm_rm.o
+	$(CC) pyfr_gemm_rm.o $(LDFLAGS) -o pyfr_gemm_rm
+
 clean:
 	rm -rf *.o
-	rm -rf pyfr_gemm_cm
+	rm -rf pyfr_gemm_cm pyfr_gemm_rm
