@@ -278,8 +278,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
           if (0 != madvise(buffer, alloc_size, MADV_NOHUGEPAGE)) {
             static LIBXSMM_TLS int madvise_error = 0;
             if (0 == madvise_error) {
-              fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%u)!\n",
-                strerror(errno), errno, buffer, alloc_size);
+              fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
+                strerror(errno), errno, buffer, (unsigned long long)alloc_size);
               madvise_error = 1;
             }
           }
@@ -287,8 +287,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
         }
 #   if !defined(NDEBUG) /* library code is expected to be mute */
         else if (alloc_failed == buffer && 0 == alloc_error) {
-          fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %u with flags=%i)!\n",
-            strerror(errno), errno, alloc_size, xflags);
+          fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %llu with flags=%i)!\n",
+            strerror(errno), errno, (unsigned long long)alloc_size, xflags);
           alloc_error = 1;
         }
 #   endif
@@ -382,8 +382,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 # if !defined(NDEBUG) /* library code is expected to be mute */
         static LIBXSMM_TLS int munmap_error = 0;
         if (0 == munmap_error) {
-          fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%u)!\n",
-            strerror(errno), errno, buffer, alloc_size);
+          fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
+            strerror(errno), errno, buffer, (unsigned long long)alloc_size);
           munmap_error = 1;
         }
 # endif
@@ -449,8 +449,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
       if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
         if (0 == revoke_error) {
-          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%u with flags=%i)!\n",
-            strerror(errno), errno, buffer, alloc_size, xflags);
+          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%llu with flags=%i)!\n",
+            strerror(errno), errno, buffer, (unsigned long long)alloc_size, xflags);
           revoke_error = 1;
         }
 # endif
