@@ -733,8 +733,8 @@ else # GCC assumed
   endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
-    # cat: avoid Unicode for some grep versions, which are not Unicode-enabled
-    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | cat | grep -q "\-ldummydoesnotexist"; echo $$?))
+    DUMMY = $(shell $(LD) -static -ldummydoesnotexist 2>&1)
+    ifeq (0,$(shell echo "${DUMMY}" | grep -q "\-ldummydoesnotexist"; echo $$?))
       SLDFLAGS += -static
     endif
   endif
@@ -909,7 +909,7 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .DEFAULT_GOAL BLAS_WARNING MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS PREFIX libdir,$V), \
+  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL BLAS_WARNING MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS PREFIX DUMMY libdir soname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
 

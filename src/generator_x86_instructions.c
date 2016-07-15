@@ -1495,33 +1495,35 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
        exit(-1);
     }
 
-    int l_regbas0 = i_gp_reg_base % 8;
-    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-    int l_vecval0 = i_vec_reg_number % 8;
-    int l_vecgrp0 = i_vec_reg_number / 8;
-    int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-    int l_2or3grp0 = (l_vecgrp0>=2);
-    int l_vecval1 = i_vec_reg_idx % 8;
-    int l_vecgrp1 = i_vec_reg_idx / 8;
-    int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-    int l_2or3grp1 = (l_vecgrp1>=2);
-    int l_sca=0;
+    { /* open a new scope to avoid warning about mixed declaration and code (C89) */
+      int l_regbas0 = i_gp_reg_base % 8;
+      int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+      int l_vecval0 = i_vec_reg_number % 8;
+      int l_vecgrp0 = i_vec_reg_number / 8;
+      int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
+      int l_2or3grp0 = (l_vecgrp0>=2);
+      int l_vecval1 = i_vec_reg_idx % 8;
+      int l_vecgrp1 = i_vec_reg_idx / 8;
+      int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
+      int l_2or3grp1 = (l_vecgrp1>=2);
+      int l_sca=0;
 
-    if (i_scale==2) l_sca=0x40;
-    else if (i_scale==4) l_sca=0x80;
-    else if (i_scale==8) l_sca=0xc0;
+      if (i_scale==2) l_sca=0x40;
+      else if (i_scale==4) l_sca=0x80;
+      else if (i_scale==8) l_sca=0xc0;
 
-    buf[i++] = 0x62;
-    buf[i++] = 0xf2 - l_gp8 * 0x20 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10;
-    buf[i++] = 0x7d + l_instr_offset;
-    buf[i++] = 0x48 - l_2or3grp0 * 0x08 + i_mask_reg_number;
-    buf[i++] = 0x92 + l_instr_offset2;
-    buf[i++] = 0x04 + l_vecval1*8;
-    buf[i++] = 0x00 + l_sca + l_regbas0 + l_vecval0*8;
-    i += add_offset ( 5, 7, i_displacement, 0, l_sizereg, buf );
+      buf[i++] = 0x62;
+      buf[i++] = (unsigned char)(0xf2 - l_gp8 * 0x20 - l_oddgrp0 * 0x40 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10);
+      buf[i++] = (unsigned char)(0x7d + l_instr_offset);
+      buf[i++] = (unsigned char)(0x48 - l_2or3grp0 * 0x08 + i_mask_reg_number);
+      buf[i++] = (unsigned char)(0x92 + l_instr_offset2);
+      buf[i++] = (unsigned char)(0x04 + l_vecval1 * 8);
+      buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_vecval0 * 8);
+      i += add_offset ( 5, 7, i_displacement, 0, l_sizereg, buf );
 
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+      io_generated_code->code_size = i;
+      /* *loc = i; */
+    }
 
   } else {
     char l_new_code[512];
@@ -2079,9 +2081,9 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
           break;
     }
     buf[i++] = 0xc5;
-    buf[i++] = 0xfc - i_mask_reg_number_src_1*8;
+    buf[i++] = (unsigned char)(0xfc - i_mask_reg_number_src_1 * 8);
     buf[i++] = 0x46;
-    buf[i++] = 0xc0 + i_mask_reg_number_src_0 + i_mask_reg_number_dest*8;
+    buf[i++] = (unsigned char)(0xc0 + i_mask_reg_number_src_0 + i_mask_reg_number_dest * 8);
 
     io_generated_code->code_size = i;
     /* *loc = i; */
