@@ -293,6 +293,9 @@
 # if !defined(__extern_always_inline)
 #   define __extern_always_inline LIBXSMM_INLINE_KEYWORD
 # endif
+# if !defined(__cplusplus) && (199901L > (__STDC_VERSION__))
+#   define inline LIBXSMM_INLINE_KEYWORD
+# endif
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
