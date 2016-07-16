@@ -65,49 +65,46 @@
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #   include <immintrin.h>
 # elif defined(__clang__)
-#   if (defined(__APPLE__) && defined(__MACH__) && (LIBXSMM_VERSION3(6, 2, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) \
-/*|| (!(defined(__APPLE__) && defined(__MACH__)) && LIBXSMM_VERSION3(3, 7, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))*/
-#     define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-#     if !defined(__AVX2__)
-#       define __AVX2__ 1
-#     endif
-#     if !defined(__AVX__)
-#       define __AVX__ 1
-#     endif
-#     if !defined(__SSE4_2__)
-#       define __SSE4_2__ 1
-#     endif
-#     if !defined(__SSE4_1__)
-#       define __SSE4_1__ 1
-#     endif
-#     if !defined(__SSSE3__)
-#       define LIBXSMM_UNDEF_SSSE
-#       define __SSSE3__ 1
-#     endif
-#     if !defined(__SSE3__)
-#       define __SSE3__ 1
-#     endif
-#     include <immintrin.h>
-#     if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __SSE3__
-#     endif
-#     if defined(LIBXSMM_UNDEF_SSSE)
-#       undef LIBXSMM_UNDEF_SSSE
-#       undef __SSSE3__
-#     endif
-#     if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_1 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __SSE4_1__
-#     endif
-#     if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __SSE4_2__
-#     endif
-#     if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_AVX > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX__
-#     endif
-#     if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_AVX2 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX2__
-#     endif
+#   define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
+#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#   if !defined(__AVX2__)
+#     define __AVX2__ 1
+#   endif
+#   if !defined(__AVX__)
+#     define __AVX__ 1
+#   endif
+#   if !defined(__SSE4_2__)
+#     define __SSE4_2__ 1
+#   endif
+#   if !defined(__SSE4_1__)
+#     define __SSE4_1__ 1
+#   endif
+#   if !defined(__SSSE3__)
+#     define LIBXSMM_UNDEF_SSSE
+#     define __SSSE3__ 1
+#   endif
+#   if !defined(__SSE3__)
+#     define __SSE3__ 1
+#   endif
+#   include <immintrin.h>
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
+#     undef __SSE3__
+#   endif
+#   if defined(LIBXSMM_UNDEF_SSSE)
+#     undef LIBXSMM_UNDEF_SSSE
+#     undef __SSSE3__
+#   endif
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_1 > (LIBXSMM_STATIC_TARGET_ARCH))
+#     undef __SSE4_1__
+#   endif
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > (LIBXSMM_STATIC_TARGET_ARCH))
+#     undef __SSE4_2__
+#   endif
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_AVX > (LIBXSMM_STATIC_TARGET_ARCH))
+#     undef __AVX__
+#   endif
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_AVX2 > (LIBXSMM_STATIC_TARGET_ARCH))
+#     undef __AVX2__
 #   endif
 # elif defined(__GNUC__)
 #   if (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
