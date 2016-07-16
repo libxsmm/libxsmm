@@ -350,12 +350,10 @@ ifneq (0,$(AVX))
   endif
 endif
 ifneq (0,$(SSE))
-  ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
-    ifneq (0,$(GCC)) # GCC (not Clang)
-      SSE ?= 3
-    else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
-      SSE ?= 4
-    endif
+  ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
+    SSE ?= 4
+  else ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
+    SSE ?= 3
   else #ifeq (,$(SSE))
     SSE ?= 0
   endif
@@ -674,7 +672,11 @@ else # GCC assumed
       endif
     else ifneq (0,$(SSE))
       ifeq (1,$(SSE)) # default
-        TARGET = -msse3
+        ifneq (0,$(GCC)) # GCC (not Clang)
+          TARGET = -msse3
+        else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
+          TARGET = -msse4.2
+        endif
       else ifeq (2,$(SSE))
         # implicitly present (64-bit ABI)
       else ifeq (4,$(SSE))
