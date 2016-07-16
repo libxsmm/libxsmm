@@ -351,7 +351,7 @@ ifneq (0,$(AVX))
 endif
 ifneq (0,$(SSE))
   ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
-    ifneq (Darwin,$(UNAME))
+    ifneq (0,$(GCC)) # GCC (not Clang)
       SSE ?= 3
     else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
       SSE ?= 4
