@@ -275,14 +275,21 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
           | MAP_32BIT
 # endif
           , -1, 0);
-# if defined(MADV_NOHUGEPAGE)
-        /* disable THP for smaller allocations; requires Linux kernel 2.6.38 (or higher) */
-        if ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size && alloc_failed != buffer) {
-#   if defined(NDEBUG)
-          /* proceed even in case of an error, we then just take what we got (THP) */
-          madvise(buffer, alloc_size, MADV_NOHUGEPAGE);
-#   else /* library code is expected to be mute */
-          if (0 != madvise(buffer, alloc_size, MADV_NOHUGEPAGE)) {
+        if (alloc_failed != buffer) {
+# if !defined(NDEBUG)
+          if (0 != 
+# endif
+          /* proceed after failed madvise (even in case of an error; take what we got from mmap) */
+          madvise(buffer, alloc_size, MADV_RANDOM
+#   if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
+            | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
+#   endif
+#   if defined(MADV_DONTDUMP)
+            | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? 0 : MADV_DONTDUMP)
+#   endif
+          )
+# if !defined(NDEBUG)
+          /* library code is expected to be mute */) {
             static LIBXSMM_TLS int madvise_error = 0;
             if (0 == madvise_error) {
               fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
@@ -290,16 +297,18 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
               madvise_error = 1;
             }
           }
-#   endif /*defined(NDEBUG)*/
+# else
+          ;
+# endif
         }
-#   if !defined(NDEBUG) /* library code is expected to be mute */
+# if !defined(NDEBUG) /* library code is expected to be mute */
         else if (alloc_failed == buffer && 0 == alloc_error) {
           fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %llu with flags=%i)!\n",
             strerror(errno), errno, (unsigned long long)alloc_size, xflags);
           alloc_error = 1;
         }
-#   endif
-# elif !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
+# endif
+# if !defined(MADV_NOHUGEPAGE) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
         LIBXSMM_MESSAGE("================================================================================")
         LIBXSMM_MESSAGE("LIBXSMM: Adjusting THP is unavailable due to C89 or kernel older than 2.6.38!")
         LIBXSMM_MESSAGE("================================================================================")
