@@ -57,7 +57,7 @@ void stream_init( int    i_length,
   *o_trip_stream = ((*o_trip_stream) > i_length) ? (*o_trip_prolog) : (*o_trip_stream);
 }
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+LIBXSMM_API
 void stream_vector_copy( const double* i_a,
                          double*       io_c,
                          const int     i_length) {
@@ -108,7 +108,7 @@ void stream_vector_copy( const double* i_a,
   }
 }
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+LIBXSMM_API
 void stream_vector_set( const double i_scalar,
                         double*       io_c,
                         const int     i_length) {
@@ -162,7 +162,7 @@ void stream_vector_set( const double i_scalar,
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+LIBXSMM_API
 void stream_vector_compscale( const double* i_a,
                               const double* i_b,
                               double*       io_c,
@@ -227,7 +227,7 @@ void stream_vector_compscale( const double* i_a,
   }
 }
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+LIBXSMM_API
 void stream_update_helmholtz( const double* i_g1,
                               const double* i_g2,
                               const double* i_g3, 
@@ -425,7 +425,7 @@ void stream_update_helmholtz( const double* i_g1,
 */
 }
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
+LIBXSMM_API
 void stream_update_helmholtz_no_h2( const double* i_g1,
                                     const double* i_g2,
                                     const double* i_g3, 

@@ -703,7 +703,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
 }
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(constructor)
 #endif
@@ -716,7 +716,7 @@ LIBXSMM_RETARGETABLE void libxsmm_init(void)
 }
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(destructor)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
@@ -814,7 +814,7 @@ LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void)
+LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
@@ -825,7 +825,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int id)
+LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 {
   switch (id) {
     case LIBXSMM_X86_AVX512_CORE:
@@ -859,7 +859,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int id)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void)
+LIBXSMM_API_DEFINITION const char* libxsmm_get_target_arch(void)
 {
   LIBXSMM_INIT
   return internal_get_target_arch(internal_target_archid);
@@ -867,8 +867,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void)
 
 
 /* function serves as a helper for implementing the Fortran interface */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length)
+LIBXSMM_API const char* get_target_arch(int* length);
+LIBXSMM_API_DEFINITION const char* get_target_arch(int* length)
 {
   const char *const arch = libxsmm_get_target_arch();
   /* valid here since function is not in the public interface */
@@ -878,7 +878,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* get_target_arch(int* length)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* arch)
+LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
 
@@ -1022,14 +1022,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_xmmdispatch(con
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   const libxsmm_xmmfunction null_mmfunction = { 0 };
   return 0 != descriptor ? internal_xmmdispatch(descriptor) : null_mmfunction;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
+LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
@@ -1038,7 +1038,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(in
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
@@ -1047,7 +1047,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   internal_code_type code = { {0} };
@@ -1061,7 +1061,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_so
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code)
+LIBXSMM_API_DEFINITION void libxsmm_destroy(const void* jit_code)
 {
   libxsmm_deallocate(jit_code);
 }
@@ -1070,7 +1070,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code)
 #if defined(LIBXSMM_GEMM_EXTWRAP)
 #if defined(__STATIC)
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -1081,7 +1081,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_dgemm)(
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,

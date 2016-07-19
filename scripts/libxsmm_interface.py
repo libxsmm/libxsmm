@@ -113,11 +113,11 @@ if __name__ == "__main__":
                 mnkstr = "_".join(map(str, mnk))
                 if (2 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c" + \
+                        "LIBXSMM_API void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c" + \
                           [");", ",\n  const float* pa, const float* pb, const float* pc);"][0!=prefetch]
                 if (1 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
-                        "LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c" + \
+                        "LIBXSMM_API void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c" + \
                           [");", ",\n  const double* pa, const double* pb, const double* pc);"][0!=prefetch]
                 if (0 == precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n"

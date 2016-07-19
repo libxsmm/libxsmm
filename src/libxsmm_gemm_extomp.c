@@ -196,7 +196,7 @@
 #if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
 
 /* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(int archid, int prefetch)
+LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 {
   union { const void* pv; libxsmm_sgemm_function pf; } internal_sgemm = { NULL };
   union { const void* pv; libxsmm_dgemm_function pf; } internal_dgemm = { NULL };
@@ -224,14 +224,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_init(int archid, int pref
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_finalize(void)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
 }
 
 #endif /*defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)*/
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_sgemm(const char* transa, const char* transb,
+LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
@@ -293,7 +293,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_sgemm(const char* transa,
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_dgemm(const char* transa, const char* transb,
+LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
@@ -357,7 +357,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_dgemm(const char* transa,
 
 #if defined(LIBXSMM_GEMM_EXTWRAP)
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+LIBXSMM_API_DEFINITION void LIBXSMM_GEMM_EXTWRAP_SGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -381,7 +381,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+LIBXSMM_API_DEFINITION void LIBXSMM_GEMM_EXTWRAP_DGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,

@@ -130,21 +130,21 @@
 # endif
 #elif (0 != LIBXSMM_ILP64)
 /** Fallback prototype functions served by any compliant LAPACK/BLAS (ILP64). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void (*libxsmm_internal_sgemm)(
   const char*, const char*, const long long*, const long long*, const long long*,
   const float*, const float*, const long long*, const float*, const long long*,
   const float*, float*, const long long*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
   const char*, const char*, const long long*, const long long*, const long long*,
   const double*, const double*, const long long*, const double*, const long long*,
   const double*, double*, const long long*);
 # else /*LP64*/
 /** Fallback prototype functions served by any compliant LAPACK/BLAS (LP64). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void (*libxsmm_internal_sgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void (*libxsmm_internal_dgemm)(
   const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);

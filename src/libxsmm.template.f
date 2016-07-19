@@ -255,7 +255,7 @@
           SUBROUTINE libxsmm_init() BIND(C)
           END SUBROUTINE
 
-          ! Uninitialize the library and free internal memory (optional).
+          ! De-initialize the library and free internal memory (optional).
           SUBROUTINE libxsmm_finalize() BIND(C)
           END SUBROUTINE
 

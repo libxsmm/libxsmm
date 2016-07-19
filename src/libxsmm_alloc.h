@@ -44,24 +44,24 @@ typedef enum libxsmm_alloc_flags {
   LIBXSMM_ALLOC_FLAG_DEFAULT = LIBXSMM_ALLOC_FLAG_RW
 } libxsmm_alloc_flags;
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_gcd(size_t a, size_t b);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_lcm(size_t a, size_t b);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_alignment(size_t size, size_t alignment);
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
+LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra);
+LIBXSMM_API int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t size, size_t alignment, int flags,
+LIBXSMM_API int libxsmm_allocate(void** memory, size_t size, size_t alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory);
+LIBXSMM_API int libxsmm_deallocate(const void* memory);
 
 /** Attribute memory allocation such as to revoke protection flags. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* memory, int flags, const char* name);
+LIBXSMM_API int libxsmm_alloc_attribute(const void* memory, int flags, const char* name);
 
 /** Allocate memory (malloc/free interface). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void* libxsmm_malloc(size_t size)
+LIBXSMM_API_INLINE void* libxsmm_malloc(size_t size)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
@@ -72,7 +72,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void* libxsmm_malloc(size_t size)
 #endif
 
 /** Deallocate memory (malloc/free interface). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_free(const void* memory)
+LIBXSMM_API_INLINE void libxsmm_free(const void* memory)
 #if defined(LIBXSMM_BUILD)
 ;
 #else

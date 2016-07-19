@@ -219,7 +219,7 @@ lib: headers drytest lib_hst lib_mic
 all: lib samples
 
 .PHONY: headers
-headers: cheader fheader
+headers: cheader cheader_only fheader
 
 .PHONY: interface
 interface: headers
@@ -355,6 +355,11 @@ ifeq (1,$(BLAS))
 endif
 	$(info ================================================================================)
 endif
+
+.PHONY: cheader_only
+cheader_only: $(INCDIR)/libxsmm_source.h
+$(INCDIR)/libxsmm_source.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_source.sh
+	@$(SCRDIR)/libxsmm_source.sh > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
@@ -1171,6 +1176,7 @@ endif
 	@rm -f $(SPLDIR)/nek/grad-perf.sh
 	@rm -f $(SPLDIR)/nek/axhm-perf.sh
 	@rm -f $(SPLDIR)/nek/rstr-perf.sh
+	@rm -f $(INCDIR)/libxsmm_source.h
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
 	@rm -f $(INCDIR)/libxsmm.f
@@ -1242,6 +1248,8 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 		cp -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic ; \
 	fi
+	@echo
+	@echo "LIBXSMM installing interface..."
 	@cp -v $(BINDIR)/libxsmm_gemm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)

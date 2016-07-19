@@ -70,7 +70,7 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_cpuid_x86(void)
+LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
 {
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;

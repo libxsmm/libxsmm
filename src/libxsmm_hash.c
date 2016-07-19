@@ -448,7 +448,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_init(int target_arch)
+LIBXSMM_API_DEFINITION void libxsmm_hash_init(int target_arch)
 {
 #if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_UNUSED(target_arch);
@@ -464,12 +464,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_init(int target_arch)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_hash_finalize(void)
+LIBXSMM_API_DEFINITION void libxsmm_hash_finalize(void)
 {
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
 #if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
   return libxsmm_crc32_sse42(data, size, seed);
@@ -480,13 +480,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32(const void* dat
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
 {
   LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when attempting to select CRC32 instr. (despite of the LIBXSMM_INTRINSICS attribute) */ \
@@ -503,13 +503,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS unsigned int libxsmm_cr
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
 {
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, data, size, size, n);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_hash_npot(const void* data, unsigned int size, unsigned int npot)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_hash_npot(const void* data, unsigned int size, unsigned int npot)
 {
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, data, size, size, npot);
 }

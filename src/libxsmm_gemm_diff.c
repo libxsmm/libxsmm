@@ -60,7 +60,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diff_function inte
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diffn_function internal_gemm_diffn_function = libxsmm_gemm_diffn_sw;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arch)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_diff_init(int target_arch)
 {
 #if defined(__MIC__)
   LIBXSMM_UNUSED(target_arch);
@@ -90,15 +90,14 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_init(int target_arc
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_gemm_diff_finalize(void)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_diff_finalize(void)
 {
   internal_gemm_diff_function = libxsmm_gemm_diff_sw;
   internal_gemm_diffn_function = libxsmm_gemm_diffn_sw;
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
@@ -118,8 +117,7 @@ unsigned int libxsmm_gemm_diff(const libxsmm_gemm_descriptor* reference, const l
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW))
   return 0 != memcmp(reference, desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
@@ -138,8 +136,7 @@ unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_descriptor* reference, cons
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
 #if defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
@@ -171,8 +168,7 @@ unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, con
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
 #if defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -223,8 +219,7 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
 #if defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -267,8 +262,7 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, co
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
 #if defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
@@ -290,8 +284,7 @@ unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_descriptor* reference, co
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
@@ -312,8 +305,7 @@ unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference, const 
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
   const char *const desc = (const char*)descs;
@@ -340,8 +332,7 @@ unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, con
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -404,8 +395,7 @@ unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, co
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -459,8 +449,7 @@ unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, c
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS
-unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if (defined(LIBXSMM_GEMM_DIFF_AVX512_MIC)  && LIBXSMM_X86_AVX512_MIC  <= LIBXSMM_MAX_STATIC_TARGET_ARCH) || \
@@ -517,8 +506,7 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE
-unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_KNC) && defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)

@@ -44,12 +44,12 @@
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
-# define LIBXSMM_EXTERN_C extern "C"
+# define LIBXSMM_EXTERN extern "C"
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 #else
 # define LIBXSMM_VARIADIC
-# define LIBXSMM_EXTERN_C extern
+# define LIBXSMM_EXTERN extern
 # if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__)) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
@@ -60,13 +60,24 @@
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
 # endif
-# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
+# if defined(LIBXSMM_BUILD)
+#   define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
+# else
+#   define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
+# endif
 #endif /*__cplusplus*/
 
+#if !defined(LIBXSMM_API)
+# define LIBXSMM_API LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
+#endif
+#if !defined(LIBXSMM_API_DEFINITION)
+# define LIBXSMM_API_DEFINITION LIBXSMM_API
+#endif
+
 #if defined(LIBXSMM_BUILD)
-# define LIBXSMM_INLINE_EXPORT LIBXSMM_EXTERN_C
+# define LIBXSMM_API_INLINE LIBXSMM_API
 #else
-# define LIBXSMM_INLINE_EXPORT LIBXSMM_INLINE
+# define LIBXSMM_API_INLINE LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 #endif
 
 #if !defined(LIBXSMM_RESTRICT)
@@ -224,7 +235,7 @@
 # define LIBXSMM_UNUSED_ARG
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(LIBXSMM_BUILD)
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
 #else

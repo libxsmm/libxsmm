@@ -155,7 +155,7 @@ LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_trace_mindepth =  
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_trace_maxnsyms = -1/*all*/;
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
@@ -193,7 +193,7 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
 }
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
@@ -242,11 +242,11 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 }
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(_WIN32)
 /*TODO: no inline*/
 #elif defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(noinline)
+/*LIBXSMM_ATTRIBUTE(noinline)*/
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
@@ -464,7 +464,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 }
 
 
-LIBXSMM_EXTERN_C
+LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
@@ -499,8 +499,9 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
 
 
 #if defined(__GNUC__)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
+
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if 1
@@ -531,10 +532,11 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) 
 #endif
 }
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
+
 #endif /*defined(__GNUC__)*/
 

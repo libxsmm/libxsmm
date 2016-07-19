@@ -83,36 +83,36 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
 } libxsmm_xmmfunction;
 
 /** Initialize the library; pay for setup cost at a specific point. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_init(void);
-/** Uninitialize the library and free internal memory (optional). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_finalize(void);
+LIBXSMM_API void libxsmm_init(void);
+/** De-initialize the library and free internal memory (optional). */
+LIBXSMM_API void libxsmm_finalize(void);
 
 /**
  * Returns the architecture and instruction set extension as determined by the CPUID flags, as set
  * by the libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_get_target_archid(void);
+LIBXSMM_API int libxsmm_get_target_archid(void);
 /** Set target architecture (id: see libxsmm_typedefs.h) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_archid(int id);
+LIBXSMM_API void libxsmm_set_target_archid(int id);
 
 /**
  * Returns the name of the target architecture as determined by the CPUID flags, as set by the
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE const char* libxsmm_get_target_arch(void);
+LIBXSMM_API const char* libxsmm_get_target_arch(void);
 /** Set target architecture (arch="0|sse|snb|hsw|knl|skx", NULL/"0": CPUID) for subsequent code generation (JIT). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_set_target_arch(const char* arch);
+LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
+LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
+LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch);
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
+LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
@@ -122,18 +122,18 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_dmmdispatch(in
  * wide vector) and a sparse matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_destroy in order to deallocate the JIT'ted code.
  */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_destroy(const void* jit_code);
+LIBXSMM_API void libxsmm_destroy(const void* jit_code);
 
 /** Transpose a matrix (out-of-place form). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_oop(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API void libxsmm_transpose_oop(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Transpose a matrix (out-of-place form, single-precision). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* out, const float* in,
+LIBXSMM_API_INLINE void libxsmm_stranspose_oop(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
 ;
@@ -142,7 +142,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_oop(float* ou
 #endif
 
 /** Transpose a matrix (out-of-place form, double-precision). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* out, const double* in,
+LIBXSMM_API_INLINE void libxsmm_dtranspose_oop(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
 ;
@@ -151,11 +151,11 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_oop(double* o
 #endif
 
 /** Transpose a matrix (in-place form). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_transpose_inp(void* inout, unsigned int typesize,
+LIBXSMM_API void libxsmm_transpose_inp(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Transpose a matrix (in-place form, single-precision). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* inout,
+LIBXSMM_API_INLINE void libxsmm_stranspose_inp(float* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 #if defined(LIBXSMM_BUILD)
 ;
@@ -164,7 +164,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_stranspose_inp(float* in
 #endif
 
 /** Transpose a matrix (in-place form, double-precision). */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* inout,
+LIBXSMM_API_INLINE void libxsmm_dtranspose_inp(double* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 #if defined(LIBXSMM_BUILD)
 ;
@@ -173,7 +173,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dtranspose_inp(double* i
 #endif
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa, const char* transb,
+LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
@@ -191,7 +191,7 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_sgemm(const char* transa
 #endif
 
 /** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
-LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa, const char* transb,
+LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
@@ -209,28 +209,28 @@ LIBXSMM_INLINE_EXPORT LIBXSMM_RETARGETABLE void libxsmm_dgemm(const char* transa
 #endif
 
 /** Threadable general dense matrix multiplication; requires linking libxsmmext (single-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_sgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_omp_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Threadable general dense matrix multiplication; requires linking libxsmmext (double-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_omp_dgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_omp_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_sgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_blas_dgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_blas_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,

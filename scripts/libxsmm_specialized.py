@@ -46,7 +46,7 @@ if __name__ == "__main__":
         if (2 != precision):
             print
             print
-            print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_smm_" + mnkstr + "(")
+            print("LIBXSMM_API_DEFINITION void libxsmm_smm_" + mnkstr + "(")
             print("  const float* a, const float* b, float* c" \
                + [")", ", const float* pa, const float* pb, const float* pc)"][0!=prefetch])
             print("{")
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         if (1 != precision):
             print
             print
-            print("LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_dmm_" + mnkstr + "(")
+            print("LIBXSMM_API_DEFINITION void libxsmm_dmm_" + mnkstr + "(")
             print("  const double* a, const double* b, double* c" \
                + [")", ", const double* pa, const double* pb, const double* pc)"][0!=prefetch])
             print("{")

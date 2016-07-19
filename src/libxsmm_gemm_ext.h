@@ -40,11 +40,11 @@
 #   define LIBXSMM_GEMM_WEAK_SLIB LIBXSMM_ATTRIBUTE(weak)
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
+    LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
       const float*, float*, const libxsmm_blasint*);
-    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_dgemm)(
+    LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
       const double*, double*, const libxsmm_blasint*);
@@ -54,11 +54,11 @@
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif
-  LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+  LIBXSMM_API void LIBXSMM_GEMM_EXTWRAP_SGEMM(
     const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
     const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
     const float*, float*, const libxsmm_blasint*);
-  LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+  LIBXSMM_API void LIBXSMM_GEMM_EXTWRAP_DGEMM(
     const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
     const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
     const double*, double*, const libxsmm_blasint*);
@@ -72,28 +72,28 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_API void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
 
 /** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
 /** INTERNAL: number of threads per core */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core;
 /** INTERNAL: prefetch strategy */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch;
 /** INTERNAL: determines whether (OpenMP-)tasks are preferred over thread-style parallelization */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks;
 /** INTERNAL: kind of OMP-based ?GEMM (1: sequential, 2: parallelized) */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp;
 /** INTERNAL: kind of LD_PRELOAD ?GEMM (0: small gemm, 1: sequential, 2: parallelized) */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
 
 #endif /*LIBXSMM_GEMM_EXT_H*/
 

@@ -33,7 +33,7 @@
 
 #if defined(LIBXSMM_GEMM_EXTWRAP)
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+LIBXSMM_API LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_SGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -50,7 +50,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+LIBXSMM_API LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_DGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,

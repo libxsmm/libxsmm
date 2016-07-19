@@ -2,6 +2,7 @@
 My Amplifier*
 bin/libxsmm_generator
 include/stream_update_kernels.f
+include/libxsmm_source.h
 include/libxsmm.f
 include/libxsmm.h
 build/libxsmm_dispatch.h
@@ -43,6 +44,9 @@ _*.txt
 *.lib
 *.mod
 *.bin
+*.jit
+*.smm
+*.soa
 *.dll
 *.so
 *.o

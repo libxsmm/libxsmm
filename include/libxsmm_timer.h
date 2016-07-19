@@ -35,8 +35,8 @@
 
 
 /** Returns the current clock tick using a platform-specific resolution. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned long long libxsmm_timer_tick(void);
+LIBXSMM_API unsigned long long libxsmm_timer_tick(void);
 /** Returns the duration between two clock ticks (seconds). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
+LIBXSMM_API double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
 
 #endif /*LIBXSMM_TIMER_H*/

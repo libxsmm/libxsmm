@@ -89,7 +89,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_alloc_info_type {
 } internal_alloc_info_type;
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_gcd(size_t a, size_t b)
+LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)
 {
   while (0 != b) {
     const size_t r = a % b;
@@ -100,13 +100,13 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_gcd(size_t a, size_t b)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_lcm(size_t a, size_t b)
+LIBXSMM_API_DEFINITION size_t libxsmm_lcm(size_t a, size_t b)
 {
   return (a * b) / libxsmm_gcd(a, b);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t libxsmm_alignment(size_t size, size_t alignment)
+LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result = sizeof(void*);
   if ((LIBXSMM_ALLOC_ALIGNFCT * LIBXSMM_ALLOC_ALIGNMAX) <= size) {
@@ -147,6 +147,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
 #endif
 
 
+#if !defined(LIBXSMM_BUILD)
+static/*TODO: fix static variable usage*/
+#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, size_t* size, int* flags,
   void** extra, internal_alloc_extra_type** internal)
 {
@@ -184,13 +187,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, 
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra)
+LIBXSMM_API_DEFINITION int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra)
 {
   return internal_alloc_info(memory, size, flags, extra, 0/*internal*/);
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t size, size_t alignment,
+LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t alignment,
   int flags, const void* extra, size_t extra_size)
 {
   int result = EXIT_SUCCESS;
@@ -207,7 +210,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
       if (0 == flags || LIBXSMM_ALLOC_FLAG_DEFAULT == flags) {
         alloc_alignment = libxsmm_alignment(size, alignment);
         alloc_size = internal_size + alloc_alignment - 1;
-        buffer = malloc(alloc_size);
+        buffer = (char*)malloc(alloc_size);
       }
       else
 #endif
@@ -368,7 +371,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_allocate(void** memory, size_t
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
+LIBXSMM_API_DEFINITION int libxsmm_deallocate(const void* memory)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
@@ -413,7 +416,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_deallocate(const void* memory)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* memory, int flags, const char* name)
+LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags, const char* name)
 {
   void* buffer = 0;
   size_t size = 0;
@@ -480,7 +483,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_alloc_attribute(const void* me
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_malloc(size_t size)
+#if defined(LIBXSMM_BUILD)
+
+LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 {
   void* result = 0;
   return 0 == libxsmm_allocate(&result, size, 0/*auto*/, LIBXSMM_ALLOC_FLAG_DEFAULT,
@@ -488,8 +493,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_malloc(size_t size)
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void libxsmm_free(const void* memory)
+LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
   libxsmm_deallocate(memory);
 }
+
+#endif /*defined(LIBXSMM_BUILD)*/
 
