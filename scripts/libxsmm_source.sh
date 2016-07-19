@@ -36,14 +36,11 @@ cat <<'EOM'
 
 #if !defined(LIBXSMM_API)
 # define LIBXSMM_API LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_DEFINITION LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+# define LIBXSMM_API_DEFINITION LIBXSMM_INLINE_KEYWORD LIBXSMM_RETARGETABLE
 #else
 # error Please do not include any LIBXSMM header other than libxsmm_source.h!
 #endif
 
-/**
- * TODO
- */
 #include "libxsmm.h"
 
 #include "libxsmm_timer.h"

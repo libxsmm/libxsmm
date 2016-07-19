@@ -147,9 +147,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
 #endif
 
 
-#if !defined(LIBXSMM_BUILD)
-static/*TODO: fix static variable usage*/
-#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, size_t* size, int* flags,
   void** extra, internal_alloc_extra_type** internal)
 {

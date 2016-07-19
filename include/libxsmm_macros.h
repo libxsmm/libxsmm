@@ -60,11 +60,7 @@
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
 # endif
-# if defined(LIBXSMM_BUILD)
-#   define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
-# else
-#   define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
-# endif
+# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
 
 #if !defined(LIBXSMM_API)
