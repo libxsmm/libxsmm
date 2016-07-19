@@ -334,7 +334,7 @@ void libxsmm_generator_spgemm( const char*                     i_file_out,
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
-      fputs( l_generated_code.generated_code, l_file_handle );
+      fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_spgemm: could not write to into destination source file\n");

@@ -128,23 +128,32 @@ typedef union LIBXSMM_RETARGETABLE internal_code_type {
   uintptr_t imm;
 } internal_code_type;
 
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL struct LIBXSMM_RETARGETABLE {
+typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
-} internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
+} internal_statistic_type;
 
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_sml = 13;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_med = 23;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_mnk = LIBXSMM_MAX_M;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_statistic_type internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_statistic_type internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_sml;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_sml = 13;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_med;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_med = 23;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_mnk;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_statistic_mnk = LIBXSMM_MAX_M;
 
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose;
 #if defined(NDEBUG)
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose = 0; /* quiet */
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose = 0; /* quiet */
 #else
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose = 1; /* verbose */
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_verbose = 1; /* verbose */
 #endif
 
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regkey_type* internal_registry_keys = 0;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code_type* internal_registry = 0;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_teardown = 0;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regkey_type* internal_registry_keys;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regkey_type* internal_registry_keys = 0;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code_type* internal_registry;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code_type* internal_registry = 0;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_teardown;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int internal_teardown = 0;
 
 typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
   const unsigned int* row_ptr;
@@ -164,8 +173,10 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
 #endif
 
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_prefetch = LIBXSMM_MAX(INTERNAL_PREFETCH, 0);
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_prefetch;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_prefetch = LIBXSMM_MAX(INTERNAL_PREFETCH, 0);
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_target_archid;
+               LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
 
 #if !defined(LIBXSMM_OPENMP)
 LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_reglock[] = {
@@ -670,13 +681,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
           /* omit registering code if JIT is enabled and if an ISA extension is found
            * which is beyond the static code path used to compile the library
            */
-#if (0 != LIBXSMM_JIT) && !defined(__MIC__)
+#if defined(LIBXSMM_BUILD)
+# if (0 != LIBXSMM_JIT) && !defined(__MIC__)
           if (LIBXSMM_STATIC_TARGET_ARCH <= internal_target_archid && LIBXSMM_X86_AVX > internal_target_archid)
-#endif
+# endif
           { /* opening a scope for eventually declaring variables */
             /* setup the dispatch table for the statically generated code */
 #           include <libxsmm_dispatch.h>
           }
+#endif
           atexit(libxsmm_finalize);
           LIBXSMM_ATOMIC_STORE(internal_registry, result, LIBXSMM_ATOMIC_SEQ_CST);
         }
@@ -960,8 +973,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   else if (0 != desc_extra->row_ptr && 0 != desc_extra->column_idx &&
     0 != desc_extra->values)
   { /* currently only one additional kernel kind */
+    assert(0 == (LIBXSMM_GEMM_FLAG_F32PREC & (descriptor->flags)));
     libxsmm_generator_spgemm_csr_soa_kernel(&generated_code, descriptor, target_arch,
-      desc_extra->row_ptr, desc_extra->column_idx, desc_extra->values);
+      desc_extra->row_ptr, desc_extra->column_idx, (const double*)desc_extra->values);
   }
 
   /* handle an eventual error in the else-branch */

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cat <<'EOM'
+cat << EOM
 /******************************************************************************
 ** Copyright (c) 2016, Intel Corporation                                     **
 ** All rights reserved.                                                      **
@@ -57,14 +57,13 @@ done
 
 echo
 
-for FILE in $(grep -L "LIBXSMM_BUILD..*LIBXSMM_..*_NOINLINE" ${HERE}/../src/*.h); do
-  BASENAME=$(basename ${FILE} .h).c
-  if [ -e ${HERE}/../src/${BASENAME} ] && [ "" != "$(echo ${BASENAME} | grep -v '.template.')" ]; then
-    echo "#include \"../src/${BASENAME}\""
-  fi
+# good-enough pattern to match a main function, and to exclude this translation unit
+for FILE in $(grep -L "main\s*(.*)" ${HERE}/../src/*.c); do
+  BASENAME=$(basename ${FILE})
+  echo "#include \"../src/${BASENAME}\""
 done
 
-cat <<'EOM'
+cat << EOM
 
 #endif /*LIBXSMM_SOURCE_H*/
 EOM
