@@ -34,21 +34,6 @@
 #include <libxsmm.h>
 
 
-/** Function type representing the SGEMM BLAS interface. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
-  const char*, const char*,
-  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*,
-  const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
-/** Function type representing the DGEMM BLAS interface. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
-  const char*, const char*,
-  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*,
-  const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-
 /**
  * INTERNAL pre-initialization step called by libxsmm_gemm_init,
  * e.g. configures the tile sizes for multi-threaded GEMM functions.
