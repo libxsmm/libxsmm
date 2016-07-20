@@ -41,7 +41,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_SGEMM(
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != libxsmm_internal_sgemm);
+  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != *libxsmm_original_sgemm());
   LIBXSMM_XGEMM(float, libxsmm_blasint, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -58,7 +58,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE(weak) void LIBXSMM_GEMM_EXTWRAP_DGEMM(
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != libxsmm_internal_dgemm);
+  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != *libxsmm_original_dgemm());
   LIBXSMM_XGEMM(double, libxsmm_blasint, flags, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),

@@ -113,12 +113,23 @@ int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ALIGNED(volatile LONG internal_trace_initialized, 32) = -1;
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL volatile LONG* internal_trace_initialized(void)
+{
+  static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG instance, 32) = -1;
+  return &instance;
+}
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ALIGNED(int internal_trace_initialized, 32) = -1;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL pthread_key_t internal_trace_key = 0;
-
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_initialized(void)
+{
+  static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int instance, 32) = -1;
+  return &instance;
+}
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL pthread_key_t* internal_trace_key(void)
+{
+  static LIBXSMM_RETARGETABLE pthread_key_t instance = 0;
+  return &instance;
+}
 LIBXSMM_INLINE
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
@@ -150,9 +161,26 @@ LIBXSMM_RETARGETABLE void internal_delete(void* value)
 }
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_trace_threadid = -1/*all*/;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_trace_mindepth =  0/*all*/;
-LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int internal_trace_maxnsyms = -1/*all*/;
+
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_threadid(void)
+{
+  static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
+  return &instance;
+}
+
+
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_mindepth(void)
+{
+  static LIBXSMM_RETARGETABLE int instance = 0/*all*/;
+  return &instance;
+}
+
+
+static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_maxnsyms(void)
+{
+  static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
+  return &instance;
+}
 
 
 LIBXSMM_API_DEFINITION
@@ -171,22 +199,22 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
     ? EXIT_SUCCESS
     : GetLastError();
 #else
-  result = pthread_key_create(&internal_trace_key, internal_delete);
+  result = pthread_key_create(internal_trace_key(), internal_delete);
 #endif
   if (EXIT_SUCCESS == result) {
-    internal_trace_threadid = filter_threadid;
-    internal_trace_mindepth = filter_mindepth;
-    internal_trace_maxnsyms = filter_maxnsyms;
+    *internal_trace_threadid() = filter_threadid;
+    *internal_trace_mindepth() = filter_mindepth;
+    *internal_trace_maxnsyms() = filter_maxnsyms;
 #if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 # if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    __atomic_store_n(&internal_trace_initialized, 0, __ATOMIC_SEQ_CST);
+    __atomic_store_n(internal_trace_initialized(), 0, __ATOMIC_SEQ_CST);
 # else
-    __sync_and_and_fetch(&internal_trace_initialized, 0);
+    __sync_and_and_fetch(internal_trace_initialized(), 0);
 # endif
 #elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    internal_trace_initialized = 0; /*TODO*/
+    *internal_trace_initialized() = 0; /*TODO*/
 #else
-    internal_trace_initialized = 0;
+    *internal_trace_initialized() = 0;
 #endif
   }
   return result;
@@ -205,33 +233,33 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #else
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 #   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-  const int initialized = __atomic_load_n(&internal_trace_initialized, __ATOMIC_RELAXED);
+  const int initialized = __atomic_load_n(internal_trace_initialized(), __ATOMIC_RELAXED);
 #   else
-  const int initialized = __sync_or_and_fetch(&internal_trace_initialized, 0);
+  const int initialized = __sync_or_and_fetch(internal_trace_initialized(), 0);
 #   endif
 # elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-  const int initialized = internal_trace_initialized; /*TODO*/
+  const int initialized = *internal_trace_initialized(); /*TODO*/
 # else
-  const int initialized = internal_trace_initialized;
+  const int initialized = *internal_trace_initialized();
 # endif
   if (0 == initialized) {
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 #   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    __atomic_store_n(&internal_trace_initialized, -1, __ATOMIC_SEQ_CST);
+    __atomic_store_n(internal_trace_initialized(), -1, __ATOMIC_SEQ_CST);
 #   else
-    __sync_or_and_fetch(&internal_trace_initialized, -1);
+    __sync_or_and_fetch(internal_trace_initialized(), -1);
 #   endif
 # elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    internal_trace_initialized = -1; /*TODO*/
+    *internal_trace_initialized() = -1; /*TODO*/
 # else
-    internal_trace_initialized = -1;
+    *internal_trace_initialized() = -1;
 # endif
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = FALSE != SymCleanup(GetCurrentProcess())
       ? EXIT_SUCCESS
       : GetLastError();
 # else
-    result = pthread_key_delete(internal_trace_key);
+    result = pthread_key_delete(*internal_trace_key());
 # endif
   }
   else {
@@ -273,18 +301,18 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # endif
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 #   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    i = __atomic_load_n(&internal_trace_initialized, __ATOMIC_RELAXED);
+    i = __atomic_load_n(internal_trace_initialized(), __ATOMIC_RELAXED);
 #   else
-    i = __sync_or_and_fetch(&internal_trace_initialized, 0);
+    i = __sync_or_and_fetch(internal_trace_initialized(), 0);
 #   endif
 # elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    i = internal_trace_initialized; /*TODO*/
+    i = *internal_trace_initialized(); /*TODO*/
 # else
-    i = internal_trace_initialized;
+    i = *internal_trace_initialized();
 # endif
     if (0 <= i) { /* do nothing if not yet initialized */
-      const int mindepth = filter_mindepth ? *filter_mindepth : internal_trace_mindepth;
-      const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms;
+      const int mindepth = *(filter_mindepth ? filter_mindepth : internal_trace_mindepth());
+      const int maxnsyms = *(filter_maxnsyms ? filter_maxnsyms : internal_trace_maxnsyms());
 # if defined(_WIN32) || defined(__CYGWIN__)
       i = CaptureStackBackTrace(0, max_n, stack, NULL);
 # else
@@ -295,7 +323,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
       {
         if (min_n <= i) { /* check against min. depth */
-          const int filter = (filter_threadid ? *filter_threadid : internal_trace_threadid);
+          const int filter = *(filter_threadid ? filter_threadid : internal_trace_threadid());
           int abs_tid = 0;
 # if defined(_WIN32) || defined(__CYGWIN__)
           static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
@@ -311,14 +339,14 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           else {
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 #   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-            abs_tid = __atomic_add_fetch(&internal_trace_initialized, 1, __ATOMIC_RELAXED);
+            abs_tid = __atomic_add_fetch(internal_trace_initialized(), 1, __ATOMIC_RELAXED);
 #   else
-            abs_tid = __sync_add_and_fetch(&internal_trace_initialized, 1);
+            abs_tid = __sync_add_and_fetch(internal_trace_initialized(), 1);
 #   endif
 # elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-            abs_tid = _InterlockedIncrement(&internal_trace_initialized);
+            abs_tid = _InterlockedIncrement(internal_trace_initialized());
 # else
-            abs_tid = ++internal_trace_initialized;
+            abs_tid = ++*internal_trace_initialized();
 # endif
             /* use sign bit to flag enabled fallback for symbol resolution */
             tid = -abs_tid;
@@ -341,7 +369,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             if (threadid) *threadid = abs_tid - 1;
           }
 # else
-          char *const raw_value = (char*)pthread_getspecific(internal_trace_key), *value = 0;
+          char *const raw_value = (char*)pthread_getspecific(*internal_trace_key()), *value = 0;
           int* ivalue = 0, fd = -1;
 
           if (raw_value) {
@@ -373,19 +401,19 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                 ivalue = (int*)buffer;
                 ivalue[0] = fd; /* valid fd for internal_delete */
 
-                if (0 == pthread_setspecific(internal_trace_key, buffer)
+                if (0 == pthread_setspecific(*internal_trace_key(), buffer)
                   && (sizeof(int) * 1) == read(fd, &check, sizeof(int))
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {
 # if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
 #   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-                  abs_tid = __atomic_add_fetch(&internal_trace_initialized, 1, __ATOMIC_RELAXED);
+                  abs_tid = __atomic_add_fetch(internal_trace_initialized(), 1, __ATOMIC_RELAXED);
 #   else
-                  abs_tid = __sync_add_and_fetch(&internal_trace_initialized, 1);
+                  abs_tid = __sync_add_and_fetch(internal_trace_initialized(), 1);
 #   endif
 # else
-                  abs_tid = ++internal_trace_initialized;
+                  abs_tid = ++*internal_trace_initialized();
 # endif
                   assert(0 < abs_tid);
                   /* use sign bit to flag enabled fallback for symbol resolution */
@@ -480,9 +508,9 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
     filter_threadid, filter_mindepth, filter_maxnsyms);
 
   if (name && *name) { /* implies actual other results to be valid */
-    const int depth0 = LIBXSMM_MAX(filter_mindepth ? *filter_mindepth : internal_trace_mindepth, 0);
+    const int depth0 = LIBXSMM_MAX(*(filter_mindepth ? filter_mindepth : internal_trace_mindepth()), 0);
     assert(0 != stream/*otherwise fprintf handle the error*/);
-    if ((0 == filter_threadid && 0 > internal_trace_threadid) || (filter_threadid && 0 > *filter_threadid)) {
+    if ((0 == filter_threadid && 0 > *internal_trace_threadid()) || (filter_threadid && 0 > *filter_threadid)) {
       fprintf(stream, "%*s%s@%u\n", (int)(depth1 - depth0), "", name, threadid);
     }
     else {
@@ -499,9 +527,12 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
 
 
 #if defined(__GNUC__)
-
+#if 0
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
+#endif
+LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if 1
@@ -532,8 +563,12 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) vo
 #endif
 }
 
+#if 0
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
+#endif
+LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
