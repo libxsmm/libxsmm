@@ -536,28 +536,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* ostream, const char* target_arch, int precision, unsigned int linebreaks, unsigned int indent)
 {
+  const internal_statistic_type statistic_sml = internal_statistic(precision)[0/*SML*/];
+  const internal_statistic_type statistic_med = internal_statistic(precision)[1/*MED*/];
+  const internal_statistic_type statistic_big = internal_statistic(precision)[2/*BIG*/];
   int printed = 0;
   assert(0 != ostream && 0 != target_arch && (0 <= precision && precision < 2));
 
   if (/* omit to print anything if it is superfluous */
-    0 != internal_statistic(precision)[0/*SML*/].ntry ||
-    0 != internal_statistic(precision)[0/*SML*/].njit ||
-    0 != internal_statistic(precision)[0/*SML*/].nsta ||
-    0 != internal_statistic(precision)[0/*SML*/].ncol ||
-    0 != internal_statistic(precision)[1/*MED*/].ntry ||
-    0 != internal_statistic(precision)[1/*MED*/].njit ||
-    0 != internal_statistic(precision)[1/*MED*/].nsta ||
-    0 != internal_statistic(precision)[1/*MED*/].ncol ||
-    0 != internal_statistic(precision)[2/*BIG*/].ntry ||
-    0 != internal_statistic(precision)[2/*BIG*/].njit ||
-    0 != internal_statistic(precision)[2/*BIG*/].nsta ||
-    0 != internal_statistic(precision)[2/*BIG*/].ncol)
+    0 != statistic_sml.ntry || 0 != statistic_sml.njit || 0 != statistic_sml.nsta || 0 != statistic_sml.ncol ||
+    0 != statistic_med.ntry || 0 != statistic_med.njit || 0 != statistic_med.nsta || 0 != statistic_med.ncol ||
+    0 != statistic_big.ntry || 0 != statistic_big.njit || 0 != statistic_big.nsta || 0 != statistic_big.ncol)
   {
-    char title[256], sml[256], med[256], big[256];
-
-    LIBXSMM_SNPRINTF(sml, sizeof(sml), "%u..%u",                             0u, *internal_statistic_sml());
-    LIBXSMM_SNPRINTF(med, sizeof(sml), "%u..%u", *internal_statistic_sml() + 1u, *internal_statistic_med());
-    LIBXSMM_SNPRINTF(big, sizeof(sml), "%u..%u", *internal_statistic_med() + 1u, *internal_statistic_mnk());
+    const unsigned int sml = *internal_statistic_sml(), med = *internal_statistic_med(), mnk = *internal_statistic_mnk();
+    char title[256], csml[256], cmed[256], cbig[256];
+    LIBXSMM_SNPRINTF(csml, sizeof(csml), "%u..%u",       0u, sml);
+    LIBXSMM_SNPRINTF(cmed, sizeof(cmed), "%u..%u", sml + 1u, med);
+    LIBXSMM_SNPRINTF(cbig, sizeof(cbig), "%u..%u", med + 1u, mnk);
     {
       unsigned int n = 0;
       for (n = 0; 0 != target_arch[n] && n < sizeof(title); ++n) { /* toupper */
@@ -568,21 +562,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
     }
     fprintf(ostream, "%*s%-10s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY" ,"JIT", "STA", "COL");
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", sml,
-      internal_statistic(precision)[0/*SML*/].ntry,
-      internal_statistic(precision)[0/*SML*/].njit,
-      internal_statistic(precision)[0/*SML*/].nsta,
-      internal_statistic(precision)[0/*SML*/].ncol);
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", med,
-      internal_statistic(precision)[1/*MED*/].ntry,
-      internal_statistic(precision)[1/*MED*/].njit,
-      internal_statistic(precision)[1/*MED*/].nsta,
-      internal_statistic(precision)[1/*MED*/].ncol);
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", big,
-      internal_statistic(precision)[2/*BIG*/].ntry,
-      internal_statistic(precision)[2/*BIG*/].njit,
-      internal_statistic(precision)[2/*BIG*/].nsta,
-      internal_statistic(precision)[2/*BIG*/].ncol);
+    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", csml,
+      statistic_sml.ntry, statistic_sml.njit, statistic_sml.nsta, statistic_sml.ncol);
+    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", cmed,
+      statistic_med.ntry, statistic_med.njit, statistic_med.nsta, statistic_med.ncol);
+    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", cbig,
+      statistic_big.ntry, statistic_big.njit, statistic_big.nsta, statistic_big.ncol);
     printed = 1;
   }
 
