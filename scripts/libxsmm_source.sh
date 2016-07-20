@@ -38,12 +38,22 @@ cat << EOM
 # define LIBXSMM_API LIBXSMM_RETARGETABLE
 # define LIBXSMM_API_DEFINITION LIBXSMM_INLINE_KEYWORD LIBXSMM_RETARGETABLE
 #else
-# error Please do not include any LIBXSMM header other than libxsmm_source.h!
+# error Please do not include any LIBXSMM header prior to libxsmm_source.h!
 #endif
 
 #include "libxsmm.h"
-
 #include "libxsmm_timer.h"
+
+/**
+ * This header is intentionally called "libxsmm_source.h" since the followings blocks
+ * include *internal* header and source files, and thereby exposes LIBXSMM's implementation.
+ * This so-called "header-only" usage model gives up the clearly defined binary interface
+ * including the support for hot-fixes after deployment (shared library), and requires
+ * to rebuild client code for every (internal) change within LIBXSMM. Please make sure to
+ * only rely on the public interface as the internal implementation may change without
+ * further notice.
+ */
+
 EOM
 
 HERE=$(cd $(dirname $0); pwd -P)
