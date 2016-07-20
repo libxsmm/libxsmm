@@ -908,9 +908,10 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
   {
     const int cpuid = libxsmm_cpuid_x86();
     if (cpuid < *internal_target_archid()) {
+      const char *const target_arch = internal_get_target_arch(*internal_target_archid());
+      const int target_archid = *internal_target_archid();
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
-        internal_get_target_arch(*internal_target_archid()),
-        internal_get_target_arch(cpuid));
+        target_arch, internal_get_target_arch(cpuid));
     }
   }
 #endif
@@ -984,9 +985,9 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
   else {
     const int cpuid = libxsmm_cpuid_x86();
     if (cpuid < target_archid) {
+      const char *const target_arch = internal_get_target_arch(target_archid);
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
-        internal_get_target_arch(target_archid),
-        internal_get_target_arch(cpuid));
+        target_arch, internal_get_target_arch(cpuid));
     }
   }
 #endif
