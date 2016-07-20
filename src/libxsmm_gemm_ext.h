@@ -82,17 +82,17 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const double*, double*, const libxsmm_blasint*);
 
 /** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
 /** INTERNAL: number of threads per core */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_nthreads_per_core;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_gemm_nt;
 /** INTERNAL: prefetch strategy */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_prefetch;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_gemm_prefetch;
 /** INTERNAL: determines whether (OpenMP-)tasks are preferred over thread-style parallelization */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_tasks;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_gemm_tasks;
 /** INTERNAL: kind of OMP-based ?GEMM (1: sequential, 2: parallelized) */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm_omp;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_gemm_omp;
 /** INTERNAL: kind of LD_PRELOAD ?GEMM (0: small gemm, 1: sequential, 2: parallelized) */
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_gemm;
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int internal_gemm;
 
 #endif /*LIBXSMM_GEMM_EXT_H*/
 
