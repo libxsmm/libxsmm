@@ -48,17 +48,17 @@
       const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
       const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
       const double*, double*, const libxsmm_blasint*);
-# elif !defined(__CYGWIN__) /* LD_PRELOAD */
+# elif defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) /* LD_PRELOAD */
 #   define LIBXSMM_GEMM_EXTWRAP
 #   define LIBXSMM_GEMM_WEAK_DLIB LIBXSMM_ATTRIBUTE(weak)
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif
-  LIBXSMM_API void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+  LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
     const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
     const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
     const float*, float*, const libxsmm_blasint*);
-  LIBXSMM_API void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+  LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
     const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
     const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
     const double*, double*, const libxsmm_blasint*);
@@ -72,15 +72,14 @@
 #endif
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
-
 
 /** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int libxsmm_internal_tile_size[/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];

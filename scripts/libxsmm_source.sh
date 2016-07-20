@@ -34,9 +34,13 @@ cat << EOM
 #ifndef LIBXSMM_SOURCE_H
 #define LIBXSMM_SOURCE_H
 
-#if !defined(LIBXSMM_API)
-# define LIBXSMM_API LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_DEFINITION LIBXSMM_INLINE_KEYWORD LIBXSMM_RETARGETABLE
+#if !defined(LIBXSMM_INTERNAL_API)
+# if defined(__cplusplus)
+#   define LIBXSMM_INTERNAL_API
+# else
+#   define LIBXSMM_INTERNAL_API static
+# endif
+# define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INLINE
 #else
 # error Please do not include any LIBXSMM header prior to libxsmm_source.h!
 #endif
