@@ -35,6 +35,7 @@
 #include <libxsmm_generator.h>
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_generated_code,
                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                            const char*                     i_arch,

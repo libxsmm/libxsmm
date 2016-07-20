@@ -34,10 +34,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*         io_generated_code,
-                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                           const char*                     i_arch ) {
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*        io_generated_code,
+                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                           const char*                    i_arch ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;

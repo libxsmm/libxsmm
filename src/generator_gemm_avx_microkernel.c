@@ -37,13 +37,14 @@
 
 #include "generator_x86_instructions.h"
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*             io_generated_code,
-                                              const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                              const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                               const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                              const unsigned int                  i_m_blocking,
-                                              const unsigned int                  i_n_blocking,
-                                              const int                           i_offset )
+                                              const unsigned int                 i_m_blocking,
+                                              const unsigned int                 i_n_blocking,
+                                              const int                          i_offset )
 {
   /* deriving register blocking from kernel config */
   unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;

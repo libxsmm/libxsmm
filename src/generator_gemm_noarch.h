@@ -34,6 +34,7 @@
 
 #include "generator_common.h"
 
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*         io_generated_code,
                                            const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                            const char*                     i_arch );

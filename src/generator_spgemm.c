@@ -42,13 +42,13 @@
 #include <assert.h>
 #include <stdio.h>
 
-
-void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*         io_generated_code,
-                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                          const char*                     i_arch,
-                                          const unsigned int*             i_row_idx,
-                                          const unsigned int*             i_column_idx,
-                                          const double*                   i_values ) {
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
+                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                          const char*                    i_arch,
+                                          const unsigned int*            i_row_idx,
+                                          const unsigned int*            i_column_idx,
+                                          const double*                  i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
@@ -82,12 +82,13 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*         io_gen
   }
 }
 
-void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_generated_code,
-                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                          const char*                     i_arch,
-                                          const unsigned int*             i_row_idx,
-                                          const unsigned int*             i_column_idx,
-                                          const double*                   i_values ) {
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_generated_code,
+                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                          const char*                    i_arch,
+                                          const unsigned int*            i_row_idx,
+                                          const unsigned int*            i_column_idx,
+                                          const double*                  i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
@@ -123,12 +124,13 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_gen
   }
 }
 
-void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*         io_generated_code,
-                                              const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                              const char*                     i_arch,
-                                              const unsigned int*             i_row_idx,
-                                              const unsigned int*             i_column_idx,
-                                              const double*                   i_values ) {
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_generated_code,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                              const char*                    i_arch,
+                                              const unsigned int*            i_row_idx,
+                                              const unsigned int*            i_column_idx,
+                                              const double*                  i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
@@ -164,12 +166,13 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*         io
   }
 }
 
-void libxsmm_generator_spgemm( const char*                     i_file_out,
-                               const char*                     i_routine_name,
-                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                               const char*                     i_arch,
-                               const char*                     i_file_in,
-                               const int                       i_is_csr        ) {
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_spgemm( const char*                    i_file_out,
+                               const char*                    i_routine_name,
+                               const libxsmm_gemm_descriptor* i_xgemm_desc,
+                               const char*                    i_arch,
+                               const char*                    i_file_in,
+                               const int                      i_is_csr        ) {
   /* CSC/CSR structure */
   unsigned int* l_row_idx = NULL;
   unsigned int* l_column_idx = NULL;

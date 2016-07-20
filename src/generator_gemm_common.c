@@ -37,11 +37,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                  const char*                     i_arch,
-                                                                  const unsigned int              i_use_masking_a_c ) {
+                                                                  const char*                    i_arch,
+                                                                  const unsigned int             i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
     io_micro_kernel_config->vector_reg_count = 16;
@@ -228,10 +228,11 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                  const char*                     i_arch,
-                                                                  const unsigned int              i_use_masking_a_c ) {
+                                                                  const char*                    i_arch,
+                                                                  const unsigned int             i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
     fprintf(stderr, "LIBXSMM WARNING, ibxsmm_generator_gemm_init_micro_kernel_config_halfvector, redirecting to scalar, please fix the generation code!!!\n");
     libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
@@ -334,10 +335,11 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                              const char*                     i_arch,
-                                                              const unsigned int              i_use_masking_a_c ) {
+                                                              const char*                    i_arch,
+                                                              const unsigned int             i_use_masking_a_c ) {
   if( strcmp( i_arch, "wsm" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
     io_micro_kernel_config->vector_reg_count = 16;
@@ -431,6 +433,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
   io_micro_kernel_config->alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   if ( io_generated_code->code_type == 0 ) {
@@ -453,26 +456,28 @@ void libxsmm_generator_gemm_add_flop_counter( libxsmm_generated_code*         io
   }
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_header_kloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                           const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_k_blocking ) {
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                           const unsigned int                 i_m_blocking,
+                                           const unsigned int                 i_k_blocking ) {
   LIBXSMM_UNUSED(i_m_blocking);
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_kloop, 0);
   libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_kloop, i_k_blocking);
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                           const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_max_blocked_k,
-                                           const unsigned int                  i_kloop_complete ) {
+                                           const unsigned int                 i_m_blocking,
+                                           const unsigned int                 i_max_blocked_k,
+                                           const unsigned int                 i_kloop_complete ) {
   LIBXSMM_UNUSED(i_m_blocking);
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_cmp_instruction, i_gp_reg_mapping->gp_reg_kloop, i_max_blocked_k );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
@@ -482,24 +487,26 @@ void libxsmm_generator_gemm_footer_kloop( libxsmm_generated_code*             io
   }
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_header_nloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                           const unsigned int                  i_n_blocking) {
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                           const unsigned int                 i_n_blocking) {
   libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_nloop, i_n_blocking );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_mloop, 0 );
 }
 
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                           const unsigned int                  i_n_blocking,
-                                           const unsigned int                  i_n_done ) {
+                                           const unsigned int                 i_n_blocking,
+                                           const unsigned int                 i_n_done ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_c,
                                (i_n_blocking*(i_xgemm_desc->ldc)*(i_micro_kernel_config->datatype_size)) - ((i_xgemm_desc->m)*(i_micro_kernel_config->datatype_size)) );
 #if 0
@@ -517,24 +524,25 @@ void libxsmm_generator_gemm_footer_nloop( libxsmm_generated_code*             io
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_header_mloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                           const unsigned int                  i_m_blocking ) {
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                           const unsigned int                 i_m_blocking ) {
   libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_mloop, i_m_blocking );
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*             io_generated_code,
-                                           libxsmm_loop_label_tracker*         io_loop_label_tracker,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                           const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_m_done,
-                                           const unsigned int                  i_k_unrolled ) {
+                                           const unsigned int                 i_m_blocking,
+                                           const unsigned int                 i_m_done,
+                                           const unsigned int                 i_k_unrolled ) {
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
                                i_gp_reg_mapping->gp_reg_c, i_m_blocking*(i_micro_kernel_config->datatype_size) );
@@ -586,12 +594,13 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*             io
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_micro_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_generated_code,
-                                     const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                     const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                     const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                     const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                     const unsigned int                  i_m_blocking,
-                                     const unsigned int                  i_n_blocking ) {
+                                     const unsigned int                 i_m_blocking,
+                                     const unsigned int                 i_n_blocking ) {
   /* deriving register blocking from kernel config */
   const unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
   /* start register of accumulator */
@@ -681,12 +690,13 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   }
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_generated_code,
-                                      const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                      const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                      const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                      const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                      const unsigned int                  i_m_blocking,
-                                      const unsigned int                  i_n_blocking )
+                                      const unsigned int                 i_m_blocking,
+                                      const unsigned int                 i_n_blocking )
 {
   /* deriving register blocking from kernel config */
   unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;

@@ -36,13 +36,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*             io_generated_code,
-                                                 const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                 const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                 const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                 const unsigned int                  i_n_blocking,
-                                                 const unsigned int                  i_k_blocking )
+                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                 const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                 const unsigned int                 i_n_blocking,
+                                                 const unsigned int                 i_k_blocking )
 {
   unsigned int l_n;
   unsigned int l_k;
@@ -339,12 +339,13 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
 }
 
 #if 0
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
-                                                         const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                         const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                         const unsigned int                  i_n_blocking,
-                                                         const unsigned int                  i_k_blocking )
+                                                         const unsigned int                 i_n_blocking,
+                                                         const unsigned int                 i_k_blocking )
 {
   unsigned int l_n;
   unsigned int l_k;
@@ -517,11 +518,12 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
 }
 #endif
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated_code*             io_generated_code,
-                                                                const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                                                const libxsmm_micro_kernel_config*  i_micro_kernel_config,
-                                                                const libxsmm_gemm_descriptor*      i_xgemm_desc,
-                                                                const unsigned int                  i_k_blocking )
+                                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                const unsigned int                 i_k_blocking )
 {
   unsigned int l_n;
   unsigned int l_k;
@@ -1075,13 +1077,14 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
   }
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*            io_generated_code,
-                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                          const libxsmm_gemm_descriptor*    i_xgemm_desc,
-                                                          const char*                        i_arch,
-                                                          unsigned int                       i_n_blocking ) {
+                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                         const char*                        i_arch,
+                                                         unsigned int                       i_n_blocking ) {
   /* l_k_blocking must be smaller than l_k_threshold */
   const unsigned int l_k_blocking = 8;
   const unsigned int l_k_threshold = 64;

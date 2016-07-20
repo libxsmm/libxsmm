@@ -32,6 +32,7 @@
 #define LIBXSMM_GENERATOR_H
 
 #include "libxsmm_typedefs.h"
+#include "libxsmm_macros.h"
 
 /**
  * Defining LIBXSMM_GENERATOR_AUTOALIGN and enabling emitting aligned loads/stores (instead of unaligned loads/stores)
@@ -150,34 +151,40 @@ typedef struct libxsmm_generated_code {
 } libxsmm_generated_code;
 
 /** function to translate LIBXSMM Generator error codes to error messages */
+LIBXSMM_INTERNAL_API
 const char* libxsmm_strerror(unsigned int i_error_code);
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                       const char*                     i_routine_name,
                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                       const char*                     i_arch );
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                       const char*                     i_routine_name,
                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                       const char*                     i_arch );
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                     const char*                     i_arch );
 
 /* @TODO change int based architecture value */
-void libxsmm_generator_spgemm( const char*                     i_file_out,
-                               const char*                     i_routine_name,
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_spgemm( const char*                    i_file_out,
+                               const char*                    i_routine_name,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
-                               const char*                     i_arch,
-                               const char*                     i_file_in,
-                               const int                       i_is_csr );
+                               const char*                    i_arch,
+                               const char*                    i_file_in,
+                               const int                      i_is_csr );
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*         io_generated_code,
                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                           const char*                     i_arch,
@@ -186,6 +193,7 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*         io_gen
                                           const double*                   i_values );
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_generated_code,
                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                           const char*                     i_arch,
@@ -194,6 +202,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*         io_gen
                                           const double*                   i_values );
 
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*         io_generated_code,
                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                               const char*                     i_arch,

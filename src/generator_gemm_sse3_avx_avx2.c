@@ -41,9 +41,10 @@
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_gemm_avx2_microkernel.h"
 
-void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*        io_generated_code,
                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                  const char*                     i_arch ) {
+                                                  const char*                    i_arch ) {
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                                   const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
   libxsmm_micro_kernel_config l_micro_kernel_config;
@@ -201,9 +202,10 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                          const char*                     i_arch ) {
+                                                                          const char*                    i_arch ) {
   unsigned int l_m_blocking = 0;
 
   if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
@@ -225,10 +227,11 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_get_inital_m_blocking( libxsmm
   return l_m_blocking;
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                      const char*                     i_arch,
-                                                                      const unsigned int              i_current_m_blocking ) {
+                                                                      const char*                    i_arch,
+                                                                      const unsigned int             i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
 
   if ( (strcmp( i_arch, "wsm" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {

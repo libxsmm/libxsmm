@@ -36,6 +36,7 @@
 #include "generator_common.h"
 #include "generator_spgemm_csr_reader.h"
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csr_file_in,
                                 unsigned int**          o_row_idx,

@@ -75,6 +75,7 @@
 #include "generator_common.h"
 #include "generator_spgemm_csc_reader.h"
 
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csc_file_in,
                                 unsigned int**          o_row_idx,

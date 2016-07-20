@@ -35,36 +35,41 @@
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_imci_microkernel( libxsmm_generated_code*             io_generated_code,
-                                               const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                               const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                               const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                               const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                               const unsigned int                  i_n_blocking,
-                                               const unsigned int                  i_k_blocking,
-                                               const int                           i_offset );
+                                               const unsigned int                 i_n_blocking,
+                                               const unsigned int                 i_k_blocking,
+                                               const int                          i_offset );
 
-unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*            io_generated_code,
+LIBXSMM_INTERNAL_API
+unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*             io_generated_code,
                                                         libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                        const libxsmm_gemm_descriptor*    i_xgemm_desc,
+                                                        const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                         const char*                        i_arch,
                                                         unsigned int                       i_n_blocking );
 
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_load_C_imci( libxsmm_generated_code*             io_generated_code,
-                                          const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                          const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                          const unsigned int                  i_m_blocking,
-                                          const unsigned int                  i_n_blocking );
+                                          const unsigned int                 i_m_blocking,
+                                          const unsigned int                 i_n_blocking );
 
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_store_C_imci( libxsmm_generated_code*             io_generated_code,
-                                           const libxsmm_gp_reg_mapping*       i_gp_reg_mapping,
-                                           const libxsmm_micro_kernel_config*  i_micro_kernel_config,
+                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                           const unsigned int                  i_m_blocking,
-                                           const unsigned int                  i_n_blocking );
+                                           const unsigned int                 i_m_blocking,
+                                           const unsigned int                 i_n_blocking );
 
+LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated_code,
                                             const unsigned int      i_instruction_set,
                                             const unsigned int      i_vmove_instr,

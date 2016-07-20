@@ -35,18 +35,21 @@
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                   const char*                     i_arch );
+                                                   const char*                    i_arch );
 
+LIBXSMM_INTERNAL_API
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                          const char*                     i_arch );
+                                                                          const char*                    i_arch );
 
+LIBXSMM_INTERNAL_API
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
                                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                      const char*                     i_arch,
-                                                                      const unsigned int              i_current_m_blocking );
+                                                                      const char*                    i_arch,
+                                                                      const unsigned int             i_current_m_blocking );
 
 #endif /* GENERATOR_GEMM_SSE3_AVX_AVX2_H */
 

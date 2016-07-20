@@ -32,6 +32,9 @@
 #ifndef GENERATOR_SPGEMM_CSC_READER_H
 #define GENERATOR_SPGEMM_CSC_READER_H
 
+#include <libxsmm_macros.h>
+
+LIBXSMM_INTERNAL_API
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csc_file_in,
                                 unsigned int**          o_row_idx,
