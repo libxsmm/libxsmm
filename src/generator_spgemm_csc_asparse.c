@@ -165,7 +165,7 @@ void libxsmm_sparse_csc_asparse_innerloop_four_vector( libxsmm_generated_code*  
                                                        const unsigned int             i_z,
                                                        const unsigned int*            i_row_idx,
                                                        const unsigned int*            i_column_idx ) {
-  char l_new_code[512]; 
+  char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
 

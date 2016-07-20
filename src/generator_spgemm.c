@@ -308,7 +308,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
     } else {
       /* generate the actual kernel code for current description depending on the architecture */
-      libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );    
+      libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
     }
   }
 

@@ -171,7 +171,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
  * @param i_displacement the offset to the base address
  * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_mask_reg_number the mask register (xmm/ymm: 0-15 when using AVX2), (k1-k7 when using AVX512)
- * @param i_is_gather "true" generate a gather instruction, "false" generator a scatter instruction 
+ * @param i_is_gather "true" generate a gather instruction, "false" generator a scatter instruction
  */
 LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,

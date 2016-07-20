@@ -109,7 +109,7 @@ int main(int argc, char* argv []) {
   l_type = argv[1];
   l_file_out = argv[2];
   l_routine_name = argv[3];
-    
+
   /* xgemm sizes */
   l_m = atoi(argv[4]);
   l_n = atoi(argv[5]);
@@ -136,9 +136,9 @@ int main(int argc, char* argv []) {
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
-  if ( (strcmp(l_type, "sparse")         != 0) && 
-       (strcmp(l_type, "sparse_csr")     != 0) && 
-       (strcmp(l_type, "sparse_csr_soa") != 0) && 
+  if ( (strcmp(l_type, "sparse")         != 0) &&
+       (strcmp(l_type, "sparse_csr")     != 0) &&
+       (strcmp(l_type, "sparse_csr_soa") != 0) &&
        (strcmp(l_type, "dense")          != 0) &&
        (strcmp(l_type, "dense_asm")      != 0)    ) {
     print_help();
@@ -148,7 +148,7 @@ int main(int argc, char* argv []) {
   /* check for the right number of arguments depending on type */
   if ( ( (strcmp(l_type, "sparse") == 0) && (argc != 18) )         ||
        ( (strcmp(l_type, "sparse_csr") == 0) && (argc != 18) )     ||
-       ( (strcmp(l_type, "sparse_csr_soa") == 0) && (argc != 18) ) || 
+       ( (strcmp(l_type, "sparse_csr_soa") == 0) && (argc != 18) ) ||
        ( (strcmp(l_type, "dense")  == 0) && (argc != 17) )         ||
        ( (strcmp(l_type, "dense_asm")  == 0) && (argc != 17) )        ) {
     print_help();
@@ -189,15 +189,15 @@ int main(int argc, char* argv []) {
   else {
     print_help();
     return -1;
-  }  
+  }
 
   /* check value of arch flag */
   if ( (strcmp(l_arch, "wsm") != 0)    &&
-       (strcmp(l_arch, "snb") != 0)    && 
-       (strcmp(l_arch, "hsw") != 0)    && 
-       (strcmp(l_arch, "knc") != 0)    && 
-       (strcmp(l_arch, "knl") != 0)    && 
-       (strcmp(l_arch, "skx") != 0)    && 
+       (strcmp(l_arch, "snb") != 0)    &&
+       (strcmp(l_arch, "hsw") != 0)    &&
+       (strcmp(l_arch, "knc") != 0)    &&
+       (strcmp(l_arch, "knl") != 0)    &&
+       (strcmp(l_arch, "skx") != 0)    &&
        (strcmp(l_arch, "noarch") != 0)    ) {
     print_help();
     return -1;
@@ -262,7 +262,7 @@ int main(int argc, char* argv []) {
     libxsmm_generator_spgemm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in, l_is_csr );
   }
 
-  if ( (strcmp(l_type, "dense")     == 0) || 
+  if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0)    ) {
     if (l_lda < 1 || l_ldb < 1 || l_ldc < 1) {
       print_help();
@@ -275,7 +275,7 @@ int main(int argc, char* argv []) {
       libxsmm_generator_gemm_directasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
     }
   }
-  
+
   return 0;
 }
 

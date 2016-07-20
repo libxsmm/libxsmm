@@ -546,14 +546,14 @@ void libxsmm_generator_gemm_footer_mloop( libxsmm_generated_code*             io
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
                                i_gp_reg_mapping->gp_reg_c, i_m_blocking*(i_micro_kernel_config->datatype_size) );
-  
+
   /* C prefetch */
 #if 0
   if ( i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL2 ||
        i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_c_prefetch, i_m_blocking*(i_micro_kernel_config->datatype_size) );
-  
+
   }
 #endif
 

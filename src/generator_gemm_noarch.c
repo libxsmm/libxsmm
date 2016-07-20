@@ -51,7 +51,7 @@ void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*        io_gen
     if ( i_xgemm_desc->beta == 0 ) {
       l_beta = 0.0;
     }
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, 
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length,
        "cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, %u, %u, %u, %f, A, %u, B, %u, %f, C, %u);\n",
        (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->n, (unsigned int)i_xgemm_desc->k, l_alpha,
        (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->k, l_beta, (unsigned int)i_xgemm_desc->m);
@@ -62,12 +62,12 @@ void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*        io_gen
     if ( i_xgemm_desc->beta == 0 ) {
       l_beta = 0.0f;
     }
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, 
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length,
        "cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, %u, %u, %u, %f, A, %u, B, %u, %f, C, %u);\n",
        (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->n, (unsigned int)i_xgemm_desc->k, l_alpha,
        (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->k, l_beta, (unsigned int)i_xgemm_desc->m);
        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  } 
+  }
 #else
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_m = 0;\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

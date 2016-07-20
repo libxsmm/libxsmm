@@ -318,8 +318,8 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
-    if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   || 
-          i_instruction_set == LIBXSMM_X86_AVX512_CORE     ) && 
+    if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
+          i_instruction_set == LIBXSMM_X86_AVX512_CORE     ) &&
          (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
@@ -1494,7 +1494,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
        fprintf(stderr,"libxsmm_x86_instruction_vec_move_gathscat: encoder only implemented for zmm registers, but notice that i_vector_name=%c\n",i_vector_name);
        exit(-1);
     }
-    if ( i_is_gather == 0 ) 
+    if ( i_is_gather == 0 )
     {
        fprintf(stderr,"libxsmm_x86_instruction_vec_move_gathscat: encoder not implemented for scatters yet\n");
        exit(-1);
