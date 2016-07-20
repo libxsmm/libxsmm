@@ -56,7 +56,7 @@
 #endif
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diff_function* internal_gemm_diff_fn(void)
+static LIBXSMM_RETARGETABLE libxsmm_gemm_diff_function* internal_gemm_diff_fn(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_gemm_diff_function instance = libxsmm_gemm_diff_sw;
   assert(0 != instance);
@@ -64,7 +64,7 @@ static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diff_functi
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_gemm_diffn_function* internal_gemm_diffn_fn(void)
+static LIBXSMM_RETARGETABLE libxsmm_gemm_diffn_function* internal_gemm_diffn_fn(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_gemm_diffn_function instance = libxsmm_gemm_diffn_sw;
   assert(0 != instance);

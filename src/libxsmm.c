@@ -377,7 +377,7 @@ return flux_entry.xmm
 
 #if !defined(LIBXSMM_OPENMP)
 # define INTERNAL_REGLOCK_COUNT 16
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE internal_reglock(int i)
+static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock(int i)
 {
   static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE instance[] = {
     LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -391,21 +391,21 @@ static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_LOCK_TYPE intern
 #endif
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_regkey_type** internal_registry_keys(void)
+static LIBXSMM_RETARGETABLE internal_regkey_type** internal_registry_keys(void)
 {
   static LIBXSMM_RETARGETABLE internal_regkey_type* instance = 0;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_code_type** internal_registry(void)
+static LIBXSMM_RETARGETABLE internal_code_type** internal_registry(void)
 {
   static LIBXSMM_RETARGETABLE internal_code_type* instance = 0;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_statistic_type* internal_statistic(int precision)
+static LIBXSMM_RETARGETABLE internal_statistic_type* internal_statistic(int precision)
 {
   static LIBXSMM_RETARGETABLE internal_statistic_type instance[2/*DP/SP*/][3/*sml/med/big*/];
   assert(0 <= precision && precision < 2);
@@ -413,42 +413,42 @@ static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL internal_statistic_type*
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int* internal_statistic_sml(void)
+static LIBXSMM_RETARGETABLE unsigned int* internal_statistic_sml(void)
 {
   static LIBXSMM_RETARGETABLE unsigned int instance = 13;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int* internal_statistic_med(void)
+static LIBXSMM_RETARGETABLE unsigned int* internal_statistic_med(void)
 {
   static LIBXSMM_RETARGETABLE unsigned int instance = 23;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int* internal_statistic_mnk(void)
+static LIBXSMM_RETARGETABLE unsigned int* internal_statistic_mnk(void)
 {
   static LIBXSMM_RETARGETABLE unsigned int instance = LIBXSMM_MAX_M;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL unsigned int* internal_teardown(void)
+static LIBXSMM_RETARGETABLE unsigned int* internal_teardown(void)
 {
   static LIBXSMM_RETARGETABLE unsigned int instance = 0;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_target_archid(void)
+static LIBXSMM_RETARGETABLE int* internal_target_archid(void)
 {
   static LIBXSMM_RETARGETABLE int instance = LIBXSMM_TARGET_ARCH_GENERIC;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_verbose(void)
+static LIBXSMM_RETARGETABLE int* internal_verbose(void)
 {
 #if defined(NDEBUG)
   static LIBXSMM_RETARGETABLE int instance = 0; /* quiet */
@@ -459,7 +459,7 @@ static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_verbose(vo
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_prefetch(void)
+static LIBXSMM_RETARGETABLE int* internal_prefetch(void)
 {
   static LIBXSMM_RETARGETABLE int instance = LIBXSMM_MAX(INTERNAL_PREFETCH, 0);
   return &instance;

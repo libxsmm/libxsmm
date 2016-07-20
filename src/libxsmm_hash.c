@@ -137,7 +137,7 @@
 #endif
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_hash_function* internal_hash_function(void)
+static LIBXSMM_RETARGETABLE libxsmm_hash_function* internal_hash_function(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_hash_function instance = libxsmm_crc32_sw;
   assert(0 != instance);
@@ -145,7 +145,7 @@ static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL libxsmm_hash_function* i
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL const uint32_t* internal_crc32_table(int i)
+static LIBXSMM_RETARGETABLE const uint32_t* internal_crc32_table(int i)
 {
   /* table-based implementation taken from http://dpdk.org/. */
   static const LIBXSMM_RETARGETABLE uint32_t instance[][256] = {

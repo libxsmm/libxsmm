@@ -113,19 +113,19 @@ int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL volatile LONG* internal_trace_initialized(void)
+static LIBXSMM_RETARGETABLE volatile LONG* internal_trace_initialized(void)
 {
   static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG instance, 32) = -1;
   return &instance;
 }
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_initialized(void)
+static LIBXSMM_RETARGETABLE int* internal_trace_initialized(void)
 {
   static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int instance, 32) = -1;
   return &instance;
 }
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL pthread_key_t* internal_trace_key(void)
+static LIBXSMM_RETARGETABLE pthread_key_t* internal_trace_key(void)
 {
   static LIBXSMM_RETARGETABLE pthread_key_t instance = 0;
   return &instance;
@@ -162,21 +162,21 @@ LIBXSMM_RETARGETABLE void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_threadid(void)
+static LIBXSMM_RETARGETABLE int* internal_trace_threadid(void)
 {
   static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_mindepth(void)
+static LIBXSMM_RETARGETABLE int* internal_trace_mindepth(void)
 {
   static LIBXSMM_RETARGETABLE int instance = 0/*all*/;
   return &instance;
 }
 
 
-static LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_INTERNAL int* internal_trace_maxnsyms(void)
+static LIBXSMM_RETARGETABLE int* internal_trace_maxnsyms(void)
 {
   static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
   return &instance;
