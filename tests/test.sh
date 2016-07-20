@@ -21,7 +21,9 @@ fi
 ${ECHO} "============="
 ${ECHO} "Running tests"
 ${ECHO} "============="
-TESTS=$(ls -1 ${HERE}/*.c)
+
+# good-enough pattern to match a main function, and to test this translation unit
+TESTS=$(grep -l "main\s*(.*)" ${HERE}/*.c 2> /dev/null)
 NTEST=1
 NMAX=$(${ECHO} ${TESTS} | wc -w)
 for TEST in ${TESTS} ; do

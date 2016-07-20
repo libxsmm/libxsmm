@@ -20,6 +20,10 @@ else
   endif
 endif
 
+# Regular expression to match "main" (good-enough pattern)
+CMAIN = "main\s*(.*)"
+FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
+
 # Optimization level
 OPT ?= 2
 
@@ -913,9 +917,15 @@ LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
 
 .SUFFIXES:
 
-STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
+# derives the extension of a filename
+extname = $(subst .,,$(suffix $(1)))
+# derives the name of an object files from a given source file
+objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG)),%-$(call extname,$(ARG)).o,$(notdir $(ARG)))))
+
+STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL BLAS_WARNING MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS PREFIX DUMMY libdir soname,$V), \
+  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS \
+    BLAS_WARNING PREFIX DUMMY libdir soname extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
 

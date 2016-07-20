@@ -41,28 +41,31 @@ HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
            $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
-CPPSRCS := $(shell ls -1 $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
-CXXSRCS := $(shell ls -1 $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
-CCXSRCS := $(shell ls -1 $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
-CSOURCS := $(shell ls -1 $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-FXXSRCS := $(shell ls -1 $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
-F77SRCS := $(shell ls -1 $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
-F90SRCS := $(shell ls -1 $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
-CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
-CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
-CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
-COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
-FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FXXSRCS:.f=-f.o)))
-F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
-F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
-F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
-SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
-OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
-FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
-MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
-FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(addprefix $(OUTDIR)/,$(basename $(notdir $(SOURCES))))
+CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
+CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
+CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
+CXXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
+CCXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
+CCXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
+CSOURCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
+CSOURCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
+FXXSRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
+FXXSRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
+F77SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
+F77SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
+F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
+           $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
+F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
+           $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
+MODULES := $(addsuffix    .mod,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
+           $(addsuffix .modmic,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS)))
+OBJECTS := $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
+OBJECTX := $(call objname, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX))
+FTNOBJS := $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS))
+FTNOBJX := $(call objname, $(FXXSRCX) $(F77SRCX) $(F90SRCX))
+XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
+           $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX) \
+           $(FXXSRCX) $(F77SRCX) $(F90SRCX))))
 
 .PHONY: all
 all: $(XFILES)
@@ -74,8 +77,32 @@ tests: test
 test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh
 
-$(OUTDIR)/%: $(BLDDIR)/%-c.o $(OUTDIR)/.make
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+define DEFINE_LINK_LD_RULE
+$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(call libdir, $(LIBNAME).$(LIBEXT)) $(dir $(1))/.make
+	$(LD) -o $(1) $(2) \
+		$(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) \
+		$(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+endef
+
+define DEFINE_LINK_FC_RULE
+ifneq (,$(strip $(FC)))
+$(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir, $(LIBNAME).$(LIBEXT)) $(dir $(1))/.make
+	$(FC) -o $(1) $(2) \
+		$(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) \
+		$(call libdir, $(LIBNAME)f.$(LIBEXT)) \
+		$(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+.PHONY: $(1)
+endif
+endef
+
+$(foreach SRC, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX),$(eval $(call DEFINE_LINK_LD_RULE, \
+  $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+
+$(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX),$(eval $(call DEFINE_LINK_FC_RULE, \
+  $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
@@ -97,7 +124,8 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DE
 
 .PHONY: clean-minimal
 clean-minimal:
-	@rm -f $(OBJECTS) $(FTNOBJS)
+	@rm -f $(OBJECTS) $(OBJECTX)
+	@rm -f $(FTNOBJS) $(FTNOBJX)
 	@rm -f fit.log *.dat
 
 .PHONY: clean

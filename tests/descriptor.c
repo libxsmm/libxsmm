@@ -1,5 +1,4 @@
-#include <libxsmm_gemm_diff.h>
-#include <libxsmm_cpuid_x86.h>
+#include <libxsmm_source.h>
 #include <stdlib.h>
 #include <stdio.h>
 
