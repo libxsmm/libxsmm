@@ -116,13 +116,14 @@ LIBXSMM_API_DEFINITION void libxsmm_transpose_oop(void* out, const void* in, uns
 #endif
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   if (8 == typesize) {
-    mkl_domatcopy('C', 'T', m, n, 1, (const double*)in, ld, (double*)out, ldo);
+    mkl_domatcopy('C', 'T', m, n, 1.0, (const double*)in, ld, (double*)out, ldo);
   }
   else if (4 == typesize) {
-    mkl_somatcopy('C', 'T', m, n, 1, (const float*)in, ld, (float*)out, ldo);
+    mkl_somatcopy('C', 'T', m, n, 1.f, (const float*)in, ld, (float*)out, ldo);
   }
   else if (16 == typesize) {
-    mkl_zomatcopy('C', 'T', m, n, 1, (const MKL_Complex16*)in, ld, (MKL_Complex16*)out, ldo);
+    const MKL_Complex16 one = { 1.0/*real*/, 0.0/*imag*/ };
+    mkl_zomatcopy('C', 'T', m, n, one, (const MKL_Complex16*)in, ld, (MKL_Complex16*)out, ldo);
   }
   else
 #endif
