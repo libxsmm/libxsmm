@@ -230,7 +230,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
     if (0 == (RESULT).pmm) { /* double-check after acquiring the lock */ \
       if (0 == diff) { \
         /* found a conflict-free registry-slot, and attempt to build the kernel */ \
-        internal_build(DESCRIPTOR, 0/*extra desc*/, &(RESULT)); \
+        internal_build(DESCRIPTOR, "smm", 0/*extra desc*/, &(RESULT)); \
         internal_update_statistic(DESCRIPTOR, 1, 0); \
         if (0 != (RESULT).pmm) { /* synchronize registry entry */ \
           (*internal_registry_keys())[i].descriptor = *(DESCRIPTOR); \
@@ -631,18 +631,19 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_get_prefetch(const libxsmm_gemm
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* target_arch,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_code_name(const char* target_arch, const char* jit_kind,
   const libxsmm_gemm_descriptor* desc, unsigned int buffer_size, char* name)
 {
   assert((0 != desc && 0 != name) || 0 == buffer_size);
-  LIBXSMM_SNPRINTF(name, buffer_size, "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.jit",
+  LIBXSMM_SNPRINTF(name, buffer_size, "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.%s",
     target_arch /* code path name */,
     0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 'd' : 's',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't',
     0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't',
     (unsigned int)desc->m, (unsigned int)desc->n, (unsigned int)desc->k,
     (unsigned int)desc->lda, (unsigned int)desc->ldb, (unsigned int)desc->ldc,
-    desc->alpha, desc->beta, internal_get_prefetch(desc));
+    desc->alpha, desc->beta, internal_get_prefetch(desc),
+    0 != jit_kind ? jit_kind : "jit");
 }
 
 
@@ -998,7 +999,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* descriptor,
-  const internal_desc_extra_type* desc_extra, internal_code_type* code)
+  const char* jit_kind, const internal_desc_extra_type* desc_extra, internal_code_type* code)
 {
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   const char *const target_arch = internal_get_target_arch(*internal_target_archid());
@@ -1036,7 +1037,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
     {
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
       char jit_code_name[256];
-      internal_get_code_name(target_arch, descriptor, sizeof(jit_code_name), jit_code_name);
+      internal_get_code_name(target_arch, jit_kind, descriptor, sizeof(jit_code_name), jit_code_name);
 #else
       const char *const jit_code_name = 0;
 #endif
@@ -1118,7 +1119,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm
   desc_extra.row_ptr = row_ptr;
   desc_extra.column_idx = column_idx;
   desc_extra.values = values;
-  internal_build(descriptor, &desc_extra, &code);
+  internal_build(descriptor, "csr", &desc_extra, &code);
   return code.xmm.dmm;
 }
 
