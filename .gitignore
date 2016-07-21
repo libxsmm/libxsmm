@@ -47,6 +47,7 @@ _*.txt
 *.jit
 *.smm
 *.soa
+*.csr
 *.dll
 *.so
 *.o
