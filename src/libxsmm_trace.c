@@ -195,7 +195,7 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
     *internal_trace_threadid() = filter_threadid;
     *internal_trace_mindepth() = filter_mindepth;
     *internal_trace_maxnsyms() = filter_maxnsyms;
-    LIBXSMM_ATOMIC_STORE_ZERO(*internal_trace_initialized(), LIBXSMM_ATOMIC_SEQ_CST);
+    LIBXSMM_ATOMIC_STORE_ZERO(internal_trace_initialized(), LIBXSMM_ATOMIC_SEQ_CST);
   }
   return result;
 }
@@ -211,9 +211,9 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #if !defined(__TRACE)
   result = EXIT_FAILURE;
 #else
-  const int initialized = LIBXSMM_ATOMIC_LOAD(*internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
+  const int initialized = LIBXSMM_ATOMIC_LOAD(internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
   if (0 == initialized) {
-    LIBXSMM_ATOMIC_STORE(*internal_trace_initialized(), -1, LIBXSMM_ATOMIC_SEQ_CST);
+    LIBXSMM_ATOMIC_STORE(internal_trace_initialized(), -1, LIBXSMM_ATOMIC_SEQ_CST);
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = FALSE != SymCleanup(GetCurrentProcess())
       ? EXIT_SUCCESS
@@ -259,7 +259,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # if defined(__GNUC__)
     __asm__("");
 # endif
-    i = LIBXSMM_ATOMIC_LOAD(*internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
+    i = LIBXSMM_ATOMIC_LOAD(internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
     if (0 <= i) { /* do nothing if not yet initialized */
       const int mindepth = *(filter_mindepth ? filter_mindepth : internal_trace_mindepth());
       const int maxnsyms = *(filter_maxnsyms ? filter_maxnsyms : internal_trace_maxnsyms());
@@ -287,7 +287,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             abs_tid = (0 <= tid ? tid : -tid);
           }
           else {
-            LIBXSMM_ATOMIC_ADD_FETCH(abs_tid, 1, LIBXSMM_ATOMIC_RELAXED);
+            abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(internal_trace_initialized(), 1, LIBXSMM_ATOMIC_RELAXED);
             /* use sign bit to flag enabled fallback for symbol resolution */
             tid = -abs_tid;
           }
@@ -346,7 +346,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {
-                  LIBXSMM_ATOMIC_ADD_FETCH(abs_tid, 1, LIBXSMM_ATOMIC_RELAXED);
+                  abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(internal_trace_initialized(), 1, LIBXSMM_ATOMIC_RELAXED);
                   assert(0 < abs_tid);
                   /* use sign bit to flag enabled fallback for symbol resolution */
                   ivalue[1] = -abs_tid;
@@ -442,7 +442,7 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
   if (name && *name) { /* implies actual other results to be valid */
     const int depth0 = LIBXSMM_MAX(*(filter_mindepth ? filter_mindepth : internal_trace_mindepth()), 0);
     assert(0 != stream/*otherwise fprintf handle the error*/);
-    if ((0 == filter_threadid && 0 > *internal_trace_threadid()) || (filter_threadid && 0 > *filter_threadid)) {
+    if ((0 == filter_threadid && 0 > *internal_trace_threadid()) || (0 != filter_threadid && 0 > *filter_threadid)) {
       fprintf(stream, "%*s%s@%u\n", (int)(depth1 - depth0), "", name, threadid);
     }
     else {
