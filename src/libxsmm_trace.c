@@ -100,16 +100,6 @@ int posix_fallocate(int, off_t, off_t);
 # undef LIBXSMM_TRACE_SYMBOLSIZE
 # define LIBXSMM_TRACE_SYMBOLSIZE 256
 #endif
-#if defined(__GNUC__)
-# if !defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#     define LIBXSMM_TRACE_GCCATOMICS 1
-#   else
-#     define LIBXSMM_TRACE_GCCATOMICS 0
-#   endif
-# endif
-#endif
-
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
@@ -205,17 +195,7 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_init(
     *internal_trace_threadid() = filter_threadid;
     *internal_trace_mindepth() = filter_mindepth;
     *internal_trace_maxnsyms() = filter_maxnsyms;
-#if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-# if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    __atomic_store_n(internal_trace_initialized(), 0, __ATOMIC_SEQ_CST);
-# else
-    __sync_and_and_fetch(internal_trace_initialized(), 0);
-# endif
-#elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    *internal_trace_initialized() = 0; /*TODO*/
-#else
-    *internal_trace_initialized() = 0;
-#endif
+    LIBXSMM_ATOMIC_STORE_ZERO(*internal_trace_initialized(), LIBXSMM_ATOMIC_SEQ_CST);
   }
   return result;
 }
@@ -231,29 +211,9 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 #if !defined(__TRACE)
   result = EXIT_FAILURE;
 #else
-# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-  const int initialized = __atomic_load_n(internal_trace_initialized(), __ATOMIC_RELAXED);
-#   else
-  const int initialized = __sync_or_and_fetch(internal_trace_initialized(), 0);
-#   endif
-# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-  const int initialized = *internal_trace_initialized(); /*TODO*/
-# else
-  const int initialized = *internal_trace_initialized();
-# endif
+  const int initialized = LIBXSMM_ATOMIC_LOAD(*internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
   if (0 == initialized) {
-# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    __atomic_store_n(internal_trace_initialized(), -1, __ATOMIC_SEQ_CST);
-#   else
-    __sync_or_and_fetch(internal_trace_initialized(), -1);
-#   endif
-# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    *internal_trace_initialized() = -1; /*TODO*/
-# else
-    *internal_trace_initialized() = -1;
-# endif
+    LIBXSMM_ATOMIC_STORE(*internal_trace_initialized(), -1, LIBXSMM_ATOMIC_SEQ_CST);
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = FALSE != SymCleanup(GetCurrentProcess())
       ? EXIT_SUCCESS
@@ -299,17 +259,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # if defined(__GNUC__)
     __asm__("");
 # endif
-# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-    i = __atomic_load_n(internal_trace_initialized(), __ATOMIC_RELAXED);
-#   else
-    i = __sync_or_and_fetch(internal_trace_initialized(), 0);
-#   endif
-# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-    i = *internal_trace_initialized(); /*TODO*/
-# else
-    i = *internal_trace_initialized();
-# endif
+    i = LIBXSMM_ATOMIC_LOAD(*internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
     if (0 <= i) { /* do nothing if not yet initialized */
       const int mindepth = *(filter_mindepth ? filter_mindepth : internal_trace_mindepth());
       const int maxnsyms = *(filter_maxnsyms ? filter_maxnsyms : internal_trace_maxnsyms());
@@ -337,17 +287,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             abs_tid = (0 <= tid ? tid : -tid);
           }
           else {
-# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-            abs_tid = __atomic_add_fetch(internal_trace_initialized(), 1, __ATOMIC_RELAXED);
-#   else
-            abs_tid = __sync_add_and_fetch(internal_trace_initialized(), 1);
-#   endif
-# elif (defined(_REENTRANT) || defined(_OPENMP)) && defined(_WIN32)
-            abs_tid = _InterlockedIncrement(internal_trace_initialized());
-# else
-            abs_tid = ++*internal_trace_initialized();
-# endif
+            LIBXSMM_ATOMIC_ADD_FETCH(abs_tid, 1, LIBXSMM_ATOMIC_RELAXED);
             /* use sign bit to flag enabled fallback for symbol resolution */
             tid = -abs_tid;
           }
@@ -406,15 +346,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {
-# if (defined(_REENTRANT) || defined(_OPENMP)) && defined(LIBXSMM_TRACE_GCCATOMICS)
-#   if (0 != LIBXSMM_TRACE_GCCATOMICS)
-                  abs_tid = __atomic_add_fetch(internal_trace_initialized(), 1, __ATOMIC_RELAXED);
-#   else
-                  abs_tid = __sync_add_and_fetch(internal_trace_initialized(), 1);
-#   endif
-# else
-                  abs_tid = ++*internal_trace_initialized();
-# endif
+                  LIBXSMM_ATOMIC_ADD_FETCH(abs_tid, 1, LIBXSMM_ATOMIC_RELAXED);
                   assert(0 < abs_tid);
                   /* use sign bit to flag enabled fallback for symbol resolution */
                   ivalue[1] = -abs_tid;
@@ -527,10 +459,6 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
 
 
 #if defined(__GNUC__)
-#if 0
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
-#endif
 LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
@@ -563,10 +491,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_prof
 #endif
 }
 
-#if 0
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
-#endif
 LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
