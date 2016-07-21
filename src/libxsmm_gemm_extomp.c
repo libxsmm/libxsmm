@@ -237,11 +237,14 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  const int nt = *internal_gemm_nt();
   const int tm = internal_gemm_tile(1/*SP*/)[0/*M*/];
   const int tn = internal_gemm_tile(1/*SP*/)[1/*N*/];
   const int tk = internal_gemm_tile(1/*SP*/)[2/*K*/];
+  const int nt = *internal_gemm_nt();
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+#if !defined(_OPENMP)
+  LIBXSMM_UNUSED(nt);
+#endif
   if (2 <= *internal_gemm_omp()) { /* enable internal parallelization */
     if (0 == *internal_gemm_tasks()) {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
@@ -291,11 +294,14 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  const int nt = *internal_gemm_nt();
   const int tm = internal_gemm_tile(0/*DP*/)[0/*M*/];
   const int tn = internal_gemm_tile(0/*DP*/)[1/*N*/];
   const int tk = internal_gemm_tile(0/*DP*/)[2/*K*/];
+  const int nt = *internal_gemm_nt();
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+#if !defined(_OPENMP)
+  LIBXSMM_UNUSED(nt);
+#endif
   if (2 <= *internal_gemm_omp()) { /* enable internal parallelization */
     if (0 == *internal_gemm_tasks()) {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
