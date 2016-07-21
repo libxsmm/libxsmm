@@ -294,7 +294,8 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
             if (0 == madvise_error) {
               madvise_error = errno;
               fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
-                strerror(madvise_error), madvise_error, buffer, (unsigned long long)alloc_size);
+                strerror(madvise_error), madvise_error, (const void*)buffer,
+                (unsigned long long)alloc_size);
             }
           }
 # else
