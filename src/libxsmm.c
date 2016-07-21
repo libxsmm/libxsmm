@@ -377,7 +377,7 @@ return flux_entry.xmm
 
 #if !defined(LIBXSMM_OPENMP)
 # define INTERNAL_REGLOCK_COUNT 16
-static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock(int i)
+static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE* internal_reglock(int i)
 {
   static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE instance[] = {
     LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT,
@@ -386,7 +386,8 @@ static LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock(int i)
     LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT, LIBXSMM_LOCK_CONSTRUCT
   };
   assert(sizeof(instance) == (INTERNAL_REGLOCK_COUNT * sizeof(*instance)));
-  return instance[i];
+  assert(0 <= i && i < INTERNAL_REGLOCK_COUNT);
+  return instance + i;
 }
 #endif
 
@@ -663,6 +664,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
       int init_code;
       /* set internal_target_archid */
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
+      target_archid = *internal_target_archid();
       { /* select prefetch strategy for JIT */
         const char *const env_prefetch = getenv("LIBXSMM_PREFETCH");
         if (0 == env_prefetch || 0 == *env_prefetch) {
@@ -710,10 +712,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
       }
 #endif
       if (EXIT_SUCCESS == init_code) {
-        assert(0 == *internal_registry_keys() && 0 == *internal_registry()/*should never happen*/);
+        assert(0 == *internal_registry_keys() && 0 == *internal_registry()); /* should never happen */
         result = (internal_code_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_code_type));
         *internal_registry_keys() = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
-        if (result && *internal_registry_keys()) {
+        if (0 != result && 0 != *internal_registry_keys()) {
           const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
           *internal_statistic_mnk() = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
           if (0 != env_verbose && 0 != *env_verbose) {
@@ -906,10 +908,10 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 
 #if !defined(NDEBUG) /* library code is expected to be mute */
   {
+    const int target_archid = *internal_target_archid();
     const int cpuid = libxsmm_cpuid_x86();
-    if (cpuid < *internal_target_archid()) {
-      const char *const target_arch = internal_get_target_arch(*internal_target_archid());
-      const int target_archid = *internal_target_archid();
+    if (cpuid < target_archid) {
+      const char *const target_arch = internal_get_target_arch(target_archid);
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
@@ -941,7 +943,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
 
-  if (arch && *arch) {
+  if (0 != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;

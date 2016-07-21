@@ -61,10 +61,10 @@
 #else /* PThreads: include <pthread.h> */
 # define LIBXSMM_LOCK_TYPE pthread_mutex_t
 # define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-# define LIBXSMM_LOCK_DESTROY(LOCK) do { LIBXSMM_LOCK_TYPE *const libxsmm_lock_ptr_ = &(LOCK); pthread_mutex_destroy(libxsmm_lock_ptr_); } while(0)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) do { LIBXSMM_LOCK_TYPE *const libxsmm_lock_ptr_ = &(LOCK); pthread_mutex_lock   (libxsmm_lock_ptr_); } while(0)
-# define LIBXSMM_LOCK_TRYLOCK(LOCK) do { LIBXSMM_LOCK_TYPE *const libxsmm_lock_ptr_ = &(LOCK); pthread_mutex_trylock(libxsmm_lock_ptr_); } while(0)
-# define LIBXSMM_LOCK_RELEASE(LOCK) do { LIBXSMM_LOCK_TYPE *const libxsmm_lock_ptr_ = &(LOCK); pthread_mutex_unlock (libxsmm_lock_ptr_); } while(0)
+# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
+# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
+# define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
+# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
 #endif
 
 #if defined(__GNUC__)
