@@ -67,7 +67,7 @@ int mkstemp(char* filename_template);
 #   include <pthread.h>
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
-/* taken from libtransmission fdlimit.c */
+/* taken from "libtransmission" fdlimit.c */
 LIBXSMM_INLINE
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
@@ -339,7 +339,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
               if (MAP_FAILED != buffer) {
                 int check = -1;
                 ivalue = (int*)buffer;
-                ivalue[0] = fd; /* valid fd for internal_delete */
+                ivalue[0] = fd; /* valid file descriptor for internal_delete */
 
                 if (0 == pthread_setspecific(*internal_trace_key(), buffer)
                   && (sizeof(int) * 1) == read(fd, &check, sizeof(int))
