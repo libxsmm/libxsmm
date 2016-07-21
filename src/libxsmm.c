@@ -1040,6 +1040,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       internal_get_code_name(target_arch, jit_kind, descriptor, sizeof(jit_code_name), jit_code_name);
 #else
       const char *const jit_code_name = 0;
+      LIBXSMM_UNUSED(jit_kind);
 #endif
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
@@ -1068,7 +1069,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
   LIBXSMM_MESSAGE("LIBXSMM: The JIT BACKEND is currently not supported under Microsoft Windows!")
   LIBXSMM_MESSAGE("================================================================================")
 # endif
-  LIBXSMM_UNUSED(descriptor); LIBXSMM_UNUSED(desc_extra);  LIBXSMM_UNUSED(code);
+  LIBXSMM_UNUSED(descriptor); LIBXSMM_UNUSED(jit_kind); LIBXSMM_UNUSED(desc_extra);  LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
   assert(LIBXSMM_X86_AVX > *internal_target_archid());
 #endif
