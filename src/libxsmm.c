@@ -1093,9 +1093,9 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   if (0 != descriptor && INTERNAL_DISPATCH_BYPASS_CHECK(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
 
-    if (0 > descriptor->prefetch) {
+    if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
-      backend_descriptor.prefetch = *internal_prefetch();
+      backend_descriptor.prefetch = (unsigned char)(*internal_prefetch());
       descriptor = &backend_descriptor;
     }
     {
