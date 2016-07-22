@@ -70,58 +70,15 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
 }
 
 
-LIBXSMM_API_DEFINITION int* internal_gemm_tile(int precision)
-{
-  static LIBXSMM_RETARGETABLE int instance[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-    { 0, 0, 0 }, { 0, 0, 0 }
-  };
-  assert(0 <= precision && precision < 2);
-  return instance[precision];
-}
-
-
-LIBXSMM_API_DEFINITION int* internal_gemm_prefetch(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = LIBXSMM_MAX(LIBXSMM_PREFETCH, 0);
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION int* internal_gemm_nt(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = 2;
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION int* internal_gemm_tasks(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = 0;
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION int* internal_gemm_omp(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = 2;
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION int* internal_gemm(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = 0;
-  return &instance;
-}
-
-
 LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
   libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
 {
   int config = 0;
 
-  *internal_gemm_prefetch() = LIBXSMM_PREFETCH_AL2_AHEAD;
   LIBXSMM_UNUSED(prefetch);
+  internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  internal_gemm_omp = 2;
+  internal_gemm_nt = 2;
 
 #if defined(__MIC__)
   LIBXSMM_UNUSED(archid);
@@ -129,7 +86,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
-    *internal_gemm_nt() = 4;
+    internal_gemm_nt = 4;
     config = 1;
   }
 
@@ -139,7 +96,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
      */
     const char *const env = getenv("LIBXSMM_OMP");
     if (0 != env && 0 != *env) {
-      *internal_gemm_omp() = atoi(env);
+      internal_gemm_omp = atoi(env);
     }
   }
 
@@ -150,7 +107,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
      */
     const char *const env = getenv("LIBXSMM_GEMM");
     if (0 != env && 0 != *env) {
-      *internal_gemm() = atoi(env);
+      internal_gemm = atoi(env);
     }
   }
 
@@ -161,21 +118,21 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
     };
     const char* env[3];
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-    internal_gemm_tile(0/*DP*/)[0/*M*/] = (env[0] ? atoi(env[0]) : 0);
-    internal_gemm_tile(0/*DP*/)[1/*N*/] = (env[1] ? atoi(env[1]) : 0);
-    internal_gemm_tile(0/*DP*/)[2/*K*/] = (env[2] ? atoi(env[2]) : 0);
+    internal_gemm_tile[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
+    internal_gemm_tile[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
+    internal_gemm_tile[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
     /* environment-defined tile sizes applies for DP and SP */
-    internal_gemm_tile(1/*SP*/)[0/*M*/] = internal_gemm_tile(0/*DP*/)[0];
-    internal_gemm_tile(1/*SP*/)[1/*N*/] = internal_gemm_tile(0/*DP*/)[1];
-    internal_gemm_tile(1/*SP*/)[2/*K*/] = internal_gemm_tile(0/*DP*/)[2];
+    internal_gemm_tile[1/*SP*/][0/*M*/] = internal_gemm_tile[0/*DP*/][0];
+    internal_gemm_tile[1/*SP*/][1/*N*/] = internal_gemm_tile[0/*DP*/][1];
+    internal_gemm_tile[1/*SP*/][2/*K*/] = internal_gemm_tile[0/*DP*/][2];
 
     /* load predefined configuration if tile size is not setup by the environment */
-    if (0 >= internal_gemm_tile(0/*DP*/)[0/*M*/]) internal_gemm_tile(0)[0] = tile_configs[config][0][0];
-    if (0 >= internal_gemm_tile(0/*DP*/)[1/*N*/]) internal_gemm_tile(0)[1] = tile_configs[config][0][1];
-    if (0 >= internal_gemm_tile(0/*DP*/)[2/*K*/]) internal_gemm_tile(0)[2] = tile_configs[config][0][2];
-    if (0 >= internal_gemm_tile(1/*SP*/)[0/*M*/]) internal_gemm_tile(1)[0] = tile_configs[config][1][0];
-    if (0 >= internal_gemm_tile(1/*SP*/)[1/*N*/]) internal_gemm_tile(1)[1] = tile_configs[config][1][1];
-    if (0 >= internal_gemm_tile(1/*SP*/)[2/*K*/]) internal_gemm_tile(1)[2] = tile_configs[config][1][2];
+    if (0 >= internal_gemm_tile[0/*DP*/][0/*M*/]) internal_gemm_tile[0][0] = tile_configs[config][0][0];
+    if (0 >= internal_gemm_tile[0/*DP*/][1/*N*/]) internal_gemm_tile[0][1] = tile_configs[config][0][1];
+    if (0 >= internal_gemm_tile[0/*DP*/][2/*K*/]) internal_gemm_tile[0][2] = tile_configs[config][0][2];
+    if (0 >= internal_gemm_tile[1/*SP*/][0/*M*/]) internal_gemm_tile[1][0] = tile_configs[config][1][0];
+    if (0 >= internal_gemm_tile[1/*SP*/][1/*N*/]) internal_gemm_tile[1][1] = tile_configs[config][1][1];
+    if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
 
   if (NULL != sgemm_function) {
