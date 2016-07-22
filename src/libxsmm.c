@@ -780,12 +780,13 @@ void libxsmm_finalize(void)
 
         for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
           internal_code_type code = registry[i];
-          if (0 != code.pmm/*potentially allocated*/) {
+          if (0 != code.pmm) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].descriptor;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
             const unsigned int statistic_sml = internal_statistic_sml;
             int bucket = 2;
+            assert((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) != code.imm);
             if (LIBXSMM_MNK_SIZE(statistic_sml, statistic_sml, statistic_sml) >= kernel_size) {
               bucket = 0;
             }
@@ -795,11 +796,10 @@ void libxsmm_finalize(void)
                 bucket = 1;
               }
             }
-            if (0 == (LIBXSMM_CODE_STATIC & code.imm)/*check non-JIT flag (dynamically allocated/generated*/) {
+            if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
               void* buffer = 0;
               size_t size = 0;
-              /* make address valid by clearing the collision flag */
-              code.imm &= ~LIBXSMM_HASH_COLLISION;
+              code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
               if (EXIT_SUCCESS == libxsmm_alloc_info(code.pmm, &size, 0/*flags*/, &buffer)) {
                 libxsmm_deallocate(code.pmm);
                 ++internal_statistic[precision][bucket].njit;
