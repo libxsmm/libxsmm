@@ -421,8 +421,20 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 
 
 #if defined(__GNUC__)
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD void __cyg_profile_func_enter(void* this_fn, void* call_site)
+
+#if defined(__cplusplus)
+LIBXSMM_EXTERN
+#else
+static
+#endif
+LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+
+#if defined(__cplusplus)
+LIBXSMM_EXTERN
+#else
+static
+#endif
+void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if 1
@@ -453,8 +465,19 @@ LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD void __cyg_profile_func_enter(void* this_f
 #endif
 }
 
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD void __cyg_profile_func_exit(void* this_fn, void* call_site)
+#if defined(__cplusplus)
+LIBXSMM_EXTERN
+#else
+static
+#endif
+LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+
+#if defined(__cplusplus)
+LIBXSMM_EXTERN
+#else
+static
+#endif
+void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }

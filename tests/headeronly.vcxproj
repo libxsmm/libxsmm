@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="headeronly.c" />
-    <ClCompile Include="headeronly_aux.cpp" />
+    <ClCompile Include="headeronly_aux.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>headeronly</ProjectName>
