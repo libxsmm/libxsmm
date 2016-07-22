@@ -5,7 +5,7 @@ ECHO=$(which echo)
 GREP=$(which grep)
 ENV=$(which env)
 
-DISABLED="headeronly"
+#DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
