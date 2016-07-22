@@ -258,10 +258,13 @@ endif
 
 # Mapping build options to libxsmm_prefetch_type (see include/libxsmm_typedefs.h)
 ifeq (1,$(PREFETCH_ID))
-  # Prefetch "auto" is a pseudo strategy introduced by the frontend;
-  # select "pfsigonly" for statically generated code.
-  PREFETCH_SCHEME = pfsigonly
-  PREFETCH_TYPE = -1
+  # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
+  # keep even the prefetch-signature disabled under Windows
+  ifneq (Windows_NT,$(UNAME))
+    # select "pfsigonly" for statically generated code.
+    PREFETCH_SCHEME = pfsigonly
+    PREFETCH_TYPE = -1
+  endif
   ifneq (0,$(MIC))
     ifneq (0,$(MPSS))
       PREFETCH_SCHEME_MIC = AL2_BL2viaC
