@@ -49,7 +49,7 @@ LIBXSMM_API void libxsmm_hash_finalize(void);
 LIBXSMM_API unsigned int libxsmm_crc32(
   const void* data, unsigned int size, unsigned int seed);
 
-/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed (init. value). */
+/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed. */
 LIBXSMM_API unsigned int libxsmm_crc32_sw(
   const void* data, unsigned int size, unsigned int seed);
 
@@ -57,13 +57,13 @@ LIBXSMM_API unsigned int libxsmm_crc32_sw(
 LIBXSMM_API unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int seed);
 
-/** Calculate a hash value for a given quantity (size) of raw data according to the seed (init. value). */
+/** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
 LIBXSMM_API unsigned int libxsmm_hash(
   const void* data, unsigned int size,
   /** Upper bound of the result. */
   unsigned int n);
 
-/** Calculate a hash value for a given quantity (size) of raw data according to the seed (init. value). */
+/** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
 LIBXSMM_API unsigned int libxsmm_hash_npot(
   const void* data, unsigned int size,
   /** Upper bound of the result. */
