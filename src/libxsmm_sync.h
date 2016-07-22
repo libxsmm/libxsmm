@@ -54,6 +54,7 @@
 #if defined(_WIN32) /*TODO*/
 # define LIBXSMM_LOCK_TYPE HANDLE
 # define LIBXSMM_LOCK_CONSTRUCT 0
+# define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
 # define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
 # define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
 # define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
@@ -61,6 +62,7 @@
 #else /* PThreads: include <pthread.h> */
 # define LIBXSMM_LOCK_TYPE pthread_mutex_t
 # define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
+# define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
 # define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
 # define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
 # define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
