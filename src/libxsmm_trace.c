@@ -68,11 +68,7 @@ int mkstemp(char* filename_template);
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
-LIBXSMM_INLINE
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, off_t length)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, off_t length)
 {
   fstore_t fst;
   fst.fst_flags = F_ALLOCATECONTIG;
@@ -103,33 +99,16 @@ int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-static LIBXSMM_RETARGETABLE volatile LONG* internal_trace_initialized(void)
-{
-  static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG instance, 32) = -1;
-  return &instance;
-}
+LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG internal_trace_initialized, 32) /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-static LIBXSMM_RETARGETABLE int* internal_trace_initialized(void)
-{
-  static LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int instance, 32) = -1;
-  return &instance;
-}
-static LIBXSMM_RETARGETABLE pthread_key_t* internal_trace_key(void)
-{
-  static LIBXSMM_RETARGETABLE pthread_key_t instance = 0;
-  return &instance;
-}
-LIBXSMM_INLINE
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-LIBXSMM_RETARGETABLE void internal_delete(void* value)
+LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int internal_trace_initialized, 32) /*= -1*/;
+LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {
   int fd;
   assert(value);
   fd = *((int*)value);
-
 #if defined(NDEBUG)
   munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
 #else /* library code is expected to be mute */
@@ -139,7 +118,6 @@ LIBXSMM_RETARGETABLE void internal_delete(void* value)
       strerror(error), error, value);
   }
 #endif
-
   if (0 <= fd) {
     close(fd);
   }
@@ -152,74 +130,64 @@ LIBXSMM_RETARGETABLE void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-static LIBXSMM_RETARGETABLE int* internal_trace_threadid(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
-  return &instance;
-}
+LIBXSMM_RETARGETABLE int internal_trace_mindepth /*=  0*/;
+LIBXSMM_RETARGETABLE int internal_trace_threadid /*= -1*/;
+LIBXSMM_RETARGETABLE int internal_trace_maxnsyms /*= -1*/;
 
 
-static LIBXSMM_RETARGETABLE int* internal_trace_mindepth(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = 0/*all*/;
-  return &instance;
-}
-
-
-static LIBXSMM_RETARGETABLE int* internal_trace_maxnsyms(void)
-{
-  static LIBXSMM_RETARGETABLE int instance = -1/*all*/;
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION
+LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE int libxsmm_trace_init(
-  int filter_threadid, int filter_mindepth, int filter_maxnsyms)
+int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms);
+
+LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
-  int result;
-#if !defined(__TRACE)
-  result = EXIT_FAILURE;
-#elif defined(_WIN32) || defined(__CYGWIN__)
-  SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-  result = FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE)
-    ? EXIT_SUCCESS
-    : GetLastError();
-#else
-  result = pthread_key_create(internal_trace_key(), internal_delete);
-#endif
-  if (EXIT_SUCCESS == result) {
-    *internal_trace_threadid() = filter_threadid;
-    *internal_trace_mindepth() = filter_mindepth;
-    *internal_trace_maxnsyms() = filter_maxnsyms;
-    LIBXSMM_ATOMIC_STORE_ZERO(internal_trace_initialized(), LIBXSMM_ATOMIC_SEQ_CST);
+  int result = EXIT_SUCCESS;
+  internal_trace_initialized = -1; /* disabled */
+#if defined(__TRACE)
+  if (0 != filter_maxnsyms) { /* enabled */
+# if defined(_WIN32) || defined(__CYGWIN__)
+    SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
+    result = FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE)
+      ? EXIT_SUCCESS
+      : GetLastError();
+# else
+    result = pthread_key_create(&internal_trace_key, internal_delete);
+# endif
+    if (EXIT_SUCCESS == result) {
+      internal_trace_threadid = filter_threadid;
+      internal_trace_maxnsyms = filter_maxnsyms;
+      internal_trace_mindepth = filter_mindepth;
+      internal_trace_initialized = 0; /* enabled */
+    }
   }
+#endif
   return result;
 }
 
 
-LIBXSMM_API_DEFINITION
+LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
+int libxsmm_trace_finalize(void);
+
+LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
 #if !defined(__TRACE)
   result = EXIT_FAILURE;
 #else
-  const int initialized = LIBXSMM_ATOMIC_LOAD(internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
+  const int initialized = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
   if (0 == initialized) {
-    LIBXSMM_ATOMIC_STORE(internal_trace_initialized(), -1, LIBXSMM_ATOMIC_SEQ_CST);
+    LIBXSMM_ATOMIC_STORE(&internal_trace_initialized, -1/*disable*/, LIBXSMM_ATOMIC_SEQ_CST);
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = FALSE != SymCleanup(GetCurrentProcess())
       ? EXIT_SUCCESS
       : GetLastError();
 # else
-    result = pthread_key_delete(*internal_trace_key());
+    result = pthread_key_delete(internal_trace_key);
 # endif
   }
   else {
@@ -230,18 +198,19 @@ LIBXSMM_RETARGETABLE int libxsmm_trace_finalize(void)
 }
 
 
+LIBXSMM_API
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
+
 LIBXSMM_API_DEFINITION
 #if defined(_WIN32)
 /*TODO: no inline*/
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
-LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
-  unsigned int* depth, unsigned int* threadid,
-  const int* filter_threadid,
-  const int* filter_mindepth,
-  const int* filter_maxnsyms)
+const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
 {
   const char *fname = NULL;
 #if defined(__TRACE)
@@ -259,10 +228,10 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 # if defined(__GNUC__)
     __asm__("");
 # endif
-    i = LIBXSMM_ATOMIC_LOAD(internal_trace_initialized(), LIBXSMM_ATOMIC_RELAXED);
+    i = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
     if (0 <= i) { /* do nothing if not yet initialized */
-      const int mindepth = *(filter_mindepth ? filter_mindepth : internal_trace_mindepth());
-      const int maxnsyms = *(filter_maxnsyms ? filter_maxnsyms : internal_trace_maxnsyms());
+      const int mindepth = filter_mindepth ? *filter_mindepth : internal_trace_mindepth;
+      const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms;
 # if defined(_WIN32) || defined(__CYGWIN__)
       i = CaptureStackBackTrace(0, max_n, stack, NULL);
 # else
@@ -273,7 +242,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
       {
         if (min_n <= i) { /* check against min. depth */
-          const int filter = *(filter_threadid ? filter_threadid : internal_trace_threadid());
+          const int filter = (filter_threadid ? *filter_threadid : internal_trace_threadid);
           int abs_tid = 0;
 # if defined(_WIN32) || defined(__CYGWIN__)
           static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
@@ -287,7 +256,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             abs_tid = (0 <= tid ? tid : -tid);
           }
           else {
-            abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(internal_trace_initialized(), 1, LIBXSMM_ATOMIC_RELAXED);
+            abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
             /* use sign bit to flag enabled fallback for symbol resolution */
             tid = -abs_tid;
           }
@@ -309,7 +278,7 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
             if (threadid) *threadid = abs_tid - 1;
           }
 # else
-          char *const raw_value = (char*)pthread_getspecific(*internal_trace_key()), *value = 0;
+          char *const raw_value = (char*)pthread_getspecific(internal_trace_key), *value = 0;
           int* ivalue = 0, fd = -1;
 
           if (raw_value) {
@@ -341,12 +310,12 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
                 ivalue = (int*)buffer;
                 ivalue[0] = fd; /* valid file descriptor for internal_delete */
 
-                if (0 == pthread_setspecific(*internal_trace_key(), buffer)
+                if (0 == pthread_setspecific(internal_trace_key, buffer)
                   && (sizeof(int) * 1) == read(fd, &check, sizeof(int))
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {
-                  abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(internal_trace_initialized(), 1, LIBXSMM_ATOMIC_RELAXED);
+                  abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
                   assert(0 < abs_tid);
                   /* use sign bit to flag enabled fallback for symbol resolution */
                   ivalue[1] = -abs_tid;
@@ -403,11 +372,6 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
           }
 # endif
         }
-# if !defined(NDEBUG) /* library code is expected to be mute */
-        else {
-          fprintf(stderr, "LIBXSMM: failed to capture stack trace\n");
-        }
-# endif
       }
     }
 
@@ -424,15 +388,13 @@ LIBXSMM_RETARGETABLE const char* libxsmm_trace_info(
 }
 
 
-LIBXSMM_API_DEFINITION
+LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE void libxsmm_trace(
-  FILE* stream, unsigned int depth,
-  const int* filter_threadid,
-  const int* filter_mindepth,
-  const int* filter_maxnsyms)
+void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
+
+LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
 {
 #if defined(__TRACE)
   unsigned int depth1 = depth + 1, threadid;
@@ -440,9 +402,9 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
     filter_threadid, filter_mindepth, filter_maxnsyms);
 
   if (name && *name) { /* implies actual other results to be valid */
-    const int depth0 = LIBXSMM_MAX(*(filter_mindepth ? filter_mindepth : internal_trace_mindepth()), 0);
+    const int depth0 = LIBXSMM_MAX(filter_mindepth ? *filter_mindepth : internal_trace_mindepth, 0);
     assert(0 != stream/*otherwise fprintf handle the error*/);
-    if ((0 == filter_threadid && 0 > *internal_trace_threadid()) || (0 != filter_threadid && 0 > *filter_threadid)) {
+    if ((0 == filter_threadid && 0 > internal_trace_threadid) || (0 != filter_threadid && 0 > *filter_threadid)) {
       fprintf(stream, "%*s%s@%u\n", (int)(depth1 - depth0), "", name, threadid);
     }
     else {
@@ -460,7 +422,7 @@ LIBXSMM_RETARGETABLE void libxsmm_trace(
 
 #if defined(__GNUC__)
 LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if 1
@@ -492,7 +454,7 @@ LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) 
 }
 
 LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_EXTERN LIBXSMM_INLINE_KEYWORD void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }

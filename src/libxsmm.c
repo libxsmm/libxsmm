@@ -643,23 +643,24 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
       init_code = libxsmm_gemm_init(target_archid, internal_prefetch);
 #if defined(__TRACE)
       {
+        int filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = 0;
         const char *const env_trace_init = getenv("LIBXSMM_TRACE");
-        if (EXIT_SUCCESS == init_code && 0 != env_trace_init) {
-          int match[] = { 0, 0 }, filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = -1;
+        if (EXIT_SUCCESS == init_code && 0 != env_trace_init && 0 != *env_trace_init) {
           char buffer[32];
-
           if (1 == sscanf(env_trace_init, "%32[^,],", buffer)) {
             sscanf(buffer, "%i", &filter_threadid);
           }
           if (1 == sscanf(env_trace_init, "%*[^,],%32[^,],", buffer)) {
-            match[0] = sscanf(buffer, "%i", &filter_mindepth);
+            sscanf(buffer, "%i", &filter_mindepth);
           }
           if (1 == sscanf(env_trace_init, "%*[^,],%*[^,],%32s", buffer)) {
-            match[1] = sscanf(buffer, "%i", &filter_maxnsyms);
+            sscanf(buffer, "%i", &filter_maxnsyms);
           }
-          init_code = (0 == filter_threadid && 0 == match[0] && 0 == match[1]) ? EXIT_SUCCESS
-            : libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+          else {
+            filter_maxnsyms = -1; /* all */
+          }
         }
+        init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
       }
 #endif
       if (EXIT_SUCCESS == init_code) {
@@ -721,7 +722,7 @@ LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(constructor)
 #endif
-LIBXSMM_RETARGETABLE void libxsmm_init(void)
+void libxsmm_init(void)
 {
   const void *const registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED);
   if (0 == registry) {
@@ -730,12 +731,17 @@ LIBXSMM_RETARGETABLE void libxsmm_init(void)
 }
 
 
+LIBXSMM_API
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void libxsmm_finalize(void);
+
 LIBXSMM_API_DEFINITION
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(destructor)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_RETARGETABLE void libxsmm_finalize(void)
+void libxsmm_finalize(void)
 {
   internal_code_type* registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
 
