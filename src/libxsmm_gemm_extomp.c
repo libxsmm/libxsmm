@@ -347,7 +347,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 
 #if defined(LIBXSMM_GEMM_EXTWRAP)
 
-LIBXSMM_API_DEFINITION void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -371,7 +371,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_GEMM_EXTWRAP_SGEMM(
 }
 
 
-LIBXSMM_API_DEFINITION void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,

@@ -33,7 +33,8 @@
 
 #include "libxsmm_gemm.h"
 
-#if !defined(LIBXSMM_GEMM_EXTWRAP) && defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
+#if !defined(LIBXSMM_GEMM_EXTWRAP) && defined(LIBXSMM_BUILD) && \
+  defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # if defined(__STATIC) /* -Wl,--wrap=xgemm_ */
 #   define LIBXSMM_GEMM_EXTWRAP
