@@ -79,11 +79,11 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
     -e "^m=" -e "${VARIANT}" \
     ${FILE} | \
   ${SED} \
-    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ (.\+) / /" \
-    -e "s/size=//" -e "s/batch=//" -e "s/memory=//" -e "s/ GB\/s//" \
-    -e "/^.\+\.\.\./Id" -e "/^$/d" -e "/--/d" | \
+    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ldc=[0-9][0-9]* //" -e "s/ (..*) / /" \
+    -e "s/size=//" -e "s/batch=[0-9][0-9]* //" -e "s/memory=//" -e "s/ GB\/s//" \
+    -e "/^..*\.\.\./Id" -e "/^$/d" -e "/--/d" | \
   ${SED} \
-    -e "N;s/ MB\n\tperformance://g" \
+    -e "N;s/ MB\( (.P)\)*\n\tperformance://g" \
     -e "N;s/ GFLOPS\/s\n\tbandwidth://g" \
   > ${HERE}/cp2k-perf.dat
   env \
