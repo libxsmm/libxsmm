@@ -45,7 +45,7 @@ int main()
       }
       else {
 #if defined(_DEBUG)
-        fprintf(stderr, "Error: the %ix%i%i-kernel does not match!\n", m, n, k);
+        fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
         assert(EXIT_SUCCESS != (i + 1));
         return i + 1;
