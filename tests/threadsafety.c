@@ -1,5 +1,6 @@
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
 # define MAX_NKERNELS 1000
@@ -43,6 +44,9 @@ int main()
         LIBXSMM_MMCALL(f[i], a, b, c, m, n, k);
       }
       else {
+#if defined(_DEBUG)
+        fprintf(stderr, "Error: the %ix%i%i-kernel does not match!\n", m, n, k);
+#endif
         assert(EXIT_SUCCESS != (i + 1));
         return i + 1;
       }
