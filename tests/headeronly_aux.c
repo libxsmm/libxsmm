@@ -1,6 +1,7 @@
 #include <libxsmm_source.h>
 
 
+LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k);
 LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k)
 {
   return libxsmm_dmmdispatch(m, n, k,
