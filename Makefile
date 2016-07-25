@@ -496,6 +496,10 @@ ifneq (0,$(JIT))
       OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
       DFLAGS += -DLIBXSMM_VTUNE
       IFLAGS += -I$(VTUNEROOT)/include
+      ifneq (0,$(INTEL))
+        CXXFLAGS += -diag-disable 271
+        CFLAGS += -diag-disable 271
+      endif
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
 	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
