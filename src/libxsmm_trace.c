@@ -162,6 +162,10 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mi
       internal_trace_initialized = 0; /* enabled */
     }
   }
+#else
+  LIBXSMM_UNUSED(filter_threadid);
+  LIBXSMM_UNUSED(filter_mindepth);
+  LIBXSMM_UNUSED(filter_maxnsyms);
 #endif
   return result;
 }
