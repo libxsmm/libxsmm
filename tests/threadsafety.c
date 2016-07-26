@@ -43,12 +43,19 @@ int main()
       if (fi == f[i]) {
         LIBXSMM_MMCALL(f[i], a, b, c, m, n, k);
       }
-      else {
+      else if (NULL != fi) {
 #if defined(_DEBUG)
         fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
         assert(EXIT_SUCCESS != (i + 1));
         return i + 1;
+      }
+      else { /* did not find previously generated and recorded kernel */
+#if defined(_DEBUG)
+        fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
+#endif
+        assert(EXIT_SUCCESS != (-i - 1));
+        return -i - 1;
       }
     }
     else {
