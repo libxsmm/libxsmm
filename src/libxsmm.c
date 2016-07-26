@@ -95,6 +95,10 @@
 # define LIBXSMM_CACHESIZE 4
 #endif
 
+#if !defined(LIBXSMM_TRYLOCK)
+# define LIBXSMM_TRYLOCK
+#endif
+
 #if defined(LIBXSMM_HASH_BASIC)
 # define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
     HASH = libxsmm_hash_npot(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_REGSIZE); \
@@ -166,9 +170,17 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #else
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
-    const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-    LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))
+# if defined(LIBXSMM_TRYLOCK)
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
+      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
+      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
+        assert(0 == diff); continue; \
+      }
+# else
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
+      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
+      LIBXSMM_LOCK_ACQUIRE(internal_reglock + (LOCKINDEX))
+# endif
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock + (LOCKINDEX)); }
 #endif
 
