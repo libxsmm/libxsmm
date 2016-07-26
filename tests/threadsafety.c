@@ -1,5 +1,4 @@
 #include <libxsmm.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
@@ -12,7 +11,7 @@ int main()
   /* we do not care about the initial values */
   /*const*/ float a[23*23], b[23*23];
   libxsmm_smmfunction f[MAX_NKERNELS];
-  int i;
+  int result = 0, i;
 
 #if defined(_OPENMP)
 # pragma omp parallel for default(none) private(i)
@@ -47,15 +46,15 @@ int main()
 #if defined(_DEBUG)
         fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
-        assert(EXIT_SUCCESS != (i + 1));
-        return i + 1;
+        result = i + 2;
+        break;
       }
       else { /* did not find previously generated and recorded kernel */
 #if defined(_DEBUG)
         fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
 #endif
-        assert(EXIT_SUCCESS != (-i - 1));
-        return -i - 1;
+        result = 1;
+        break;
       }
     }
     else {
@@ -72,5 +71,5 @@ int main()
     libxsmm_finalize();
   }
 
-  return EXIT_SUCCESS;
+  return result;
 }
