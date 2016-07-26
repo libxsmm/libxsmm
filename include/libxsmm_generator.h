@@ -49,22 +49,6 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC) (FLAGS)
 #endif
 
-#define LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA) \
-  if (0 != ((FLAGS) & (LIBXSMM_GEMM_FLAG_ALPHA_F | LIBXSMM_GEMM_FLAG_BETA_F))) { \
-    if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_ALPHA_F)) { \
-      if (0 < (ALPHA) || 0 > (ALPHA)) { \
-        const double dalpha = ALPHA; \
-        (DESCRIPTOR).alpha = (signed char)(1.0 / dalpha); \
-      } \
-    } \
-    if (0 != ((FLAGS) & LIBXSMM_GEMM_FLAG_BETA_F)) { \
-      if (0 < (BETA) || 0 > (BETA)) { \
-        const double dbeta = BETA; \
-        (DESCRIPTOR).beta = (signed char)(1.0 / dbeta); \
-      } \
-    } \
-  }
-
 #if defined(LIBXSMM_GENERATOR_BIGDESC)
 /* TODO: support libxsmm_blasint in the backend, or make sure to fallback earlier */
 # define LIBXSMM_GENERATOR_SIZE_TYPE unsigned int
@@ -95,8 +79,7 @@
   (DESCRIPTOR).n = (LIBXSMM_GENERATOR_SIZE_TYPE)(N); (DESCRIPTOR).k = (LIBXSMM_GENERATOR_SIZE_TYPE)(K); \
   (DESCRIPTOR).flags = (unsigned char)LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC); \
   (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-  (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
-  LIBXSMM_GEMM_DESCRIPTOR_FIXUP(DESCRIPTOR, FLAGS, ALPHA, BETA)
+  (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -122,11 +105,7 @@ typedef struct libxsmm_gemm_descriptor {
 
 /** Extended flag set complementing libxsmm_gemm_flags. */
 typedef enum libxsmm_gemm_xflags {
-  LIBXSMM_GEMM_FLAG_F32PREC = 16,
-  /** Fractional: 1/alpha, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_ALPHA_F = 32,
-  /** Fractional: 1/beta, or General: 1/0. */
-  LIBXSMM_GEMM_FLAG_BETA_F  = 64
+  LIBXSMM_GEMM_FLAG_F32PREC = 16
 } libxsmm_gemm_xflags;
 
 /** Structure referring to the generated code with some attached information. */
