@@ -96,7 +96,7 @@
 #endif
 
 #if !defined(LIBXSMM_TRYLOCK)
-# define LIBXSMM_TRYLOCK
+/*# define LIBXSMM_TRYLOCK*/
 #endif
 
 #if defined(LIBXSMM_HASH_BASIC)
