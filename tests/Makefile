@@ -80,7 +80,6 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 define DEFINE_LINK_LD_RULE
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(dir $(1))/.make
 	$(LD) -o $(1) $(2) \
-		$(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) \
 		$(call libdir, $(LIBNAME).$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 endef
@@ -89,7 +88,6 @@ define DEFINE_LINK_FC_RULE
 ifneq (,$(strip $(FC)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(dir $(1))/.make
 	$(FC) -o $(1) $(2) \
-		$(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) \
 		$(call libdir, $(LIBNAME)f.$(LIBEXT)) \
 		$(call libdir, $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
@@ -103,6 +101,9 @@ $(foreach SRC, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX),$(eval $(call DEFINE_
 
 $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX),$(eval $(call DEFINE_LINK_FC_RULE, \
   $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+
+$(OUTDIR)/headeronly: $(OUTDIR)/.make $(LIBNAME).$(LIBEXT) $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o
+	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
