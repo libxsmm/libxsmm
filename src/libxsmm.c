@@ -152,6 +152,10 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
 #endif
 
+#if !defined(LIBXSMM_TRYLOCK)
+/*# define LIBXSMM_TRYLOCK*/
+#endif
+
 #if defined(__GNUC__)
 # define LIBXSMM_INIT
 /* libxsmm_init already executed via GCC constructor attribute */
@@ -250,7 +254,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
         } \
       } \
       else { /* 0 != diff */ \
-        if (0 == diff0) { \
+        if (0 == diff0 && /*bypass*/0 == (LIBXSMM_HASH_COLLISION & (CODE)->imm)) { \
           /* flag existing entry as collision */ \
           internal_code_type collision; \
           /* find new slot to store the code version */ \
@@ -264,7 +268,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
         } \
         else { \
           const unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE); \
-          if (next != i0) { /* linear search for free slot */ \
+          if (next != i0) { /* linear search for free slot not completed */ \
             i = next; \
           } \
           else { /* out of registry capacity (no free slot found) */ \
@@ -315,7 +319,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
             unsigned int next; \
             for (i0 = (index != i ? index : LIBXSMM_HASH_MOD(index + 1, LIBXSMM_REGSIZE)), \
               i = i0, next = LIBXSMM_HASH_MOD(i0 + 1, LIBXSMM_REGSIZE); \
-              /* skip any (still invalid) descriptor which corresponds to no code, or continue on difference */ \
+              /* skip entries which correspond to no code, or continue on difference */ \
               (0 == (CODE = (internal_registry + i))->pmm || \
                 0 != (diff = libxsmm_gemm_diff(DESCRIPTOR, &internal_registry_keys[i].descriptor))) \
                 /* entire registry was searched and no code version was found */ \
@@ -392,10 +396,6 @@ return flux_entry.xmm
 #define INTERNAL_DMMDISPATCH(PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) \
   INTERNAL_DISPATCH((0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)), \
   M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH, dmm)
-
-#if !defined(LIBXSMM_TRYLOCK)
-/*# define LIBXSMM_TRYLOCK*/
-#endif
 
 #if !defined(LIBXSMM_OPENMP)
 # define INTERNAL_REGLOCK_COUNT 16
