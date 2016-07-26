@@ -785,10 +785,8 @@ void libxsmm_finalize(void)
         libxsmm_gemm_diff_finalize();
         libxsmm_hash_finalize();
 
-        { /* make internal registry globally unavailable */
-          const internal_code_type const* zero = LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
-          LIBXSMM_UNUSED(zero);
-        }
+        /* make internal registry globally unavailable */
+        LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
         internal_registry_keys = 0;
 
         for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
