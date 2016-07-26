@@ -48,8 +48,10 @@ int main()
 #if defined(_DEBUG)
           fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
-#if defined(_OPENMP)
+#if defined(_OPENMP) && (201107 <= _OPENMP)
 #         pragma omp atomic write
+#else
+#         pragma omp critical
 #endif
           result = i + 2;
         }
@@ -57,8 +59,10 @@ int main()
 #if defined(_DEBUG)
           fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
 #endif
-#if defined(_OPENMP)
+#if defined(_OPENMP) && (201107 <= _OPENMP)
 #         pragma omp atomic write
+#else
+#         pragma omp critical
 #endif
           result = 1;
         }
