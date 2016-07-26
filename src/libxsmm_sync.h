@@ -31,6 +31,8 @@
 #ifndef LIBXSMM_SYNC_H
 #define LIBXSMM_SYNC_H
 
+#include <libxsmm_macros.h>
+
 #if defined(LIBXSMM_NOSYNC)
 # undef _REENTRANT
 #elif !defined(_REENTRANT)
@@ -89,29 +91,39 @@
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = VALUE
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) *(DST_PTR) += VALUE
 #endif
-
 #if !defined(LIBXSMM_ATOMIC_STORE_ZERO)
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
 #endif
 
-#if defined(_WIN32) /*TODO*/
-# define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
-# define LIBXSMM_LOCK_TYPE HANDLE
-# define LIBXSMM_LOCK_CONSTRUCT 0
-# define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
-# define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
-# define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
-# define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-#else /* PThreads: include <pthread.h> */
+#if defined(_REENTRANT)
+# if defined(_WIN32) /*TODO*/
+#   define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#   define LIBXSMM_LOCK_TYPE HANDLE
+#   define LIBXSMM_LOCK_CONSTRUCT 0
+#   define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
+#   define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
+#   define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
+#   define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
+#   define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
+# else /* PThreads: include <pthread.h> */
+#   define LIBXSMM_LOCK_ACQUIRED 0
+#   define LIBXSMM_LOCK_TYPE pthread_mutex_t
+#   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
+#   define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
+#   define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
+#   define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
+#   define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
+#   define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
+# endif
+#else
 # define LIBXSMM_LOCK_ACQUIRED 0
-# define LIBXSMM_LOCK_TYPE pthread_mutex_t
-# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-# define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
-# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
-# define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
-# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
+# define LIBXSMM_LOCK_TYPE const void*
+# define LIBXSMM_LOCK_CONSTRUCT 0
+# define LIBXSMM_LOCK_INIT(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_LOCK_DESTROY(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_LOCK_ACQUIRE(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_LOCK_TRYLOCK(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_LOCK_RELEASE(LOCK) LIBXSMM_UNUSED(LOCK)
 #endif
 
 #endif /*LIBXSMM_SYNC_H*/
