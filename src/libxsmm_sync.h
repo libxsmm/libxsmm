@@ -51,24 +51,6 @@
 # define LIBXSMM_TLS
 #endif
 
-#if defined(_WIN32) /*TODO*/
-# define LIBXSMM_LOCK_TYPE HANDLE
-# define LIBXSMM_LOCK_CONSTRUCT 0
-# define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
-# define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
-# define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
-# define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-#else /* PThreads: include <pthread.h> */
-# define LIBXSMM_LOCK_TYPE pthread_mutex_t
-# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-# define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
-# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
-# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
-# define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
-# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
-#endif
-
 #if defined(__GNUC__)
 # if !defined(LIBXSMM_GCCATOMICS)
 #   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
@@ -107,6 +89,24 @@
 
 #if !defined(LIBXSMM_ATOMIC_STORE_ZERO)
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
+#endif
+
+#if defined(_WIN32) /*TODO*/
+# define LIBXSMM_LOCK_TYPE HANDLE
+# define LIBXSMM_LOCK_CONSTRUCT 0
+# define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
+# define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
+# define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
+# define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
+# define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
+#else /* PThreads: include <pthread.h> */
+# define LIBXSMM_LOCK_TYPE pthread_mutex_t
+# define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
+# define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
+# define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
+# define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
+# define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
+# define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
 #endif
 
 #endif /*LIBXSMM_SYNC_H*/
