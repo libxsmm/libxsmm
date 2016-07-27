@@ -1151,7 +1151,7 @@ clean-minimal:
 clean: clean-minimal
 	@rm -f $(OBJECTS) $(FTNOBJS) $(SRCFILES_KERNELS)
 	@rm -f $(BLDDIR)/libxsmm_dispatch.h
-	@if [ "" = $(find build -type f -not -name .make) ]; then \
+	@if [ "" = "$$(find build -type f -not -name .make 2> /dev/null)" ]; then \
 		rm -rf $(BLDDIR); \
 	fi
 
