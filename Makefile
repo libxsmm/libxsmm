@@ -607,7 +607,7 @@ module: module_hst module_mic
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ -shared $(LDFLAGS) $(CLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_GEN_LIB)
+	$(LD) -o $@ -shared $(LDFLAGS) $(CLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_GEN_LIB) -lrt
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
