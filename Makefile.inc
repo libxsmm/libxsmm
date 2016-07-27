@@ -112,6 +112,15 @@ BLAS ?= 0
 # Prefer to link statically against BLAS library
 BLAS_STATIC ?= 1
 
+# Explicitly disables BLAS by user's intervention
+# Makefile defines what happens (perhaps nothing)
+NOBLAS ?= 0
+ifneq (,$(filter environment% override command%,$(origin BLAS)))
+  ifeq (0,$(BLAS))
+    NOBLAS = 1
+  endif
+endif
+
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
