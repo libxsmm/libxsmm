@@ -1140,12 +1140,12 @@ documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
 
 .PHONY: clean-minimal
 clean-minimal:
-	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
 	@rm -rf $(SCRDIR)/__pycache__
+	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
+	@touch $(INCDIR)/.make 2> /dev/null || true
 	@touch $(SPLDIR)/cp2k/.make
 	@touch $(SPLDIR)/smm/.make
 	@touch $(SPLDIR)/nek/.make
-	@touch $(INCDIR)/.make
 
 .PHONY: clean
 clean: clean-minimal
