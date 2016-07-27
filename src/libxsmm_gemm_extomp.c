@@ -206,6 +206,17 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
   /* internal pre-initialization step */
   libxsmm_gemm_configure(archid, prefetch, fn_sgemm.pf, fn_dgemm.pf);
 
+  { /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
+     * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
+     * 1: OpenMP-parallelized but without internal parallel region,
+     * 2: OpenMP-parallelized with internal parallel region" )
+     */
+    const char *const env = getenv("LIBXSMM_GEMM");
+    if (0 != env && 0 != *env) {
+      internal_gemm = atoi(env);
+    }
+  }
+
 #if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
   { /* consider user input about using (OpenMP-)tasks; this code must be here
     * because maybe only this translation unit is compiled with OpenMP support
@@ -216,11 +227,14 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     }
   }
 #endif
-
+#if !defined(__BLAS) || (0 != __BLAS)
   return (NULL != *libxsmm_original_sgemm()
        && NULL != *libxsmm_original_dgemm())
     ? EXIT_SUCCESS
     : EXIT_FAILURE;
+#else
+  return EXIT_SUCCESS;
+#endif
 }
 
 
@@ -245,7 +259,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
-  if (2 <= internal_gemm_omp) { /* enable internal parallelization */
+  if (0 == LIBXSMM_DIV2(internal_gemm, 2)) { /* enable internal parallelization */
     if (0 == internal_gemm_tasks) {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
@@ -302,7 +316,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
-  if (2 <= internal_gemm_omp) { /* enable internal parallelization */
+  if (0 == LIBXSMM_DIV2(internal_gemm, 2)) { /* enable internal parallelization */
     if (0 == internal_gemm_tasks) {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,

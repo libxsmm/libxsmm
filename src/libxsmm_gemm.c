@@ -77,8 +77,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
 
   LIBXSMM_UNUSED(prefetch);
   internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-  internal_gemm_omp = 2;
   internal_gemm_nt = 2;
+  internal_gemm = 0;
 
 #if defined(__MIC__)
   LIBXSMM_UNUSED(archid);
@@ -88,27 +88,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
   {
     internal_gemm_nt = 4;
     config = 1;
-  }
-
-  { /* behaviour of libxsmm_omp_?gemm routines (OpenMP based)
-     * 1: parallelized but without internal parallel region,
-     * 2: parallelized with internal parallel region" )
-     */
-    const char *const env = getenv("LIBXSMM_OMP");
-    if (0 != env && 0 != *env) {
-      internal_gemm_omp = atoi(env);
-    }
-  }
-
-  { /* behaviour of LD_PRELOAD ?GEMM routines
-     * 0: sequential below-threshold routine (no OpenMP) with fallback to BLAS,
-     * 1: OpenMP-parallelized but without internal parallel region,
-     * 2: OpenMP-parallelized with internal parallel region" )
-     */
-    const char *const env = getenv("LIBXSMM_GEMM");
-    if (0 != env && 0 != *env) {
-      internal_gemm = atoi(env);
-    }
   }
 
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */

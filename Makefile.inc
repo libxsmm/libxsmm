@@ -117,6 +117,7 @@ BLAS_STATIC ?= 1
 NOBLAS ?= 0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
   ifeq (0,$(BLAS))
+    DFLAGS += -D__BLAS=0
     NOBLAS = 1
   endif
 endif
