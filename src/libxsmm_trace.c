@@ -99,10 +99,10 @@ int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(volatile LONG internal_trace_initialized, 32) /*= -1*/;
+LIBXSMM_RETARGETABLE volatile LONG internal_trace_initialized /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_RETARGETABLE LIBXSMM_ALIGNED(int internal_trace_initialized, 32) /*= -1*/;
+LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
 LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {

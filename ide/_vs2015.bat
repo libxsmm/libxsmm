@@ -2,7 +2,7 @@
 SETLOCAL
 
 cd ..
-bash -c "make realclean ; make M='1 2 3 4 5 23' PREFETCH=1 headers sources"
+bash -c "make realclean ; make headers sources"
 cd ide
 
 SET LIBXSMMROOT=%~d0%~p0..

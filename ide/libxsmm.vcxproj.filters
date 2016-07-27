@@ -39,9 +39,6 @@
     <ClInclude Include="..\include\libxsmm_typedefs.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\build\libxsmm_dispatch.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -114,26 +111,11 @@
     <ClInclude Include="..\src\libxsmm_alloc.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\build\libxsmm_dispatch.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\build\mm_2_2_2.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\build\mm_3_3_3.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\build\mm_4_4_4.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\build\mm_5_5_5.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\build\mm_23_23_23.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\build\mm_1_1_1.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_hash.c">
       <Filter>src</Filter>
     </ClCompile>

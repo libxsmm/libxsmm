@@ -63,12 +63,6 @@
     <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\build\mm_1_1_1.c" />
-    <ClCompile Include="..\build\mm_23_23_23.c" />
-    <ClCompile Include="..\build\mm_2_2_2.c" />
-    <ClCompile Include="..\build\mm_3_3_3.c" />
-    <ClCompile Include="..\build\mm_4_4_4.c" />
-    <ClCompile Include="..\build\mm_5_5_5.c" />
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
