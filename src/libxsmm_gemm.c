@@ -36,31 +36,27 @@
 #endif
 #include <stdlib.h>
 #include <stdint.h>
+#if defined(LIBXSMM_RTLD_NEXT)
+# include <dlfcn.h>
+#endif
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 
-/* must be located in a different translation unit than __real_sgemm */
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function* libxsmm_original_sgemm(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = 0;
-#if !defined(__BLAS) || (0 != __BLAS)
-  instance = LIBXSMM_FSYMBOL(__real_sgemm);
-  assert(0 != instance);
-#endif
   return &instance;
 }
 
 
-/* must be located in a different translation unit than __real_dgemm */
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = 0;
-#if !defined(__BLAS) || (0 != __BLAS)
-  instance = LIBXSMM_FSYMBOL(__real_dgemm);
-  assert(0 != instance);
-#endif
   return &instance;
 }
 
@@ -109,13 +105,53 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
     if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
 
-  if (NULL != sgemm_function) {
+  if (0 != sgemm_function) {
     *libxsmm_original_sgemm() = sgemm_function;
   }
+#if !defined(__CYGWIN__)
+  if (0 == *libxsmm_original_sgemm()) {
+    *libxsmm_original_sgemm() = LIBXSMM_FSYMBOL(__real_sgemm);
+  }
+#endif
+  if (0 == *libxsmm_original_sgemm()) {
+    *libxsmm_original_sgemm() = LIBXSMM_FSYMBOL(sgemm);
+  }
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == *libxsmm_original_sgemm()) {
+    union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+    *libxsmm_original_sgemm() = gemm.pf;
+  }
+#endif
 
-  if (NULL != dgemm_function) {
+  if (0 != dgemm_function) {
     *libxsmm_original_dgemm() = dgemm_function;
   }
+#if !defined(__CYGWIN__)
+  if (0 == *libxsmm_original_dgemm()) {
+    *libxsmm_original_dgemm() = LIBXSMM_FSYMBOL(__real_dgemm);
+  }
+#endif
+  if (0 == *libxsmm_original_dgemm()) {
+    *libxsmm_original_dgemm() = LIBXSMM_FSYMBOL(dgemm);
+  }
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == *libxsmm_original_dgemm()) {
+    union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+    *libxsmm_original_dgemm() = gemm.pf;
+  }
+#endif
+
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == *libxsmm_original_sgemm() || 0 == *libxsmm_original_dgemm()) {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
 }
 
 
@@ -123,13 +159,14 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
 
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK int libxsmm_gemm_init(int archid, int prefetch)
 {
+  int result = EXIT_SUCCESS;
   /* internal pre-initialization step */
   libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
-
-  return (NULL != *libxsmm_original_sgemm()
-       && NULL != *libxsmm_original_dgemm())
-    ? EXIT_SUCCESS
-    : EXIT_FAILURE;
+#if !defined(__BLAS) || (0 != __BLAS)
+  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
+#endif
+  assert(EXIT_SUCCESS == result);
+  return result;
 }
 
 
@@ -168,7 +205,6 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 }
 
 
-/* must be located in a different translation unit than __real_sgemm */
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -180,7 +216,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
 }
 
 
-/* must be located in a different translation unit than __real_dgemm */
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -249,7 +284,6 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
 }
 
 
-/* must be located in a different translation unit than __real_sgemm */
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -282,7 +316,6 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 }
 
 
-/* must be located in a different translation unit than __real_dgemm */
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,

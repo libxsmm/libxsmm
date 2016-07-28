@@ -33,6 +33,13 @@
 
 #include <libxsmm.h>
 
+#if !defined(LIBXSMM_RTLD_NEXT) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
+  !defined(_WIN32) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# define LIBXSMM_RTLD_NEXT
+#endif
+
 
 /**
  * INTERNAL pre-initialization step called by libxsmm_gemm_init,
@@ -45,26 +52,26 @@ LIBXSMM_API void libxsmm_gemm_configure(int archid, int prefetch,
   libxsmm_dgemm_function dgemm_function);
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API int libxsmm_gemm_init(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK int libxsmm_gemm_init(
   int archid, int prefetch/*default prefetch strategy*/);
 
 /** Finalizes the gemm facility; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_finalize(void);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void libxsmm_gemm_finalize(void);
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);

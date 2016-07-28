@@ -31,17 +31,10 @@
 #include "libxsmm_ext_gemm.h"
 #include "libxsmm_gemm.h"
 
-#if !defined(LIBXSMM_EXT_GEMM_WRAP) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
-  !defined(_WIN32) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
-    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-# define LIBXSMM_EXT_GEMM_WRAP
-#endif
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(LIBXSMM_EXT_GEMM_WRAP)
+#if defined(LIBXSMM_RTLD_NEXT)
 # include <dlfcn.h>
 #endif
 #include <stdlib.h>
@@ -52,9 +45,10 @@
 
 LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 {
+  int result = EXIT_SUCCESS;
   union { const void* pv; libxsmm_sgemm_function pf; } fn_sgemm = { NULL };
   union { const void* pv; libxsmm_dgemm_function pf; } fn_dgemm = { NULL };
-#if defined(LIBXSMM_EXT_GEMM_WRAP)
+#if defined(LIBXSMM_RTLD_NEXT)
   fn_sgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
   fn_dgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
 #endif
@@ -84,13 +78,10 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
   }
 #endif
 #if !defined(__BLAS) || (0 != __BLAS)
-  return (NULL != *libxsmm_original_sgemm()
-       && NULL != *libxsmm_original_dgemm())
-    ? EXIT_SUCCESS
-    : EXIT_FAILURE;
-#else
-  return EXIT_SUCCESS;
+  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
+  assert(EXIT_SUCCESS == result);
+  return result;
 }
 
 
