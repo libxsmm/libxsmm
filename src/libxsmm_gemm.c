@@ -35,7 +35,9 @@
 #else
 # include "libxsmm_gemm_ext.h"
 #endif
-
+#if defined(__BLAS) && (0 == __BLAS)
+# include "libxsmm_gemm_extomp.h"
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -48,24 +50,30 @@
 
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function* libxsmm_original_sgemm(void)
 {
-#if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = LIBXSMM_FSYMBOL(__real_sgemm);
-#else
-  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = LIBXSMM_FSYMBOL(sgemm);
-#endif
+  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = 0;
+#if !defined(__BLAS) || (0 != __BLAS)
+# if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
+  instance = LIBXSMM_FSYMBOL(__real_sgemm);
+# else
+  instance = LIBXSMM_FSYMBOL(sgemm);
+# endif
   assert(0 != instance);
+#endif
   return &instance;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
 {
-#if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
-  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = LIBXSMM_FSYMBOL(__real_dgemm);
-#else
-  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = LIBXSMM_FSYMBOL(dgemm);
-#endif
+  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = 0;
+#if !defined(__BLAS) || (0 != __BLAS)
+# if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
+  instance = LIBXSMM_FSYMBOL(__real_dgemm);
+# else
+  instance = LIBXSMM_FSYMBOL(dgemm);
+# endif
   assert(0 != instance);
+#endif
   return &instance;
 }
 
@@ -234,3 +242,72 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 
+
+#if defined(__BLAS) && (0 == __BLAS)
+
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != *libxsmm_original_sgemm());
+  switch (internal_gemm) {
+    case 0: { /* below-THRESHOLD xGEMM */
+      libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: { /* tiled xGEMM */
+      const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
+      const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
+      const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
+      const int nt = internal_gemm_nt;
+      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+#if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
+      LIBXSMM_UNUSED(nt);
+#endif
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((float)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+  }
+}
+
+
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != *libxsmm_original_dgemm());
+  switch (internal_gemm) {
+    case 0: { /* below-THRESHOLD xGEMM */
+      libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    } break;
+    default: { /* tiled xGEMM */
+      const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
+      const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
+      const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
+      const int nt = internal_gemm_nt;
+      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+#if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
+      LIBXSMM_UNUSED(nt);
+#endif
+      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+        double, flags, nt, tm, tn, tk, *m, *n, *k,
+        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+        0 != beta ? *beta : ((double)LIBXSMM_BETA),
+        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+  }
+}
+
+#endif /*defined(__BLAS) && (0 == __BLAS)*/

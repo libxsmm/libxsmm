@@ -55,6 +55,7 @@
     <ClInclude Include="..\src\libxsmm_alloc.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_gemm_ext.h" />
+    <ClInclude Include="..\src\libxsmm_gemm_extomp.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />

@@ -33,12 +33,15 @@
 
 #include "libxsmm_gemm.h"
 
-#if !defined(LIBXSMM_GEMM_EXTWRAP) && defined(LIBXSMM_BUILD) && \
+#if defined(__BLAS) && (0 == __BLAS) /* no fallback */
+# define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
+# define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
+#elif !defined(LIBXSMM_GEMM_EXTWRAP) && defined(LIBXSMM_BUILD) && \
   defined(__GNUC__) && !defined(_WIN32) && !(defined(__APPLE__) && defined(__MACH__) && \
   LIBXSMM_VERSION3(6, 1, 0) >= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # if defined(__STATIC) /* -Wl,--wrap=xgemm_ */
 #   define LIBXSMM_GEMM_EXTWRAP
-#   define LIBXSMM_GEMM_WEAK_SLIB LIBXSMM_ATTRIBUTE(weak)
+#   define LIBXSMM_GEMM_WEAK_SLIB LIBXSMM_ATTRIBUTE_WEAK
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(__wrap_sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(__wrap_dgemm)
     LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
@@ -51,7 +54,7 @@
       const double*, double*, const libxsmm_blasint*);
 # elif defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) /* LD_PRELOAD */
 #   define LIBXSMM_GEMM_EXTWRAP
-#   define LIBXSMM_GEMM_WEAK_DLIB LIBXSMM_ATTRIBUTE(weak)
+#   define LIBXSMM_GEMM_WEAK_DLIB LIBXSMM_ATTRIBUTE_WEAK
 #   define LIBXSMM_GEMM_EXTWRAP_SGEMM LIBXSMM_FSYMBOL(sgemm)
 #   define LIBXSMM_GEMM_EXTWRAP_DGEMM LIBXSMM_FSYMBOL(dgemm)
 # endif

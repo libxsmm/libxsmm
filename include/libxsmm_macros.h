@@ -247,6 +247,12 @@
 # define LIBXSMM_VISIBILITY_INTERNAL
 #endif
 
+#if (defined(__GNUC__) || defined(__clang__))
+# define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
+#else
+# define LIBXSMM_ATTRIBUTE_WEAK
+#endif
+
 #if defined(NDEBUG)
 # define LIBXSMM_NDEBUG NDEBUG
 # define LIBXSMM_DEBUG(...)

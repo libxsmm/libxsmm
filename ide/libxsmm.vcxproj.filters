@@ -114,6 +114,9 @@
     <ClInclude Include="..\build\libxsmm_dispatch.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_gemm_extomp.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
