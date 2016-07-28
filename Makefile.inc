@@ -89,15 +89,15 @@ endif
 SYM ?= 0
 DBG ?= 0
 
+# Threading runtime
+OMP ?= 0
+
 # PTHREAD refers to foundational TRT (and not necessarily Posix Threads)
 ifneq (0,$(OMP))
   PTHREAD ?= 1
 else
   PTHREAD ?= 0
 endif
-
-# Threading runtime
-OMP ?= 0
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
@@ -722,7 +722,16 @@ else # GCC assumed
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
   endif
-  OMPFLAG = -fopenmp
+  # account for missing TLS/OMP
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (clang,$(CC))
+      OMPFLAG = -fopenmp
+    endif
+  endif
+  ifeq (,$(OMPFLAG))
+    PTHREAD = 0
+    OMP = 0
+  endif
   ifeq (,$(strip $(OMPLIB)))
     OMPLIB = gomp
   endif
