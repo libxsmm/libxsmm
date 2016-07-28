@@ -31,64 +31,6 @@
 #include "libxsmm_ext_gemm.h"
 #include "libxsmm_gemm.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#if defined(LIBXSMM_RTLD_NEXT)
-# include <dlfcn.h>
-#endif
-#include <stdlib.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
-
-LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
-{
-  int result = EXIT_SUCCESS;
-  union { const void* pv; libxsmm_sgemm_function pf; } fn_sgemm = { NULL };
-  union { const void* pv; libxsmm_dgemm_function pf; } fn_dgemm = { NULL };
-#if defined(LIBXSMM_RTLD_NEXT)
-  fn_sgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-  fn_dgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-#endif
-
-  /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, prefetch, fn_sgemm.pf, fn_dgemm.pf);
-
-  { /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
-     * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
-     * 1: OpenMP-parallelized but without internal parallel region,
-     * 2: OpenMP-parallelized with internal parallel region" )
-     */
-    const char *const env = getenv("LIBXSMM_GEMM");
-    if (0 != env && 0 != *env) {
-      internal_gemm = atoi(env);
-    }
-  }
-
-#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
-  { /* consider user input about using (OpenMP-)tasks; this code must be here
-    * because maybe only this translation unit is compiled with OpenMP support
-    */
-    const char *const env_tasks = getenv("LIBXSMM_TASKS");
-    if (0 != env_tasks && 0 != *env_tasks) {
-      internal_gemm_tasks = atoi(env_tasks);
-    }
-  }
-#endif
-#if !defined(__BLAS) || (0 != __BLAS)
-  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
-  assert(EXIT_SUCCESS == result);
-  return result;
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
-{
-}
-
 
 LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -104,8 +46,11 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
-  if (0 == LIBXSMM_DIV2(internal_gemm, 2)) { /* enable internal parallelization */
-    if (0 == internal_gemm_tasks) {
+  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+    if (0 == internal_gemm_tasks)
+#endif
+    {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
         float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
@@ -114,6 +59,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
     else {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
@@ -123,9 +69,13 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#endif
   }
   else { /* potentially sequential or externally parallelized */
-    if (0 == internal_gemm_tasks) {
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+    if (0 == internal_gemm_tasks)
+#endif
+    {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
         float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
@@ -134,6 +84,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
     else {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN,
         LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
@@ -143,6 +94,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#endif
   }
 }
 
@@ -161,8 +113,11 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
-  if (0 == LIBXSMM_DIV2(internal_gemm, 2)) { /* enable internal parallelization */
-    if (0 == internal_gemm_tasks) {
+  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+    if (0 == internal_gemm_tasks)
+#endif
+    {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
         double, flags, nt, tm, tn, tk, *m, *n, *k,
@@ -171,6 +126,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
     else {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN_PARALLEL,
         LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
@@ -180,9 +136,13 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#endif
   }
   else { /* potentially sequential or externally parallelized */
-    if (0 == internal_gemm_tasks) {
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+    if (0 == internal_gemm_tasks)
+#endif
+    {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
         LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
         double, flags, nt, tm, tn, tk, *m, *n, *k,
@@ -191,6 +151,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
     else {
       LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_TSK_INIT, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BEGIN,
         LIBXSMM_GEMM_EXTOMP_TSK_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_TSK_LOOP_END,
@@ -200,6 +161,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
+#endif
   }
 }
 

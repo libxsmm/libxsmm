@@ -41,22 +41,12 @@
 #endif
 
 
-/**
- * INTERNAL pre-initialization step called by libxsmm_gemm_init,
- * e.g. configures the tile sizes for multi-threaded GEMM functions.
- */
-LIBXSMM_API void libxsmm_gemm_configure(int archid, int prefetch,
-  /** If NULL is given, the routine attempts to find the SGEMM function. */
-  libxsmm_sgemm_function sgemm_function,
-  /** If NULL is given, the routine attempts to find the DGEMM function. */
-  libxsmm_dgemm_function dgemm_function);
-
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK int libxsmm_gemm_init(
+LIBXSMM_API int libxsmm_gemm_init(
   int archid, int prefetch/*default prefetch strategy*/);
 
 /** Finalizes the gemm facility; NOT thread-safe. */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void libxsmm_gemm_finalize(void);
+LIBXSMM_API void libxsmm_gemm_finalize(void);
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,

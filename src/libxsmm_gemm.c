@@ -62,15 +62,40 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
-  libxsmm_sgemm_function sgemm_function, libxsmm_dgemm_function dgemm_function)
+#if defined(LIBXSMM_BUILD)
+
+LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 {
+  int result = EXIT_SUCCESS;
+
   int config = 0;
 
   LIBXSMM_UNUSED(prefetch);
   internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
   internal_gemm_nt = 2;
-  internal_gemm = 0;
+  internal_gemm = 2;
+
+  { /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
+     * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
+     * 1: OpenMP-parallelized but without internal parallel region,
+     * 2: OpenMP-parallelized with internal parallel region" )
+     */
+    const char *const env = getenv("LIBXSMM_GEMM");
+    if (0 != env && 0 != *env) {
+      internal_gemm = atoi(env);
+    }
+  }
+
+#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+  { /* consider user input about using (OpenMP-)tasks; this code must be here
+    * because maybe only this translation unit is compiled with OpenMP support
+    */
+    const char *const env_tasks = getenv("LIBXSMM_TASKS");
+    if (0 != env_tasks && 0 != *env_tasks) {
+      internal_gemm_tasks = atoi(env_tasks);
+    }
+  }
+#endif
 
 #if defined(__MIC__)
   LIBXSMM_UNUSED(archid);
@@ -106,9 +131,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
     if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
 
-  if (0 != sgemm_function) {
-    *libxsmm_original_sgemm() = sgemm_function;
-  }
 #if !defined(__CYGWIN__)
   if (0 == *libxsmm_original_sgemm()) {
     *libxsmm_original_sgemm() = LIBXSMM_FSYMBOL(__real_sgemm);
@@ -125,9 +147,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
   }
 #endif
 
-  if (0 != dgemm_function) {
-    *libxsmm_original_dgemm() = dgemm_function;
-  }
 #if !defined(__CYGWIN__)
   if (0 == *libxsmm_original_dgemm()) {
     *libxsmm_original_dgemm() = LIBXSMM_FSYMBOL(__real_dgemm);
@@ -143,9 +162,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
     *libxsmm_original_dgemm() = gemm.pf;
   }
 #endif
-
+#if !defined(__BLAS) || (0 != __BLAS)
+  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
+#endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
-  if (0 == *libxsmm_original_sgemm() || 0 == *libxsmm_original_dgemm()) {
+  if (EXIT_SUCCESS != result) {
     static LIBXSMM_TLS int error_blas = 0;
     if (0 == error_blas) {
       fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
@@ -153,25 +174,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
     }
   }
 #endif
-}
-
-
-#if defined(LIBXSMM_BUILD)
-
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK int libxsmm_gemm_init(int archid, int prefetch)
-{
-  int result = EXIT_SUCCESS;
-  /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
-#if !defined(__BLAS) || (0 != __BLAS)
-  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
-  assert(EXIT_SUCCESS == result);
   return result;
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void libxsmm_gemm_finalize(void)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
 }
 
@@ -269,27 +276,25 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  switch (internal_gemm) {
-    case 0: { /* below-THRESHOLD xGEMM */
-      libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: { /* tiled xGEMM */
-      const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
-      const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
-      const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
-      const int nt = internal_gemm_nt;
-      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* below-THRESHOLD xGEMM */
+    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else { /* tiled xGEMM */
+    const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
+    const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
+    const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
+    const int nt = internal_gemm_nt;
+    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
-      LIBXSMM_UNUSED(nt);
+    LIBXSMM_UNUSED(nt);
 #endif
-      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((float)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
+    LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+      LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 }
 
@@ -301,27 +306,25 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  switch (internal_gemm) {
-    case 0: { /* below-THRESHOLD xGEMM */
-      libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: { /* tiled xGEMM */
-      const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
-      const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
-      const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
-      const int nt = internal_gemm_nt;
-      LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* below-THRESHOLD xGEMM */
+    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else { /* tiled xGEMM */
+    const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
+    const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
+    const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
+    const int nt = internal_gemm_nt;
+    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
-      LIBXSMM_UNUSED(nt);
+    LIBXSMM_UNUSED(nt);
 #endif
-      LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-        LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
-        double, flags, nt, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((double)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
+    LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+      LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+      double, flags, nt, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 }
 
