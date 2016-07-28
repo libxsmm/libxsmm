@@ -28,28 +28,33 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_gemm_extomp.h"
+#include "libxsmm_ext_gemm.h"
+#include "libxsmm_gemm.h"
+
+#if !defined(LIBXSMM_EXT_GEMM_WRAP) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
+  !defined(_WIN32) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# define LIBXSMM_EXT_GEMM_WRAP
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
-# include <stdlib.h>
+#if defined(LIBXSMM_EXT_GEMM_WRAP)
 # include <dlfcn.h>
 #endif
+#include <stdlib.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 
-#if defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)
-
-/* implementation variant for non-static linkage; overrides weak libxsmm_gemm_init in libxsmm_gemm.c */
 LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 {
   union { const void* pv; libxsmm_sgemm_function pf; } fn_sgemm = { NULL };
   union { const void* pv; libxsmm_dgemm_function pf; } fn_dgemm = { NULL };
-#if !defined(__BLAS) || (0 != __BLAS)
+#if defined(LIBXSMM_EXT_GEMM_WRAP)
   fn_sgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
   fn_dgemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
 #endif
@@ -92,8 +97,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
 }
-
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP) && !defined(__STATIC)*/
 
 
 LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
@@ -208,46 +211,4 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
     }
   }
 }
-
-
-#if defined(LIBXSMM_GEMM_EXTWRAP)
-
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_SGEMM(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-{
-  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != *libxsmm_original_sgemm());
-  switch (internal_gemm) {
-    case 0: { /* below-THRESHOLD xGEMM */
-      libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: { /* tiled xGEMM */
-      libxsmm_omp_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
-  }
-}
-
-
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_EXTWRAP_DGEMM(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != *libxsmm_original_dgemm());
-  switch (internal_gemm) {
-    case 0: { /* below-THRESHOLD xGEMM */
-      libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    } break;
-    default: { /* tiled xGEMM */
-      libxsmm_omp_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-    }
-  }
-}
-
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 

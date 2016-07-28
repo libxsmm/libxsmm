@@ -28,43 +28,71 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_gemm_ext.h"
+#include "libxsmm_gemm.h"
+#include "libxsmm_ext_gemm.h"
+#include "libxsmm_sync.h"
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
-#if defined(LIBXSMM_GEMM_EXTWRAP)
-
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+/* must be located in a different translation unit than libxsmm_original_sgemm */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != *libxsmm_original_sgemm());
-  LIBXSMM_XGEMM(float, libxsmm_blasint, flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  static const LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = LIBXSMM_FSYMBOL(sgemm);
+#if !defined(NDEBUG)
+  if (0 != instance)
+#endif
+  {
+    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
 }
 
 
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+/* must be located in a different translation unit than libxsmm_original_dgemm */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != *libxsmm_original_dgemm());
-  LIBXSMM_XGEMM(double, libxsmm_blasint, flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  static const LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = LIBXSMM_FSYMBOL(dgemm);
+#if !defined(NDEBUG)
+  if (0 != instance)
+#endif
+  {
+    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
 }
-
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 

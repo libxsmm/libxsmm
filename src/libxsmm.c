@@ -31,8 +31,8 @@
 #include "libxsmm_intrinsics_x86.h"
 #include "libxsmm_cpuid_x86.h"
 #include "libxsmm_gemm_diff.h"
-#include "libxsmm_gemm_ext.h"
 #include "libxsmm_alloc.h"
+#include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_sync.h"
 
@@ -1114,62 +1114,4 @@ LIBXSMM_API_DEFINITION void libxsmm_destroy(const void* jit_code)
 {
   libxsmm_deallocate(jit_code);
 }
-
-
-#if defined(LIBXSMM_GEMM_EXTWRAP)
-#if defined(__STATIC)
-
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_sgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-{
-  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = LIBXSMM_FSYMBOL(sgemm);
-#if !defined(NDEBUG)
-  if (0 != instance)
-#endif
-  {
-    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  else {
-    static LIBXSMM_TLS int error_blas = 0;
-    if (0 == error_blas) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_blas = 1;
-    }
-  }
-#endif
-}
-
-
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_dgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = LIBXSMM_FSYMBOL(dgemm);
-#if !defined(NDEBUG)
-  if (0 != instance)
-#endif
-  {
-    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  else {
-    static LIBXSMM_TLS int error_blas = 0;
-    if (0 == error_blas) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_blas = 1;
-    }
-  }
-#endif
-}
-
-#endif /*defined(__STATIC)*/
-#endif /*defined(LIBXSMM_GEMM_EXTWRAP)*/
 

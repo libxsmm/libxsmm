@@ -28,10 +28,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_GEMM_EXTOMP_H
-#define LIBXSMM_GEMM_EXTOMP_H
+#ifndef LIBXSMM_EXT_GEMM_H
+#define LIBXSMM_EXT_GEMM_H
 
-#include "libxsmm_gemm_ext.h"
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -191,4 +191,5 @@
   } \
 }
 
-#endif /*LIBXSMM_GEMM_EXTOMP_H*/
+#endif /*LIBXSMM_EXT_GEMM_H*/
+

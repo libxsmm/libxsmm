@@ -51,5 +51,43 @@ LIBXSMM_API int libxsmm_gemm_init(
 /** Finalizes the gemm facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(dgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+
+LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+
+/** INTERNAL: configuration table containing the tile sizes separate for DP and SP. */
+LIBXSMM_RETARGETABLE int internal_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+/** INTERNAL: number of threads per core */
+LIBXSMM_RETARGETABLE int internal_gemm_nt /*= 2*/;
+/** INTERNAL: prefetch strategy */
+LIBXSMM_RETARGETABLE int internal_gemm_prefetch /*= LIBXSMM_MAX(LIBXSMM_PREFETCH, 0)*/;
+/** INTERNAL: determines whether (OpenMP-)tasks are preferred over thread-style parallelization */
+LIBXSMM_RETARGETABLE int internal_gemm_tasks /*= 0*/;
+/** INTERNAL: kind of LD_PRELOAD ?GEMM (0: small gemm, 1: sequential, 2: parallelized) */
+LIBXSMM_RETARGETABLE int internal_gemm /*= 0*/;
+
 #endif /*LIBXSMM_GEMM_H*/
 

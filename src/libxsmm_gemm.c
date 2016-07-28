@@ -29,15 +29,8 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
+#include "libxsmm_ext_gemm.h"
 
-#if defined(__STATIC)
-# include "libxsmm_gemm_extwrap.c"
-#else
-# include "libxsmm_gemm_ext.h"
-#endif
-#if defined(__BLAS) && (0 == __BLAS)
-# include "libxsmm_gemm_extomp.h"
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -48,30 +41,24 @@
 #endif
 
 
+/* must be located in a different translation unit than __real_sgemm */
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function* libxsmm_original_sgemm(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = 0;
 #if !defined(__BLAS) || (0 != __BLAS)
-# if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
   instance = LIBXSMM_FSYMBOL(__real_sgemm);
-# else
-  instance = LIBXSMM_FSYMBOL(sgemm);
-# endif
   assert(0 != instance);
 #endif
   return &instance;
 }
 
 
+/* must be located in a different translation unit than __real_dgemm */
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
 {
   static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = 0;
 #if !defined(__BLAS) || (0 != __BLAS)
-# if defined(LIBXSMM_GEMM_EXTWRAP) && defined(__STATIC)
   instance = LIBXSMM_FSYMBOL(__real_dgemm);
-# else
-  instance = LIBXSMM_FSYMBOL(dgemm);
-# endif
   assert(0 != instance);
 #endif
   return &instance;
@@ -132,7 +119,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch,
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(int archid, int prefetch)
+#if defined(LIBXSMM_BUILD)
+
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK int libxsmm_gemm_init(int archid, int prefetch)
 {
   /* internal pre-initialization step */
   libxsmm_gemm_configure(archid, prefetch, 0/*auto-discovered*/, 0/*auto-discovered*/);
@@ -144,12 +133,10 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK_DLIB int libxsmm_gemm_init(int archid, 
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK_DLIB void libxsmm_gemm_finalize(void)
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void libxsmm_gemm_finalize(void)
 {
 }
 
-
-#if defined(LIBXSMM_BUILD)
 
 LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -180,9 +167,35 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 
+
+/* must be located in a different translation unit than __real_sgemm */
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
+/* must be located in a different translation unit than __real_dgemm */
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(dgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
 #endif /*defined(LIBXSMM_BUILD)*/
 
 
+/* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*,
@@ -198,6 +211,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char* transa, c
 }
 
 
+/* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*,
@@ -219,12 +233,8 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* t
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  /*static*/ const LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = *libxsmm_original_sgemm();
+  instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -234,25 +244,19 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  /*static*/ const LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = *libxsmm_original_dgemm();
+  instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
-#if defined(__BLAS) && (0 == __BLAS)
-
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_SGEMM(
+/* must be located in a different translation unit than __real_sgemm */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  assert(LIBXSMM_GEMM_EXTWRAP_SGEMM != *libxsmm_original_sgemm());
   switch (internal_gemm) {
     case 0: { /* below-THRESHOLD xGEMM */
       libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -278,14 +282,14 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXT
 }
 
 
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXTWRAP_DGEMM(
+/* must be located in a different translation unit than __real_dgemm */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  assert(LIBXSMM_GEMM_EXTWRAP_DGEMM != *libxsmm_original_dgemm());
   switch (internal_gemm) {
     case 0: { /* below-THRESHOLD xGEMM */
       libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
@@ -310,4 +314,3 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_GEMM_EXT
   }
 }
 
-#endif /*defined(__BLAS) && (0 == __BLAS)*/
