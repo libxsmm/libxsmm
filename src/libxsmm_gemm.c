@@ -48,20 +48,6 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_sgemm_function* libxsmm_original_sgemm(void)
-{
-  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = 0;
-  return &instance;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dgemm_function* libxsmm_original_dgemm(void)
-{
-  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = 0;
-  return &instance;
-}
-
-
 #if defined(LIBXSMM_BUILD)
 
 LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
@@ -132,38 +118,38 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
   }
 
 #if !defined(__CYGWIN__)
-  if (0 == *libxsmm_original_sgemm()) {
-    *libxsmm_original_sgemm() = LIBXSMM_FSYMBOL(__real_sgemm);
+  if (0 == libxsmm_original_sgemm) {
+    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
   }
 #endif
-  if (0 == *libxsmm_original_sgemm()) {
-    *libxsmm_original_sgemm() = LIBXSMM_FSYMBOL(sgemm);
+  if (0 == libxsmm_original_sgemm) {
+    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(sgemm);
   }
 #if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == *libxsmm_original_sgemm()) {
+  if (0 == libxsmm_original_sgemm) {
     union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    *libxsmm_original_sgemm() = gemm.pf;
+    libxsmm_original_sgemm = gemm.pf;
   }
 #endif
 
 #if !defined(__CYGWIN__)
-  if (0 == *libxsmm_original_dgemm()) {
-    *libxsmm_original_dgemm() = LIBXSMM_FSYMBOL(__real_dgemm);
+  if (0 == libxsmm_original_dgemm) {
+    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
   }
 #endif
-  if (0 == *libxsmm_original_dgemm()) {
-    *libxsmm_original_dgemm() = LIBXSMM_FSYMBOL(dgemm);
+  if (0 == libxsmm_original_dgemm) {
+    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(dgemm);
   }
 #if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == *libxsmm_original_dgemm()) {
+  if (0 == libxsmm_original_dgemm) {
     union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    *libxsmm_original_dgemm() = gemm.pf;
+    libxsmm_original_dgemm = gemm.pf;
   }
 #endif
 #if !defined(__BLAS) || (0 != __BLAS)
-  result = (0 != *libxsmm_original_sgemm() && 0 != *libxsmm_original_dgemm()) ? EXIT_SUCCESS : EXIT_FAILURE;
+  result = (0 != libxsmm_original_sgemm && 0 != libxsmm_original_dgemm) ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (EXIT_SUCCESS != result) {
@@ -253,8 +239,8 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* t
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  /*static*/ const LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = *libxsmm_original_sgemm();
-  instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  assert(0 != libxsmm_original_sgemm);
+  libxsmm_original_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -264,8 +250,8 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  /*static*/ const LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = *libxsmm_original_dgemm();
-  instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  assert(0 != libxsmm_original_dgemm);
+  libxsmm_original_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
