@@ -5,6 +5,7 @@ ECHO=$(which echo)
 GREP=$(which grep)
 ENV=$(which env)
 
+NOBLAS="descriptor dispatch"
 #DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
@@ -70,3 +71,12 @@ for TEST in ${TESTS} ; do
   NTEST=$((NTEST+1))
 done
 
+# Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
+WORKAROUND="DBG=0"
+
+# selected build-only tests that do not run anything
+# below case do not actually depend on LAPACK/BLAS
+for TEST in ${NOBLAS} ; do
+  make ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
+  make ${WORKAROUND} BLAS=0 ${TEST}
+done

@@ -1126,7 +1126,22 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  sgemm_(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  static LIBXSMM_RETARGETABLE libxsmm_sgemm_function instance = LIBXSMM_FSYMBOL(sgemm);
+#if !defined(NDEBUG)
+  if (0 != instance)
+#endif
+  {
+    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
 }
 
 
@@ -1137,7 +1152,22 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__real_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  dgemm_(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  static LIBXSMM_RETARGETABLE libxsmm_dgemm_function instance = LIBXSMM_FSYMBOL(dgemm);
+#if !defined(NDEBUG)
+  if (0 != instance)
+#endif
+  {
+    instance(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
 }
 
 #endif /*defined(__STATIC)*/
