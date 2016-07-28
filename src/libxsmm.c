@@ -1096,7 +1096,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   internal_code_type code = { {0} };
@@ -1106,7 +1106,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_soa(const libxsmm
   desc_extra.column_idx = column_idx;
   desc_extra.values = values;
   internal_build(descriptor, "csr", &desc_extra, &code);
-  return code.xmm.dmm;
+  return code.xmm;
 }
 
 
