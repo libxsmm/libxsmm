@@ -29,7 +29,7 @@ ${ECHO} "============="
 TESTS=$(grep -l "main\s*(.*)" ${HERE}/*.c 2> /dev/null)
 NTEST=1
 NMAX=$(${ECHO} ${TESTS} | wc -w)
-for TEST in ${TESTS} ; do
+for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(echo ${DISABLED} | grep -q ${NAME}; echo $?)" ]; then
@@ -74,9 +74,14 @@ done
 # Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
 WORKAROUND="DBG=0"
 
+
 # selected build-only tests that do not run anything
 # below case do not actually depend on LAPACK/BLAS
-for TEST in ${NOBLAS} ; do
-  make ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
-  make ${WORKAROUND} BLAS=0 ${TEST}
+CWD=${PWD}
+cd ${HERE}/build
+for TEST in ${NOBLAS}; do
+  make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
+  make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
 done
+cd ${CWD}
+
