@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext_gemm.h"
+#include "libxsmm_sync.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -203,29 +204,6 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
-
-
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-{
-  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(dgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
 
 #endif /*defined(LIBXSMM_BUILD)*/
 
