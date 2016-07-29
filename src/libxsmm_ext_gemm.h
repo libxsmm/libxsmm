@@ -104,6 +104,14 @@
   } \
 }
 
+#if !defined(LIBXSMM_EXT_GEMM_BLAS)
+# if !defined(__BLAS) || (0 != __BLAS)
+#   define LIBXSMM_EXT_GEMM_BLAS 1
+# else
+#   define LIBXSMM_EXT_GEMM_BLAS 0
+# endif
+#endif
+
 #define LIBXSMM_EXT_GEMM_XGEMM(INIT, LOOP_BEGIN, LOOP_BODY, LOOP_END, \
   REAL, FLAGS, NT, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) INIT \
 { \
@@ -183,7 +191,7 @@
       LOOP_END \
     } \
   } \
-  else if (0 != sufficient_size) { /* BLAS fallback */ \
+  else if (0 != sufficient_size && 0 != LIBXSMM_EXT_GEMM_BLAS) { /* BLAS fallback */ \
     LIBXSMM_BLAS_XGEMM(REAL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
   else { /* small problem size */ \
