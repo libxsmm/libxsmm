@@ -429,11 +429,11 @@ ifneq (0,$(INTEL))
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else
+    else ifneq (0,$(shell echo $$(0>$(SYM))))
       DFLAGS += -DNDEBUG
     endif
   else # debugging enabled
-    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 >$(DBG)))))
+    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 > $(DBG)))))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
@@ -630,11 +630,11 @@ else # GCC assumed
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else
+    else ifneq (0,$(shell echo $$(0 > $(SYM))))
       DFLAGS += -DNDEBUG
     endif
   else
-    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 >$(DBG)))))
+    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 > $(DBG)))))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
