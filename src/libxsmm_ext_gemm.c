@@ -79,12 +79,9 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
   const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
   const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
   const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
-  const int nt = internal_gemm_nt;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  assert(0 < tm && 0 < tn && 0 < tk && 0 < internal_gemm_nt);
   LIBXSMM_INIT
-#if !defined(_OPENMP)
-  LIBXSMM_UNUSED(nt);
-#endif
   if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
 #if defined(LIBXSMM_EXT_GEMM_TASKS)
     if (0 == internal_gemm_tasks)
@@ -92,7 +89,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
     {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -102,7 +99,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
     else {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL,
         LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -117,7 +114,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
     {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
         LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -127,7 +124,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
     else {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN,
         LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -147,12 +144,8 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
   const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
   const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
   const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
-  const int nt = internal_gemm_nt;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_INIT
-#if !defined(_OPENMP)
-  LIBXSMM_UNUSED(nt);
-#endif
   if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
 #if defined(LIBXSMM_EXT_GEMM_TASKS)
     if (0 == internal_gemm_tasks)
@@ -160,7 +153,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
     {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL,
         LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        double, flags, nt, tm, tn, tk, *m, *n, *k,
+        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
@@ -170,7 +163,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
     else {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL,
         LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        double, flags, nt, tm, tn, tk, *m, *n, *k,
+        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
@@ -185,7 +178,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
     {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
         LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        double, flags, nt, tm, tn, tk, *m, *n, *k,
+        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
@@ -195,7 +188,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
     else {
       LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN,
         LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        double, flags, nt, tm, tn, tk, *m, *n, *k,
+        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
