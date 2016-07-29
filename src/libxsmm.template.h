@@ -103,6 +103,14 @@ LIBXSMM_API const char* libxsmm_get_target_arch(void);
 /** Set target architecture (arch="0|sse|snb|hsw|knl|skx", NULL/"0": CPUID) for subsequent code generation (JIT). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
+/** Get the level of verbosity. */
+LIBXSMM_API int libxsmm_get_verbose_mode(void);
+/**
+ * Set the level of verbosity (0: off, positive value: verbosity level,
+ * negative value: maximum verbosity, which also dumps JIT-code)
+ */
+LIBXSMM_API void libxsmm_set_verbose_mode(int mode);
+
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 

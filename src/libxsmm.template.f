@@ -246,6 +246,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbose_mode
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbose_mode
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_omp_sgemm
@@ -279,6 +281,19 @@
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
             CHARACTER(C_CHAR), INTENT(IN) :: arch(*)
+          END SUBROUTINE
+
+          ! Get the level of verbosity.
+          PURE FUNCTION libxsmm_get_verbose_mode() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_verbose_mode
+          END FUNCTION
+
+          ! Set the level of verbosity (0: off, positive value: verbosity level,
+          ! negative value: maximum verbosity, which also dumps JIT-code).
+          SUBROUTINE libxsmm_set_verbose_mode(mode) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: mode
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).

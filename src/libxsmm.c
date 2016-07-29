@@ -413,7 +413,7 @@ LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
 LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
 LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
 LIBXSMM_RETARGETABLE int internal_target_archid /*= LIBXSMM_TARGET_ARCH_GENERIC*/;
-LIBXSMM_RETARGETABLE int internal_verbose /*= 0*/;
+LIBXSMM_RETARGETABLE int internal_verbose_mode /*= 0*/;
 LIBXSMM_RETARGETABLE int internal_prefetch /*= LIBXSMM_MAX(INTERNAL_PREFETCH, 0)*/;
 
 
@@ -687,11 +687,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
           internal_statistic_mnk = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
           internal_statistic_sml = 13; internal_statistic_med = 23;
           if (0 != env_verbose && 0 != *env_verbose) {
-            internal_verbose = atoi(env_verbose);
+            internal_verbose_mode = atoi(env_verbose);
           }
 #if !defined(NDEBUG)
           else {
-            internal_verbose = 1; /* quiet -> verbose */
+            internal_verbose_mode = 1; /* quiet -> verbose */
           }
 #endif
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
@@ -829,7 +829,7 @@ void libxsmm_finalize(void)
             }
           }
         }
-        if (0 != internal_verbose) { /* print statistic on termination */
+        if (0 != internal_verbose_mode) { /* print statistic on termination */
           LIBXSMM_FLOCK(stderr);
           LIBXSMM_FLOCK(stdout);
           fflush(stdout); /* synchronize with standard output */
@@ -977,6 +977,18 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_get_verbose_mode(void)
+{
+  return internal_verbose_mode;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_verbose_mode(int mode)
+{
+  internal_verbose_mode = mode;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descriptor* descriptor,
   const char* jit_kind, const internal_desc_extra_type* desc_extra, internal_code_type* code)
 {
@@ -1014,35 +1026,32 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
       LIBXSMM_ALLOC_FLAG_RWX,
       0/*extra*/, 0/*extra_size*/))
     {
-#if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-      char jit_code_name[256];
-      internal_get_code_name(target_arch, jit_kind, descriptor, sizeof(jit_code_name), jit_code_name);
-#else
-      const char *const jit_code_name = 0;
+# if !defined(LIBXSMM_VTUNE)
       LIBXSMM_UNUSED(jit_kind);
-#endif
-      assert(0 == ((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) & code->imm));
-      /* copy temporary buffer into the prepared executable buffer */
-      memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
-      free(generated_code.generated_code); /* free temporary/initial code buffer */
-      /* revoke unnecessary memory protection flags; continue on error */
-      libxsmm_alloc_attribute(code->pmm, LIBXSMM_ALLOC_FLAG_RW, jit_code_name);
-    }
-    else {
-      free(generated_code.generated_code);
+      if (0 > internal_verbose_mode)
+# endif
+      {
+        char jit_code_name[256];
+        internal_get_code_name(target_arch, jit_kind, descriptor, sizeof(jit_code_name), jit_code_name);
+        assert(0 == ((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) & code->imm));
+        /* copy temporary buffer into the prepared executable buffer */
+        memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
+        /* revoke unnecessary memory protection flags; continue on error */
+        libxsmm_alloc_attribute(code->pmm, LIBXSMM_ALLOC_FLAG_RW, jit_code_name);
+      }
     }
   }
+# if !defined(NDEBUG) /* library code is expected to be mute */
   else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
     static LIBXSMM_TLS int error_jit = 0;
     if (0 == error_jit) {
       fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error),
         generated_code.last_error);
       error_jit = 1;
     }
-#endif
-    free(generated_code.generated_code);
   }
+# endif
+  free(generated_code.generated_code); /* free temporary/initial code buffer */
 #else /* unsupported platform */
 # if !defined(__MIC__)
   LIBXSMM_MESSAGE("================================================================================")
