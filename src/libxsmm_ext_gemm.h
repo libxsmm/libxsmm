@@ -53,7 +53,7 @@
 # define LIBXSMM_EXT_GEMM_OVERHEAD(NT) (/*arbitrary factor*/NT)
 # define LIBXSMM_EXT_GEMM_FOR_INIT
 # define LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN LIBXSMM_PRAGMA(omp for schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(LIBXSMM_EXT_GEMM_COLLAPSE))
-# define LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel for schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(LIBXSMM_EXT_GEMM_COLLAPSE))
+# define LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel for default(none) schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(LIBXSMM_EXT_GEMM_COLLAPSE))
 # define LIBXSMM_EXT_GEMM_FOR_LOOP_BODY(...)
 # define LIBXSMM_EXT_GEMM_FOR_LOOP_END
 #else
@@ -70,7 +70,7 @@
 # define LIBXSMM_EXT_GEMM_COLLAPSE 2
 # define LIBXSMM_EXT_GEMM_TSK_INIT LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN
-# define LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel) LIBXSMM_PRAGMA(omp single nowait)
+# define LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL LIBXSMM_PRAGMA(omp parallel default(none)) LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_GEMM_TSK_LOOP_BODY(...) LIBXSMM_PRAGMA(omp task firstprivate(__VA_ARGS__))
 # define LIBXSMM_EXT_GEMM_TSK_LOOP_END LIBXSMM_PRAGMA(omp taskwait)
 #else
@@ -82,12 +82,12 @@
 # define LIBXSMM_EXT_GEMM_TSK_LOOP_END LIBXSMM_EXT_GEMM_FOR_LOOP_END
 #endif
 
-#define LIBXSMM_EXT_GEMM_KERNEL(REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_EXT_GEMM_KERNEL(KERNEL, REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
   libxsmm_blasint j = 0, j_next = TILE_K; \
   if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
     for (; j < max_j; j = j_next) { \
-      LIBXSMM_MMCALL_PRF(xmm.LIBXSMM_TPREFIX(REAL,mm), \
+      LIBXSMM_MMCALL_PRF((KERNEL).LIBXSMM_TPREFIX(REAL,mm), \
         (A) + (POS_H) + (LDA) * j, \
         (B) + (POS_I) * (LDB) + j, \
         (C) + ic, \
@@ -157,7 +157,7 @@
       for (h = 0; h < (M); h += tile_m) { \
         for (i = 0; i < (N); i += tile_n) { \
           LOOP_BODY(h, i) \
-          LIBXSMM_EXT_GEMM_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_EXT_GEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
       LOOP_END \
@@ -167,7 +167,7 @@
       for (h = 0; h < (M); h += tile_m) { \
         LOOP_BODY(h) \
         for (i = 0; i < (N); i += tile_n) { \
-          LIBXSMM_EXT_GEMM_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_EXT_GEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
       LOOP_END \
@@ -177,7 +177,7 @@
       for (i = 0; i < (N); i += tile_n) { \
         LOOP_BODY(i) \
         for (h = 0; h < (M); h += tile_m) { \
-          LIBXSMM_EXT_GEMM_KERNEL(REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_EXT_GEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
       LOOP_END \
