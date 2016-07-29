@@ -44,7 +44,7 @@
 #endif
 
 
-#if defined(LIBXSMM_BUILD) && !defined(__STATIC)
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_RTLD_NEXT) && !defined(__STATIC)
 
 /* overrides the regular libxsmm_gemm_init in case of LD_PRELOADing libxsmmext */
 LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
@@ -67,7 +67,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
   return result;
 }
 
-#endif /*!defined(__STATIC)*/
+#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_RTLD_NEXT) && !defined(__STATIC)*/
 
 
 LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
