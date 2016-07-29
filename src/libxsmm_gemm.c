@@ -107,7 +107,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     if (0 >= internal_gemm_tile[1/*SP*/][1/*N*/]) internal_gemm_tile[1][1] = tile_configs[config][1][1];
     if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
-#if !defined(__CYGWIN__)
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) /*&& !defined(__CYGWIN__)*/
   if (0 == libxsmm_original_sgemm) {
     libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
   }
@@ -122,7 +122,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     libxsmm_original_sgemm = gemm.pf;
   }
 #endif
-#if !defined(__CYGWIN__)
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) /*&& !defined(__CYGWIN__)*/
   if (0 == libxsmm_original_dgemm) {
     libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
   }
@@ -261,26 +261,21 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* below-THRESHOLD xGEMM */
-    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* tiled xGEMM */
-    const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
-    const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
-    const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
-    const int nt = internal_gemm_nt;
-    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
+  const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
+  const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
+  const int nt = internal_gemm_nt;
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
-    LIBXSMM_UNUSED(nt);
+  LIBXSMM_UNUSED(nt);
 #endif
-    LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-      LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
-      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
-      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((float)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
+  LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+    LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 
 
@@ -291,25 +286,20 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* below-THRESHOLD xGEMM */
-    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* tiled xGEMM */
-    const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
-    const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
-    const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
-    const int nt = internal_gemm_nt;
-    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
+  const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
+  const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
+  const int nt = internal_gemm_nt;
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
-    LIBXSMM_UNUSED(nt);
+  LIBXSMM_UNUSED(nt);
 #endif
-    LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-      LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
-      double, flags, nt, tm, tn, tk, *m, *n, *k,
-      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((double)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
+  LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
+    LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+    double, flags, nt, tm, tn, tk, *m, *n, *k,
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
 
