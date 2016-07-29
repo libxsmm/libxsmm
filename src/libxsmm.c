@@ -838,7 +838,7 @@ void libxsmm_finalize(void)
             if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
               fprintf(stderr, "LIBXSMM_TARGET=%s ", target_arch);
             }
-            fprintf(stderr, "HEAP: %.f MB\n", 1.0 * heapmem / (1 << 20));
+            fprintf(stderr, "HEAP: %.1f MB\n", 1.0 * heapmem / (1 << 20));
           }
           LIBXSMM_FUNLOCK(stdout);
           LIBXSMM_FUNLOCK(stderr);
