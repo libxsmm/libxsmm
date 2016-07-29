@@ -74,14 +74,16 @@ done
 # Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
 WORKAROUND="DBG=0"
 
-
 # selected build-only tests that do not run anything
 # below case do not actually depend on LAPACK/BLAS
-CWD=${PWD}
-cd ${HERE}/build
-for TEST in ${NOBLAS}; do
-  make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
-  make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
-done
-cd ${CWD}
+#
+if [ "Windows_NT" != "${OS}" ]; then
+  CWD=${PWD}
+  cd ${HERE}/build
+  for TEST in ${NOBLAS}; do
+    make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
+    make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
+  done
+  cd ${CWD}
+fi
 
