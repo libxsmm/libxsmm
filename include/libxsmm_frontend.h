@@ -154,7 +154,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
 LIBXSMM_RETARGETABLE libxsmm_sgemm_function libxsmm_original_sgemm;
 LIBXSMM_RETARGETABLE libxsmm_dgemm_function libxsmm_original_dgemm;
 
-#if !defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT) && !defined(__STATIC) && defined(__CYGWIN__)
+#if !defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT) && defined(__CYGWIN__)
 # define LIBXSMM_ORIGINAL_GEMM_INDIRECT
 #endif
 
