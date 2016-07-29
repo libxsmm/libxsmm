@@ -247,10 +247,12 @@
 # define LIBXSMM_VISIBILITY_INTERNAL
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__)
-# define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
+#if (defined(__GNUC__) || defined(__clang__))
+# define LIBXSMM_ATTRIBUTE_WEAK_EXPORT LIBXSMM_ATTRIBUTE(weak)
+# define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 #else
-# define LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_ATTRIBUTE_WEAK_EXPORT
+# define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
 #if defined(NDEBUG)
