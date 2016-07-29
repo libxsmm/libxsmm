@@ -48,6 +48,22 @@
 #endif
 
 
+#if defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT)
+
+LIBXSMM_API_DEFINITION const libxsmm_sgemm_function* libxsmm_original_sgemm_ptr(void)
+{
+  return &libxsmm_original_sgemm;
+}
+
+
+LIBXSMM_API_DEFINITION const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(void)
+{
+  return &libxsmm_original_dgemm;
+}
+
+#endif /*defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT)*/
+
+
 LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
 {
   int config = 0;
