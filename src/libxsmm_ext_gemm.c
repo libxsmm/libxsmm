@@ -30,6 +30,44 @@
 ******************************************************************************/
 #include "libxsmm_ext_gemm.h"
 #include "libxsmm_gemm.h"
+#include "libxsmm_sync.h"
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
+
+#if defined(LIBXSMM_BUILD) && !defined(__STATIC)
+
+/* overrides the regular libxsmm_gemm_init in case of LD_PRELOADing libxsmmext */
+LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
+{
+  int result = EXIT_SUCCESS;
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid, prefetch);
+#if !defined(__BLAS) || (0 != __BLAS)
+  result = (0 != libxsmm_original_sgemm && 0 != libxsmm_original_dgemm) ? EXIT_SUCCESS : EXIT_FAILURE;
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (EXIT_SUCCESS != result) {
+    static LIBXSMM_TLS int error_blas = 0;
+    if (0 == error_blas) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_blas = 1;
+    }
+  }
+#endif
+  return result;
+}
+
+#endif /*!defined(__STATIC)*/
 
 
 LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
