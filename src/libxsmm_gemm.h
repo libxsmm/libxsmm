@@ -41,6 +41,12 @@
 #endif
 
 
+/**
+ * INTERNAL pre-initialization step called by libxsmm_gemm_init,
+ * e.g. configures the tile sizes for multi-threaded GEMM functions.
+ */
+LIBXSMM_API void libxsmm_gemm_configure(int archid, int prefetch);
+
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
 LIBXSMM_API int libxsmm_gemm_init(
   int archid, int prefetch/*default prefetch strategy*/);

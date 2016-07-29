@@ -48,20 +48,15 @@
 #endif
 
 
-#if defined(LIBXSMM_BUILD)
-
-LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
 {
-  int result = EXIT_SUCCESS;
-
   int config = 0;
-
   LIBXSMM_UNUSED(prefetch);
   internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
   internal_gemm_nt = 2;
   internal_gemm = 2;
-
-  { /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
+  {
+    /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
      * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
      * 1: OpenMP-parallelized but without internal parallel region,
      * 2: OpenMP-parallelized with internal parallel region" )
@@ -71,7 +66,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
       internal_gemm = atoi(env);
     }
   }
-
 #if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
   { /* consider user input about using (OpenMP-)tasks; this code must be here
     * because maybe only this translation unit is compiled with OpenMP support
@@ -82,7 +76,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     }
   }
 #endif
-
 #if defined(__MIC__)
   LIBXSMM_UNUSED(archid);
 #else
@@ -92,7 +85,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     internal_gemm_nt = 4;
     config = 1;
   }
-
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
     const int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
       { { 72, 32, 16 }, { 72, 32, 16 } }, /*generic*/
@@ -107,7 +99,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     internal_gemm_tile[1/*SP*/][0/*M*/] = internal_gemm_tile[0/*DP*/][0];
     internal_gemm_tile[1/*SP*/][1/*N*/] = internal_gemm_tile[0/*DP*/][1];
     internal_gemm_tile[1/*SP*/][2/*K*/] = internal_gemm_tile[0/*DP*/][2];
-
     /* load predefined configuration if tile size is not setup by the environment */
     if (0 >= internal_gemm_tile[0/*DP*/][0/*M*/]) internal_gemm_tile[0][0] = tile_configs[config][0][0];
     if (0 >= internal_gemm_tile[0/*DP*/][1/*N*/]) internal_gemm_tile[0][1] = tile_configs[config][0][1];
@@ -116,7 +107,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     if (0 >= internal_gemm_tile[1/*SP*/][1/*N*/]) internal_gemm_tile[1][1] = tile_configs[config][1][1];
     if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
-
 #if !defined(__CYGWIN__)
   if (0 == libxsmm_original_sgemm) {
     libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
@@ -132,7 +122,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     libxsmm_original_sgemm = gemm.pf;
   }
 #endif
-
 #if !defined(__CYGWIN__)
   if (0 == libxsmm_original_dgemm) {
     libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
@@ -148,6 +137,14 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
     libxsmm_original_dgemm = gemm.pf;
   }
 #endif
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
+{
+  int result = EXIT_SUCCESS;
+  /* internal pre-initialization step */
+  libxsmm_gemm_configure(archid, prefetch);
 #if !defined(__BLAS) || (0 != __BLAS)
   result = (0 != libxsmm_original_sgemm && 0 != libxsmm_original_dgemm) ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
@@ -168,6 +165,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
 }
 
+
+#if defined(LIBXSMM_BUILD)
 
 LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
