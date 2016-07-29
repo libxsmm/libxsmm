@@ -723,10 +723,10 @@ else # GCC assumed
     CXXFLAGS += -fno-exceptions
   endif
   # account for missing TLS/OMP
-  ifneq (Windows_NT,$(UNAME))
-    ifneq (clang,$(CC))
-      OMPFLAG = -fopenmp
-    endif
+  ifneq (clang,$(CC))
+    OMPFLAG = -fopenmp
+  else ifneq (Windows_NT,$(UNAME))
+    OMPFLAG = -fopenmp
   endif
   ifeq (,$(OMPFLAG))
     PTHREAD = 0
