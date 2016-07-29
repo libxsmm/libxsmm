@@ -82,7 +82,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
       internal_gemm = atoi(env);
     }
   }
-#if defined(LIBXSMM_GEMM_EXTOMP_TASKS)
+#if defined(LIBXSMM_EXT_GEMM_TASKS)
   { /* consider user input about using (OpenMP-)tasks; this code must be here
     * because maybe only this translation unit is compiled with OpenMP support
     */
@@ -299,8 +299,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
   LIBXSMM_UNUSED(nt);
 #endif
-  LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-    LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+  LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
+    LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
     float, flags | LIBXSMM_GEMM_FLAG_F32PREC, nt, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -324,8 +324,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 #if !defined(_OPENMP) /* OpenMP is not expected outside of libxsmmext, but just in case... */
   LIBXSMM_UNUSED(nt);
 #endif
-  LIBXSMM_GEMM_EXTOMP_XGEMM(LIBXSMM_GEMM_EXTOMP_FOR_INIT, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BEGIN,
-    LIBXSMM_GEMM_EXTOMP_FOR_LOOP_BODY, LIBXSMM_GEMM_EXTOMP_FOR_LOOP_END,
+  LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
+    LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
     double, flags, nt, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
