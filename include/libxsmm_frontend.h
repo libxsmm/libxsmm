@@ -173,6 +173,13 @@ LIBXSMM_API const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(void);
 #define LIBXSMM_XOMPS_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_omp_, LIBXSMM_TPREFIX(REAL, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, gemm))
 
+/** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
+#if defined(__GNUC__)
+# define LIBXSMM_INIT
+#else /* lazy initialization */
+# define LIBXSMM_INIT libxsmm_init();
+#endif
+
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
 #define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB, M, N, K, A, B, C) \
   int FLAGS = (0 != (TRANSA) \

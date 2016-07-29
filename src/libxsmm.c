@@ -157,11 +157,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
 #endif
 
 #if defined(__GNUC__)
-# define LIBXSMM_INIT
 /* libxsmm_init already executed via GCC constructor attribute */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) assert(0 != (VARIABLE))
 #else /* lazy initialization */
-# define LIBXSMM_INIT libxsmm_init();
 /* use return value of internal_init to refresh local representation */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) if (0 == (VARIABLE)) VARIABLE = internal_init()
 #endif
@@ -922,7 +920,6 @@ LIBXSMM_API_DEFINITION const char* get_target_arch(int* length)
 LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
-
   if (0 != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
@@ -979,12 +976,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 
 LIBXSMM_API_DEFINITION int libxsmm_get_verbose_mode(void)
 {
+  LIBXSMM_INIT
   return internal_verbose_mode;
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_set_verbose_mode(int mode)
 {
+  LIBXSMM_INIT
   internal_verbose_mode = mode;
 }
 
@@ -1073,9 +1072,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   const libxsmm_xmmfunction null_mmfunction = { 0 };
+  LIBXSMM_INIT
   if (0 != descriptor && INTERNAL_DISPATCH_BYPASS_CHECK(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
-
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
       backend_descriptor.prefetch = (unsigned char)internal_prefetch;
@@ -1097,6 +1096,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
 {
+  LIBXSMM_INIT
   INTERNAL_SMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1106,6 +1106,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
 {
+  LIBXSMM_INIT
   INTERNAL_DMMDISPATCH(flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1115,6 +1116,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
 {
   internal_code_type code = { {0} };
   internal_desc_extra_type desc_extra;
+  LIBXSMM_INIT
   memset(&desc_extra, 0, sizeof(desc_extra));
   desc_extra.row_ptr = row_ptr;
   desc_extra.column_idx = column_idx;
@@ -1126,6 +1128,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
 
 LIBXSMM_API_DEFINITION void libxsmm_destroy(const void* jit_code)
 {
+  LIBXSMM_INIT
   libxsmm_deallocate(jit_code);
 }
 

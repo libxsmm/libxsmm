@@ -81,6 +81,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
   const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
   const int nt = internal_gemm_nt;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  LIBXSMM_INIT
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
@@ -148,6 +149,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
   const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
   const int nt = internal_gemm_nt;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  LIBXSMM_INIT
 #if !defined(_OPENMP)
   LIBXSMM_UNUSED(nt);
 #endif
