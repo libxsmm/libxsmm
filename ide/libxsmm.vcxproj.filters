@@ -114,7 +114,7 @@
     <ClInclude Include="..\build\libxsmm_dispatch.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm_extomp.h">
+    <ClInclude Include="..\src\libxsmm_ext_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -141,12 +141,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_gemm_diff.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm_extwrap.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm_extomp.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm.c">
@@ -207,6 +201,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_alloc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_ext_gemm.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
