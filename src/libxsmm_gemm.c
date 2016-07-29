@@ -123,7 +123,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     if (0 >= internal_gemm_tile[1/*SP*/][1/*N*/]) internal_gemm_tile[1][1] = tile_configs[config][1][1];
     if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
   }
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__)
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
   if (0 == libxsmm_original_sgemm) {
     libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
   }
@@ -138,7 +139,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     libxsmm_original_sgemm = gemm.pf;
   }
 #endif
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__)
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
   if (0 == libxsmm_original_dgemm) {
     libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
   }
