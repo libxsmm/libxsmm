@@ -87,8 +87,8 @@ $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAM
 else ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(LD) -o $(1) $(2) \
-		$(call libdir, $(LIBNAME)ext.$(LIBEXT)) \
 		$(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(call libdir, $(LIBNAME)ext.$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(1)
@@ -112,8 +112,8 @@ else ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(FC) -o $(1) $(2) \
 		$(call libdir, $(LIBNAME)f.$(LIBEXT)) \
-		$(call libdir, $(LIBNAME)ext.$(LIBEXT)) \
 		$(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(call libdir, $(LIBNAME)ext.$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(1)
