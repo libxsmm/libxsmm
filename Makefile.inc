@@ -28,7 +28,7 @@ FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 OPT ?= 2
 
 # Optimization flag derived from OPT flag
-ifeq (0,$(shell echo $(OPT) | grep -q "^[0-9]\+$$"; echo $$?))
+ifeq (0,$(shell echo "$(OPT)" | grep -q "^[0-9]\+$$"; echo "$$?"))
   OPTFLAG = -O$(OPT)
 else
   OPTFLAG = -$(OPT)
@@ -144,7 +144,7 @@ else
 endif
 
 # Pickup OpenMP library name if passed as OMP=libname|name
-ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
+ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
   OMPLIB = $(patsubst lib%,%,$(OMP))
 endif
 
@@ -183,17 +183,17 @@ ifneq (0,$(INTEL))
 else
   ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
     CXX = g++
-  else ifneq (0,$(shell $(CXX) --version > /dev/null 2> /dev/null; echo $$?))
+  else ifneq (0,$(shell $(CXX) --version > /dev/null 2> /dev/null; echo "$$?"))
     CXX = g++
   endif
   ifeq (,$(notdir $(shell which $(CC) 2> /dev/null)))
     CC = gcc
-  else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo $$?))
+  else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo "$$?"))
     CC = gcc
   endif
   ifeq (0,$(FORTRAN))
     FC = $(shell which gfortran 2> /dev/null)
-  else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo $$?))
+  else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo "$$?"))
     FC = $(shell which gfortran 2> /dev/null)
   endif
 endif
@@ -308,7 +308,7 @@ ifneq (,$(findstring gcc,$(CC_NAME)))
   GCC = 1
 else ifeq (GCC,$(shell $(CC) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
   GCC = 1
-else ifeq (0,$(shell $(CC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
+else ifeq (0,$(shell $(CC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo "$$?"))
   GCC = 1
 endif
 ifeq (1,$(GCC))
@@ -321,7 +321,7 @@ ifeq (1,$(GCC))
     GCC = 2
   else ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
     GCC = 2
-  else ifeq (0,$(shell $(CXX) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
+  else ifeq (0,$(shell $(CXX) --version 2> /dev/null | grep -q "Free Software Foundation"; echo "$$?"))
     GCC = 2
   endif
   ifeq (2,$(GCC))
@@ -330,7 +330,7 @@ ifeq (1,$(GCC))
     else ifneq (,$(strip $(FC)))
       ifeq (GCC,$(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
         GCC = 3
-      else ifeq (0,$(shell $(FC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo $$?))
+      else ifeq (0,$(shell $(FC) --version 2> /dev/null | grep -q "Free Software Foundation"; echo "$$?"))
         GCC = 3
       endif
     endif
@@ -429,11 +429,11 @@ ifneq (0,$(INTEL))
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else ifneq (0,$(shell echo $$(0>$(SYM))))
+    else ifneq (0,$(shell echo "$$(0>$(SYM))"))
       DFLAGS += -DNDEBUG
     endif
   else # debugging enabled
-    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 > $(DBG)))))
+    ifneq (0,$(shell echo "$$((1 < $(DBG) || 0 > $(DBG)))"))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
@@ -452,7 +452,7 @@ ifneq (0,$(INTEL))
       endif
     endif
   endif
-  ifneq (0,$(shell echo $$((3 > $(DBG)))))
+  ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (0,$(COMPATIBLE))
       ifeq (1,$(AVX))
         TARGET = -xAVX
@@ -630,11 +630,11 @@ else # GCC assumed
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else ifneq (0,$(shell echo $$(0 > $(SYM))))
+    else ifneq (0,$(shell echo "$$((0 > $(SYM)))"))
       DFLAGS += -DNDEBUG
     endif
   else
-    ifneq (0,$(shell echo $$((1 < $(DBG) || 0 > $(DBG)))))
+    ifneq (0,$(shell echo "$$((1 < $(DBG) || 0 > $(DBG)))"))
       DFLAGS += -D_DEBUG
     endif
     CXXFLAGS += -O0
@@ -647,11 +647,11 @@ else # GCC assumed
     CFLAGS += -finstrument-functions
     FCFLAGS += -finstrument-functions
     # e.g. clang does not need/understand below flag
-    ifneq (0,$(shell echo $$((1 <= $(GCC)))))
+    ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
       CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
-      ifneq (0,$(shell echo $$((2 <= $(GCC)))))
+      ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
         CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
-        ifneq (0,$(shell echo $$((3 <= $(GCC)))))
+        ifneq (0,$(shell echo "$$((3 <= $(GCC)))"))
           FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
         endif
       endif
@@ -666,7 +666,7 @@ else # GCC assumed
     endif
     DFLAGS += -D__TRACE=$(TRACE)
   endif
-  ifneq (0,$(shell echo $$((3 > $(DBG)))))
+  ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (3,$(GCC))
       # downgrade to AVX2 due to outdated compiler
       ifneq (0,$(shell echo "$$((3 <= $(AVX)))"))
@@ -737,13 +737,13 @@ else # GCC assumed
   endif
   ifneq (0,$(OMP))
     # clang: OMP=libomp
-    ifneq (0,$(shell echo $(OMP) | grep -q "^-*[0-9]\+$$"; echo $$?)) # NaN
+    ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
       CXXFLAGS += $(OMPFLAG)=$(OMP)
       CFLAGS += $(OMPFLAG)=$(OMP)
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo $$?))
+    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo "$$?"))
       CXXFLAGS += $(OMPFLAG)
       CFLAGS += $(OMPFLAG)
       FCFLAGS += $(OMPFLAG)
@@ -763,7 +763,7 @@ else # GCC assumed
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     DUMMY = $(shell $(LD) -static -ldummydoesnotexist 2>&1)
-    ifeq (0,$(shell echo "${DUMMY}" | grep -q "\-ldummydoesnotexist"; echo $$?))
+    ifeq (0,$(shell echo "${DUMMY}" | grep -q "\-ldummydoesnotexist"; echo "$$?"))
       SLDFLAGS += -static
     endif
   endif
@@ -776,10 +776,10 @@ else # GCC assumed
   MIC = 0
 endif
 
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo $$?))
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
   LIBRT = -lrt
 endif
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo $$?))
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
   LIBDL = -ldl
 endif
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
@@ -787,17 +787,17 @@ ifneq (,$(strip $(LIBRT) $(LIBDL)))
 endif
 ifeq (Darwin,$(UNAME))
   # avoid Homebrew based GCC AS; apply the flag only to the non-GCC components
-  ifneq (0,$(shell echo $$((1 <= $(GCC)))))
+  ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
     LDFLAGS += -Wa,-q
     CFLAGS += -Wa,-q
-    ifneq (0,$(shell echo $$((2 <= $(GCC)))))
+    ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
       CXXFLAGS += -Wa,-q
     endif
   endif
   FLDFLAGS += -Wa,-q
   FCFLAGS += -Wa,-q
 endif
-ifeq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo $$?))
+ifeq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo "$$?"))
   OMPLIB = $(NULL)
 endif
 
@@ -903,7 +903,7 @@ else ifneq (0,$(BLAS)) # generic
   ifneq (1,$(BLAS))
     BLAS_THREADS = o
   endif
-  OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo $$?)
+  OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
   ifeq (1,$(OPENBLAS))
     LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
   else
@@ -917,7 +917,7 @@ else ifneq (0,$(BLAS)) # generic
         CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
       endif
     endif
-    QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo $$?)
+    QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
     ifneq (0,$(QUADMATH))
       CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
     endif
