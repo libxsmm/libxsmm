@@ -45,7 +45,7 @@
 
 
 /* Based on cache-oblivious scheme as published by Frigo et.al. Further optimization for compile-time bounded loops. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_transpose_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
@@ -79,22 +79,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void inernal_transpose_oop(void *LIBXSMM_RES
   }
   else if (m >= n) {
     const libxsmm_blasint mi = (m0 + m1) / 2;
-    inernal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
-    inernal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
+    internal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
+    internal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
   }
   else {
 #if (0 < LIBXSMM_TRANSPOSE_CHUNK)
     if (LIBXSMM_TRANSPOSE_CHUNK < n) {
       const libxsmm_blasint ni = n0 + LIBXSMM_TRANSPOSE_CHUNK;
-      inernal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
-      inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
+      internal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      internal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
     else
 #endif
     {
       const libxsmm_blasint ni = (n0 + n1) / 2;
-      inernal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
-      inernal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
+      internal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      internal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
   }
 }
@@ -128,7 +128,7 @@ LIBXSMM_API_DEFINITION void libxsmm_transpose_oop(void* out, const void* in, uns
   else
 #endif
   {
-    inernal_transpose_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
+    internal_transpose_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
   }
 }
 
