@@ -17,6 +17,24 @@
 # define REAL_TYPE double
 #endif
 
+#if !defined(USE_LIBXSMM_MALLOC)
+# define USE_LIBXSMM_MALLOC
+#endif
+
+/**
+ * This uses an internal unsupported API; not for production code!
+ * Perhaps this makes a case for an alternative allocator...
+ */
+#if defined(USE_LIBXSMM_MALLOC)
+LIBXSMM_API void* libxsmm_malloc(size_t size);
+LIBXSMM_API void libxsmm_free(const void* memory);
+# define MALLOC(SIZE) libxsmm_malloc(SIZE)
+# define FREE(BUFFER) libxsmm_free(BUFFER)
+#else
+# define MALLOC(SIZE) malloc(SIZE)
+# define FREE(BUFFER) free(BUFFER)
+#endif
+
 
 LIBXSMM_INLINE REAL_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
@@ -32,8 +50,8 @@ int main(int argc, char* argv[])
   const libxsmm_blasint lda = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldb = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
 
-  REAL_TYPE *const a = (REAL_TYPE*)malloc(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
-  REAL_TYPE *const b = (REAL_TYPE*)malloc(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+  REAL_TYPE *const a = (REAL_TYPE*)MALLOC(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
+  REAL_TYPE *const b = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
   const unsigned int size = m * n * sizeof(REAL_TYPE);
   unsigned long long start;
   libxsmm_blasint i, j;
@@ -104,8 +122,8 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  free(a);
-  free(b);
+  FREE(a);
+  FREE(b);
 
   return EXIT_SUCCESS;
 }

@@ -14,6 +14,24 @@
 # define REAL_TYPE double
 #endif
 
+#if !defined(USE_LIBXSMM_MALLOC)
+# define USE_LIBXSMM_MALLOC
+#endif
+
+/**
+ * This uses an internal unsupported API; not for production code!
+ * Perhaps this makes a case for an alternative allocator...
+ */
+#if defined(USE_LIBXSMM_MALLOC)
+LIBXSMM_API void* libxsmm_malloc(size_t size);
+LIBXSMM_API void libxsmm_free(const void* memory);
+# define MALLOC(SIZE) libxsmm_malloc(SIZE)
+# define FREE(BUFFER) libxsmm_free(BUFFER)
+#else
+# define MALLOC(SIZE) malloc(SIZE)
+# define FREE(BUFFER) free(BUFFER)
+#endif
+
 
 LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double scale, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld);
 LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double scale, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
@@ -52,10 +70,10 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    REAL_TYPE *const a = (REAL_TYPE*)malloc(lda * k * sizeof(REAL_TYPE));
-    REAL_TYPE *const b = (REAL_TYPE*)malloc(ldb * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const c = (REAL_TYPE*)malloc(ldc * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const d = (REAL_TYPE*)malloc(ldc * n * sizeof(REAL_TYPE));
+    REAL_TYPE *const a = (REAL_TYPE*)MALLOC(lda * k * sizeof(REAL_TYPE));
+    REAL_TYPE *const b = (REAL_TYPE*)MALLOC(ldb * n * sizeof(REAL_TYPE));
+    REAL_TYPE *const c = (REAL_TYPE*)MALLOC(ldc * n * sizeof(REAL_TYPE));
+    REAL_TYPE *const d = (REAL_TYPE*)MALLOC(ldc * n * sizeof(REAL_TYPE));
 
     init(42, a, scale, m, k, lda);
     init(24, b, scale, k, n, ldb);
@@ -102,7 +120,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "\tdiff=%f\n", diff);
     }
 
-    free(a); free(b); free(c); free(d);
+    FREE(a); FREE(b); FREE(c); FREE(d);
   }
   fprintf(stdout, "Finished\n");
 
