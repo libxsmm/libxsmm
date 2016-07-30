@@ -266,10 +266,13 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
           MAP_PRIVATE | MAP_ANONYMOUS
 # endif
 # if defined(MAP_NORESERVE)
-          | MAP_NORESERVE
+          | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
 # endif
 # if defined(MAP_HUGETLB)
           | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
+# endif
+# if defined(MAP_LOCKED) && 0
+          | MAP_LOCKED
 # endif
 # if defined(MAP_32BIT)
           | MAP_32BIT
