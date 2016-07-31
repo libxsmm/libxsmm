@@ -97,7 +97,7 @@ typedef struct libxsmm_gemm_descriptor {
   LIBXSMM_GENERATOR_SIZE_TYPE m, n, k;
   /** Collection of various flags. */
   unsigned char flags;
-  /** Integer unless FLAG_*_F is raised. */
+  /** Integer value. */
   signed char alpha, beta;
   /** Prefetch strategy enumeration. */
   unsigned char prefetch;
