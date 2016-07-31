@@ -29,11 +29,7 @@ int main()
   }
 
 #if defined(_OPENMP)
-# if defined(_DEBUG)
-# pragma omp parallel for default(none) private(i) shared(a, b, f, result, stderr)
-# else
-# pragma omp parallel for default(none) private(i) shared(a, b, f, result)
-# endif
+# pragma omp parallel for private(i)
 #endif
   for (i = 0; i < MAX_NKERNELS; ++i) {
     if (0 == result) {
