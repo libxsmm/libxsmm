@@ -994,11 +994,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_build(const libxsmm_gemm_descr
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   const char *const target_arch = internal_get_target_arch(internal_target_archid);
   libxsmm_generated_code generated_code;
-  assert(0 != descriptor && 0 < descriptor->m && 0 < descriptor->n && 0 < descriptor->k);
-  assert(0 < descriptor->lda && 0 < descriptor->lda && 0 < descriptor->ldc);
-  assert(0 != internal_target_archid);
+  assert(0 != descriptor && 0 != internal_target_archid);
   assert(0 != code && 0 == code->pmm);
-
+  if (0 >= descriptor->m || 0 >= descriptor->n || 0 >= descriptor->k ||
+      0 >= descriptor->lda || 0 >= descriptor->lda || 0 >= descriptor->ldc)
+  {
+    return;
+  }
   /* allocate temporary buffer which is large enough to cover the generated code */
   generated_code.generated_code = malloc(131072);
   generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
