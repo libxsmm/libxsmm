@@ -427,7 +427,7 @@ ifneq (0,$(INTEL))
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
+    else ifeq (0,$(shell echo "$$((0 > $(SYM)))"))
       DFLAGS += -DNDEBUG
     endif
   else # debugging enabled
@@ -628,7 +628,7 @@ else # GCC assumed
     endif
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
-    else ifneq (0,$(shell echo "$$((0 > $(SYM)))"))
+    else ifeq (0,$(shell echo "$$((0 > $(SYM)))"))
       DFLAGS += -DNDEBUG
     endif
   else
