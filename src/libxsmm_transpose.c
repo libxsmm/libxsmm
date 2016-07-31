@@ -20,6 +20,18 @@
 #if !defined(LIBXSMM_TRANSPOSE_CHUNK)
 # define LIBXSMM_TRANSPOSE_CHUNK 32
 #endif
+#if !defined(LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE)
+# define LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE
+#endif
+
+/* consecutive store and strided load */
+#if defined(LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE)
+# define INTERNAL_TRANSPOSE_INDEX_STORE(I, J, LD) (I * LD + J)
+# define INTERNAL_TRANSPOSE_INDEX_LOAD(I, J, LD) (J * LD + I)
+#else /* consecutive load and strided store */
+# define INTERNAL_TRANSPOSE_INDEX_STORE(I, J, LD) (J * LD + I)
+# define INTERNAL_TRANSPOSE_INDEX_LOAD(I, J, LD) (I * LD + J)
+#endif
 
 #define INTERNAL_TRANSPOSE_OOP(TYPE, OUT, IN, M0, M1, N0, N1, N) { \
   const TYPE *const a = (const TYPE*)IN; \
@@ -29,7 +41,7 @@
     for (i = M0; i < M1; ++i) { \
       LIBXSMM_PRAGMA_NONTEMPORAL \
       for (j = N0; j < N0 + LIBXSMM_TRANSPOSE_CHUNK; ++j) { \
-        b[i*ldo+j/*consecutive*/] = a[j*ld+i/*strided*/]; \
+        b[INTERNAL_TRANSPOSE_INDEX_STORE(i,j,ldo)] = a[INTERNAL_TRANSPOSE_INDEX_LOAD(i,j,ld)]; \
       } \
     } \
   } \
@@ -37,7 +49,7 @@
     for (i = M0; i < M1; ++i) { \
       LIBXSMM_PRAGMA_NONTEMPORAL \
       for (j = N0; j < N1; ++j) { \
-        b[i*ldo+j/*consecutive*/] = a[j*ld+i/*strided*/]; \
+        b[INTERNAL_TRANSPOSE_INDEX_STORE(i,j,ldo)] = a[INTERNAL_TRANSPOSE_INDEX_LOAD(i,j,ld)]; \
       } \
     } \
   } \
