@@ -137,9 +137,9 @@
 #endif
 
 typedef uint32_t internal_crc32_entry_type[256];
-const LIBXSMM_RETARGETABLE internal_crc32_entry_type* internal_crc32_table;
+LIBXSMM_EXTERN_C const LIBXSMM_RETARGETABLE internal_crc32_entry_type* internal_crc32_table;
 
-LIBXSMM_RETARGETABLE libxsmm_hash_function internal_hash_function /*= libxsmm_crc32_sw*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_hash_function internal_hash_function /*= libxsmm_crc32_sw*/;
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int seed, unsigned int n, unsigned char value)

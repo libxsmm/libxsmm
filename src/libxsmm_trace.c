@@ -99,11 +99,11 @@ int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_RETARGETABLE volatile LONG internal_trace_initialized /*= -1*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE volatile LONG internal_trace_initialized /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
-LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {
   int fd;
@@ -130,9 +130,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_RETARGETABLE int internal_trace_mindepth /*=  0*/;
-LIBXSMM_RETARGETABLE int internal_trace_threadid /*= -1*/;
-LIBXSMM_RETARGETABLE int internal_trace_maxnsyms /*= -1*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_mindepth /*=  0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_threadid /*= -1*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_maxnsyms /*= -1*/;
 
 
 LIBXSMM_API

@@ -400,19 +400,19 @@ return flux_entry.xmm
 
 #if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NOSYNC)
 # define INTERNAL_REGLOCK_COUNT 16
-LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_COUNT];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_COUNT];
 #endif
 
-LIBXSMM_RETARGETABLE internal_regkey_type* internal_registry_keys /*= 0*/;
-LIBXSMM_RETARGETABLE internal_code_type* internal_registry /*= 0*/;
-LIBXSMM_RETARGETABLE internal_statistic_type internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
-LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml /*= 13*/;
-LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
-LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
-LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
-LIBXSMM_RETARGETABLE int internal_target_archid /*= LIBXSMM_TARGET_ARCH_GENERIC*/;
-LIBXSMM_RETARGETABLE int internal_verbose_mode /*= 0*/;
-LIBXSMM_RETARGETABLE int internal_prefetch /*= LIBXSMM_MAX(INTERNAL_PREFETCH, 0)*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_regkey_type* internal_registry_keys /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_code_type* internal_registry /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_statistic_type internal_statistic[2/*DP/SP*/][3/*sml/med/big*/];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml /*= 13*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_target_archid /*= LIBXSMM_TARGET_ARCH_GENERIC*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_verbose_mode /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_prefetch /*= LIBXSMM_MAX(INTERNAL_PREFETCH, 0)*/;
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm_gemm_descriptor* desc,
