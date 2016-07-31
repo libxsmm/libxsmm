@@ -147,7 +147,7 @@ endif
 include $(ROOTDIR)/Makefile.inc
 
 # Number of repeated calls (tests)
-TESTSIZE ?= 1
+TESTSIZE ?= 100
 
 ifeq (1,$(AVX))
   GENTARGET = snb
