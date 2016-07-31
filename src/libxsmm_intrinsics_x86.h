@@ -31,6 +31,7 @@
 #ifndef LIBXSMM_INTRINSICS_X86_H
 #define LIBXSMM_INTRINSICS_X86_H
 
+#include <libxsmm_typedefs.h>
 #include <libxsmm_macros.h>
 
 #if defined(__MIC__)
