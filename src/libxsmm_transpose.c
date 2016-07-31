@@ -1,5 +1,4 @@
 #include <libxsmm.h>
-#include "libxsmm_intrinsics_x86.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -38,7 +37,7 @@
   const TYPE *const a = (const TYPE*)IN; \
   TYPE *const b = (TYPE*)OUT; \
   libxsmm_blasint i, j; \
-  if (LIBXSMM_TRANSPOSE_CHUNK == N && 0 == LIBXSMM_MOD2((uintptr_t)b, LIBXSMM_STATIC_SIMD_WIDTH)) { \
+  if (LIBXSMM_TRANSPOSE_CHUNK == N && 0 == LIBXSMM_MOD2((uintptr_t)b, LIBXSMM_ALIGNMENT)) { \
     for (i = M0; i < M1; ++i) { \
       LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
       LIBXSMM_PRAGMA_NONTEMPORAL \
