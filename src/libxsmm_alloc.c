@@ -67,6 +67,8 @@
 #if !defined(LIBXSMM_ALLOC_ALIGNFCT)
 # define LIBXSMM_ALLOC_ALIGNFCT 8
 #endif
+
+/* perform low-level allocation even for small non-executable buffers */
 #if !defined(LIBXSMM_ALLOC_MMAP)
 /*# define LIBXSMM_ALLOC_MMAP*/
 #endif
