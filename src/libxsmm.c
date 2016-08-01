@@ -698,9 +698,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_code_type* internal_init(void)
            */
 #if defined(LIBXSMM_BUILD)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
-          if (LIBXSMM_X86_AVX > internal_target_archid/* jit not available */
-           /* Condition allows to avoid JIT if static code is good enough. */
-           || LIBXSMM_STATIC_TARGET_ARCH == internal_target_archid)
+          /* check if target arch. permits execution (arch. may be overridden) */
+          if (LIBXSMM_STATIC_TARGET_ARCH <= internal_target_archid &&
+             (LIBXSMM_X86_AVX > internal_target_archid /* jit is not available */
+              /* condition allows to avoid JIT (if static code is good enough) */
+           || LIBXSMM_STATIC_TARGET_ARCH == internal_target_archid))
 # endif
           { /* opening a scope for eventually declaring variables */
             /* setup the dispatch table for the statically generated code */
