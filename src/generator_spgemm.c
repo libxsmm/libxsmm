@@ -125,6 +125,48 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_generated_code,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                              const char*                    i_arch,
+                                              const unsigned int*            i_row_idx,
+                                              const unsigned int*            i_column_idx,
+                                              const double*                  i_values ) {
+  /* A matrix is sparse */
+  if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
+    /* check LDB */
+    if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
+    /* check LDC */
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      return;
+    }
+    libxsmm_generator_spgemm_csr_asparse_reg( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
+  /* B matrix is sparse */
+  } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
+    /* check LDA */
+    if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      return;
+    }
+    /* check LDC */
+    if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      return;
+    }
+    /* something bad happened... */
+    fprintf( stderr, "LIBXSMM ERROR, B sparse for CSR datastructure is not yet available, FATAL ERROR, EXTI!\n");
+    exit(-1);
+  } else {
+    /* something bad happened... */
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
+    return;
+  }
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
@@ -306,9 +348,14 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     if (i_is_csr == 1) {
       /* generate the actual kernel code for current description depending on the architecture */
       libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else {
+    } else if (i_is_csr == 2) {
       /* generate the actual kernel code for current description depending on the architecture */
       libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+    } else if (i_is_csr == 3) {
+      /* generate the actual kernel code for current description depending on the architecture */
+      libxsmm_generator_spgemm_csr_reg_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+    } else {
+      /* shouldn't happen */
     }
   }
 
