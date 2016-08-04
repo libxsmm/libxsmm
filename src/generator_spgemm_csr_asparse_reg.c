@@ -81,7 +81,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  double l_uniq_c[%u];\n", l_unique);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   for ( l_z = 0; l_z < l_unique; l_z++) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  l_uniq_a[%u] = %.20e;\n", l_z, l_unique_values[l_z]);
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  l_uniq_c[%u] = %.20e;\n", l_z, l_unique_values[l_z]);
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 
