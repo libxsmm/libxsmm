@@ -41,7 +41,7 @@ ifeq ($(AVX), 3)
 CXXFLAGS+=-xCOMMON-AVX512 -fma
 endif
 
-default: pyfr_gemm_cm pyfr_gemm_rm
+default: pyfr_gemm_cm pyfr_gemm_rm pyfr_driver_asp_reg
 
 pyfr_gemm_cm.o: pyfr_gemm_cm.c
 	$(CC) $(CFLAGS) pyfr_gemm_cm.c
@@ -49,12 +49,24 @@ pyfr_gemm_cm.o: pyfr_gemm_cm.c
 pyfr_gemm_rm.o: pyfr_gemm_rm.c
 	$(CC) $(CFLAGS) pyfr_gemm_rm.c
 
+pyfr_driver_asp_reg.o : pyfr_driver_asp_reg.c
+	$(CC) $(CFLAGS) pyfr_driver_asp_reg.c
+
+kernel.c : ./../../bin/libxsmm_gemm_generator
+	./../../bin/libxsmm_gemm_generator sparse_csr_reg kernel.c libxsmm_code 192 48000 96 0 48000 48000 1 0 0 0 knl nopf DP m6-sp.mtx
+
+kernel.o : kernel.c
+	$(CC) $(CFLAGS) kernel.c
+
 pyfr_gemm_cm: pyfr_gemm_cm.o
 	$(CC) pyfr_gemm_cm.o $(LDFLAGS) -o pyfr_gemm_cm
 
 pyfr_gemm_rm: pyfr_gemm_rm.o
 	$(CC) pyfr_gemm_rm.o $(LDFLAGS) -o pyfr_gemm_rm
 
+pyfr_driver_asp_reg: pyfr_driver_asp_reg.o kernel.o
+	$(CC) pyfr_driver_asp_reg.o kernel.o $(LDFLAGS) -o pyfr_driver_asp_reg
+
 clean:
-	rm -rf *.o
+	rm -rf *.o kernel.c
 	rm -rf pyfr_gemm_cm pyfr_gemm_rm
