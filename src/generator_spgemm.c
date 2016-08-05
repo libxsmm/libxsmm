@@ -232,7 +232,11 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+  if (i_is_csr == 3) {
+    libxsmm_mmfunction_signature_asparse_reg( &l_generated_code, i_routine_name, i_xgemm_desc );
+  } else {
+    libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
+  }
 
   /* check if generate to CSC */
   if ( i_is_csr == 0 ) {
