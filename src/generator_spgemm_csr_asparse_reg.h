@@ -34,6 +34,7 @@
 
 #include <libxsmm_generator.h>
 
+LIBXSMM_INTERNAL_API
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
