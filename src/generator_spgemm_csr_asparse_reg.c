@@ -30,7 +30,8 @@
 ******************************************************************************/
 
 #include "generator_spgemm_csr_asparse_reg.h"
-#include "generator_common.h"
+#include "generator_x86_instructions.h"
+#include "generator_gemm_common.h"
 #include <libxsmm_macros.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,7 +80,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_n;
   unsigned int l_z;
   unsigned int l_row_elements;
+#if 0
   unsigned int l_flop_count = 0;
+#endif
   unsigned int l_unique;
   unsigned int l_hit;
   unsigned int l_n_i_blocking = 1;
