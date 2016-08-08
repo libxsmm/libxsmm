@@ -53,7 +53,7 @@ pyfr_driver_asp_reg.o : pyfr_driver_asp_reg.c
 	$(CC) $(CFLAGS) pyfr_driver_asp_reg.c
 
 kernel.c : ./../../bin/libxsmm_gemm_generator
-	./../../bin/libxsmm_gemm_generator sparse_csr_reg kernel.c libxsmm_code 192 48000 96 0 48000 48000 1 0 0 0 knl nopf DP m6-sp.mtx
+	./../../bin/libxsmm_gemm_generator sparse_csr_reg kernel.c libxsmm_code 192 48000 96 0 48000 48000 1 0 0 0 knl nopf DP ./mats/p3/hex/m6-sp.mtx
 
 kernel.o : kernel.c
 	$(CC) $(CFLAGS) kernel.c
@@ -65,7 +65,7 @@ pyfr_gemm_rm: pyfr_gemm_rm.o
 	$(CC) pyfr_gemm_rm.o $(LDFLAGS) -o pyfr_gemm_rm
 
 pyfr_driver_asp_reg: pyfr_driver_asp_reg.o kernel.o
-	$(CC) pyfr_driver_asp_reg.o kernel.o $(LDFLAGS) -o pyfr_driver_asp_reg
+	$(CC) pyfr_driver_asp_reg.o kernel.o $(LDFLAGS) -mkl -o pyfr_driver_asp_reg
 
 clean:
 	rm -rf *.o kernel.c

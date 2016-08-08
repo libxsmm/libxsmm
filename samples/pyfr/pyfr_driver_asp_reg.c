@@ -46,7 +46,7 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-void my_csr_reader( const char*           i_csr_file_in,
+int my_csr_reader( const char*           i_csr_file_in,
                     unsigned int**        o_row_idx,
                     unsigned int**        o_column_idx,
                     REALTYPE**            o_values,
@@ -63,13 +63,13 @@ void my_csr_reader( const char*           i_csr_file_in,
   l_csr_file_handle = fopen( i_csr_file_in, "r" );
   if ( l_csr_file_handle == NULL ) {
     fprintf( stderr, "cannot open CSR file!\n" );
-    return;
+    return -1;
   }
 
   while (fgets(l_line, l_line_length, l_csr_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
       fprintf( stderr, "could not read file length!\n" );
-      return;
+      return -1;
     }
     /* check if we are still reading comments header */
     if ( l_line[0] == '%' ) {
@@ -90,7 +90,7 @@ void my_csr_reader( const char*           i_csr_file_in,
                ( *o_values == NULL )       ||
                ( l_row_idx_id == NULL )    ) {
             fprintf( stderr, "could not allocate sp data!\n" );
-            return;
+            return -1;
           }
 
           /* set everything to zero for init */
@@ -109,7 +109,7 @@ void my_csr_reader( const char*           i_csr_file_in,
           l_header_read = 1;
         } else {
           fprintf( stderr, "could not csr descripton!\n" );
-          return;
+          return -1;
         }
       /* now we read the actual content */
       } else {
@@ -118,7 +118,7 @@ void my_csr_reader( const char*           i_csr_file_in,
         /* read a line of content */
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
           fprintf( stderr, "could not read element!\n" );
-          return;
+          return -1;
         }
         /* adjust numbers to zero termination */
         l_row--;
@@ -140,7 +140,7 @@ void my_csr_reader( const char*           i_csr_file_in,
   /* check if we read a file which was consitent */
   if ( l_i != (*o_element_count) ) {
     fprintf( stderr, "we were not able to read all elements!\n" );
-    return;
+    return -1;
   }
 
   /* let's handle empty rows */
@@ -154,11 +154,12 @@ void my_csr_reader( const char*           i_csr_file_in,
   if ( l_row_idx_id != NULL ) {
     free( l_row_idx_id );
   }
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 3) {
-    fprintf( stderr, "need N and csr filename!\n" );
+  if (argc != 4 ) {
+    fprintf( stderr, "need csr-filename N reps!\n" );
     exit(-1);
   }
 
@@ -168,9 +169,11 @@ int main(int argc, char* argv[]) {
   unsigned int* l_colidx;
   unsigned int l_rowcount, l_colcount, l_elements;
   
+  REALTYPE* l_a_dense;
   REALTYPE* l_b;
   REALTYPE* l_c;
   REALTYPE* l_c_gold;
+  REALTYPE* l_c_dense;
   REALTYPE l_max_error = 0.0;
   unsigned int l_m;
   unsigned int l_n;
@@ -180,6 +183,7 @@ int main(int argc, char* argv[]) {
   unsigned int l_j;
   unsigned int l_z;
   unsigned int l_elems;
+  unsigned int l_reps;
 
   struct timeval l_start, l_end;
   double l_total;
@@ -187,30 +191,49 @@ int main(int argc, char* argv[]) {
   /* read sparse A */
   l_csr_file = argv[1];
   l_n = atoi(argv[2]);
-  my_csr_reader(  l_csr_file,
+  l_reps = atoi(argv[3]);
+  if (my_csr_reader(  l_csr_file,
                  &l_rowptr,
                  &l_colidx,
                  &l_a_sp,
-                 &l_rowcount, &l_colcount, &l_elements );
+                 &l_rowcount, &l_colcount, &l_elements ) != 0 ) 
+  {
+    exit(-1);
+  }
   l_m = l_rowcount;
   l_k = l_colcount;
   printf("CSR matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   /* allocate dense matrices */
+  l_a_dense = (REALTYPE*)_mm_malloc(l_k * l_m * sizeof(REALTYPE), 64);
   l_b = (REALTYPE*)_mm_malloc(l_k * l_n * sizeof(REALTYPE), 64);
   l_c = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
   l_c_gold = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_dense = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
     l_b[l_i] = (REALTYPE)drand48();
+  }
+  
+  /* touch dense A */
+  for ( l_i = 0; l_i < l_k*l_m; l_i++) {
+    l_a_dense[l_i] = (REALTYPE)0.0;
+  }
+  /* init dense A using sparse A */
+  for ( l_i = 0; l_i < l_m; l_i++ ) {
+    l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
+    for ( l_z = 0; l_z < l_elems; l_z++ ) {
+      l_a_dense[(l_i*l_k)+l_colidx[l_rowptr[l_i]+l_z]] = l_a_sp[l_rowptr[l_i]+l_z];
+    }
   }
 
   /* touch C */
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
     l_c[l_i] = (REALTYPE)0.0;
     l_c_gold[l_i] = (REALTYPE)0.0;
+    l_c_dense[l_i] = (REALTYPE)0.0;
   }
   
   /* compute golden results */
@@ -226,8 +249,16 @@ int main(int argc, char* argv[]) {
   printf("...done!\n");
 
   /* libxsmm generated code */
-  printf("computing libxsmm solution...\n");
+  printf("computing libxsmm (A sparse) solution...\n");
   libxsmm_code(l_b, l_c);
+  printf("...done!\n");
+
+  /* BLAS code */
+  printf("computing BLAS (A dense) solution...\n");
+  double alpha = 1.0;
+  double beta = 1.0;
+  char trans = 'N';
+  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense, &l_n );
   printf("...done!\n");
 
   /* check for errors */
@@ -237,107 +268,37 @@ int main(int argc, char* argv[]) {
       l_max_error = fabs(l_c[l_i]-l_c_gold[l_i]);
     }
   }
-  printf("max error: %f\n", l_max_error);
-
-#if 0
-  for ( l_n = 0; l_n < (N_ELEMENT_MODES * N_ELEMENT_MODES); l_n++) {
-    l_b_de[l_n] = 0.0;
-  }
-
-  for ( l_n = 0; l_n < N_ELEMENT_MODES; l_n++) {
-    const unsigned int l_rowelems = l_rowptr[l_n+1] - l_rowptr[l_n];
-    assert(l_rowptr[l_n+1] >= l_rowptr[l_n]);
-
-    for ( l_k = 0; l_k < l_rowelems; l_k++) {
-      l_b_de[(l_n * N_ELEMENT_MODES) + l_colidx[l_rowptr[l_n] + l_k]] = l_b_sp[l_rowptr[l_n] + l_k];
-    }
-  }
-
-  /* dense routine */
-  gettimeofday(&l_start, NULL);
-#if 1
-  for ( l_n = 0; l_n < REPS; l_n++) {
-    for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-      for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-        for ( l_jj = 0; l_jj < N_ELEMENT_MODES; l_jj++) {
-          #pragma simd
-          for (l_k = 0; l_k < N_CRUNS; l_k++) {
-            l_p_c_gold[l_i][l_j][l_k] += l_p_a[l_i][l_jj][l_k] * l_b_de[(l_jj*N_ELEMENT_MODES)+l_j];
-          }
-        }
-      }
-    }
-  }
-#endif
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  printf("%fs for dense\n", l_total);
-  printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)N_ELEMENT_MODES * (double)N_ELEMENT_MODES * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
-
-  /* sparse routine */
-  gettimeofday(&l_start, NULL);
-  for ( l_n = 0; l_n < REPS; l_n++) {
-    for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-      for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-        unsigned int l_elems_per_row = l_rowptr[l_j+1] - l_rowptr[l_j];
-        unsigned int l_rowstart = l_rowptr[l_j];
-        for ( l_jj = 0; l_jj < l_elems_per_row; l_jj++) {
-          #pragma simd
-          for (l_k = 0; l_k < N_CRUNS; l_k++) {
-            l_p_c[l_i][l_colidx[l_rowstart+l_jj]][l_k] += l_b_sp[l_rowstart+l_jj] * l_p_a[l_i][l_j][l_k];
-          }
-        }
-      }
-    }
-  }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  printf("%fs for sparse\n", l_total);
-  printf("%f GFLOPS for sparse\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
-
-
-  /* sparse routine */
-  libxsmm_gemm_descriptor l_xgemm_desc;
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 1,
-    (0 == 0 ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
-      | (0 != 0 ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
-      | (0 != 0 ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
-    N_QUANTITIES, N_ELEMENT_MODES, N_ELEMENT_MODES, N_ELEMENT_MODES, 0, N_ELEMENT_MODES,
-    1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  libxsmm_dmmfunction mykernel = libxsmm_create_dcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, l_b_sp );
-
-  gettimeofday(&l_start, NULL);
-  for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel( &(l_p_a[0][0][0]), l_b_sp, &(l_p_c_asm[0][0][0]) );
-  }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  printf("%fs for sparse (asm)\n", l_total);
-  printf("%f GFLOPS for sparse (asm)\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
-  /* check for errors */
-  for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-    for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-      for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        if (fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c[l_i][l_j][l_k]) > l_max_error ) {
-          l_max_error = fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c[l_i][l_j][l_k]);
-        }
-      }
-    }
-  }
-  printf("max error: %f\n", l_max_error);
-
-  /* check for errors */
+  printf("max error (libxmm vs. gold): %f\n", l_max_error);
   l_max_error = (REALTYPE)0.0;
-  for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-    for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-      for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        if (fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c_asm[l_i][l_j][l_k]) > l_max_error ) {
-          l_max_error = fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c_asm[l_i][l_j][l_k]);
-        }
-      }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    if (fabs(l_c_dense[l_i]-l_c_gold[l_i]) > l_max_error ) {
+      l_max_error = fabs(l_c_dense[l_i]-l_c_gold[l_i]);
     }
   }
-  printf("max error: %f\n", l_max_error);
-#endif
+  printf("max error (dense vs. gold): %f\n", l_max_error);
+
+  /* Let's measure performance */
+  gettimeofday(&l_start, NULL);
+  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+    libxsmm_code(l_b, l_c);
+  }
+  gettimeofday(&l_end, NULL);
+  l_total = sec(l_start, l_end);
+  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+
+  gettimeofday(&l_start, NULL);
+  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense, &l_n );
+  }
+  gettimeofday(&l_end, NULL);
+  l_total = sec(l_start, l_end);
+  fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+  
   /* free */
+  /* @TODO */
 }
