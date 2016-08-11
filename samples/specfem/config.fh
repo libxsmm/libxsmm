@@ -1,0 +1,31 @@
+!-------------------------------------------------------------------
+!
+! macros
+!
+!-------------------------------------------------------------------
+
+! LIBXSMM for this test
+#define XSMM
+
+! macros for vectorization
+
+! switches indexing between: array( i,j,k .. ) <-> array( ijk,1,1 .. )
+#ifdef FORCE_VECTORIZATION
+#  define INDEX_IJK  ijk,1,1
+#else
+#  define INDEX_IJK  i,j,k
+#endif
+
+! switches do-loops between: do k=1,NGLLZ; do j=1,NGLLY; do i=1,NGLLX  <-> do ijk=1,NGLLCUBE
+#ifdef FORCE_VECTORIZATION
+#  define DO_LOOP_IJK  do ijk=1,NGLLCUBE
+#else
+#  define DO_LOOP_IJK  do k=1,NGLLZ; do j=1,NGLLY; do i=1,NGLLX
+#endif
+
+! switches enddo-loops between: enddo; enddo; enddo ! NGLLZ,NGLLY,NGLLX <-> enddo ! NGLLCUBE
+#ifdef FORCE_VECTORIZATION
+#  define ENDDO_LOOP_IJK  enddo ! NGLLCUBE
+#else
+#  define ENDDO_LOOP_IJK  enddo; enddo; enddo ! NGLLZ,NGLLY,NGLLX
+#endif
