@@ -35,7 +35,7 @@ int main()
       NULL/*flags*/, NULL/*prefetch*/);
   }
 
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < MAX_NKERNELS; ++i) {
@@ -55,7 +55,7 @@ int main()
 #if defined(_DEBUG)
           fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
 #         pragma omp atomic write
 # else
@@ -68,7 +68,7 @@ int main()
 #if defined(_DEBUG)
           fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
 #endif
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
 #         pragma omp atomic write
 # else
