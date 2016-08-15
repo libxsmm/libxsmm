@@ -52,9 +52,13 @@ int main(int argc, char* argv[])
 
   REAL_TYPE *const a = (REAL_TYPE*)MALLOC(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
   REAL_TYPE *const b = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+  /* validate against result computed by Intel MKL */
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  REAL_TYPE *const c = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+#endif
   const unsigned int size = m * n * sizeof(REAL_TYPE);
   unsigned long long start;
-  libxsmm_blasint i, j;
+  libxsmm_blasint i = 0, j;
   double duration;
 
   fprintf(stdout, "m=%i n=%i lda=%i ldb=%i size=%.fMB (%s, %s)\n", m, n, lda, ldb,
@@ -70,7 +74,10 @@ int main(int argc, char* argv[])
   if (('o' == t || 'O' == t)) {
     start = libxsmm_timer_tick();
     libxsmm_transpose_oop(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
+#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+    /* without Intel MKL, construct an invariant result and check against it */
     libxsmm_transpose_oop(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
+#endif
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   }
   else {
@@ -78,19 +85,25 @@ int main(int argc, char* argv[])
       fprintf(stderr, "In-place transpose assumed!\n");
     }
     start = libxsmm_timer_tick();
-    /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), m, n, lda);
-    libxsmm_transpose_inp(a, sizeof(REAL_TYPE), n, m, lda);*/
+    /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), m, n, lda);*/
+#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+    /* without Intel MKL, construct an invariant result and check against it */
+    /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), n, m, lda);*/
+#endif
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   }
 
+#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+  /* without Intel MKL, check against a known result (invariant) */
   for (i = 0; i < n; ++i) {
     for (j = 0; j < m; ++j) {
       if (initial_value(i, j, m) != a[i*lda+j]) {
-        i = n + 1;
+        i = n + 1; /* leave outer loop as well */
         break;
       }
     }
   }
+#endif
 
   if (i <= n) {
     if (0 < duration) {
@@ -98,30 +111,43 @@ int main(int argc, char* argv[])
     }
     fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
   }
+#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
   else {
     fprintf(stderr, "Validation failed!\n");
   }
-
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#else /* Intel MKL available */
   {
     double mkl_duration;
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1, a, lda, b, ldb);
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', n, m, 1, b, ldb, a, lda);
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1, a, lda, c, ldb);
       mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
     else {
       start = libxsmm_timer_tick();
-      /* TODO */
+      /* TODO: call in-place variant */
       mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
-    if (0 < mkl_duration) {
-      fprintf(stdout, "\tMKL: %.1fx\n", duration / mkl_duration);
+    /* validate against result computed by Intel MKL */
+    for (i = 0; i < m; ++i) {
+      for (j = 0; j < n; ++j) {
+        if (b[i*ldb+j] != c[i*ldb+j]) {
+          i = m + 1; /* leave outer loop as well */
+          break;
+        }
+      }
+    }
+    if (i <= m) {
+      if (0 < mkl_duration) {
+        fprintf(stdout, "\tMKL: %.1fx\n", duration / mkl_duration);
+      }
+    }
+    else {
+      fprintf(stderr, "Validation failed!\n");
     }
   }
+  FREE(c);
 #endif
-
   FREE(a);
   FREE(b);
 
