@@ -344,6 +344,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_desc_extra_type {
           flux_entry.pmm = 0; \
         } \
       } \
+      else { \
+        diff = 0; \
+      } \
       INTERNAL_FIND_CODE_JIT(DESCRIPTOR, CODE, flux_entry) \
       { \
         diff = 0; \
