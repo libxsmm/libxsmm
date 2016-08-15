@@ -5,6 +5,10 @@
 # define MAX_NKERNELS 1000
 #endif
 
+#if !defined(USE_PARALLEL_JIT)
+# define USE_PARALLEL_JIT
+#endif
+
 
 int main()
 {
@@ -20,9 +24,12 @@ int main()
     libxsmm_init();
   }
 
+#if defined(_OPENMP) && defined(USE_PARALLEL_JIT)
+# pragma omp parallel for private(i)
+#endif
   for (i = 0; i < MAX_NKERNELS; ++i) {
     const libxsmm_blasint m = 23, n = 23, k = (i / 50) % 23 + 1;
-    /* playing ping-pong with fi's cache line is not the subject */
+    /* OpenMP: playing ping-pong with fi's cache line is not the subject */
     f[i] = libxsmm_smmdispatch(m, n, k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       NULL/*flags*/, NULL/*prefetch*/);
