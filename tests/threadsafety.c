@@ -1,4 +1,5 @@
 #include <libxsmm.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
@@ -15,7 +16,7 @@ int main()
   /* we do not care about the initial values */
   /*const*/ float a[23*23], b[23*23];
   libxsmm_smmfunction f[MAX_NKERNELS];
-  int result = 0, i;
+  int result = EXIT_SUCCESS, i;
 
 #if defined(_OPENMP)
 # pragma omp parallel for default(none) private(i)
@@ -39,7 +40,7 @@ int main()
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < MAX_NKERNELS; ++i) {
-    if (0 == result) {
+    if (EXIT_SUCCESS == result) {
       const libxsmm_blasint m = 23, n = 23, k = (i / 50) % 23 + 1;
       float c[23/*m*/*23/*n*/];
 
@@ -62,21 +63,13 @@ int main()
 #         pragma omp critical
 # endif
 #endif
-          result = i + 2;
+          result = EXIT_FAILURE;
         }
-        else { /* did not find previously generated and recorded kernel */
 #if defined(_DEBUG)
+        else { /* did not find previously generated and recorded kernel */
           fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
-#endif
-#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
-# if (201107 <= _OPENMP)
-#         pragma omp atomic write
-# else
-#         pragma omp critical
-# endif
-#endif
-          result = 1;
         }
+#endif
       }
       else {
         libxsmm_sgemm(NULL/*transa*/, NULL/*transb*/, &m, &n, &k,
