@@ -178,10 +178,10 @@ void run_test() {
     int l_ldb = MY_LDB;
     int l_ldc = MY_LDC;
     if (sizeof(REALTYPE) == sizeof(double)) {
-      double l_one = 1.0;    
-      dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_a, &l_lda, (double*)l_b, &l_ldb, &l_one, (double*)l_c_gold, &l_ldc); 
+      double l_one = 1.0;
+      dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_a, &l_lda, (double*)l_b, &l_ldb, &l_one, (double*)l_c_gold, &l_ldc);
     } else {
-      float l_one = 1.0f;    
+      float l_one = 1.0f;
       sgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (float*)l_a, &l_lda, (float*)l_b, &l_ldb, &l_one, (float*)l_c_gold, &l_ldc);
     }
   }
@@ -193,7 +193,7 @@ void run_test() {
       l_c_gold[(l_j * MY_LDC) + l_i] = (REALTYPE)0.0;
     }
   }
-#endif   
+#endif
 
   /* C routine */
   gettimeofday(&l_start, NULL);
@@ -242,14 +242,14 @@ void run_test() {
 #else
         REALTYPE* l_p_a = l_a;
         REALTYPE* l_p_b = l_b;
-#endif 
+#endif
         dgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (double*)l_p_a, &l_lda, (double*)l_p_b, &l_ldb, &l_one, (double*)l_c_gold, &l_ldc);
 #ifdef STREAM_A_B
       }
 #endif
-    } 
+    }
   } else {
-    float l_one = 1.0f;   
+    float l_one = 1.0f;
     for ( l_t = 0; l_t < REPS; l_t++  ) {
 #ifdef STREAM_A_B
       REALTYPE* l_p_a = l_a - (MY_K * MY_LDA);
@@ -260,7 +260,7 @@ void run_test() {
 #else
         REALTYPE* l_p_a = l_a;
         REALTYPE* l_p_b = l_b;
-#endif  
+#endif
         sgemm(&l_trans, &l_trans, &l_M, &l_N, &l_K, &l_one, (float*)l_p_a, &l_lda, (float*)l_p_b, &l_ldb, &l_one, (float*)l_c_gold, &l_ldc);
 #ifdef STREAM_A_B
       }
@@ -269,7 +269,7 @@ void run_test() {
   }
 #endif
   gettimeofday(&l_end, NULL);
-  
+
   l_total = sec(l_start, l_end);
 #ifndef __USE_MKL
   printf("%fs for C\n", l_total);
@@ -310,7 +310,7 @@ void run_test() {
     }
 #endif
   }
-  size_t l_cyc_end = _rdtsc();  
+  size_t l_cyc_end = _rdtsc();
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
 

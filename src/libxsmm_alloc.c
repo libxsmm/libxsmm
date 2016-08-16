@@ -436,7 +436,8 @@ LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags
   if (0 != buffer && EXIT_SUCCESS == result) {
     if (0 != (LIBXSMM_ALLOC_FLAG_X & alloc_flags) && name && *name) {
       FILE *const code_file = (0 > libxsmm_get_verbose_mode() ? fopen(name, "wb") : 0);
-      if (0 != code_file) { /* dump byte-code into a file */
+      if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
+        fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory, name);
         fwrite(memory, 1, size, code_file);
         fclose(code_file);
       }

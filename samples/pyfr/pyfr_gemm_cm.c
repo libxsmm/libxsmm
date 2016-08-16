@@ -53,9 +53,9 @@ int main(int argc, char *argv[])
   const int nblock = 16;
   double alpha = 1.0, beta = 1.0;
   char transa = 'N', transb = 'N';
-  libxsmm_prefetch_type l_prefetch_op = LIBXSMM_PREFETCH_NONE;
+  libxsmm_gemm_prefetch_type l_prefetch_op = LIBXSMM_PREFETCH_NONE;
   libxsmm_dmmfunction kernel = NULL;
-  
+
   if (argc != 5) {
     fprintf(stderr, "Invalid ./a,out M N K reps\n");
     //fprintf(stderr, "Invalid ./a,out M N K\n");
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   n = atoi(argv[2]);
   k = atoi(argv[3]);
   reps = atoi(argv[4]);
-  // this is col-major what you want to use 
+  // this is col-major what you want to use
   // for the sizes in question
   lda = m;
   ldb = k;
@@ -85,12 +85,12 @@ int main(int argc, char *argv[])
   #pragma omp parallel for
   for (i = 0; i < lda*k; i++) {
     a[i] = drand48();
-  } 
+  }
 
   #pragma omp parallel for
   for (i = 0; i < ldb*n; i++) {
     b[i] = drand48();
-  } 
+  }
 
   #pragma omp parallel for
   for (i = 0; i < ldc*n; i++) {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   // init MKL
   dgemm(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c1, &ldc);
- 
+
   #pragma omp parallel for
   for (i = 0; i < ldc*n; i++) {
     c1[i] = 0;

@@ -54,9 +54,6 @@
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm_ext.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -117,6 +114,36 @@
     <ClInclude Include="..\src\libxsmm_ext_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_conv.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_source.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_forward_avx2.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_forward_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_backward_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_main.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_conv_fwd.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -126,9 +153,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_common.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_x86_instructions.c">
@@ -206,6 +230,36 @@
     <ClCompile Include="..\src\libxsmm_ext_gemm.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_forward_avx2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_forward_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_backward_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_common.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_conv.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_main.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_conv_fwd.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\libxsmm.template.f">
@@ -234,6 +288,13 @@
     <None Include="..\.codecov" />
     <None Include="..\.env" />
     <None Include="..\Makefile.inc" />
+    <None Include="..\scripts\libxsmm_source.sh">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\.gitconfig" />
+    <None Include="..\.gitattributes" />
+    <None Include="..\.state.sh" />
+    <None Include="..\LICENSE" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

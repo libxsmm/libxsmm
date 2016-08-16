@@ -29,12 +29,19 @@
   <ItemGroup>
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
+    <ClInclude Include="..\include\libxsmm_conv.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
+    <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
+    <ClInclude Include="..\src\generator_convolution_backward_avx512.h" />
+    <ClInclude Include="..\src\generator_convolution_common.h" />
+    <ClInclude Include="..\src\generator_convolution_forward_avx2.h" />
+    <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
+    <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h" />
@@ -48,23 +55,31 @@
     <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_asparse.h" />
+    <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_alloc.h" />
+    <ClInclude Include="..\src\libxsmm_conv_fwd.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_ext_gemm.h" />
-    <ClInclude Include="..\src\libxsmm_gemm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
     <ClInclude Include="..\src\libxsmm_intrinsics_x86.h" />
+    <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_sync.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
+    <ClCompile Include="..\src\generator_convolution.c" />
+    <ClCompile Include="..\src\generator_convolution_backward_avx512.c" />
+    <ClCompile Include="..\src\generator_convolution_common.c" />
+    <ClCompile Include="..\src\generator_convolution_forward_avx2.c" />
+    <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
+    <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c" />
@@ -80,11 +95,13 @@
     <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
+    <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
-    <ClCompile Include="..\src\libxsmm.c" />
     <ClCompile Include="..\src\libxsmm_alloc.c" />
+    <ClCompile Include="..\src\libxsmm_conv.c" />
+    <ClCompile Include="..\src\libxsmm_conv_fwd.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
@@ -111,6 +128,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
     <ClCompile Include="..\src\libxsmm_transpose.c" />
@@ -118,15 +136,20 @@
   <ItemGroup>
     <None Include="..\.codecov" />
     <None Include="..\.env" />
+    <None Include="..\.gitattributes" />
+    <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
+    <None Include="..\.state.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
+    <None Include="..\LICENSE" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
     <None Include="..\README.md" />
     <None Include="..\README.sh" />
     <None Include="..\scripts\libxsmm_dispatch.py" />
     <None Include="..\scripts\libxsmm_interface.py" />
+    <None Include="..\scripts\libxsmm_source.sh" />
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
     <None Include="..\src\libxsmm.template.f" />

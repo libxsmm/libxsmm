@@ -40,7 +40,7 @@
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
  * @param i_arch architecture code was generated for (needed to build clobber)
- * @param i_prefetch prefetch mode which may result in addtional gp reg inits
+ * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
@@ -54,7 +54,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
  * @param i_arch architecture code was generated for (needed to build clobber)
- * @param i_prefetch prefetch mode which may result in addtional gp reg clobbers
+ * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
@@ -74,7 +74,7 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
  * @param i_vector_name the vector register name prefix (x, y or z)
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_mask_reg_number the mask register to be used
- * @param i_is_store 0: load semantik, other: store semantik
+ * @param i_is_store 0: load semantic, other: store semantic
  */
 LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
@@ -167,7 +167,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_vec_reg_idx the index vector registers (ymm0-15 AVX2) (zmm0-zmm32 AVX512)
- * @param i_scale the scaling of the indecies in i_vec_reg_idx
+ * @param i_scale the scaling of the indexes in i_vec_reg_idx
  * @param i_displacement the offset to the base address
  * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_mask_reg_number the mask register (xmm/ymm: 0-15 when using AVX2), (k1-k7 when using AVX512)
@@ -303,6 +303,34 @@ LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                  const unsigned int          i_jmp_instr,
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
+
+/**
+ * @TODO: clean-up
+ * Opens the inline assembly section / jit stream for convolutions, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*                   io_generated_code,
+                                                      const unsigned int                        i_gp_reg_input,
+                                                      const unsigned int                        i_gp_reg_weight,
+                                                      const unsigned int                        i_gp_reg_output,
+                                                      const unsigned int                        i_gp_reg_input_pf,
+                                                      const unsigned int                        i_gp_reg_weight_pf,
+                                                      const unsigned int                        i_gp_reg_output_pf,
+                                                      const char*                               i_arch );
+
+/**
+ * @TODO: clean-up
+ * Closes the inline assembly section / jit stream for convolutions, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*       io_generated_code,
+                                                const char*                   i_arch );
 
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */
 

@@ -174,7 +174,7 @@ void run_jit_double( const double*               i_a,
                      const int                   i_M,
                      const int                   i_N,
                      const int                   i_K,
-                     const libxsmm_prefetch_type i_prefetch,
+                     const libxsmm_gemm_prefetch_type i_prefetch,
                      const char*                 i_arch ) {
 
   /* define function pointer */
@@ -224,7 +224,7 @@ void run_jit_float( const float*               i_a,
                     const int                   i_M,
                     const int                   i_N,
                     const int                   i_K,
-                    const libxsmm_prefetch_type i_prefetch,
+                    const libxsmm_gemm_prefetch_type i_prefetch,
                     const char*                 i_arch ) {
 
   /* define function pointer */
@@ -246,7 +246,7 @@ void run_jit_float( const float*               i_a,
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_smmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
-  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());  
+  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("function pointer address: %llx\n", (size_t)l_test_jit);
 
   l_start = libxsmm_timer_tick();
@@ -320,17 +320,17 @@ int main(int argc, char* argv []) {
   int l_alpha = 0;
   int l_beta = 0;
   int l_single_precision = 0;
-  libxsmm_prefetch_type l_prefetch = 0;
+  libxsmm_gemm_prefetch_type l_prefetch = 0;
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
-  double* l_a_d; 
-  double* l_b_d; 
-  double* l_c_d; 
+  double* l_a_d;
+  double* l_b_d;
+  double* l_c_d;
   double* l_c_gold_d;
   float* l_a_f;
-  float* l_b_f; 
-  float* l_c_f; 
+  float* l_b_f;
+  float* l_c_f;
   float* l_c_gold_f;
 
   /* check argument count for a valid range */
@@ -389,12 +389,12 @@ int main(int argc, char* argv []) {
   else {
     print_help();
     return -1;
-  }  
+  }
 
   /* check value of arch flag */
-  if ( (strcmp(l_arch, "snb") != 0)    && 
-       (strcmp(l_arch, "hsw") != 0)    && 
-       (strcmp(l_arch, "knl") != 0)    && 
+  if ( (strcmp(l_arch, "snb") != 0)    &&
+       (strcmp(l_arch, "hsw") != 0)    &&
+       (strcmp(l_arch, "knl") != 0)    &&
        (strcmp(l_arch, "skx") != 0)       ) {
     print_help();
     return -1;
@@ -458,15 +458,15 @@ int main(int argc, char* argv []) {
     run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
   } else {
     run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
-  }  
+  }
 
   /* run jit */
   if ( l_single_precision == 0 ) {
     run_jit_double( l_a_d, l_b_d, l_c_d, l_m, l_n, l_k, l_prefetch, l_arch );
   } else {
     run_jit_float( l_a_f, l_b_f, l_c_f, l_m, l_n, l_k, l_prefetch, l_arch );
-  }  
- 
+  }
+
   /* test result */
   if ( l_single_precision == 0 ) {
     max_error_double( l_c_d, l_c_gold_d, &l_xgemm_desc );

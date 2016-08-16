@@ -258,6 +258,87 @@ typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_5;
 } libxsmm_gp_reg_mapping;
 
+/* convolution kernel config */
+typedef struct libxsmm_convolution_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  unsigned int vector_length;
+  unsigned int datatype_size;
+  unsigned int vmove_instruction;
+  unsigned int vfma_instruction;
+  unsigned int vxor_instruction;
+  unsigned int vadd_instruction;
+  unsigned int prefetch_instruction;
+  unsigned int alu_add_instruction;
+  unsigned int alu_mul_instruction;
+  unsigned int alu_sub_instruction;
+  unsigned int alu_cmp_instruction;
+  unsigned int alu_jmp_instruction;
+  unsigned int alu_mov_instruction;
+  char vector_name;
+} libxsmm_convolution_kernel_config;
+
+/* struct for storing the current gp reg mapping for convolution */
+typedef struct libxsmm_convolution_forward_gp_reg_mapping_struct {
+  unsigned int gp_reg_input;
+  unsigned int gp_reg_weight;
+  unsigned int gp_reg_output;
+  unsigned int gp_reg_input_pf;
+  unsigned int gp_reg_weight_pf;
+  unsigned int gp_reg_output_pf;
+  unsigned int gp_reg_kw_loop;
+  unsigned int gp_reg_kh_loop;
+  unsigned int gp_reg_ifmInner_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+  unsigned int gp_reg_help_6;
+} libxsmm_convolution_forward_gp_reg_mapping;
+
+/* struct for storing the current gp reg mapping for convolution */
+typedef struct libxsmm_convolution_backward_gp_reg_mapping_struct {
+  unsigned int gp_reg_input;
+  unsigned int gp_reg_weight;
+  unsigned int gp_reg_output;
+  unsigned int gp_reg_input_pf;
+  unsigned int gp_reg_weight_pf;
+  unsigned int gp_reg_output_pf;
+  unsigned int gp_reg_kw_loop;
+  unsigned int gp_reg_oi_loop;
+  unsigned int gp_reg_kh_loop;
+  unsigned int gp_reg_ofmInner_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+  unsigned int gp_reg_help_6;
+} libxsmm_convolution_backward_gp_reg_mapping;
+
+/* struct for storing the current gp reg mapping for convolution */
+typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {
+  unsigned int gp_reg_input;
+  unsigned int gp_reg_weight;
+  unsigned int gp_reg_output;
+  unsigned int gp_reg_input_pf;
+  unsigned int gp_reg_weight_pf;
+  unsigned int gp_reg_output_pf;
+  unsigned int gp_reg_ifmInner_loop;
+  unsigned int gp_reg_oj_loop;
+  unsigned int gp_reg_oi_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+  unsigned int gp_reg_help_6;
+} libxsmm_convolution_weight_update_gp_reg_mapping;
+
 /* struct for tracking local labels in assembly
    we don't allow overlapping loops */
 typedef struct libxsmm_loop_label_tracker_struct {
@@ -321,4 +402,9 @@ void libxsmm_strncpy( char*        o_dest,
                       unsigned int i_dest_length,
                       unsigned int i_src_length );
 
+LIBXSMM_INTERNAL_API
+void libxsmm_convfunction_signature( libxsmm_generated_code*         io_generated_code,
+                                     const char*                     i_routine_name     );
+
 #endif /* GENERATOR_COMMON_H */
+

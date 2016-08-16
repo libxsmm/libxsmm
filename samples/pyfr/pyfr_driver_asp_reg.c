@@ -164,11 +164,11 @@ int main(int argc, char* argv[]) {
   }
 
   char* l_csr_file;
-  REALTYPE* l_a_sp; 
+  REALTYPE* l_a_sp;
   unsigned int* l_rowptr;
   unsigned int* l_colidx;
   unsigned int l_rowcount, l_colcount, l_elements;
-  
+
   REALTYPE* l_a_dense;
   REALTYPE* l_b;
   REALTYPE* l_c;
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
                  &l_rowptr,
                  &l_colidx,
                  &l_a_sp,
-                 &l_rowcount, &l_colcount, &l_elements ) != 0 ) 
+                 &l_rowcount, &l_colcount, &l_elements ) != 0 )
   {
     exit(-1);
   }
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
     l_b[l_i] = (REALTYPE)drand48();
   }
-  
+
   /* touch dense A */
   for ( l_i = 0; l_i < l_k*l_m; l_i++) {
     l_a_dense[l_i] = (REALTYPE)0.0;
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
     l_c_gold[l_i] = (REALTYPE)0.0;
     l_c_dense[l_i] = (REALTYPE)0.0;
   }
-  
+
   /* compute golden results */
   printf("computing golden solution...\n");
   for ( l_j = 0; l_j < l_n; l_j++ ) {
@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
-  
+
   /* free */
   /* @TODO */
 }

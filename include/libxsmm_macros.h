@@ -50,7 +50,7 @@
 #else
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
-# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__)) /*C99*/
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
@@ -152,6 +152,13 @@
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_N(N)
 # define LIBXSMM_PRAGMA_UNROLL
+#endif
+
+/* For VLAs, check EXACTLY for C99 since a C11-conformant compiler may not provide VLAs */
+#if !defined(LIBXSMM_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
+   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || \
+     defined(__INTEL_COMPILER))
+# define LIBXSMM_VLA
 #endif
 
 #if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
@@ -273,7 +280,7 @@
 # define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
 # define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
 #else
-# if defined(__STDC_VERSION__) && (199901L <= (__STDC_VERSION__))
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)
 #   define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 # else
 #   define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
@@ -322,7 +329,7 @@
 # if !defined(__extern_always_inline)
 #   define __extern_always_inline LIBXSMM_INLINE_KEYWORD
 # endif
-# if !defined(__cplusplus) && (199901L > (__STDC_VERSION__))
+# if !defined(__cplusplus) && (199901L > __STDC_VERSION__)
 #   define inline LIBXSMM_INLINE_KEYWORD
 # endif
 #endif

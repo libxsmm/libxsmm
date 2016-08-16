@@ -63,7 +63,6 @@
 $LIBXSMM_OFFLOAD_BUILD
 #include "libxsmm_frontend.h"
 
-
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 #if (0 != LIBXSMM_ILP64)
 typedef long long libxsmm_blasint;
@@ -75,12 +74,8 @@ typedef int libxsmm_blasint;
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
-
-/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
-  libxsmm_smmfunction smm;
-  libxsmm_dmmfunction dmm;
-} libxsmm_xmmfunction;
+/** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);
@@ -128,14 +123,14 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
  * wide vector) and a sparse matrix. There is no code cache, and user code has to manage the code pointers.
- * Call libxsmm_destroy in order to deallocate the JIT'ted code.
+ * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  * @TODO: This is not great, probably need to declare values as void pointer
  */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
-LIBXSMM_API void libxsmm_destroy(const void* jit_code);
+LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
 
 /** Transpose a matrix (out-of-place form). */
 LIBXSMM_API void libxsmm_transpose_oop(void* out, const void* in, unsigned int typesize,

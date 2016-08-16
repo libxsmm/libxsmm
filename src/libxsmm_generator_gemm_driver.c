@@ -234,7 +234,7 @@ int main(int argc, char* argv []) {
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
 
-  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 || 
+  if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ||
        strcmp(l_type, "sparse_csr_reg") == 0 || strcmp(l_type, "sparse_csr_soa") == 0 ) {
     /* read additional paramter for CSC/CSR description */
     l_matrix_file_in = argv[17];

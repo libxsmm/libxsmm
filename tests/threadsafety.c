@@ -73,7 +73,7 @@ int main()
       }
       else {
         libxsmm_sgemm(NULL/*transa*/, NULL/*transb*/, &m, &n, &k,
-          NULL/*alpha*/, a, NULL/*lda*/, b, NULL/*ldb*/, 
+          NULL/*alpha*/, a, NULL/*lda*/, b, NULL/*ldb*/,
           NULL/*beta*/, c, NULL/*ldc*/);
       }
     }

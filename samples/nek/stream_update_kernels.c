@@ -42,12 +42,12 @@ void stream_init( int    i_length,
                   size_t i_start_address,
                   int*   o_trip_prolog,
                   int*   o_trip_stream    ) {
-  /* let's calculate the prolog until C is cachline aligned */ 
+  /* let's calculate the prolog until C is cachline aligned */
   /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {
     *o_trip_prolog = (64 - (i_start_address % 64))/sizeof(double);
   }
-  
+
   /* let's calculate the end of the streaming part */
   /* @TODO we need to add shifts */
   *o_trip_stream = (((i_length-(*o_trip_prolog))/sizeof(double))*sizeof(double))+(*o_trip_prolog);
@@ -64,7 +64,7 @@ void stream_vector_copy( const double* i_a,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  
+
   /* init the trip counts */
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
@@ -75,7 +75,7 @@ void stream_vector_copy( const double* i_a,
   /* run the bulk, hopefully using streaming stores */
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
-    /* we need manual unrolling as the compiler otherwise generates 
+    /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
 #ifdef DISABLE_NONTEMPORAL_STORES
@@ -115,7 +115,7 @@ void stream_vector_set( const double i_scalar,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  
+
   /* init the trip counts */
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
@@ -126,7 +126,7 @@ void stream_vector_set( const double i_scalar,
   /* run the bulk, hopefully using streaming stores */
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
-    /* we need manual unrolling as the compiler otherwise generates 
+    /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
     const __m256d vec_scalar = _mm256_broadcast_sd(&i_scalar);
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
@@ -170,7 +170,7 @@ void stream_vector_compscale( const double* i_a,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  
+
   /* init the trip counts */
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
@@ -181,7 +181,7 @@ void stream_vector_compscale( const double* i_a,
   /* run the bulk, hopefully using streaming stores */
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
-    /* we need manual unrolling as the compiler otherwise generates 
+    /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m256d vec_a_1, vec_b_1;
@@ -230,7 +230,7 @@ void stream_vector_compscale( const double* i_a,
 LIBXSMM_API
 void stream_update_helmholtz( const double* i_g1,
                               const double* i_g2,
-                              const double* i_g3, 
+                              const double* i_g3,
                               const double* i_tm1,
                               const double* i_tm2,
                               const double* i_tm3,
@@ -243,7 +243,7 @@ void stream_update_helmholtz( const double* i_g1,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  
+
   /* init the trip counts */
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
@@ -253,7 +253,7 @@ void stream_update_helmholtz( const double* i_g1,
 */
   {
     for ( ; l_n < l_trip_prolog;  l_n++ ) {
-      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
+      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2*(i_b[l_n]*i_a[l_n]);
     }
   }
@@ -291,7 +291,7 @@ void stream_update_helmholtz( const double* i_g1,
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
     const __m256d vec_h2 = _mm256_broadcast_sd(&i_h2);
-    /* we need manual unrolling as the compiler otherwise generates 
+    /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m256d vec_g1_1, vec_g2_1, vec_g3_1, vec_tm1_1, vec_tm2_1, vec_tm3_1, vec_a_1, vec_b_1;
@@ -380,7 +380,7 @@ void stream_update_helmholtz( const double* i_g1,
   }
 #else
   for ( ; l_n < l_trip_stream;  l_n++ ) {
-    io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
+    io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
 #endif
@@ -390,7 +390,7 @@ void stream_update_helmholtz( const double* i_g1,
 */
   {
     for ( ; l_n < i_length;  l_n++ ) {
-      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]) 
+      io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2*(i_b[l_n]*i_a[l_n]);
     }
   }
@@ -428,7 +428,7 @@ void stream_update_helmholtz( const double* i_g1,
 LIBXSMM_API
 void stream_update_helmholtz_no_h2( const double* i_g1,
                                     const double* i_g2,
-                                    const double* i_g3, 
+                                    const double* i_g3,
                                     const double* i_tm1,
                                     const double* i_tm2,
                                     const double* i_tm3,
@@ -438,10 +438,10 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
-  
+
   /* init the trip counts */
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
-  
+
   /* run the prologue */
   for ( ; l_n < l_trip_prolog;  l_n++ ) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
@@ -450,7 +450,7 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
 #if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(&i_h1);
-    /* we need manual unrolling as the compiler otherwise generates 
+    /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
     for ( ; l_n < l_trip_stream;  l_n+=8 ) {
       __m256d vec_g1_1, vec_g2_1, vec_g3_1, vec_tm1_1, vec_tm2_1, vec_tm3_1;

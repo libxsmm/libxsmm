@@ -15,6 +15,7 @@ ide/r*ah
 tmp
 .state
 .make
+keywords.txt
 notes.txt
 err*.txt
 out*.txt

@@ -9,7 +9,7 @@ RM=$(which rm)
 
 if [ -e ${GIT_DIR}/hooks ]; then
   # make sure the path to .gitconfig is a relative path
-  ${GIT} config --local include.path ../.gitconfig
+  ${GIT} config --local include.path ../.gitconfig 2> /dev/null
   ${CP} ${HERE}/pre-commit ${GIT_DIR}/hooks
   ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks
   #${CP} ${HERE}/post-merge ${GIT_DIR}/hooks

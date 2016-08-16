@@ -61,7 +61,7 @@ typedef enum libxsmm_gemm_flags {
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */
-typedef enum libxsmm_prefetch_type {
+typedef enum libxsmm_gemm_prefetch_type {
   /** Automatically select strategy (frontend). */
   LIBXSMM_PREFETCH_AUTO               = -1,
   /** No prefetching and no prefetch fn. signature. */
@@ -82,7 +82,131 @@ typedef enum libxsmm_prefetch_type {
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2 | LIBXSMM_PREFETCH_CL2,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
-} libxsmm_prefetch_type;
+} libxsmm_gemm_prefetch_type;
 
+/* compatible for all older codes */
+typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type;
+
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_convolution_prefetch_type {
+  /** no prefetch */
+  LIBXSMM_CONVOLUTION_PREFETCH_NONE = 0,
+  /** prefetch input into L1 */
+  LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 = 1,
+  /** prefetch weight into L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 = 2,
+  /** prefetch output into L1 */
+  LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 = 4,
+
+  /** prefetch weight into L1 */
+  LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 = 8,
+  /** prefetch output into L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 = 16,
+  /** prefetch input into L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 = 32,
+
+  /** combination 1: all */
+  LIBXSMM_CONVOLUTION_PREFETCH_ALL = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
+
+  /** combination 2: no weight */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1,
+  /** combination 3: no output */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2,
+  /** combination 4: no output L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1  | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
+  /** combination 5: no input L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 ,
+  /** combination 7: no output L2  and no input L2*/
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_INPUT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ,
+  /** combination 8: no output L2  and no input L2 and no weight L2*/
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_INPUT_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1,
+  /** combination 9: no output L2 no weight L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1  | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
+
+  /** combination 10: no input and no output L1 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_INPUT_L1 = LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
+  
+  /** combination 11: no weight L2 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
+  /** combination 12: no input L1 */
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L1 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2,
+
+  /** combination 12: no input L1 no weight L2*/
+  LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L1_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2
+} libxsmm_convolution_prefetch_type;
+
+/**
+ * Structure storing the convolution argument description.
+ */
+typedef struct libxsmm_convolution_forward_descriptor {
+  unsigned int kh;                              /* kernel height */
+  unsigned int kw;                              /* kernel width */
+  unsigned int unroll_kh;                       /* kernel height, unrolled */
+  unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int ofm_block;                       /* should be VLEN */
+  unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ofh_padded;                      /* this we need for 2D register block */
+  unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int ofh_rb;                          /* UR, register block of ofh */
+  unsigned int ofw_rb;                          /* UR, register block of ofw */
+  unsigned int ifh_padded;                      /* this we need for 2D register block */
+  unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int stride_h;                        /* this we use for offsets in the input */
+  unsigned int stride_w;                        /* this we use for offsets in the input */
+  libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
+} libxsmm_convolution_forward_descriptor;
+
+/**
+ * Structure storing the convolution backward argument description.
+ */
+typedef struct libxsmm_convolution_backward_descriptor {
+  unsigned int kw;                              /* kernel width */
+  unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int ofm_block;                       /* should be VLEN */
+  unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ofh_padded;                      /* this we need for 2D register block */
+  unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int ofh_rb;                          /* UR, register block of ofh */
+  unsigned int ofw_rb;                          /* UR, register block of ofw */
+  unsigned int ifh_padded;                      /* this we need for 2D register block */
+  unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int stride_h;                        /* this we use for offsets in the input */
+  unsigned int stride_w;                        /* this we use for offsets in the input */
+
+  unsigned int ofw;                             /* upper bound for oi loop */
+  unsigned int ofw_unroll;                      /* this we use for ofw unroll factor */
+  unsigned int kh;                              /* kernel height */
+  unsigned int unroll_kh;                       /* kernel height, unrolled */
+  unsigned int peeled;                          /* generate multi version code for peeled and non-peeled loop -- that avoids conditional in back propagation */
+
+  unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */ 
+
+  libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
+} libxsmm_convolution_backward_descriptor;
+/**
+ * Structure storing the convolution weight update argument description.
+ */
+typedef struct libxsmm_convolution_weight_update_descriptor {
+  unsigned int kw;                              /* kernel width */
+  unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int ofm_block;                       /* should be VLEN */
+  unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ofh_padded;                      /* this we need for 2D register block */
+  unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int ofh_rb;                          /* UR, register block of ofh */
+  unsigned int ofw_rb;                          /* UR, register block of ofw */
+  unsigned int ifh_padded;                      /* this we need for 2D register block */
+  unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int stride_h;                        /* this we use for offsets in the input */
+  unsigned int stride_w;                        /* this we use for offsets in the input */
+
+  unsigned int ifm_unroll;                      /* this we use to unroll ifm loop */
+  unsigned int ofh;                             /* upper bound of oj loop */
+  unsigned int ofh_unroll;                      /* this we use to unroll ofh loop */
+  unsigned int ofw;                             /* upper bound of oi loop */
+  unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
+
+  libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
+} libxsmm_convolution_weight_update_descriptor;
 #endif /*LIBXSMM_TYPEDEFS_H*/
 
