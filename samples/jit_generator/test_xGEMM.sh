@@ -4,7 +4,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -84,7 +84,7 @@ do
     do
       lda=$m
       ldb=$k
-      ldc=$m 
+      ldc=$m
       ./xgemm_icc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
 #      ./xgemm_gcc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
     done

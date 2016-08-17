@@ -238,6 +238,24 @@
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
+#define LIBXSMM_CALC_SIZE1(TYPE, VARIABLE, NDIMS, SHAPE, INIT) { \
+  unsigned int libxsmm_calc_size1_i_ = 0; \
+  VARIABLE = LIBXSMM_MAX(INIT, 1); \
+  LIBXSMM_REPEAT(NDIMS, \
+    VARIABLE *= (TYPE)((SHAPE)[libxsmm_calc_size1_i_]); \
+    ++libxsmm_calc_size1_i_;) \
+}
+/* TODO: LIBXSMM_CALC_INDEX1 plus PITCH */
+#define LIBXSMM_CALC_INDEX1(TYPE, VARIABLE, NDIMS, INDEXN, SHAPE) { \
+  unsigned int libxsmm_calc_index1_i_ = 0; \
+  TYPE libxsmm_calc_index1_size_ = 1; \
+  VARIABLE = 0; \
+  LIBXSMM_REPEAT(NDIMS, \
+    VARIABLE += libxsmm_calc_index1_size_ * ((TYPE)(INDEXN)[libxsmm_calc_index1_i_]); \
+    libxsmm_calc_index1_size_ *= (TYPE)((SHAPE)[libxsmm_calc_index1_i_]); \
+    ++libxsmm_calc_index1_i_;) \
+}
+
 #if !defined(LIBXSMM_UNUSED)
 # if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))

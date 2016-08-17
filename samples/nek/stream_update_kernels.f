@@ -35,7 +35,7 @@ MODULE STREAM_UPDATE_KERNELS
 
   INTERFACE
     SUBROUTINE stream_update_helmholtz( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
-                                        i_a, i_b, io_c, i_h1, i_h2, i_length ) & 
+                                        i_a, i_b, io_c, i_h1, i_h2, i_length ) &
                                       BIND(C, name='stream_update_helmholtz')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
@@ -53,7 +53,7 @@ MODULE STREAM_UPDATE_KERNELS
     END SUBROUTINE
 
     SUBROUTINE stream_update_helmholtz_no_h2( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
-                                              io_c, i_h1, i_length ) & 
+                                              io_c, i_h1, i_length ) &
                                             BIND(C, name='stream_update_helmholtz_no_h2')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
@@ -67,7 +67,7 @@ MODULE STREAM_UPDATE_KERNELS
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
 
-    SUBROUTINE stream_vector_compscale( i_a, i_b, io_c, i_length ) & 
+    SUBROUTINE stream_vector_compscale( i_a, i_b, io_c, i_length ) &
                                             BIND(C, name='stream_vector_compscale')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_a
@@ -76,7 +76,7 @@ MODULE STREAM_UPDATE_KERNELS
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
 
-    SUBROUTINE stream_vector_copy( i_a, io_c, i_length ) & 
+    SUBROUTINE stream_vector_copy( i_a, io_c, i_length ) &
                                             BIND(C, name='stream_vector_copy')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_a
@@ -84,7 +84,7 @@ MODULE STREAM_UPDATE_KERNELS
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
 
-    SUBROUTINE stream_vector_set( i_scalar, io_c, i_length ) & 
+    SUBROUTINE stream_vector_set( i_scalar, io_c, i_length ) &
                                             BIND(C, name='stream_vector_set')
       IMPORT :: C_DOUBLE, C_INT
       REAL(KIND=C_DOUBLE), VALUE,        INTENT(IN)    :: i_scalar

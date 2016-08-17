@@ -28,17 +28,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*
  * Copyright (c) 2013-2014, SeisSol Group
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
@@ -93,7 +93,7 @@ struct Cells {
 };
 
 struct GlobalData **m_globalDataArray;
-struct GlobalData *m_globalData; 
+struct GlobalData *m_globalData;
 struct CellLocalInformation *m_cellInformation;
 struct CellData *m_cellData;
 struct Cells *m_cells;
@@ -106,7 +106,7 @@ seissol::kernels::Boundary m_boundaryKernel;
 
 /* This option is needed to avoid polution of low-level caches */
 #define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 4
-#ifndef NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 
+#ifndef NUMBER_OF_THREADS_PER_GLOBALDATA_COPY
 #define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 16383
 #endif
 
@@ -170,7 +170,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     }
     data.close();
     if (reads != i_cells*4) { printf("wrong neigh (%i) in scenario were read!\n", reads); exit(-1); }
-    
+
     // read faceTypes
     file = s_scenario + ".bound";
     data.open(file.c_str());
@@ -217,7 +217,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     for (unsigned int f = 0; f < 4; f++) {
       if (bUseScenario == true ) {
         switch (scenario_faceType[l_cell][f]) {
-          case 0: 
+          case 0:
             m_cellInformation[l_cell].faceTypes[f] = regular;
             break;
           case 1:
@@ -233,7 +233,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
             m_cellInformation[l_cell].faceTypes[f] = periodic;
             break;
           default:
-            printf("unsupported faceType (%i)!\n", scenario_faceType[l_cell][f]); 
+            printf("unsupported faceType (%i)!\n", scenario_faceType[l_cell][f]);
             exit(-1);
             break;
         }
@@ -309,7 +309,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #ifdef __USE_DERS
     m_pder[l_cell] = &(m_ders[(l_cell*NUMBER_OF_ALIGNED_DERS)]);
 #else
-    m_pder[l_cell] = NULL; 
+    m_pder[l_cell] = NULL;
 #endif
   }
 
@@ -355,19 +355,19 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     // init star matrices
-    for (size_t m = 0; m < 3; m++) { 
-      for (size_t j = 0; j < STAR_NNZ; j++) { 
+    for (size_t m = 0; m < 3; m++) {
+      for (size_t j = 0; j < STAR_NNZ; j++) {
         m_localIntegration[l_cell].starMatrices[m][j] = (real)drand48();
       }
     }
     // init flux solver
-    for (size_t m = 0; m < 4; m++) { 
-      for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) { 
+    for (size_t m = 0; m < 4; m++) {
+      for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
         m_localIntegration[l_cell].nApNm1[m][j] = (real)drand48();
       }
     }
   }
-  
+
   // neighbor integration
 #ifdef USE_HBM_CELLLOCAL_NEIGH
   hbw_posix_memalign( (void**) &m_neighboringIntegration, 2097152, i_cells*sizeof(NeighboringIntegrationData) );
@@ -380,8 +380,8 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     // init flux solver
-    for (size_t m = 0; m < 4; m++) { 
-      for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) { 
+    for (size_t m = 0; m < 4; m++) {
+      for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
         m_neighboringIntegration[l_cell].nAmNm1[m][j] = (real)drand48();
       }
     }
@@ -393,9 +393,9 @@ unsigned int init_data_structures(unsigned int i_cells) {
   m_cellData->neighboringIntegration = m_neighboringIntegration;
 
   // Global matrices
-  unsigned int l_globalMatrices  = NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * seissol::kernels::getNumberOfBasisFunctions( CONVERGENCE_ORDER-1 ) * 3; 
-               l_globalMatrices += seissol::kernels::getNumberOfAlignedBasisFunctions( CONVERGENCE_ORDER-1 ) * NUMBER_OF_BASIS_FUNCTIONS  * 3; 
-               l_globalMatrices += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * NUMBER_OF_BASIS_FUNCTIONS * 52;                                         
+  unsigned int l_globalMatrices  = NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * seissol::kernels::getNumberOfBasisFunctions( CONVERGENCE_ORDER-1 ) * 3;
+               l_globalMatrices += seissol::kernels::getNumberOfAlignedBasisFunctions( CONVERGENCE_ORDER-1 ) * NUMBER_OF_BASIS_FUNCTIONS  * 3;
+               l_globalMatrices += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * NUMBER_OF_BASIS_FUNCTIONS * 52;
                l_globalMatrices *= sizeof(real);
 
   // determine number of global data copies
@@ -425,7 +425,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     m_globalPointer = m_globalPointerArray[l_globalDataCount];
     m_globalDataArray[l_globalDataCount] = (GlobalData*) malloc(sizeof(GlobalData));
     m_globalData =  m_globalDataArray[l_globalDataCount];
-   
+
     for (unsigned int i = 0; i < (l_globalMatrices/sizeof(real)); i++) {
       m_globalPointer[i] = (real)drand48();
     }
@@ -460,7 +460,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     free(scenario_side);
     free(scenario_orientation);
   }
-  
+
   return i_cells;
 }
 
@@ -519,10 +519,8 @@ void free_data_structures() {
 #endif
 #endif
 
-  free(m_ptdofs); 
-
-  free(m_pder); 
-
+  free(m_ptdofs);
+  free(m_pder);
   free(m_faceNeighbors);
 
   for (unsigned int l_globalDataCount = 0; l_globalDataCount < l_numberOfCopies; l_globalDataCount++) {

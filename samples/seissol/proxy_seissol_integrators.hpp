@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void computeAderIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel 
+# pragma omp parallel
   {
 #if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
   //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];
@@ -56,7 +56,7 @@ void computeAderIntegration() {
 
 void computeVolumeIntegration() {
 #ifdef _OPENMP
-  #pragma omp parallel 
+# pragma omp parallel
   {
 #if NUMBER_OF_THREADS_PER_GLOBALDATA_COPY < 512
   //GlobalData* l_globalData = m_globalDataArray[omp_get_thread_num()/NUMBER_OF_THREADS_PER_GLOBALDATA_COPY];

@@ -4,7 +4,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -59,10 +59,10 @@ ASM=1
 # set SDE to run AVX512 code
 SDE_KNL="sde64 -knl -mix -- "
 
-# select precision 
+# select precision
 if [ "${PREC}" == 'DP' ]; then
   DATATYPE="double"
-elif [ "${PREC}" == 'SP' ]; then    
+elif [ "${PREC}" == 'SP' ]; then
   DATATYPE="float"
 fi
 
@@ -79,7 +79,7 @@ do
     do
       lda=$m
       ldb=$k
-      ldc=$m 
+      ldc=$m
       rm -rf kernel_${m}_${n}_${k}_${PREC}.*
       rm -rf xgemm_${m}_${n}_${k}_${PREC}
       ./../../bin/libxsmm_gemm_generator dense kernel_${m}_${n}_${k}_${PREC}.h dense_test_mul $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC}

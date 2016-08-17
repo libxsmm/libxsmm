@@ -53,9 +53,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-  const element_type *const input = (const element_type*)inp;
-  const element_type *const weight = (const element_type*)wtp;
-  element_type *const output = (element_type*)outp;
+  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
+  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
+  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
   unsigned int ishape[5], wshape[6], oshape[5];
   unsigned int indexi[5], indexw[6], indexo[5];
   /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
@@ -78,19 +78,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(
 #if defined(LIBXSMM_VLA)
                   output[img][ofm1][oj][oi][ofm2] += input[img][ifm1][ij+kj][ii+ki][ifm2] * weight[ofm1][ifm1][kj][ki][ifm2][ofm2];
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
+                  size_t i, w, o;
                   indexi[0] = ifm2; indexi[1] = ii + ki; indexi[2] = ij + kj; indexi[3] = ifm1; indexi[4] = img;
                   indexw[0] = ofm2; indexw[1] = ifm2; indexw[2] = ki; indexw[3] = kj; indexw[4] = ifm1; indexw[5] = ofm1;
                   indexo[0] = ofm2; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
-                  {
-                    LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape);
-                    {
-                      LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape);
-                      {
-                        LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape);
-                        output[o] += input[i] * weight[w];
-                      }
-                    }
-                  }
+                  LIBXSMM_CALC_INDEX1(size_t, i, 5, indexi, ishape);
+                  LIBXSMM_CALC_INDEX1(size_t, w, 6, indexw, wshape);
+                  LIBXSMM_CALC_INDEX1(size_t, o, 5, indexo, oshape);
+                  output[o] += input[i] * weight[w];
 #endif
                 }
               }
@@ -134,9 +129,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-  const element_type *const input = (const element_type*)inp;
-  const element_type *const weight = (const element_type*)wtp;
-  element_type *const output = (element_type*)outp;
+  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
+  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
+  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
   unsigned int ishape[5], wshape[6], oshape[5];
   unsigned int indexi[5], indexw[6], indexo[5];
   /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
@@ -158,18 +153,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
           l_output = &(output[img][ofm1][oj][oi][0]);
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
           indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-          {
-            LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape);
-            l_input = input + i;
-          }
           indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
-          {
-            LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape);
-            l_wt = weight + w;
-          }
           indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
           {
-            LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape);
+            size_t i, w, o;
+            LIBXSMM_CALC_INDEX1(size_t, i, 5, indexi, ishape);
+            LIBXSMM_CALC_INDEX1(size_t, w, 6, indexw, wshape);
+            LIBXSMM_CALC_INDEX1(size_t, o, 5, indexo, oshape);
+            l_input = input + i;
+            l_wt = weight + w;
             l_output = output + o;
           }
 #endif
@@ -182,13 +174,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 # else
             size_t pi, po;
             indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofh_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-            }
             indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-            }
+            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
 # endif
           }
@@ -200,18 +188,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 # else
               size_t pi, pw, po;
               indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img + 1;
-              {
-                LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-              }
               /*indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = 0;*/
-              {
-                /*LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape); pw = w;*/
-                pw = 0;
-              }
               indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = 0; indexo[4] = img + 1;
-              {
-                LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-              }
+              LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+              pw = 0;/*LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);*/
+              LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
               jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
 # endif
             }
@@ -223,17 +204,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 # else
                 size_t pi, pw, po;
                 indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-                }
                 indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = ofm1 + 1;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape); pw = w;
-                }
                 indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1 + 1; indexo[4] = img;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-                }
+                LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+                LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
+                LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
 # endif
               }
@@ -244,17 +219,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 # else
                 size_t pi, pw, po;
                 indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-                }
                 indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape); pw = w;
-                }
                 indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1; indexo[4] = img;
-                {
-                  LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-                }
+                LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+                LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
+                LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
 # endif
               }
@@ -308,9 +277,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-  const element_type *const input = (const element_type*)inp;
-  const element_type *const weight = (const element_type*)wtp;
-  element_type *const output = (element_type*)outp;
+  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
+  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
+  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
   unsigned int ishape[5], wshape[6], oshape[5];
   unsigned int indexi[5], indexw[6], indexo[5];
   /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
@@ -331,19 +300,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
         l_output = &(output[img][ofm1][oj][oi][0]);
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
         indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-        {
-          LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape);
-          l_input = input + i;
-        }
         indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
-        {
-          LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape);
-          l_wt = weight + w;
-        }
         indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
-        {
-          LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape);
-          l_output = output + o;
+        { size_t index1;
+          LIBXSMM_CALC_INDEX1(size_t, index1, 5, indexi, ishape);
+          l_input = input + index1;
+          LIBXSMM_CALC_INDEX1(size_t, index1, 6, indexw, wshape);
+          l_wt = weight + index1;
+          LIBXSMM_CALC_INDEX1(size_t, index1, 5, indexo, oshape);
+          l_output = output + index1;
         }
 #endif
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -355,13 +320,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 # else
           size_t pi, po;
           indexi[0] = 0; indexi[1] = (oi + handle->fwd_ofw_rb) * handle->desc.v; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-          {
-            LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-          }
           indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
-          {
-            LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-          }
+          LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+          LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
           jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
 # endif
         }
@@ -373,13 +334,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 # else
             size_t pi, po;
             indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofw_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-            }
             indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofw_rb; indexo[3] = ofm1; indexo[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-            }
+            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
 # endif
           }
@@ -390,17 +347,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 # else
             size_t pi, pw, po;
             indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, i, 5, indexi, ishape); pi = i;
-            }
             indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, w, 6, indexw, wshape); pw = w;
-            }
             indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1; indexo[4] = img;
-            {
-              LIBXSMM_DEFINE_INDEX1(size_t, o, 5, indexo, oshape); po = o;
-            }
+            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
+            LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
+            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
 # endif
           }

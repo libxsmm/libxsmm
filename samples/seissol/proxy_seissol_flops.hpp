@@ -34,7 +34,7 @@ seissol_flops flops_ader_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   ret.d_nonZeroFlops = 0.0;
   ret.d_hardwareFlops = 0.0;
-  
+
   // iterate over cells
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
@@ -54,7 +54,7 @@ seissol_flops flops_vol_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   ret.d_nonZeroFlops = 0.0;
   ret.d_hardwareFlops = 0.0;
-  
+
   // iterate over cells
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
@@ -74,7 +74,7 @@ seissol_flops flops_bndlocal_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   ret.d_nonZeroFlops = 0.0;
   ret.d_hardwareFlops = 0.0;
-  
+
   // iterate over cells
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
@@ -94,7 +94,7 @@ seissol_flops flops_bndneigh_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   ret.d_nonZeroFlops = 0.0;
   ret.d_hardwareFlops = 0.0;
-  
+
   // iterate over cells
   for( unsigned int l_cell = 0; l_cell < m_cells->numberOfCells; l_cell++ ) {
     unsigned int l_nonZeroFlops, l_hardwareFlops;
@@ -192,7 +192,7 @@ double flops_all(unsigned int i_timesteps) {
 seissol_flops flops_local_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   seissol_flops tmp;
-  
+
   tmp = flops_ader_actual(i_timesteps);
   ret.d_nonZeroFlops = tmp.d_nonZeroFlops;
   ret.d_hardwareFlops = tmp.d_hardwareFlops;
@@ -211,7 +211,7 @@ seissol_flops flops_local_actual(unsigned int i_timesteps) {
 seissol_flops flops_all_actual(unsigned int i_timesteps) {
   seissol_flops ret;
   seissol_flops tmp;
-  
+
   tmp = flops_local_actual(i_timesteps);
   ret.d_nonZeroFlops = tmp.d_nonZeroFlops;
   ret.d_hardwareFlops = tmp.d_hardwareFlops;

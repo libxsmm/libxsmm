@@ -47,7 +47,7 @@ if __name__ == "__main__":
         else: ilp64 = 0
         if (4 < argc): offload = int(sys.argv[4])
         else: offload = 0
-        if (5 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5])) 
+        if (5 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5]))
         else: alignment = 64
         if (6 < argc): prefetch = int(sys.argv[6])
         else: prefetch = 0

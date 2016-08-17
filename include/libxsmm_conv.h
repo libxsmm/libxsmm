@@ -79,7 +79,7 @@ typedef enum libxsmm_conv_kind {
   LIBXSMM_CONV_KIND_UPD_BIAS
 } libxsmm_conv_kind;
 
-/** typo of algorithm used for convolutions */
+/** Typ of algorithm used for convolutions. */
 typedef enum libxsmm_conv_algo {
   /** direct convolution. */
   LIBXSMM_CONV_ALGO_DIRECT
@@ -95,7 +95,7 @@ typedef enum libxsmm_conv_datatype {
 
 /** struct which holds description of convolution */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_conv_desc {
-  int N;           /* number of images in minibatch */
+  int N;           /* number of images in mini-batch */
   int C;           /* number of input feature maps */
   int H;           /* height of input image */
   int W;           /* width of input image */
@@ -178,8 +178,8 @@ LIBXSMM_API libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libxsmm_conv_fi
 LIBXSMM_API void libxsmm_convolve(libxsmm_conv_handle* handle, libxsmm_conv_kind kind);
 
 /** Run the convolution identified by the handle; takes a thread id. */
-LIBXSMM_API libxsmm_conv_err_t libxsmm_convolve_st(libxsmm_conv_handle* handle, libxsmm_conv_kind kind, 
-                                     /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads);
+LIBXSMM_API libxsmm_conv_err_t libxsmm_convolve_st(libxsmm_conv_handle* handle, libxsmm_conv_kind kind,
+  /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads);
 
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API) /* Internal API */
 

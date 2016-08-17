@@ -38,23 +38,6 @@
 # define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
 #endif
 
-#define LIBXSMM_DEFINE_SIZE1(TYPE, NAME, NDIMS, SHAPE, INIT) \
-  TYPE NAME = LIBXSMM_MAX(INIT, 1); { unsigned int libxsmm_define_size1_i_ = 0; \
-  LIBXSMM_REPEAT(NDIMS, \
-    NAME *= (TYPE)((SHAPE)[libxsmm_define_size1_i_]); \
-    ++libxsmm_define_size1_i_); \
-  }
-/* TODO: LIBXSMM_DEFINE_INDEX1 plus PITCH */
-#define LIBXSMM_DEFINE_INDEX1(TYPE, NAME, NDIMS, INDEXN, SHAPE) \
-  TYPE NAME = 0; { TYPE libxsmm_define_index1_size_ = 1; unsigned int libxsmm_define_index1_i_ = 0; \
-  LIBXSMM_REPEAT(NDIMS, \
-    NAME += libxsmm_define_index1_size_ * ((TYPE)(INDEXN)[libxsmm_define_index1_i_]); \
-    libxsmm_define_index1_size_ *= (TYPE)((SHAPE)[libxsmm_define_index1_i_]); \
-    ++libxsmm_define_index1_i_); \
-  }
-#define LIBXSMM_DEFINE_SOMETYPE(NAME, TYPESIZE) \
-  typedef struct LIBXSMM_RETARGETABLE NAME { char byte[TYPESIZE]; } NAME
-
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API)
@@ -74,14 +57,14 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_csr_soa_descriptor {
 
 /** struct which holds description of a layer */
 struct LIBXSMM_RETARGETABLE libxsmm_conv_layer {
-  int N;                            /* number of images in minibatch */
+  int N;                            /* number of images in mini-batch */
   int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
   int W;                            /* width of image */
   libxsmm_conv_datatype datatype;   /* data type */
-  void* data;                       /* pointer to data */  
+  void* data;                       /* pointer to data */
 };
 
 /** struct which holds description of a bias */
@@ -90,7 +73,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_conv_bias {
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   libxsmm_conv_datatype datatype;   /* data type */
-  void* data;                       /* pointer to data */  
+  void* data;                       /* pointer to data */
 };
 
 /** struct which holds description of a filter */
@@ -99,11 +82,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_conv_filter {
   int ifmb;                         /* number of feature map blocks */
   int bifm;                         /* sized of blocked feature maps, in a block */
   int ofmb;                         /* number of feature map blocks */
-  int bofm;                         /* sized of blocked feature maps, in a block */  
+  int bofm;                         /* sized of blocked feature maps, in a block */
   int R;                            /* height of filter kernel */
   int S;                            /* width of filter kernel */
   libxsmm_conv_datatype datatype;   /* data type */
-  void* data;                       /* pointer to data */ 
+  void* data;                       /* pointer to data */
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_conv_handle {
@@ -124,7 +107,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_conv_handle {
   int blocksofm;
   int fwd_ofw_rb;
   int fwd_ofh_rb;
-  
+
   /* internal data representation */
   libxsmm_conv_layer* input;
   libxsmm_conv_layer* output;

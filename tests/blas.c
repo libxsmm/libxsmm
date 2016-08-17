@@ -15,7 +15,7 @@
 #define LDC 240
 
 
-int main()
+int main(void)
 {
   const libxsmm_blasint m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
   REAL_TYPE a[K*LDA], b[N*LDB], c[N*LDC], d[N*LDC];

@@ -26,7 +26,7 @@
 !* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        *!
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
-!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *! 
+!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *!
 !* Maxwell Hutchinson (University of Chicago)                                *!
 !*****************************************************************************!
 
@@ -125,7 +125,7 @@ PROGRAM stpm
         END DO
       END DO
     END DO
-  END DO 
+  END DO
   !$OMP PARALLEL DO PRIVATE(i, ix, iy, iz) DEFAULT(NONE) SHARED(c, m, mm, n, nn, k, kk, s)
   DO i = 1, s
     DO ix = 1, mm
@@ -135,7 +135,7 @@ PROGRAM stpm
         END DO
       END DO
     END DO
-  END DO 
+  END DO
   dx = 1.
   dy = 1.
   dz = 1.
@@ -156,7 +156,7 @@ PROGRAM stpm
           END DO
         END DO
       END DO
-    END DO 
+    END DO
 
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i, j, r) DEFAULT(NONE) &

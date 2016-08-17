@@ -32,6 +32,7 @@
 #ifndef GENERATOR_SPGEMM_CSR_READER_H
 #define GENERATOR_SPGEMM_CSR_READER_H
 
+#include <libxsmm_generator.h>
 #include <libxsmm_macros.h>
 
 LIBXSMM_INTERNAL_API

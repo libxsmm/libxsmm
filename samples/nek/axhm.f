@@ -26,7 +26,7 @@
 !* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        *!
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
-!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *! 
+!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *!
 !* Maxwell Hutchinson (University of Chicago)                                *!
 !*****************************************************************************!
 
@@ -45,7 +45,7 @@ PROGRAM stpm
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   DOUBLE PRECISION :: duration, max_diff, h1, h2
@@ -100,7 +100,7 @@ PROGRAM stpm
   ALLOCATE(g1(m,n,k,s), g2(m,n,k,s), g3(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
 
-  ! Initialize 
+  ! Initialize
   !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, g1, g2, g3, b, c, m, n, k, s)
   DO i = 1, s
     DO ix = 1, m
@@ -115,7 +115,7 @@ PROGRAM stpm
         END DO
       END DO
     END DO
-  END DO 
+  END DO
   dx = 1.; dy = 1.; dz = 1.
   h1 = 1.; h2 = 1.
 
@@ -127,7 +127,7 @@ PROGRAM stpm
   IF (0.NE.check) THEN
     WRITE(*, "(A)") "Calculating check..."
     ALLOCATE(d(m,n,k,s))
-    ! Initialize 
+    ! Initialize
     !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(d, m, n, k, s)
     DO i = 1, s
       DO ix = 1, m
@@ -137,7 +137,7 @@ PROGRAM stpm
           END DO
         END DO
       END DO
-    END DO 
+    END DO
 
     !$OMP PARALLEL PRIVATE(i, j, r) DEFAULT(NONE) &
     !$OMP   SHARED(a, b, dx, dy, dz, g1, g2, g3, d, m, n, k, h1, h2, repetitions)

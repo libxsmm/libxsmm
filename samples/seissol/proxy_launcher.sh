@@ -4,7 +4,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -27,7 +27,7 @@
 #
 MAKE=${MAKE:-make}
 
-# Please adjust 
+# Please adjust
 SEISSOL_KERNELS_CONFIG=sparse_dense   #define this if you want to generate a sparse-dense tuned backend
 #SEISSOL_KERNELS_CONFIG=all_dense   #define this if you want to generate an all-dense backend
 #SEISSOL_KERNELS_CONFIG=all_sparse   #define this if you want to generate an all-sparse backend
@@ -174,7 +174,7 @@ fi
 
 # compile proxy app
 rm -rf driver_${SIMARCH}_${ORDER}.exe
-icpc -O3 -ip -ipo -DNDEBUG ${ARCH_FLAGS} -DCONVERGENCE_ORDER=${ORDER} -DNUMBER_OF_QUANTITIES=9 -I${SEISSOL_KERNELS_ROOT}/src -I${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code ${SEISSOL_KERNELS_ROOT}/src/Volume.cpp ${SEISSOL_KERNELS_ROOT}/src/Time.cpp ${SEISSOL_KERNELS_ROOT}/src/Boundary.cpp ${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code/matrix_kernels/${MATMUL_KERNEL_DENSE_FILE} ${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code/matrix_kernels/${MATMUL_KERNEL_SPARSE_FILE} proxy_seissol.cpp -o driver_${SIMARCH}_${ORDER}.exe 
+icpc -O3 -ip -ipo -DNDEBUG ${ARCH_FLAGS} -DCONVERGENCE_ORDER=${ORDER} -DNUMBER_OF_QUANTITIES=9 -I${SEISSOL_KERNELS_ROOT}/src -I${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code ${SEISSOL_KERNELS_ROOT}/src/Volume.cpp ${SEISSOL_KERNELS_ROOT}/src/Time.cpp ${SEISSOL_KERNELS_ROOT}/src/Boundary.cpp ${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code/matrix_kernels/${MATMUL_KERNEL_DENSE_FILE} ${SEISSOL_KERNELS_ROOT}/preprocessing/generated_code/matrix_kernels/${MATMUL_KERNEL_SPARSE_FILE} proxy_seissol.cpp -o driver_${SIMARCH}_${ORDER}.exe
 
 # run SeisSol Scenario converter
 #./proxy_extract_neigh_information_nc.sh ${SEISSOL_PROXY_SCENARIO}

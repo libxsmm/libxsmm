@@ -8,7 +8,7 @@
  * since INTERNAL functions are tested which are not part
  * of the LIBXSMM API.
  */
-int main()
+int main(void)
 {
   const int cpuid_archid = libxsmm_cpuid_x86();
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;

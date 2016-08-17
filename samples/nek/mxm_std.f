@@ -99,9 +99,9 @@ subroutine mxmf2(A,N1,B,N2,C,N3)
         case (24)
           call mxf24(a,n1,b,n2,c,n3)
       end select
-    case default 
+    case default
       call mxm44_0(a,n1,b,n2,c,n3)
-  end select 
+  end select
 
   return
 end subroutine mxmf2
@@ -1730,7 +1730,6 @@ end subroutine mxmf2
             c(i,15)  =  c(i,15) + a(i,k) * tmp15
             c(i,16)  =  c(i,16) + a(i,k) * tmp16
         enddo
-    
     enddo
 
     return
@@ -1772,7 +1771,6 @@ end subroutine mxmf2
             c(i,14)  =  c(i,14) + a(i,k) * tmp14
             c(i,15)  =  c(i,15) + a(i,k) * tmp15
         enddo
-    
     enddo
 
     return
@@ -1812,7 +1810,6 @@ end subroutine mxmf2
             c(i,13)  =  c(i,13) + a(i,k) * tmp13
             c(i,14)  =  c(i,14) + a(i,k) * tmp14
         enddo
-    
     enddo
 
     return
@@ -1850,7 +1847,6 @@ end subroutine mxmf2
             c(i,12)  =  c(i,12) + a(i,k) * tmp12
             c(i,13)  =  c(i,13) + a(i,k) * tmp13
         enddo
-    
     enddo
 
     return
@@ -1886,7 +1882,6 @@ end subroutine mxmf2
             c(i,11)  =  c(i,11) + a(i,k) * tmp11
             c(i,12)  =  c(i,12) + a(i,k) * tmp12
         enddo
-    
     enddo
 
     return
@@ -1920,7 +1915,6 @@ end subroutine mxmf2
             c(i,10)  =  c(i,10) + a(i,k) * tmp10
             c(i,11)  =  c(i,11) + a(i,k) * tmp11
         enddo
-    
     enddo
 
     return
@@ -1952,7 +1946,6 @@ end subroutine mxmf2
             c(i, 9)  =  c(i, 9) + a(i,k) * tmp9
             c(i,10)  =  c(i,10) + a(i,k) * tmp10
         enddo
-    
     enddo
 
     return
@@ -1982,7 +1975,6 @@ end subroutine mxmf2
             c(i, 8)  =  c(i, 8) + a(i,k) * tmp8
             c(i, 9)  =  c(i, 9) + a(i,k) * tmp9
         enddo
-    
     enddo
 
     return
@@ -2010,7 +2002,6 @@ end subroutine mxmf2
             c(i, 7)  =  c(i, 7) + a(i,k) * tmp7
             c(i, 8)  =  c(i, 8) + a(i,k) * tmp8
         enddo
-    
     enddo
 
     return
@@ -2036,7 +2027,6 @@ end subroutine mxmf2
             c(i, 6)  =  c(i, 6) + a(i,k) * tmp6
             c(i, 7)  =  c(i, 7) + a(i,k) * tmp7
         enddo
-    
     enddo
 
     return
@@ -2060,7 +2050,6 @@ end subroutine mxmf2
             c(i, 5)  =  c(i, 5) + a(i,k) * tmp5
             c(i, 6)  =  c(i, 6) + a(i,k) * tmp6
         enddo
-    
     enddo
 
     return
@@ -2082,7 +2071,6 @@ end subroutine mxmf2
             c(i, 4)  =  c(i, 4) + a(i,k) * tmp4
             c(i, 5)  =  c(i, 5) + a(i,k) * tmp5
         enddo
-    
     enddo
 
     return
@@ -2102,7 +2090,6 @@ end subroutine mxmf2
             c(i, 3)  =  c(i, 3) + a(i,k) * tmp3
             c(i, 4)  =  c(i, 4) + a(i,k) * tmp4
         enddo
-    
     enddo
 
     return
@@ -2120,7 +2107,6 @@ end subroutine mxmf2
             c(i, 2)  =  c(i, 2) + a(i,k) * tmp2
             c(i, 3)  =  c(i, 3) + a(i,k) * tmp3
         enddo
-    
     enddo
 
     return
@@ -2136,7 +2122,6 @@ end subroutine mxmf2
             c(i, 1)  =  c(i, 1) + a(i,k) * tmp1
             c(i, 2)  =  c(i, 2) + a(i,k) * tmp2
         enddo
-    
     enddo
 
     return
@@ -2251,7 +2236,6 @@ end subroutine mxmf2
             call mxmfb_24(a,n1,b,n2,c,n3)
         endif
     else
-    
         one=1.0
         zero=0.0
         if (wdsize == 4) then
@@ -2259,7 +2243,6 @@ end subroutine mxmf2
         else
             call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
         endif
-         
     endif
     return
     end subroutine mxmfb
@@ -2930,7 +2913,6 @@ end subroutine mxmf2
             call mxmf3_24(a,n1,b,n2,c,n3)
         endif
     else
-    
         one=1.0
         zero=0.0
         if (wdsize == 4) then
@@ -2938,7 +2920,6 @@ end subroutine mxmf2
         else
             call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
         endif
-    
     !        N0=N1*N3
     !        DO 10 I=1,N0
     !           C(I,1)=0.
@@ -2949,7 +2930,6 @@ end subroutine mxmf2
     !        DO 100 I=1,N1
     !           C(I,J)=C(I,J)+A(I,K)*BB
     ! 100    CONTINUE
-         
     endif
     return
     end subroutine mxmf3

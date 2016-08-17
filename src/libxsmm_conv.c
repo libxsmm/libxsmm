@@ -537,7 +537,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_layer(const libxsm
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (layer->datatype) {
       case LIBXSMM_CONV_DATATYPE_FP32: {
-        LIBXSMM_DEFINE_SOMETYPE(element_type, 4/*FP32*/);
+        typedef float element_type;
         int i1, i2, i3, i4, i5, i6;
         int N = layer->N;
         int splits = layer->splits;
@@ -546,8 +546,8 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_layer(const libxsm
         int H = layer->H;
         int W = layer->W;
 #if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[N][splits][fmb][H][W][bfm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[N][splits][fmb*bfm][H][W];
+        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
+        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
         const handle_data_type handle_data = (handle_data_type)layer->data;
         const user_data_type user_data = (user_data_type)data;
 #else
@@ -566,18 +566,15 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_layer(const libxsm
                 for (i5 = 0; i5 < W; ++i5) {
                   for (i6 = 0; i6 < bfm; ++i6) {
 #if defined(LIBXSMM_VLA)
-                    (*handle_data)[i1][i2][i3][i4][i5][i6] = (*user_data)[i1][i2][i3*bfm+i6][i4][i5];
+                    handle_data[i1][i2][i3][i4][i5][i6] = user_data[i1][i2][i3*bfm+i6][i4][i5];
 #else
+                    size_t h, u;
                     /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
                     hindexn[0] = i6; hindexn[1] = i5; hindexn[2] = i4; hindexn[3] = i3; hindexn[4] = i2; hindexn[5] = i1;
                     uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bfm + i6; uindexn[3] = i2; uindexn[4] = i1;
-                    {
-                      LIBXSMM_DEFINE_INDEX1(size_t, h, 6, hindexn, hshape);
-                      {
-                        LIBXSMM_DEFINE_INDEX1(size_t, u, 5, uindexn, ushape);
-                        handle_data[h] = user_data[u];
-                      }
-                    }
+                    LIBXSMM_CALC_INDEX1(size_t, h, 6, hindexn, hshape);
+                    LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
+                    handle_data[h] = user_data[u];
 #endif
                   }
                 }
@@ -646,7 +643,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_layer(const libxs
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (layer->datatype) {
       case LIBXSMM_CONV_DATATYPE_FP32: {
-        LIBXSMM_DEFINE_SOMETYPE(element_type, 4/*FP32*/);
+        typedef float element_type;
         int i1, i2, i3, i4, i5, i6;
         int N = layer->N;
         int splits = layer->splits;
@@ -655,8 +652,8 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_layer(const libxs
         int H = layer->H;
         int W = layer->W;
 #if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[N][splits][fmb][H][W][bfm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[N][splits][fmb*bfm][H][W];
+        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
+        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
         const handle_data_type handle_data = (handle_data_type)layer->data;
         const user_data_type user_data = (user_data_type)data;
 #else
@@ -675,18 +672,15 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_layer(const libxs
                 for (i5 = 0; i5 < W; ++i5) {
                   for (i6 = 0; i6 < bfm; ++i6) {
 #if defined(LIBXSMM_VLA)
-                    (*user_data)[i1][i2][i3*bfm+i6][i4][i5] = (*handle_data)[i1][i2][i3][i4][i5][i6];
+                    user_data[i1][i2][i3*bfm+i6][i4][i5] = handle_data[i1][i2][i3][i4][i5][i6];
 #else
+                    size_t h, u;
                     /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
                     hindexn[0] = i6; hindexn[1] = i5; hindexn[2] = i4; hindexn[3] = i3; hindexn[4] = i2; hindexn[5] = i1;
                     uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bfm + i6; uindexn[3] = i2; uindexn[4] = i1;
-                    {
-                      LIBXSMM_DEFINE_INDEX1(size_t, h, 6, hindexn, hshape);
-                      {
-                        LIBXSMM_DEFINE_INDEX1(size_t, u, 5, uindexn, ushape);
-                        user_data[u] = handle_data[h];
-                      }
-                    }
+                    LIBXSMM_CALC_INDEX1(size_t, h, 6, hindexn, hshape);
+                    LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
+                    user_data[u] = handle_data[h];
 #endif
                   }
                 }
@@ -716,7 +710,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_filter(const libxs
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (filter->datatype) {
       case LIBXSMM_CONV_DATATYPE_FP32: {
-        LIBXSMM_DEFINE_SOMETYPE(element_type, 4/*FP32*/);
+        typedef float element_type;
         int i1, i2, i3, i4, i5, i6, i7;
         int splits = filter->splits;
         int ifmb = filter->ifmb;
@@ -726,8 +720,8 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_filter(const libxs
         int R = filter->R;
         int S = filter->S;
 #if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][ofmb][ifmb][R][S][bifm][bofm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][ofmb*bofm][ifmb*bifm][R][S];
+        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[ofmb][ifmb][R][S][bifm][bofm];
+        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[ofmb*bofm][ifmb*bifm][R][S];
         const handle_data_type handle_data = (handle_data_type)filter->data;
         const user_data_type user_data = (user_data_type)data;
 #else
@@ -747,18 +741,15 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_filter(const libxs
                   for (i6 = 0; i6 < bifm; ++i6) {
                     for (i7 = 0; i7 < bofm; ++i7) {
 #if defined(LIBXSMM_VLA)
-                      (*handle_data)[i1][i2][i3][i4][i5][i6][i7] = (*user_data)[i1][i2*bofm+i7][i3*bifm+i6][i4][i5];
+                      handle_data[i1][i2][i3][i4][i5][i6][i7] = user_data[i1][i2*bofm+i7][i3*bifm+i6][i4][i5];
 #else
+                      size_t h, u;
                       /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
                       hindexn[0] = i7; hindexn[1] = i6; hindexn[2] = i5; hindexn[3] = i4; hindexn[4] = i3; hindexn[5] = i2; hindexn[6] = i1;
                       uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bifm + i6; uindexn[3] = i2 * bofm + i7; uindexn[4] = i1;
-                      {
-                        LIBXSMM_DEFINE_INDEX1(size_t, h, 7, hindexn, hshape);
-                        {
-                          LIBXSMM_DEFINE_INDEX1(size_t, u, 5, uindexn, ushape);
-                          handle_data[h] = user_data[u];
-                        }
-                      }
+                      LIBXSMM_CALC_INDEX1(size_t, h, 7, hindexn, hshape);
+                      LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
+                      handle_data[h] = user_data[u];
 #endif
                     }
                   }
@@ -789,7 +780,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libx
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (filter->datatype) {
       case LIBXSMM_CONV_DATATYPE_FP32: {
-        LIBXSMM_DEFINE_SOMETYPE(element_type, 4/*FP32*/);
+        typedef float element_type;
         int i1, i2, i3, i4, i5, i6, i7;
         int splits = filter->splits;
         int ifmb = filter->ifmb;
@@ -799,8 +790,8 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libx
         int R = filter->R;
         int S = filter->S;
 #if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][ofmb][ifmb][R][S][bifm][bofm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][ofmb*bofm][ifmb*bifm][R][S];
+        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[ofmb][ifmb][R][S][bifm][bofm];
+        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[ofmb*bofm][ifmb*bifm][R][S];
         const handle_data_type handle_data = (handle_data_type)filter->data;
         const user_data_type user_data = (user_data_type)data;
 #else
@@ -820,18 +811,15 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libx
                   for (i6 = 0; i6 < bifm; ++i6) {
                     for (i7 = 0; i7 < bofm; ++i7) {
 #if defined(LIBXSMM_VLA)
-                      (*user_data)[i1][i2*bofm+i7][i3*bifm+i6][i4][i5] = (*handle_data)[i1][i2][i3][i4][i5][i6][i7];
+                      user_data[i1][i2*bofm+i7][i3*bifm+i6][i4][i5] = handle_data[i1][i2][i3][i4][i5][i6][i7];
 #else
+                      size_t h, u;
                       /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
                       hindexn[0] = i7; hindexn[1] = i6; hindexn[2] = i5; hindexn[3] = i4; hindexn[4] = i3; hindexn[5] = i2; hindexn[6] = i1;
                       uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bifm + i6; uindexn[3] = i2 * bofm + i7; uindexn[4] = i1;
-                      {
-                        LIBXSMM_DEFINE_INDEX1(size_t, h, 7, hindexn, hshape);
-                        {
-                          LIBXSMM_DEFINE_INDEX1(size_t, u, 5, uindexn, ushape);
-                          user_data[u] = handle_data[h];
-                        }
-                      }
+                      LIBXSMM_CALC_INDEX1(size_t, h, 7, hindexn, hshape);
+                      LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
+                      user_data[u] = handle_data[h];
 #endif
                     }
                   }

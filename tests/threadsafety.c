@@ -11,7 +11,7 @@
 #endif
 
 
-int main()
+int main(void)
 {
   /* we do not care about the initial values */
   /*const*/ float a[23*23], b[23*23];

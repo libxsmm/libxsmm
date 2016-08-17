@@ -26,7 +26,7 @@
 !* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        *!
 !* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              *!
 !*****************************************************************************!
-!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *! 
+!* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.), and           *!
 !* Maxwell Hutchinson (University of Chicago)                                *!
 !*****************************************************************************!
 
@@ -46,8 +46,8 @@ PROGRAM grad
   REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, cx, cy, cz
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz 
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3 
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz
+  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
   TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
   DOUBLE PRECISION :: duration, max_diff
@@ -100,7 +100,7 @@ PROGRAM grad
   ALLOCATE(a(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
 
-  ! Initialize 
+  ! Initialize
   !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, cx, cy, cz, m, n, k, s)
   DO i = 1, s
     DO ix = 1, m
@@ -113,7 +113,7 @@ PROGRAM grad
         END DO
       END DO
     END DO
-  END DO 
+  END DO
   dx = 1.; dy = 2.; dz = 3.
 
   WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)") "m=", m, " n=", n, " k=", k, &
@@ -134,7 +134,7 @@ PROGRAM grad
           END DO
         END DO
       END DO
-    END DO 
+    END DO
 
     WRITE(*, "(A)") "Calculating check..."
     !$OMP PARALLEL PRIVATE(i, j, r) DEFAULT(NONE) &
@@ -318,7 +318,7 @@ CONTAINS
     diff = MAX(MAXVAL((refy - testy) * (refy - testy)), diff)
     diff = MAX(MAXVAL((refz - testz) * (refz - testz)), diff)
 
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff 
+    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
   END FUNCTION
 
   SUBROUTINE performance(duration, m, n, k, size)

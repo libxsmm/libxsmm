@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -29,7 +29,7 @@
 AVX?=3
 CC=icc
 CFLAGS=-qopenmp -O2 -mkl -I./../../include/ -c
-LDFLAGS=-mkl -L./../../lib -lxsmm 
+LDFLAGS=-mkl -L./../../lib -lxsmm
 
 ifeq ($(AVX), 1)
 CXXFLAGS+=-mavx

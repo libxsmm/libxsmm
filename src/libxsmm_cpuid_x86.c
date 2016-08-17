@@ -28,6 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_CPUID_X86_C
+#define LIBXSMM_CPUID_X86_C
+
 #include "libxsmm_cpuid_x86.h"
 #include "libxsmm_intrinsics_x86.h"
 
@@ -122,3 +125,4 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   return target_arch;
 }
 
+#endif /* LIBXSMM_CPUID_X86_C */
