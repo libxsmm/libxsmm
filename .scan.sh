@@ -32,8 +32,6 @@
 
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt *.md Makefile"
 KEYFILE=keywords.txt
-KEYBEGIN="[[:alnum:]_]"
-KEYEND=${KEYBEGIN}
 
 # check for any pending replacement which overlays local view of repository
 if [ "" != "$(git replace -l)" ]; then
@@ -45,23 +43,29 @@ fi
 
 for KEYWORD in $(cat ${KEYFILE}); do
   echo "Searching for ${KEYWORD}..."
-  REVS=$(git log -i -G${KEYWORD} --oneline | cut -d' ' -f1)
-  for REV in ${REVS}; do
-    # Unix timestamp (sort key)
-    STM=$(git show -s --format=%ct ${REV})
-    # Author information
-    WHO=$(git show -s --format=%an ${REV})
-    echo "Found ${REV} (${WHO})"
-    HITS+="${STM} ${REV}\n"
+  for PATTERN in ${PATTERNS}; do
+    REVS=$(git log -i -G${KEYWORD} --oneline "${PATTERN}" | cut -d' ' -f1)
+    for REV in ${REVS}; do
+      # Unix timestamp (sort key)
+      STM=$(git show -s --format=%ct ${REV})
+      # Author information
+      WHO=$(git show -s --format=%an ${REV})
+      echo "Found ${REV} (${WHO})"
+      HITS+="${STM} ${REV}\n"
+      LF=true
+    done
   done
-  echo
+  if [ "" != "${LF}" ]; then
+    echo; LF=""
+  fi
 done
 
 # make unique by SHA, sort from older to newer, and drop timestamp (sort key)
-HIST=$(echo -e ${HITS} | grep -v "^\s*$" | sort -uk2 | sort -nuk1 | cut -d' ' -f2)
-HITS=$(echo "${HIST}" | wc -l)
+HIST=$(echo -e ${HITS} | sort -uk2 | sort -nuk1 | cut -d' ' -f2)
+HITS=$(echo -n "${HIST}" | wc -l)
 
 if [ "0" != "${HITS}" ]; then
+  echo
   echo "Potentially ${HITS} infected revisions (newer to older):"
   echo "${HIST}" | tac
   exit 1
