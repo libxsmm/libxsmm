@@ -33,6 +33,11 @@
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt *.md Makefile"
 KEYFILE=keywords.txt
 
+if [ ! -e ${KEYFILE} ]; then
+  echo "Error: No file ${KEYFILE} found!"
+  exit 1
+fi
+
 # check for any pending replacement which overlays local view of repository
 if [ "" != "$(git replace -l)" ]; then
   echo "Error: found pending replacements!"
