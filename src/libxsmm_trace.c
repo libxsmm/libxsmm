@@ -426,16 +426,18 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 
 #if defined(__GNUC__)
 
-#if defined(__cplusplus)
-LIBXSMM_EXTERN
-#elif !defined(LIBXSMM_BUILD)
+LIBXSMM_EXTERN_C
+#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
+LIBXSMM_API
+#else
 static
 #endif
 LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 
-#if defined(__cplusplus)
-LIBXSMM_EXTERN
-#elif !defined(LIBXSMM_BUILD)
+LIBXSMM_EXTERN_C
+#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
+LIBXSMM_API_DEFINITION
+#else
 static
 #endif
 void __cyg_profile_func_enter(void* this_fn, void* call_site)
@@ -469,16 +471,19 @@ void __cyg_profile_func_enter(void* this_fn, void* call_site)
 #endif
 }
 
-#if defined(__cplusplus)
-LIBXSMM_EXTERN
-#elif !defined(LIBXSMM_BUILD)
+
+LIBXSMM_EXTERN_C
+#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
+LIBXSMM_API
+#else
 static
 #endif
 LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
 
-#if defined(__cplusplus)
-LIBXSMM_EXTERN
-#elif !defined(LIBXSMM_BUILD)
+LIBXSMM_EXTERN_C
+#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
+LIBXSMM_API_DEFINITION
+#else
 static
 #endif
 void __cyg_profile_func_exit(void* this_fn, void* call_site)
