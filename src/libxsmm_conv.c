@@ -46,7 +46,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION char* libxsmm_conv_get_error(libxsmm_conv_err_t code)
+LIBXSMM_API_DEFINITION const char* libxsmm_conv_get_error(libxsmm_conv_err_t code)
 {
   switch (code) {
     case LIBXSMM_CONV_SUCCESS:

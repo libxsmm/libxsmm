@@ -110,7 +110,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_conv_desc {
 } libxsmm_conv_desc;
 
 /** get string of error code */
-LIBXSMM_API char* libxsmm_conv_get_error(libxsmm_conv_err_t code);
+LIBXSMM_API const char* libxsmm_conv_get_error(libxsmm_conv_err_t code);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
 LIBXSMM_API libxsmm_conv_handle* libxsmm_conv_create_handle(
