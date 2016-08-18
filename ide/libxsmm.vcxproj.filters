@@ -203,7 +203,7 @@
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_transpose.c">
+    <ClCompile Include="..\src\libxsmm_trans.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csc_asparse.c">

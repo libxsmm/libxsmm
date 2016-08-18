@@ -131,7 +131,7 @@
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
-    <ClCompile Include="..\src\libxsmm_transpose.c" />
+    <ClCompile Include="..\src\libxsmm_trans.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.codecov" />
