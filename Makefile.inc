@@ -823,6 +823,10 @@ else
   MKL = 0
 endif
 
+ifneq (0,$(MKL))
+  DFLAGS += -D__CBLAS
+endif
+
 ifeq (1,$(MKL_DIRECT))
   DFLAGS += -DMKL_DIRECT_CALL_SEQ
 endif
@@ -905,9 +909,12 @@ else ifneq (0,$(BLAS)) # generic
   ifneq (1,$(BLAS))
     BLAS_THREADS = o
   endif
+  # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
   OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
-  ifeq (1,$(OPENBLAS))
+  ifneq (0,$(OPENBLAS))
     LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+    # OpenBLAS also carries the CBLAS bits
+    DFLAGS += -D__OPENBLAS -D__CBLAS
   else
     ifneq (Windows_NT,$(UNAME))
       LDFLAGS += -lblas$(BLAS_BITS)
