@@ -8,9 +8,17 @@
 #include <math.h>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_trans.h>
+#elif defined(__OPENBLAS) && defined(__CBLAS)
+# include <openblas/cblas.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
+#endif
+
+#if !defined(USE_SELF_VALIDATION) \
+ && !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL) \
+ && !defined(__OPENBLAS)
+# define USE_SELF_VALIDATION
 #endif
 
 #if !defined(REAL_TYPE)
@@ -53,7 +61,7 @@ int main(int argc, char* argv[])
   REAL_TYPE *const a = (REAL_TYPE*)MALLOC(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
   REAL_TYPE *const b = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
   /* validate against result computed by Intel MKL */
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if !defined(USE_SELF_VALIDATION)
   REAL_TYPE *const c = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
 #endif
   const unsigned int size = m * n * sizeof(REAL_TYPE);
@@ -74,7 +82,7 @@ int main(int argc, char* argv[])
   if (('o' == t || 'O' == t)) {
     start = libxsmm_timer_tick();
     libxsmm_transpose_oop(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
-#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if defined(USE_SELF_VALIDATION)
     /* without Intel MKL, construct an invariant result and check against it */
     libxsmm_transpose_oop(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
 #endif
@@ -86,14 +94,14 @@ int main(int argc, char* argv[])
     }
     start = libxsmm_timer_tick();
     /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), m, n, lda);*/
-#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if defined(USE_SELF_VALIDATION)
     /* without Intel MKL, construct an invariant result and check against it */
     /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), n, m, lda);*/
 #endif
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   }
 
-#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if defined(USE_SELF_VALIDATION)
   /* without Intel MKL, check against a known result (invariant) */
   for (i = 0; i < n; ++i) {
     for (j = 0; j < m; ++j) {
@@ -111,24 +119,30 @@ int main(int argc, char* argv[])
     }
     fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
   }
-#if !defined(__MKL) && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if defined(USE_SELF_VALIDATION)
   else {
     fprintf(stderr, "Validation failed!\n");
   }
-#else /* Intel MKL available */
+#else /* Intel MKL or OpenBLAS transpose interface available */
   {
-    double mkl_duration;
+    double duration2;
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1, a, lda, c, ldb);
-      mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#if defined(__MKL)
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1/*alpha*/, a, lda, c, ldb);
+#elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
+      LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, m, n, 1/*alpha*/, a, lda, c, ldb);
+#else
+#     error No alternative transpose routine available!
+#endif
+      duration2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
     else {
       start = libxsmm_timer_tick();
       /* TODO: call in-place variant */
-      mkl_duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      duration2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
-    /* validate against result computed by Intel MKL */
+    /* validate against result computed by alternative routine */
     for (i = 0; i < m; ++i) {
       for (j = 0; j < n; ++j) {
         if (b[i*ldb+j] != c[i*ldb+j]) {
@@ -138,8 +152,8 @@ int main(int argc, char* argv[])
       }
     }
     if (i <= m) {
-      if (0 < mkl_duration) {
-        fprintf(stdout, "\tMKL: %.1fx\n", duration / mkl_duration);
+      if (0 < duration2) {
+        fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
       }
     }
     else {
