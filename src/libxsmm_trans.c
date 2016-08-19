@@ -30,6 +30,13 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
+/* external implementation, if a supported library is enabled at build-time */
+#if !defined(LIBXSMM_TRANSPOSE_EXTERNAL) &&
+   ((defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) \
+  || defined(__OPENBLAS))
+/*# define LIBXSMM_TRANSPOSE_EXTERNAL*/
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -37,8 +44,12 @@
 #if !defined(NDEBUG)
 # include <assert.h>
 #endif
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_trans.h>
+#if defined(LIBXSMM_TRANSPOSE_EXTERNAL)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#   include <mkl_trans.h>
+# elif defined(__OPENBLAS)
+#   include <openblas/cblas.h>
+# endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -157,16 +168,28 @@ LIBXSMM_API_DEFINITION void libxsmm_transpose_oop(void* out, const void* in, uns
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-  if (8 == typesize) {
+#if defined(LIBXSMM_TRANSPOSE_EXTERNAL)
+  if (8 == typesize) { /* hopefully the actual type is not complex-SP (or alpha-multiplication is not performed) */
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     mkl_domatcopy('C', 'T', m, n, 1.0, (const double*)in, ld, (double*)out, ldo);
+# elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
+    cblas_domatcopy(CblasColMajor, CblasTrans, m, n, 1.0, (const double*)in, ld, (double*)out, ldo);
+# endif
   }
   else if (4 == typesize) {
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     mkl_somatcopy('C', 'T', m, n, 1.f, (const float*)in, ld, (float*)out, ldo);
+# elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
+    cblas_somatcopy(CblasColMajor, CblasTrans, m, n, 1.f, (const float*)in, ld, (float*)out, ldo);
+# endif
   }
   else if (16 == typesize) {
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     const MKL_Complex16 one = { 1.0/*real*/, 0.0/*imag*/ };
     mkl_zomatcopy('C', 'T', m, n, one, (const MKL_Complex16*)in, ld, (MKL_Complex16*)out, ldo);
+# elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
+    cblas_zomatcopy(CblasColMajor, CblasTrans, m, n, 1.0, (const double*)in, ld, (double*)out, ldo);
+# endif
   }
   else
 #endif

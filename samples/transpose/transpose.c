@@ -8,7 +8,7 @@
 #include <math.h>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_trans.h>
-#elif defined(__OPENBLAS) && defined(__CBLAS)
+#elif defined(__OPENBLAS)
 # include <openblas/cblas.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     double duration2;
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-#if defined(__MKL)
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1/*alpha*/, a, lda, c, ldb);
 #elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
       LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, m, n, 1/*alpha*/, a, lda, c, ldb);
