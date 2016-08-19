@@ -31,7 +31,7 @@
 #include <libxsmm.h>
 
 /* external implementation, if a supported library is enabled at build-time */
-#if !defined(LIBXSMM_TRANSPOSE_EXTERNAL) &&
+#if !defined(LIBXSMM_TRANSPOSE_EXTERNAL) && \
    ((defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) \
   || defined(__OPENBLAS))
 /*# define LIBXSMM_TRANSPOSE_EXTERNAL*/
