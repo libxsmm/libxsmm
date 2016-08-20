@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trans.h"
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -57,7 +58,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_trans_oop(void *LIBXSMM_RESTRI
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  LIBXSMM_TRANS_OOP_MAIN(internal_trans_oop, out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
+  LIBXSMM_TRANS_OOP_MAIN(LIBXSMM_SEQUENTIAL, LIBXSMM_JOIN, LIBXSMM_NOOP, LIBXSMM_NOOP,
+    internal_trans_oop, out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
 
 

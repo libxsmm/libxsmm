@@ -56,11 +56,11 @@
 #if !defined(LIBXSMM_FOR_SYNC)
 # define LIBXSMM_FOR_SYNC
 #endif
-#if !defined(LIBXSMM_NO_SYNC)
-# define LIBXSMM_NO_SYNC
-#endif
 #if !defined(LIBXSMM_JOIN)
 # define LIBXSMM_JOIN
+#endif
+#if !defined(LIBXSMM_NOOP)
+# define LIBXSMM_NOOP
 #endif
 
 

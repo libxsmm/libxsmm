@@ -102,7 +102,9 @@
  * optimization such as using a loop with bounds which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_TRANS_OOP_MAIN(FN, OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, LD, LDO) { \
+#define LIBXSMM_TRANS_OOP_MAIN(PARALLEL, JOIN, KERNEL_START, SYNC, \
+  FN, OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, LD, LDO) \
+PARALLEL JOIN { \
   const libxsmm_blasint m = (M1) - (M0), n = (N1) - (N0); \
   if (m * n * (TYPESIZE) <= ((LIBXSMM_TRANS_CACHESIZE) / 2)) { \
     LIBXSMM_TRANS_OOP_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, n, LD, LDO) \
@@ -112,22 +114,29 @@
   } \
   else if (m >= n) { \
     const libxsmm_blasint mi = ((M0) + (M1)) / 2; \
+    KERNEL_START \
     (FN)(OUT, IN, TYPESIZE, M0, mi, N0, N1, LD, LDO); \
+    KERNEL_START \
     (FN)(OUT, IN, TYPESIZE, mi, M1, N0, N1, LD, LDO); \
   } \
   else { \
     if ((CHUNKSIZE) < n) { \
       const libxsmm_blasint ni = (N0) + (CHUNKSIZE); \
+      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
+      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
     } \
     else \
     { \
       const libxsmm_blasint ni = ((N0) + (N1)) / 2; \
+      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
+      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
     } \
   } \
+  SYNC \
 }
 
 #endif /*LIBXSMM_TRANS_H*/
