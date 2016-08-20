@@ -198,8 +198,8 @@ OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_alloc.o $(BLDD
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
 KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KERNELOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
-EXTOBJS_HST = $(BLDDIR)/intel64/libxsmm_ext_gemm.o
-EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_ext_gemm.o
+EXTOBJS_HST = $(BLDDIR)/intel64/libxsmm_ext_gemm.o $(BLDDIR)/intel64/libxsmm_ext_trans.o
+EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_ext_gemm.o $(BLDDIR)/mic/libxsmm_ext_trans.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \

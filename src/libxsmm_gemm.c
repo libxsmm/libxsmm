@@ -72,7 +72,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   libxsmm_nt = 2;
   libxsmm_mp = 2;
   {
-    /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
+    /* behaviour of libxsmm_?gemm_omp routines or LD_PRELOAD ?GEMM routines
      * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
      * 1: OpenMP-parallelized but without internal parallel region,
      * 2: OpenMP-parallelized with internal parallel region" )

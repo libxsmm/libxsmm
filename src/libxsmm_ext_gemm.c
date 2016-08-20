@@ -70,7 +70,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_RTLD_NEXT) && !defined(__STATIC)*/
 
 
-LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* transb,
+LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
@@ -99,7 +99,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 #if defined(LIBXSMM_EXT_TASKS)
     else {
       LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
@@ -126,7 +126,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 #if defined(LIBXSMM_EXT_TASKS)
     else {
       LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
@@ -139,7 +139,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* transb,
+LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
@@ -167,7 +167,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 #if defined(LIBXSMM_EXT_TASKS)
     else {
       LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
@@ -194,7 +194,7 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 #if defined(LIBXSMM_EXT_TASKS)
     else {
       LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
@@ -216,7 +216,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sge
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_omp_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -227,7 +227,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dge
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_omp_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 #endif

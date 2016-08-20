@@ -250,8 +250,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbose_mode
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_omp_sgemm
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_omp_dgemm
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -297,7 +297,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).
-          PURE SUBROUTINE libxsmm_transpose_oop(output,                 &
+          PURE SUBROUTINE libxsmm_otrans(output,                 &
      &    input, typesize, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
@@ -307,7 +307,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, single-precision).
-          PURE SUBROUTINE libxsmm_stranspose_oop(output,                &
+          PURE SUBROUTINE libxsmm_sotrans(output,                &
      &    input, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
@@ -317,7 +317,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, double-precision).
-          PURE SUBROUTINE libxsmm_dtranspose_oop(output,                &
+          PURE SUBROUTINE libxsmm_dotrans(output,                &
      &    input, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
@@ -340,7 +340,7 @@
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
           END FUNCTION
 
-          SUBROUTINE libxsmm_omp_sgemm(transa, transb, m, n, k,         &
+          SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
@@ -351,7 +351,7 @@
             REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
-          SUBROUTINE libxsmm_omp_dgemm(transa, transb, m, n, k,         &
+          SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb

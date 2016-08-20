@@ -29,13 +29,12 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trans.h"
-#include "libxsmm_main.h"
+#include "libxsmm_ext.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if !defined(NDEBUG)
-# include <assert.h>
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -43,16 +42,16 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP, LIBXSMM_NOOP, internal_otrans,
+  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC, internal_otrans_omp,
     out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_otrans(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -66,46 +65,7 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans(void* out, const void* in, unsigned i
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
-  internal_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+  LIBXSMM_EXT_TSK_PARALLEL_ONLY
+  internal_otrans_omp(out, in, typesize, 0, m, 0, n, ld, ldo);
 }
-
-
-LIBXSMM_API_DEFINITION void libxsmm_itrans(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-{
-  LIBXSMM_UNUSED(inout); LIBXSMM_UNUSED(typesize); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(ld);
-  assert(0/*Not yet implemented!*/);
-}
-
-
-#if defined(LIBXSMM_BUILD)
-
-LIBXSMM_API_DEFINITION void libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
-{
-  libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo);
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
-{
-  libxsmm_otrans(out, in, sizeof(double), m, n, ld, ldo);
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-{
-  libxsmm_itrans(inout, sizeof(float), m, n, ld);
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-{
-  libxsmm_itrans(inout, sizeof(double), m, n, ld);
-}
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

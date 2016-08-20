@@ -171,8 +171,8 @@ LIBXSMM_API const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(void);
 #define LIBXSMM_MMFUNCTION_TYPE(REAL)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(REAL) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, mmdispatch))
 #define LIBXSMM_XBLAS_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(REAL, gemm))
-#define LIBXSMM_XOMPS_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_omp_, LIBXSMM_TPREFIX(REAL, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(REAL)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(REAL, gemm))
+#define LIBXSMM_YGEMM_SYMBOL(REAL)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(REAL), _omp)
 
 /** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
 #if defined(__GNUC__)
@@ -271,12 +271,6 @@ LIBXSMM_API const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(void);
     LIBXSMM_INLINE_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
-
-#define LIBXSMM_OMPS_GEMM(REAL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-  LIBXSMM_XOMPS_SYMBOL(REAL)( \
-    0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T', \
-    0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T', \
-    M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Fallback code paths: LIBXSMM_FALLBACK0, and LIBXSMM_FALLBACK1 (template). */
 #if defined(LIBXSMM_FALLBACK_INLINE_GEMM)

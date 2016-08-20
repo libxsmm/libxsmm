@@ -85,10 +85,10 @@ int main(int argc, char* argv[])
 
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      libxsmm_transpose_oop(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
+      libxsmm_otrans(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
-      libxsmm_transpose_oop(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
+      libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
 #endif
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
         fprintf(stderr, "In-place transpose assumed!\n");
       }
       start = libxsmm_timer_tick();
-      /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), m, n, lda);*/
+      /*libxsmm_itrans(a, sizeof(REAL_TYPE), m, n, lda);*/
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
-      /*libxsmm_transpose_inp(a, sizeof(REAL_TYPE), n, m, lda);*/
+      /*libxsmm_itrans(a, sizeof(REAL_TYPE), n, m, lda);*/
 #endif
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }

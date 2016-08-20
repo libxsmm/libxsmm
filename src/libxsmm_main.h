@@ -37,6 +37,9 @@
 #if !defined(LIBXSMM_REGSIZE) /* must be POT */
 # define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
 #endif
+#if !defined(LIBXSMM_CPU_DCACHESIZE)
+# define LIBXSMM_CPU_DCACHESIZE 32768
+#endif
 
 #if !defined(LIBXSMM_SEQUENTIAL)
 # define LIBXSMM_SEQUENTIAL

@@ -81,14 +81,14 @@ int main(int argc, char* argv[])
     init(0, d, scale, m, n, ldc);
 
     /* warmup BLAS library (populate thread pool) */
-    LIBXSMM_XOMPS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+    LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 
     { /* Tiled xGEMM */
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
-        LIBXSMM_XOMPS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+        LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
