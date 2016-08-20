@@ -51,6 +51,9 @@
 #   define LIBXSMM_TRANS_CHUNKSIZE 32
 # endif
 #endif
+#if !defined(LIBXSMM_TRANS_TYPEOPT)
+# define LIBXSMM_TRANS_TYPEOPT
+#endif
 
 
 /* Based on the cache-oblivious transpose by Frigo et.al. with optimization for a loop with bounds which are known at compile-time. */
@@ -60,6 +63,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_trans_oop(void *LIBXSMM_RESTRI
 {
   const libxsmm_blasint m = m1 - m0, n = n1 - n0;
   if (m * n * typesize <= ((LIBXSMM_TRANS_CACHESIZE) / 2)) {
+#if defined(LIBXSMM_TRANS_TYPEOPT)
     switch(typesize) {
       case 1: {
         LIBXSMM_TRANS_OOP(char, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
@@ -77,11 +81,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_trans_oop(void *LIBXSMM_RESTRI
         typedef struct dvec2_t { double value[2]; } dvec2_t;
         LIBXSMM_TRANS_OOP(dvec2_t, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
-      default: {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM: unsupported element type in transpose!\n");
+      default:
+#else
+    { /* fall-back code path which is generic with respect to the typesize */
 #endif
-        assert(0);
+      {
+        LIBXSMM_TRANS_OOP_GENERIC(typesize, out, in, m0, m1, n0, n1, n, ld, ldo);
       }
     }
   }

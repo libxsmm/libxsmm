@@ -33,11 +33,27 @@
 
 #include <libxsmm.h>
 
+#define LIBXSMM_TRANS_OOP_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
+  const char *const a = (const char*)(IN); \
+  char *const b = (char*)(OUT); \
+  libxsmm_blasint i, j, k; \
+  for (i = M0; i < (M1); ++i) { \
+    LIBXSMM_PRAGMA_NONTEMPORAL \
+    for (j = N0; j < (N1); ++j) { \
+      const char *const aji = a + (TYPESIZE) * (j * (LD) + i); \
+      char *const bij = b + (TYPESIZE) * (i * (LDO) + j); \
+      for (k = 0; k < (TYPESIZE); ++k) { \
+        bij[k] = aji[k]; \
+      } \
+    } \
+  } \
+}
+
 #define LIBXSMM_TRANS_OOP(TYPE, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
-  const TYPE *const a = (const TYPE*)(IN); \
-  TYPE *const b = (TYPE*)(OUT); \
-  libxsmm_blasint i, j; \
-  if (CHUNKSIZE == (N) && 0 == LIBXSMM_MOD2((uintptr_t)b, LIBXSMM_ALIGNMENT)) { \
+  if (CHUNKSIZE == (N) && 0 == LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT)) { \
+    const TYPE *const a = (const TYPE*)(IN); \
+    TYPE *const b = (TYPE*)(OUT); \
+    libxsmm_blasint i, j; \
     for (i = M0; i < (M1); ++i) { \
       LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
       LIBXSMM_PRAGMA_NONTEMPORAL \
@@ -48,12 +64,7 @@
     } \
   } \
   else { \
-    for (i = M0; i < (M1); ++i) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = N0; j < (N1); ++j) { \
-        b[i*(LDO)+j] = a[j*(LD)+i]; \
-      } \
-    } \
+    LIBXSMM_TRANS_OOP_GENERIC(sizeof(TYPE), OUT, IN, M0, M1, N0, N1, N, LD, LDO); \
   } \
 }
 
