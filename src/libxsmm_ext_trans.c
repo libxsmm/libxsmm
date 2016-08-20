@@ -48,7 +48,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTR
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL, internal_otrans_omp, out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
+  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC, internal_otrans_omp,
+    out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
 
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
@@ -73,12 +74,10 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
     if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
       LIBXSMM_EXT_TSK_PARALLEL_ONLY
       internal_otrans_omp(out, in, typesize, 0, m, 0, n, ld, ldo);
-      /* no sync required (implicit barrier) */
     }
     else { /* prepare for external parallelization */
       LIBXSMM_EXT_SINGLE
       internal_otrans_omp(out, in, typesize, 0, m, 0, n, ld, ldo);
-      LIBXSMM_EXT_TSK_SYNC
     }
   }
   else
