@@ -175,6 +175,8 @@ LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned re
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks /*= 0*/;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mp /*= 0*/;
+/** Number of threads per core. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt /*= 2*/;
 
 #endif /*LIBXSMM_MAIN_H*/
 
