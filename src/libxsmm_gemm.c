@@ -29,7 +29,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
-#include "libxsmm_ext_gemm.h"
 #include "libxsmm_sync.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -68,27 +67,27 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
 {
   int config = 0;
   LIBXSMM_UNUSED(prefetch);
-  internal_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-  internal_gemm_nt = 2;
-  internal_gemm = 2;
+  libxsmm_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+  libxsmm_gemm_nt = 2;
+  libxsmm_mp = 2;
   {
     /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
      * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
      * 1: OpenMP-parallelized but without internal parallel region,
      * 2: OpenMP-parallelized with internal parallel region" )
      */
-    const char *const env = getenv("LIBXSMM_GEMM");
+    const char *const env = getenv("LIBXSMM_MP");
     if (0 != env && 0 != *env) {
-      internal_gemm = atoi(env);
+      libxsmm_mp = atoi(env);
     }
   }
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
+#if defined(LIBXSMM_EXT_TASKS)
   { /* consider user input about using (OpenMP-)tasks; this code must be here
     * because maybe only this translation unit is compiled with OpenMP support
     */
     const char *const env_tasks = getenv("LIBXSMM_TASKS");
     if (0 != env_tasks && 0 != *env_tasks) {
-      internal_gemm_tasks = atoi(env_tasks);
+      libxsmm_tasks = atoi(env_tasks);
     }
   }
 #endif
@@ -98,7 +97,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
-    internal_gemm_nt = 4;
+    libxsmm_gemm_nt = 4;
     config = 1;
   }
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
@@ -108,20 +107,20 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     };
     const char* env[3];
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-    internal_gemm_tile[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
-    internal_gemm_tile[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
-    internal_gemm_tile[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
+    libxsmm_gemm_tile[0/*DP*/][0/*M*/] = (env[0] ? atoi(env[0]) : 0);
+    libxsmm_gemm_tile[0/*DP*/][1/*N*/] = (env[1] ? atoi(env[1]) : 0);
+    libxsmm_gemm_tile[0/*DP*/][2/*K*/] = (env[2] ? atoi(env[2]) : 0);
     /* environment-defined tile sizes applies for DP and SP */
-    internal_gemm_tile[1/*SP*/][0/*M*/] = internal_gemm_tile[0/*DP*/][0];
-    internal_gemm_tile[1/*SP*/][1/*N*/] = internal_gemm_tile[0/*DP*/][1];
-    internal_gemm_tile[1/*SP*/][2/*K*/] = internal_gemm_tile[0/*DP*/][2];
+    libxsmm_gemm_tile[1/*SP*/][0/*M*/] = libxsmm_gemm_tile[0/*DP*/][0];
+    libxsmm_gemm_tile[1/*SP*/][1/*N*/] = libxsmm_gemm_tile[0/*DP*/][1];
+    libxsmm_gemm_tile[1/*SP*/][2/*K*/] = libxsmm_gemm_tile[0/*DP*/][2];
     /* load predefined configuration if tile size is not setup by the environment */
-    if (0 >= internal_gemm_tile[0/*DP*/][0/*M*/]) internal_gemm_tile[0][0] = tile_configs[config][0][0];
-    if (0 >= internal_gemm_tile[0/*DP*/][1/*N*/]) internal_gemm_tile[0][1] = tile_configs[config][0][1];
-    if (0 >= internal_gemm_tile[0/*DP*/][2/*K*/]) internal_gemm_tile[0][2] = tile_configs[config][0][2];
-    if (0 >= internal_gemm_tile[1/*SP*/][0/*M*/]) internal_gemm_tile[1][0] = tile_configs[config][1][0];
-    if (0 >= internal_gemm_tile[1/*SP*/][1/*N*/]) internal_gemm_tile[1][1] = tile_configs[config][1][1];
-    if (0 >= internal_gemm_tile[1/*SP*/][2/*K*/]) internal_gemm_tile[1][2] = tile_configs[config][1][2];
+    if (0 >= libxsmm_gemm_tile[0/*DP*/][0/*M*/]) libxsmm_gemm_tile[0][0] = tile_configs[config][0][0];
+    if (0 >= libxsmm_gemm_tile[0/*DP*/][1/*N*/]) libxsmm_gemm_tile[0][1] = tile_configs[config][0][1];
+    if (0 >= libxsmm_gemm_tile[0/*DP*/][2/*K*/]) libxsmm_gemm_tile[0][2] = tile_configs[config][0][2];
+    if (0 >= libxsmm_gemm_tile[1/*SP*/][0/*M*/]) libxsmm_gemm_tile[1][0] = tile_configs[config][1][0];
+    if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/]) libxsmm_gemm_tile[1][1] = tile_configs[config][1][1];
+    if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/]) libxsmm_gemm_tile[1][2] = tile_configs[config][1][2];
   }
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
@@ -291,13 +290,13 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
-  const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
-  const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
+  const int tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
+  const int tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
+  const int tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
-    LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_JOIN,
+    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
+    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -312,13 +311,13 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
-  const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
-  const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
+  const int tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
+  const int tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
+  const int tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
-    LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-    double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_JOIN,
+    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
+    double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((double)LIBXSMM_BETA),

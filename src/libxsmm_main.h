@@ -38,6 +38,28 @@
 # define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
 #endif
 
+#if !defined(LIBXSMM_SEQUENTIAL)
+# define LIBXSMM_SEQUENTIAL
+#endif
+#if !defined(LIBXSMM_EXT_MIN_NTASKS)
+# define LIBXSMM_MIN_NTASKS(NT) 1
+#endif
+#if !defined(LIBXSMM_OVERHEAD)
+# define LIBXSMM_OVERHEAD(NT) 0
+#endif
+#if !defined(LIBXSMM_FOR_LOOP)
+# define LIBXSMM_FOR_LOOP(COLLAPSE)
+#endif
+#if !defined(LIBXSMM_FOR_KERNEL)
+# define LIBXSMM_FOR_KERNEL(...)
+#endif
+#if !defined(LIBXSMM_FOR_SYNC)
+# define LIBXSMM_FOR_SYNC
+#endif
+#if !defined(LIBXSMM_JOIN)
+# define LIBXSMM_JOIN
+#endif
+
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API)
@@ -148,6 +170,11 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
 
 
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
+
+/** Determines whether (OpenMP-)tasks are preferred over thread-style parallelization. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks /*= 0*/;
+/** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mp /*= 0*/;
 
 #endif /*LIBXSMM_MAIN_H*/
 

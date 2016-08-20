@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_ext_gemm.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_sync.h"
+#include "libxsmm_ext.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -76,30 +76,32 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  const int tm = internal_gemm_tile[1/*SP*/][0/*M*/];
-  const int tn = internal_gemm_tile[1/*SP*/][1/*N*/];
-  const int tk = internal_gemm_tile[1/*SP*/][2/*K*/];
+  const int tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
+  const int tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
+  const int tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  assert(0 < tm && 0 < tn && 0 < tk && 0 < internal_gemm_nt);
+  assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_gemm_nt);
   LIBXSMM_INIT
-  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
-    if (0 == internal_gemm_tasks)
+  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
+#if defined(LIBXSMM_EXT_TASKS)
+    if (0 == libxsmm_tasks)
 #endif
     {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL,
-        LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_EXT_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
+#if defined(LIBXSMM_EXT_TASKS)
     else {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL,
-        LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -108,23 +110,25 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_sgemm(const char* transa, const char* tr
 #endif
   }
   else { /* potentially sequential or externally parallelized */
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
-    if (0 == internal_gemm_tasks)
+#if defined(LIBXSMM_EXT_TASKS)
+    if (0 == libxsmm_tasks)
 #endif
     {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
-        LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_EXT_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
+#if defined(LIBXSMM_EXT_TASKS)
     else {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN,
-        LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -141,29 +145,31 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  const int tm = internal_gemm_tile[0/*DP*/][0/*M*/];
-  const int tn = internal_gemm_tile[0/*DP*/][1/*N*/];
-  const int tk = internal_gemm_tile[0/*DP*/][2/*K*/];
+  const int tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
+  const int tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
+  const int tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_INIT
-  if (0 == LIBXSMM_MOD2(internal_gemm, 2)) { /* enable internal parallelization */
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
-    if (0 == internal_gemm_tasks)
+  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
+#if defined(LIBXSMM_EXT_TASKS)
+    if (0 == libxsmm_tasks)
 #endif
     {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN_PARALLEL,
-        LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_EXT_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+        double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
+#if defined(LIBXSMM_EXT_TASKS)
     else {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN_PARALLEL,
-        LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
@@ -172,23 +178,25 @@ LIBXSMM_API_DEFINITION void libxsmm_omp_dgemm(const char* transa, const char* tr
 #endif
   }
   else { /* potentially sequential or externally parallelized */
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
-    if (0 == internal_gemm_tasks)
+#if defined(LIBXSMM_EXT_TASKS)
+    if (0 == libxsmm_tasks)
 #endif
     {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_FOR_INIT, LIBXSMM_EXT_GEMM_FOR_LOOP_BEGIN,
-        LIBXSMM_EXT_GEMM_FOR_LOOP_BODY, LIBXSMM_EXT_GEMM_FOR_LOOP_END,
-        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_EXT_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+        double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),
         c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
     }
-#if defined(LIBXSMM_EXT_GEMM_TASKS)
+#if defined(LIBXSMM_EXT_TASKS)
     else {
-      LIBXSMM_EXT_GEMM_XGEMM(LIBXSMM_EXT_GEMM_TSK_INIT, LIBXSMM_EXT_GEMM_TSK_LOOP_BEGIN,
-        LIBXSMM_EXT_GEMM_TSK_LOOP_BODY, LIBXSMM_EXT_GEMM_TSK_LOOP_END,
-        double, flags, internal_gemm_nt, tm, tn, tk, *m, *n, *k,
+      LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, LIBXSMM_EXT_JOIN, LIBXSMM_JOIN,
+        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC,
+        double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
         0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
         a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
         0 != beta ? *beta : ((double)LIBXSMM_BETA),

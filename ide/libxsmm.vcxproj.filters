@@ -111,9 +111,6 @@
     <ClInclude Include="..\build\libxsmm_dispatch.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_ext_gemm.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_conv.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -142,6 +139,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_conv_fwd.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_trans.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_ext.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

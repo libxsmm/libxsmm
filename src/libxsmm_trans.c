@@ -28,14 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-
-/* external implementation, if a supported library is enabled at build-time */
-#if !defined(LIBXSMM_TRANSPOSE_EXTERNAL) && \
-   ((defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) \
-  || defined(__OPENBLAS))
-/*# define LIBXSMM_TRANSPOSE_EXTERNAL*/
-#endif
+#include "libxsmm_trans.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -44,7 +37,7 @@
 #if !defined(NDEBUG)
 # include <assert.h>
 #endif
-#if defined(LIBXSMM_TRANSPOSE_EXTERNAL)
+#if defined(LIBXSMM_TRANS_EXTERNAL)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 #   include <mkl_trans.h>
 # elif defined(__OPENBLAS)
@@ -55,77 +48,41 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_TRANSPOSE_CACHESIZE)
-# define LIBXSMM_TRANSPOSE_CACHESIZE 32768
+#if !defined(LIBXSMM_TRANS_CACHESIZE)
+# define LIBXSMM_TRANS_CACHESIZE 32768
 #endif
-#if !defined(LIBXSMM_TRANSPOSE_CHUNK)
+#if !defined(LIBXSMM_TRANS_CHUNKSIZE)
 # if defined(__MIC__)
-#   define LIBXSMM_TRANSPOSE_CHUNK 8
+#   define LIBXSMM_TRANS_CHUNKSIZE 8
 # else
-#   define LIBXSMM_TRANSPOSE_CHUNK 32
+#   define LIBXSMM_TRANS_CHUNKSIZE 32
 # endif
 #endif
-#if !defined(LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE)
-# define LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE
-#endif
-
-/* consecutive store and strided load */
-#if defined(LIBXSMM_TRANSPOSE_CONSECUTIVE_STORE)
-# define INTERNAL_TRANSPOSE_INDEX_STORE(I, J, LD) (I * LD + J)
-# define INTERNAL_TRANSPOSE_INDEX_LOAD(I, J, LD) (J * LD + I)
-#else /* consecutive load and strided store */
-# define INTERNAL_TRANSPOSE_INDEX_STORE(I, J, LD) (J * LD + I)
-# define INTERNAL_TRANSPOSE_INDEX_LOAD(I, J, LD) (I * LD + J)
-#endif
-
-#define INTERNAL_TRANSPOSE_OOP(TYPE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
-  const TYPE *const a = (const TYPE*)IN; \
-  TYPE *const b = (TYPE*)OUT; \
-  libxsmm_blasint i, j; \
-  if (LIBXSMM_TRANSPOSE_CHUNK == N && 0 == LIBXSMM_MOD2((uintptr_t)b, LIBXSMM_ALIGNMENT)) { \
-    for (i = M0; i < M1; ++i) { \
-      LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
-      LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = N0; j < N0 + LIBXSMM_TRANSPOSE_CHUNK; ++j) { \
-        b[INTERNAL_TRANSPOSE_INDEX_STORE(i,j,LDO)] = a[INTERNAL_TRANSPOSE_INDEX_LOAD(i,j,LD)]; \
-      } \
-    } \
-  } \
-  else { \
-    for (i = M0; i < M1; ++i) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = N0; j < N1; ++j) { \
-        b[INTERNAL_TRANSPOSE_INDEX_STORE(i,j,LDO)] = a[INTERNAL_TRANSPOSE_INDEX_LOAD(i,j,LD)]; \
-      } \
-    } \
-  } \
-}
 
 
-/* Based on cache-oblivious scheme as published by Frigo et.al. Further optimization for loop with bounds known at compile-time. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_transpose_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+/* Based on the cache-oblivious transpose by Frigo et.al. with optimization for a loop with bounds which are known at compile-time. */
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_trans_oop(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   const libxsmm_blasint m = m1 - m0, n = n1 - n0;
-
-  if (m * n * typesize <= (LIBXSMM_TRANSPOSE_CACHESIZE / 2)) {
+  if (m * n * typesize <= ((LIBXSMM_TRANS_CACHESIZE) / 2)) {
     switch(typesize) {
       case 1: {
-        INTERNAL_TRANSPOSE_OOP(char, out, in, m0, m1, n0, n1, n, ld, ldo);
+        LIBXSMM_TRANS_OOP(char, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
       case 2: {
-        INTERNAL_TRANSPOSE_OOP(short, out, in, m0, m1, n0, n1, n, ld, ldo);
+        LIBXSMM_TRANS_OOP(short, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
       case 4: {
-        INTERNAL_TRANSPOSE_OOP(float, out, in, m0, m1, n0, n1, n, ld, ldo);
+        LIBXSMM_TRANS_OOP(float, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
       case 8: {
-        INTERNAL_TRANSPOSE_OOP(double, out, in, m0, m1, n0, n1, n, ld, ldo);
+        LIBXSMM_TRANS_OOP(double, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
       case 16: {
         typedef struct dvec2_t { double value[2]; } dvec2_t;
-        INTERNAL_TRANSPOSE_OOP(dvec2_t, out, in, m0, m1, n0, n1, n, ld, ldo);
+        LIBXSMM_TRANS_OOP(dvec2_t, LIBXSMM_TRANS_CHUNKSIZE, out, in, m0, m1, n0, n1, n, ld, ldo);
       } break;
       default: {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -137,22 +94,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_transpose_oop(void *LIBXSMM_RE
   }
   else if (m >= n) {
     const libxsmm_blasint mi = (m0 + m1) / 2;
-    internal_transpose_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
-    internal_transpose_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
+    internal_trans_oop(out, in, typesize, m0, mi, n0, n1, ld, ldo);
+    internal_trans_oop(out, in, typesize, mi, m1, n0, n1, ld, ldo);
   }
   else {
-#if (0 < LIBXSMM_TRANSPOSE_CHUNK)
-    if (LIBXSMM_TRANSPOSE_CHUNK < n) {
-      const libxsmm_blasint ni = n0 + LIBXSMM_TRANSPOSE_CHUNK;
-      internal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
-      internal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
+#if (0 < LIBXSMM_TRANS_CHUNKSIZE)
+    if (LIBXSMM_TRANS_CHUNKSIZE < n) {
+      const libxsmm_blasint ni = n0 + LIBXSMM_TRANS_CHUNKSIZE;
+      internal_trans_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      internal_trans_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
     else
 #endif
     {
       const libxsmm_blasint ni = (n0 + n1) / 2;
-      internal_transpose_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
-      internal_transpose_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
+      internal_trans_oop(out, in, typesize, m0, m1, n0, ni, ld, ldo);
+      internal_trans_oop(out, in, typesize, m0, m1, ni, n1, ld, ldo);
     }
   }
 }
@@ -172,7 +129,7 @@ LIBXSMM_API_DEFINITION void libxsmm_transpose_oop(void* out, const void* in, uns
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
 #endif
-#if defined(LIBXSMM_TRANSPOSE_EXTERNAL)
+#if defined(LIBXSMM_TRANS_EXTERNAL)
   if (8 == typesize) { /* hopefully the actual type is not complex-SP (or alpha-multiplication is not performed) */
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     mkl_domatcopy('C', 'T', m, n, 1.0, (const double*)in, ld, (double*)out, ldo);
@@ -198,7 +155,7 @@ LIBXSMM_API_DEFINITION void libxsmm_transpose_oop(void* out, const void* in, uns
   else
 #endif
   {
-    internal_transpose_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
+    internal_trans_oop(out, in, typesize, 0, m, 0, n, ld, ldo);
   }
 }
 

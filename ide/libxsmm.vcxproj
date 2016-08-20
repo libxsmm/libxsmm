@@ -63,7 +63,7 @@
     <ClInclude Include="..\src\libxsmm_alloc.h" />
     <ClInclude Include="..\src\libxsmm_conv_fwd.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
-    <ClInclude Include="..\src\libxsmm_ext_gemm.h" />
+    <ClInclude Include="..\src\libxsmm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
@@ -71,6 +71,7 @@
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_sync.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
+    <ClInclude Include="..\src\libxsmm_trans.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
