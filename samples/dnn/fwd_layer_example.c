@@ -248,7 +248,7 @@ int main(int argc, char* argv[])
   srand48(1);
 
   /* reading new values from cli */
-  i=1;
+  i = 1;
   if (argc > i) iters      = atoi(argv[i++]);
   if (argc > i) ifw        = atoi(argv[i++]);
   if (argc > i) ifh        = atoi(argv[i++]);
@@ -271,8 +271,8 @@ int main(int argc, char* argv[])
   ofw = (ifw - kw) / stride_w + 1;
   ifhp = ifh;
   ifwp = ifw;
-  ofhp = ofh + 2*pad_h;
-  ofwp = ofw + 2*pad_w;
+  ofhp = ofh + 2 * pad_h;
+  ofwp = ofw + 2 * pad_w;
 
   /* set struct for naive convolution */
   naive_param.nImg = nImg;
