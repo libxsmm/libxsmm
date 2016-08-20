@@ -47,8 +47,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT 
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP, LIBXSMM_NOOP, internal_otrans,
-    out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
+  LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP, internal_otrans, out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
 
 

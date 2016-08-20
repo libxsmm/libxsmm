@@ -90,14 +90,14 @@
 # endif
 #endif
 
-#define LIBXSMM_TILED_XGEMM(PARALLEL, JOIN_OUTER, JOIN_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, \
+#define LIBXSMM_TILED_XGEMM(PARALLEL, SINGLE_OUTER, SINGLE_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, \
   MIN_TASKS, OVERHEAD, NT, REAL, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-JOIN_OUTER { \
+SINGLE_OUTER { \
   const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
   const int sufficient_size = LIBXSMM_TILED_XGEMM_THRESHOLD(M, N, K); \
   libxsmm_blasint tile_m = 0, tile_n = 0, tile_k = 0, num_m = 0, num_n = 0, num_k = 0; \
   libxsmm_xmmfunction xmm = { 0 }; \
-  JOIN_INNER \
+  SINGLE_INNER \
   if (0 != sufficient_size \
     /*TODO: not supported*/&& 0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) \
     /*TODO: not supported*/&& 1 == scalpha && (1 == scbeta || 0 == scbeta)) \
