@@ -92,7 +92,7 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
 #endif
   {
     /* avoid dependency by not calling libxsmm_otrans */
-    internal_otrans_ext(out, in, typesize, m, n, ld, ldo)
+    internal_otrans_ext(out, in, typesize, m, n, ld, ldo);
   }
 }
 
