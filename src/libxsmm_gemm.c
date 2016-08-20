@@ -295,8 +295,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const int tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
   const int tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_SINGLE, LIBXSMM_SINGLE,
-    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
     LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
     float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
@@ -317,8 +317,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const int tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
   const int tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_SINGLE, LIBXSMM_SINGLE,
-    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
     LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
     double, flags, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),

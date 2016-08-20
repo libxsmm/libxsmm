@@ -41,26 +41,14 @@
 # define LIBXSMM_CPU_DCACHESIZE 32768
 #endif
 
-#if !defined(LIBXSMM_SEQUENTIAL)
-# define LIBXSMM_SEQUENTIAL
-#endif
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
 # define LIBXSMM_MIN_NTASKS(NT) 1
 #endif
 #if !defined(LIBXSMM_OVERHEAD)
 # define LIBXSMM_OVERHEAD(NT) 0
 #endif
-#if !defined(LIBXSMM_FOR_LOOP)
-# define LIBXSMM_FOR_LOOP(COLLAPSE)
-#endif
-#if !defined(LIBXSMM_FOR_KERNEL)
-# define LIBXSMM_FOR_KERNEL(...)
-#endif
-#if !defined(LIBXSMM_FOR_SYNC)
-# define LIBXSMM_FOR_SYNC
-#endif
-#if !defined(LIBXSMM_SINGLE)
-# define LIBXSMM_SINGLE
+#if !defined(LIBXSMM_NOOP_ARGS)
+# define LIBXSMM_NOOP_ARGS(...)
 #endif
 #if !defined(LIBXSMM_NOOP)
 # define LIBXSMM_NOOP
