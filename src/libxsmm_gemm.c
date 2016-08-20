@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
+#include "libxsmm_main.h"
 #include "libxsmm_sync.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -68,7 +69,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   int config = 0;
   LIBXSMM_UNUSED(prefetch);
   libxsmm_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-  libxsmm_gemm_nt = 2;
+  libxsmm_nt = 2;
   libxsmm_mp = 2;
   {
     /* behaviour of libxsmm_omp_?gemm routines or LD_PRELOAD ?GEMM routines
@@ -97,7 +98,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
-    libxsmm_gemm_nt = 4;
+    libxsmm_nt = 4;
     config = 1;
   }
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
@@ -294,9 +295,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const int tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
   const int tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_JOIN,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_JOIN, LIBXSMM_JOIN,
     LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
-    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
+    LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((float)LIBXSMM_BETA),
@@ -315,9 +317,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const int tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
   const int tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, LIBXSMM_JOIN, LIBXSMM_JOIN,
+  LIBXSMM_TILED_XGEMM(LIBXSMM_SEQUENTIAL, LIBXSMM_JOIN, LIBXSMM_JOIN,
     LIBXSMM_GEMM_COLLAPSE, LIBXSMM_FOR_LOOP, LIBXSMM_FOR_KERNEL, LIBXSMM_FOR_SYNC,
-    double, flags, libxsmm_gemm_nt, tm, tn, tk, *m, *n, *k,
+    LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+    double, flags, tm, tn, tk, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
     0 != beta ? *beta : ((double)LIBXSMM_BETA),

@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_GEMM_H
 #define LIBXSMM_GEMM_H
 
-#include "libxsmm_main.h"
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -90,9 +90,9 @@
 # endif
 #endif
 
-#define LIBXSMM_TILED_XGEMM(PARALLEL, MIN_TASKS, OVERHEAD, JOIN_OUTER, JOIN_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, REAL, FLAGS, NT, \
-  TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) JOIN_OUTER \
-{ \
+#define LIBXSMM_TILED_XGEMM(PARALLEL, JOIN_OUTER, JOIN_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, \
+  MIN_TASKS, OVERHEAD, NT, REAL, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+JOIN_OUTER { \
   const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
   const int sufficient_size = LIBXSMM_TILED_XGEMM_THRESHOLD(M, N, K); \
   libxsmm_blasint tile_m = 0, tile_n = 0, tile_k = 0, num_m = 0, num_n = 0, num_k = 0; \
@@ -219,8 +219,6 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
-/** Number of threads per core. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_nt /*= 2*/;
 /** Prefetch strategy. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch /*= LIBXSMM_MAX(LIBXSMM_PREFETCH, 0)*/;
 
