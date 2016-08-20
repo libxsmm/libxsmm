@@ -41,9 +41,14 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_EXT_TRANS_NODEP)
+# define LIBXSMM_EXT_TRANS_NODEP
+#endif
+
 
 #if defined(LIBXSMM_EXT_TASKS)
 
+#if defined(LIBXSMM_EXT_TRANS_NODEP)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_ext(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
@@ -51,6 +56,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_ext(void *LIBXSMM_RESTR
   LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP, LIBXSMM_NOOP, internal_otrans_ext,
     out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
+#endif
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
@@ -66,8 +72,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTR
 LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-#if defined(LIBXSMM_EXT_TASKS)
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(NDEBUG) && (defined(LIBXSMM_EXT_TASKS) || defined(LIBXSMM_EXT_TRANS_NODEP))
   if (ld < m && ldo < n) {
     fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
   }
@@ -77,7 +82,8 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
   else if (ldo < n) {
     fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
   }
-# endif
+#endif
+#if defined(LIBXSMM_EXT_TASKS)
   if (0 != libxsmm_mp) { /* enable OpenMP support */
     if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
       LIBXSMM_EXT_TSK_PARALLEL_ONLY
@@ -91,13 +97,14 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
   else
 #endif
   {
-    /* avoid dependency by not calling libxsmm_otrans */
+#if defined(LIBXSMM_EXT_TRANS_NODEP)
     internal_otrans_ext(out, in, typesize, 0, m, 0, n, ld, ldo);
+#else
+    libxsmm_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+#endif
   }
 }
 
-
-#if defined(LIBXSMM_BUILD)
 
 LIBXSMM_API_DEFINITION void libxsmm_sotrans_omp(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
@@ -111,6 +118,4 @@ LIBXSMM_API_DEFINITION void libxsmm_dotrans_omp(double* out, const double* in,
 {
   libxsmm_otrans_omp(out, in, sizeof(double), m, n, ld, ldo);
 }
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

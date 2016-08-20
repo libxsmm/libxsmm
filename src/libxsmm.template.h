@@ -159,22 +159,12 @@ LIBXSMM_API void libxsmm_otrans_omp(void* out, const void* in, unsigned int type
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition, which is multi-threadable (out-of-place form, single-precision). */
-LIBXSMM_API_INLINE void libxsmm_sotrans_omp(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ libxsmm_otrans_omp(out, in, sizeof(float), m, n, ld, ldo); }
-#endif
+LIBXSMM_API void libxsmm_sotrans_omp(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition, which is multi-threadable (out-of-place form, double-precision). */
-LIBXSMM_API_INLINE void libxsmm_dotrans_omp(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ libxsmm_otrans_omp(out, in, sizeof(double), m, n, ld, ldo); }
-#endif
+LIBXSMM_API void libxsmm_dotrans_omp(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition (in-place form). */
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
