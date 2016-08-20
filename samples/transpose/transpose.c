@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      libxsmm_otrans(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
+      libxsmm_otrans_omp(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
       libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
