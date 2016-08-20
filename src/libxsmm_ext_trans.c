@@ -87,3 +87,21 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
   }
 }
 
+
+#if defined(LIBXSMM_BUILD)
+
+LIBXSMM_API_DEFINITION void libxsmm_sotrans_omp(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmm_otrans_omp(out, in, sizeof(float), m, n, ld, ldo);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dotrans_omp(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmm_otrans_omp(out, in, sizeof(double), m, n, ld, ldo);
+}
+
+#endif /*defined(LIBXSMM_BUILD)*/
+
