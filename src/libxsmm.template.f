@@ -297,7 +297,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).
-          PURE SUBROUTINE libxsmm_otrans(output,                 &
+          PURE SUBROUTINE libxsmm_otrans(output,                        &
      &    input, typesize, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
@@ -307,7 +307,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, single-precision).
-          PURE SUBROUTINE libxsmm_sotrans(output,                &
+          PURE SUBROUTINE libxsmm_sotrans(output,                       &
      &    input, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
@@ -317,7 +317,7 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, double-precision).
-          PURE SUBROUTINE libxsmm_dotrans(output,                &
+          PURE SUBROUTINE libxsmm_dotrans(output,                       &
      &    input, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
