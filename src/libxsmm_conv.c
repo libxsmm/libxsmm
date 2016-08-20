@@ -1017,7 +1017,10 @@ LIBXSMM_API_DEFINITION void libxsmm_convolve(libxsmm_conv_handle* handle, libxsm
 {
 #if defined(_OPENMP)
 # pragma omp parallel
-  internal_convolve_st(handle, kind, 0, omp_get_thread_num(), omp_get_num_threads());
+  {
+    const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
+    internal_convolve_st(handle, kind, 0, tid, nthreads);
+  }
 #else
   internal_convolve_st(handle, kind, 0/*start_thread*/, 0/*tid*/, 1/*num_threads*/);
 #endif
