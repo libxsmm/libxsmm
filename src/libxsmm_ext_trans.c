@@ -46,8 +46,6 @@
 #endif
 
 
-#if defined(LIBXSMM_EXT_TASKS)
-
 #if defined(LIBXSMM_EXT_TRANS_NODEP)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_ext(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
@@ -58,6 +56,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_ext(void *LIBXSMM_RESTR
 }
 #endif
 
+
+#if defined(LIBXSMM_EXT_TASKS)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
@@ -65,7 +65,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(void *LIBXSMM_RESTR
   LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL, LIBXSMM_EXT_TSK_SYNC, internal_otrans_omp,
     out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
 }
-
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
 
 
