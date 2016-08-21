@@ -82,59 +82,74 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
   LIBXSMM_INIT
-  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
-#if defined(LIBXSMM_EXT_TASKS)
-    if (0 == libxsmm_tasks)
-#endif
-    {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((float)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if defined(_OPENMP)
+  if (0 != libxsmm_mp) { /* enable OpenMP support */
+    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* even: enable internal parallelization */
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 == libxsmm_tasks)
+# endif
+      {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((float)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((float)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# endif
     }
-#if defined(LIBXSMM_EXT_TASKS)
-    else {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((float)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    else { /* odd: prepare for external parallelization */
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 == libxsmm_tasks)
+# endif
+      {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((float)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((float)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# endif
     }
-#endif
   }
-  else { /* potentially sequential or externally parallelized */
-#if defined(LIBXSMM_EXT_TASKS)
-    if (0 == libxsmm_tasks)
+  else
 #endif
-    {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((float)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
-#if defined(LIBXSMM_EXT_TASKS)
-    else {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((float)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
-#endif
+  {
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+      LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+      LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 }
 
@@ -150,59 +165,74 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   const int tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_INIT
-  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
-#if defined(LIBXSMM_EXT_TASKS)
-    if (0 == libxsmm_tasks)
-#endif
-    {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((double)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if defined(_OPENMP)
+  if (0 != libxsmm_mp) { /* enable OpenMP support */
+    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* even: enable internal parallelization */
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 == libxsmm_tasks)
+# endif
+      {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          double, flags, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((double)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          double, flags, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((double)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# endif
     }
-#if defined(LIBXSMM_EXT_TASKS)
-    else {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_TSK_PARALLEL, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_NOOP,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((double)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    else { /* odd: prepare for external parallelization */
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 == libxsmm_tasks)
+# endif
+      {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          double, flags, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((double)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else {
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+          LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          double, flags, tm, tn, tk, *m, *n, *k,
+          0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+          a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+          0 != beta ? *beta : ((double)LIBXSMM_BETA),
+          c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      }
+# endif
     }
-#endif
   }
-  else { /* potentially sequential or externally parallelized */
-#if defined(LIBXSMM_EXT_TASKS)
-    if (0 == libxsmm_tasks)
+  else
 #endif
-    {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((double)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
-#if defined(LIBXSMM_EXT_TASKS)
-    else {
-      LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
-        LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_TSK_LOOP, LIBXSMM_EXT_TSK_KERNEL_VARS, LIBXSMM_EXT_TSK_SYNC,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
-        0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-        a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-        0 != beta ? *beta : ((double)LIBXSMM_BETA),
-        c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-    }
-#endif
+  {
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+      LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+      LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+      double, flags, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 }
 
