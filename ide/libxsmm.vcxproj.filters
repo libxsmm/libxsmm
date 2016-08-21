@@ -263,6 +263,9 @@
     <ClCompile Include="..\src\libxsmm_conv_fwd.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_ext_trans.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\libxsmm.template.f">
