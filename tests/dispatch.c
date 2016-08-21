@@ -5,46 +5,47 @@
 #if !defined(REAL_TYPE)
 # define REAL_TYPE float
 #endif
+#if !defined(NTESTS)
+# define NTESTS 10000
+#endif
 
 
 int main(void)
 {
-#if 0 != LIBXSMM_JIT
-  const int m[] = { 1, 2, 3, 4, 5, 6, 7, LIBXSMM_MAX_M - 1, LIBXSMM_MAX_M, LIBXSMM_MAX_M + 1 };
-  const int n[] = { 1, 2, 3, 4, 5, 6, 7, LIBXSMM_MAX_N - 1, LIBXSMM_MAX_N, LIBXSMM_MAX_N + 1 };
-  const int k[] = { 1, 2, 3, 4, 5, 6, 7, LIBXSMM_MAX_K - 1, LIBXSMM_MAX_K, LIBXSMM_MAX_K + 1 };
+  const int m[] = { 1, 2, 3, LIBXSMM_MAX_M - 1, LIBXSMM_MAX_M, LIBXSMM_MAX_M + 1,    16,    16,    16 };
+  const int n[] = { 1, 2, 3, LIBXSMM_MAX_N - 1, LIBXSMM_MAX_N, LIBXSMM_MAX_N + 1, 65279, 65280, 65792 };
+  const int k[] = { 1, 2, 3, LIBXSMM_MAX_K - 1, LIBXSMM_MAX_K, LIBXSMM_MAX_K + 1,    16,    16,    16 };
   const int size = sizeof(m) / sizeof(*m), flags = LIBXSMM_FLAGS, prefetch = LIBXSMM_PREFETCH;
   const REAL_TYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
-  int i, j = 0, nerrors = 0;
+  LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) f[sizeof(m)/sizeof(*m)];
+  int i, nerrors = 0;
 
+  /* initially generate a number of test kernels */
   for (i = 0; i < size; ++i) {
-    const int lda = m[i], ldb = k[i], ldc = m[i];
-    if (0 == LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(m[i], n[i], k[i], &lda, &ldb, &ldc,
-      &alpha, &beta, &flags, &prefetch))
-    {
-      if (0 == j) { /* capture first failure*/
-        j = i;
+    f[i] = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
+      m[i], n[i], k[i], m + i, k + i, m + i,
+      &alpha, &beta, &flags, &prefetch);
+  }
+
+  /* check that the same kernels are dispatched as previously generated */
+  for (i = 0; i < (NTESTS); ++i) {
+    const LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) fi = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
+      m[i%size], n[i%size], k[i%size], m + (i % size), k + (i % size), m + (i % size),
+      &alpha, &beta, &flags, &prefetch);
+
+    if (fi != f[i%size]) { /* always an error even when JIT is disabled at compile-time */
+#if defined(_DEBUG)
+      if (0 != fi) {
+        fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m[i%size], n[i%size], k[i%size]);
       }
+      else { /* did not find previously generated and recorded kernel */
+        fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m[i%size], n[i%size], k[i%size]);
+      }
+#endif
       ++nerrors;
     }
   }
 
-  if (size != nerrors) {
-    return size == i ? EXIT_SUCCESS : (i + 1)/*EXIT_FAILURE*/;
-  }
-  else if (LIBXSMM_X86_AVX > libxsmm_get_target_archid()) {
-    /* potentially unsupported platforms due to not supporting AVX, due to calling convention,
-     * or due to the environment variable LIBXSMM_JIT being set to zero.
-     */
-    fprintf(stderr, "JIT support is unavailable\n");
-    return EXIT_SUCCESS;
-  }
-  else {
-    return EXIT_FAILURE;
-  }
-#else
-  fprintf(stderr, "Please rebuild LIBXSMM with JIT=1\n");
-  return EXIT_SUCCESS;
-#endif
+  return (0 == nerrors) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
