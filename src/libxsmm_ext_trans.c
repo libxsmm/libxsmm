@@ -82,15 +82,17 @@ LIBXSMM_API_DEFINITION void libxsmm_otrans_omp(void* out, const void* in, unsign
 #endif
 #if defined(LIBXSMM_EXT_TASKS)
   if (0 != libxsmm_mp) { /* enable OpenMP support */
-    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* enable internal parallelization */
+    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* even: enable internal parallelization */
       LIBXSMM_EXT_TSK_PARALLEL_ONLY
       internal_otrans_omp(out, in, typesize, 0, m, 0, n, ld, ldo);
       /* implicit synchronization (barrier) */
     }
-    else { /* prepare for external parallelization */
+    else { /* odd: prepare for external parallelization */
       LIBXSMM_EXT_SINGLE
       internal_otrans_omp(out, in, typesize, 0, m, 0, n, ld, ldo);
-      LIBXSMM_EXT_TSK_SYNC
+      if (1 == libxsmm_mp) { /* allow to omit synchronization */
+        LIBXSMM_EXT_TSK_SYNC
+      }
     }
   }
   else
