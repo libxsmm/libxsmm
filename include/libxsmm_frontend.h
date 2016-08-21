@@ -50,9 +50,11 @@
 #endif
 #include "libxsmm_generator.h"
 #include "libxsmm_conv.h"
-#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#if !defined(NDEBUG)
+# include <assert.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
