@@ -33,12 +33,11 @@
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_TRANS_CHUNKSIZE)
-# if defined(__MIC__)
-#   define LIBXSMM_TRANS_CHUNKSIZE 8
-# else
-#   define LIBXSMM_TRANS_CHUNKSIZE 32
-# endif
+#if !defined(LIBXSMM_TRANS_MIN_CHUNKSIZE)
+# define LIBXSMM_TRANS_MIN_CHUNKSIZE 8
+#endif
+#if !defined(LIBXSMM_TRANS_MAX_CHUNKSIZE)
+# define LIBXSMM_TRANS_MAX_CHUNKSIZE 32
 #endif
 #if !defined(LIBXSMM_TRANS_TYPEOPT)
 # define LIBXSMM_TRANS_TYPEOPT
@@ -61,15 +60,16 @@
   } \
 }
 
-#define LIBXSMM_OTRANS(TYPE, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
-  if (CHUNKSIZE == (N) && 0 == LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT)) { \
+#define LIBXSMM_OTRANS(TYPE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
+  if (libxsmm_trans_chunksize == (N) && 0 == LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT)) { \
     const TYPE *const a = (const TYPE*)(IN); \
     TYPE *const b = (TYPE*)(OUT); \
     libxsmm_blasint i, j; \
     for (i = M0; i < (M1); ++i) { \
-      LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
       LIBXSMM_PRAGMA_NONTEMPORAL \
-      for (j = N0; j < (N0) + (CHUNKSIZE); ++j) { \
+      LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
+      LIBXSMM_PRAGMA_LOOP_COUNT(LIBXSMM_TRANS_MIN_CHUNKSIZE, LIBXSMM_TRANS_MAX_CHUNKSIZE, LIBXSMM_TRANS_MIN_CHUNKSIZE) \
+      for (j = N0; j < (N0) + libxsmm_trans_chunksize; ++j) { \
         /* use consecutive stores and strided loads */ \
         b[i*(LDO)+j] = a[j*(LD)+i]; \
       } \
@@ -81,27 +81,27 @@
 }
 
 #if defined(LIBXSMM_TRANS_TYPEOPT)
-# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, N, LD, LDO) \
+# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LD, LDO) \
     switch(TYPESIZE) { \
       case 1: { \
-        LIBXSMM_OTRANS(char, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(char, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
       } break; \
       case 2: { \
-        LIBXSMM_OTRANS(short, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(short, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
       } break; \
       case 4: { \
-        LIBXSMM_OTRANS(float, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(float, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
       } break; \
       case 8: { \
-        LIBXSMM_OTRANS(double, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(double, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
       } break; \
       case 16: { \
         typedef struct dvec2_t { double value[2]; } dvec2_t; \
-        LIBXSMM_OTRANS(dvec2_t, CHUNKSIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(dvec2_t, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
       } break; \
       default:
 #else
-# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, N, LD, LDO) {
+# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LD, LDO) {
 #endif
 #define LIBXSMM_OTRANS_TYPEOPT_END }
 
@@ -110,10 +110,10 @@
  * optimization such as using a loop with bounds which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_OTRANS_MAIN(KERNEL_START, SYNC, FN, OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, LD, LDO) { \
+#define LIBXSMM_OTRANS_MAIN(KERNEL_START, SYNC, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LD, LDO) { \
   const libxsmm_blasint m = (M1) - (M0), n = (N1) - (N0); \
   if (m * n * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
-    LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, CHUNKSIZE, M0, M1, N0, N1, n, LD, LDO) \
+    LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LD, LDO) \
     /* fall-back code path which is generic with respect to the typesize */ \
     LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
     LIBXSMM_OTRANS_TYPEOPT_END \
@@ -126,8 +126,8 @@
     (FN)(OUT, IN, TYPESIZE, mi, M1, N0, N1, LD, LDO); \
   } \
   else { \
-    if ((CHUNKSIZE) < n) { \
-      const libxsmm_blasint ni = (N0) + (CHUNKSIZE); \
+    if (libxsmm_trans_chunksize < n) { \
+      const libxsmm_blasint ni = (N0) + libxsmm_trans_chunksize; \
       KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
       KERNEL_START \
@@ -144,6 +144,17 @@
   } \
   SYNC \
 }
+
+
+/** Initializes the tranpose functionality; NOT thread-safe. */
+LIBXSMM_API void libxsmm_trans_init(int archid);
+
+/** Finalizes the transpose functionality; NOT thread-safe. */
+LIBXSMM_API void libxsmm_gemm_finalize(void);
+
+
+/** Size of peeled chunks during transposing inner tiles. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trans_chunksize;
 
 #endif /*LIBXSMM_TRANS_H*/
 

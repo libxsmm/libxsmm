@@ -43,12 +43,29 @@
 #endif
 
 
+LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
+{
+  libxsmm_trans_chunksize = LIBXSMM_TRANS_MAX_CHUNKSIZE;
+#if !defined(__MIC__)
+  if (LIBXSMM_X86_AVX512_MIC == archid)
+#endif
+  {
+    libxsmm_trans_chunksize = LIBXSMM_TRANS_MIN_CHUNKSIZE;
+  }
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
+{
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP, LIBXSMM_NOOP, internal_otrans,
-    out, in, typesize, LIBXSMM_TRANS_CHUNKSIZE, m0, m1, n0, n1, ld, ldo);
+    out, in, typesize, m0, m1, n0, n1, ld, ldo);
 }
 
 

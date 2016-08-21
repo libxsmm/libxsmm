@@ -32,6 +32,7 @@
 #include "libxsmm_cpuid_x86.h"
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_alloc.h"
+#include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_sync.h"
@@ -685,8 +686,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         init_code = libxsmm_gemm_init(internal_target_archid, internal_prefetch);
       }
       if (EXIT_SUCCESS == init_code) {
-        libxsmm_hash_init(internal_target_archid);
         libxsmm_gemm_diff_init(internal_target_archid);
+        libxsmm_trans_init(internal_target_archid);
+        libxsmm_hash_init(internal_target_archid);
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
         result = (libxsmm_code_pointer*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
         internal_registry_keys = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
