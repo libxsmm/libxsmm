@@ -597,8 +597,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       /* set internal_target_archid */
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
       { /* select prefetch strategy for JIT */
-        const char *const env_prefetch = getenv("LIBXSMM_PREFETCH");
-        if (0 == env_prefetch || 0 == *env_prefetch) {
+        const char *const env = getenv("LIBXSMM_PREFETCH");
+        if (0 == env || 0 == *env) {
 #if (0 > LIBXSMM_PREFETCH) /* permitted by LIBXSMM_PREFETCH_AUTO */
           internal_prefetch = (LIBXSMM_X86_AVX512_MIC != internal_target_archid
             ? LIBXSMM_PREFETCH_NONE : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
@@ -607,7 +607,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #endif
         }
         else { /* user input considered even if LIBXSMM_PREFETCH_AUTO is disabled */
-          switch (atoi(env_prefetch)) {
+          switch (atoi(env)) {
             case 2:  internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
             case 3:  internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
             case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
@@ -620,22 +620,57 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           }
         }
       }
-      libxsmm_hash_init(internal_target_archid);
-      libxsmm_gemm_diff_init(internal_target_archid);
-      init_code = libxsmm_gemm_init(internal_target_archid, internal_prefetch);
+      libxsmm_mp = 2;
+      {
+        /* behaviour of parallelized routines which are located in libxsmmext library
+         * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
+         * 1: (OpenMP-)parallelized but without internal parallel region,
+         * 2: (OpenMP-)parallelized with internal parallel region"
+         */
+        const char *const env = getenv("LIBXSMM_MP");
+        if (0 != env && 0 != *env) {
+          libxsmm_mp = atoi(env);
+        }
+      }
+      { 
+        const char *const env = getenv("LIBXSMM_TASKS");
+        if (0 != env && 0 != *env) {
+          libxsmm_tasks = atoi(env);
+        }
+      }
+      libxsmm_nt = 2;
+#if !defined(__MIC__)
+      if (LIBXSMM_X86_AVX512_MIC == internal_target_archid)
+#endif
+      {
+        libxsmm_nt = 4;
+      }
+      {
+        const char *const env = getenv("LIBXSMM_VERBOSE");
+        internal_statistic_mnk = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
+        internal_statistic_sml = 13; internal_statistic_med = 23;
+        if (0 != env && 0 != *env) {
+          internal_verbose_mode = atoi(env);
+        }
+#if !defined(NDEBUG)
+        else {
+          internal_verbose_mode = 1; /* quiet -> verbose */
+        }
+#endif
+      }
 #if defined(__TRACE)
       {
         int filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = 0;
-        const char *const env_trace_init = getenv("LIBXSMM_TRACE");
-        if (EXIT_SUCCESS == init_code && 0 != env_trace_init && 0 != *env_trace_init) {
+        const char *const env = getenv("LIBXSMM_TRACE");
+        if (0 != env && 0 != *env) {
           char buffer[32];
-          if (1 == sscanf(env_trace_init, "%32[^,],", buffer)) {
+          if (1 == sscanf(env, "%32[^,],", buffer)) {
             sscanf(buffer, "%i", &filter_threadid);
           }
-          if (1 == sscanf(env_trace_init, "%*[^,],%32[^,],", buffer)) {
+          if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
             sscanf(buffer, "%i", &filter_mindepth);
           }
-          if (1 == sscanf(env_trace_init, "%*[^,],%*[^,],%32s", buffer)) {
+          if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
             sscanf(buffer, "%i", &filter_maxnsyms);
           }
           else {
@@ -644,23 +679,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         }
         init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
       }
+      if (EXIT_SUCCESS == init_code)
 #endif
+      {
+        init_code = libxsmm_gemm_init(internal_target_archid, internal_prefetch);
+      }
       if (EXIT_SUCCESS == init_code) {
+        libxsmm_hash_init(internal_target_archid);
+        libxsmm_gemm_diff_init(internal_target_archid);
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
         result = (libxsmm_code_pointer*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
         internal_registry_keys = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
         if (0 != result && 0 != internal_registry_keys) {
-          const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
-          internal_statistic_mnk = (unsigned int)(pow((double)(LIBXSMM_MAX_MNK), 0.3333333333333333) + 0.5);
-          internal_statistic_sml = 13; internal_statistic_med = 23;
-          if (0 != env_verbose && 0 != *env_verbose) {
-            internal_verbose_mode = atoi(env_verbose);
-          }
-#if !defined(NDEBUG)
-          else {
-            internal_verbose_mode = 1; /* quiet -> verbose */
-          }
-#endif
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
            * which is beyond the static code path used to compile the library

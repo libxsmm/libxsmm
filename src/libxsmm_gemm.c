@@ -69,36 +69,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   int config = 0;
   LIBXSMM_UNUSED(prefetch);
   libxsmm_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-  libxsmm_nt = 2;
-  libxsmm_mp = 2;
-  {
-    /* behaviour of libxsmm_?gemm_omp routines or LD_PRELOAD ?GEMM routines
-     * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
-     * 1: OpenMP-parallelized but without internal parallel region,
-     * 2: OpenMP-parallelized with internal parallel region" )
-     */
-    const char *const env = getenv("LIBXSMM_MP");
-    if (0 != env && 0 != *env) {
-      libxsmm_mp = atoi(env);
-    }
-  }
-#if defined(LIBXSMM_EXT_TASKS)
-  { /* consider user input about using (OpenMP-)tasks; this code must be here
-    * because maybe only this translation unit is compiled with OpenMP support
-    */
-    const char *const env_tasks = getenv("LIBXSMM_TASKS");
-    if (0 != env_tasks && 0 != *env_tasks) {
-      libxsmm_tasks = atoi(env_tasks);
-    }
-  }
-#endif
-#if defined(__MIC__)
-  LIBXSMM_UNUSED(archid);
-#else
+#if !defined(__MIC__)
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
-    libxsmm_nt = 4;
     config = 1;
   }
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
