@@ -51,7 +51,6 @@
 #include <stdio.h>
 #include <math.h>
 #if !defined(NDEBUG)
-# include <assert.h>
 # include <errno.h>
 #endif
 #if defined(_WIN32)

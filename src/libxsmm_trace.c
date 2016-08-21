@@ -42,7 +42,6 @@
 int mkstemp(char* filename_template);
 # endif
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 #if !defined(NDEBUG)
 # include <errno.h>
