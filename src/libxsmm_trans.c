@@ -55,7 +55,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
+LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
 {
 }
 
