@@ -639,7 +639,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         }
       }
       libxsmm_nt = 2;
-#if !defined(__MIC__)
+#if !defined(__MIC__) && (LIBXSMM_X86_AVX512_MIC != LIBXSMM_STATIC_TARGET_ARCH)
       if (LIBXSMM_X86_AVX512_MIC == internal_target_archid)
 #endif
       {

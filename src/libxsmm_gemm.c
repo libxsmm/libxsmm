@@ -69,7 +69,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
   int config = 0;
   LIBXSMM_UNUSED(prefetch);
   libxsmm_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-#if !defined(__MIC__)
+#if !defined(__MIC__) && (LIBXSMM_X86_AVX512_MIC != LIBXSMM_STATIC_TARGET_ARCH)
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
