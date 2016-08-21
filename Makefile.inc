@@ -399,17 +399,20 @@ ifneq (0,$(INTEL))
   LDFLAGS += -fPIC -diag-disable 1879,3415,10006,10010,10411
   FCFLAGS += -fPIC -diag-disable 10006,10010,10411,13003
   FCMTFLAGS += -threads
-  CPEDANTIC += -std=c89 -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
+  CPEDANTIC += -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
   FPEDANTIC += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   ifeq (1,$(PEDANTIC))
-    CFLAGS += -std=c89 -Wcheck
+    CPEDANTIC += -std=c99
+    CFLAGS += -std=c99 -Wcheck
     FCFLAGS += -free
     FMFLAGS += $(FPEDANTIC) -diag-disable 10010
   else ifneq (0,$(PEDANTIC))
+    CPEDANTIC += -std=c89
     CFLAGS += $(CPEDANTIC)
     FCFLAGS += $(FPEDANTIC)
     FMFLAGS += -fixed
   else
+    CPEDANTIC += -std=c89
     FCFLAGS += -free
   endif
   # flag specifying output directory must be last
@@ -586,7 +589,7 @@ else # GCC assumed
     FCFLAGS += -fPIC
     LDFLAGS += -fPIC
   endif
-  CPEDANTIC += -std=c89 -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
+  CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
   FPEDANTIC += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
                -Wcharacter-truncation -Wline-truncation \
                -Wconversion -Wconversion-extra -Wextra \
@@ -597,6 +600,7 @@ else # GCC assumed
     FPEDANTIC += -Wuse-without-only
   endif
   ifeq (1,$(PEDANTIC))
+    CPEDANTIC += -std=c99
     CFLAGS += $(CPEDANTIC)
     FCFLAGS += -ffree-form
     FMFLAGS += -std=f2003 -pedantic -Wunused-variable
@@ -604,9 +608,11 @@ else # GCC assumed
       FMFLAGS += -Wuse-without-only
     endif
   else ifneq (0,$(PEDANTIC))
+    CPEDANTIC += -std=c89
     CFLAGS += $(CPEDANTIC)
     FCFLAGS += $(FPEDANTIC)
   else ifeq (0,$(COMPATIBLE))
+    CPEDANTIC += -std=c89
     FCFLAGS += -ffree-form
   endif
   ifeq (0,$(COMPATIBLE))
