@@ -470,7 +470,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                                                 const unsigned int                                      ofh_trip_counter,
                                                                 const int                                               no_unroll_no_block ) {
   unsigned int l_n;
-  unsigned int l_k=0, l_k_1=0, l_k_2=0;
+  unsigned int l_k = 0, l_k_1 = 0, l_k_2 = 0;
   unsigned int l_input_reg;
   unsigned int l_input_idx;
   unsigned int l_scale;
@@ -479,40 +479,37 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
   unsigned int l_k_updates = 0;
   unsigned int l_w;
   unsigned int num_look_ahead;
-  unsigned int output_counter=0;
+  unsigned int output_counter = 0;
   unsigned int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
-  l_displacement_k = 0;
 
-  /*l_k=0;*/
-  output_counter = 0;
+  LIBXSMM_UNUSED(ofh_trip_counter);
+
   /* apply k blocking */
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
 
   l_k_updates = 0;
   for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2++, l_k++ ) {
-
-
 #if 1
     /* advance b pointer if needed */
     if ( (l_k_2 > 0) /*&& (i_conv_desc->ifm_block >= i_conv_kernel_config->vector_length)*/ &&(l_k_2%8 == 0) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
                                        /*i_gp_reg_mapping->gp_reg_input, 8*(i_conv_kernel_config->vector_length) * i_conv_kernel_config->datatype_size );*/
                                        i_gp_reg_mapping->gp_reg_input, 8*(i_conv_desc->ifm_block * i_conv_desc->stride_w)* i_conv_kernel_config->datatype_size );
-  if ( /*i_conv_desc->ifm_block*/ unroll_factor > 9 ) {
-    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                     i_gp_reg_mapping->gp_reg_help_4,  9 * i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block*/ );
-  }
-  if ( /*i_conv_desc->ifm_block*/ unroll_factor > 18 ) {
-    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_5);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                     i_gp_reg_mapping->gp_reg_help_5, 18 *  i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block */);
-  }
-  if ( /*i_conv_desc->ifm_block*/ unroll_factor > 27 ) {
-    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_6);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                     i_gp_reg_mapping->gp_reg_help_6, 27 *  i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block */);
-  }
+      if ( /*i_conv_desc->ifm_block*/ unroll_factor > 9 ) {
+        libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                         i_gp_reg_mapping->gp_reg_help_4,  9 * i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block*/ );
+      }
+      if ( /*i_conv_desc->ifm_block*/ unroll_factor > 18 ) {
+        libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_5);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                         i_gp_reg_mapping->gp_reg_help_5, 18 *  i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block */);
+      }
+      if ( /*i_conv_desc->ifm_block*/ unroll_factor > 27 ) {
+        libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_6);
+        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                         i_gp_reg_mapping->gp_reg_help_6, 27 *  i_conv_kernel_config->datatype_size /** i_conv_desc->stride_w*/ /* * i_conv_desc->ofw_rb*/ /*i_conv_desc->ifm_block */);
+      }
       l_displacement_k = 0;
       l_k_updates++;
     }
