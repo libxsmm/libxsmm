@@ -122,39 +122,35 @@
  * optimization such as using a loop with bounds which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_OTRANS_MAIN(KERNEL_START, SYNC, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LD, LDO) { \
+#define LIBXSMM_OTRANS_MAIN(KERNEL_START, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LD, LDO) { \
   const libxsmm_blasint m = (M1) - (M0), n = (N1) - (N0); \
   if (m * n * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
-    LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LD, LDO) \
-    /* fall-back code path which is generic with respect to the typesize */ \
-    LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
-    LIBXSMM_OTRANS_TYPEOPT_END \
+    KERNEL_START \
+    { \
+      LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LD, LDO) \
+      /* fall-back code path which is generic with respect to the typesize */ \
+      LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+      LIBXSMM_OTRANS_TYPEOPT_END \
+    } \
   } \
   else if (m >= n) { \
     const libxsmm_blasint mi = ((M0) + (M1)) / 2; \
-    KERNEL_START \
     (FN)(OUT, IN, TYPESIZE, M0, mi, N0, N1, LD, LDO); \
-    KERNEL_START \
     (FN)(OUT, IN, TYPESIZE, mi, M1, N0, N1, LD, LDO); \
   } \
   else { \
     if (libxsmm_trans_chunksize < n) { \
       const libxsmm_blasint ni = (N0) + libxsmm_trans_chunksize; \
-      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
-      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
     } \
     else \
     { \
       const libxsmm_blasint ni = ((N0) + (N1)) / 2; \
-      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
-      KERNEL_START \
       (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
     } \
   } \
-  SYNC \
 }
 
 
