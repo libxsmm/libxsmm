@@ -220,6 +220,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sge
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  assert(libxsmm_original_sgemm() != LIBXSMM_FSYMBOL(sgemm));
   libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
@@ -231,6 +232,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dge
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+  assert(libxsmm_original_dgemm() != LIBXSMM_FSYMBOL(dgemm));
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
