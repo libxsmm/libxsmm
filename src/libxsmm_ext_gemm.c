@@ -36,12 +36,69 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#if defined(LIBXSMM_RTLD_NEXT)
+# include <dlfcn.h>
+#endif
 #if !defined(NDEBUG)
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+
+LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
+{
+  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == original) {
+    union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
+    dlerror(); /* clear an eventual error status */
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+    original = gemm.pf;
+    LIBXSMM_GEMM_WRAP(float, &original);
+  }
+#else
+  LIBXSMM_GEMM_WRAP(float, &original);
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == original) {
+    static LIBXSMM_TLS int error_sgemm = 0;
+    if (0 == error_sgemm) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_sgemm = 1;
+    }
+  }
+#endif
+  return original;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
+{
+  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == original) {
+    union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
+    dlerror(); /* clear an eventual error status */
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+    original = gemm.pf;
+    LIBXSMM_GEMM_WRAP(double, &original);
+  }
+#else
+  LIBXSMM_GEMM_WRAP(double, &original);
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == original) {
+    static LIBXSMM_TLS int error_dgemm = 0;
+    if (0 == error_dgemm) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_dgemm = 1;
+    }
+  }
+#endif
+  return original;
+}
 
 
 LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* transb,

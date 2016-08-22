@@ -36,7 +36,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
-#include <stdint.h>
 #if defined(LIBXSMM_RTLD_NEXT)
 # include <dlfcn.h>
 #endif
@@ -48,34 +47,6 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_noblas(libxsmm_sgemm_function* original)
-{
-#if !defined(__BLAS) || (0 != __BLAS)
-  assert(0 != original);
-  if (0 == *original) {
-    *original = LIBXSMM_FSYMBOL(sgemm);
-  }
-#else
-  LIBXSMM_UNUSED(original);
-#endif
-}
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_wrap(libxsmm_sgemm_function* original)
-{
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  assert(0 != original);
-  if (0 == *original) {
-    *original = LIBXSMM_FSYMBOL(__real_sgemm);
-    internal_original_sgemm_noblas(original);
-  }
-#else
-  internal_original_sgemm_noblas(original);
-#endif
-}
-
-
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
@@ -85,10 +56,10 @@ LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
     original = gemm.pf;
-    internal_original_sgemm_wrap(&original);
+    LIBXSMM_GEMM_WRAP(float, &original);
   }
 #else
-  internal_original_sgemm_wrap(&original);
+  LIBXSMM_GEMM_WRAP(float, &original);
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == original) {
@@ -103,34 +74,6 @@ LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_noblas(libxsmm_dgemm_function* original)
-{
-#if !defined(__BLAS) || (0 != __BLAS)
-  assert(0 != original);
-  if (0 == *original) {
-    *original = LIBXSMM_FSYMBOL(dgemm);
-  }
-#else
-  LIBXSMM_UNUSED(original);
-#endif
-}
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_wrap(libxsmm_dgemm_function* original)
-{
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  assert(0 != original);
-  if (0 == *original) {
-    *original = LIBXSMM_FSYMBOL(__real_dgemm);
-    internal_original_dgemm_noblas(original);
-  }
-#else
-  internal_original_dgemm_noblas(original);
-#endif
-}
-
-
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
@@ -140,10 +83,10 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
     original = gemm.pf;
-    internal_original_dgemm_wrap(&original);
+    LIBXSMM_GEMM_WRAP(double, &original);
   }
 #else
-  internal_original_dgemm_wrap(&original);
+  LIBXSMM_GEMM_WRAP(double, &original);
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == original) {

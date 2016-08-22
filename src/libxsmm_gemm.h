@@ -176,6 +176,28 @@ SINGLE_OUTER { \
   } \
 }
 
+#if !defined(__BLAS) || (0 != __BLAS)
+# define LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL) \
+    assert(0 != (ORIGINAL)); \
+    if (0 == *(ORIGINAL)) { \
+      *(ORIGINAL) = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm)); \
+    }
+#else
+# define LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL) LIBXSMM_UNUSED(ORIGINAL)
+#endif
+
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
+# define LIBXSMM_GEMM_WRAP(REAL, ORIGINAL) \
+    assert(0 != (ORIGINAL)); \
+    if (0 == *(ORIGINAL)) { \
+      *(ORIGINAL) = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(REAL, gemm))); \
+      LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL); \
+    }
+#else
+# define LIBXSMM_GEMM_WRAP(REAL, ORIGINAL) LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL);
+#endif
+
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch strategy*/);
