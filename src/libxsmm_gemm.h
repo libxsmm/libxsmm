@@ -58,9 +58,13 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
-#define LIBXSMM_TILED_XGEMM_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
+#define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
+  0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
+  1 == (ALPHA) && (1 == (BETA) || 0 == (BETA)))
 
-#define LIBXSMM_TILED_XGEMM_KERNEL(KERNEL_START, REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
+
+#define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_START, REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
   libxsmm_blasint j = 0, j_next = TILE_K; \
   if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
@@ -94,14 +98,11 @@
   MIN_TASKS, OVERHEAD, NT, REAL, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 SINGLE_OUTER { \
   const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
-  const int sufficient_size = LIBXSMM_TILED_XGEMM_THRESHOLD(M, N, K); \
+  const int sufficient_size = LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K); \
   libxsmm_blasint tile_m = 0, tile_n = 0, tile_k = 0, num_m = 0, num_n = 0, num_k = 0; \
   libxsmm_xmmfunction xmm = { 0 }; \
   SINGLE_INNER \
-  if (0 != sufficient_size \
-    /*TODO: not supported*/&& 0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) \
-    /*TODO: not supported*/&& 1 == scalpha && (1 == scbeta || 0 == scbeta)) \
-  { \
+  if (0 != sufficient_size && LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)) { \
     tile_m = LIBXSMM_MAX(TILE_M, 2); tile_n = LIBXSMM_MAX(TILE_N, 2); tile_k = LIBXSMM_MAX(TILE_K, 2); \
     num_m = ((M) + tile_m - 1) / tile_m; num_n = ((N) + tile_n - 1) / tile_n; num_k = ((K) + tile_k - 1) / tile_k; \
     { /* opening scope for additional variable declarations */ \
@@ -144,7 +145,7 @@ SINGLE_OUTER { \
       for (h = 0; h < (M); h += tile_m) { \
         for (i = 0; i < (N); i += tile_n) { \
           KERNEL_START(h, i) \
-          LIBXSMM_TILED_XGEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
@@ -153,7 +154,7 @@ SINGLE_OUTER { \
       for (h = 0; h < (M); h += tile_m) { \
         KERNEL_START(h) \
         for (i = 0; i < (N); i += tile_n) { \
-          LIBXSMM_TILED_XGEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
@@ -162,7 +163,7 @@ SINGLE_OUTER { \
       for (i = 0; i < (N); i += tile_n) { \
         KERNEL_START(i) \
         for (h = 0; h < (M); h += tile_m) { \
-          LIBXSMM_TILED_XGEMM_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \

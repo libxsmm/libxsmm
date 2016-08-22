@@ -105,6 +105,9 @@ typedef struct libxsmm_gemm_descriptor {
 
 /** Extended flag set complementing libxsmm_gemm_flags. */
 typedef enum libxsmm_gemm_xflags {
+  /** Not an actual flag; just provided for symmetry. */
+  LIBXSMM_GEMM_FLAG_F64PREC = 0,
+  /** Single-precision (sgemm rather than dgemm). */
   LIBXSMM_GEMM_FLAG_F32PREC = 16
 } libxsmm_gemm_xflags;
 
