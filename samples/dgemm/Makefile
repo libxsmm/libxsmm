@@ -109,7 +109,7 @@ endif
 
 .PHONY: test
 test: $(OUTDIR)/.make $(OUTDIR)/dgemm-test.sh $(XFILES)
-	@bash $(OUTDIR)/dgemm-test.sh 500000
+	@bash $(OUTDIR)/dgemm-test.sh $(shell echo $$(($(TESTSIZE) * 400000)))
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@

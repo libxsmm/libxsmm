@@ -42,6 +42,10 @@ TRACE ?= 0
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
 
+# Number of repeated calls (tests),
+# or used to scale the problem size
+TESTSIZE ?= 1
+
 # Static or shared binary
 STATIC ?= 0
 

@@ -146,9 +146,6 @@ endif
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
-# Number of repeated calls (tests)
-TESTSIZE ?= 1
-
 ifeq (1,$(AVX))
   GENTARGET = snb
 else ifeq (2,$(AVX))
