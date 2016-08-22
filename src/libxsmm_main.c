@@ -598,7 +598,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
   {
     result = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
     if (0 == result) {
-      int init_code;
+      int init_code = EXIT_FAILURE;
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set internal_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_PREFETCH");
@@ -726,7 +726,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
       else {
-        fprintf(stderr, "LIBXSMM: failed to initialize sub-component (error #%i)!\n", init_code);
+        fprintf(stderr, "LIBXSMM: failed to initialize TRACE (error #%i)!\n", init_code);
       }
 #endif
     }

@@ -158,7 +158,7 @@
 LIBXSMM_API void libxsmm_trans_init(int archid);
 
 /** Finalizes the transpose functionality; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_finalize(void);
+LIBXSMM_API void libxsmm_trans_finalize(void);
 
 
 /** Size of peeled chunks during transposing inner tiles. */
