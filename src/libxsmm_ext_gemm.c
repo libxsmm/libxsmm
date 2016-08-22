@@ -49,6 +49,7 @@
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
+#if !defined(__STATIC)
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
@@ -101,6 +102,7 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 #endif
   return original;
 }
+#endif /*defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
