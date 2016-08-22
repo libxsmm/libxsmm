@@ -61,7 +61,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_noblas(libxsmm_
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_static(libxsmm_sgemm_function* original)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_wrap(libxsmm_sgemm_function* original)
 {
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
@@ -85,10 +85,10 @@ LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
     original = gemm.pf;
-    internal_original_sgemm_static(&original);
+    internal_original_sgemm_wrap(&original);
   }
 #else
-  internal_original_sgemm_static(&original);
+  internal_original_sgemm_wrap(&original);
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == original) {
@@ -116,7 +116,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_noblas(libxsmm_
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_static(libxsmm_dgemm_function* original)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_wrap(libxsmm_dgemm_function* original)
 {
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
@@ -140,10 +140,10 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
     original = gemm.pf;
-    internal_original_dgemm_static(&original);
+    internal_original_dgemm_wrap(&original);
   }
 #else
-  internal_original_dgemm_static(&original);
+  internal_original_dgemm_wrap(&original);
 #endif
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (0 == original) {
