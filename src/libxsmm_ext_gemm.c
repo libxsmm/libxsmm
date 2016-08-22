@@ -246,7 +246,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sge
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  assert(LIBXSMM_FSYMBOL(sgemm) != libxsmm_original_sgemm);
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (LIBXSMM_FSYMBOL(sgemm) == libxsmm_original_sgemm) {
+    libxsmm_gemm_configure_sgemm();
+  }
+#endif
+  assert(0 != libxsmm_original_sgemm);
   libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
@@ -258,7 +263,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dge
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  assert(LIBXSMM_FSYMBOL(dgemm) != libxsmm_original_dgemm);
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (LIBXSMM_FSYMBOL(dgemm) == libxsmm_original_dgemm) {
+    libxsmm_gemm_configure_dgemm();
+  }
+#endif
+  assert(0 != libxsmm_original_dgemm);
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 

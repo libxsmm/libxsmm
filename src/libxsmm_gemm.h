@@ -177,6 +177,11 @@ SINGLE_OUTER { \
 }
 
 
+/** INTERNAL pre-initialization step to load the original GEMM symbol. */
+LIBXSMM_API void libxsmm_gemm_configure_sgemm(void);
+/** INTERNAL pre-initialization step to load the original GEMM symbol. */
+LIBXSMM_API void libxsmm_gemm_configure_dgemm(void);
+
 /**
  * INTERNAL pre-initialization step called by libxsmm_gemm_init,
  * e.g. configures the tile sizes for multi-threaded GEMM functions.

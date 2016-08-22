@@ -64,6 +64,54 @@ LIBXSMM_API_DEFINITION const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(
 #endif /*defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT)*/
 
 
+LIBXSMM_API_DEFINITION void libxsmm_gemm_configure_sgemm(void)
+{
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == libxsmm_original_sgemm) {
+    union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
+    dlerror(); /* clear an eventual error status */
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
+    libxsmm_original_sgemm = gemm.pf;
+  }
+#endif
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
+  if (0 == libxsmm_original_sgemm) {
+    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
+  }
+#endif
+#if !defined(__BLAS) || (0 != __BLAS)
+  if (0 == libxsmm_original_sgemm) {
+    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(sgemm);
+  }
+#endif
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_gemm_configure_dgemm(void)
+{
+#if defined(LIBXSMM_RTLD_NEXT)
+  if (0 == libxsmm_original_dgemm) {
+    union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
+    dlerror(); /* clear an eventual error status */
+    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
+    libxsmm_original_dgemm = gemm.pf;
+  }
+#endif
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
+  if (0 == libxsmm_original_dgemm) {
+    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
+  }
+#endif
+#if !defined(__BLAS) || (0 != __BLAS)
+  if (0 == libxsmm_original_dgemm) {
+    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(dgemm);
+  }
+#endif
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
 {
   int config = 0;
@@ -97,42 +145,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/]) libxsmm_gemm_tile[1][1] = tile_configs[config][1][1];
     if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/]) libxsmm_gemm_tile[1][2] = tile_configs[config][1][2];
   }
-#if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == libxsmm_original_sgemm) {
-    union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
-    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    libxsmm_original_sgemm = gemm.pf;
-  }
-#endif
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  if (0 == libxsmm_original_sgemm) {
-    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
-  }
-#endif
-#if !defined(__BLAS) || (0 != __BLAS)
-  if (0 == libxsmm_original_sgemm) {
-    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(sgemm);
-  }
-#endif
-#if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == libxsmm_original_dgemm) {
-    union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
-    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    libxsmm_original_dgemm = gemm.pf;
-  }
-#endif
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  if (0 == libxsmm_original_dgemm) {
-    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
-  }
-#endif
-#if !defined(__BLAS) || (0 != __BLAS)
-  if (0 == libxsmm_original_dgemm) {
-    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(dgemm);
-  }
-#endif
+  libxsmm_gemm_configure_sgemm();
+  libxsmm_gemm_configure_dgemm();
 }
 
 
