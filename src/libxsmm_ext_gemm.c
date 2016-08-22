@@ -44,32 +44,6 @@
 #endif
 
 
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_RTLD_NEXT) && !defined(__STATIC)
-
-/* overrides the regular libxsmm_gemm_init in case of LD_PRELOADing libxsmmext */
-LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
-{
-  int result = EXIT_SUCCESS;
-  /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, prefetch);
-#if !defined(__BLAS) || (0 != __BLAS)
-  result = (0 != libxsmm_original_sgemm && 0 != libxsmm_original_dgemm) ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  if (EXIT_SUCCESS != result) {
-    static LIBXSMM_TLS int error_blas = 0;
-    if (0 == error_blas) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_blas = 1;
-    }
-  }
-#endif
-  return result;
-}
-
-#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_RTLD_NEXT) && !defined(__STATIC)*/
-
-
 LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,

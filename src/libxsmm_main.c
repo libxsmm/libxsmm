@@ -598,9 +598,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
   {
     result = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
     if (0 == result) {
-      int init_code;
-      /* set internal_target_archid */
-      libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
+      int filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = 0;
+      libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set internal_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_PREFETCH");
         if (0 == env || 0 == *env) {
@@ -663,9 +662,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         }
 #endif
       }
-#if defined(__TRACE)
+#if !defined(__TRACE)
+      LIBXSMM_UNUSED(filter_threadid); LIBXSMM_UNUSED(filter_mindepth); LIBXSMM_UNUSED(filter_maxnsyms);
+#else
       {
-        int filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = 0;
         const char *const env = getenv("LIBXSMM_TRACE");
         if (0 != env && 0 != *env) {
           char buffer[32];
@@ -682,14 +682,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
             filter_maxnsyms = -1; /* all */
           }
         }
-        init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
       }
-      if (EXIT_SUCCESS == init_code)
+      if (EXIT_SUCCESS == libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms))
 #endif
       {
-        init_code = libxsmm_gemm_init(internal_target_archid, internal_prefetch);
-      }
-      if (EXIT_SUCCESS == init_code) {
+        libxsmm_gemm_init(internal_target_archid, internal_prefetch);
         libxsmm_gemm_diff_init(internal_target_archid);
         libxsmm_trans_init(internal_target_archid);
         libxsmm_hash_init(internal_target_archid);

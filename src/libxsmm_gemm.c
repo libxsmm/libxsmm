@@ -48,71 +48,117 @@
 #endif
 
 
-#if defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT)
-
-LIBXSMM_API_DEFINITION const libxsmm_sgemm_function* libxsmm_original_sgemm_ptr(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_noblas(libxsmm_sgemm_function* original)
 {
-  return &libxsmm_original_sgemm;
+#if !defined(__BLAS) || (0 != __BLAS)
+  assert(0 != original);
+  if (0 == *original) {
+    *original = LIBXSMM_FSYMBOL(sgemm);
+  }
+#else
+  LIBXSMM_UNUSED(original);
+#endif
 }
 
 
-LIBXSMM_API_DEFINITION const libxsmm_dgemm_function* libxsmm_original_dgemm_ptr(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_sgemm_static(libxsmm_sgemm_function* original)
 {
-  return &libxsmm_original_dgemm;
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
+  assert(0 != original);
+  if (0 == *original) {
+    *original = LIBXSMM_FSYMBOL(__real_sgemm);
+    internal_original_sgemm_noblas(original);
+  }
+#else
+  internal_original_sgemm_noblas(original);
+#endif
 }
 
-#endif /*defined(LIBXSMM_ORIGINAL_GEMM_INDIRECT)*/
 
-
-LIBXSMM_API_DEFINITION void libxsmm_gemm_configure_sgemm(void)
+LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
+  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
 #if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == libxsmm_original_sgemm) {
+  if (0 == original) {
     union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    libxsmm_original_sgemm = gemm.pf;
+    original = gemm.pf;
+    internal_original_sgemm_static(&original);
+  }
+#else
+  internal_original_sgemm_static(&original);
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == original) {
+    static LIBXSMM_TLS int error_sgemm = 0;
+    if (0 == error_sgemm) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_sgemm = 1;
+    }
   }
 #endif
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  if (0 == libxsmm_original_sgemm) {
-    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(__real_sgemm);
-  }
-#endif
+  return original;
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_noblas(libxsmm_dgemm_function* original)
+{
 #if !defined(__BLAS) || (0 != __BLAS)
-  if (0 == libxsmm_original_sgemm) {
-    libxsmm_original_sgemm = LIBXSMM_FSYMBOL(sgemm);
+  assert(0 != original);
+  if (0 == *original) {
+    *original = LIBXSMM_FSYMBOL(dgemm);
   }
+#else
+  LIBXSMM_UNUSED(original);
 #endif
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_gemm_configure_dgemm(void)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_original_dgemm_static(libxsmm_dgemm_function* original)
 {
+#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
+  assert(0 != original);
+  if (0 == *original) {
+    *original = LIBXSMM_FSYMBOL(__real_dgemm);
+    internal_original_dgemm_noblas(original);
+  }
+#else
+  internal_original_dgemm_noblas(original);
+#endif
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
+{
+  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
 #if defined(LIBXSMM_RTLD_NEXT)
-  if (0 == libxsmm_original_dgemm) {
+  if (0 == original) {
     union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
     dlerror(); /* clear an eventual error status */
     gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    libxsmm_original_dgemm = gemm.pf;
+    original = gemm.pf;
+    internal_original_dgemm_static(&original);
+  }
+#else
+  internal_original_dgemm_static(&original);
+#endif
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  if (0 == original) {
+    static LIBXSMM_TLS int error_dgemm = 0;
+    if (0 == error_dgemm) {
+      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+      error_dgemm = 1;
+    }
   }
 #endif
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-  if (0 == libxsmm_original_dgemm) {
-    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(__real_dgemm);
-  }
-#endif
-#if !defined(__BLAS) || (0 != __BLAS)
-  if (0 == libxsmm_original_dgemm) {
-    libxsmm_original_dgemm = LIBXSMM_FSYMBOL(dgemm);
-  }
-#endif
+  return original;
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 {
   int config = 0;
   LIBXSMM_UNUSED(prefetch);
@@ -145,29 +191,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_configure(int archid, int prefetch)
     if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/]) libxsmm_gemm_tile[1][1] = tile_configs[config][1][1];
     if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/]) libxsmm_gemm_tile[1][2] = tile_configs[config][1][2];
   }
-  libxsmm_gemm_configure_sgemm();
-  libxsmm_gemm_configure_dgemm();
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_gemm_init(int archid, int prefetch)
-{
-  int result = EXIT_SUCCESS;
-  /* internal pre-initialization step */
-  libxsmm_gemm_configure(archid, prefetch);
-#if !defined(__BLAS) || (0 != __BLAS)
-  result = (0 != libxsmm_original_sgemm && 0 != libxsmm_original_dgemm) ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  if (EXIT_SUCCESS != result) {
-    static LIBXSMM_TLS int error_blas = 0;
-    if (0 == error_blas) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_blas = 1;
-    }
-  }
-#endif
-  return result;
 }
 
 
