@@ -60,15 +60,31 @@ LIBXSMM_API int libxsmm_deallocate(const void* memory);
 /** Attribute memory allocation such as to revoke protection flags. */
 LIBXSMM_API int libxsmm_alloc_attribute(const void* memory, int flags, const char* name);
 
+/** Allocate aligned memory (malloc/free interface). */
+LIBXSMM_API_INLINE void* libxsmm_aligned_malloc(size_t size, size_t alignment)
+#if defined(LIBXSMM_BUILD)
+;
+#else
+{ void* result = 0;
+  return 0 == libxsmm_allocate(&result, size, alignment, LIBXSMM_ALLOC_FLAG_DEFAULT,
+    0/*extra*/, 0/*extra_size*/) ? result : 0;
+}
+#endif
+
+/** Deallocate memory (malloc/free interface). */
+LIBXSMM_API_INLINE void libxsmm_aligned_free(const void* memory)
+#if defined(LIBXSMM_BUILD)
+;
+#else
+{ libxsmm_deallocate(memory); }
+#endif
+
 /** Allocate memory (malloc/free interface). */
 LIBXSMM_API_INLINE void* libxsmm_malloc(size_t size)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ void* result = 0;
-  return 0 == libxsmm_allocate(&result, size, 0/*auto*/, LIBXSMM_ALLOC_FLAG_DEFAULT,
-    0/*extra*/, 0/*extra_size*/) ? result : 0;
-}
+{ return libxsmm_aligned_malloc(size, 0/*auto*/); }
 #endif
 
 /** Deallocate memory (malloc/free interface). */
@@ -76,7 +92,7 @@ LIBXSMM_API_INLINE void libxsmm_free(const void* memory)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ libxsmm_deallocate(memory); }
+{ libxsmm_aligned_free(memory); }
 #endif
 
 #endif /*LIBXSMM_ALLOC_H*/

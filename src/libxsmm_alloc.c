@@ -483,11 +483,23 @@ LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags
 
 #if defined(LIBXSMM_BUILD)
 
-LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
+LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignment)
 {
   void* result = 0;
-  return 0 == libxsmm_allocate(&result, size, 0/*auto*/, LIBXSMM_ALLOC_FLAG_DEFAULT,
+  return 0 == libxsmm_allocate(&result, size, alignment, LIBXSMM_ALLOC_FLAG_DEFAULT,
     0/*extra*/, 0/*extra_size*/) ? result : 0;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_aligned_free(const void* memory)
+{
+  libxsmm_deallocate(memory);
+}
+
+
+LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
+{
+  return libxsmm_aligned_malloc(size, 0/*auto*/);
 }
 
 
