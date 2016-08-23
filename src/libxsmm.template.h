@@ -122,7 +122,8 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
- * wide vector) and a sparse matrix. There is no code cache, and user code has to manage the code pointers.
+ * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.
+ * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  * @TODO: This is not great, probably need to declare values as void pointer
  */

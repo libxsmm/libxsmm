@@ -37,6 +37,7 @@
 #include "generator_spgemm_csr_asparse.h"
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_spgemm_csr_bsparse_soa.h"
+#include "generator_spgemm_csr_asparse_soa.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -187,8 +188,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
       return;
     }
     /* something bad happened... */
-    fprintf( stderr, "LIBXSMM ERROR, A sparse for CSR datastructure + SOA in A and C is not yet available, FATAL ERROR, EXTI!\n");
-    exit(-1);
+    libxsmm_generator_spgemm_csr_asparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   /* B matrix is sparse */
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
