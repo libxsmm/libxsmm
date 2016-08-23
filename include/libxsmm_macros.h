@@ -195,6 +195,8 @@
 #define LIBXSMM_DIV2(N, NPOT) ((N) >> LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_UP2(N, NPOT) LIBXSMM_MUL2(LIBXSMM_DIV2((N) + (NPOT) - 1, NPOT), NPOT)
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
+/* compares floating point values but avoids warning about unreliable comparison */
+#define LIBXSMM_FEQ(A, B) (!((A) < (B) || (A) > (B)))
 
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(...) __declspec(__VA_ARGS__)
