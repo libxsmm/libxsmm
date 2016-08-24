@@ -319,7 +319,6 @@ cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
                      $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                     $(BLDDIR)/libxsmm_dispatch.h \
                      $(HEADERS)
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
@@ -379,8 +378,7 @@ fheader: $(INCDIR)/libxsmm.f
 $(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
                      $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt \
                      $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
-                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                     $(BLDDIR)/libxsmm_dispatch.h
+                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -399,7 +397,7 @@ endif
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(INCDIR)/libxsmm.h
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
