@@ -163,6 +163,36 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
 } libxsmm_build_request;
 
 
+typedef enum libxsmm_malloc_flags {
+  LIBXSMM_MALLOC_FLAG_R = 1,
+  LIBXSMM_MALLOC_FLAG_W = 2,
+  LIBXSMM_MALLOC_FLAG_X = 4,
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W | LIBXSMM_MALLOC_FLAG_X,
+  LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
+  /** LIBXSMM_MALLOC_FLAG_DEFAULT is an alias for setting no flag bits. */
+  LIBXSMM_MALLOC_FLAG_DEFAULT = LIBXSMM_MALLOC_FLAG_RW
+} libxsmm_malloc_flags;
+
+/** Greatest common divisor. */ 
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
+/** Least common multiple. */ 
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
+/** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */ 
+LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
+
+/** Receive the size, the flags, or the extra attachment of the given buffer. */
+LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
+
+/** Allocate memory of the requested size, which is aligned according to the given alignment. */
+LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, int alignment, int flags,
+  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
+  const void* extra, size_t extra_size);
+LIBXSMM_API int libxsmm_xfree(const volatile void* memory);
+
+/** Attribute memory allocation such as to revoke protection flags. */
+LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags, const char* name);
+
+/** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
 /** Determines whether (OpenMP-)tasks are preferred over thread-style parallelization. */

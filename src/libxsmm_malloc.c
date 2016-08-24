@@ -28,8 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_alloc.h"
-#include "libxsmm_sync.h"
+#include <libxsmm_malloc.h>
+#include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -61,34 +62,34 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_ALLOC_ALIGNMAX)
-# define LIBXSMM_ALLOC_ALIGNMAX (2 * 1024 *1024)
+#if !defined(LIBXSMM_MALLOC_ALIGNMAX)
+# define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 *1024)
 #endif
-#if !defined(LIBXSMM_ALLOC_ALIGNFCT)
-# define LIBXSMM_ALLOC_ALIGNFCT 8
+#if !defined(LIBXSMM_MALLOC_ALIGNFCT)
+# define LIBXSMM_MALLOC_ALIGNFCT 8
 #endif
 
 /* perform low-level allocation even for small non-executable buffers */
-#if !defined(LIBXSMM_ALLOC_MMAP)
-/*# define LIBXSMM_ALLOC_MMAP*/
+#if !defined(LIBXSMM_MALLOC_MMAP)
+/*# define LIBXSMM_MALLOC_MMAP*/
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_alloc_extra_type {
+typedef struct LIBXSMM_RETARGETABLE internal_malloc_extra_type {
 #if defined(LIBXSMM_VTUNE)
   unsigned int code_id;
 #else /* avoid warning about empty structure */
   int dummy;
 #endif
-} internal_alloc_extra_type;
+} internal_malloc_extra_type;
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_alloc_info_type {
+typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
   void* pointer;
   size_t size;
   int flags;
-  internal_alloc_extra_type internal;
-} internal_alloc_info_type;
+  internal_malloc_extra_type internal;
+} internal_malloc_info_type;
 
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)
@@ -111,11 +112,11 @@ LIBXSMM_API_DEFINITION size_t libxsmm_lcm(size_t a, size_t b)
 LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result = sizeof(void*);
-  if ((LIBXSMM_ALLOC_ALIGNFCT * LIBXSMM_ALLOC_ALIGNMAX) <= size) {
-    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_ALLOC_ALIGNMAX);
+  if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_MALLOC_ALIGNMAX) <= size) {
+    result = libxsmm_lcm(0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT), LIBXSMM_MALLOC_ALIGNMAX);
   }
   else {
-    if ((LIBXSMM_ALLOC_ALIGNFCT * LIBXSMM_ALIGNMENT) <= size) {
+    if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_ALIGNMENT) <= size) {
       result = (0 == alignment ? (LIBXSMM_ALIGNMENT) : libxsmm_lcm(alignment, LIBXSMM_ALIGNMENT));
     }
     else if (0 != alignment) {
@@ -149,8 +150,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, size_t* size, int* flags,
-  void** extra, internal_alloc_extra_type** internal)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_malloc_info(const volatile void* memory, size_t* size, int* flags,
+  void** extra, internal_malloc_extra_type** internal)
 {
   int result = EXIT_SUCCESS;
 #if !defined(NDEBUG)
@@ -158,7 +159,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, 
 #endif
   {
     if (0 != memory) {
-      internal_alloc_info_type *const info = (internal_alloc_info_type*)(((const char*)memory) - sizeof(internal_alloc_info_type));
+      internal_malloc_info_type *const info = (internal_malloc_info_type*)(((const char*)memory) - sizeof(internal_malloc_info_type));
       if (size) *size = info->size;
       if (flags) *flags = info->flags;
       if (extra) *extra = info->pointer;
@@ -186,28 +187,28 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_alloc_info(const void* memory, 
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra)
+LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra)
 {
-  return internal_alloc_info(memory, size, flags, extra, 0/*internal*/);
+  return internal_malloc_info(memory, size, flags, extra, 0/*internal*/);
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t alignment,
+LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int alignment,
   int flags, const void* extra, size_t extra_size)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
     if (0 < size) {
-      const size_t internal_size = size + extra_size + sizeof(internal_alloc_info_type);
+      const size_t internal_size = size + extra_size + sizeof(internal_malloc_info_type);
       size_t alloc_alignment = 0, alloc_size = 0;
       void* alloc_failed = 0;
       char* buffer = 0;
 #if !defined(NDEBUG)
       static LIBXSMM_TLS int alloc_error = 0;
 #endif
-#if !defined(LIBXSMM_ALLOC_MMAP)
-      if (0 == flags || LIBXSMM_ALLOC_FLAG_DEFAULT == flags) {
-        alloc_alignment = libxsmm_alignment(size, alignment);
+#if !defined(LIBXSMM_MALLOC_MMAP)
+      if (0 == flags || LIBXSMM_MALLOC_FLAG_DEFAULT == flags) {
+        alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
         alloc_size = internal_size + alloc_alignment - 1;
         buffer = (char*)malloc(alloc_size);
       }
@@ -215,9 +216,9 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
 #endif
       {
 #if defined(_WIN32)
-        const int xflags = (0 != (LIBXSMM_ALLOC_FLAG_X & flags) ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
-        if ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size) {
-          alloc_alignment = libxsmm_alignment(size, alignment);
+        const int xflags = (0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
+        if ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size) {
+          alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
           alloc_size = internal_size + alloc_alignment - 1;
           buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, xflags);
         }
@@ -225,7 +226,7 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
           HANDLE process_token;
           const SIZE_T alloc_alignmax = GetLargePageMinimum();
           /* respect user-requested alignment */
-          alloc_alignment = 0 == alignment ? alloc_alignmax : libxsmm_lcm(alignment, alloc_alignmax);
+          alloc_alignment = 0 == alignment ? alloc_alignmax : libxsmm_lcm((size_t)LIBXSMM_ABS(alignment), alloc_alignmax);
           alloc_size = LIBXSMM_UP2(internal_size, alloc_alignment); /* assume that alloc_alignment is POT */
 
           if (TRUE == OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &process_token)) {
@@ -244,7 +245,7 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
           }
 
           if (alloc_failed == buffer) { /* retry allocation with regular page size */
-            alloc_alignment = libxsmm_alignment(size, alignment);
+            alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
             alloc_size = internal_size + alloc_alignment - 1;
             buffer = (char*)VirtualAlloc(0, alloc_size, MEM_RESERVE | MEM_COMMIT, xflags);
           }
@@ -257,8 +258,8 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
         }
 # endif
 #else
-        const int xflags = (0 != (LIBXSMM_ALLOC_FLAG_X & flags) ? (PROT_READ | PROT_WRITE | PROT_EXEC) : (PROT_READ | PROT_WRITE));
-        alloc_alignment = libxsmm_alignment(size, alignment);
+        const int xflags = (0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? (PROT_READ | PROT_WRITE | PROT_EXEC) : (PROT_READ | PROT_WRITE));
+        alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
         alloc_size = internal_size + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
         buffer = (char*)mmap(0, alloc_size, xflags,
@@ -268,10 +269,10 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
           MAP_PRIVATE | MAP_ANONYMOUS
 # endif
 # if defined(MAP_NORESERVE)
-          | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
+          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
 # endif
 # if defined(MAP_HUGETLB)
-          | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
+          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
 # endif
 # if defined(MAP_LOCKED) && 0
           | MAP_LOCKED
@@ -287,10 +288,10 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
           /* proceed after failed madvise (even in case of an error; take what we got from mmap) */
           madvise(buffer, alloc_size, MADV_RANDOM
 #   if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
-            | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
+            | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
 #   endif
 #   if defined(MADV_DONTDUMP)
-            | ((LIBXSMM_ALLOC_ALIGNMAX * LIBXSMM_ALLOC_ALIGNFCT) > size ? 0 : MADV_DONTDUMP)
+            | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MADV_DONTDUMP)
 #   endif
           )
 # if !defined(NDEBUG)
@@ -322,8 +323,8 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
 #endif
       }
       if (alloc_failed != buffer) {
-        char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_alloc_info_type), alloc_alignment);
-        internal_alloc_info_type *const info = (internal_alloc_info_type*)(aligned - sizeof(internal_alloc_info_type));
+        char *const aligned = LIBXSMM_ALIGN(buffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
+        internal_malloc_info_type *const info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
         assert((aligned + size) <= (buffer + alloc_size));
 #if !defined(NDEBUG) && !defined(_WIN32)
         memset(buffer, 0, alloc_size);
@@ -343,10 +344,10 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
 #endif
         info->pointer = buffer;
         info->size = size;
-        info->flags = (0 == flags ? LIBXSMM_ALLOC_FLAG_DEFAULT : (0 != (LIBXSMM_ALLOC_FLAG_X & flags)
+        info->flags = (0 == flags ? LIBXSMM_MALLOC_FLAG_DEFAULT : (0 != (LIBXSMM_MALLOC_FLAG_X & flags)
           /* normalize given flags */
-          ? LIBXSMM_ALLOC_FLAG_RWX
-          : LIBXSMM_ALLOC_FLAG_RW));
+          ? LIBXSMM_MALLOC_FLAG_RWX
+          : LIBXSMM_MALLOC_FLAG_RW));
         *memory = aligned;
       }
       else {
@@ -374,17 +375,17 @@ LIBXSMM_API_DEFINITION int libxsmm_allocate(void** memory, size_t size, size_t a
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_deallocate(const void* memory)
+LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
-    internal_alloc_extra_type* internal = 0;
+    internal_malloc_extra_type* internal = 0;
     size_t size = 0;
     void* buffer = 0;
     int flags = 0;
-    result = internal_alloc_info(memory, &size, &flags, &buffer, &internal);
-#if !defined(LIBXSMM_ALLOC_MMAP)
-    if (LIBXSMM_ALLOC_FLAG_DEFAULT == flags && EXIT_SUCCESS == result) {
+    result = internal_malloc_info(memory, &size, &flags, &buffer, &internal);
+#if !defined(LIBXSMM_MALLOC_MMAP)
+    if (LIBXSMM_MALLOC_FLAG_DEFAULT == flags && EXIT_SUCCESS == result) {
       free(buffer);
     }
     else
@@ -392,7 +393,7 @@ LIBXSMM_API_DEFINITION int libxsmm_deallocate(const void* memory)
     if (EXIT_SUCCESS == result) {
 #if defined(LIBXSMM_VTUNE)
       assert(0 != internal);
-      if (0 != (LIBXSMM_ALLOC_FLAG_X & flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
         iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &internal->code_id);
       }
 #endif
@@ -419,26 +420,26 @@ LIBXSMM_API_DEFINITION int libxsmm_deallocate(const void* memory)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags, const char* name)
+LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, int flags, const char* name)
 {
   int alloc_flags = 0;
   void* buffer = 0;
   size_t size = 0;
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-  internal_alloc_extra_type* internal = 0;
-  int result = internal_alloc_info(memory, &size, &alloc_flags, &buffer, &internal);
+  internal_malloc_extra_type* internal = 0;
+  int result = internal_malloc_info(memory, &size, &alloc_flags, &buffer, &internal);
 #else
-  int result = internal_alloc_info(memory, &size, &alloc_flags, &buffer, 0/*internal*/);
+  int result = internal_malloc_info(memory, &size, &alloc_flags, &buffer, 0/*internal*/);
 #endif
 #if !defined(NDEBUG)
   static LIBXSMM_TLS int revoke_error = 0;
 #endif
   if (0 != buffer && EXIT_SUCCESS == result) {
-    if (0 != (LIBXSMM_ALLOC_FLAG_X & alloc_flags) && name && *name) {
+    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
       FILE *const code_file = (0 > libxsmm_get_verbose_mode() ? fopen(name, "wb") : 0);
       if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
         fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory, name);
-        fwrite(memory, 1, size, code_file);
+        fwrite((const void*)memory, 1, size, code_file);
         fclose(code_file);
       }
 # if defined(LIBXSMM_VTUNE)
@@ -461,8 +462,8 @@ LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags
 #else
       const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
       int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
-      if (0 != (LIBXSMM_ALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
-      if (0 != (LIBXSMM_ALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
+      if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
       if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
         if (0 == revoke_error) {
@@ -481,19 +482,11 @@ LIBXSMM_API_DEFINITION int libxsmm_alloc_attribute(const void* memory, int flags
 }
 
 
-#if defined(LIBXSMM_BUILD)
-
-LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignment)
+LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, int alignment)
 {
   void* result = 0;
-  return 0 == libxsmm_allocate(&result, size, alignment, LIBXSMM_ALLOC_FLAG_DEFAULT,
+  return 0 == libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT,
     0/*extra*/, 0/*extra_size*/) ? result : 0;
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_aligned_free(const void* memory)
-{
-  libxsmm_deallocate(memory);
 }
 
 
@@ -503,10 +496,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
+LIBXSMM_API_DEFINITION void libxsmm_free(const volatile void* memory)
 {
-  libxsmm_deallocate(memory);
+  libxsmm_xfree(memory);
 }
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

@@ -29,7 +29,7 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "generator_common.h"
-#include "libxsmm_sync.h"
+#include <libxsmm_sync.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

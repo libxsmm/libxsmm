@@ -33,6 +33,7 @@
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
+    <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
@@ -56,11 +57,11 @@
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_asparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h" />
+    <ClInclude Include="..\src\generator_spgemm_csr_asparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm.template.h" />
-    <ClInclude Include="..\src\libxsmm_alloc.h" />
     <ClInclude Include="..\src\libxsmm_conv_fwd.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_ext.h" />
@@ -97,10 +98,10 @@
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
+    <ClCompile Include="..\src\generator_spgemm_csr_asparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
-    <ClCompile Include="..\src\libxsmm_alloc.c" />
     <ClCompile Include="..\src\libxsmm_conv.c" />
     <ClCompile Include="..\src\libxsmm_conv_fwd.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
@@ -131,6 +132,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_main.c" />
+    <ClCompile Include="..\src\libxsmm_malloc.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
     <ClCompile Include="..\src\libxsmm_trans.c" />

@@ -28,72 +28,26 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_ALLOC_H
-#define LIBXSMM_ALLOC_H
+#ifndef LIBXSMM_MALLOC_H
+#define LIBXSMM_MALLOC_H
 
 #include <libxsmm.h>
 
 
-typedef enum libxsmm_alloc_flags {
-  LIBXSMM_ALLOC_FLAG_R = 1,
-  LIBXSMM_ALLOC_FLAG_W = 2,
-  LIBXSMM_ALLOC_FLAG_X = 4,
-  LIBXSMM_ALLOC_FLAG_RWX = LIBXSMM_ALLOC_FLAG_R | LIBXSMM_ALLOC_FLAG_W | LIBXSMM_ALLOC_FLAG_X,
-  LIBXSMM_ALLOC_FLAG_RW  = LIBXSMM_ALLOC_FLAG_R | LIBXSMM_ALLOC_FLAG_W,
-  /** LIBXSMM_ALLOC_FLAG_DEFAULT is an alias for setting no flag bits. */
-  LIBXSMM_ALLOC_FLAG_DEFAULT = LIBXSMM_ALLOC_FLAG_RW
-} libxsmm_alloc_flags;
-
-LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
-LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
-LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
-
-/** Receive the size, the flags, or the extra attachment of the given buffer. */
-LIBXSMM_API int libxsmm_alloc_info(const void* memory, size_t* size, int* flags, void** extra);
-
-/** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API int libxsmm_allocate(void** memory, size_t size, size_t alignment, int flags,
-  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
-  const void* extra, size_t extra_size);
-LIBXSMM_API int libxsmm_deallocate(const void* memory);
-
-/** Attribute memory allocation such as to revoke protection flags. */
-LIBXSMM_API int libxsmm_alloc_attribute(const void* memory, int flags, const char* name);
-
 /** Allocate aligned memory (malloc/free interface). */
-LIBXSMM_API_INLINE void* libxsmm_aligned_malloc(size_t size, size_t alignment)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ void* result = 0;
-  return 0 == libxsmm_allocate(&result, size, alignment, LIBXSMM_ALLOC_FLAG_DEFAULT,
-    0/*extra*/, 0/*extra_size*/) ? result : 0;
-}
-#endif
-
-/** Deallocate memory (malloc/free interface). */
-LIBXSMM_API_INLINE void libxsmm_aligned_free(const void* memory)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ libxsmm_deallocate(memory); }
-#endif
+LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
+  /**
+   * =0: automatic alignment is requested based on size
+   * 0<: delivers (at least) the given alignment (LCM)
+   * 0>: takes alignment literally (skips align.-calc.)
+   */
+  int alignment);
 
 /** Allocate memory (malloc/free interface). */
-LIBXSMM_API_INLINE void* libxsmm_malloc(size_t size)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_aligned_malloc(size, 0/*auto*/); }
-#endif
+LIBXSMM_API void* libxsmm_malloc(size_t size);
 
 /** Deallocate memory (malloc/free interface). */
-LIBXSMM_API_INLINE void libxsmm_free(const void* memory)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ libxsmm_aligned_free(memory); }
-#endif
+LIBXSMM_API void libxsmm_free(const volatile void* memory);
 
-#endif /*LIBXSMM_ALLOC_H*/
+#endif /*LIBXSMM_MALLOC_H*/
 

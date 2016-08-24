@@ -28,10 +28,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_alloc.h"
 #include "libxsmm_main.h"
-#include "libxsmm_sync.h"
 #include "libxsmm_conv_fwd.h"
+#include <libxsmm_malloc.h>
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -274,10 +274,10 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_handle(const libx
     /* TODO */
     /* deallocate code known to be not registered; no index attached */
     /* do not use libxsmm_release_kernel here! */
-    libxsmm_deallocate(handle->code_fwd[0].pmm);
-    libxsmm_deallocate(handle->code_fwd[1].pmm);
-    libxsmm_deallocate(handle->code_fwd[2].pmm);
-    libxsmm_deallocate(handle->code_fwd[3].pmm);
+    libxsmm_xfree(handle->code_fwd[0].pmm);
+    libxsmm_xfree(handle->code_fwd[1].pmm);
+    libxsmm_xfree(handle->code_fwd[2].pmm);
+    libxsmm_xfree(handle->code_fwd[3].pmm);
     /* TODO Backward path */
     /* TODO weight update path */
     /* deallocate handle structure */
@@ -327,9 +327,9 @@ LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_input_layer_check
     layer->W = handle->ifwp;
     layer->datatype = handle->datatype;
     /* allocate raw data */
-    result = libxsmm_allocate(&layer->data,
+    result = libxsmm_xmalloc(&layer->data,
         layer->N * layer->splits * layer->fmb * layer->bfm * layer->H * layer->W * internal_conv_typesize(layer->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_ALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
     *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
@@ -374,9 +374,9 @@ LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_output_layer_chec
       layer->datatype = LIBXSMM_CONV_DATATYPE_INT32;
     }
     /* allocate raw data, we always have a 4 byte wide type!! */
-    result = libxsmm_allocate(&layer->data,
+    result = libxsmm_xmalloc(&layer->data,
         layer->N * layer->splits * layer->fmb * layer->bfm * layer->H * layer->W * internal_conv_typesize(layer->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_ALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
     *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
@@ -399,7 +399,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_layer(const libxs
 
   if (0 != layer) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_deallocate(layer->data);
+    libxsmm_xfree(layer->data);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_conv_layer*)layer);
   }
@@ -435,9 +435,9 @@ LIBXSMM_API_DEFINITION libxsmm_conv_filter* libxsmm_conv_create_filter_check(con
     filter->S = handle->desc.S;
     filter->datatype = handle->datatype;
     /* allocate raw data */
-    result = libxsmm_allocate(&filter->data,
+    result = libxsmm_xmalloc(&filter->data,
         filter->splits * filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * internal_conv_typesize(filter->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_ALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
     *status = LIBXSMM_CONV_ERR_CREATE_FILTER;
@@ -460,7 +460,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_filter(const libx
 
   if (0 != filter) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_deallocate(filter->data);
+    libxsmm_xfree(filter->data);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_conv_filter*)filter);
   }
@@ -492,9 +492,9 @@ LIBXSMM_API_DEFINITION libxsmm_conv_bias* libxsmm_conv_create_bias_check(const l
     bias->bfm = handle->ifmblock;
     bias->datatype = handle->datatype;
     /* allocate raw data, we always have a 4 byte wide type!! */
-    result = libxsmm_allocate(&bias->data,
+    result = libxsmm_xmalloc(&bias->data,
         bias->splits * bias->fmb * bias->bfm * internal_conv_typesize(bias->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_ALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
     *status = LIBXSMM_CONV_ERR_CREATE_BIAS;
@@ -517,7 +517,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_bias(const libxsm
 
   if (0 != bias) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_deallocate(bias->data);
+    libxsmm_xfree(bias->data);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_conv_bias*)bias);
   }

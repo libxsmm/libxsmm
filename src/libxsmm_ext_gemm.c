@@ -29,8 +29,8 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
-#include "libxsmm_sync.h"
 #include "libxsmm_ext.h"
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

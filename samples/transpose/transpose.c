@@ -1,4 +1,5 @@
 #include <libxsmm_timer.h>
+#include <libxsmm_malloc.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -25,24 +26,6 @@
 # define REAL_TYPE double
 #endif
 
-#if !defined(USE_LIBXSMM_MALLOC)
-# define USE_LIBXSMM_MALLOC
-#endif
-
-/**
- * This uses an internal unsupported API; not for production code!
- * Perhaps this makes a case for an alternative allocator...
- */
-#if defined(USE_LIBXSMM_MALLOC)
-LIBXSMM_API void* libxsmm_malloc(size_t size);
-LIBXSMM_API void libxsmm_free(const void* memory);
-# define MALLOC(SIZE) libxsmm_malloc(SIZE)
-# define FREE(BUFFER) libxsmm_free(BUFFER)
-#else
-# define MALLOC(SIZE) malloc(SIZE)
-# define FREE(BUFFER) free(BUFFER)
-#endif
-
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE REAL_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
@@ -62,11 +45,11 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    REAL_TYPE *const a = (REAL_TYPE*)MALLOC(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
-    REAL_TYPE *const b = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
+    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
     /* validate against result computed by Intel MKL */
 #if !defined(USE_SELF_VALIDATION)
-    REAL_TYPE *const c = (REAL_TYPE*)MALLOC(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
 #endif
     const unsigned int size = m * n * sizeof(REAL_TYPE);
     unsigned long long start;
@@ -164,10 +147,10 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Validation failed!\n");
       }
     }
-    FREE(c);
+    libxsmm_free(c);
 #endif
-    FREE(a);
-    FREE(b);
+    libxsmm_free(a);
+    libxsmm_free(b);
   }
   return EXIT_SUCCESS;
 }

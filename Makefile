@@ -178,20 +178,26 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
+          $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_timer.c libxsmm_trace.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) \
+                   libxsmm_malloc.c libxsmm_sync.c libxsmm_timer.c libxsmm_trace.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
-OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o $(BLDDIR)/intel64/libxsmm_alloc.o $(BLDDIR)/intel64/libxsmm_gemm.o \
-               $(BLDDIR)/intel64/libxsmm_trans.o $(BLDDIR)/intel64/libxsmm_conv.o $(BLDDIR)/intel64/libxsmm_conv_fwd.o
-OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_alloc.o $(BLDDIR)/mic/libxsmm_gemm.o \
-               $(BLDDIR)/mic/libxsmm_trans.o $(BLDDIR)/mic/libxsmm_conv.o $(BLDDIR)/mic/libxsmm_conv_fwd.o \
+OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o \
+               $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_trans.o \
+               $(BLDDIR)/intel64/libxsmm_conv.o $(BLDDIR)/intel64/libxsmm_conv_fwd.o
+OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o \
+               $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
+               $(BLDDIR)/mic/libxsmm_conv.o $(BLDDIR)/mic/libxsmm_conv_fwd.o \
+               $(BLDDIR)/mic/libxsmm_malloc.o $(BLDDIR)/mic/libxsmm_sync.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
 KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KERNELOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
@@ -318,6 +324,8 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
