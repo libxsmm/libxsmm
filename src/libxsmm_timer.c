@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_timer.h>
+#include "libxsmm_intrinsics_x86.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -75,3 +76,10 @@ LIBXSMM_API_DEFINITION double libxsmm_timer_duration(unsigned long long tick0, u
   return d * 1E-6;
 #endif
 }
+
+
+LIBXSMM_API_DEFINITION /*LIBXSMM_INTRINSICS*/ unsigned long long libxsmm_timer_cycle(void)
+{
+  return _rdtsc();
+}
+

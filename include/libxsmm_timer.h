@@ -34,9 +34,12 @@
 #include <libxsmm.h>
 
 
-/** Returns the current clock tick using a platform-specific resolution. */
+/** Returns the current (monotonic) clock tick by using a platform-specific resolution. */
 LIBXSMM_API unsigned long long libxsmm_timer_tick(void);
 /** Returns the duration between two clock ticks (seconds). */
 LIBXSMM_API double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
+
+/** Returns the current count of a platform-specific cycle-counter. */
+LIBXSMM_API unsigned long long libxsmm_timer_cycle(void);
 
 #endif /*LIBXSMM_TIMER_H*/
