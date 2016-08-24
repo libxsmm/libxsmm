@@ -47,7 +47,10 @@
 #if defined(_rdtsc) || !defined(__clang__)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER)
-# define LIBXSMM_TIMER_RDTSC(CYCLE) __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE))
+# define LIBXSMM_TIMER_RDTSC(CYCLE) { unsigned long libxsmm_timer_rdtsc_hi_; \
+    __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
+    CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
+  }
 #endif
 
 
