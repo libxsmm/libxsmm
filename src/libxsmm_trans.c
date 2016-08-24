@@ -45,7 +45,9 @@
 LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 {
   libxsmm_trans_chunksize = LIBXSMM_TRANS_MAX_CHUNKSIZE;
-#if !defined(__MIC__)
+#if defined(__MIC__)
+  LIBXSMM_UNUSED(archid);
+#else
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
