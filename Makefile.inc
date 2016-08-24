@@ -667,11 +667,11 @@ else # GCC assumed
     FCFLAGS += -finstrument-functions
     # e.g. clang does not need/understand below flag
     ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
-      CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
+      CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
       ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
-        CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
+        CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
         ifneq (0,$(shell echo "$$((3 <= $(GCC)))"))
-          FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_
+          FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
         endif
       endif
     endif
