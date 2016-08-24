@@ -80,6 +80,13 @@ LIBXSMM_API_DEFINITION double libxsmm_timer_duration(unsigned long long tick0, u
 
 LIBXSMM_API_DEFINITION /*LIBXSMM_INTRINSICS*/ unsigned long long libxsmm_timer_cycle(void)
 {
-  return _rdtsc();
+#if defined(_rdtsc) || defined(_MSC_VER)
+  return __rdtsc();
+#else
+  LIBXSMM_MESSAGE("================================================================================")
+  LIBXSMM_MESSAGE("LIBXSMM: Support for the RDTSC intrinsic appears to be unavailable!")
+  LIBXSMM_MESSAGE("================================================================================")
+  return libxsmm_timer_tick();
+#endif
 }
 
