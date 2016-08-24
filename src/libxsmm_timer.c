@@ -44,6 +44,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(_rdtsc)
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE unsigned long long __rdtsc(void);
+#endif
+
 
 LIBXSMM_API_DEFINITION unsigned long long libxsmm_timer_tick(void)
 {
@@ -80,13 +84,6 @@ LIBXSMM_API_DEFINITION double libxsmm_timer_duration(unsigned long long tick0, u
 
 LIBXSMM_API_DEFINITION /*LIBXSMM_INTRINSICS*/ unsigned long long libxsmm_timer_cycle(void)
 {
-#if defined(_rdtsc) || defined(_MSC_VER)
   return __rdtsc();
-#else
-  LIBXSMM_MESSAGE("================================================================================")
-  LIBXSMM_MESSAGE("LIBXSMM: Support for the RDTSC intrinsic appears to be unavailable!")
-  LIBXSMM_MESSAGE("================================================================================")
-  return libxsmm_timer_tick();
-#endif
 }
 
