@@ -105,9 +105,11 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 {
   int config = 0;
-  LIBXSMM_UNUSED(prefetch);
   libxsmm_gemm_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
-#if !defined(__MIC__) && (LIBXSMM_X86_AVX512_MIC != LIBXSMM_STATIC_TARGET_ARCH)
+  LIBXSMM_UNUSED(prefetch);
+#if defined(__MIC__) || (LIBXSMM_X86_AVX512_MIC == LIBXSMM_STATIC_TARGET_ARCH)
+  LIBXSMM_UNUSED(archid);
+#else
   if (LIBXSMM_X86_AVX512_MIC == archid)
 #endif
   {
