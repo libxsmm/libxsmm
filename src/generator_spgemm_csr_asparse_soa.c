@@ -125,7 +125,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   /* test if we should generate a dense version */
-  if ( i_row_idx[i_xgemm_desc->m] == i_xgemm_desc->m*i_xgemm_desc->k ) {
+  if ( i_row_idx[i_xgemm_desc->m] == (unsigned int)(i_xgemm_desc->m*i_xgemm_desc->k) ) {
     l_gen_m_trips = 1; 
     l_is_dense = 1;
   } else {
