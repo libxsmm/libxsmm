@@ -37,6 +37,10 @@
 # define LIBXSMM_SYNC_CACHELINE_SIZE 64
 #endif
 
+#if !defined(LIBXSMM_SYNC_DELAY)
+# define LIBXSMM_SYNC_DELAY 8
+#endif
+
 #if !defined(LIBXSMM_SYNC_ATOMIC_SET)
 # define LIBXSMM_SYNC_ATOMIC_SET(DST, VALUE) ((DST) = (VALUE))
 #endif
@@ -182,7 +186,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
     for (i = 1; i < barrier->nthreads_per_core; ++i) {
       uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[i];
       while (core_sense == thread_sense) { /* avoid evaluation in unspecified order */
-        _mm_pause();
+        LIBXSMM_SYNC_PAUSE(LIBXSMM_SYNC_DELAY);
         core_sense = core->core_sense;
         thread_sense = core->thread_senses[i];
       }
@@ -207,7 +211,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
 #else
         *core->partner_flags[core->parity][i] = core->sense;
 #endif
-        while (core->my_flags[core->parity][di] != core->sense) _mm_pause();
+        while (core->my_flags[core->parity][di] != core->sense) LIBXSMM_SYNC_PAUSE(LIBXSMM_SYNC_DELAY);
       }
 
 #if defined(__MIC__)
@@ -215,7 +219,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
 #else
       *core->partner_flags[core->parity][i] = core->sense;
 #endif
-      while (core->my_flags[core->parity][di] != core->sense) _mm_pause();
+      while (core->my_flags[core->parity][di] != core->sense) LIBXSMM_SYNC_PAUSE(LIBXSMM_SYNC_DELAY);
       if (1 == core->parity) {
         core->sense = (uint8_t)(0 == core->sense ? 1 : 0);
       }
@@ -228,7 +232,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
   else { /* other threads wait for cross-core sync to complete */
     uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[thread->core_tid];
     while (core_sense != thread_sense) { /* avoid evaluation in unspecified order */
-      _mm_pause();
+      LIBXSMM_SYNC_PAUSE(LIBXSMM_SYNC_DELAY);
       core_sense = core->core_sense;
       thread_sense = core->thread_senses[thread->core_tid];
     }

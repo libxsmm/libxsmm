@@ -130,6 +130,12 @@
 # define LIBXSMM_LOCK_RELEASE(LOCK) LIBXSMM_UNUSED(LOCK)
 #endif
 
+#if defined(__MIC__)
+# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
+#else
+# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
+#endif
+
 
 /** Opaque type which represents a barrier. */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
