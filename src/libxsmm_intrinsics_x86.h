@@ -34,6 +34,10 @@
 #include <libxsmm_typedefs.h>
 #include <libxsmm_macros.h>
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+
 #if defined(__MIC__)
 # define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
 # define LIBXSMM_INTRINSICS
@@ -157,6 +161,10 @@
 # else
 #   include <x86intrin.h>
 # endif
+#endif
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/
