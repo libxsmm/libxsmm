@@ -38,6 +38,9 @@
 #if defined(__TRACE)
 # include "libxsmm_trace.h"
 #endif
+#if defined(LIBXSMM_PERF)
+# include "libxsmm_perf.h"
+#endif
 
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
@@ -682,6 +685,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         libxsmm_gemm_diff_init(internal_target_archid);
         libxsmm_trans_init(internal_target_archid);
         libxsmm_hash_init(internal_target_archid);
+#if defined(LIBXSMM_PERF)
+        libxsmm_perf_init();
+#endif
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
         result = (libxsmm_code_pointer*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
         internal_registry_keys = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
@@ -787,6 +793,9 @@ void libxsmm_finalize(void)
         libxsmm_gemm_finalize();
         libxsmm_gemm_diff_finalize();
         libxsmm_hash_finalize();
+#if defined(LIBXSMM_PERF)
+        libxsmm_perf_finalize();
+#endif
 
         /* make internal registry globally unavailable */
         LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);

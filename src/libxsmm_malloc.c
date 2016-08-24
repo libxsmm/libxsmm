@@ -61,6 +61,9 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+#if defined(LIBXSMM_PERF)
+# include "libxsmm_perf.h"
+#endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
 # define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 *1024)
@@ -476,6 +479,15 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
       }
 #endif
     }
+# if defined(LIBXSMM_PERF)
+    /* If jitting and in verbose mode emit information for perf. In jitdump
+     * case this needs to be done after mprotect as it gets overwritten
+     * otherwise. */
+    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name &&
+        0 != libxsmm_get_verbose_mode()) {
+      libxsmm_perf_write_code(memory, size, name);
+    }
+# endif
   }
   assert(EXIT_SUCCESS == result);
   return result;
