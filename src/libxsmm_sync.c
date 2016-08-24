@@ -181,7 +181,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
     /* wait for the core's remaining threads */
     for (i = 1; i < barrier->nthreads_per_core; ++i) {
       uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[i];
-      while (core_sense == thread_sense) { /* avoid evaluation in unspecified order*/
+      while (core_sense == thread_sense) { /* avoid evaluation in unspecified order */
         _mm_pause();
         core_sense = core->core_sense;
         thread_sense = core->thread_senses[i];
@@ -227,7 +227,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
   }
   else { /* other threads wait for cross-core sync to complete */
     uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[thread->core_tid];
-    while (core_sense != thread_sense) { /* avoid evaluation in unspecified order*/
+    while (core_sense != thread_sense) { /* avoid evaluation in unspecified order */
       _mm_pause();
       core_sense = core->core_sense;
       thread_sense = core->thread_senses[thread->core_tid];
