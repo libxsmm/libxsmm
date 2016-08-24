@@ -124,6 +124,13 @@ ifneq (,$(filter environment% override command%,$(origin BLAS)))
   endif
 endif
 
+ifeq (0,$(BLAS))
+  # provides a libxsmmext as a dummy library which satisfies BLAS symbols
+  BLASLIB = $(call libdir,$(LIBNAME)ext.$(LIBEXT))
+else
+  BLASLIB = $(NULL)
+endif
+
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
