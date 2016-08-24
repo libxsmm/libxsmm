@@ -436,7 +436,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
 #endif
   if (0 != buffer && EXIT_SUCCESS == result) {
     if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
-      FILE *const code_file = (0 > libxsmm_get_verbose_mode() ? fopen(name, "wb") : 0);
+      FILE *const code_file = fopen(name, "wb");
       if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
         fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory, name);
         fwrite((const void*)memory, 1, size, code_file);

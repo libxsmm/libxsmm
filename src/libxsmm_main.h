@@ -190,7 +190,9 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, int alignment, int f
 LIBXSMM_API int libxsmm_xfree(const volatile void* memory);
 
 /** Attribute memory allocation such as to revoke protection flags. */
-LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags, const char* name);
+LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags,
+  /** If a name is given, an executable buffer will be dumped into a file. */
+  const char* name);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
