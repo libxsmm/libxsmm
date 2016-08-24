@@ -173,14 +173,19 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
   internal_sync_core_tag *const core = thread->core;
 
   /* first signal this thread's arrival */
-  core->thread_senses[thread->core_tid] = !core->thread_senses[thread->core_tid];
+  core->thread_senses[thread->core_tid] = (uint8_t)(0 == core->thread_senses[thread->core_tid] ? 1 : 0);
 
   /* each core's thread 0 syncs across cores */
   if (0 == thread->core_tid) {
     int i;
     /* wait for the core's remaining threads */
     for (i = 1; i < barrier->nthreads_per_core; ++i) {
-      while (core->thread_senses[i] == core->core_sense) _mm_pause();
+      uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[i];
+      while (core_sense == thread_sense) { /* avoid evaluation in unspecified order*/
+        _mm_pause();
+        core_sense = core->core_sense;
+        thread_sense = core->thread_senses[i];
+      }
     }
 
     if (1 < barrier->ncores) {
@@ -212,16 +217,21 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
 #endif
       while (core->my_flags[core->parity][di] != core->sense) _mm_pause();
       if (1 == core->parity) {
-        core->sense = !core->sense;
+        core->sense = (uint8_t)(0 == core->sense ? 1 : 0);
       }
-      core->parity = 1 - core->parity;
+      core->parity = (uint8_t)(1 - core->parity);
     }
 
     /* wake up the core's remaining threads */
     core->core_sense = core->thread_senses[0];
   }
   else { /* other threads wait for cross-core sync to complete */
-    while (core->core_sense != core->thread_senses[thread->core_tid]) _mm_pause();
+    uint8_t core_sense = core->core_sense, thread_sense = core->thread_senses[thread->core_tid];
+    while (core_sense != thread_sense) { /* avoid evaluation in unspecified order*/
+      _mm_pause();
+      core_sense = core->core_sense;
+      thread_sense = core->thread_senses[thread->core_tid];
+    }
   }
 }
 
