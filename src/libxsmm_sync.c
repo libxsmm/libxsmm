@@ -110,7 +110,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   if (0 == thread->core_tid) {
     core = (internal_sync_core_tag*)libxsmm_aligned_malloc(
       sizeof(internal_sync_core_tag), -(LIBXSMM_SYNC_CACHELINE_SIZE));
-    core->id = cid;
+    core->id = (uint8_t)cid;
     core->core_sense = 1;
 
     core->thread_senses = (uint8_t*)libxsmm_aligned_malloc(
