@@ -70,6 +70,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_z;
   unsigned int l_row_elements;
   unsigned int l_soa_width;
+  unsigned int l_gen_m_trips;
+  unsigned int l_is_dense;
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -120,8 +122,23 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
+  /* test if we should generate a dense version */
+  if ( i_row_idx[i_xgemm_desc->m] == i_xgemm_desc->m*i_xgemm_desc->k ) {
+    l_gen_m_trips = 1; 
+    l_is_dense = 1;
+  } else {
+    l_gen_m_trips = i_xgemm_desc->m;
+    l_is_dense = 0;
+  }
+
   /* do sparse times dense soa multiplication */
-  for ( l_m = 0; l_m < i_xgemm_desc->m; l_m++ ) {
+  for ( l_m = 0; l_m < l_gen_m_trips; l_m++ ) {
+    /* generate M loop */
+    if (l_is_dense != 0 ) {
+      libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
+      libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_mloop, 1 );
+    }
+
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
     if (l_row_elements > 0) {
       /* load C accumulator */
@@ -185,6 +202,17 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
     /* advance C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
                                      l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldc);
+ 
+    /* generate M loop */
+    if (l_is_dense != 0 ) {
+      /* advance A pointer */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
+                                       l_micro_kernel_config.datatype_size*i_xgemm_desc->k);
+
+      /* M loop jump back */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_mloop, i_xgemm_desc->m );
+      libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
+    }
   }
   
   /* close asm */
