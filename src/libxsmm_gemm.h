@@ -60,7 +60,7 @@
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
   0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
-  1 == (ALPHA) && (1 == (BETA) || 0 == (BETA)))
+  LIBXSMM_FEQ(1, ALPHA) && (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
 #define LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
 
