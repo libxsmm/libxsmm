@@ -35,7 +35,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE REAL_TYPE initial_value(libxsmm_blasint i, l
 
 int main(int argc, char* argv[])
 {
-  const char t = 1 < argc ? *argv[1] : 'o';
+  const char t = (char)(1 < argc ? *argv[1] : 'o');
   const libxsmm_blasint m = 2 < argc ? atoi(argv[2]) : 4096;
   const libxsmm_blasint n = 3 < argc ? atoi(argv[3]) : m;
   const libxsmm_blasint lda = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
