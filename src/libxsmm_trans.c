@@ -72,6 +72,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT 
 LIBXSMM_API_DEFINITION void libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
+  LIBXSMM_INIT
 #if !defined(NDEBUG) /* library code is expected to be mute */
   if (ld < m && ldo < n) {
     fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
@@ -92,6 +93,7 @@ LIBXSMM_API_DEFINITION void libxsmm_itrans(void* inout, unsigned int typesize,
 {
   LIBXSMM_UNUSED(inout); LIBXSMM_UNUSED(typesize); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(ld);
   assert(0/*Not yet implemented!*/);
+  LIBXSMM_INIT
 }
 
 
