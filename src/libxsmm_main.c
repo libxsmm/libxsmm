@@ -140,7 +140,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 /*# define LIBXSMM_TRYLOCK*/
 #endif
 
-#if defined(__GNUC__)
+#if defined(LIBXSMM_CTOR)
 /* libxsmm_init already executed via GCC constructor attribute */
 # define INTERNAL_FIND_CODE_INIT(VARIABLE) assert(0 != (VARIABLE))
 #else /* lazy initialization */
@@ -735,11 +735,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 }
 
 
-LIBXSMM_API_DEFINITION
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(constructor)
-#endif
-void libxsmm_init(void)
+LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void libxsmm_init(void)
 {
   const void *const registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED);
   if (0 == registry) {
@@ -754,11 +750,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void libxsmm_finalize(void);
 
-LIBXSMM_API_DEFINITION
-#if defined(__GNUC__)
-LIBXSMM_ATTRIBUTE(destructor)
-#endif
-void libxsmm_finalize(void)
+LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
 {
   libxsmm_code_pointer* registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
 

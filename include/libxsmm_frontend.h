@@ -170,7 +170,7 @@ LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
 #define LIBXSMM_YGEMM_SYMBOL(REAL)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(REAL), _omp)
 
 /** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
-#if defined(__GNUC__)
+#if defined(LIBXSMM_CTOR)
 # define LIBXSMM_INIT
 #else /* lazy initialization */
 # define LIBXSMM_INIT libxsmm_init();

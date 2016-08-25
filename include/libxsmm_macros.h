@@ -288,6 +288,15 @@
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
+#if !defined(LIBXSMM_CTOR) && defined(__GNUC__)
+# define LIBXSMM_CTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(constructor)
+# define LIBXSMM_DTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(destructor)
+# define LIBXSMM_CTOR
+#else 
+# define LIBXSMM_CTOR_ATTRIBUTE
+# define LIBXSMM_DTOR_ATTRIBUTE
+#endif
+
 #if defined(NDEBUG)
 # define LIBXSMM_NDEBUG NDEBUG
 # define LIBXSMM_DEBUG(...)
