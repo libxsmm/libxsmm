@@ -120,6 +120,10 @@ ifneq (0,$(JIT))
   SSE ?= 1
 endif
 
+# Perf profiling of JIT code
+PERF ?= 1
+PERF_JITDUMP ?= 0
+
 # OpenMP is disabled by default and LIBXSMM is
 # always agnostic wrt the threading runtime
 OMP ?= 0
@@ -498,6 +502,13 @@ endif
 ifneq (0,$(JIT))
   ifneq (0,$(SYM))
   ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
+    ifneq (0,$(PERF))
+      OBJFILES_HST += $(BLDDIR)/intel64/libxsmm_perf.o
+      DFLAGS += -DLIBXSMM_PERF
+      ifneq (0, $(PERF_JITDUMP))
+        DFLAGS += -DLIBXSMM_PERF_JITDUMP
+      endif
+    endif
     VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
     ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
       LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
