@@ -51,7 +51,8 @@
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
-#if defined(LIBXSMM_RTLD_NEXT)
+#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
+
   if (0 == original) {
     union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
     dlerror(); /* clear an eventual error status */
@@ -78,7 +79,7 @@ LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
-#if defined(LIBXSMM_RTLD_NEXT)
+#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
   if (0 == original) {
     union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
     dlerror(); /* clear an eventual error status */
