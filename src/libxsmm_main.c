@@ -792,6 +792,7 @@ void libxsmm_finalize(void)
 #endif
         libxsmm_gemm_finalize();
         libxsmm_gemm_diff_finalize();
+        libxsmm_trans_finalize();
         libxsmm_hash_finalize();
 #if defined(LIBXSMM_PERF)
         libxsmm_perf_finalize();
