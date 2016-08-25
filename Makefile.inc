@@ -502,7 +502,11 @@ ifneq (0,$(INTEL))
         TARGET = -march=core-avx2
       else ifeq (3,$(AVX))
         ifeq (0,$(MIC))
-          TARGET = -xCOMMON-AVX512
+          ifneq (file,$(origin MIC))
+            TARGET = -xCORE-AVX512
+          else
+            TARGET = -xCOMMON-AVX512
+          endif
         else
           TARGET = -xMIC-AVX512
         endif
