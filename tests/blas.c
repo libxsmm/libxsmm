@@ -30,7 +30,6 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #if !defined(REAL_TYPE)
 # define REAL_TYPE float

@@ -30,7 +30,9 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 #include <stdlib.h>
-#include <stdio.h>
+#if defined(_DEBUG)
+# include <stdio.h>
+#endif
 
 
 /**
@@ -77,72 +79,104 @@ int main(void)
     /* DIFF Testing
      */
     if (0 == libxsmm_gemm_diff_sw(&a.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
       fprintf(stderr, "using generic code path\n");
+#endif
       result = 1;
     }
     else if (0 == libxsmm_gemm_diff_sw(&b.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
       fprintf(stderr, "using generic code path\n");
+#endif
       result = 2;
     }
     else if (0 != libxsmm_gemm_diff_sw(&a.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
       fprintf(stderr, "using generic code path\n");
+#endif
       result = 3;
     }
     else if (0 != libxsmm_gemm_diff_sw(&b.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
       fprintf(stderr, "using generic code path\n");
+#endif
       result = 4;
     }
     if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid_archid) {
       if (0 == libxsmm_gemm_diff_avx(&a.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX code path\n");
+#endif
         result = 9;
       }
       else if (0 == libxsmm_gemm_diff_avx(&b.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX code path\n");
+#endif
         result = 10;
       }
       else if (0 != libxsmm_gemm_diff_avx(&a.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX code path\n");
+#endif
         result = 11;
       }
       else if (0 != libxsmm_gemm_diff_avx(&b.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX code path\n");
+#endif
         result = 12;
       }
     }
     if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid_archid) {
       if (0 == libxsmm_gemm_diff_avx2(&a.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2 code path\n");
+#endif
         result = 13;
       }
       else if (0 == libxsmm_gemm_diff_avx2(&b.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2 code path\n");
+#endif
         result = 14;
       }
       else if (0 != libxsmm_gemm_diff_avx2(&a.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2 code path\n");
+#endif
         result = 15;
       }
       else if (0 != libxsmm_gemm_diff_avx2(&b.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2 code path\n");
+#endif
         result = 16;
       }
     }
     if (EXIT_SUCCESS == result) {
       if (0 == libxsmm_gemm_diff(&a.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched code path\n");
+#endif
         result = 17;
       }
       else if (0 == libxsmm_gemm_diff(&b.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched code path\n");
+#endif
         result = 18;
       }
       else if (0 != libxsmm_gemm_diff(&a.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched code path\n");
+#endif
         result = 19;
       }
       else if (0 != libxsmm_gemm_diff(&b.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched code path\n");
+#endif
         result = 20;
       }
     }
@@ -152,13 +186,17 @@ int main(void)
       if (1 != libxsmm_gemm_diffn_sw(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using generic diffn-search\n");
+#endif
         result = 21;
       }
       else if (6 != libxsmm_gemm_diffn_sw(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using generic diffn-search\n");
+#endif
         result = 22;
       }
     }
@@ -166,13 +204,17 @@ int main(void)
       if (1 != libxsmm_gemm_diffn_avx(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX-based diffn-search\n");
+#endif
         result = 23;
       }
       else if (6 != libxsmm_gemm_diffn_avx(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX-based diffn-search\n");
+#endif
         result = 24;
       }
     }
@@ -180,13 +222,17 @@ int main(void)
       if (1 != libxsmm_gemm_diffn_avx2(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2-based diffn-search\n");
+#endif
         result = 25;
       }
       else if (6 != libxsmm_gemm_diffn_avx2(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX2-based diffn-search\n");
+#endif
         result = 26;
       }
     }
@@ -194,13 +240,17 @@ int main(void)
       if (1 != libxsmm_gemm_diffn_avx512(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX512-based diffn-search\n");
+#endif
         result = 27;
       }
       else if (6 != libxsmm_gemm_diffn_avx512(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using AVX512-based diffn-search\n");
+#endif
         result = 28;
       }
     }
@@ -208,13 +258,17 @@ int main(void)
       if (1 != libxsmm_gemm_diffn(&a.descriptor, &descs[0].desc, 0/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched diffn-search\n");
+#endif
         result = 29;
       }
       else if (6 != libxsmm_gemm_diffn(&b.descriptor, &descs[0].desc, 2/*hint*/,
         sizeof(descs) / sizeof(*descs), sizeof(*descs)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using dispatched diffn-search\n");
+#endif
         result = 30;
       }
     }
@@ -235,31 +289,43 @@ int main(void)
       local[6].desc = b.descriptor; local[7].desc = a.descriptor;
 
       if (0 == libxsmm_gemm_diff_imci(&a.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI code path\n");
+#endif
         result = 31;
       }
       else if (0 == libxsmm_gemm_diff_imci(&b.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI code path\n");
+#endif
         result = 32;
       }
       else if (0 != libxsmm_gemm_diff_imci(&a.descriptor, &a.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI code path\n");
+#endif
         result = 33;
       }
       else if (0 != libxsmm_gemm_diff_imci(&b.descriptor, &b.descriptor)) {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI code path\n");
+#endif
         result = 34;
       }
       else if (1 != libxsmm_gemm_diffn_imci(&a.descriptor, &local[0].desc, 0/*hint*/,
         sizeof(local) / sizeof(*local), sizeof(*local)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI-based diffn-search\n");
+#endif
         result = 35;
       }
       else if (6 != libxsmm_gemm_diffn_imci(&b.descriptor, &local[0].desc, 2/*hint*/,
         sizeof(local) / sizeof(*local), sizeof(*local)))
       {
+#if defined(_DEBUG)
         fprintf(stderr, "using IMCI-based diffn-search\n");
+#endif
         result = 36;
       }
     }
