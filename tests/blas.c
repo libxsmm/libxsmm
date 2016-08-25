@@ -30,6 +30,9 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
+#if defined(_DEBUG)
+# include <stdio.h>
+#endif
 
 #if !defined(REAL_TYPE)
 # define REAL_TYPE float
@@ -72,16 +75,17 @@ int main(void)
     }
   }
 
+#if !defined(__BLAS) || (0 != __BLAS)
   LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 
-#if defined(USE_LIBXSMM_BLAS)
+# if defined(USE_LIBXSMM_BLAS)
   LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-#else
+# else
   LIBXSMM_BLAS_GEMM_SYMBOL(REAL_TYPE)(&notrans, &notrans, &m, &n, &k,
     &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-#endif
+# endif
 
   for (i = 0; i < m; ++i) {
     for (j = 0; j < n; ++j) {
@@ -92,5 +96,11 @@ int main(void)
   }
 
   return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
+#else
+# if defined(_DEBUG)
+  fprintf(stderr, "Warning: skipped the actual test due to missing BLAS support!\n");
+# endif
+  return EXIT_SUCCESS;
+#endif
 }
 
