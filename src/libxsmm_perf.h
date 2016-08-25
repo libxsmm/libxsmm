@@ -31,11 +31,12 @@
 #ifndef LIBXSMM_PERF_H
 #define LIBXSMM_PERF_H
 
-#include <stdlib.h>
+#include <libxsmm.h>
 
-void libxsmm_perf_init();
-void libxsmm_perf_finalize();
-void libxsmm_perf_write_code(const volatile void* memory, size_t size,
-                             const char* name);
+LIBXSMM_API void libxsmm_perf_init();
+LIBXSMM_API void libxsmm_perf_finalize();
+LIBXSMM_API void libxsmm_perf_write_code(
+  const volatile void* memory, size_t size,
+  const char* name);
 
 #endif /* LIBXSMM_PERF_H */

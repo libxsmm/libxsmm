@@ -28,16 +28,20 @@
 ******************************************************************************/
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
-#ifndef LIBXSMM_PERF_C
-#define LIBXSMM_PERF_C
+#include "libxsmm_perf.h"
 
-#include <unistd.h>
-#include <assert.h>
+#if defined(_WIN32)
+# include <process.h>
+# define LIBXSMM_PERF_GETPID _getpid
+#else
+# include <unistd.h>
+# define LIBXSMM_PERF_GETPID getpid
+#endif
 #include <stdio.h>
 
-#include "libxsmm_macros.h"
-#include "libxsmm_perf.h"
 #if defined(LIBXSMM_PERF_JITDUMP)
+#include <libxsmm_timer.h>
+#include "jitdump.h"
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -45,65 +49,61 @@
 #include <sys/stat.h>
 #include <syscall.h>
 #include <fcntl.h>
-
-#include "jitdump.h"
 #endif
 
 #if !defined(NDEBUG)
-#define ERROR(msg) fprintf(stderr, msg)
+# define LIBXSMM_PERF_ERROR(msg) fprintf(stderr, msg)
 #else
-#define ERROR(msg)
+# define LIBXSMM_PERF_ERROR(msg)
 #endif
 
-static FILE * fp;
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE FILE * fp;
 #if defined(LIBXSMM_PERF_JITDUMP)
-static void * marker_addr;
-static int code_index = 0;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* marker_addr;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int code_index /*= 0*/;
 
 /* Records in jit dump file are padded to 8 bytes. */
-static char zeros[8];  /* for padding. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE char zeros[8];  /* for padding. */
 
-size_t libxsmm_perf_padding_len(size_t len) {
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t libxsmm_perf_padding_len(size_t len) {
   return PADDING_8ALIGNED(len);
-}
-
-uint64_t libxsmm_perf_get_timestamp() {
-  unsigned int low, high;
-  asm volatile("rdtsc" : "=a" (low), "=d" (high));
-  uint64_t ts = (low | (((uint64_t) high) << 32));
-  return ts;
 }
 #endif
 
-void libxsmm_perf_init() {
+
+LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
   char file_name[64];
 #if defined(LIBXSMM_PERF_JITDUMP)
   int fd;
   int res;
   struct jitheader header;
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", getpid());
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", LIBXSMM_PERF_GETPID());
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
   if(fd < 0) {
-    ERROR("LIBXSMM: failed to open file\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to open file\n");
     goto error;
   }
 
   int page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) {
-    ERROR("LIBXSMM: failed to get page size\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page size\n");
     goto error;
   }
   marker_addr = mmap(NULL, page_size, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
   if(marker_addr == MAP_FAILED) {
-    ERROR("LIBXSMM: mmap failed.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: mmap failed.\n");
     goto error;
   }
 
+  /* initialize code index */
+  code_index = 0;
+
   fp = fdopen(fd, "wb+");
   if(fp == NULL) {
-    ERROR("LIBXSMM: fdopen failed.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: fdopen failed.\n");
     goto error;
   }
 
@@ -114,28 +114,28 @@ void libxsmm_perf_init() {
   header.version    = JITHEADER_VERSION;
   header.elf_mach   = 62;  /* EM_X86_64 */
   header.total_size = sizeof(header) + padding_len;
-  header.pid        = getpid();
-  header.timestamp  = libxsmm_perf_get_timestamp();
+  header.pid        = LIBXSMM_PERF_GETPID();
+  header.timestamp  = libxsmm_timer_cycle();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
   res = fwrite(&header, sizeof(header), 1, fp);
   if(res != 1) {
-    ERROR("LIBXSMM: failed to write header.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header.\n");
     goto error;
   }
   if(padding_len > 0) {
     res = fwrite(&zeros, padding_len, 1, fp);
     if(res != 1) {
-      ERROR("LIBXSMM: failed to write header padding.\n");
+      LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header padding.\n");
       goto error;
     }
   }
 
 #else
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", getpid());
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", LIBXSMM_PERF_GETPID());
   fp = fopen(file_name, "w+");
   if(fp == NULL) {
-    ERROR("LIBXSMM: failed to open map file\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");
     goto error;
   }
 #endif
@@ -150,29 +150,30 @@ error:
   assert(0);
 }
 
-void libxsmm_perf_finalize() {
+
+LIBXSMM_API_DEFINITION void libxsmm_perf_finalize() {
 #if defined(LIBXSMM_PERF_JITDUMP)
   int res;
   struct jr_code_close rec;
 
   if(fp == NULL) {
-    ERROR("LIBXSMM: jit dump file not opened\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: jit dump file not opened\n");
     goto error;
   }
 
   memset(&rec, 0, sizeof(rec));
   rec.p.id = JIT_CODE_CLOSE;
   rec.p.total_size = sizeof(rec);
-  rec.p.timestamp = libxsmm_perf_get_timestamp();
+  rec.p.timestamp = libxsmm_timer_cycle();
   res = fwrite(&rec, sizeof(rec), 1, fp);
   if(res != 1) {
-    ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
     goto error;
   }
 
   int page_size = sysconf(_SC_PAGESIZE);
   if(page_size < 0) {
-    ERROR("LIBXSMM: failed to get page_size\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page_size\n");
     goto error;
   }
   munmap(marker_addr, page_size);
@@ -186,7 +187,8 @@ error:
 #endif
 }
 
-void libxsmm_perf_write_code(const volatile void* memory, size_t size,
+
+LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory, size_t size,
                              const char* name) {
   assert(fp != NULL);
   assert(name && *name);
@@ -201,11 +203,11 @@ void libxsmm_perf_write_code(const volatile void* memory, size_t size,
     memset(&rec, 0, sizeof(rec));
     rec.p.id = JIT_CODE_LOAD;
     rec.p.total_size = sizeof(rec) + name_len + padding_len + size;
-    rec.p.timestamp = libxsmm_perf_get_timestamp();
+    rec.p.timestamp = libxsmm_timer_cycle();
     rec.code_size = size;
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
-    rec.pid = getpid();
+    rec.pid = LIBXSMM_PERF_GETPID();
     rec.tid = (pid_t) syscall(__NR_gettid);
 
 #if !defined(LIBXSMM_NOSYNC)
@@ -234,10 +236,8 @@ void libxsmm_perf_write_code(const volatile void* memory, size_t size,
     assert(res == expected_res);
 
 #else
-    fprintf(fp, "%lx %lx %s\n", (long) memory, (unsigned long) size, name);
+    fprintf(fp, "%llx %lx %s\n", (unsigned long long)/*uintptr_t*/memory, (unsigned long)size, name);
     fflush(fp);
 #endif
   }
 }
-
-#endif /* LIBXSMM_PERF_C */
