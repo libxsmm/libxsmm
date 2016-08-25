@@ -171,7 +171,11 @@ LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
 
 /** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
 #if defined(LIBXSMM_CTOR)
-# define LIBXSMM_INIT
+# if defined(LIBXSMM_BUILD_EXT) && defined(__STATIC)
+#   define LIBXSMM_INIT libxsmm_ext_init/*dummy*/ = libxsmm_init;
+# else
+#   define LIBXSMM_INIT
+# endif
 #else /* lazy initialization */
 # define LIBXSMM_INIT libxsmm_init();
 #endif

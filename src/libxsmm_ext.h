@@ -80,5 +80,15 @@
 # define LIBXSMM_EXT_TSK_SYNC LIBXSMM_EXT_FOR_SYNC
 #endif
 
+
+/**
+ * Global (dummy-)variable which is touched via LIBXSMM_INIT macro
+ * in order to keep the libxsmm_init/libxsmm_finalize symbols
+ * even when linking statically (or only linking libxsmmext).
+ */
+#if defined(LIBXSMM_CTOR) && defined(LIBXSMM_BUILD_EXT) && defined(__STATIC)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_ext_init)(void);
+#endif
+
 #endif /*LIBXSMM_EXT_H*/
 
