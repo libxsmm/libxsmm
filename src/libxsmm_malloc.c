@@ -479,15 +479,14 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
       }
 #endif
     }
-# if defined(LIBXSMM_PERF)
-    /* If jitting and in verbose mode emit information for perf. In jitdump
-     * case this needs to be done after mprotect as it gets overwritten
+#if defined(LIBXSMM_PERF)
+    /* If jitting is enabled and a valid name is given, emit information for perf.
+     * In jitdump case this needs to be done after mprotect as it gets overwritten
      * otherwise. */
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name &&
-        0 != libxsmm_get_verbose_mode()) {
+    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
       libxsmm_perf_write_code(memory, size, name);
     }
-# endif
+#endif
   }
   assert(EXIT_SUCCESS == result);
   return result;

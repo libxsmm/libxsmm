@@ -503,7 +503,7 @@ ifneq (0,$(JIT))
   ifneq (0,$(SYM))
   ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
     ifneq (0,$(PERF))
-      OBJFILES_HST += $(BLDDIR)/intel64/libxsmm_perf.o
+      SRCFILES_GEN_LIB += libxsmm_perf.c
       DFLAGS += -DLIBXSMM_PERF
       ifneq (0, $(PERF_JITDUMP))
         DFLAGS += -DLIBXSMM_PERF_JITDUMP
