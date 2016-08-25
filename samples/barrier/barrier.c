@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
     libxsmm_barrier_init(barrier, tid);
   }
 
-  tstart = libxsmm_timer_cycle();
+  tstart = libxsmm_timer_xtick();
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(num_threads)
 #endif
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
       libxsmm_barrier_wait(barrier, tid);
     }
   }
-  tend = libxsmm_timer_cycle();
+  tend = libxsmm_timer_xtick();
 
   printf("libxsmm_barrier_wait(): %llu cycles (%d threads)\n",
     /* calculate performance and report */

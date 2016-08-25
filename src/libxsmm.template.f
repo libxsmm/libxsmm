@@ -249,7 +249,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbose_mode
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbose_mode
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_cycle
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_xtick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
@@ -327,20 +327,20 @@
             REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
           END SUBROUTINE
 
-          ! Impure function which returns the current (monotonic)
-          ! clock tick by using a platform-specific resolution.
+          ! Impure function which returns the current clock tick of a
+          ! monotonic timer source; uses a platform-specific resolution.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
 
-          ! Impure function which returns the current count of a
-          ! platform-specific cycle-counter.
-          INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_cycle() BIND(C)
+          ! Impure function which returns the current tick of a (monotonic)
+          ! platform-specific counter; not necessarily CPU cycles.
+          INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_xtick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
 
-          ! Impure function (timer freq. may vary) returning
-          ! the duration between two ticks (seconds).
+          ! Impure function (timer freq. may vary) which returns the duration
+          ! (in seconds) between two values received by libxsmm_timer_tick.
           REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(               &
      &    tick0, tick1) BIND(C)
             IMPORT :: C_LONG_LONG, C_DOUBLE

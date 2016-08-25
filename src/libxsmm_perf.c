@@ -115,7 +115,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   header.elf_mach   = 62;  /* EM_X86_64 */
   header.total_size = sizeof(header) + padding_len;
   header.pid        = LIBXSMM_PERF_GETPID();
-  header.timestamp  = libxsmm_timer_cycle();
+  header.timestamp  = libxsmm_timer_xtick();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
   res = fwrite(&header, sizeof(header), 1, fp);
@@ -164,7 +164,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize() {
   memset(&rec, 0, sizeof(rec));
   rec.p.id = JIT_CODE_CLOSE;
   rec.p.total_size = sizeof(rec);
-  rec.p.timestamp = libxsmm_timer_cycle();
+  rec.p.timestamp = libxsmm_timer_xtick();
   res = fwrite(&rec, sizeof(rec), 1, fp);
   if(res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
@@ -203,7 +203,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     memset(&rec, 0, sizeof(rec));
     rec.p.id = JIT_CODE_LOAD;
     rec.p.total_size = sizeof(rec) + name_len + padding_len + size;
-    rec.p.timestamp = libxsmm_timer_cycle();
+    rec.p.timestamp = libxsmm_timer_xtick();
     rec.code_size = size;
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
