@@ -147,6 +147,9 @@
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_soa.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_perf.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -270,6 +273,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_sync.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_perf.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

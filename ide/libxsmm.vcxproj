@@ -70,6 +70,7 @@
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
     <ClInclude Include="..\src\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
+    <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_trans.h" />
   </ItemGroup>
@@ -132,6 +133,7 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
+    <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
     <ClCompile Include="..\src\libxsmm_trace.c" />
