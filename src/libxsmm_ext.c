@@ -30,12 +30,3 @@
 ******************************************************************************/
 #include "libxsmm_ext.h"
 
-
-#if defined(LIBXSMM_CTOR)
-LIBXSMM_API void libxsmm_ext_init(void); /* declaration */
-LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void libxsmm_ext_init(void)
-{
-  libxsmm_init();
-}
-#endif
-
