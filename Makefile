@@ -148,7 +148,7 @@ ifneq (1,$(CACHE))
 endif
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = BLAS_WARNING PREFIX M N K MNK
+EXCLUDE_STATE = BLAS_WARNING PREFIX
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
