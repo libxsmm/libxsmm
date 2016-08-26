@@ -42,7 +42,7 @@
   MAX = LIBXSMM_MAX(MAX, (VALUE)[I])
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE float
+# define REAL_TYPE double
 #endif
 
 /*#define USE_LIBXSMM_BLAS*/
