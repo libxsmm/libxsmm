@@ -399,17 +399,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_update_statistic(const libxsmm
 {
   assert(0 != desc);
   {
-    const unsigned long long size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
+    const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
     const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
     int bucket = 3/*huge*/;
 
-    if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= size) {
+    if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
       bucket = 0;
     }
-    else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= size) {
+    else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= kernel_size) {
       bucket = 1;
     }
-    else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= size) {
+    else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= kernel_size) {
       bucket = 2;
     }
 
@@ -800,17 +800,16 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].descriptor;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (0 == (LIBXSMM_GEMM_FLAG_F32PREC & desc->flags) ? 0 : 1);
-            const unsigned int statistic_sml = internal_statistic_sml;
-            int bucket = 2;
+            int bucket = 3/*huge*/;
             assert((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) != code.imm);
-            if (LIBXSMM_MNK_SIZE(statistic_sml, statistic_sml, statistic_sml) >= kernel_size) {
+            if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
               bucket = 0;
             }
-            else {
-              const unsigned int statistic_med = internal_statistic_med;
-              if (LIBXSMM_MNK_SIZE(statistic_med, statistic_med, statistic_med) >= kernel_size) {
-                bucket = 1;
-              }
+            else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= kernel_size) {
+              bucket = 1;
+            }
+            else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= kernel_size) {
+              bucket = 2;
             }
             if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
               void* buffer = 0;
