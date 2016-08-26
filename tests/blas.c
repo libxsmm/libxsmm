@@ -34,6 +34,13 @@
 # include <stdio.h>
 #endif
 
+#define MAXREDUCE(I, VALUE, MAX, LIMIT, NWARNINGS) \
+  if ((LIMIT) < ((VALUE)[I])) { \
+    (VALUE)[I] = LIMIT; \
+    ++(NWARNINGS); \
+  } \
+  MAX = LIBXSMM_MAX(MAX, (VALUE)[I])
+
 #if !defined(REAL_TYPE)
 # define REAL_TYPE float
 #endif
@@ -44,28 +51,33 @@
 int main(void)
 {
   const char transa = 'N', transb = 'N';
-  const libxsmm_blasint m[]   = {  64,    16 };
-  const libxsmm_blasint n[]   = { 239, 65792 };
-  const libxsmm_blasint k[]   = {  64,    16 };
-  const libxsmm_blasint lda[] = {  64,    16 };
-  const libxsmm_blasint ldb[] = { 240,    16 };
-  const libxsmm_blasint ldc[] = { 240,    16 };
-  const REAL_TYPE alpha[]     = {   1,     1 };
-  const REAL_TYPE beta[]      = {   1,     0 };
+  libxsmm_blasint m[]   = {  64,    16 };
+  libxsmm_blasint n[]   = { 239, 65792 };
+  libxsmm_blasint k[]   = {  64,    16 };
+  libxsmm_blasint lda[] = {  64,    16 };
+  libxsmm_blasint ldb[] = { 240,    16 };
+  libxsmm_blasint ldc[] = { 240,    16 };
+  const REAL_TYPE alpha[]     = {   1,  1 };
+  const REAL_TYPE beta[]      = {   1,  0 };
   const int ntests = sizeof(m) / sizeof(*m);
-  libxsmm_blasint maxm, maxn, maxk, maxa, maxb, maxc;
+  libxsmm_blasint maxm = 0, maxn = 0, maxk = 0, maxa = 0, maxb = 0, maxc = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
+  int test, nwarnings = 0, i, j;
   double d2 = 0;
-  int test, i, j;
 
   for (test = 0; test < ntests; ++test) {
-    maxm = LIBXSMM_MAX(maxm, m[test]);
-    maxn = LIBXSMM_MAX(maxn, n[test]);
-    maxk = LIBXSMM_MAX(maxk, k[test]);
-    maxa = LIBXSMM_MAX(maxa, lda[test]);
-    maxb = LIBXSMM_MAX(maxb, ldb[test]);
-    maxc = LIBXSMM_MAX(maxc, ldc[test]);
+    MAXREDUCE(test, m, maxm, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
+    MAXREDUCE(test, n, maxn, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
+    MAXREDUCE(test, k, maxk, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
+    MAXREDUCE(test, lda, maxa, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
+    MAXREDUCE(test, ldb, maxb, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
+    MAXREDUCE(test, ldc, maxc, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
   }
+#if defined(_DEBUG)
+  if (0 < nwarnings) {
+    fprintf(stderr, "Warning: recompile with BIG=1 for a complete test!\n");
+  }
+#endif
 
   a = (REAL_TYPE*)malloc(maxa * maxk * sizeof(REAL_TYPE));
   b = (REAL_TYPE*)malloc(maxb * maxn * sizeof(REAL_TYPE));
