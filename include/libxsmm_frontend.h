@@ -135,7 +135,8 @@
 # else
 #   include <mkl.h>
 # endif
-#elif (0 != LIBXSMM_ILP64)
+#endif
+#if (0 != LIBXSMM_ILP64)
 /** Fallback prototype functions served by any compliant LAPACK/BLAS (ILP64). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
   const char*, const char*, const long long*, const long long*, const long long*,
