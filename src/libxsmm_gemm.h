@@ -75,6 +75,15 @@
   0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
   LIBXSMM_FEQ(1, ALPHA) && (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
+#if defined(LIBXSMM_GENERATOR_BIGDESC)
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
+#else
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (M) && \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (N) && \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (K))
+#endif
+
 #define LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
 
 #define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_START, REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
@@ -245,7 +254,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, double*, const libxsmm_blasint*);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
 /** Prefetch strategy. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch /*= LIBXSMM_MAX(LIBXSMM_PREFETCH, 0)*/;
 
