@@ -48,6 +48,19 @@
 # define LIBXSMM_RTLD_NEXT
 #endif
 
+/**
+ * Undefine (disarm) MKL's DIRECT_CALL macros,
+ * which try to pick-up the BLAS symbols.
+ */
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# if defined(sgemm_)
+#   undef sgemm_
+# endif
+# if defined(dgemm_)
+#   undef dgemm_
+# endif
+#endif
+
 #if defined(LIBXSMM_BUILD_EXT)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 #else
