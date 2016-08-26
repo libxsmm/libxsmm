@@ -70,12 +70,28 @@
 #endif
 
 #define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)-1)
+/** Allow to check whether a given M, N, K, LDA, LDB, or LDC fits. */
+#if defined(LIBXSMM_GENERATOR_BIGDESC)
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
+#else
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (M) && \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (N) && \
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (K))
+#endif
+
+#if defined(LIBXSMM_FRONTEND_H) /* assert available */
+# define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K) assert(LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K))
+#else
+# define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
+#endif
 
 /**
  * Construct a GEMM descriptor after it has been declared. The descriptor flags will sanitized to remove any
  * alignment request which cannot be satisfied (avoids to build an unnecessary code version).
  */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
+  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   (DESCRIPTOR).lda = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDA); (DESCRIPTOR).ldb = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDB); \
   (DESCRIPTOR).ldc = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDC); (DESCRIPTOR).m = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(M); \
   (DESCRIPTOR).n = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(N); (DESCRIPTOR).k = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(K); \
