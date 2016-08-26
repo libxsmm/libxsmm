@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_conv_fwd.h"
+#include "libxsmm_dnn_conv_fwd.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(libxsmm_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
@@ -98,7 +98,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxsmm_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((const element_type*)handle->filter->data);
@@ -239,7 +239,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_parallel_opt(libxsmm_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
@@ -365,37 +365,37 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_convolve_st_fwd(libxsmm_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
   if (handle->input == 0 || handle->output == 0 || handle->filter == 0) {
-    status = LIBXSMM_CONV_ERR_DATA_NOT_BOUND;
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
 
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].sconv == 0) {
     switch (handle->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
           internal_convolve_st_fwd_fp32_fallback(handle, start_thread, tid, num_threads);
         }
         else {
-          status = LIBXSMM_CONV_ERR_GENERAL;
+          status = LIBXSMM_DNN_ERR_GENERAL;
           return status;
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
         return status;
       }
     }
   }
   else {
     switch (handle->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
           if (handle->desc.N*handle->blocksofm >= num_threads) {
             internal_convolve_st_fwd_fp32_opt(handle, start_thread, tid, num_threads);
@@ -405,12 +405,12 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_convolve_st_fwd(libxsmm_conv_h
           }
         }
         else {
-          status = LIBXSMM_CONV_ERR_GENERAL;
+          status = LIBXSMM_DNN_ERR_GENERAL;
           return status;
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
         return status;
       }
     }

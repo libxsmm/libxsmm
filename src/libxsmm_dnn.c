@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
-#include "libxsmm_conv_fwd.h"
+#include "libxsmm_dnn_conv_fwd.h"
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
 
@@ -46,73 +46,73 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION const char* libxsmm_conv_get_error(libxsmm_conv_err_t code)
+LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
 {
   switch (code) {
-    case LIBXSMM_CONV_SUCCESS:
-      return "LIBXSMM CONV Success!";
-    case LIBXSMM_CONV_WARN_FALLBACK:
-      return "LIBXSMM CONV Warning: Falling back to naive code as target is currently not supported by LIBXSMM!";
-    case LIBXSMM_CONV_ERR_GENERAL:
-      return "LIBXSMM CONV Error: General error occured!";
-    case LIBXSMM_CONV_ERR_CREATE_HANDLE:
-      return "LIBXSMM CONV Error: Handle creation failed!";
-    case LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE:
-      return "LIBXSMM CONV Error: Requested datatype is not available!";
-    case LIBXSMM_CONV_ERR_INVALID_BLOCKING:
-      return "LIBXSMM CONV Error: Requested Input/Output layer size cannot be blocked!";
-    case LIBXSMM_CONV_ERR_INVALID_HANDLE:
-      return "LIBXSMM CONV Error: An invalid handle was proivded!";
-    case LIBXSMM_CONV_ERR_DATA_NOT_BOUND:
-      return "LIBXSMM CONV Error: Not all required sources and destinations have been bound to convolution!";
-    case LIBXSMM_CONV_ERR_CREATE_LAYER:
-      return "LIBXSMM CONV Error: Layer creation failed!";
-    case LIBXSMM_CONV_ERR_INVALID_LAYER:
-      return "LIBXSMM CONV Error: Invalid layer was specified!";
-    case LIBXSMM_CONV_ERR_CREATE_FILTER:
-      return "LIBXSMM CONV Error: Filter creation failed!";
-    case LIBXSMM_CONV_ERR_INVALID_FILTER:
-      return "LIBXSMM CONV Error: Invalid filter was specified!";
-    case LIBXSMM_CONV_ERR_CREATE_BIAS:
-      return "LIBXSMM CONV Error: Bias creation failed!";
-    case LIBXSMM_CONV_ERR_INVALID_BIAS:
-      return "LIBXSMM CONV Error: Invalid Bias was specified";
-    case LIBXSMM_CONV_ERR_MISMATCH_LAYER:
-      return "LIBXSMM CONV Error: Layer doesn't match handle it should be bind to!";
-    case LIBXSMM_CONV_ERR_INVALID_HANDLE_LAYER:
-      return "LIBXSMM CONV Error: Invalid hanlde or layer!";
-    case LIBXSMM_CONV_ERR_MISMATCH_FILTER:
-      return "LIBXSMM CONV Error: Filter doens't match handle it should be bind to!";
-    case LIBXSMM_CONV_ERR_INVALID_HANDLE_FILTER:
-      return "LIBXSMM CONV Error: Invalid handle or filter!";
-    case LIBXSMM_CONV_ERR_INVALID_KIND:
-      return "LIBXSMM CONV Error: Invalid convolution kind!";
+    case LIBXSMM_DNN_SUCCESS:
+      return "LIBXSMM DNN Success!";
+    case LIBXSMM_DNN_WARN_FALLBACK:
+      return "LIBXSMM DNN Warning: Falling back to naive code as target is currently not supported by LIBXSMM!";
+    case LIBXSMM_DNN_ERR_GENERAL:
+      return "LIBXSMM DNN Error: General error occured!";
+    case LIBXSMM_DNN_ERR_CREATE_HANDLE:
+      return "LIBXSMM DNN Error: Handle creation failed!";
+    case LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE:
+      return "LIBXSMM DNN Error: Requested datatype is not available!";
+    case LIBXSMM_DNN_ERR_INVALID_BLOCKING:
+      return "LIBXSMM DNN Error: Requested Input/Output activation size cannot be blocked!";
+    case LIBXSMM_DNN_ERR_INVALID_HANDLE:
+      return "LIBXSMM DNN Error: An invalid handle was proivded!";
+    case LIBXSMM_DNN_ERR_DATA_NOT_BOUND:
+      return "LIBXSMM DNN Error: Not all required sources and destinations have been bound to convolution!";
+    case LIBXSMM_DNN_ERR_CREATE_LAYER:
+      return "LIBXSMM DNN Error: Layer creation failed!";
+    case LIBXSMM_DNN_ERR_INVALID_LAYER:
+      return "LIBXSMM DNN Error: Invalid activation was specified!";
+    case LIBXSMM_DNN_ERR_CREATE_FILTER:
+      return "LIBXSMM DNN Error: Filter creation failed!";
+    case LIBXSMM_DNN_ERR_INVALID_FILTER:
+      return "LIBXSMM DNN Error: Invalid filter was specified!";
+    case LIBXSMM_DNN_ERR_CREATE_BIAS:
+      return "LIBXSMM DNN Error: Bias creation failed!";
+    case LIBXSMM_DNN_ERR_INVALID_BIAS:
+      return "LIBXSMM DNN Error: Invalid Bias was specified";
+    case LIBXSMM_DNN_ERR_MISMATCH_LAYER:
+      return "LIBXSMM DNN Error: Layer doesn't match handle it should be bind to!";
+    case LIBXSMM_DNN_ERR_INVALID_HANDLE_LAYER:
+      return "LIBXSMM DNN Error: Invalid hanlde or activation!";
+    case LIBXSMM_DNN_ERR_MISMATCH_FILTER:
+      return "LIBXSMM DNN Error: Filter doens't match handle it should be bind to!";
+    case LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER:
+      return "LIBXSMM DNN Error: Invalid handle or filter!";
+    case LIBXSMM_DNN_ERR_INVALID_KIND:
+      return "LIBXSMM DNN Error: Invalid convolution kind!";
     default:
-      return "LIBXSMM CONV Error: Unknown error or warning occured!";
+      return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_handle* libxsmm_conv_create_handle(
-  libxsmm_conv_desc     conv_desc,
-  libxsmm_conv_datatype conv_datatype,
-  libxsmm_conv_algo     conv_algo)
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
+  libxsmm_dnn_conv_desc     conv_desc,
+  libxsmm_dnn_datatype      conv_datatype,
+  libxsmm_dnn_conv_algo     conv_algo)
 {
-  libxsmm_conv_err_t status;
-  return libxsmm_conv_create_handle_check( conv_desc, conv_datatype, conv_algo, &status);
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_create_conv_handle_check( conv_desc, conv_datatype, conv_algo, &status);
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_handle* libxsmm_conv_create_handle_check(
-  libxsmm_conv_desc     conv_desc,
-  libxsmm_conv_datatype conv_datatype,
-  libxsmm_conv_algo     conv_algo,
-  libxsmm_conv_err_t*   status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
+  libxsmm_dnn_conv_desc     conv_desc,
+  libxsmm_dnn_datatype      conv_datatype,
+  libxsmm_dnn_conv_algo     conv_algo,
+  libxsmm_dnn_err_t*        status)
 {
-  libxsmm_conv_handle* handle = (libxsmm_conv_handle*)malloc(sizeof(libxsmm_conv_handle));
+  libxsmm_dnn_conv_handle* handle = (libxsmm_dnn_conv_handle*)malloc(sizeof(libxsmm_dnn_conv_handle));
   int noarch = 1;
   int i = 0;
-  *status = LIBXSMM_CONV_SUCCESS;
+  *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
@@ -153,27 +153,27 @@ LIBXSMM_API_DEFINITION libxsmm_conv_handle* libxsmm_conv_create_handle_check(
       }
 #endif
 
-      if (handle->datatype == LIBXSMM_CONV_DATATYPE_FP32) {
+      if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
         handle->ifmblock = (conv_desc.C >=16) ? 16 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
       }
-      else if (handle->datatype == LIBXSMM_CONV_DATATYPE_INT16) {
+      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
         handle->ifmblock = (conv_desc.C >=32) ? 32 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
       }
-      else if (handle->datatype == LIBXSMM_CONV_DATATYPE_INT8) {
+      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT8) {
         handle->ifmblock = (conv_desc.C >=64) ? 64 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
       }
       else {
-        *status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
         free(handle);
         handle = 0;
         return handle;
       }
     }
     else {
-      *status = LIBXSMM_CONV_WARN_FALLBACK;
+      *status = LIBXSMM_DNN_WARN_FALLBACK;
       handle->ifmblock = (conv_desc.C >=8) ? 8 : conv_desc.C;
       handle->ofmblock = (conv_desc.K >=8) ? 8 : conv_desc.K;
     }
@@ -184,7 +184,7 @@ LIBXSMM_API_DEFINITION libxsmm_conv_handle* libxsmm_conv_create_handle_check(
     if (conv_desc.C % handle->ifmblock != 0 ||
         conv_desc.K % handle->ofmblock != 0)
     {
-      *status = LIBXSMM_CONV_ERR_INVALID_BLOCKING;
+      *status = LIBXSMM_DNN_ERR_INVALID_BLOCKING;
       free(handle);
       handle = 0;
       return handle;
@@ -259,15 +259,15 @@ LIBXSMM_API_DEFINITION libxsmm_conv_handle* libxsmm_conv_create_handle_check(
     }
   }
   else {
-    *status = LIBXSMM_CONV_ERR_CREATE_HANDLE;
+    *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
   }
   return handle;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_handle(const libxsmm_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_conv_handle* handle)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
@@ -281,151 +281,151 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_handle(const libx
     /* TODO Backward path */
     /* TODO weight update path */
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_conv_handle*)handle);
+    free(/*remove constness*/(libxsmm_dnn_conv_handle*)handle);
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_HANDLE;
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
 
   return status;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t internal_conv_typesize(libxsmm_conv_datatype datatype)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t internal_dnn_typesize(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
-    case LIBXSMM_CONV_DATATYPE_FP32:  return 4;
-    case LIBXSMM_CONV_DATATYPE_INT32: return 4;
-    case LIBXSMM_CONV_DATATYPE_INT16: return 2;
-    case LIBXSMM_CONV_DATATYPE_INT8:  return 1;
+    case LIBXSMM_DNN_DATATYPE_FP32:  return 4;
+    case LIBXSMM_DNN_DATATYPE_INT32: return 4;
+    case LIBXSMM_DNN_DATATYPE_INT16: return 2;
+    case LIBXSMM_DNN_DATATYPE_INT8:  return 1;
     /* no error expected as enumeration really arrives at an enum; compiler-checked */
     default: return 1;
   }
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_input_layer(const libxsmm_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_activation* libxsmm_dnn_create_input_activation(const libxsmm_dnn_conv_handle* handle)
 {
-  libxsmm_conv_err_t status;
-  return libxsmm_conv_create_input_layer_check(handle, &status);
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_create_input_activation_check(handle, &status);
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_input_layer_check(const libxsmm_conv_handle* handle, libxsmm_conv_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_conv_layer* layer = (libxsmm_conv_layer*)malloc(sizeof(libxsmm_conv_layer));
+  libxsmm_dnn_activation* activation = (libxsmm_dnn_activation*)malloc(sizeof(libxsmm_dnn_activation));
   int result = EXIT_SUCCESS;
-  *status = LIBXSMM_CONV_SUCCESS;
+  *status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && layer != 0) {
-    /* set properties of the layer according to convolution handle */
-    layer->N = handle->desc.N;
-    layer->splits = handle->desc.splits;
-    layer->fmb = handle->blocksifm;
-    layer->bfm = handle->ifmblock;
-    layer->H = handle->ifhp;
-    layer->W = handle->ifwp;
-    layer->datatype = handle->datatype;
+  if (handle != 0 && activation != 0) {
+    /* set properties of the activation according to convolution handle */
+    activation->N = handle->desc.N;
+    activation->splits = handle->desc.splits;
+    activation->fmb = handle->blocksifm;
+    activation->bfm = handle->ifmblock;
+    activation->H = handle->ifhp;
+    activation->W = handle->ifwp;
+    activation->datatype = handle->datatype;
     /* allocate raw data */
-    result = libxsmm_xmalloc(&layer->data,
-        layer->N * layer->splits * layer->fmb * layer->bfm * layer->H * layer->W * internal_conv_typesize(layer->datatype),
+    result = libxsmm_xmalloc(&activation->data,
+        activation->N * activation->splits * activation->fmb * activation->bfm * activation->H * activation->W * internal_dnn_typesize(activation->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
-    *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
-    layer = 0;
+    *status = LIBXSMM_DNN_ERR_CREATE_LAYER;
+    activation = 0;
   }
 
   if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
-    free((libxsmm_conv_layer*)layer);
-    layer = 0;
+    *status = LIBXSMM_DNN_ERR_CREATE_LAYER;
+    free((libxsmm_dnn_activation*)activation);
+    activation = 0;
   }
 
-  return layer;
+  return activation;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_output_layer(const libxsmm_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_activation* libxsmm_dnn_create_output_activation(const libxsmm_dnn_conv_handle* handle)
 {
-  libxsmm_conv_err_t status;
-  return libxsmm_conv_create_output_layer_check(handle, &status);
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_create_output_activation_check(handle, &status);
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_layer* libxsmm_conv_create_output_layer_check(const libxsmm_conv_handle* handle, libxsmm_conv_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_conv_layer* layer = (libxsmm_conv_layer*)malloc(sizeof(libxsmm_conv_layer));
+  libxsmm_dnn_activation* activation = (libxsmm_dnn_activation*)malloc(sizeof(libxsmm_dnn_activation));
   int result = EXIT_SUCCESS;
-  *status = LIBXSMM_CONV_SUCCESS;
+  *status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && layer != 0) {
-    /* set properties of the layer according to convolution handle */
-    layer->N = handle->desc.N;
-    layer->splits = handle->desc.splits;
-    layer->fmb = handle->blocksofm;
-    layer->bfm = handle->ofmblock;
-    layer->H = handle->ofhp;
-    layer->W = handle->ofwp;
-    if (handle->datatype == LIBXSMM_CONV_DATATYPE_FP32) {
-      layer->datatype = handle->datatype;
+  if (handle != 0 && activation != 0) {
+    /* set properties of the activation according to convolution handle */
+    activation->N = handle->desc.N;
+    activation->splits = handle->desc.splits;
+    activation->fmb = handle->blocksofm;
+    activation->bfm = handle->ofmblock;
+    activation->H = handle->ofhp;
+    activation->W = handle->ofwp;
+    if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
+      activation->datatype = handle->datatype;
     }
     else {
-      layer->datatype = LIBXSMM_CONV_DATATYPE_INT32;
+      activation->datatype = LIBXSMM_DNN_DATATYPE_INT32;
     }
     /* allocate raw data, we always have a 4 byte wide type!! */
-    result = libxsmm_xmalloc(&layer->data,
-        layer->N * layer->splits * layer->fmb * layer->bfm * layer->H * layer->W * internal_conv_typesize(layer->datatype),
+    result = libxsmm_xmalloc(&activation->data,
+        activation->N * activation->splits * activation->fmb * activation->bfm * activation->H * activation->W * internal_dnn_typesize(activation->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
-    *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
-    layer = 0;
+    *status = LIBXSMM_DNN_ERR_CREATE_LAYER;
+    activation = 0;
   }
 
   if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_CONV_ERR_CREATE_LAYER;
-    free((libxsmm_conv_layer*)layer);
-    layer = 0;
+    *status = LIBXSMM_DNN_ERR_CREATE_LAYER;
+    free((libxsmm_dnn_activation*)activation);
+    activation = 0;
   }
 
-  return layer;
+  return activation;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_layer(const libxsmm_conv_layer* layer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_activation(const libxsmm_dnn_activation* activation)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (0 != layer) { /* it is not an error attempting to destroy a NULL-handle */
+  if (0 != activation) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_xfree(layer->data);
+    libxsmm_xfree(activation->data);
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_conv_layer*)layer);
+    free(/*remove constness*/(libxsmm_dnn_activation*)activation);
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_filter* libxsmm_conv_create_filter(const libxsmm_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter(const libxsmm_dnn_conv_handle* handle)
 {
-  libxsmm_conv_err_t status;
-  return libxsmm_conv_create_filter_check(handle, &status);
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_create_filter_check(handle, &status);
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_filter* libxsmm_conv_create_filter_check(const libxsmm_conv_handle* handle, libxsmm_conv_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_conv_filter* filter = (libxsmm_conv_filter*)malloc(sizeof(libxsmm_conv_filter));
+  libxsmm_dnn_filter* filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
   int result = EXIT_SUCCESS;
-  *status = LIBXSMM_CONV_SUCCESS;
+  *status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && filter != 0) {
-    /* set properties of the layer according to convolution handle */
+    /* set properties of the activation according to convolution handle */
     filter->splits = handle->desc.splits;
     filter->ifmb = handle->blocksifm;
     filter->bifm = handle->ifmblock;
@@ -436,17 +436,17 @@ LIBXSMM_API_DEFINITION libxsmm_conv_filter* libxsmm_conv_create_filter_check(con
     filter->datatype = handle->datatype;
     /* allocate raw data */
     result = libxsmm_xmalloc(&filter->data,
-        filter->splits * filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * internal_conv_typesize(filter->datatype),
+        filter->splits * filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * internal_dnn_typesize(filter->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
-    *status = LIBXSMM_CONV_ERR_CREATE_FILTER;
+    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
     filter = 0;
   }
 
   if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_CONV_ERR_CREATE_FILTER;
-    free((libxsmm_conv_filter*)filter);
+    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
+    free((libxsmm_dnn_filter*)filter);
     filter = 0;
   }
 
@@ -454,56 +454,56 @@ LIBXSMM_API_DEFINITION libxsmm_conv_filter* libxsmm_conv_create_filter_check(con
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_filter(const libxsmm_conv_filter* filter)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsmm_dnn_filter* filter)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
     libxsmm_xfree(filter->data);
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_conv_filter*)filter);
+    free(/*remove constness*/(libxsmm_dnn_filter*)filter);
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_FILTER;
+    status = LIBXSMM_DNN_ERR_INVALID_FILTER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_bias* libxsmm_conv_create_bias(const libxsmm_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias(const libxsmm_dnn_conv_handle* handle)
 {
-  libxsmm_conv_err_t status;
-  return libxsmm_conv_create_bias_check(handle, &status);
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_create_bias_check(handle, &status);
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_bias* libxsmm_conv_create_bias_check(const libxsmm_conv_handle* handle, libxsmm_conv_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_conv_bias* bias = (libxsmm_conv_bias*)malloc(sizeof(libxsmm_conv_bias));
+  libxsmm_dnn_bias* bias = (libxsmm_dnn_bias*)malloc(sizeof(libxsmm_dnn_bias));
   int result = EXIT_SUCCESS;
-  *status = LIBXSMM_CONV_SUCCESS;
+  *status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && bias != 0) {
-    /* set properties of the layer according to convolution handle */
+    /* set properties of the activation according to convolution handle */
     bias->splits = handle->desc.splits;
     bias->fmb = handle->blocksifm;
     bias->bfm = handle->ifmblock;
     bias->datatype = handle->datatype;
     /* allocate raw data, we always have a 4 byte wide type!! */
     result = libxsmm_xmalloc(&bias->data,
-        bias->splits * bias->fmb * bias->bfm * internal_conv_typesize(bias->datatype),
+        bias->splits * bias->fmb * bias->bfm * internal_dnn_typesize(bias->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
-    *status = LIBXSMM_CONV_ERR_CREATE_BIAS;
+    *status = LIBXSMM_DNN_ERR_CREATE_BIAS;
     bias = 0;
   }
 
   if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_CONV_ERR_CREATE_BIAS;
-    free((libxsmm_conv_bias*)bias);
+    *status = LIBXSMM_DNN_ERR_CREATE_BIAS;
+    free((libxsmm_dnn_bias*)bias);
     bias = 0;
   }
 
@@ -511,47 +511,47 @@ LIBXSMM_API_DEFINITION libxsmm_conv_bias* libxsmm_conv_create_bias_check(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_destroy_bias(const libxsmm_conv_bias* bias)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* bias)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != bias) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
     libxsmm_xfree(bias->data);
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_conv_bias*)bias);
+    free(/*remove constness*/(libxsmm_dnn_bias*)bias);
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_BIAS;
+    status = LIBXSMM_DNN_ERR_INVALID_BIAS;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_layer(const libxsmm_conv_layer* layer, const void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_activation(const libxsmm_dnn_activation* activation, const void* data)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (0 != layer) {
+  if (0 != activation) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (layer->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+    switch (activation->datatype) {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         typedef float element_type;
         int i1, i2, i3, i4, i5, i6;
-        int N = layer->N;
-        int splits = layer->splits;
-        int fmb = layer->fmb;
-        int bfm = layer->bfm;
-        int H = layer->H;
-        int W = layer->W;
+        int N = activation->N;
+        int splits = activation->splits;
+        int fmb = activation->fmb;
+        int bfm = activation->bfm;
+        int H = activation->H;
+        int W = activation->W;
 #if defined(LIBXSMM_VLA)
         typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
         typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
-        const handle_data_type handle_data = (handle_data_type)layer->data;
+        const handle_data_type handle_data = (handle_data_type)activation->data;
         const user_data_type user_data = (user_data_type)data;
 #else
-        element_type *const handle_data = (element_type*)layer->data;
+        element_type *const handle_data = (element_type*)activation->data;
         const element_type *const user_data = (const element_type*)data;
         unsigned int hindexn[6], uindexn[5];
         unsigned int hshape[6], ushape[5];
@@ -584,80 +584,80 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_layer(const libxsm
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_zero_layer(const libxsmm_conv_layer* layer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_zero_activation(const libxsmm_dnn_activation* activation)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
-  const size_t size = (size_t)layer->N * (size_t)layer->splits * (size_t)layer->fmb
-                    * (size_t)layer->bfm * (size_t)layer->H * (size_t)layer->W;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  const size_t size = (size_t)activation->N * (size_t)activation->splits * (size_t)activation->fmb
+                    * (size_t)activation->bfm * (size_t)activation->H * (size_t)activation->W;
   size_t i;
 
-  if (0 != layer) {
+  if (0 != activation) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (layer->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
-        float* fp32_data = (float*)layer->data;
+    switch (activation->datatype) {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
+        float* fp32_data = (float*)activation->data;
         for (i = 0; i < size; ++i) fp32_data[i] = 0.0f;
       } break;
-      case LIBXSMM_CONV_DATATYPE_INT32: {
-        int* int32_data = (int*)layer->data;
+      case LIBXSMM_DNN_DATATYPE_INT32: {
+        int* int32_data = (int*)activation->data;
         for (i = 0; i < size; ++i) int32_data[i] = 0;
       } break;
-      case LIBXSMM_CONV_DATATYPE_INT16: {
-        short* int16_data = (short*)layer->data;
+      case LIBXSMM_DNN_DATATYPE_INT16: {
+        short* int16_data = (short*)activation->data;
         for (i = 0; i < size; ++i) int16_data[i] = 0;
       } break;
-      case LIBXSMM_CONV_DATATYPE_INT8: {
-        char* int8_data = (char*)layer->data;
+      case LIBXSMM_DNN_DATATYPE_INT8: {
+        char* int8_data = (char*)activation->data;
         for (i = 0; i < size; ++i) int8_data[i] = 0;
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_layer(const libxsmm_conv_layer* layer, void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_activation(const libxsmm_dnn_activation* activation, void* data)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (0 != layer) {
+  if (0 != activation) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (layer->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+    switch (activation->datatype) {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         typedef float element_type;
         int i1, i2, i3, i4, i5, i6;
-        int N = layer->N;
-        int splits = layer->splits;
-        int fmb = layer->fmb;
-        int bfm = layer->bfm;
-        int H = layer->H;
-        int W = layer->W;
+        int N = activation->N;
+        int splits = activation->splits;
+        int fmb = activation->fmb;
+        int bfm = activation->bfm;
+        int H = activation->H;
+        int W = activation->W;
 #if defined(LIBXSMM_VLA)
         typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
         typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
-        const handle_data_type handle_data = (handle_data_type)layer->data;
+        const handle_data_type handle_data = (handle_data_type)activation->data;
         const user_data_type user_data = (user_data_type)data;
 #else
-        const element_type *const handle_data = (const element_type*)layer->data;
+        const element_type *const handle_data = (const element_type*)activation->data;
         element_type *const user_data = (element_type*)data;
         unsigned int hindexn[6], uindexn[5];
         unsigned int hshape[6], ushape[5];
@@ -690,26 +690,26 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_layer(const libxs
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_filter(const libxsmm_conv_filter* filter, const void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (filter->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         typedef float element_type;
         int i1, i2, i3, i4, i5, i6, i7;
         int splits = filter->splits;
@@ -760,26 +760,26 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_filter(const libxs
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_FILTER;
+    status = LIBXSMM_DNN_ERR_INVALID_FILTER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libxsmm_conv_filter* filter, void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
     switch (filter->datatype) {
-      case LIBXSMM_CONV_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_FP32: {
         typedef float element_type;
         int i1, i2, i3, i4, i5, i6, i7;
         int splits = filter->splits;
@@ -830,12 +830,12 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libx
         }
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_FILTER;
+    status = LIBXSMM_DNN_ERR_INVALID_FILTER;
   }
 
   return status;
@@ -843,79 +843,79 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_filter(const libx
 
 
 #if 0
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyin_bias(const libxsmm_conv_bias* bias, const void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_bias(const libxsmm_dnn_bias* bias, const void* data)
 {
-  LIBXSMM_UNUSED(bias); LIBXSMM_UNUSED(data); /* TODO: libxsmm_conv_copyin_input */
+  LIBXSMM_UNUSED(bias); LIBXSMM_UNUSED(data); /* TODO: libxsmm_dnn_copyin_input */
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_copyout_bias(const libxsmm_conv_bias* bias, void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_dnn_bias* bias, void* data)
 {
-  LIBXSMM_UNUSED(bias); LIBXSMM_UNUSED(data); /* TODO: libxsmm_conv_copyin_input */
+  LIBXSMM_UNUSED(bias); LIBXSMM_UNUSED(data); /* TODO: libxsmm_dnn_copyin_input */
 }
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_bind_input_layer(libxsmm_conv_handle* handle, const libxsmm_conv_layer* layer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_activation(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_activation* activation)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && layer != 0) {
+  if (handle != 0 && activation != 0) {
     /* check if format matches */
-    if ( handle->desc.N == layer->N
-      && handle->desc.splits == layer->splits
-      && handle->ifwp == layer->W
-      && handle->ifhp == layer->H
-      && handle->ifmblock == layer->bfm
-      && handle->blocksifm == layer->fmb
-      && handle->datatype == layer->datatype)
+    if ( handle->desc.N == activation->N
+      && handle->desc.splits == activation->splits
+      && handle->ifwp == activation->W
+      && handle->ifhp == activation->H
+      && handle->ifmblock == activation->bfm
+      && handle->blocksifm == activation->fmb
+      && handle->datatype == activation->datatype)
     {
-      handle->input = (libxsmm_conv_layer*)layer;
+      handle->input = (libxsmm_dnn_activation*)activation;
     }
     else {
-      status = LIBXSMM_CONV_ERR_MISMATCH_LAYER;
+      status = LIBXSMM_DNN_ERR_MISMATCH_LAYER;
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_HANDLE_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_bind_output_layer(libxsmm_conv_handle* handle, const libxsmm_conv_layer* layer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_activation(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_activation* activation)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && layer != 0) {
+  if (handle != 0 && activation != 0) {
     /* check if format matches */
-    if ( handle->desc.N == layer->N
-      && handle->desc.splits == layer->splits
-      && handle->ofwp == layer->W
-      && handle->ofhp == layer->H
-      && handle->ofmblock == layer->bfm
-      && handle->blocksofm == layer->fmb
-      && ((handle->datatype == LIBXSMM_CONV_DATATYPE_FP32 && layer->datatype == LIBXSMM_CONV_DATATYPE_FP32)
-        || (layer->datatype == LIBXSMM_CONV_DATATYPE_INT32)))
+    if ( handle->desc.N == activation->N
+      && handle->desc.splits == activation->splits
+      && handle->ofwp == activation->W
+      && handle->ofhp == activation->H
+      && handle->ofmblock == activation->bfm
+      && handle->blocksofm == activation->fmb
+      && ((handle->datatype == LIBXSMM_DNN_DATATYPE_FP32 && activation->datatype == LIBXSMM_DNN_DATATYPE_FP32)
+        || (activation->datatype == LIBXSMM_DNN_DATATYPE_INT32)))
     {
-      handle->output = (libxsmm_conv_layer*)layer;
+      handle->output = (libxsmm_dnn_activation*)activation;
     }
     else {
-      status = LIBXSMM_CONV_ERR_MISMATCH_LAYER;
+      status = LIBXSMM_DNN_ERR_MISMATCH_LAYER;
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_HANDLE_LAYER;
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_LAYER;
   }
 
   return status;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_bind_filter(libxsmm_conv_handle* handle, const libxsmm_conv_filter* filter)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_filter* filter)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && filter != 0) {
     /* check if format matches */
@@ -928,37 +928,37 @@ LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_conv_bind_filter(libxsmm_conv_
       && handle->blocksofm == filter->ofmb
       && handle->datatype == filter->datatype)
     {
-      handle->filter = (libxsmm_conv_filter*)filter;
+      handle->filter = (libxsmm_dnn_filter*)filter;
     }
     else {
-      status = LIBXSMM_CONV_ERR_MISMATCH_FILTER;
+      status = LIBXSMM_DNN_ERR_MISMATCH_FILTER;
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_HANDLE_FILTER;
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER;
   }
 
   return status;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_conv_err_t internal_convolve_st(libxsmm_conv_handle* handle,
-  libxsmm_conv_kind kind, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxsmm_dnn_conv_handle* handle,
+  libxsmm_dnn_conv_kind kind, int start_thread, int tid, int num_threads)
 {
-  libxsmm_conv_err_t status = LIBXSMM_CONV_SUCCESS;
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_CONV_KIND_FWD: {
-        libxsmm_convolve_st_fwd(handle, start_thread, tid, num_threads);
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        libxsmm_dnn_convolve_st_fwd(handle, start_thread, tid, num_threads);
       } break;
       default: {
-        status = LIBXSMM_CONV_ERR_INVALID_KIND;
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }
     }
   }
   else {
-    status = LIBXSMM_CONV_ERR_INVALID_HANDLE;
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
 
   return status;
@@ -968,21 +968,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_conv_err_t internal_convolve_st(libx
     /* TODO: implement support for bias */
     LIBXSMM_UNUSED(bias);
     switch (kind) {
-      case LIBXSMM_CONV_KIND_FWD: if (
+      case LIBXSMM_DNN_KIND_FWD: if (
            0 != handle->data_input
         && 0 != handle->data_weight
         && 0 != handle->data_output)
       {
         convolution = handle->code_fwd.sconv;
       } break;
-      case LIBXSMM_CONV_KIND_BWD: if (
+      case LIBXSMM_DNN_KIND_BWD: if (
            0 != handle->data_input
         && 0 != handle->data_weight
         && 0 != handle->data_output)
       {
         convolution = handle->code_bwd.sconv;
       } break;
-      case LIBXSMM_CONV_KIND_UPD: if (
+      case LIBXSMM_DNN_KIND_UPD: if (
            0 != handle->data_input
         && 0 != handle->data_weight
         && 0 != handle->data_output)
@@ -1013,7 +1013,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_conv_err_t internal_convolve_st(libx
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_convolve(libxsmm_conv_handle* handle, libxsmm_conv_kind kind)
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind)
 {
 #if defined(_OPENMP)
 # pragma omp parallel
@@ -1027,14 +1027,14 @@ LIBXSMM_API_DEFINITION void libxsmm_convolve(libxsmm_conv_handle* handle, libxsm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_conv_err_t libxsmm_convolve_st(libxsmm_conv_handle* handle,
-  libxsmm_conv_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle,
+  libxsmm_dnn_conv_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads)
 {
   return internal_convolve_st(handle, kind, start_thread, tid, num_threads);
 }
 
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API)
+#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
 
 LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_forward(
   const libxsmm_convolution_forward_descriptor* descriptor)
@@ -1107,5 +1107,5 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
   return code.sconv;
 }
 
-#endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API)*/
+#endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 

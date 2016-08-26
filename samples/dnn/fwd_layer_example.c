@@ -43,7 +43,7 @@
 # define srand48 srand
 #endif
 
-#define CHKERR_LIBXSMM_CONV(A) if ( A != LIBXSMM_CONV_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_conv_get_error(A) );
+#define CHKERR_LIBXSMM_CONV(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 typedef struct {
   int nImg;
@@ -234,12 +234,12 @@ int main(int argc, char* argv[])
   int nThreads = 1;
 #endif
 
-  libxsmm_conv_desc conv_desc;
-  libxsmm_conv_handle* libxsmm_handle;
-  libxsmm_conv_layer* libxsmm_input;
-  libxsmm_conv_layer* libxsmm_output;
-  libxsmm_conv_filter* libxsmm_filter;
-  libxsmm_conv_err_t status;
+  libxsmm_dnn_conv_desc conv_desc;
+  libxsmm_dnn_conv_handle* libxsmm_handle;
+  libxsmm_dnn_activation* libxsmm_input;
+  libxsmm_dnn_activation* libxsmm_output;
+  libxsmm_dnn_filter* libxsmm_filter;
+  libxsmm_dnn_err_t status;
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride splits\n", argv[0]);
@@ -328,29 +328,30 @@ int main(int argc, char* argv[])
   conv_desc.S = kw;
   conv_desc.u = stride_h;
   conv_desc.v = stride_w;
+  /* @TODO we need to change the interface to provide intut and output padding! */
   conv_desc.pad_h = pad_h;
-  conv_desc.pad_w = pad_h;
+  conv_desc.pad_w = pad_w;
   conv_desc.splits = nSplits;
-  libxsmm_handle = libxsmm_conv_create_handle_check( conv_desc, LIBXSMM_CONV_DATATYPE_FP32, LIBXSMM_CONV_ALGO_DIRECT, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, LIBXSMM_DNN_DATATYPE_FP32, LIBXSMM_DNN_CONV_ALGO_DIRECT, &status );
   CHKERR_LIBXSMM_CONV( status );
 
   /* setup LIBXSMM layers */
-  libxsmm_input = libxsmm_conv_create_input_layer_check( libxsmm_handle, &status );
+  libxsmm_input = libxsmm_dnn_create_input_activation_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_CONV( status );
-  libxsmm_output = libxsmm_conv_create_output_layer_check( libxsmm_handle, &status );
+  libxsmm_output = libxsmm_dnn_create_output_activation_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_CONV( status );
-  libxsmm_filter = libxsmm_conv_create_filter_check( libxsmm_handle, &status );
+  libxsmm_filter = libxsmm_dnn_create_filter_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_CONV( status );
 
   /* copy in data to LIBXSMM format */
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_copyin_layer( libxsmm_input, (void*)naive_input ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_zero_layer( libxsmm_output ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_copyin_filter( libxsmm_filter, (void*)naive_filter ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_copyin_activation( libxsmm_input, (void*)naive_input ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_zero_activation( libxsmm_output ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter ) );
 
   /* bind layer to handle */
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_bind_input_layer( libxsmm_handle, libxsmm_input ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_bind_output_layer( libxsmm_handle, libxsmm_output ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_bind_filter( libxsmm_handle, libxsmm_filter ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_bind_input_activation( libxsmm_handle, libxsmm_input ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_bind_output_activation( libxsmm_handle, libxsmm_output ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
 
   printf("##########################################\n");
   printf("#           Check Correctness            #\n");
@@ -367,10 +368,10 @@ int main(int argc, char* argv[])
 #else
     const int tid = 0, nthreads = 1;
 #endif
-    CHKERR_LIBXSMM_CONV( libxsmm_convolve_st( libxsmm_handle, LIBXSMM_CONV_KIND_FWD, 0, tid, nthreads ) );
+    CHKERR_LIBXSMM_CONV( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid, nthreads ) );
   }
   /* copy out data */
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_copyout_layer( libxsmm_output, (void*)naive_libxsmm_output ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_copyout_activation( libxsmm_output, (void*)naive_libxsmm_output ) );
 
   /* compare */
   compare_buf(naive_output, naive_libxsmm_output, nImg*nOfm*ofhp*ofwp, &norms);
@@ -394,7 +395,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0, nthreads = 1;
 #endif
-      libxsmm_convolve_st( libxsmm_handle, LIBXSMM_CONV_KIND_FWD, 0, tid, nthreads );
+      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid, nthreads );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -410,10 +411,10 @@ int main(int argc, char* argv[])
      (flops*1e-9)/l_total, norms.max_rel_err, norms.max_abs_err, norms.l2_rel_err, norms.one_norm_ref, norms.one_norm_test );
 
   /* clean-up */
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_destroy_layer( libxsmm_input ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_destroy_layer( libxsmm_output ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_destroy_filter( libxsmm_filter ) );
-  CHKERR_LIBXSMM_CONV( libxsmm_conv_destroy_handle( libxsmm_handle ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_destroy_activation( libxsmm_input ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_destroy_activation( libxsmm_output ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
+  CHKERR_LIBXSMM_CONV( libxsmm_dnn_destroy_conv_handle( libxsmm_handle ) );
 
   return 0;
 }
