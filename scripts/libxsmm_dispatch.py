@@ -39,7 +39,7 @@ if __name__ == "__main__":
     if (3 < argc):
         precision = int(sys.argv[1])
         threshold = int(sys.argv[2])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], threshold)
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
 
         print("libxsmm_gemm_descriptor desc;")
         print("libxsmm_xmmfunction func;")

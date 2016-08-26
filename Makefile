@@ -330,7 +330,7 @@ endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: .state $(INCDIR)/.make \
+$(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
                      $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                      $(HEADERS)

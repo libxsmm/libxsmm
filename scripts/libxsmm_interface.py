@@ -63,7 +63,7 @@ if __name__ == "__main__":
         else: alpha = 1
         if (12 < argc): beta = int(sys.argv[12])
         else: beta = 1
-        if (13 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], threshold))
+        if (13 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], 0))
         else: mnklist = list()
 
         template = Template(open(filename, "r").read())
