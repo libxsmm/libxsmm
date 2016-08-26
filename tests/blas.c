@@ -75,7 +75,7 @@ int main(void)
   }
 #if defined(_DEBUG)
   if (0 < nwarnings) {
-    fprintf(stderr, "Warning: recompile with BIG=1 for a complete test!\n");
+    fprintf(stderr, "Warning: recompile with BIG=1 and an increased THRESHOLD for a complete test!\n");
   }
 #endif
 
