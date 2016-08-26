@@ -1198,9 +1198,9 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   const libxsmm_xmmfunction null_mmfunction = { 0 };
-  LIBXSMM_INIT
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
+    LIBXSMM_INIT
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
       backend_descriptor.prefetch = (unsigned char)internal_prefetch;
