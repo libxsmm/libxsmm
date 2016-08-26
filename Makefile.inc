@@ -849,7 +849,11 @@ ifneq (0,$(MKL))
 endif
 
 ifeq (1,$(MKL_DIRECT))
-  DFLAGS += -DMKL_DIRECT_CALL_SEQ
+  ifeq (1,$(MKL))
+    DFLAGS += -DMKL_DIRECT_CALL_SEQ
+  else ifneq (0,$(MKL))
+    DFLAGS += -DMKL_DIRECT_CALL
+  endif
 endif
 
 ifeq (1,$(MKL)) # sequential
