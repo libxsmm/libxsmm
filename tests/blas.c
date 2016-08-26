@@ -39,61 +39,86 @@
 #endif
 
 /*#define USE_LIBXSMM_BLAS*/
-#define M 64
-#define N 239
-#define K 64
-#define LDA 64
-#define LDB 240
-#define LDC 240
 
 
 int main(void)
 {
-  const libxsmm_blasint m = M, n = N, k = K, lda = LDA, ldb = LDB, ldc = LDC;
-  REAL_TYPE a[K*LDA], b[N*LDB], c[N*LDC], d[N*LDC];
   const char transa = 'N', transb = 'N';
-  const REAL_TYPE alpha = 1, beta = 1;
+  const libxsmm_blasint m[]   = {  64,    16 };
+  const libxsmm_blasint n[]   = { 239, 65792 };
+  const libxsmm_blasint k[]   = {  64,    16 };
+  const libxsmm_blasint lda[] = {  64,    16 };
+  const libxsmm_blasint ldb[] = { 240,    16 };
+  const libxsmm_blasint ldc[] = { 240,    16 };
+  const REAL_TYPE alpha[]     = {   1,     1 };
+  const REAL_TYPE beta[]      = {   1,     0 };
+  const int ntests = sizeof(m) / sizeof(*m);
+  libxsmm_blasint maxm, maxn, maxk, maxa, maxb, maxc;
+  REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
   double d2 = 0;
-  int i, j;
+  int test, i, j;
 
-  for (i = 0; i < m; ++i) {
-    for (j = 0; j < k; ++j) {
-      const int index = i * lda + j;
+  for (test = 0; test < ntests; ++test) {
+    maxm = LIBXSMM_MAX(maxm, m[test]);
+    maxn = LIBXSMM_MAX(maxn, n[test]);
+    maxk = LIBXSMM_MAX(maxk, k[test]);
+    maxa = LIBXSMM_MAX(maxa, lda[test]);
+    maxb = LIBXSMM_MAX(maxb, ldb[test]);
+    maxc = LIBXSMM_MAX(maxc, ldc[test]);
+  }
+
+  a = (REAL_TYPE*)malloc(maxa * maxk * sizeof(REAL_TYPE));
+  b = (REAL_TYPE*)malloc(maxb * maxn * sizeof(REAL_TYPE));
+  c = (REAL_TYPE*)malloc(maxc * maxn * sizeof(REAL_TYPE));
+  d = (REAL_TYPE*)malloc(maxc * maxn * sizeof(REAL_TYPE));
+  assert(0 != a && 0 != b && 0 != c && 0 != d);
+
+  for (j = 0; j < maxk; ++j) {
+    for (i = 0; i < maxm; ++i) {
+      const int index = j * maxa + i;
       a[index] = ((REAL_TYPE)1) / (index + 1);
     }
   }
-  for (i = 0; i < k; ++i) {
-    for (j = 0; j < n; ++j) {
-      const int index = i * ldb + j;
+  for (j = 0; j < maxn; ++j) {
+    for (i = 0; i < maxk; ++i) {
+      const int index = j * maxb + i;
       b[index] = ((REAL_TYPE)2) / (index + 1);
     }
   }
-  for (i = 0; i < m; ++i) {
-    for (j = 0; j < n; ++j) {
-      const int index = i * ldc + j;
+  for (j = 0; j < maxn; ++j) {
+    for (i = 0; i < maxm; ++i) {
+      const int index = j * maxc + i;
       c[index] = d[index] = 1000;
     }
   }
 
+  for (test = 0; test < ntests; ++test) {
+    double dtest = 0;
 #if !defined(__BLAS) || (0 != __BLAS)
-  LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
-    &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+    LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+      alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
 
 # if defined(USE_LIBXSMM_BLAS)
-  LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
-    &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+    LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+      alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 # else
-  LIBXSMM_BLAS_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
-    &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+    LIBXSMM_BLAS_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+      alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 # endif
 
-  for (i = 0; i < m; ++i) {
-    for (j = 0; j < n; ++j) {
-      const int index = i * ldc + j;
-      const double d1 = c[index] - d[index];
-      d2 += d1 * d1;
+    for (j = 0; j < n[test]; ++j) {
+      for (i = 0; i < m[test]; ++i) {
+        const int index = j * ldc[test] + i;
+        const double d1 = c[index] - d[index];
+        c[index] = d[index];
+        dtest += d1 * d1;
+      }
     }
+    d2 = LIBXSMM_MAX(d2, dtest);
   }
+
+  free(a); free(b);
+  free(c); free(d);
 
   return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
