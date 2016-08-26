@@ -51,14 +51,14 @@
 int main(void)
 {
   const char transa = 'N', transb = 'N';
-  libxsmm_blasint m[]   = {  64,    16 };
-  libxsmm_blasint n[]   = { 239, 65792 };
-  libxsmm_blasint k[]   = {  64,    16 };
-  libxsmm_blasint lda[] = {  64,    16 };
-  libxsmm_blasint ldb[] = { 240,    16 };
-  libxsmm_blasint ldc[] = { 240,    16 };
-  const REAL_TYPE alpha[]     = {   1,  1 };
-  const REAL_TYPE beta[]      = {   1,  0 };
+  libxsmm_blasint m[]     = {  64,    16 };
+  libxsmm_blasint n[]     = { 239, 65792 };
+  libxsmm_blasint k[]     = {  64,    16 };
+  libxsmm_blasint lda[]   = {  64,    16 };
+  libxsmm_blasint ldb[]   = { 240,    16 };
+  libxsmm_blasint ldc[]   = { 240,    16 };
+  const REAL_TYPE alpha[] = {   1,     1 };
+  const REAL_TYPE beta[]  = {   1,     0 };
   const int ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 0, maxn = 0, maxk = 0, maxa = 0, maxb = 0, maxc = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
