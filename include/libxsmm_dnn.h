@@ -181,7 +181,7 @@ LIBXSMM_API void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_d
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads);
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_CONV_INTERNAL_API) /* Internal API */
+#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 
 /** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(const float* input1, const float* input2, float* output,

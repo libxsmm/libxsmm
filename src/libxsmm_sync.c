@@ -36,13 +36,21 @@
 #if !defined(LIBXSMM_SYNC_CACHELINE_SIZE)
 # define LIBXSMM_SYNC_CACHELINE_SIZE 64
 #endif
-
 #if !defined(LIBXSMM_SYNC_DELAY)
 # define LIBXSMM_SYNC_DELAY 8
 #endif
-
 #if !defined(LIBXSMM_SYNC_ATOMIC_SET)
 # define LIBXSMM_SYNC_ATOMIC_SET(DST, VALUE) ((DST) = (VALUE))
+#endif
+#if !defined(LIBXSMM_SYNC_MALLOC_INTRINSIC)
+# define LIBXSMM_SYNC_MALLOC_INTRINSIC
+#endif
+#if defined(LIBXSMM_SYNC_MALLOC_INTRINSIC)
+# define LIBXSMM_SYNC_MALLOC(SIZE, ALIGNMENT) _mm_malloc(SIZE, ALIGNMENT)
+# define LIBXSMM_SYNC_FREE(BUFFER) _mm_free((void*)(BUFFER))
+#else
+# define LIBXSMM_SYNC_MALLOC(SIZE, ALIGNMENT) libxsmm_aligned_malloc(SIZE, ALIGNMENT)
+# define LIBXSMM_SYNC_FREE libxsmm_free(BUFFER)
 #endif
 
 
@@ -79,16 +87,16 @@ struct LIBXSMM_RETARGETABLE libxsmm_barrier {
 
 LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core)
 {
-  libxsmm_barrier *const barrier = (libxsmm_barrier*)libxsmm_aligned_malloc(
+  libxsmm_barrier *const barrier = (libxsmm_barrier*)LIBXSMM_SYNC_MALLOC(
     sizeof(libxsmm_barrier), -(LIBXSMM_SYNC_CACHELINE_SIZE));
   barrier->ncores = ncores;
   barrier->ncores_log2 = (int)ceil(log2(ncores));
   barrier->nthreads_per_core = nthreads_per_core;
   barrier->nthreads = ncores * nthreads_per_core;
 
-  barrier->threads = (internal_sync_thread_tag**)libxsmm_aligned_malloc(
+  barrier->threads = (internal_sync_thread_tag**)LIBXSMM_SYNC_MALLOC(
     barrier->nthreads * sizeof(internal_sync_thread_tag*), -(LIBXSMM_SYNC_CACHELINE_SIZE));
-  barrier->cores = (internal_sync_core_tag**)libxsmm_aligned_malloc(
+  barrier->cores = (internal_sync_core_tag**)LIBXSMM_SYNC_MALLOC(
     barrier->ncores * sizeof(internal_sync_core_tag*), -(LIBXSMM_SYNC_CACHELINE_SIZE));
 
   LIBXSMM_SYNC_ATOMIC_SET(barrier->threads_waiting.counter, barrier->nthreads);
@@ -105,27 +113,27 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   int i;
 
   /* allocate per-thread structure */
-  internal_sync_thread_tag *const thread = (internal_sync_thread_tag*)libxsmm_aligned_malloc(
+  internal_sync_thread_tag *const thread = (internal_sync_thread_tag*)LIBXSMM_SYNC_MALLOC(
     sizeof(internal_sync_thread_tag), -(LIBXSMM_SYNC_CACHELINE_SIZE));
   barrier->threads[tid] = thread;
   thread->core_tid = tid - (barrier->nthreads_per_core * cid); /* mod */
 
   /* each core's thread 0 does all the allocations */
   if (0 == thread->core_tid) {
-    core = (internal_sync_core_tag*)libxsmm_aligned_malloc(
+    core = (internal_sync_core_tag*)LIBXSMM_SYNC_MALLOC(
       sizeof(internal_sync_core_tag), -(LIBXSMM_SYNC_CACHELINE_SIZE));
     core->id = (uint8_t)cid;
     core->core_sense = 1;
 
-    core->thread_senses = (uint8_t*)libxsmm_aligned_malloc(
+    core->thread_senses = (uint8_t*)LIBXSMM_SYNC_MALLOC(
       barrier->nthreads_per_core * sizeof(uint8_t), -(LIBXSMM_SYNC_CACHELINE_SIZE));
     for (i = 0; i < barrier->nthreads_per_core; ++i) core->thread_senses[i] = 1;
 
     for (i = 0; i < 2;  ++i) {
-      core->my_flags[i] = (uint8_t*)libxsmm_aligned_malloc(
+      core->my_flags[i] = (uint8_t*)LIBXSMM_SYNC_MALLOC(
         barrier->ncores_log2 * sizeof(uint8_t) * LIBXSMM_SYNC_CACHELINE_SIZE,
         -(LIBXSMM_SYNC_CACHELINE_SIZE));
-      core->partner_flags[i] = (uint8_t**)libxsmm_aligned_malloc(
+      core->partner_flags[i] = (uint8_t**)LIBXSMM_SYNC_MALLOC(
         barrier->ncores_log2 * sizeof(uint8_t*),
         -(LIBXSMM_SYNC_CACHELINE_SIZE));
     }
@@ -245,18 +253,18 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barri
   int i;
   for (i = 0; i < barrier->ncores; ++i) {
     int j;
-    libxsmm_free(barrier->cores[i]->thread_senses);
+    LIBXSMM_SYNC_FREE(barrier->cores[i]->thread_senses);
     for (j = 0; j < 2; ++j) {
-      libxsmm_free(barrier->cores[i]->partner_flags[j]);
-      libxsmm_free(barrier->cores[i]->my_flags[j]);
+      LIBXSMM_SYNC_FREE(barrier->cores[i]->partner_flags[j]);
+      LIBXSMM_SYNC_FREE(barrier->cores[i]->my_flags[j]);
     }
-    libxsmm_free(barrier->cores[i]);
+    LIBXSMM_SYNC_FREE(barrier->cores[i]);
   }
-  libxsmm_free(barrier->cores);
+  LIBXSMM_SYNC_FREE(barrier->cores);
   for (i = 0; i < barrier->nthreads; ++i) {
-    libxsmm_free(barrier->threads[i]);
+    LIBXSMM_SYNC_FREE(barrier->threads[i]);
   }
-  libxsmm_free(barrier->threads);
-  libxsmm_free(barrier);
+  LIBXSMM_SYNC_FREE(barrier->threads);
+  LIBXSMM_SYNC_FREE(barrier);
 }
 

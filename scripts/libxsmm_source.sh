@@ -41,8 +41,8 @@ cat << EOM
 #   define LIBXSMM_INTERNAL_API static
 # endif
 # define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INLINE
-# if !defined(LIBXSMM_CONV_INTERNAL_API)
-#   define LIBXSMM_CONV_INTERNAL_API
+# if !defined(LIBXSMM_DNN_INTERNAL_API)
+#   define LIBXSMM_DNN_INTERNAL_API
 # endif
 #else
 # error Please do not include any LIBXSMM header prior to libxsmm_source.h!
