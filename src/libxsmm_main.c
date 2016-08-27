@@ -599,17 +599,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_PREFETCH");
         internal_prefetch = (LIBXSMM_X86_AVX512_MIC != internal_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
-        if (0 != env && 0 <= *env) { /* user input beyond auto-prefetch is always considered */
-          switch (atoi(env)) {
-            case 2:  internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
-            case 3:  internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
-            case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
-            case 5:  internal_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD; break;
-            case 6:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C; break;
-            case 7:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD; break;
-            case 8:  internal_prefetch = LIBXSMM_PREFETCH_AL2_JPST; break;
-            case 9:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST; break;
-            default: internal_prefetch = LIBXSMM_PREFETCH_NONE;
+        if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
+          const int env_prefetch = atoi(env);
+          if (0 <= env_prefetch) {
+            switch (env_prefetch) {
+              case 2:  internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
+              case 3:  internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
+              case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
+              case 5:  internal_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD; break;
+              case 6:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C; break;
+              case 7:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD; break;
+              case 8:  internal_prefetch = LIBXSMM_PREFETCH_AL2_JPST; break;
+              case 9:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST; break;
+              default: internal_prefetch = LIBXSMM_PREFETCH_NONE;
+            }
           }
         }
       }
