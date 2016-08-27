@@ -64,17 +64,18 @@ CACHE ?= 1
 
 # Issue software prefetch instructions (see end of section
 # https://github.com/hfp/libxsmm/#generator-driver)
-# Use the enumerator 1...9, or the exact strategy
-# name pfsigonly...AL2jpst_BL2viaC.
-# 1: auto-select
-# 2: pfsigonly
-# 3: BL2viaC
-# 4: AL2
-# 5: curAL2
-# 6: AL2_BL2viaC
-# 7: curAL2_BL2viaC
-# 8: AL2jpst
-# 9: AL2jpst_BL2viaC
+# Use the enumerator 1...10, or the exact strategy
+# name pfsigonly...AL2_BL2viaC_CL2.
+#  1: auto-select
+#  2: pfsigonly
+#  3: BL2viaC
+#  4: curAL2
+#  7: curAL2_BL2viaC
+#  5: AL2
+#  6: AL2_BL2viaC
+#  8: AL2jpst
+#  9: AL2jpst_BL2viaC
+# 10: AL2_BL2viaC_CL2
 PREFETCH ?= 1
 
 # Preferred precision when registering statically generated code versions
@@ -285,7 +286,7 @@ ifeq (1,$(PREFETCH_ID))
   PREFETCH_TYPE = -1
   ifneq (0,$(MIC))
     ifneq (0,$(MPSS))
-      PREFETCH_SCHEME_MIC = AL2_BL2viaC
+      PREFETCH_SCHEME_MIC = AL2_BL2viaC_CL2
     endif
   endif
 else ifeq (2,$(PREFETCH_ID))
