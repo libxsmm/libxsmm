@@ -189,7 +189,7 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
           $(SRCDIR)/libxsmm_gemm_diff.c \
           $(SRCDIR)/libxsmm_cpuid_x86.c \
           $(SRCDIR)/libxsmm_hash.c \
-          $(ROOTDIR)/include/libxsmm_conv.h \
+          $(ROOTDIR)/include/libxsmm_dnn.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
@@ -208,10 +208,10 @@ OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILE
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
 OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o \
                $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_trans.o \
-               $(BLDDIR)/intel64/libxsmm_conv.o $(BLDDIR)/intel64/libxsmm_conv_fwd.o
+               $(BLDDIR)/intel64/libxsmm_dnn.o $(BLDDIR)/intel64/libxsmm_dnn_conv_fwd.o
 OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o \
                $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
-               $(BLDDIR)/mic/libxsmm_conv.o $(BLDDIR)/mic/libxsmm_conv_fwd.o \
+               $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_conv_fwd.o \
                $(BLDDIR)/mic/libxsmm_malloc.o $(BLDDIR)/mic/libxsmm_sync.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
 KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
@@ -334,7 +334,7 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
-	@cp $(ROOTDIR)/include/libxsmm_conv.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true

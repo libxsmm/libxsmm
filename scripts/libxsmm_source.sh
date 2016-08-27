@@ -53,7 +53,7 @@ cat << EOM
 #endif
 
 #include "libxsmm_timer.h"
-#include "libxsmm_conv.h"
+#include "libxsmm_dnn.h"
 
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings blocks

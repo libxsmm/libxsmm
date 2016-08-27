@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
 
-#include <libxsmm_conv.h>
+#include <libxsmm_dnn.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_REGSIZE) /* must be POT */
@@ -71,29 +71,29 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_csr_soa_descriptor {
   const void* values;
 } libxsmm_csr_soa_descriptor;
 
-/** struct which holds description of a layer */
-struct LIBXSMM_RETARGETABLE libxsmm_conv_layer {
+/** struct which holds description of an activation layer */
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_activation {
   int N;                            /* number of images in mini-batch */
   int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
   int W;                            /* width of image */
-  libxsmm_conv_datatype datatype;   /* data type */
+  libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };
 
 /** struct which holds description of a bias */
-struct LIBXSMM_RETARGETABLE libxsmm_conv_bias {
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
   int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
-  libxsmm_conv_datatype datatype;   /* data type */
+  libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };
 
 /** struct which holds description of a filter */
-struct LIBXSMM_RETARGETABLE libxsmm_conv_filter {
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int splits;                       /* number of splits */
   int ifmb;                         /* number of feature map blocks */
   int bifm;                         /* sized of blocked feature maps, in a block */
@@ -101,14 +101,14 @@ struct LIBXSMM_RETARGETABLE libxsmm_conv_filter {
   int bofm;                         /* sized of blocked feature maps, in a block */
   int R;                            /* height of filter kernel */
   int S;                            /* width of filter kernel */
-  libxsmm_conv_datatype datatype;   /* data type */
+  libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };
 
-struct LIBXSMM_RETARGETABLE libxsmm_conv_handle {
-  libxsmm_conv_datatype datatype;
-  libxsmm_conv_desc desc;
-  libxsmm_conv_algo algo;
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_conv_desc desc;
+  libxsmm_dnn_conv_algo algo;
 
   /* additional size for iternal data types */
   int ifhp;
@@ -125,11 +125,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_conv_handle {
   int fwd_ofh_rb;
 
   /* internal data representation */
-  libxsmm_conv_layer* input;
-  libxsmm_conv_layer* output;
-  libxsmm_conv_layer* input_relu;
-  libxsmm_conv_filter* filter;
-  libxsmm_conv_bias* bias;
+  libxsmm_dnn_activation* input;
+  libxsmm_dnn_activation* output;
+  libxsmm_dnn_activation* input_relu;
+  libxsmm_dnn_filter* filter;
+  libxsmm_dnn_bias* bias;
   void* scratch;
 
   /* JIT-generated convolution code */

@@ -83,13 +83,13 @@ A variety of overloaded function signatures is provided allowing to omit argumen
 ## Interface for Convolutions
 In order to achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout has to be used. As this layout depends on several architectural parameters, the goal of LIBXSMM interface is to hide this complexity from the user by providing copy-in and copy-out routines. These happen on custom datatype which themselves are later bound to a convolution operation. The interface is available for C.
 
-The main concept in LIBXSMM's frontend is that everything is circled around `libxsmm_conv_handle` which will define all properties of a layer operation. A handle can be created by describing the convolutional layer and calling a create function:
+The main concept in LIBXSMM's frontend is that everything is circled around `libxsmm_dnn_conv_handle` which will define all properties of a layer operation. A handle can be created by describing the convolutional layer and calling a create function:
 
 ```C
 /** simplified LIBXSMM types which are needed to create a handle*/
 
 /** struct which holds description of convolution */
-typedef struct libxsmm_conv_desc {
+typedef struct libxsmm_dnn_conv_desc {
   int N;           /* number of images in mini-batch */
   int C;           /* number of input feature maps */
   int H;           /* height of input image */
@@ -102,82 +102,82 @@ typedef struct libxsmm_conv_desc {
   int pad_h;       /* height of zero-padding */
   int pad_w;       /* width of zero-padding */
   int splits;      /* number of splits */
-} libxsmm_conv_desc;
+} libxsmm_dnn_conv_desc;
 
 /** Typ of algorithm used for convolutions. */
 typedef enum libxsmm_conv_algo {
   /** direct convolution. */
-  LIBXSMM_CONV_ALGO_DIRECT
-} libxsmm_conv_algo;
+  LIBXSMM_DNN_CONV_ALGO_DIRECT
+} libxsmm_dnn_conv_algo;
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_conv_datatype {
-  LIBXSMM_CONV_DATATYPE_FP32
-} libxsmm_conv_datatype;
+  LIBXSMM_DNN_DATATYPE_FP32
+} libxsmm_dnn_datatype;
 
-LIBXSMM_API libxsmm_conv_handle* libxsmm_conv_create_handle_check(
-  libxsmm_conv_desc     conv_desc,
-  libxsmm_conv_datatype conv_datatype,
-  libxsmm_conv_algo     conv_algo,
-  libxsmm_conv_err_t*   status);
+LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
+  libxsmm_dnn_conv_desc   conv_desc,
+  libxsmm_dnn_datatype    conv_datatype,
+  libxsmm_dnn_conv_algo   conv_algo,
+  libxsmm_dnn_err_t*      status);
 ```
 
 Therefore, a sample call looks like:
 ```C
 /** macro for error checking */
-#define CHKERR_LIBXSMM_CONV(A) if (A != LIBXSMM_CONV_SUCCESS) \
-  fprintf(stderr, "%s\n", libxsmm_conv_get_error(A));
+#define CHKERR_LIBXSMM_DNN(A) if (A != LIBXSMM_DNN_SUCCESS) \
+  fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A));
 /* declare LIBXSMM variables */
-libxsmm_conv_desc conv_desc;
-libxsmm_conv_err_t status;
-libxsmm_conv_handle* libxsmm_handle;
+libxsmm_dnn_conv_desc conv_desc;
+libxsmm_dnn_err_t status;
+libxsmm_dnn_conv_handle* libxsmm_handle;
 /* setting conv_desc values.... */
 conv_desc.N = ...
 /* create handle */
-libxsmm_handle = libxsmm_conv_create_handle_check(conv_desc,
-  LIBXSMM_CONV_DATATYPE_FP32,
-  LIBXSMM_CONV_ALGO_DIRECT,
+libxsmm_handle = libxsmm_dnn_create_conv_handle_check(conv_desc,
+  LIBXSMM_DNN_DATATYPE_FP32,
+  LIBXSMM_DNN_CONV_ALGO_DIRECT,
   &status);
-CHKERR_LIBXSMM_CONV(status);
+CHKERR_LIBXSMM_DNN(status);
 ```
 
-Next layers need to be created, initialized and bound to the handle. Afterwards the convolution could be executed by a threading environment of choice:
+Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution could be executed by a threading environment of choice:
 
 ```C
-libxsmm_conv_layer* libxsmm_input;
-libxsmm_conv_layer* libxsmm_output;
-libxsmm_conv_filter* libxsmm_filter;
+libxsmm_dnn_activation* libxsmm_input;
+libxsmm_dnn_activation* libxsmm_output;
+libxsmm_dnn_filter* libxsmm_filter;
 
-/* setup LIBXSMM layers */
-libxsmm_input = libxsmm_conv_create_input_layer_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_CONV(status);
-libxsmm_output = libxsmm_conv_create_output_layer_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_CONV(status);
-libxsmm_filter = libxsmm_conv_create_filter_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_CONV(status);
+/* setup LIBXSMM layer information */
+libxsmm_input = libxsmm_dnn_create_input_activation_check(libxsmm_handle, &status);
+CHKERR_LIBXSMM_DNN(status);
+libxsmm_output = libxsmm_dnn_create_output_activation_check(libxsmm_handle, &status);
+CHKERR_LIBXSMM_DNN(status);
+libxsmm_filter = libxsmm_dnn_create_filter_check(libxsmm_handle, &status);
+CHKERR_LIBXSMM_DNN(status);
 
 /* copy in data to LIBXSMM format: naive format is: */
 /* (mini-batch)(splits)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
 /* and the naive format for filters is: */
 /* (splits)(number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
-CHKERR_LIBXSMM_CONV(libxsmm_conv_copyin_layer(libxsmm_input, (void*)naive_input));
-CHKERR_LIBXSMM_CONV(libxsmm_conv_zero_layer(libxsmm_output));
-CHKERR_LIBXSMM_CONV(libxsmm_conv_copyin_filter(libxsmm_filter, (void*)naive_filter));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_activation(libxsmm_input, (void*)naive_input));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_activation(libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter));
 
 /* bind layer to handle */
-CHKERR_LIBXSMM_CONV(libxsmm_conv_bind_input_layer(libxsmm_handle, libxsmm_input));
-CHKERR_LIBXSMM_CONV(libxsmm_conv_bind_output_layer(libxsmm_handle, libxsmm_output));
-CHKERR_LIBXSMM_CONV(libxsmm_conv_bind_filter(libxsmm_handle, libxsmm_filter));
+CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_input_activation(libxsmm_handle, libxsmm_input));
+CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_output_activation(libxsmm_handle, libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_filter(libxsmm_handle, libxsmm_filter));
 
 /* run the convolution */
 #pragma omp parallel
 {
-  CHKERR_LIBXSMM_CONV(libxsmm_convolve_st(libxsmm_handle, LIBXSMM_CONV_KIND_FWD, 0,
+  CHKERR_LIBXSMM_DNN(libxsmm_dnn_convolve_st(libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0,
     omp_get_thread_num(), omp_get_num_threads()));
 }
 
 /* copy out data */
-CHKERR_LIBXSMM_CONV(libxsmm_conv_copyout_layer(libxsmm_output, (void*)naive_libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_activation(libxsmm_output, (void*)naive_libxsmm_output));
 ```
 
 ## Build Instructions
