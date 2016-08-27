@@ -253,7 +253,7 @@ PREFETCH_ID = 0
 PREFETCH_SCHEME = nopf
 PREFETCH_TYPE = 0
 
-ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 9))))
+ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 10))))
   PREFETCH_ID = $(PREFETCH)
 else ifeq (1,$(PREFETCH)) # auto
   PREFETCH_ID = 1
@@ -261,18 +261,20 @@ else ifeq (pfsigonly,$(PREFETCH))
   PREFETCH_ID = 2
 else ifeq (BL2viaC,$(PREFETCH))
   PREFETCH_ID = 3
-else ifeq (AL2,$(PREFETCH))
-  PREFETCH_ID = 4
 else ifeq (curAL2,$(PREFETCH))
-  PREFETCH_ID = 5
-else ifeq (AL2_BL2viaC,$(PREFETCH))
-  PREFETCH_ID = 6
+  PREFETCH_ID = 4
 else ifeq (curAL2_BL2viaC,$(PREFETCH))
+  PREFETCH_ID = 5
+else ifeq (AL2,$(PREFETCH))
+  PREFETCH_ID = 6
+else ifeq (AL2_BL2viaC,$(PREFETCH))
   PREFETCH_ID = 7
 else ifeq (AL2jpst,$(PREFETCH))
   PREFETCH_ID = 8
 else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
   PREFETCH_ID = 9
+else ifeq (AL2_BL2viaC_CL2,$(PREFETCH))
+  PREFETCH_ID = 10
 endif
 
 # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
@@ -293,16 +295,16 @@ else ifeq (3,$(PREFETCH_ID))
   PREFETCH_SCHEME = BL2viaC
   PREFETCH_TYPE = 8
 else ifeq (4,$(PREFETCH_ID))
-  PREFETCH_SCHEME = AL2
+  PREFETCH_SCHEME = curAL2
   PREFETCH_TYPE = 2
 else ifeq (5,$(PREFETCH_ID))
-  PREFETCH_SCHEME = curAL2
-  PREFETCH_TYPE = 16
-else ifeq (6,$(PREFETCH_ID))
-  PREFETCH_SCHEME = AL2_BL2viaC
-  PREFETCH_TYPE = $(shell echo $$((8 | 2)))
-else ifeq (7,$(PREFETCH_ID))
   PREFETCH_SCHEME = curAL2_BL2viaC
+  PREFETCH_TYPE = $(shell echo $$((8 | 2)))
+else ifeq (6,$(PREFETCH_ID))
+  PREFETCH_SCHEME = AL2
+  PREFETCH_TYPE = 16
+else ifeq (7,$(PREFETCH_ID))
+  PREFETCH_SCHEME = AL2_BL2viaC
   PREFETCH_TYPE = $(shell echo $$((8 | 16)))
 else ifeq (8,$(PREFETCH_ID))
   PREFETCH_SCHEME = AL2jpst
@@ -310,6 +312,9 @@ else ifeq (8,$(PREFETCH_ID))
 else ifeq (9,$(PREFETCH_ID))
   PREFETCH_SCHEME = AL2jpst_BL2viaC
   PREFETCH_TYPE = $(shell echo $$((8 | 4)))
+else ifeq (10,$(PREFETCH_ID))
+  PREFETCH_SCHEME = AL2_BL2viaC_CL2
+  PREFETCH_TYPE = $(shell echo $$((8 | 2 | 32)))
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC))
   PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)

@@ -557,11 +557,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_get_prefetch(int prefetch)
     case LIBXSMM_PREFETCH_SIGONLY:            return 2;
     case LIBXSMM_PREFETCH_BL2_VIA_C:          return 3;
     case LIBXSMM_PREFETCH_AL2:                return 4;
-    case LIBXSMM_PREFETCH_AL2_AHEAD:          return 5;
-    case LIBXSMM_PREFETCH_AL2BL2_VIA_C:       return 6;
+    case LIBXSMM_PREFETCH_AL2BL2_VIA_C:       return 5;
+    case LIBXSMM_PREFETCH_AL2_AHEAD:          return 6;
     case LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 7;
     case LIBXSMM_PREFETCH_AL2_JPST:           return 8;
     case LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST:  return 9;
+    case LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C:    return 10;
     default: {
       assert(LIBXSMM_PREFETCH_NONE == prefetch);
       return 0;
@@ -605,12 +606,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
             switch (env_prefetch) {
               case 2:  internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
               case 3:  internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
-              case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
-              case 5:  internal_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD; break;
-              case 6:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C; break;
-              case 7:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD; break;
+              case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD; break;
+              case 5:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD; break;
+              case 6:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
+              case 7:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C; break;
               case 8:  internal_prefetch = LIBXSMM_PREFETCH_AL2_JPST; break;
               case 9:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST; break;
+              case 10:  internal_prefetch = LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C; break;
               default: internal_prefetch = LIBXSMM_PREFETCH_NONE;
             }
           }

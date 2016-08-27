@@ -465,12 +465,14 @@ The prefetch strategy can be:
 1. "nopf": no prefetching at all, just 3 inputs (A, B, C)
 2. "pfsigonly": just prefetching signature, 6 inputs (A, B, C, A', B', C')
 3. "BL2viaC": uses accesses to C to prefetch B'
-4. "AL2": uses accesses to A to prefetch A'
-5. "curAL2": prefetches current A ahead in the kernel
-6. "AL2_BL2viaC": combines AL2 and BL2viaC
-7. "curAL2_BL2viaC": combines curAL2 and BL2viaC
+4. "curAL2": prefetches current A ahead in the kernel
+5. "curAL2_BL2viaC": combines curAL2 and BL2viaC
+6. "AL2": uses accesses to A to prefetch A'
+7. "AL2_BL2viaC": combines AL2 and BL2viaC
 8. "AL2jpst": aggressive A' prefetch of first rows without any structure
 9. "AL2jpst_BL2viaC": combines AL2jpst and BL2viaC
+10. "AL2_BL2viaC_CL2": combines AL2 and BL2viaC
+
 
 Here are some examples of invoking the driver program:
 
