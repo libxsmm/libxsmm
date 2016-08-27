@@ -1,5 +1,5 @@
 # LIBXSMM
-LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications as well as for small convolutions (as needed for deep learning applications) targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the [Intel&#160;Xeon&#160;Phi processor family&#160;("KNL")](https://software.intel.com/en-us/articles/what-disclosures-has-intel-made-about-knights-landing) and future Intel&#160;Xeon processors. Small convolutions are currently only optimized for Intel&#160;AVX&#8209;512. Historically the library was solely targeting the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.4.4.zip)] [![cistatus](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip) [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications as well as for deep learning primitivies such as small convolutions targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the [Intel&#160;Xeon&#160;Phi processor family&#160;("KNL")](https://software.intel.com/en-us/articles/what-disclosures-has-intel-made-about-knights-landing) and future Intel&#160;Xeon processors. Small convolutions are currently only optimized for Intel&#160;AVX&#8209;512. Historically the library was solely targeting the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond. [[pdf](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)] [[src](https://github.com/hfp/libxsmm/archive/1.4.4.zip)] [![cistatus](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip) [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
 
 **What is the background of the name "LIBXSMM"?** The "MM" stands for Matrix Multiplication, and the "S" clarifies the working domain i.e., Small Matrix Multiplication. The latter also means the name is neither a variation of "MXM" nor an eXtreme Small Matrix Multiplication but rather about Intel Architecture (x86) - and no, the library is 64&#8209;bit (only). The spelling of the name might follow the syllables of libx\\/smm, libx'smm, or libx&#8209;smm.
 
@@ -105,13 +105,13 @@ typedef struct libxsmm_dnn_conv_desc {
 } libxsmm_dnn_conv_desc;
 
 /** Typ of algorithm used for convolutions. */
-typedef enum libxsmm_conv_algo {
+typedef enum libxsmm_dnn_conv_algo {
   /** direct convolution. */
   LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
 
 /** Denotes the element/pixel type of an image/channel. */
-typedef enum libxsmm_conv_datatype {
+typedef enum libxsmm_dnn_conv_datatype {
   LIBXSMM_DNN_DATATYPE_FP32
 } libxsmm_dnn_datatype;
 
@@ -165,9 +165,9 @@ CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_activation(libxsmm_output));
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter));
 
 /* bind layer to handle */
-CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_input_activation(libxsmm_handle, libxsmm_input));
-CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_output_activation(libxsmm_handle, libxsmm_output));
-CHKERR_LIBXSMM_DNN(libxsmm_conv_bind_filter(libxsmm_handle, libxsmm_filter));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_input_activation(libxsmm_handle, libxsmm_input));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_output_activation(libxsmm_handle, libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter));
 
 /* run the convolution */
 #pragma omp parallel
