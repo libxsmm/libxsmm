@@ -79,7 +79,7 @@ typedef enum libxsmm_dnn_conv_kind {
   LIBXSMM_DNN_CONV_KIND_UPD_BIAS
 } libxsmm_dnn_conv_kind;
 
-/** Typ of algorithm used for convolutions. */
+/** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
   /** direct convolution. */
   LIBXSMM_DNN_CONV_ALGO_DIRECT
@@ -93,8 +93,8 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_INT8
 } libxsmm_dnn_datatype;
 
-/** struct which holds description of convolution */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_conv_desc {
+/** Structure which describes the input and output of data (DNN). */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int N;           /* number of images in mini-batch */
   int C;           /* number of input feature maps */
   int H;           /* height of input image */
