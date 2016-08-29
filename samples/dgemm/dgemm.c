@@ -1,9 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/** Construct symbol name from a given real type name (float or double). */
-#define GEMM(REAL) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm))
-
 /** Function prototype for SGEMM; any kind of BLAS library should be sufficient at link-time. */
 void sgemm_(const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
