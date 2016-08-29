@@ -52,7 +52,7 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 #endif /*defined(__STATIC)*/
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -64,7 +64,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sge
 }
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -242,5 +242,27 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       0 != beta ? *beta : ((double)LIBXSMM_BETA),
       c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
+}
+
+
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 

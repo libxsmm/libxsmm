@@ -66,9 +66,11 @@
 #endif
 
 #if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-#else
+# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 # define LIBXSMM_GEMM_WEAK
+#else
+# define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_EXT_GEMM_WEAK
 #endif
 
 #if !defined(LIBXSMM_GEMM_COLLAPSE)
@@ -248,11 +250,11 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
@@ -266,11 +268,11 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+LIBXSMM_API void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+LIBXSMM_API void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
@@ -278,7 +280,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
 /** Prefetch strategy. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch /*= LIBXSMM_MAX(LIBXSMM_PREFETCH, 0)*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch;
 
 #endif /*LIBXSMM_GEMM_H*/
 
