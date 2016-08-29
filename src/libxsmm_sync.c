@@ -89,6 +89,7 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
 {
   libxsmm_barrier *const barrier = (libxsmm_barrier*)LIBXSMM_SYNC_MALLOC(
     sizeof(libxsmm_barrier), LIBXSMM_SYNC_CACHELINE_SIZE);
+#if defined(_REENTRANT)
   barrier->ncores = ncores;
   barrier->ncores_log2 = (int)ceil(log2(ncores));
   barrier->nthreads_per_core = nthreads_per_core;
@@ -101,13 +102,16 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
 
   LIBXSMM_SYNC_ATOMIC_SET(barrier->threads_waiting.counter, barrier->nthreads);
   barrier->init_done = 0;
-
+#else
+  LIBXSMM_UNUSED(ncores); LIBXSMM_UNUSED(nthreads_per_core);
+#endif
   return barrier;
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
+#if defined(_REENTRANT)
   const int cid = tid / barrier->nthreads_per_core; /* this thread's core ID */
   internal_sync_core_tag* core = 0;
   int i;
@@ -176,11 +180,15 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   else {
     while (0 != barrier->init_done);
   }
+#else
+  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
+#endif
 }
 
 
 LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 {
+#if defined(_REENTRANT)
   internal_sync_thread_tag *const thread = barrier->threads[tid];
   internal_sync_core_tag *const core = thread->core;
 
@@ -245,11 +253,15 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barr
       thread_sense = core->thread_senses[thread->core_tid];
     }
   }
+#else
+  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
+#endif
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barrier)
 {
+#if defined(_REENTRANT)
   int i;
   for (i = 0; i < barrier->ncores; ++i) {
     int j;
@@ -265,6 +277,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barri
     LIBXSMM_SYNC_FREE(barrier->threads[i]);
   }
   LIBXSMM_SYNC_FREE(barrier->threads);
+#endif
   LIBXSMM_SYNC_FREE(barrier);
 }
 
