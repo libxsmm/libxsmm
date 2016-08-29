@@ -49,7 +49,7 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
   LIBXSMM_GEMM_WRAP(double, original);
   return original;
 }
-#endif /*defined(__STATIC)*/
+#endif /*!defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(sgemm)(
