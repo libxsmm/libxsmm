@@ -96,9 +96,9 @@ DBG ?= 0
 # Threading runtime
 OMP ?= 0
 
-# PTHREAD refers to foundational TRT (and not necessarily Posix Threads)
-ifneq (0,$(OMP))
-  PTHREAD ?= 1
+# THREADS refers to foundational TRT (and not necessarily Posix Threads)
+ifeq (0,$(OMP))
+  THREADS ?= 0
 endif
 
 # Code conformance (beyond -Wall)
@@ -551,7 +551,7 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
   endif
-  ifneq (0,$(PTHREAD))
+  ifneq (0,$(THREADS))
     DFLAGS += -D_REENTRANT
     CXXFLAGS += -pthread
     CFLAGS += -pthread
@@ -752,7 +752,7 @@ else # GCC assumed
     OMPFLAG = -fopenmp
   endif
   ifeq (,$(OMPFLAG))
-    PTHREAD = 0
+    THREADS = 0
     OMP = 0
   endif
   ifeq (,$(strip $(OMPLIB)))
@@ -773,7 +773,7 @@ else # GCC assumed
       LDFLAGS += $(OMPFLAG)
     endif
   endif
-  ifneq (0,$(PTHREAD))
+  ifneq (0,$(THREADS))
     DFLAGS += -D_REENTRANT
     CXXFLAGS += -pthread
     CFLAGS += -pthread

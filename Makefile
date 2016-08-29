@@ -116,7 +116,7 @@ ifneq (1,$(BETA))
 endif
 endif
 
-PTHREAD ?= 1
+THREADS ?= 1
 STATIC ?= 1
 
 # JIT backend is enabled by default
@@ -347,7 +347,7 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 	$(info ================================================================================)
 	$(info $(INFO))
@@ -399,13 +399,13 @@ $(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
 ifeq (0,$(OFFLOAD))
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
 	sed '/ATTRIBUTES OFFLOAD:MIC/d' > $@
 else
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
 		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(PTHREAD)+$(OMP)))) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 endif
 
