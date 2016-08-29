@@ -32,6 +32,14 @@
 #include "libxsmm_intrinsics_x86.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
