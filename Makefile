@@ -1234,19 +1234,19 @@ endif
 clean-all: clean
 	@cd $(TSTDIR)           && $(MAKE) --no-print-directory clean-minimal
 	@cd $(SPLDIR)/cp2k      && $(MAKE) --no-print-directory clean-minimal
-	@cd $(SPLDIR)/dgemm     && $(MAKE) --no-print-directory clean-minimal
 	@cd $(SPLDIR)/dispatch  && $(MAKE) --no-print-directory clean-minimal
 	@cd $(SPLDIR)/nek       && $(MAKE) --no-print-directory clean-minimal
 	@cd $(SPLDIR)/smm       && $(MAKE) --no-print-directory clean-minimal
+	@cd $(SPLDIR)/wrap      && $(MAKE) --no-print-directory clean-minimal
 
 .PHONY: realclean-all
 realclean-all: realclean
 	@cd $(TSTDIR)           && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/cp2k      && $(MAKE) --no-print-directory realclean
-	@cd $(SPLDIR)/dgemm     && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/dispatch  && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/nek       && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/smm       && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/wrap      && $(MAKE) --no-print-directory realclean
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
