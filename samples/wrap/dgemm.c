@@ -16,7 +16,7 @@ void dgemm_(const char*, const char*, const int*, const int*, const int*,
 int main(int argc, char* argv[])
 {
   int size = 2 == argc ? atoi(argv[1]) : 500;
-  const int m = 2 < argc ? size : 23;
+  const int m = 2 != argc ? atoi(argv[1]) : 23;
   const int n = 2 < argc ? atoi(argv[2]) : m;
   const int k = 3 < argc ? atoi(argv[3]) : m;
   const int lda = 4 < argc ? atoi(argv[4]) : m;
