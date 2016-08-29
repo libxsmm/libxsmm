@@ -268,11 +268,11 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-LIBXSMM_API void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);

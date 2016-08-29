@@ -245,7 +245,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -256,7 +256,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
