@@ -34,8 +34,10 @@ int main(int argc, char* argv[])
   printf("dgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
          "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
          "                  %p/*b*/, %i/*ldb*/,\n"
-         "      %g/*beta*/,  %p/*c*/, %i/*ldc*/)\n",
-    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+         "       %g/*beta*/, %p/*c*/, %i/*ldc*/)\n",
+    transa, transb, m, n, k, alpha, (const void*)a, lda,
+                                    (const void*)b, ldb,
+                              beta, (const void*)c, ldc);
   assert(0 != a && 0 != b && 0 != c);
 
 #if defined(_OPENMP)
