@@ -30,21 +30,6 @@
 ******************************************************************************/
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext.h"
-#include <libxsmm_sync.h>
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#if defined(LIBXSMM_RTLD_NEXT)
-# include <dlfcn.h>
-#endif
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
@@ -53,26 +38,7 @@
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
-#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
-  if (0 == original) {
-    union { const void* pv; libxsmm_sgemm_function pf; } gemm = { NULL };
-    dlerror(); /* clear an eventual error status */
-    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(sgemm)));
-    original = gemm.pf;
-    LIBXSMM_GEMM_WRAP(float, &original);
-  }
-#else
-  LIBXSMM_GEMM_WRAP(float, &original);
-#endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  if (0 == original) {
-    static LIBXSMM_TLS int error_sgemm = 0;
-    if (0 == error_sgemm) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_sgemm = 1;
-    }
-  }
-#endif
+  LIBXSMM_GEMM_WRAP(float, original);
   return original;
 }
 
@@ -80,26 +46,7 @@ LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(void)
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
-#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
-  if (0 == original) {
-    union { const void* pv; libxsmm_dgemm_function pf; } gemm = { NULL };
-    dlerror(); /* clear an eventual error status */
-    gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(dgemm)));
-    original = gemm.pf;
-    LIBXSMM_GEMM_WRAP(double, &original);
-  }
-#else
-  LIBXSMM_GEMM_WRAP(double, &original);
-#endif
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  if (0 == original) {
-    static LIBXSMM_TLS int error_dgemm = 0;
-    if (0 == error_dgemm) {
-      fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
-      error_dgemm = 1;
-    }
-  }
-#endif
+  LIBXSMM_GEMM_WRAP(double, original);
   return original;
 }
 #endif /*defined(__STATIC)*/
@@ -128,7 +75,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(dge
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
-#endif
+#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
 
 
 LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* transb,

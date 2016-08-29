@@ -32,20 +32,24 @@
 #define LIBXSMM_GEMM_H
 
 #include <libxsmm.h>
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <math.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #if !defined(LIBXSMM_RTLD_NEXT) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
   !defined(_WIN32) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# include <dlfcn.h>
 # define LIBXSMM_RTLD_NEXT
+#endif
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#include <math.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 /**
@@ -77,12 +81,12 @@
 
 #define LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
 
-#define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_START, REAL, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+#define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_START, TYPE, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
   libxsmm_blasint j = 0, j_next = TILE_K; \
   if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
     for (; j < max_j; j = j_next) { \
-      LIBXSMM_MMCALL_PRF((KERNEL_START).LIBXSMM_TPREFIX(REAL,mm), \
+      LIBXSMM_MMCALL_PRF((KERNEL_START).LIBXSMM_TPREFIX(TYPE, mm), \
         (A) + (POS_H) + (LDA) * j, \
         (B) + (POS_I) * (LDB) + j, \
         (C) + ic, \
@@ -93,7 +97,7 @@
     } \
   } \
   for (; j < (K); j = j_next) { /* remainder */ \
-    LIBXSMM_XGEMM(REAL, libxsmm_blasint, FLAGS, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
+    LIBXSMM_XGEMM(TYPE, libxsmm_blasint, FLAGS, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
       ALPHA, (A) + j * (LDA) + (POS_H), LDA, (B) + (POS_I) * (LDB) + j, LDB, BETA, (C) + ic, LDC); \
     j_next = j + (TILE_K); \
   } \
@@ -108,7 +112,7 @@
 #endif
 
 #define LIBXSMM_TILED_XGEMM(PARALLEL, SINGLE_OUTER, SINGLE_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, \
-  MIN_TASKS, OVERHEAD, NT, REAL, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  MIN_TASKS, OVERHEAD, NT, TYPE, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 SINGLE_OUTER { \
   const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
   const int sufficient_size = LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K); \
@@ -158,7 +162,7 @@ SINGLE_OUTER { \
       for (h = 0; h < (M); h += tile_m) { \
         for (i = 0; i < (N); i += tile_n) { \
           KERNEL_START(h, i) \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
@@ -167,7 +171,7 @@ SINGLE_OUTER { \
       for (h = 0; h < (M); h += tile_m) { \
         KERNEL_START(h) \
         for (i = 0; i < (N); i += tile_n) { \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
@@ -176,38 +180,65 @@ SINGLE_OUTER { \
       for (i = 0; i < (N); i += tile_n) { \
         KERNEL_START(i) \
         for (h = 0; h < (M); h += tile_m) { \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, REAL, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
     SYNC \
   } \
   else if (0 != sufficient_size && 0 != LIBXSMM_EXT_GEMM_BLAS) { /* BLAS fall-back */ \
-    LIBXSMM_BLAS_XGEMM(REAL, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
   else { /* small problem size */ \
-    LIBXSMM_XGEMM(REAL, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    LIBXSMM_XGEMM(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
 
 #if !defined(__BLAS) || (0 != __BLAS)
-# define LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL) \
-    if (0 == *(ORIGINAL)) { \
-      *(ORIGINAL) = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL, gemm)); \
+# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL) \
+    if (0 == (ORIGINAL)) { \
+      ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)); \
     }
 #else
-# define LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL) LIBXSMM_UNUSED(ORIGINAL)
+# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL) LIBXSMM_UNUSED(ORIGINAL)
 #endif
 
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-# define LIBXSMM_GEMM_WRAP(REAL, ORIGINAL) \
-    if (0 == *(ORIGINAL)) { \
-      *(ORIGINAL) = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(REAL, gemm))); \
-      LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL); \
+# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL) \
+    ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm)))
+#else
+# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL)
+#endif
+
+#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
+# define LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL) \
+    if (0 == (ORIGINAL)) { \
+      union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { NULL }; \
+      dlerror(); /* clear an eventual error status */ \
+      gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
+      ORIGINAL = gemm.pf; \
+      LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL); \
     }
 #else
-# define LIBXSMM_GEMM_WRAP(REAL, ORIGINAL) LIBXSMM_GEMM_NOBLAS(REAL, ORIGINAL);
+# define LIBXSMM_GEMM_WRAP_DYNAMIC LIBXSMM_GEMM_WRAP_NOBLAS
+#endif
+
+#if defined(NDEBUG) /* library code is expected to be mute */
+# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL) \
+    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL); \
+    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL)
+#else
+# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL) \
+    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL); \
+    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL); \
+    if (0 == (ORIGINAL)) { \
+      static LIBXSMM_TLS int libxsmm_gemm_wrap_error_ = 0; \
+      if (0 == libxsmm_gemm_wrap_error_) { \
+        fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n"); \
+        libxsmm_gemm_wrap_error_ = 1; \
+      } \
+    }
 #endif
 
 
