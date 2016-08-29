@@ -47,9 +47,6 @@ VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
 THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
 
-# Use ROW_MAJOR matrix representation if set to 1, COL_MAJOR otherwise
-ROW_MAJOR ?= 0
-
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
 # (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
@@ -422,13 +419,8 @@ ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval MVALUE := $(shell echo $(basename $@) | cut -d_ -f2))
 	$(eval NVALUE := $(shell echo $(basename $@) | cut -d_ -f3))
 	$(eval KVALUE := $(shell echo $(basename $@) | cut -d_ -f4))
-ifneq (0,$(ROW_MAJOR)) # row-major
-	$(eval MNVALUE := $(NVALUE))
-	$(eval NMVALUE := $(MVALUE))
-else # column-major
 	$(eval MNVALUE := $(MVALUE))
 	$(eval NMVALUE := $(NVALUE))
-endif
 	$(eval ASTSP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
 	$(eval ASTDP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*8)%$(ALIGNMENT)))))
 	$(eval ALDSP := $(shell echo $$((0!=$(ALIGNED_LOADS)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
