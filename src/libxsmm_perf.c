@@ -78,7 +78,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
   char file_name[64];
 #if defined(LIBXSMM_PERF_JITDUMP)
-  int fd, int page_size, res;
+  int fd, page_size, res;
   struct jitheader header;
   size_t padding_len;
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", LIBXSMM_PERF_GETPID());
