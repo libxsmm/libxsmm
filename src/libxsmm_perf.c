@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2016, Google Inc.
+** Copyright (c) 2015-2016, Google Inc.                                      **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -40,15 +40,16 @@
 #include <stdio.h>
 
 #if defined(LIBXSMM_PERF_JITDUMP)
-#include <libxsmm_timer.h>
-#include "jitdump.h"
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <syscall.h>
-#include <fcntl.h>
+# include <libxsmm_timer.h>
+/* make JITDUMP=/path/to/linux-kernel/tools/perf/util */
+# include <jitdump.h>
+# include <string.h>
+# include <sys/mman.h>
+# include <sys/types.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <syscall.h>
+# include <fcntl.h>
 #endif
 
 #if !defined(NDEBUG)
@@ -72,7 +73,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t libxsmm_perf_padding_len(size_t len) 
 #endif
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
+LIBXSMM_API_DEFINITION void libxsmm_perf_init()
+{
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
   char file_name[64];
 #if defined(LIBXSMM_PERF_JITDUMP)
@@ -82,7 +84,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", LIBXSMM_PERF_GETPID());
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
-  if(fd < 0) {
+  if (fd < 0) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open file\n");
     goto error;
   }
@@ -93,7 +95,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
     goto error;
   }
   marker_addr = mmap(NULL, page_size, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
-  if(marker_addr == MAP_FAILED) {
+  if (marker_addr == MAP_FAILED) {
     LIBXSMM_PERF_ERROR("LIBXSMM: mmap failed.\n");
     goto error;
   }
@@ -102,7 +104,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   code_index = 0;
 
   fp = fdopen(fd, "wb+");
-  if(fp == NULL) {
+  if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: fdopen failed.\n");
     goto error;
   }
@@ -119,13 +121,13 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
   res = fwrite(&header, sizeof(header), 1, fp);
-  if(res != 1) {
+  if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header.\n");
     goto error;
   }
-  if(padding_len > 0) {
+  if (padding_len > 0) {
     res = fwrite(&zeros, padding_len, 1, fp);
-    if(res != 1) {
+    if (res != 1) {
       LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header padding.\n");
       goto error;
     }
@@ -134,7 +136,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
 #else
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", LIBXSMM_PERF_GETPID());
   fp = fopen(file_name, "w+");
-  if(fp == NULL) {
+  if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");
     goto error;
   }
@@ -143,7 +145,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init() {
   return;
 
 error:
-  if(fp != NULL) {
+  if (fp != NULL) {
     fclose(fp);
     fp = NULL;
   }
@@ -151,12 +153,13 @@ error:
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_finalize() {
+LIBXSMM_API_DEFINITION void libxsmm_perf_finalize()
+{
 #if defined(LIBXSMM_PERF_JITDUMP)
   int res;
   struct jr_code_close rec;
 
-  if(fp == NULL) {
+  if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: jit dump file not opened\n");
     goto error;
   }
@@ -166,13 +169,13 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize() {
   rec.p.total_size = sizeof(rec);
   rec.p.timestamp = libxsmm_timer_xtick();
   res = fwrite(&rec, sizeof(rec), 1, fp);
-  if(res != 1) {
+  if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
     goto error;
   }
 
   int page_size = sysconf(_SC_PAGESIZE);
-  if(page_size < 0) {
+  if (page_size < 0) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page_size\n");
     goto error;
   }
@@ -189,7 +192,8 @@ error:
 
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory, size_t size,
-                             const char* name) {
+                             const char* name)
+{
   assert(fp != NULL);
   assert(name && *name);
   assert(memory != NULL && size != 0);
@@ -221,7 +225,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     int expected_res = 3;
     res += fwrite_unlocked(&rec, sizeof(rec), 1, fp);
     res += fwrite_unlocked(name, name_len, 1, fp);
-    if(padding_len > 0) {
+    if (padding_len > 0) {
       res += fwrite_unlocked(&zeros, padding_len, 1, fp);
       expected_res++;
     }
@@ -241,3 +245,4 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
 #endif
   }
 }
+

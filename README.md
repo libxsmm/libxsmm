@@ -366,12 +366,12 @@ to the `mpirun` command line. Please notice the `:4=exclusive` which is unrelate
 Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which belong to a module named "libxsmm.jit". The function name as well as the module name are supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::smxm" encodes an Intel&#160;AVX2 ("hsw") double-precision kernel ("d") for small dense matrix multiplications which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
 
 #### Linux perf
-There is both basic (perf map) and extended support (jitdump) provided for profiling an applications using LIBXSMM's JIT code.
+There is both basic (`perf map`) and extended support (`jitdump`) for profiling an application which is using LIBXSMM's JIT code.
 
-* The basic support is enabled by default at compile-time if symbols are available (SYM=1 or DBG=1), and it generates a map-file within the '/tmp' directory, which perf automatically reads and uses to enrich information about unknown code such as JIT'ted kernels.
-* The support for `jitdump` can be enabled by using `make SYM=1 PERF_JITDUMP=1`, and it generates a 'jit-<pid>.dump' file, which includes information about JIT'ted kernels such as addresses, symbol names, code size as well as the code itself. The aforementioned file can be then injected into 'perf.data' (via `perf inject -j`), and it enables an annotated assembly view in perf's report (requires a reasonably recent version of 'perf').
+* The basic support is enabled by default if symbols are available (SYM=1 or DBG=1), and it generates a map-file within the '/tmp' directory, which "perf" automatically reads and uses to enrich information about unknown code such as JIT'ted kernels.
+* The support for "jitdump" can be enabled by using `make SYM=1 JITDUMP=/path/to/linux-kernel/tools/perf/util`, and it generates a file ('jit-<pid>.dump'), which includes information about JIT'ted kernels such as addresses, symbol names, code size, and the code itself. This dump file can be then injected into 'perf.data' (via `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of perf).
 
-**NOTE**: the extended support (jitdump) does not compile currently as it requires the 'jitdump.h' header file, which is part of the Linux kernel sources (under 'tools/perf/util'). This header file is provided under the GPLv2 license, and it may be placed into LIBXSMM's 'src/' directory in order to activate the support for `jitdump` facility.
+**NOTE**: the extended support (jitdump) requires the 'jitdump.h' header file, which is part of the Linux kernel sources (under 'tools/perf/util'). This header file is provided under the GPLv2 license.
 
 ### Tuning
 Specifying a particular code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:

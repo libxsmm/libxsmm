@@ -126,9 +126,10 @@ ifneq (0,$(JIT))
   SSE ?= 1
 endif
 
-# Perf profiling of JIT code
+# Profiling JIT code using Linux Perf
+# Support for jitdump requires to supply:
+# JITDUMP=/path/to/linux-kernel/tools/perf/util
 PERF ?= 1
-PERF_JITDUMP ?= 0
 
 # OpenMP is disabled by default and LIBXSMM is
 # always agnostic wrt the threading runtime
@@ -198,7 +199,8 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) \
-                   libxsmm_malloc.c libxsmm_sync.c libxsmm_timer.c libxsmm_trace.c)
+                   libxsmm_malloc.c libxsmm_sync.c libxsmm_timer.c \
+                   libxsmm_trace.c libxsmm_perf.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
@@ -505,33 +507,34 @@ endif
 endif
 
 ifneq (0,$(JIT))
-  ifneq (0,$(SYM))
-  ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
-    ifneq (0,$(PERF))
-      SRCFILES_GEN_LIB += libxsmm_perf.c
-      DFLAGS += -DLIBXSMM_PERF
-      ifneq (0, $(PERF_JITDUMP))
-        DFLAGS += -DLIBXSMM_PERF_JITDUMP
-      endif
+ifneq (0,$(SYM))
+ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
+  ifneq (0,$(PERF))
+    DFLAGS += -DLIBXSMM_PERF
+    ifneq (,$(JITDUMP))
+      DFLAGS += -DLIBXSMM_PERF_JITDUMP
+      IFLAGS += -I$(JITDUMP)
     endif
-    VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
-    ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-      DFLAGS += -DLIBXSMM_VTUNE
-      IFLAGS += -I$(VTUNEROOT)/include
-      ifneq (0,$(INTEL))
-        CXXFLAGS += -diag-disable 271
-        CFLAGS += -diag-disable 271
-      endif
+  endif
+
+  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+    DFLAGS += -DLIBXSMM_VTUNE
+    IFLAGS += -I$(VTUNEROOT)/include
+    ifneq (0,$(INTEL))
+      CXXFLAGS += -diag-disable 271
+      CFLAGS += -diag-disable 271
+    endif
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
 	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
 	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
-    else
+  else
 .PHONY: $(LIBJITPROFILING)
-    endif
   endif
-  endif
+endif
+endif
 endif
 
 define DEFINE_COMPILE_RULE
