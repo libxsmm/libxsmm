@@ -41,9 +41,9 @@
 
 #if defined(LIBXSMM_PERF_JITDUMP)
 # include <libxsmm_timer.h>
+# include <string.h> /* included in front of <jitdump.h> */
 /* make JITDUMP=/path/to/linux-kernel/tools/perf/util */
 # include <jitdump.h>
-# include <string.h>
 # include <sys/mman.h>
 # include <sys/types.h>
 # include <sys/types.h>
@@ -78,9 +78,9 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
   char file_name[64];
 #if defined(LIBXSMM_PERF_JITDUMP)
-  int fd;
-  int res;
+  int fd, int page_size, res;
   struct jitheader header;
+  size_t padding_len;
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", LIBXSMM_PERF_GETPID());
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
@@ -89,7 +89,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
     goto error;
   }
 
-  int page_size = sysconf(_SC_PAGESIZE);
+  page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page size\n");
     goto error;
@@ -109,9 +109,8 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
     goto error;
   }
 
-  size_t padding_len = libxsmm_perf_padding_len(sizeof(header));
+  padding_len = libxsmm_perf_padding_len(sizeof(header));
   memset(&header, 0, sizeof(header));
-
   header.magic      = JITHEADER_MAGIC;
   header.version    = JITHEADER_VERSION;
   header.elf_mach   = 62;  /* EM_X86_64 */
@@ -156,7 +155,7 @@ error:
 LIBXSMM_API_DEFINITION void libxsmm_perf_finalize()
 {
 #if defined(LIBXSMM_PERF_JITDUMP)
-  int res;
+  int res, page_size;
   struct jr_code_close rec;
 
   if (fp == NULL) {
@@ -174,7 +173,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize()
     goto error;
   }
 
-  int page_size = sysconf(_SC_PAGESIZE);
+  page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page_size\n");
     goto error;
@@ -199,7 +198,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
   assert(memory != NULL && size != 0);
   if (fp != NULL) {
 #if defined(LIBXSMM_PERF_JITDUMP)
-    int res;
+    int res, expected_res;
     struct jr_code_load rec;
     size_t name_len = strlen(name) + 1;
     size_t padding_len = libxsmm_perf_padding_len(sizeof(rec) + name_len);
@@ -222,7 +221,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
 
     /* Count number of written items to check for errors. */
     res = 0;
-    int expected_res = 3;
+    expected_res = 3;
     res += fwrite_unlocked(&rec, sizeof(rec), 1, fp);
     res += fwrite_unlocked(name, name_len, 1, fp);
     if (padding_len > 0) {
