@@ -161,15 +161,15 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 include $(ROOTDIR)/Makefile.inc
 
 ifeq (1,$(AVX))
-  GENTARGET = snb
+  GENCTARGET = snb
 else ifeq (2,$(AVX))
-  GENTARGET = hsw
+  GENCTARGET = hsw
 else ifeq (3,$(AVX))
-  GENTARGET = knl
+  GENCTARGET = knl
 else ifneq (0,$(SSE))
-  GENTARGET = wsm
+  GENCTARGET = wsm
 else
-  GENTARGET = noarch
+  GENCTARGET = noarch
 endif
 
 ifeq (0,$(STATIC))
@@ -355,7 +355,7 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
 	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
 	$(info --------------------------------------------------------------------------------)
 	$(info $(INFO))
-	$(info TARGET: $(TARGET))
+	$(info TARGET: $(CTARGET))
 	$(info ================================================================================)
 ifeq (,$(strip $(FC)))
 ifeq (,$(strip $(FC_VERSION_STRING)))
@@ -443,7 +443,7 @@ endif
 endif
 endif
 ifeq (noarch,$(GENTARGET))
-ifneq (,$(TARGET))
+ifneq (,$(CTARGET))
 ifneq (2,$(PRECISION))
 	@echo "#define LIBXSMM_GENTARGET_knl_sp" >> $@
 	@echo "#define LIBXSMM_GENTARGET_hsw_sp" >> $@
@@ -570,13 +570,13 @@ endif
 
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, $(TARGET))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, $(CTARGET))))
 $(foreach OBJ,$(KERNELOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(CPEDANTIC) $(TARGET))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(CPEDANTIC) $(CTARGET))))
 $(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(TARGET) $(EXTCFLAGS))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(CTARGET) $(EXTCFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(CPEDANTIC))))
@@ -599,7 +599,7 @@ endif
 .PHONY: compile_hst
 compile_hst:
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $< -o $@
+	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: module_mic
 ifneq (0,$(MIC))
@@ -618,7 +618,7 @@ endif
 ifneq (,$(strip $(FC)))
 module_hst: $(BLDDIR)/intel64/libxsmm-mod.o
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(TARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 else
 .PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
 endif

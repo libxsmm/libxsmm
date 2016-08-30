@@ -469,61 +469,61 @@ ifneq (0,$(INTEL))
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (0,$(COMPATIBLE))
       ifeq (1,$(AVX))
-        TARGET = -xAVX
+        CTARGET = -xAVX
       else ifeq (2,$(AVX))
-        TARGET = -xCORE-AVX2
+        CTARGET = -xCORE-AVX2
       else ifeq (3,$(AVX))
         ifeq (0,$(MIC))
           ifneq (file,$(origin MIC))
-            TARGET = -xCORE-AVX512
+            CTARGET = -xCORE-AVX512
           else
-            TARGET = -xCOMMON-AVX512
+            CTARGET = -xCOMMON-AVX512
           endif
         else
-          TARGET = -xMIC-AVX512
+          CTARGET = -xMIC-AVX512
         endif
       else ifneq (0,$(SSE))
         ifeq (1,$(SSE)) # default
-          TARGET = -xSSE3
+          CTARGET = -xSSE3
         else ifeq (3,$(SSE))
-          TARGET = -xSSE3
+          CTARGET = -xSSE3
         else ifeq (4,$(SSE))
-          TARGET = -xSSE4.2
+          CTARGET = -xSSE4.2
         else
-          TARGET = -xSSE$(SSE)
+          CTARGET = -xSSE$(SSE)
         endif
       else ifneq (0,$(AVX))
-        TARGET = -xHost
+        CTARGET = -xHost
       endif
     else
       ifeq (1,$(AVX))
-        TARGET = -mavx
+        CTARGET = -mavx
       else ifeq (2,$(AVX))
-        TARGET = -march=core-avx2
+        CTARGET = -march=core-avx2
       else ifeq (3,$(AVX))
         ifeq (0,$(MIC))
           ifneq (file,$(origin MIC))
-            TARGET = -xCORE-AVX512
+            CTARGET = -xCORE-AVX512
           else
-            TARGET = -xCOMMON-AVX512
+            CTARGET = -xCOMMON-AVX512
           endif
         else
-          TARGET = -xMIC-AVX512
+          CTARGET = -xMIC-AVX512
         endif
       else ifneq (0,$(SSE))
         ifeq (1,$(SSE)) # default
-          TARGET = -msse3
+          CTARGET = -msse3
         else ifeq (2,$(SSE))
           # implicitly present (64-bit ABI)
         else ifeq (3,$(SSE))
-          TARGET = -msse3
+          CTARGET = -msse3
         else ifeq (4,$(SSE))
-          TARGET = -msse4.2
+          CTARGET = -msse4.2
         else # perhaps better to use TARGET
-          TARGET = -msse$(SSE)
+          CTARGET = -msse$(SSE)
         endif
       else ifneq (0,$(AVX))
-        TARGET = -march=native
+        CTARGET = -march=native
       endif
     endif
   endif
@@ -691,35 +691,35 @@ else # GCC assumed
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (1,$(AVX))
-      TARGET = -mavx
+      CTARGET = -mavx
     else ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
       ifeq (3,$(AVX))
         ifeq (0,$(shell $(CC) -E -mavx512f - < /dev/null 2>&1 > /dev/null ; echo $$?))
-          TARGET = -mavx512f -mavx512cd
+          CTARGET = -mavx512f -mavx512cd
           ifneq (0,$(MIC))
             TARGET += -mavx512er -mavx512pf
           endif
         endif
       endif
-      ifeq (,$(TARGET)) # fall-back to AVX2
-        TARGET = -mavx2
+      ifeq (,$(CTARGET)) # fall-back to AVX2
+        CTARGET = -mavx2
       endif
     else ifneq (0,$(SSE))
       ifeq (1,$(SSE)) # default
         ifneq (0,$(GCC)) # GCC (not Clang)
-          TARGET = -msse3
+          CTARGET = -msse3
         else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
-          TARGET = -msse4.2
+          CTARGET = -msse4.2
         endif
       else ifeq (2,$(SSE))
         # implicitly present (64-bit ABI)
       else ifeq (4,$(SSE))
-        TARGET = -msse4.2
+        CTARGET = -msse4.2
       else # perhaps better to use TARGET
-        TARGET = -msse$(SSE)
+        CTARGET = -msse$(SSE)
       endif
     else ifneq (0,$(AVX))
-      TARGET = -march=native
+      CTARGET = -march=native
     endif
   endif
   ifneq (0,$(SYM))
@@ -794,6 +794,11 @@ else # GCC assumed
   endif
   OFFLOAD = 0
   MIC = 0
+endif
+ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
+  FTARGET=$(CTARGET)
+else
+  FTARGET=$(NULL)
 endif
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
