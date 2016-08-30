@@ -56,9 +56,11 @@
 #   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
 #   define LIBXSMM_INLINE_KEYWORD __inline
+#   define LIBXSMM_INLINE_FIXUP
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
+#   define LIBXSMM_INLINE_FIXUP
 # endif
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
@@ -357,8 +359,8 @@
 #if defined(__clang__) && !defined(__extern_always_inline)
 # define __extern_always_inline LIBXSMM_INLINE
 #endif
-#if !defined(__cplusplus) && !defined(inline)
-# define inline LIBXSMM_INLINE
+#if defined(LIBXSMM_INLINE_FIXUP) && !defined(inline)
+# define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
