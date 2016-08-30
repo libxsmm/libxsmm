@@ -161,15 +161,15 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 include $(ROOTDIR)/Makefile.inc
 
 ifeq (1,$(AVX))
-  GENCTARGET = snb
+  GENTARGET = snb
 else ifeq (2,$(AVX))
-  GENCTARGET = hsw
+  GENTARGET = hsw
 else ifeq (3,$(AVX))
-  GENCTARGET = knl
+  GENTARGET = knl
 else ifneq (0,$(SSE))
-  GENCTARGET = wsm
+  GENTARGET = wsm
 else
-  GENCTARGET = noarch
+  GENTARGET = noarch
 endif
 
 ifeq (0,$(STATIC))
