@@ -354,13 +354,11 @@
 #   define _GNU_SOURCE
 # endif
 #endif
-#if defined(__clang__)
-# if !defined(__extern_always_inline)
-#   define __extern_always_inline LIBXSMM_INLINE_KEYWORD
-# endif
-# if !defined(__cplusplus) && (199901L > __STDC_VERSION__)
-#   define inline LIBXSMM_INLINE_KEYWORD
-# endif
+#if defined(__clang__) && !defined(__extern_always_inline)
+# define __extern_always_inline LIBXSMM_INLINE
+#endif
+#if !defined(__cplusplus) && !defined(inline)
+# define inline LIBXSMM_INLINE
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
