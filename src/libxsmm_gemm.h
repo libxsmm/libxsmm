@@ -37,12 +37,12 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_RTLD_NEXT) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
+#if !defined(LIBXSMM_GEMM_WRAP_DYNAMIC_OK) && defined(LIBXSMM_BUILD) && defined(__GNUC__) && \
   !defined(_WIN32) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # include <dlfcn.h>
-# define LIBXSMM_RTLD_NEXT
+# define LIBXSMM_GEMM_WRAP_DYNAMIC_OK
 #endif
 #if !defined(NDEBUG)
 # include <stdio.h>
@@ -209,11 +209,12 @@ SINGLE_OUTER { \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
 # define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL) \
     ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm)))
+# define LIBXSMM_GEMM_WRAP_STATIC_OK
 #else
 # define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL)
 #endif
 
-#if defined(LIBXSMM_RTLD_NEXT) && (!defined(__BLAS) || (0 != __BLAS))
+#if defined(LIBXSMM_GEMM_WRAP_DYNAMIC_OK) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL) \
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { NULL }; \
