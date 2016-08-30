@@ -49,6 +49,7 @@ LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(void)
   LIBXSMM_GEMM_WRAP(double, original);
   return original;
 }
+#endif /*!defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
@@ -73,7 +74,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBO
   assert(libxsmm_original_dgemm() != LIBXSMM_FSYMBOL(dgemm));
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
-#endif /*!defined(__STATIC)*/
 
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC_OK)
