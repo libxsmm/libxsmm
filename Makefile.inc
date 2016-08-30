@@ -395,9 +395,9 @@ else
 endif
 
 ifneq (,$(strip $(FC)))
-  INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
+  INFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
 else
-  INFO = Using $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
+  INFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
 endif
 
 ifneq (0,$(INTEL))
@@ -690,22 +690,19 @@ else # GCC assumed
     DFLAGS += -D__TRACE=$(TRACE)
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
-    ifeq (3,$(GCC))
-      # downgrade to AVX2 due to outdated compiler
-      ifneq (0,$(shell echo "$$((3 <= $(AVX)))"))
-        ifneq (0,$(shell echo "$$((40900 > $(CC_VERSION)))"))
-          AVX = 2
-        endif
-      endif
-    endif
     ifeq (1,$(AVX))
       TARGET = -mavx
-    else ifeq (2,$(AVX))
-      TARGET = -mavx2
-    else ifeq (3,$(AVX))
-      TARGET = -mavx512f -mavx512cd
-      ifneq (0,$(MIC))
-        TARGET += -mavx512er -mavx512pf
+    else ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
+      ifeq (3,$(AVX))
+        ifeq (0,$(shell $(CC) -E -mavx512f - < /dev/null 2>&1 > /dev/null ; echo $$?))
+          TARGET = -mavx512f -mavx512cd
+          ifneq (0,$(MIC))
+            TARGET += -mavx512er -mavx512pf
+          endif
+        endif
+      endif
+      ifeq (,$(TARGET)) # fall-back to AVX2
+        TARGET = -mavx2
       endif
     else ifneq (0,$(SSE))
       ifeq (1,$(SSE)) # default
