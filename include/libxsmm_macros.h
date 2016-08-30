@@ -47,20 +47,26 @@
 # define LIBXSMM_EXTERN extern "C"
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
+# define LIBXSMM_CALLER __FUNCTION__
 #else
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#   define LIBXSMM_CALLER __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
+#   define LIBXSMM_CALLER __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
 #   define LIBXSMM_INLINE_FIXUP
+# endif
+# if !defined(LIBXSMM_CALLER)
+#   define LIBXSMM_CALLER 0
 # endif
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
