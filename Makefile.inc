@@ -174,12 +174,12 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
   $(shell $(CXX) --version 2> /dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) --version 2> /dev/null | head -n1 | cut -d' ' -f1)))))")
 
-FORTRAN ?= $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0)
+#FORTRAN ?= $(if $(FC), $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0), 0)
 ifneq (0,$(INTEL))
   ifeq (0,$(OFFLOAD))
     CXXFLAGS += -qno-offload
     CFLAGS += -qno-offload
-    ifneq (0,$(FORTRAN))
+    ifneq (,$(strip $(FC)))
       ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
         FCFLAGS += -qno-offload
       endif
@@ -200,17 +200,15 @@ else
   else ifneq (0,$(shell $(CC) --version > /dev/null 2> /dev/null; echo "$$?"))
     CC = gcc
   endif
-  ifeq (0,$(FORTRAN))
-    FC = $(shell which gfortran 2> /dev/null)
-  else ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo "$$?"))
+  ifneq (0,$(FORTRAN))
+    ifneq (,$(strip $(FC)))
+      ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo "$$?"))
+        FC = $(shell which gfortran 2> /dev/null)
+      endif
+    endif
+  else
     FC = $(shell which gfortran 2> /dev/null)
   endif
-endif
-
-ifneq (,$(strip $(FC)))
-  FORTRAN = 1
-else
-  FORTRAN = 0
 endif
 ifeq (0,$(FORTRAN))
   FC = $(NULL)
@@ -263,43 +261,41 @@ else
   FC_VERSION = 0
 endif
 
-ifneq (0,$(FORTRAN))
-  ifneq (,$(strip $(FC)))
-    ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
-      ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-        ifneq (gfortran,$(notdir $(FC)))
-          FC = gfortran
-          FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-          FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
-          FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
-          FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-          ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-            FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
-          else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-            FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
-            FC_VERSION_PATCH = 0
-          else
-            FC_VERSION = 0
-          endif
-          ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-            # keep FC_VERSION_STRING available for message about outdated compiler
-            FC_VERSION = 0
-            FC = $(NULL)
-            FORTRAN = 0
-          endif
+ifneq (,$(strip $(FC)))
+  ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
+    ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+      ifneq (gfortran,$(notdir $(FC)))
+        FC = gfortran
+        FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
+        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
+        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
+        ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+        else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
+          FC_VERSION_PATCH = 0
         else
+          FC_VERSION = 0
+        endif
+        ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
           # keep FC_VERSION_STRING available for message about outdated compiler
           FC_VERSION = 0
           FC = $(NULL)
           FORTRAN = 0
         endif
-      endif
-    else ifneq (0,$(INTEL))
-      ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
+      else
+        # keep FC_VERSION_STRING available for message about outdated compiler
         FC_VERSION = 0
         FC = $(NULL)
         FORTRAN = 0
       endif
+    endif
+  else ifneq (0,$(INTEL))
+    ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
+      FC_VERSION = 0
+      FC = $(NULL)
+      FORTRAN = 0
     endif
   endif
 endif
@@ -392,12 +388,6 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
 else
   SUITE = Compiler
-endif
-
-ifneq (,$(strip $(FC)))
-  INFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
-else
-  INFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
 endif
 
 ifneq (0,$(INTEL))
@@ -783,7 +773,7 @@ else # GCC assumed
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     DUMMY = $(shell $(LD) -static -ldummydoesnotexist 2>&1)
-    ifeq (0,$(shell echo "${DUMMY}" | grep -q "\-ldummydoesnotexist"; echo "$$?"))
+    ifeq (0,$(shell echo "$(DUMMY)" | grep -q "\-ldummydoesnotexist"; echo "$$?"))
       SLDFLAGS += -static
     endif
   endif
@@ -795,11 +785,26 @@ else # GCC assumed
   OFFLOAD = 0
   MIC = 0
 endif
-ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
-  FTARGET=$(CTARGET)
-else
-  FTARGET=$(NULL)
+
+# Take user's TARGET request into account
+ifneq (undefined,$(origin TARGET))
+  CTARGET = $(TARGET)
 endif
+ifneq (,$(strip $(FC)))
+  ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
+    FTARGET = $(CTARGET)
+  endif
+endif
+
+# Information which can be displayed by the actual Makefile
+ifneq (,$(strip $(FC)))
+  GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
+  FINFO = FORTRAN: $(if $(FTARGET),$(FTARGET),<compiler default>)
+else
+  GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
+  FINFO = FORTRAN: <none>
+endif
+CINFO = C & C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
   LIBRT = -lrt
