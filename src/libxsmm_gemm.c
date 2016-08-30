@@ -43,19 +43,19 @@
 
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
-  LIBXSMM_GEMM_WRAP(float, original);
-  LIBXSMM_UNUSED(caller);
-  return original;
+  static LIBXSMM_TLS union { const void* pv; libxsmm_sgemm_function pf; } original = { NULL };
+  LIBXSMM_GEMM_WRAP(float, original.pf);
+  assert(caller != original.pv);
+  return original.pf;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
-  LIBXSMM_GEMM_WRAP(double, original);
-  LIBXSMM_UNUSED(caller);
-  return original;
+  static LIBXSMM_TLS union { const void* pv; libxsmm_dgemm_function pf; } original = { NULL };
+  LIBXSMM_GEMM_WRAP(double, original.pf);
+  assert(caller != original.pv);
+  return original.pf;
 }
 
 
