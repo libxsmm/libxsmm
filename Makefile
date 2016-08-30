@@ -352,7 +352,10 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 	$(info ================================================================================)
+	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
+	$(info --------------------------------------------------------------------------------)
 	$(info $(INFO))
+	$(info TARGET: $(TARGET))
 	$(info ================================================================================)
 ifeq (,$(strip $(FC)))
 ifeq (,$(strip $(FC_VERSION_STRING)))
