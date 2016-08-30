@@ -387,11 +387,11 @@ else ifneq (0,$(MIC))
 endif
 
 ifneq (0,$(INTEL))
-  SUITE = Intel Compiler suite
+  SUITE = Intel Compiler
 else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
 else
-  SUITE = Other compilers
+  SUITE = Compiler
 endif
 
 ifneq (,$(strip $(FC)))
