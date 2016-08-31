@@ -44,7 +44,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(_rdtsc) || !defined(__clang__)
+#if defined(_rdtsc) || defined(_WIN32)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER)
 # define LIBXSMM_TIMER_RDTSC(CYCLE) { unsigned long libxsmm_timer_rdtsc_hi_; \
