@@ -787,10 +787,10 @@ endif
 # Information which can be displayed by the actual Makefile
 ifneq (,$(strip $(FC)))
   GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
-  FINFO = FORTRAN: $(if $(FTARGET),$(FTARGET),<compiler default>)
+  FINFO = Fortran: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
   GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
-  FINFO = FORTRAN: <none>
+  FINFO = Fortran: <none>
 endif
 CINFO = C & C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
