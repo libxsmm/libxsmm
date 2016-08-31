@@ -37,21 +37,20 @@
 #if !defined(__STATIC)
 LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
-  static LIBXSMM_TLS union { const void* pv; libxsmm_sgemm_function pf; } original = { NULL };
-  LIBXSMM_GEMM_WRAP(float, original.pf);
-  assert(caller != original.pv);
-  return original.pf;
+  static LIBXSMM_TLS libxsmm_sgemm_function original = NULL;
+  LIBXSMM_GEMM_WRAP(float, original, caller);
+  assert(NULL != original);
+  return original;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
-  static LIBXSMM_TLS union { const void* pv; libxsmm_dgemm_function pf; } original = { NULL };
-  LIBXSMM_GEMM_WRAP(double, original.pf);
-  assert(caller != original.pv);
-  return original.pf;
+  static LIBXSMM_TLS libxsmm_dgemm_function original = NULL;
+  LIBXSMM_GEMM_WRAP(double, original, caller);
+  assert(NULL != original);
+  return original;
 }
-#endif /*!defined(__STATIC)*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(sgemm)(
@@ -74,6 +73,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBO
 {
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
+#endif /*!defined(__STATIC)*/
 
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC_OK)

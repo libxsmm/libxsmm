@@ -67,11 +67,11 @@
 #endif
 
 #if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 # define LIBXSMM_GEMM_WEAK
+# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 #else
 # define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK
+# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 #endif
 
 #if !defined(LIBXSMM_GEMM_COLLAPSE)
@@ -198,51 +198,55 @@ SINGLE_OUTER { \
 }
 
 #if (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL) \
-    if (0 == (ORIGINAL)) { \
+# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER) \
+    if (0 == (ORIGINAL) && LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)) != (CALLER)) { \
       ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)); \
     }
 #else
-# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL) LIBXSMM_UNUSED(ORIGINAL)
+# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER) LIBXSMM_UNUSED(ORIGINAL)
 #endif
 
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL) \
-    ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm)))
+# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER) \
+    if (LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))) != (CALLER)) { \
+      ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))); \
+    }
 # define LIBXSMM_GEMM_WRAP_STATIC_OK
 #else
-# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL)
+# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER)
 #endif
 
 #if defined(LIBXSMM_GEMM_WRAP_DYNAMIC_OK)
-# define LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL) \
+# define LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER) \
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { NULL }; \
       dlerror(); /* clear an eventual error status */ \
       gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
-      ORIGINAL = gemm.pf; \
-      LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL); \
+      if (gemm.pv != (CALLER)) ORIGINAL = gemm.pf; \
+      LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER); \
     }
 #else
 # define LIBXSMM_GEMM_WRAP_DYNAMIC LIBXSMM_GEMM_WRAP_NOBLAS
 #endif
 
 #if defined(NDEBUG) /* library code is expected to be mute */
-# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL) \
-    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL); \
-    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL)
+# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
+    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER); \
+    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER); \
+  }
 #else
-# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL) \
-    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL); \
-    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL); \
+# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
+    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER); \
+    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER); \
     if (0 == (ORIGINAL)) { \
       static LIBXSMM_TLS int libxsmm_gemm_wrap_error_ = 0; \
       if (0 == libxsmm_gemm_wrap_error_) { \
         fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n"); \
         libxsmm_gemm_wrap_error_ = 1; \
       } \
-    }
+    } \
+  }
 #endif
 
 
