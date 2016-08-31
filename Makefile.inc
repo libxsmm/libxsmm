@@ -737,7 +737,7 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifeq (0,$(shell $(CC) -E -mavx512f - < /dev/null 2>&1 > /dev/null ; echo $$?))
+    ifeq (0,$(shell $(CC) -E -mavx512f /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
       ifneq (,$(MIC)) # specified
         ifneq (0,$(MIC)) # MIC
@@ -779,7 +779,7 @@ ifneq (undefined,$(origin TARGET))
   CTARGET = $(TARGET)
 endif
 ifneq (,$(strip $(FC)))
-ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
+ifeq (0,$(shell $(FC) -E $(CTARGET) /dev/null 2> /dev/null > /dev/null; echo $$?))
   FTARGET = $(CTARGET)
 endif
 endif
