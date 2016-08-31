@@ -79,6 +79,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_activation {
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
   int W;                            /* width of image */
+  libxsmm_dnn_conv_format format;   /* format of activation buffer */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };
@@ -109,6 +110,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
+  libxsmm_dnn_conv_format format;
+  libxsmm_dnn_conv_fuse_ops fuse_ops;
 
   /* additional size for iternal data types */
   int ifhp;

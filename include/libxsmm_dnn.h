@@ -41,46 +41,66 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter libxsmm_dnn_filter;
 typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
-#define LIBXSMM_DNN_SUCCESS                           0
-#define LIBXSMM_DNN_WARN_FALLBACK                 90000
-#define LIBXSMM_DNN_ERR_GENERAL                  100000
-#define LIBXSMM_DNN_ERR_CREATE_HANDLE            100001
-#define LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE     100002
-#define LIBXSMM_DNN_ERR_INVALID_BLOCKING         100003
-#define LIBXSMM_DNN_ERR_INVALID_HANDLE           100004
-#define LIBXSMM_DNN_ERR_DATA_NOT_BOUND           100005
-#define LIBXSMM_DNN_ERR_CREATE_LAYER             100006
-#define LIBXSMM_DNN_ERR_INVALID_LAYER            100007
-#define LIBXSMM_DNN_ERR_CREATE_FILTER            100008
-#define LIBXSMM_DNN_ERR_INVALID_FILTER           100009
-#define LIBXSMM_DNN_ERR_CREATE_BIAS              100010
-#define LIBXSMM_DNN_ERR_INVALID_BIAS             100011
-#define LIBXSMM_DNN_ERR_MISMATCH_LAYER           100012
-#define LIBXSMM_DNN_ERR_INVALID_HANDLE_LAYER     100013
-#define LIBXSMM_DNN_ERR_MISMATCH_FILTER          100014
-#define LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER    100015
-#define LIBXSMM_DNN_ERR_INVALID_KIND             100016
+#define LIBXSMM_DNN_SUCCESS                             0
+#define LIBXSMM_DNN_WARN_FALLBACK                   90000
+#define LIBXSMM_DNN_ERR_GENERAL                    100000
+#define LIBXSMM_DNN_ERR_CREATE_HANDLE              100001
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE       100002
+#define LIBXSMM_DNN_ERR_INVALID_BLOCKING           100003
+#define LIBXSMM_DNN_ERR_INVALID_HANDLE             100004
+#define LIBXSMM_DNN_ERR_DATA_NOT_BOUND             100005
+#define LIBXSMM_DNN_ERR_CREATE_ACTIVATION          100006
+#define LIBXSMM_DNN_ERR_INVALID_ACTIVATION         100007
+#define LIBXSMM_DNN_ERR_CREATE_FILTER              100008
+#define LIBXSMM_DNN_ERR_INVALID_FILTER             100009
+#define LIBXSMM_DNN_ERR_CREATE_BIAS                100010
+#define LIBXSMM_DNN_ERR_INVALID_BIAS               100011
+#define LIBXSMM_DNN_ERR_MISMATCH_ACTIVATION        100012
+#define LIBXSMM_DNN_ERR_INVALID_HANDLE_ACTIVATION  100013
+#define LIBXSMM_DNN_ERR_MISMATCH_FILTER            100014
+#define LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER      100015
+#define LIBXSMM_DNN_ERR_INVALID_KIND               100016
+#define LIBXSMM_DNN_ERR_INVALID_FORMAT_NCHW        100017
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT     100018
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT     100019
 
 /** Kinds of supported convolution operations. */
 typedef enum libxsmm_dnn_conv_kind {
   /** Forward convolution. */
   LIBXSMM_DNN_CONV_KIND_FWD,
-  /** Forward convolution, fused Bias */
-  LIBXSMM_DNN_CONV_KIND_FWD_BIAS,
-  /** Forward convolution, fused Bias and ReLU */
-  LIBXSMM_DNN_CONV_KIND_FWD_BIAS_RELU,
   /** Backward convolution. */
   LIBXSMM_DNN_CONV_KIND_BWD,
-  /** Backward convolution, fused ReLU */
-  LIBXSMM_DNN_CONV_KIND_BWD_RELU,
   /** Updated weights. */
-  LIBXSMM_DNN_CONV_KIND_UPD,
-  /** Updated weights, fused Bias */
-  LIBXSMM_DNN_CONV_KIND_UPD_BIAS
+  LIBXSMM_DNN_CONV_KIND_UPD
 } libxsmm_dnn_conv_kind;
+
+typedef enum libxsmm_dnn_conv_fuse_ops {
+  /* we fuse nothing into convolution */
+  LIBXSMM_DNN_CONV_FUSE_NONE = 0
+#if 0
+  ,
+  /* we fuse fuse bias init into convolution */
+  LIBXSMM_DNN_CONV_FUSE_BIAS = 1,
+  /* we fase fase ReLU calculation into convolution Op */
+  LIBXSMM_DNN_CONV_FUSE_RELU = 2
+#endif
+} libxsmm_dnn_conv_fuse_ops;
+
+typedef enum libxsmm_dnn_conv_format{
+  /* use LIBXSMM internal format, we need to copy data into that */
+  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM = 1,
+  /* use NHWC format internally, this allows no-copy operations */
+  LIBXSMM_DNN_CONV_FORMAT_NHWC = 2,
+  /* use NCHW format internally, this will include shadow copies, not preferred */
+  LIBXSMM_DNN_CONV_FORMAT_NCHW = 4,
+  /* use ptr copy when copying in -> no copy takes place, this is just an additional option */
+  LIBXSMM_DNN_CONV_FORMAT_PTR = 8
+} libxsmm_dnn_conv_format;
 
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
+  /** let the library decide */
+  LIBXSMM_DNN_CONV_ALGO_AUTO,
   /** direct convolution. */
   LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
@@ -95,18 +115,24 @@ typedef enum libxsmm_dnn_datatype {
 
 /** Structure which describes the input and output of data (DNN). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
-  int N;           /* number of images in mini-batch */
-  int C;           /* number of input feature maps */
-  int H;           /* height of input image */
-  int W;           /* width of input image */
-  int K;           /* number of output feature maps */
-  int R;           /* height of filter kernel */
-  int S;           /* width of filter kernel */
-  int u;           /* vertical stride */
-  int v;           /* horizontal stride */
-  int pad_h;       /* height of zero-padding */
-  int pad_w;       /* width of zero-padding */
-  int splits;      /* number of splits */
+  int N;                                /* number of images in mini-batch */
+  int C;                                /* number of input feature maps */
+  int H;                                /* height of input image */
+  int W;                                /* width of input image */
+  int K;                                /* number of output feature maps */
+  int R;                                /* height of filter kernel */
+  int S;                                /* width of filter kernel */
+  int u;                                /* vertical stride */
+  int v;                                /* horizontal stride */
+  int pad_h_in;                         /* height of zero-padding in input activation */
+  int pad_w_in;                         /* width of zero-padding in input activation */
+  int pad_h_out;                        /* height of zero-padding in output activation */
+  int pad_w_out;                        /* width of zero-padding in output activation */
+  int splits;                           /* number of splits */
+  libxsmm_dnn_conv_algo algo;           /* convolution algorithm used */
+  libxsmm_dnn_conv_format format;       /* format which is for activation buffers */
+  libxsmm_dnn_conv_fuse_ops fuse_ops;   /* used ops into convolutoions */
+  libxsmm_dnn_datatype datatype;        /* dataytpes use for all buffers */
 } libxsmm_dnn_conv_desc;
 
 /** get string of error code */
@@ -114,14 +140,10 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
-  libxsmm_dnn_conv_desc     conv_desc,
-  libxsmm_dnn_datatype      conv_datatype,
-  libxsmm_dnn_conv_algo     conv_algo );
+  libxsmm_dnn_conv_desc     conv_desc );
 
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
   libxsmm_dnn_conv_desc     conv_desc,
-  libxsmm_dnn_datatype      conv_datatype,
-  libxsmm_dnn_conv_algo     conv_algo,
   libxsmm_dnn_err_t*        status );
 
 /** Release the given convolution handle. */
@@ -132,11 +154,15 @@ LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation(const li
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation(const libxsmm_dnn_conv_handle* handle);
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_create_filter(const libxsmm_dnn_conv_handle* handle);
 LIBXSMM_API libxsmm_dnn_bias* libxsmm_dnn_create_bias(const libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_from_userdata(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_from_userdata(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
 
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_from_userdata_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_from_userdata_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 
 /** Bind layers, filters and bias to convolutions operation */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_input_activation(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_activation* input);
@@ -160,7 +186,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* b
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_activation(const libxsmm_dnn_activation* activation, const void* data);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_activation(const libxsmm_dnn_activation* activation, const void* data, libxsmm_dnn_conv_format in_format);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data);
 /*LIBXSMM_API libxsmm_dnn_err_t libxsmm_conv_copyin_bias(const libxsmm_dnn_bias* bias, const void* data);*/
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_activation(const libxsmm_dnn_activation* layer);
@@ -170,7 +196,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_activation(const libxsmm_dnn_acti
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_activation(const libxsmm_dnn_activation* activation, void* data);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_activation(const libxsmm_dnn_activation* activation, void* data, libxsmm_dnn_conv_format out_format);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data);
 /*LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_dnn_bias* bias, void* data);*/
 

@@ -34,7 +34,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h * handle->ofwp + handle->desc.pad_w) * handle->ofmblock;
+  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
   /* computing first logical thread */
   const int ltid = tid - start_thread;
@@ -102,7 +102,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((const element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h * handle->ofwp + handle->desc.pad_w) * handle->ofmblock;
+  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
   /* computing first logical thread */
   const int ltid = tid-start_thread;
@@ -243,7 +243,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 {
   typedef float element_type;
   const element_type *const inp = ((element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h * handle->ofwp + handle->desc.pad_w) * handle->ofmblock;
+  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
   int ifm1, oj, ij, oi, ii;
   /* calculate local thread ids */
   const int ltid = tid - start_thread;
