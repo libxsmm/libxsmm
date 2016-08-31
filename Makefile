@@ -129,7 +129,7 @@ endif
 # Profiling JIT code using Linux Perf
 # Support for jitdump requires to supply:
 # JITDUMP=/path/to/linux-kernel/tools/perf/util
-PERF ?= 1
+PERF ?= 0
 
 # OpenMP is disabled by default and LIBXSMM is
 # always agnostic wrt the threading runtime

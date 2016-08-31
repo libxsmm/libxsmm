@@ -318,6 +318,8 @@ The tables are distinct between single-precision and double-precision, but eithe
 
 The TRY counter represents all attempts to register statically generated kernels and all attempts to dynamically generate and register kernels. The JIT and STA counters distinct the aforementioned event into dynamically (JIT) and statically (STA) generated code but also count only actually registered kernels. In case the capacity (O(*n*)&#160;=&#160;10<sup>5</sup>) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (O(*n*)&#160;=&#160;10<sup>3</sup>) may ramp the number of hash key collisions (COL), which can degrade performance. The latter is prevented if the small thread-local cache is effectively utilized.
 
+Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under the THRESHOLD, the above table may be extended by one line if large kernels have been requested. This a sign of abusing the library since such kernel code may not be cache-blocked, and it might be better to implement a threshold-criterion (customized dispatch) or to look at "medium-sized" GEMM routines (`libxsmm_?gemm_omp`) already performing a tiled multiplication.
+
 **NOTE**: setting LIBXSMM_VERBOSE to a negative value will dump each generated JIT kernel to a file with each file being named similar to the function name shown in [Intel&#160;VTune](#profiling).
 
 ### Call Trace
@@ -347,7 +349,7 @@ source /path/to/vtune_amplifier/amplxe-vars.sh
 make SYM=1
 ```
 
-In the above example, the root directory is automatically determined from an environment variable (VTUNE_AMPLIFIER_\*_DIR), which is present after source'ing the Intel&#160;VTune environment, but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are actually not required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example, when "call stacks" are collected it is possible to find out where the JIT code has been invoked by the application:
+Above, the root directory is automatically determined from the environment (VTUNE_AMPLIFIER_\*_DIR). This variable is present after source'ing the Intel&#160;VTune environment, but it can be manually provided as well (`make VTUNEROOT=/path/to/vtune_amplifier`). Symbols are actually not required to display kernel names for the dynamically generated code, however enabling symbols makes the analysis much more useful for the rest of the (static) code, and hence it has been made a prerequisite. For example, when "call stacks" are collected it is possible to find out where the JIT code has been invoked by the application:
 
 ```
 amplxe-cl -r result-directory -data-limit 0 -collect advanced-hotspots \
@@ -366,10 +368,14 @@ to the `mpirun` command line. Please notice the `:4=exclusive` which is unrelate
 Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which belong to a module named "libxsmm.jit". The function name as well as the module name are supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::smxm" encodes an Intel&#160;AVX2 ("hsw") double-precision kernel ("d") for small dense matrix multiplications which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
 
 #### Linux perf
-There is both basic (`perf map`) and extended support (`jitdump`) for profiling an application which is using LIBXSMM's JIT code.
+There is both basic (`perf map`) and extended support (`jitdump`) when profiling an application, which is using LIBXSMM.
 
-* The basic support is enabled by default if symbols are available (SYM=1 or DBG=1), and it generates a map-file within the '/tmp' directory, which "perf" automatically reads and uses to enrich information about unknown code such as JIT'ted kernels.
-* The support for "jitdump" can be enabled by using `make SYM=1 JITDUMP=/path/to/linux-kernel/tools/perf/util`, and it generates a file ('jit-<pid>.dump'), which includes information about JIT'ted kernels such as addresses, symbol names, code size, and the code itself. This dump file can be then injected into 'perf.data' (via `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of perf).
+* The basic support can be enabled at compile-time with PERF=1 along with SYM=1 (or DBG=1) using:  
+`make PERF=1 SYM=1`  
+At runtime of the application, a map-file ('jit-*pid*.map') is generated ('/tmp' directory). This file is automatically read by "perf", and enriches the information about unknown code such as JIT'ted kernels.
+* The support for "jitdump" can be enabled by supplying JITDUMP when making the library:  
+`make PERF=1 SYM=1 JITDUMP=/path/to/linux-kernel/tools/perf/util`  
+At runtime of the application, a dump-file ('jit-*pid*.dump') is generated ('/tmp' directory) which includes additional information about JIT'ted kernels (such as addresses, symbol names, code size, and the code itself). The dump file can be injected into 'perf.data' (using `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of perf).
 
 **NOTE**: the extended support (jitdump) requires the 'jitdump.h' header file, which is part of the Linux kernel sources (under 'tools/perf/util'). This header file is provided under the GPLv2 license.
 
