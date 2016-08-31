@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_conv_fwd.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
@@ -98,7 +98,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_fallback(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((const element_type*)handle->filter->data);
@@ -239,7 +239,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_opt(libxs
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_type;
   const element_type *const inp = ((element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
@@ -365,7 +365,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_fp32_img_paral
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -380,7 +380,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd(libxsmm_dnn
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
-          internal_convolve_st_fwd_fp32_fallback(handle, start_thread, tid, num_threads);
+          internal_convolve_st_fwd_custom_fp32_fallback(handle, start_thread, tid, num_threads);
         }
         else {
           status = LIBXSMM_DNN_ERR_GENERAL;
@@ -398,10 +398,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd(libxsmm_dnn
       case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
           if (handle->desc.N*handle->blocksofm >= num_threads) {
-            internal_convolve_st_fwd_fp32_opt(handle, start_thread, tid, num_threads);
+            internal_convolve_st_fwd_custom_fp32_opt(handle, start_thread, tid, num_threads);
           }
           else {
-            internal_convolve_st_fwd_fp32_img_parallel_opt(handle, start_thread, tid, num_threads);
+            internal_convolve_st_fwd_custom_fp32_img_parallel_opt(handle, start_thread, tid, num_threads);
           }
         }
         else {

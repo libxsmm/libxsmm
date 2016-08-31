@@ -63,6 +63,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_NCHW        100017
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT     100018
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT     100019
+#define LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE    100020
 
 /** Kinds of supported convolution operations. */
 typedef enum libxsmm_dnn_conv_kind {
@@ -100,7 +101,7 @@ typedef enum libxsmm_dnn_conv_format{
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
   /** let the library decide */
-  LIBXSMM_DNN_CONV_ALGO_AUTO,
+  LIBXSMM_DNN_CONV_ALGO_AUTO,   /* ignored for now */
   /** direct convolution. */
   LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
@@ -154,15 +155,15 @@ LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation(const li
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation(const libxsmm_dnn_conv_handle* handle);
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_create_filter(const libxsmm_dnn_conv_handle* handle);
 LIBXSMM_API libxsmm_dnn_bias* libxsmm_dnn_create_bias(const libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_from_userdata(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
-LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_from_userdata(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_link_input_activation(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_link_output_activation(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format);
 
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_input_activation_from_userdata_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_create_output_activation_from_userdata_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_link_input_activation_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_activation* libxsmm_dnn_link_output_activation_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 
 /** Bind layers, filters and bias to convolutions operation */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_input_activation(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_activation* input);

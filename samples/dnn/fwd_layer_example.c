@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
   conv_desc.pad_h_out = pad_h_out;
   conv_desc.pad_w_out = pad_w_out;
   conv_desc.splits = nSplits;
-  conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+  conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
   conv_desc.format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;

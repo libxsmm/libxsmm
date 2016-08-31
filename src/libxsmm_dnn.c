@@ -93,6 +93,8 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported destination format when copying data!";
     case LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT:
       return "LIBXSMM DNN Error: Unsupported source format when copying data!";
+    case LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE:
+      return "LIBXSMM DNN Error: Unsupported format when requesting a convolution!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
@@ -132,7 +134,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     /* at min. we have 1 split */
     handle->desc.splits = (conv_desc.splits <= 1) ? 1 : conv_desc.splits;
     handle->datatype = conv_desc.datatype;
-    handle->algo = conv_desc.algo;
+    handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     handle->format = conv_desc.format;
     handle->fuse_ops = conv_desc.fuse_ops;
     /* derive additional values */
@@ -993,7 +995,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_CONV_KIND_FWD: {
-        libxsmm_dnn_convolve_st_fwd(handle, start_thread, tid, num_threads);
+        switch (handle->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            libxsmm_dnn_convolve_st_fwd_custom(handle, start_thread, tid, num_threads);
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
+          }
+        }
       } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
