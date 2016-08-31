@@ -102,6 +102,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int bofm;                         /* sized of blocked feature maps, in a block */
   int R;                            /* height of filter kernel */
   int S;                            /* width of filter kernel */
+  libxsmm_dnn_conv_format format;   /* format of filter buffer */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };

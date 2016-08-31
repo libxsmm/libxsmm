@@ -370,6 +370,48 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_input_buffer_check
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format)
+{
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_link_input_buffer_check( handle, data, in_format, &status );
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+{
+  libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (handle != 0 && buffer != 0 && data != 0) {
+    /* set properties of the buffer according to convolution handle */
+    buffer->N = handle->desc.N;
+    buffer->splits = handle->desc.splits;
+    buffer->fmb = handle->blocksifm;
+    buffer->bfm = handle->ifmblock;
+    buffer->H = handle->ifhp;
+    buffer->W = handle->ifwp;
+    buffer->format = in_format;
+    buffer->datatype = handle->datatype;
+    if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      buffer->data = (void*)data;
+    } else {
+      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
+    buffer = 0;
+  }
+
+  if (*status != LIBXSMM_DNN_SUCCESS) {
+    free((libxsmm_dnn_buffer*)buffer);
+    buffer = 0;
+  }
+
+  return buffer;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer(const libxsmm_dnn_conv_handle* handle)
 {
   libxsmm_dnn_err_t status;
@@ -418,13 +460,57 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer_chec
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format)
+{
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_link_output_buffer_check( handle, data, in_format, &status );
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+{
+  libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (handle != 0 && buffer != 0 && data != 0) {
+    /* set properties of the buffer according to convolution handle */
+    buffer->N = handle->desc.N;
+    buffer->splits = handle->desc.splits;
+    buffer->fmb = handle->blocksofm;
+    buffer->bfm = handle->ofmblock;
+    buffer->H = handle->ofhp;
+    buffer->W = handle->ofwp;
+    buffer->format = in_format;
+    buffer->datatype = handle->datatype;
+    if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      buffer->data = (void*)data;
+    } else {
+      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
+    buffer = 0;
+  }
+
+  if (*status != LIBXSMM_DNN_SUCCESS) {
+    free((libxsmm_dnn_buffer*)buffer);
+    buffer = 0;
+  }
+
+  return buffer;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsmm_dnn_buffer* buffer)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != buffer) { /* it is not an error attempting to destroy a NULL-handle */
-    /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_xfree(buffer->data);
+    /* deallocate data components; not an error to deallocate a NULL-pointer, just deallocate if it's LIBXSMM private data */
+    if ( (buffer->format & LIBXSMM_DNN_CONV_FORMAT_PTR) == 0 ) {
+      libxsmm_xfree(buffer->data);
+    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_buffer*)buffer);
   }
@@ -458,6 +544,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const
     filter->bofm = handle->ofmblock;
     filter->R = handle->desc.R;
     filter->S = handle->desc.S;
+    filter->format = handle->filter_format;
     filter->datatype = handle->datatype;
     /* allocate raw data */
     result = libxsmm_xmalloc(&filter->data,
@@ -479,13 +566,59 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format)
+{
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_link_filter_check(handle, data, in_format, &status);
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+{
+  libxsmm_dnn_filter* filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (handle != 0 && filter != 0 && data != 0) {
+    /* set properties of the buffer according to convolution handle */
+    filter->splits = handle->desc.splits;
+    filter->ifmb = handle->blocksifm;
+    filter->bifm = handle->ifmblock;
+    filter->ofmb = handle->blocksofm;
+    filter->bofm = handle->ofmblock;
+    filter->R = handle->desc.R;
+    filter->S = handle->desc.S;
+    filter->format = in_format;
+    filter->datatype = handle->datatype;
+    if ( ((handle->filter_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_RSCK ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      filter->data = (void*)data;
+    } else {
+      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
+    filter = 0;
+  }
+
+  if (*status != LIBXSMM_DNN_SUCCESS) {
+    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
+    free((libxsmm_dnn_filter*)filter);
+    filter = 0;
+  }
+
+  return filter;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsmm_dnn_filter* filter)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_xfree(filter->data);
+    if ( (filter->format & LIBXSMM_DNN_CONV_FORMAT_PTR) == 0 ) {
+      libxsmm_xfree(filter->data);
+    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_filter*)filter);
   }
@@ -922,7 +1055,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_d
       && handle->ifmblock == buffer->bfm
       && handle->blocksifm == buffer->fmb
       && handle->datatype == buffer->datatype
-      && handle->buffer_format == buffer->format )
+      && ((handle->buffer_format & buffer->format) > 0) )
     {
       handle->input = (libxsmm_dnn_buffer*)buffer;
     }
@@ -950,7 +1083,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_
       && handle->ofhp == buffer->H
       && handle->ofmblock == buffer->bfm
       && handle->blocksofm == buffer->fmb
-      && handle->buffer_format == buffer->format
+      && ((handle->buffer_format & buffer->format) > 0)
       && ((handle->datatype == LIBXSMM_DNN_DATATYPE_FP32 && buffer->datatype == LIBXSMM_DNN_DATATYPE_FP32)
         || (buffer->datatype == LIBXSMM_DNN_DATATYPE_INT32)))
     {
@@ -981,6 +1114,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_con
       && handle->blocksifm == filter->ifmb
       && handle->ofmblock == filter->bofm
       && handle->blocksofm == filter->ofmb
+      && ((handle->filter_format & filter->format) > 0)
       && handle->datatype == filter->datatype)
     {
       handle->filter = (libxsmm_dnn_filter*)filter;
