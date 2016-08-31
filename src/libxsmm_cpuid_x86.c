@@ -94,6 +94,10 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
           else if (0xD0030000 == (0xD0030000 & ebx)) {
             target_arch = LIBXSMM_X86_AVX512_CORE;
           }
+          /* AVX512F(0x00010000), AVX512CD(0x10000000) */
+          else if (0x10010000 == (0x10010000 & ebx)) {
+            target_arch = LIBXSMM_X86_AVX512;
+          }
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
