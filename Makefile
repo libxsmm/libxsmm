@@ -552,8 +552,10 @@ endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
+ifeq (,$(filter environment% override command%,$(origin OMP)))
   EXTCFLAGS += $(OMPFLAG)
   EXTLDFLAGS += $(OMPFLAG)
+endif
 endif
 
 ifneq (0,$(MIC))
