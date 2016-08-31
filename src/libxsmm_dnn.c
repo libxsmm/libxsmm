@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
-#include "libxsmm_dnn_conv_fwd.h"
+#include "libxsmm_dnn_conv_fwd_custom.h"
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
 
