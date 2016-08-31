@@ -72,7 +72,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_csr_soa_descriptor {
 } libxsmm_csr_soa_descriptor;
 
 /** Structure which describes an activation layer. */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_activation {
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int N;                            /* number of images in mini-batch */
   int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
@@ -110,7 +110,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
-  libxsmm_dnn_conv_format format;
+  libxsmm_dnn_conv_format buffer_format;
+  libxsmm_dnn_conv_format filter_format;
   libxsmm_dnn_conv_fuse_ops fuse_ops;
 
   /* additional size for iternal data types */
@@ -128,9 +129,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int fwd_ofh_rb;
 
   /* internal data representation */
-  libxsmm_dnn_activation* input;
-  libxsmm_dnn_activation* output;
-  libxsmm_dnn_activation* input_relu;
+  libxsmm_dnn_buffer* input;
+  libxsmm_dnn_buffer* output;
+  libxsmm_dnn_buffer* input_relu;
   libxsmm_dnn_filter* filter;
   libxsmm_dnn_bias* bias;
   void* scratch;

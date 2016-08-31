@@ -238,8 +238,8 @@ int main(int argc, char* argv[])
 
   libxsmm_dnn_conv_desc conv_desc;
   libxsmm_dnn_conv_handle* libxsmm_handle;
-  libxsmm_dnn_activation* libxsmm_input;
-  libxsmm_dnn_activation* libxsmm_output;
+  libxsmm_dnn_buffer* libxsmm_input;
+  libxsmm_dnn_buffer* libxsmm_output;
   libxsmm_dnn_filter* libxsmm_filter;
   libxsmm_dnn_err_t status;
 
@@ -339,7 +339,8 @@ int main(int argc, char* argv[])
   conv_desc.pad_w_out = pad_w_out;
   conv_desc.splits = nSplits;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
-  conv_desc.format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
+  conv_desc.buffer_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
+  conv_desc.filter_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;
 
@@ -347,21 +348,21 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM layers */
-  libxsmm_input = libxsmm_dnn_create_input_activation_check( libxsmm_handle, &status );
+  libxsmm_input = libxsmm_dnn_create_input_buffer_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_create_output_activation_check( libxsmm_handle, &status );
+  libxsmm_output = libxsmm_dnn_create_output_buffer_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_DNN( status );
   libxsmm_filter = libxsmm_dnn_create_filter_check( libxsmm_handle, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_activation( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_activation( libxsmm_output ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter ) );
 
   /* bind layer to handle */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_activation( libxsmm_handle, libxsmm_input ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_activation( libxsmm_handle, libxsmm_output ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_buffer( libxsmm_handle, libxsmm_input ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_buffer( libxsmm_handle, libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
 
   printf("##########################################\n");
@@ -382,7 +383,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid, nthreads ) );
   }
   /* copy out data */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_activation( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
 
   /* compare */
   compare_buf(naive_output, naive_libxsmm_output, nImg*nOfm*ofhp*ofwp, &norms);
@@ -422,8 +423,8 @@ int main(int argc, char* argv[])
      (flops*1e-9)/l_total, norms.max_rel_err, norms.max_abs_err, norms.l2_rel_err, norms.one_norm_ref, norms.one_norm_test );
 
   /* clean-up */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_activation( libxsmm_input ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_activation( libxsmm_output ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_handle( libxsmm_handle ) );
 
