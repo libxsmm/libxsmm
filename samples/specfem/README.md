@@ -35,13 +35,13 @@ This example needs the LIBXSMM library to be built with static kernels, using MN
   - for Knights Corner (KNC) (and also creating Sandy Bridge version):
     ```
     make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
-    OFFLOAD=1 MIC=1
+    OFFLOAD=1 KNC=1
     ```
 
   - installing libraries into a sub-directory workstation/:
     ```
     make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
-    OFFLOAD=1 MIC=1 \
+    OFFLOAD=1 KNC=1 \
     PREFIX=workstation/ install-minimal
     ```
 
@@ -55,7 +55,7 @@ This example needs the LIBXSMM library to be built with static kernels, using MN
   - for Knights Corner (KNC):
     ```
     cd sample/specfem
-    make MIC=1
+    make KNC=1
     ```
 
   - additionally, adding some specific fortran compiler flags, for example:
@@ -71,7 +71,7 @@ Note that steps 1 & 2 could be shortened:
     ```
   - for Knights Corner, this would need two steps:
     ```
-    make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 OFFLOAD=1 MIC=1
+    make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 OFFLOAD=1 KNC=1
     make OPT=3 specfem_mic
     ```
 
@@ -168,13 +168,13 @@ Using Intel Compiler suite: icpc 15.0.2, icc 15.0.2, and ifort 15.0.2
 
 - library compilation by (root directory):
   ```
-  make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 OFFLOAD=1 MIC=1
+  make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 OFFLOAD=1 KNC=1
   ```
 
 - multi-threaded example run:
   ```
   cd sample/specfem
-  make FCFLAGS="-O3 -fopenmp -warn" OPT=3 MIC=1; ./specfem.sh -mic
+  make FCFLAGS="-O3 -fopenmp -warn" OPT=3 KNC=1; ./specfem.sh -mic
   ```
 
   Output:

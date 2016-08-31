@@ -76,7 +76,7 @@ DFLAGS += -DUSE_OPENMP
 endif
 
 # fixes library paths: substitutes path name from ../mkl/lib/intel64/.. to ../mkl/lib/mic/..
-ifneq (0,$(MIC))
+ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
 lib_intel := mkl/lib/intel64
 lib_mic := mkl/lib/mic
@@ -92,15 +92,15 @@ endif
 all: $(XFILES)
 
 $(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS)
-ifneq (0,$(MIC))
+ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
 	@echo ""
-	@echo "building MIC version"
+	@echo "building MIC/KNC version"
 	@echo ""
 	$(FC) -o $@ -mmic $(FTNOBJS) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS_MIC) $(FLDFLAGS) $(ELDFLAGS)
 endif
 endif
-ifeq (0,$(MIC))
+ifeq (0,$(KNC))
 ifeq (0,$(MPSS))
 	@echo ""
 	@echo "building host version"
@@ -155,7 +155,7 @@ $(BLDDIR)/compute_forces_xsmm_static-f90.o: $(BLDDIR)/specfem-f90.o
 ##
 ## rules
 ##
-ifneq (0,$(MIC))
+ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
@@ -164,7 +164,7 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
 endif
 endif
-ifeq (0,$(MIC))
+ifeq (0,$(KNC))
 ifeq (0,$(MPSS))
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@

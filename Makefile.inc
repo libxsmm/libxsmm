@@ -52,14 +52,14 @@ STATIC ?= 0
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
   MPSS ?= 1
-  MIC ?= 1
+  KNC ?= 1
 else
   MPSS ?= 0
-  MIC ?= 0
+  KNC ?= 0
 endif
 
 DEPDIR ?= $(ROOTDIR)
-ifeq (0,$(MIC))
+ifeq (0,$(KNC))
   LIBNAME ?= $(DEPDIR)/lib/libxsmm
 else ifneq (3,$(AVX))
   ifeq (0,$(OFFLOAD))
@@ -118,10 +118,10 @@ BLAS_STATIC ?= 1
 # Makefile defines what happens (perhaps nothing)
 NOBLAS ?= 0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
-  ifeq (0,$(BLAS))
-    DFLAGS += -D__BLAS=0
-    NOBLAS = 1
-  endif
+ifeq (0,$(BLAS))
+  DFLAGS += -D__BLAS=0
+  NOBLAS = 1
+endif
 endif
 
 ifeq (0,$(BLAS))
@@ -180,9 +180,9 @@ ifneq (0,$(INTEL))
     CXXFLAGS += -qno-offload
     CFLAGS += -qno-offload
     ifneq (,$(strip $(FC)))
-      ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
-        FCFLAGS += -qno-offload
-      endif
+    ifeq (ifort,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
+      FCFLAGS += -qno-offload
+    endif
     endif
   endif
   XLIB_BEGIN = -Wl,--as-needed
@@ -202,9 +202,9 @@ else
   endif
   ifneq (0,$(FORTRAN))
     ifneq (,$(strip $(FC)))
-      ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo "$$?"))
-        FC = $(shell which gfortran 2> /dev/null)
-      endif
+    ifneq (0,$(shell $(FC) --version > /dev/null 2> /dev/null; echo "$$?"))
+      FC = $(shell which gfortran 2> /dev/null)
+    endif
     endif
   else
     FC = $(shell which gfortran 2> /dev/null)
@@ -262,42 +262,42 @@ else
 endif
 
 ifneq (,$(strip $(FC)))
-  ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
-    ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-      ifneq (gfortran,$(notdir $(FC)))
-        FC = gfortran
-        FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
-        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
-        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-        ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
-        else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
-          FC_VERSION_PATCH = 0
-        else
-          FC_VERSION = 0
-        endif
-        ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
-          # keep FC_VERSION_STRING available for message about outdated compiler
-          FC_VERSION = 0
-          FC = $(NULL)
-          FORTRAN = 0
-        endif
-      else
-        # keep FC_VERSION_STRING available for message about outdated compiler
-        FC_VERSION = 0
-        FC = $(NULL)
-        FORTRAN = 0
-      endif
+ifeq (GNU,$(shell $(FC) --version 2> /dev/null | head -n1 | cut -d" " -f1))
+  ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+  ifneq (gfortran,$(notdir $(FC)))
+    FC = gfortran
+    FC_VERSION_STRING := $(shell $(FC) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+    FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
+    FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
+    FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
+    ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100 + $(FC_VERSION_PATCH)))")
+    else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR) * 10000 + $(FC_VERSION_MINOR) * 100))")
+      FC_VERSION_PATCH = 0
+    else
+      FC_VERSION = 0
     endif
-  else ifneq (0,$(INTEL))
-    ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
+      # keep FC_VERSION_STRING available for message about outdated compiler
       FC_VERSION = 0
       FC = $(NULL)
       FORTRAN = 0
     endif
+  else
+    # keep FC_VERSION_STRING available for message about outdated compiler
+    FC_VERSION = 0
+    FC = $(NULL)
+    FORTRAN = 0
   endif
+  endif
+else ifneq (0,$(INTEL))
+  ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
+    FC_VERSION = 0
+    FC = $(NULL)
+    FORTRAN = 0
+  endif
+endif
 endif
 
 # compiler names
@@ -355,8 +355,10 @@ ifneq (0,$(AVX))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
     SSE ?= 0
-    ifeq (1,$(words $(filter avx512er,$(CPUFLAGS))))
-      MIC = 1
+    ifneq (0,$(words $(filter avx512er,$(CPUFLAGS)))) # KNL
+      MIC ?= 1
+    else # SKX
+      MIC ?= 0
     endif
   else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
     AVX ?= 2
@@ -376,10 +378,8 @@ ifneq (0,$(SSE))
   else #ifeq (,$(SSE))
     SSE ?= 0
   endif
-else ifneq (0,$(MIC))
-  ifneq (3,$(AVX))
-    MPSS = 1
-  endif
+else ifneq (0,$(KNC))
+  MPSS = 1
 endif
 
 ifneq (0,$(INTEL))
@@ -451,71 +451,53 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(TRACE)
     ifneq (0,$(DEPSTATIC))
-      ifneq (Darwin,$(UNAME))
-        LDFLAGS += -Wl,--export-dynamic
-      endif
+    ifneq (Darwin,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
-    ifeq (0,$(COMPATIBLE))
-      ifeq (1,$(AVX))
-        CTARGET = -xAVX
-      else ifeq (2,$(AVX))
-        CTARGET = -xCORE-AVX2
-      else ifeq (3,$(AVX))
-        ifeq (0,$(MIC))
-          ifneq (file,$(origin MIC))
-            CTARGET = -xCORE-AVX512
-          else
-            CTARGET = -xCOMMON-AVX512
-          endif
+  ifeq (0,$(COMPATIBLE))
+    ifeq (3,$(AVX))
+      ifeq (0,$(MIC))
+        ifneq (file,$(origin MIC))
+          CTARGET = -xCORE-AVX512
         else
-          CTARGET = -xMIC-AVX512
+          CTARGET = -xCOMMON-AVX512
         endif
-      else ifneq (0,$(SSE))
-        ifeq (1,$(SSE)) # default
-          CTARGET = -xSSE3
-        else ifeq (3,$(SSE))
-          CTARGET = -xSSE3
-        else ifeq (4,$(SSE))
-          CTARGET = -xSSE4.2
-        else
-          CTARGET = -xSSE$(SSE)
-        endif
-      else ifneq (0,$(AVX))
-        CTARGET = -xHost
+      else
+        CTARGET = -xMIC-AVX512
+      endif
+    else ifeq (2,$(AVX))
+      CTARGET = -xCORE-AVX2
+    else ifeq (1,$(AVX))
+      CTARGET = -xAVX
+    else ifneq (0,$(SSE))
+      ifeq (1,$(SSE)) # default
+        CTARGET = -xSSE3
+      else ifeq (3,$(SSE))
+        CTARGET = -xSSE3
+      else ifeq (4,$(SSE))
+        CTARGET = -xSSE4.2
+      else
+        CTARGET = -xSSE$(SSE)
+      endif
+    else ifneq (0,$(AVX))
+      CTARGET = -xHost
+    endif
+  else ifeq (3,$(AVX))
+    ifneq (,$(MIC)) # specified
+      ifneq (0,$(MIC)) # MIC
+        CTARGET = -xMIC-AVX512
+      else # SKX
+        CTARGET = -xCORE-AVX512
       endif
     else
-      ifeq (1,$(AVX))
-        CTARGET = -mavx
-      else ifeq (2,$(AVX))
-        CTARGET = -march=core-avx2
-      else ifeq (3,$(AVX))
-        ifeq (0,$(MIC))
-          ifneq (file,$(origin MIC))
-            CTARGET = -xCORE-AVX512
-          else
-            CTARGET = -xCOMMON-AVX512
-          endif
-        else
-          CTARGET = -xMIC-AVX512
-        endif
-      else ifneq (0,$(SSE))
-        ifeq (1,$(SSE)) # default
-          CTARGET = -msse3
-        else ifeq (2,$(SSE))
-          # implicitly present (64-bit ABI)
-        else ifeq (3,$(SSE))
-          CTARGET = -msse3
-        else ifeq (4,$(SSE))
-          CTARGET = -msse4.2
-        else # perhaps better to use TARGET
-          CTARGET = -msse$(SSE)
-        endif
-      else ifneq (0,$(AVX))
-        CTARGET = -march=native
-      endif
+      CTARGET = -xCOMMON-AVX512
     endif
+  else ifeq (2,$(AVX))
+    CTARGET = -march=core-avx2
+  endif
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -559,9 +541,9 @@ ifneq (0,$(INTEL))
     SLDFLAGS += -static
   endif
   ifneq (,$(strip $(R8)))
-    ifneq (0,$(R8))
-      FCFLAGS += -autodouble
-    endif
+  ifneq (0,$(R8))
+    FCFLAGS += -autodouble
+  endif
   endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
@@ -670,47 +652,14 @@ else # GCC assumed
       endif
     endif
     ifneq (0,$(DEPSTATIC))
-      ifneq (Darwin,$(UNAME))
-        LDFLAGS += -Wl,--export-dynamic
-      endif
+    ifneq (Darwin,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
     ifeq (Windows_NT,$(UNAME))
       LDFLAGS += -ldbghelp
     endif
     DFLAGS += -D__TRACE=$(TRACE)
-  endif
-  ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
-    ifeq (1,$(AVX))
-      CTARGET = -mavx
-    else ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
-      ifeq (3,$(AVX))
-        ifeq (0,$(shell $(CC) -E -mavx512f - < /dev/null 2>&1 > /dev/null ; echo $$?))
-          CTARGET = -mavx512f -mavx512cd
-          ifneq (0,$(MIC))
-            TARGET += -mavx512er -mavx512pf
-          endif
-        endif
-      endif
-      ifeq (,$(CTARGET)) # fall-back to AVX2
-        CTARGET = -mavx2
-      endif
-    else ifneq (0,$(SSE))
-      ifeq (1,$(SSE)) # default
-        ifneq (0,$(GCC)) # GCC (not Clang)
-          CTARGET = -msse3
-        else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
-          CTARGET = -msse4.2
-        endif
-      else ifeq (2,$(SSE))
-        # implicitly present (64-bit ABI)
-      else ifeq (4,$(SSE))
-        CTARGET = -msse4.2
-      else # perhaps better to use TARGET
-        CTARGET = -msse$(SSE)
-      endif
-    else ifneq (0,$(AVX))
-      CTARGET = -march=native
-    endif
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -778,12 +727,51 @@ else # GCC assumed
     endif
   endif
   ifneq (,$(strip $(R8)))
-    ifneq (0,$(R8))
-      FCFLAGS += -fdefault-real-8 -fdefault-double-8
-    endif
+  ifneq (0,$(R8))
+    FCFLAGS += -fdefault-real-8 -fdefault-double-8
   endif
-  OFFLOAD = 0
-  MIC = 0
+  endif
+endif
+
+ifeq (,$(CTARGET))
+ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
+  ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
+    ifeq (3,$(AVX))
+    ifeq (0,$(shell $(CC) -E -mavx512f - < /dev/null 2>&1 > /dev/null ; echo $$?))
+      CTARGET = -mavx512f -mavx512cd
+      ifneq (,$(MIC)) # specified
+        ifneq (0,$(MIC)) # MIC
+          CTARGET += -mavx512pf -mavx512er
+        else # SKX
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          #CTARGET += -mavx512ifma -mavx512vbmi
+        endif
+      endif
+    endif
+    endif
+    ifeq (,$(CTARGET)) # fall-back to AVX2
+      CTARGET = -mavx2
+    endif
+  else ifeq (1,$(AVX))
+    CTARGET = -mavx
+  else ifneq (0,$(SSE))
+    ifeq (1,$(SSE)) # default
+      ifneq (0,$(GCC)) # GCC (not Clang)
+        CTARGET = -msse3
+      else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
+        CTARGET = -msse4.2
+      endif
+    else ifeq (2,$(SSE))
+      # implicitly present (64-bit ABI)
+    else ifeq (4,$(SSE))
+      CTARGET = -msse4.2
+    else # perhaps better to use TARGET flag directly
+      CTARGET = -msse$(SSE)
+    endif
+  else ifneq (0,$(AVX))
+    CTARGET = -march=native
+  endif
+endif
 endif
 
 # Take user's TARGET request into account
@@ -791,9 +779,9 @@ ifneq (undefined,$(origin TARGET))
   CTARGET = $(TARGET)
 endif
 ifneq (,$(strip $(FC)))
-  ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
-    FTARGET = $(CTARGET)
-  endif
+ifeq (0,$(shell $(FC) -E $(CTARGET) - < /dev/null 2>&1 > /dev/null ; echo $$?))
+  FTARGET = $(CTARGET)
+endif
 endif
 
 # Information which can be displayed by the actual Makefile
@@ -833,9 +821,9 @@ endif
 
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
-  ifneq (0,$(ILP64))
-    MAKE_ILP64 = $(ILP64)
-  endif
+ifneq (0,$(ILP64))
+  MAKE_ILP64 = $(ILP64)
+endif
 endif
 ifneq (0,$(MAKE_ILP64))
   BLAS_BITS = 64
@@ -925,12 +913,12 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(INTEL))
     ifeq (0,$(OMP))
-      ifneq (,$(strip $(OMPLIB)))
-        LDFLAGS += -l$(OMPLIB)
-        ifneq (0,$(OFFLOAD))
-          LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
-        endif
+    ifneq (,$(strip $(OMPLIB)))
+      LDFLAGS += -l$(OMPLIB)
+      ifneq (0,$(OFFLOAD))
+        LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
       endif
+    endif
     endif
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
@@ -954,9 +942,9 @@ else ifneq (0,$(BLAS)) # generic
       LDFLAGS += -lblas$(BLAS_BITS).dll
     endif
     ifneq (0,$(STATIC))
-      ifneq (,$(LIBGFORTRAN))
-        CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
-      endif
+    ifneq (,$(LIBGFORTRAN))
+      CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
+    endif
     endif
     QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
     ifneq (0,$(QUADMATH))
