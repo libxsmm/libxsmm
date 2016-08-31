@@ -232,12 +232,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.kw = conv_desc.S;
         descriptor.stride_h = conv_desc.u;
         descriptor.stride_w = conv_desc.v;
+        descriptor.blocks_ofm = handle->blocksofm;
+        descriptor.blocks_ifm = handle->blocksifm;
         descriptor.ofm_block = handle->ofmblock;
         descriptor.ifm_block = handle->ifmblock;
         descriptor.ofh_padded = handle->ofhp;
         descriptor.ofw_padded = handle->ofwp;
         descriptor.ofh_rb = handle->fwd_ofh_rb;
         descriptor.ofw_rb = handle->fwd_ofw_rb;
+        descriptor.format = handle->buffer_format & handle->filter_format;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         /* TODO check JIT errors */
         handle->code_fwd[0].sconv = libxsmm_create_sconv_forward(&descriptor);

@@ -88,24 +88,6 @@ typedef enum libxsmm_dnn_conv_fuse_ops {
 #endif
 } libxsmm_dnn_conv_fuse_ops;
 
-typedef enum libxsmm_dnn_conv_format{
-  /* use LIBXSMM internal format, we need to copy data into that */
-  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM = 1,
-  /* use NHWC format internally, this allows no-copy operations */
-  LIBXSMM_DNN_CONV_FORMAT_NHWC = 2,
-  /* use NCHW format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_CONV_FORMAT_NCHW = 4,
-  /* use RSCK format internally, this allows no-copy operations  */
-  LIBXSMM_DNN_CONV_FORMAT_RSCK = 8,
-  /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_CONV_FORMAT_KCRS = 16,
-  /* use ptr copy when copying in -> no copy takes place, this is just an additional option */
-  LIBXSMM_DNN_CONV_FORMAT_PTR = 32,
-  /* now some combinded types */
-  LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_PTR,
-  LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR = LIBXSMM_DNN_CONV_FORMAT_RSCK | LIBXSMM_DNN_CONV_FORMAT_PTR
-} libxsmm_dnn_conv_format;
-
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
   /** let the library decide */

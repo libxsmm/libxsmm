@@ -136,6 +136,26 @@ typedef enum libxsmm_convolution_prefetch_type {
   LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L1_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2
 } libxsmm_convolution_prefetch_type;
 
+
+typedef enum libxsmm_dnn_conv_format{
+  /* use LIBXSMM internal format, we need to copy data into that */
+  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM = 1,
+  /* use NHWC format internally, this allows no-copy operations */
+  LIBXSMM_DNN_CONV_FORMAT_NHWC = 2,
+  /* use NCHW format internally, this will include shadow copies, not preferred */
+  LIBXSMM_DNN_CONV_FORMAT_NCHW = 4,
+  /* use RSCK format internally, this allows no-copy operations  */
+  LIBXSMM_DNN_CONV_FORMAT_RSCK = 8,
+  /* use KCRS format internally, this will include shadow copies, not preferred */
+  LIBXSMM_DNN_CONV_FORMAT_KCRS = 16,
+  /* use ptr copy when copying in -> no copy takes place, this is just an additional option */
+  LIBXSMM_DNN_CONV_FORMAT_PTR = 32,
+  /* now some combinded types */
+  LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_PTR,
+  LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR = LIBXSMM_DNN_CONV_FORMAT_RSCK | LIBXSMM_DNN_CONV_FORMAT_PTR
+} libxsmm_dnn_conv_format;
+
+
 /**
  * Structure storing the convolution argument description.
  */
@@ -144,6 +164,8 @@ typedef struct libxsmm_convolution_forward_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kh;                       /* kernel height, unrolled */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int blocks_ofm;
+  unsigned int blocks_ifm;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
   unsigned int ofh_padded;                      /* this we need for 2D register block */
@@ -154,6 +176,7 @@ typedef struct libxsmm_convolution_forward_descriptor {
   unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
+  libxsmm_dnn_conv_format format;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
@@ -163,6 +186,8 @@ typedef struct libxsmm_convolution_forward_descriptor {
 typedef struct libxsmm_convolution_backward_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int blocks_ofm;
+  unsigned int blocks_ifm;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
   unsigned int ofh_padded;                      /* this we need for 2D register block */
@@ -182,6 +207,7 @@ typedef struct libxsmm_convolution_backward_descriptor {
 
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
+  libxsmm_dnn_conv_format format;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
 /**
@@ -190,6 +216,8 @@ typedef struct libxsmm_convolution_backward_descriptor {
 typedef struct libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int blocks_ofm;
+  unsigned int blocks_ifm;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
   unsigned int ofh_padded;                      /* this we need for 2D register block */
@@ -207,6 +235,7 @@ typedef struct libxsmm_convolution_weight_update_descriptor {
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
 
+  libxsmm_dnn_conv_format format;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 #endif /*LIBXSMM_TYPEDEFS_H*/
