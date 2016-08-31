@@ -792,7 +792,7 @@ else
   GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
   FINFO = Fortran: <none>
 endif
-CINFO = C & C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
+CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
   LIBRT = -lrt
