@@ -82,7 +82,7 @@
 #if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/)
 # define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
 #endif
-#if 0/*no scheme yet using C*/
+#if 0 != ((LIBXSMM_PREFETCH) & 32/*CL2*/)
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
 #endif
 #endif

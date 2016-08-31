@@ -37,7 +37,7 @@
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__)
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
-    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION))
+    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
 #else
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
     int libxsmm_cpuid_x86_[4]; \
@@ -94,6 +94,10 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
           else if (0xD0030000 == (0xD0030000 & ebx)) {
             target_arch = LIBXSMM_X86_AVX512_CORE;
           }
+          /* AVX512F(0x00010000), AVX512CD(0x10000000) */
+          else if (0x10010000 == (0x10010000 & ebx)) {
+            target_arch = LIBXSMM_X86_AVX512;
+          }
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
           if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
@@ -112,7 +116,7 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   assert(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
 #endif
 
-  return target_arch;
+  return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 
 #endif /* LIBXSMM_CPUID_X86_C */
