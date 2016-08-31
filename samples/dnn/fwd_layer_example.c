@@ -124,6 +124,63 @@ LIBXSMM_INLINE void compare_buf(float* ref, float* test, long size, correctness_
   norms->l2_rel_err = sqrt(norms->l2_rel_err);
 }
 
+
+LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int N, int H, int W, int C)
+{
+  int n, h, w, c;
+#if defined(LIBXSMM_VLA)
+  typedef float (*LIBXSMM_RESTRICT  input_type)[C][H][W];
+  typedef float (*LIBXSMM_RESTRICT  output_type)[H][W][C];
+
+  const input_type   input_t =  (input_type)nchw;
+  const output_type output_t = (output_type)nhwc;
+#else
+#error VLA is needed to run the convolution example
+#endif
+  for ( n = 0; n < N; n++ ) {
+    for ( h = 0; h < H; h++ ) {
+      for ( w = 0; w < W; w++ ) {
+        for ( c = 0; c < C; c++ ) {
+#if defined(LIBXSMM_VLA)
+          output_t[n][h][w][c] = input_t[n][c][h][w];
+#else
+#error VLA is needed to run the convolution example
+#endif
+        }
+      }
+    }
+  }
+}
+
+
+LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K) 
+{
+  int r, s, c, k;
+#if defined(LIBXSMM_VLA)
+  typedef float (*LIBXSMM_RESTRICT  input_type)[C][R][S];
+  typedef float (*LIBXSMM_RESTRICT  output_type)[S][C][K];
+
+  const input_type   input_t =  (input_type)kcrs;
+  const output_type output_t = (output_type)rsck;
+#else
+#error VLA is needed to run the convolution example
+#endif
+  for ( r = 0; r < R; r++ ) {
+    for ( s = 0; s < S; s++ ) {
+      for ( c = 0; c < C; c++ ) {
+        for ( k = 0; k < K; k++ ) {
+#if defined(LIBXSMM_VLA)
+          output_t[r][s][c][k] = input_t[k][c][r][s];
+#else
+#error VLA is needed to run the convolution example
+#endif
+        }
+      }
+    }
+  }
+}
+
+
 LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float* output, const float* filter)
 {
   int nImg      = param->nImg;
@@ -206,6 +263,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_filter, *naive_libxsmm_output;
+  float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc; 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
@@ -298,7 +356,7 @@ int main(int argc, char* argv[])
 
   /* print some summary */
   printf("##########################################\n");
-  printf("#        Setting Up forward-prop         #\n");
+  printf("#    Setting Up forward-prop (Common)    #\n");
   printf("##########################################\n");
   printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  STRIDE:%d\n", ifw, ifh, nImg, nIfm, nOfm, kw, kh, stride);
   printf("PARAMS: ITERS:%d  Threads:%d\n", iters, nThreads);
@@ -311,16 +369,28 @@ int main(int argc, char* argv[])
   printf("SIZE Weight     : %10.2f MiB\n", (double)(nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
-  naive_input =          (float*)malloc(nImg*nIfm*ifhp*ifwp*sizeof(float));
-  naive_output =         (float*)malloc(nImg*nOfm*ofhp*ofwp*sizeof(float));
-  naive_libxsmm_output = (float*)malloc(nImg*nOfm*ofhp*ofwp*sizeof(float));
-  naive_filter =         (float*)malloc(nOfm*nIfm*kh*kw*    sizeof(float));
+  posix_memalign( (void**) &naive_input,          2097152, nImg*nIfm*ifhp*ifwp*sizeof(float) );
+  posix_memalign( (void**) &naive_output,         2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
+  posix_memalign( (void**) &naive_libxsmm_output, 2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
+  posix_memalign( (void**) &naive_filter,         2097152, nOfm*nIfm*kh*kw*    sizeof(float) );
+  posix_memalign( (void**) &input_nhwc,           2097152, nImg*nIfm*ifhp*ifwp*sizeof(float) );
+  posix_memalign( (void**) &output_nhwc,          2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
+  posix_memalign( (void**) &naive_output_nhwc,    2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
+  posix_memalign( (void**) &filter_rsck,          2097152, nOfm*nIfm*kh*kw*    sizeof(float) );
 
   /* init data */
   init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   zero_buf(naive_output,         nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   init_buf(naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
+  naive_copy_NCHW_to_NHWC(naive_input, input_nhwc, nImg, ifhp, ifwp, nIfm);
+  zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
+  zero_buf(naive_output_nhwc,    nImg*nOfm*ofhp*ofwp);
+  naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
+
+  printf("##########################################\n");
+  printf("#     Setting Up   (LIBXSMM-Storage)     #\n");
+  printf("##########################################\n");
 
   /* setup LIBXSMM handle */
   conv_desc.N = nImg;
@@ -366,7 +436,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
 
   printf("##########################################\n");
-  printf("#           Check Correctness            #\n");
+  printf("#  Check Correctness  (LIBXSMM-Storage)  #\n");
   printf("##########################################\n");
   /* run naive convolution */
   naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter);
@@ -393,7 +463,7 @@ int main(int argc, char* argv[])
   printf("    inf-norm of comp. rel. error: %f\n", norms.max_rel_err);
   printf("    inf-norm of comp. abs. error: %f\n", norms.max_abs_err);
   printf("##########################################\n");
-  printf("#            Performance Run             #\n");
+  printf("#   Performance Run  (LIBXSMM-Storage)   #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
   l_start = libxsmm_timer_tick();
@@ -427,6 +497,22 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_handle( libxsmm_handle ) );
+
+
+  printf("##########################################\n");
+  printf("#    Setting Up   (NHWC/RSCK-Storage)    #\n");
+  printf("##########################################\n");
+
+
+  printf("##########################################\n");
+  printf("# Check Correctness  (NHWC/RSCK-Storage) #\n");
+  printf("##########################################\n");
+
+
+  printf("##########################################\n");
+  printf("#  Performance Run  (NHWC/RSCK-Storage)  #\n");
+  printf("##########################################\n");
+
 
   return 0;
 }
