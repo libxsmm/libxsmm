@@ -37,7 +37,7 @@
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__)
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
-    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION))
+    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
 #else
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
     int libxsmm_cpuid_x86_[4]; \
@@ -116,7 +116,7 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   assert(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
 #endif
 
-  return target_arch;
+  return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 
 #endif /* LIBXSMM_CPUID_X86_C */
