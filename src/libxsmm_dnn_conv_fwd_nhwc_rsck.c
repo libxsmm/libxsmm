@@ -53,7 +53,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-  #error non-VLA is not support for NHWC RSCK
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error non-VLA is not support for NHWC RSCK
   const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
   const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
   element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
@@ -63,6 +66,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = (thr_end - thr_begin) / handle->blocksofm;
   wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = (thr_end - thr_begin) % handle->blocksofm;
   oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
+# endif
 #endif
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
     img = imgofm1 / handle->blocksofm;
@@ -79,7 +83,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 #if defined(LIBXSMM_VLA)
                   output[img][oj][oi][ofm1][ofm2] += input[img][ij+kj][ii+ki][ifm1][ifm2] * weight[kj][ki][ifm1][ifm2][ofm1][ofm2];
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-#error non-VLA is not supported for NHWC RSCK
+# if defined(_MSC_VER)
+                  assert(0/*TODO*/);
+# else
+#                 error non-VLA is not supported for NHWC RSCK
                   size_t i, w, o;
                   indexi[0] = ifm2; indexi[1] = ii + ki; indexi[2] = ij + kj; indexi[3] = ifm1; indexi[4] = img;
                   indexw[0] = ofm2; indexw[1] = ifm2; indexw[2] = ki; indexw[3] = kj; indexw[4] = ifm1; indexw[5] = ofm1;
@@ -88,6 +95,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
                   LIBXSMM_CALC_INDEX1(size_t, w, 6, indexw, wshape);
                   LIBXSMM_CALC_INDEX1(size_t, o, 5, indexo, oshape);
                   output[o] += input[i] * weight[w];
+# endif
 #endif
                 }
               }
@@ -131,7 +139,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-  #error non-VLA is not support for NHWC RSCK
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error non-VLA is not support for NHWC RSCK
   const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
   const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
   element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
@@ -141,6 +152,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = (thr_end - thr_begin) / handle->blocksofm;
   wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = (thr_end - thr_begin) % handle->blocksofm;
   oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
+# endif
 #endif
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
     img = imgofm1/handle->blocksofm;
@@ -155,7 +167,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
           l_wt = &(weight[0][0][ifm1][0][ofm1][0]);
           l_output = &(output[img][oj][oi][ofm1][0]);
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-#error non-VLA is not support for NHWC RSCK
+# if defined(_MSC_VER)
+          assert(0/*TODO*/);
+# else
+#         error non-VLA is not support for NHWC RSCK
           indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
           indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
           indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
@@ -168,6 +183,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
             l_wt = weight + w;
             l_output = output + o;
           }
+# endif
 #endif
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
           /* check we are not at the end */
@@ -176,13 +192,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
               &(input[img][(oj+handle->fwd_ofh_rb)*handle->desc.u][ii][ifm1][0]), NULL, &(output[img][oj+handle->fwd_ofh_rb][oi][ofm1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+            assert(0/*TODO*/);
+#   else
+#           error non-VLA is not support for NHWC RSCK
             size_t pi, po;
             indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofh_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
             indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
             LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
             LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
+#   endif
 # endif
           }
           else {
@@ -191,7 +211,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
               jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
                 &(input[img+1][0][0][0][0]), &(weight[0][0][0][0][0][0]), &(output[img+1][0][0][0][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+              assert(0/*TODO*/);
+#   else
+#             error non-VLA is not support for NHWC RSCK
               size_t pi, pw, po;
               indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img + 1;
               /*indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = 0;*/
@@ -200,6 +223,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
               pw = 0;/*LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);*/
               LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
               jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
+#   endif
 # endif
             }
             else {
@@ -208,7 +232,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
                   &(input[img][0][0][0][0]), &(weight[0][0][0][0][ofm1+1][0]), &(output[img][0][0][ofm1+1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+                assert(0/*TODO*/);
+#   else
+#               error non-VLA is not support for NHWC RSCK
                 size_t pi, pw, po;
                 indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img;
                 indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = ofm1 + 1;
@@ -217,6 +244,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
                 LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
                 LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
+#   endif
 # endif
               }
               else {
@@ -224,7 +252,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
                   &(input[img][0][0][ifm1+1][0]), &(weight[0][0][ifm1+1][0][ofm1][0]), &(output[img][0][0][ofm1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+                assert(0/*TODO*/);
+#   else
+#               error non-VLA is not support for NHWC RSCK
                 size_t pi, pw, po;
                 indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
                 indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
@@ -233,6 +264,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
                 LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
                 LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
+#   endif
 # endif
               }
             }
@@ -285,7 +317,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   const weight_data_type weight = (weight_data_type)wtp;
   const output_data_type output = (output_data_type)outp;
 #else
-#error non-VLA is not support for NHWC RSCK
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error non-VLA is not support for NHWC RSCK
   const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
   const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
   element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
@@ -295,6 +330,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = num_threads / handle->blocksofm;
   wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = num_threads % handle->blocksofm;
   oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
+# endif
 #endif
   /* avoid ouf of bounds (dirty) */
   start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
@@ -308,7 +344,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
         l_wt = &(weight[0][0][ifm1][0][ofm1][0]);
         l_output = &(output[img][oj][oi][ofm1][0]);
 #else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-#error non-VLA is not support for NHWC RSCK
+# if defined(_MSC_VER)
+        assert(0/*TODO*/);
+# else
+#       error non-VLA is not support for NHWC RSCK
         indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
         indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
         indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
@@ -320,6 +359,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
           LIBXSMM_CALC_INDEX1(size_t, index1, 5, indexo, oshape);
           l_output = output + index1;
         }
+# endif
 #endif
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
         /* check we are not at the end, we prefetch inside the image */
@@ -328,13 +368,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
           jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
             &(input[img][ij][(oi+handle->fwd_ofw_rb)*handle->desc.v][ifm1][0]), NULL, &(output[img][oj][oi+handle->fwd_ofw_rb][ofm1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+          assert(0/*TODO*/);
+#   else
+#         error non-VLA is not support for NHWC RSCK
           size_t pi, po;
           indexi[0] = 0; indexi[1] = (oi + handle->fwd_ofw_rb) * handle->desc.v; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
           indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
           LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
           LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
           jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
+#   endif
 # endif
         }
         else {
@@ -343,13 +387,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
               &(input[img][(oj+handle->fwd_ofw_rb)*handle->desc.u][ii][ifm1][0]), NULL, &(output[img][oj+handle->fwd_ofw_rb][oi][ofm1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+            assert(0/*TODO*/);
+#   else
+#           error non-VLA is not support for NHWC RSCK
             size_t pi, po;
             indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofw_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
             indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofw_rb; indexo[3] = ofm1; indexo[4] = img;
             LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
             LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
+#   endif
 # endif
           }
           else {
@@ -357,7 +405,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
             jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
               &(input[img][0][0][ifm1+1][0]), &(weight[0][0][ifm1+1][0][ofm1][0]), &(output[img][0][0][ofm1][0]));
 # else
-#error non-VLA is not support for NHWC RSCK
+#   if defined(_MSC_VER)
+            assert(0/*TODO*/);
+#   else
+#           error non-VLA is not support for NHWC RSCK
             size_t pi, pw, po;
             indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
             indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
@@ -366,6 +417,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
             LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
             LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
             jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
+#   endif
 # endif
           }
         }
