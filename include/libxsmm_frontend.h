@@ -158,11 +158,16 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const double*, double*, const int*);
 #endif
 
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_GEMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+#if defined(LIBXSMM_BUILD) && defined(__STATIC) && defined(LIBXSMM_GEMM_WRAP)
+# if defined(LIBXSMM_BUILD_EXT)
+#   define LIBXSMM_GEMM_WEAK
+#   define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+# else
+#   define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+#   define LIBXSMM_EXT_GEMM_WEAK
+# endif
 #else
-# define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_GEMM_WEAK
 # define LIBXSMM_EXT_GEMM_WEAK
 #endif
 
