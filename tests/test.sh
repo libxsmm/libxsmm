@@ -78,7 +78,7 @@ done
 WORKAROUND="DBG=0"
 
 # selected build-only tests that do not run anything
-# below case do not actually depend on LAPACK/BLAS
+# below cases do not actually depend on LAPACK/BLAS
 #
 if [ "Windows_NT" != "${OS}" ]; then
   CWD=${PWD}
