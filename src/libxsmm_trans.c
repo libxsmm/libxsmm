@@ -34,6 +34,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <stdlib.h>
 #if !defined(NDEBUG)
 # include <stdio.h>
 #endif
@@ -69,61 +70,92 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT 
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_otrans(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  LIBXSMM_INIT
+  int result = EXIT_SUCCESS;
 #if !defined(NDEBUG) /* library code is expected to be mute */
-  if (ld < m && ldo < n) {
-    fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
-  }
-  else if (ld < m) {
-    fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
-  }
-  else if (ldo < n) {
-    fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
-  }
+  static LIBXSMM_TLS int trans_error = 0;
 #endif
-  internal_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+  LIBXSMM_INIT
+
+  if (ld >= m && ldo >= n) {
+    if (out != in) {
+      internal_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+    }
+    else if (ld == ldo) {
+      libxsmm_itrans(out, typesize, m, n, ld);
+    }
+    else {
+#if !defined(NDEBUG) /* library code is expected to be mute */
+      if (0 == trans_error) {
+        fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
+        trans_error = 1;
+      }
+#endif
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+#if !defined(NDEBUG) /* library code is expected to be mute */
+    if (0 == trans_error) {
+      if (ld < m && ldo < n) {
+        fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
+      }
+      else if (ld < m) {
+        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
+      }
+      else {
+        assert(ldo < n);
+        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
+      }
+      trans_error = 1;
+    }
+#endif
+    result = EXIT_FAILURE;
+  }
+
+  return result;
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_itrans(void* inout, unsigned int typesize,
+LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
   LIBXSMM_UNUSED(inout); LIBXSMM_UNUSED(typesize); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(ld);
-  assert(0/*Not yet implemented!*/);
+  assert(0/*TODO: not yet implemented!*/);
   LIBXSMM_INIT
+  return EXIT_FAILURE;
 }
 
 
 #if defined(LIBXSMM_BUILD)
 
-LIBXSMM_API_DEFINITION void libxsmm_sotrans(float* out, const float* in,
+LIBXSMM_API_DEFINITION int libxsmm_sotrans(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo);
+  return libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dotrans(double* out, const double* in,
+LIBXSMM_API_DEFINITION int libxsmm_dotrans(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  libxsmm_otrans(out, in, sizeof(double), m, n, ld, ldo);
+  return libxsmm_otrans(out, in, sizeof(double), m, n, ld, ldo);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_sitrans(float* inout,
+LIBXSMM_API_DEFINITION int libxsmm_sitrans(float* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  libxsmm_itrans(inout, sizeof(float), m, n, ld);
+  return libxsmm_itrans(inout, sizeof(float), m, n, ld);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_ditrans(double* inout,
+LIBXSMM_API_DEFINITION int libxsmm_ditrans(double* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-  libxsmm_itrans(inout, sizeof(double), m, n, ld);
+  return libxsmm_itrans(inout, sizeof(double), m, n, ld);
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

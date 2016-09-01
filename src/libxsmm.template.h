@@ -134,59 +134,59 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descr
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
 
 /** Matrix transposition (out-of-place form). */
-LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, single-precision). */
-LIBXSMM_API_INLINE void libxsmm_sotrans(float* out, const float* in,
+LIBXSMM_API_INLINE int libxsmm_sotrans(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo); }
+{ return libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo); }
 #endif
 
 /** Matrix transposition (out-of-place form, double-precision). */
-LIBXSMM_API_INLINE void libxsmm_dotrans(double* out, const double* in,
+LIBXSMM_API_INLINE int libxsmm_dotrans(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ libxsmm_otrans(out, in, sizeof(double), m, n, ld, ldo); }
+{ return libxsmm_otrans(out, in, sizeof(double), m, n, ld, ldo); }
 #endif
 
 /** Matrix transposition, which is multi-threadable using libxsmmext (out-of-place form). */
-LIBXSMM_API void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition, which is multi-threadable (out-of-place form, single-precision). */
-LIBXSMM_API void libxsmm_sotrans_omp(float* out, const float* in,
+LIBXSMM_API int libxsmm_sotrans_omp(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition, which is multi-threadable (out-of-place form, double-precision). */
-LIBXSMM_API void libxsmm_dotrans_omp(double* out, const double* in,
+LIBXSMM_API int libxsmm_dotrans_omp(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo);
 
 /** Matrix transposition (in-place form). */
-LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
+LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, single-precision). */
-LIBXSMM_API_INLINE void libxsmm_sitrans(float* inout,
+LIBXSMM_API_INLINE int libxsmm_sitrans(float* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ libxsmm_itrans(inout, sizeof(float), m, n, ld); }
+{ return libxsmm_itrans(inout, sizeof(float), m, n, ld); }
 #endif
 
 /** Matrix transposition (in-place form, double-precision). */
-LIBXSMM_API_INLINE void libxsmm_ditrans(double* inout,
+LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ libxsmm_itrans(inout, sizeof(double), m, n, ld); }
+{ return libxsmm_itrans(inout, sizeof(double), m, n, ld); }
 #endif
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
@@ -346,42 +346,42 @@ public:
 };
 
 /** Matrix transposition (out-of-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
-  libxsmm_otrans(out, in, sizeof(T), m, n, ld, ldo);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
+  return libxsmm_otrans(out, in, sizeof(T), m, n, ld, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
-  libxsmm_trans(out, in, m, n, ld, ld);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
+  return libxsmm_trans(out, in, m, n, ld, ld);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
-  libxsmm_trans(out, in, m, n, m);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_trans(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* out, const T* in, libxsmm_blasint n) {
-  libxsmm_trans(out, in, n, n);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_trans(out, in, n, n);
 }
 
 /** Matrix transposition, which is multi-threadable (out-of-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
-  libxsmm_otrans(out, in, sizeof(T), m, n, ld, ldo);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo) {
+  return libxsmm_otrans(out, in, sizeof(T), m, n, ld, ldo);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
-  libxsmm_trans_omp(out, in, m, n, ld, ld);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
+  return libxsmm_trans_omp(out, in, m, n, ld, ld);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
-  libxsmm_trans_omp(out, in, m, n, m);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_trans_omp(out, in, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint n) {
-  libxsmm_trans_omp(out, in, n, n);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_trans_omp(out, in, n, n);
 }
 
 /** Matrix transposition (in-place form). */
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* inout, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
-  libxsmm_itrans(inout, sizeof(T), m, n, ld);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld) {
+  return libxsmm_itrans(inout, sizeof(T), m, n, ld);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* inout, libxsmm_blasint m, libxsmm_blasint n) {
-  libxsmm_trans(inout, m, n, m);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_trans(inout, m, n, m);
 }
-template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE void libxsmm_trans(T* inout, libxsmm_blasint n) {
-  libxsmm_trans(inout, n, n);
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* inout, libxsmm_blasint n) {
+  return libxsmm_trans(inout, n, n);
 }
 
 /** Dispatched general dense matrix multiplication (single-precision). */
