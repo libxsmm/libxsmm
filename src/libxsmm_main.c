@@ -1070,7 +1070,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
 # endif
         {
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_sfwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i.conv", target_arch/*code path name*/,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_sfwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv", target_arch/*code path name*/,
             (unsigned int)request->descriptor.cfwd->kw/*kernel width*/, (unsigned int)request->descriptor.cfwd->kh/*kernel height*/,
             (unsigned int)request->descriptor.cfwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cfwd->unroll_kh/*height*/,
             (int)request->descriptor.cfwd->stride_w/*input offset*/, (int)request->descriptor.cfwd->stride_h/*output offsets*/,
@@ -1080,7 +1080,8 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             (unsigned int)request->descriptor.cfwd->ofh_padded/*2D register block*/,
             (unsigned int)request->descriptor.cfwd->ofw_rb/*register block ofw*/,
             (unsigned int)request->descriptor.cfwd->ofh_rb/*register block ofh*/,
-            (int)request->descriptor.cfwd->prefetch/*binary OR'd prefetch flags*/);
+            (int)request->descriptor.cfwd->prefetch/*binary OR'd prefetch flags*/,
+            (int)request->descriptor.cfwd->format/*binary OR'd format flags*/);
         }
       }
     } break;

@@ -276,6 +276,10 @@ typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
   char vector_name;
+  unsigned int l_ld_ifm_act;
+  unsigned int l_ld_ofm_act;
+  unsigned int l_ld_ifm_fil;
+  unsigned int l_ld_ofm_fil;
 } libxsmm_convolution_kernel_config;
 
 /* struct for storing the current gp reg mapping for convolution */

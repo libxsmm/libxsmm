@@ -104,7 +104,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 {
   typedef float element_type;
   const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((const element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->blocksofm;
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
   /* computing first logical thread */
   const int ltid = tid-start_thread;
@@ -251,7 +251,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 {
   typedef float element_type;
   const element_type *const inp = ((element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->blocksofm;
   int ifm1, oj, ij, oi, ii;
   /* calculate local thread ids */
   const int ltid = tid - start_thread;
@@ -389,9 +389,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
   }
 
   /* check if we have a kernel JITed */
-#if 0
   if (handle->code_fwd[0].sconv == 0) {
-#endif
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
@@ -407,7 +405,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
         return status;
       }
     }
-#if 0
   } else {
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_FP32: {
@@ -430,7 +427,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
       }
     }
   }
-#endif
 
   return status;
 }

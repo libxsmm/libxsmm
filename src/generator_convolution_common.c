@@ -190,6 +190,8 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb * l_reg_per_block);
   /* register blocking counter  */
   unsigned int l_i, l_j, l_k, l_accs;
+  /* block-feature map offset, leading dimension */
+  unsigned int l_lead_dim;
 
 #if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.
@@ -203,6 +205,16 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length != 0) {
     fprintf( stderr, "libxsmm_generator_convolution_load_output: ofm_block needs to be divisble by vectorlength!\n" );
+    exit(-1);
+  }
+
+  /* calculate leading dimension depending on format */
+  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+    l_lead_dim = i_conv_desc->ofm_block * l_reg_per_block;
+  } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0 ) {
+    l_lead_dim = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
+  } else {
+    fprintf( stderr, "libxsmm_generator_convolution_load_output: unsupported output format!\n" );
     exit(-1);
   }
 
@@ -226,7 +238,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_j * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size,
+                                        l_j * l_lead_dim * i_conv_kernel_config->datatype_size,
                                         i_conv_kernel_config->vector_name,
                                         i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j , 0, 0 );
 #if 1
@@ -235,7 +247,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                            LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
                                            i_gp_reg_mapping->gp_reg_output_pf,
                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                           l_j * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size );
+                                           l_j * l_lead_dim * i_conv_kernel_config->datatype_size );
       }
 #endif
     }
@@ -249,8 +261,9 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                             i_conv_kernel_config->vmove_instruction,
                                             i_gp_reg_mapping->gp_reg_output,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            ((l_i*i_conv_desc->ofw_padded) + ((l_j*l_reg_per_block)+l_k))
-                                              * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size,
+                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                            ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
+                                            ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ),
                                             i_conv_kernel_config->vector_name,
                                             l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i), 0, 0 );
 #if 1
@@ -259,8 +272,9 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                               LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
                                               i_gp_reg_mapping->gp_reg_output_pf,
                                               LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              ((l_i*i_conv_desc->ofw_padded) + ((l_j*l_reg_per_block)+l_k))
-                                                * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size );
+                                              ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                              ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
+                                              ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ) );
           }
 #endif
         }
@@ -280,6 +294,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb * l_reg_per_block);
   /* register blocking counter  */
   unsigned int l_i, l_j, l_k, l_accs;
+  /* block-feature map offset, leading dimension */
+  unsigned int l_lead_dim;
 
 #if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.
@@ -293,6 +309,16 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length != 0) {
     fprintf( stderr, "libxsmm_generator_convolution_store_output: ofm_block needs to be divisble by vectorlength!\n" );
+    exit(-1);
+  }
+
+  /* calculate leading dimension depending on format */
+  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+    l_lead_dim = i_conv_desc->ofm_block * l_reg_per_block;
+  } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0 ) {
+    l_lead_dim = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
+  } else {
+    fprintf( stderr, "libxsmm_generator_convolution_load_output: unsupported output format!\n" );
     exit(-1);
   }
 
@@ -319,7 +345,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_j * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size,
+                                        l_j * l_lead_dim * i_conv_kernel_config->datatype_size,
                                         i_conv_kernel_config->vector_name,
                                         i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j, 0, 1 );
     }
@@ -333,8 +359,9 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                             i_conv_kernel_config->vmove_instruction,
                                             i_gp_reg_mapping->gp_reg_output,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            ((l_i*i_conv_desc->ofw_padded) + ((l_j*l_reg_per_block)+l_k))
-                                              * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size,
+                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                            ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
+                                            ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ),
                                             i_conv_kernel_config->vector_name,
                                             l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i), 0, 1 );
         }
