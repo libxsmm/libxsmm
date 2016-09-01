@@ -35,6 +35,7 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+#include <libxsmm_malloc.h>
 #include <libxsmm_timer.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -135,7 +136,11 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
   const input_type   input_t =  (input_type)nchw;
   const output_type output_t = (output_type)nhwc;
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error VLA is needed to run the convolution example
+# endif
 #endif
   for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
@@ -144,7 +149,11 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
 #if defined(LIBXSMM_VLA)
           output_t[n][h][w][c] = input_t[n][c][h][w];
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+          assert(0/*TODO*/);
+# else
+#         error VLA is needed to run the convolution example
+# endif
 #endif
         }
       }
@@ -163,7 +172,11 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
   const input_type   input_t =  (input_type)nhwc;
   const output_type output_t = (output_type)nchw;
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error VLA is needed to run the convolution example
+# endif
 #endif
   for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
@@ -172,7 +185,11 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
 #if defined(LIBXSMM_VLA)
           output_t[n][c][h][w] = input_t[n][h][w][c];
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+          assert(0/*TODO*/);
+# else
+#         error VLA is needed to run the convolution example
+# endif
 #endif
         }
       }
@@ -191,7 +208,11 @@ LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int 
   const input_type   input_t =  (input_type)kcrs;
   const output_type output_t = (output_type)rsck;
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+  assert(0/*TODO*/);
+# else
+# error VLA is needed to run the convolution example
+# endif
 #endif
   for ( r = 0; r < R; r++ ) {
     for ( s = 0; s < S; s++ ) {
@@ -200,7 +221,11 @@ LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int 
 #if defined(LIBXSMM_VLA)
           output_t[r][s][c][k] = input_t[k][c][r][s];
 #else
-#error VLA is needed to run the convolution example
+# if defined(_MSC_VER)
+          assert(0/*TODO*/);
+# else
+#         error VLA is needed to run the convolution example
+# endif
 #endif
         }
       }
@@ -239,12 +264,12 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
   typedef float (*LIBXSMM_RESTRICT output_type)[nOfm][ofhp][ofwp];
   const input_type   input_t =  (input_type)input;
   const filter_type filter_t = (filter_type)filter;
-  const output_type output_t = (output_type)(output + (pad_w * ofwp + pad_h));
+  const output_type output_t = (output_type)(output + (pad_w_out * ofwp + pad_h_out));
 #else
   unsigned int ishape[4], fshape[4], oshape[4], indexi[4], indexf[4], indexo[4];
   const float *LIBXSMM_RESTRICT  input_t = (const float*)input;
   const float *LIBXSMM_RESTRICT filter_t = (const float*)filter;
-  float *LIBXSMM_RESTRICT output_t = (float*)(output + (pad_w * ofwp + pad_h));
+  float *LIBXSMM_RESTRICT output_t = (float*)(output + (pad_w_out * ofwp + pad_h_out));
   ishape[0] = ifwp; ishape[1] = ifhp; ishape[2] = nIfm; ishape[3] = nImg;
   fshape[0] =   kw; fshape[1] =   kh; fshape[2] = nIfm; fshape[3] = nOfm;
   oshape[0] = ofwp; oshape[1] = ofhp; oshape[2] = nOfm; oshape[3] = nImg;
@@ -397,16 +422,16 @@ int main(int argc, char* argv[])
   printf("SIZE Weight     : %10.2f MiB\n", (double)(nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
-  posix_memalign( (void**) &naive_input,          2097152, nImg*nIfm*ifhp*ifwp*sizeof(float) );
-  posix_memalign( (void**) &naive_output,         2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
-  posix_memalign( (void**) &naive_libxsmm_output, 2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
-  posix_memalign( (void**) &naive_filter,         2097152, nOfm*nIfm*kh*kw*    sizeof(float) );
-  posix_memalign( (void**) &input_nhwc,           2097152, nImg*nIfm*ifhp*ifwp*sizeof(float) );
-  posix_memalign( (void**) &output_nhwc,          2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
-  posix_memalign( (void**) &naive_output_nhwc,    2097152, nImg*nOfm*ofhp*ofwp*sizeof(float) );
-  posix_memalign( (void**) &filter_rsck,          2097152, nOfm*nIfm*kh*kw*    sizeof(float) );
+  naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_filter          = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  input_nhwc            = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  output_nhwc           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_nhwc     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
 
-  /* init data */
+  /* initialize data */
   init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   zero_buf(naive_output,         nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
@@ -630,6 +655,12 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_handle( libxsmm_handle ) );
+
+  /* deallocate data */
+  libxsmm_free(naive_input);
+  libxsmm_free(naive_output);
+  libxsmm_free(naive_libxsmm_output);
+  libxsmm_free(naive_filter);
 
   return 0;
 }

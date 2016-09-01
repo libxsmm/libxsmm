@@ -39,9 +39,9 @@ before_install:
 install:
   - pip install --user codecov
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      cd /tmp && curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
+      (cd /tmp && curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
         tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make && sudo make install &&
-        cd ${TRAVIS_BUILD_DIR};
+        cd ${TRAVIS_BUILD_DIR}) || true;
     fi
 
 after_success:

@@ -89,10 +89,10 @@
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-          ! No prefetching and no prefetch function signature.
-     &    LIBXSMM_PREFETCH_NONE       = 0,                              &
           ! Automatically select strategy (frontend).
      &    LIBXSMM_PREFETCH_AUTO       = -1,                             &
+          ! No prefetching and no prefetch function signature.
+     &    LIBXSMM_PREFETCH_NONE       = 0,                              &
           ! Only function prefetch signature.
      &    LIBXSMM_PREFETCH_SIGONLY    = 1,                              &
           ! Prefetch PA using accesses to A.
@@ -103,9 +103,13 @@
      &    LIBXSMM_PREFETCH_BL2_VIA_C  = 8,                              &
           ! Prefetch A ahead.
      &    LIBXSMM_PREFETCH_AL2_AHEAD  = 16,                             &
+          ! Prefetch PC using accesses to C.
+     &    LIBXSMM_PREFETCH_CL2        = 32,                             &
           ! Composed prefetch strategies.
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C = IOR(                          &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2),        &
+     &    LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C = IOR(                       &
+     &        LIBXSMM_PREFETCH_AL2BL2_VIA_C, LIBXSMM_PREFETCH_CL2),     &
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST = IOR(                     &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_JPST),   &
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
@@ -299,34 +303,37 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).
-          PURE SUBROUTINE libxsmm_otrans(output,                        &
+          PURE FUNCTION libxsmm_otrans(output,                          &
      &    input, typesize, m, n, ld, ldo) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN), VALUE :: typesize
-          END SUBROUTINE
+            INTEGER(C_INT) :: libxsmm_otrans
+          END FUNCTION
 
           ! Transpose a matrix (out-of-place form, single-precision).
-          PURE SUBROUTINE libxsmm_sotrans(output,                       &
+          FUNCTION libxsmm_sotrans(output,                              &
      &    input, m, n, ld, ldo) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
+            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_FLOAT), INTENT(OUT) :: output(ldo,*)
             REAL(C_FLOAT), INTENT(IN) :: input(ld,*)
-          END SUBROUTINE
+            INTEGER(C_INT) :: libxsmm_sotrans
+          END FUNCTION
 
           ! Transpose a matrix (out-of-place form, double-precision).
-          PURE SUBROUTINE libxsmm_dotrans(output,                       &
+          FUNCTION libxsmm_dotrans(output,                              &
      &    input, m, n, ld, ldo) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
+            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
             REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
-          END SUBROUTINE
+            INTEGER(C_INT) :: libxsmm_dotrans
+          END FUNCTION
 
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.

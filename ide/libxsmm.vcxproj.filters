@@ -135,9 +135,6 @@
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwk_rsck.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_trans.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -151,6 +148,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_perf.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -266,9 +266,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_custom.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwk_rsck.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_ext_trans.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -285,6 +282,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_ext.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
