@@ -218,7 +218,7 @@ OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o \
 OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o \
                $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
                $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_custom.o \
-               $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwk_rsck.o \
+               $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwc_rsck.o \
                $(BLDDIR)/mic/libxsmm_malloc.o $(BLDDIR)/mic/libxsmm_sync.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
 KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
