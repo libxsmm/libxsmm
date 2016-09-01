@@ -29,7 +29,13 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
+#if defined(LIBXSMM_PERF_JITDUMP)
+# include <libxsmm_timer.h>
+#endif
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #if defined(_WIN32)
 # include <process.h>
 # define LIBXSMM_PERF_GETPID _getpid
@@ -38,9 +44,7 @@
 # define LIBXSMM_PERF_GETPID getpid
 #endif
 #include <stdio.h>
-
 #if defined(LIBXSMM_PERF_JITDUMP)
-# include <libxsmm_timer.h>
 # include <string.h> /* included in front of <jitdump.h> */
 /* make JITDUMP=/path/to/linux-kernel/tools/perf/util */
 # include <jitdump.h>
@@ -50,6 +54,9 @@
 # include <sys/stat.h>
 # include <syscall.h>
 # include <fcntl.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #if !defined(NDEBUG)
