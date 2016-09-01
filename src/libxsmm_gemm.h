@@ -37,13 +37,13 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_GEMM_WRAP_DYNAMIC_OK) && defined(LIBXSMM_BUILD) && \
- (!defined(__BLAS) || (0 != __BLAS)) && defined(__GNUC__) && \
-  !defined(_WIN32) && !defined(__CYGWIN__) && \
+#if !defined(LIBXSMM_GEMM_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
+  (!defined(__BLAS) || (0 != __BLAS)) && defined(__GNUC__) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
-    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
+  !defined(_WIN32) && !defined(__CYGWIN__)
 # include <dlfcn.h>
-# define LIBXSMM_GEMM_WRAP_DYNAMIC_OK
+# define LIBXSMM_GEMM_WRAP_DYNAMIC
 #endif
 #if !defined(NDEBUG)
 # include <stdio.h>
@@ -64,14 +64,6 @@
 # if defined(dgemm_)
 #   undef dgemm_
 # endif
-#endif
-
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_GEMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-#else
-# define LIBXSMM_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
 #endif
 
 #if !defined(LIBXSMM_GEMM_COLLAPSE)
@@ -198,49 +190,49 @@ SINGLE_OUTER { \
 }
 
 #if (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER) { \
+# define LIBXSMM_GEMM_WRAPPER_NOBLAS(TYPE, ORIGINAL, CALLER) { \
     union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm; \
     gemm.pf = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)); \
     if (0 == (ORIGINAL) && gemm.pv != (CALLER)) { ORIGINAL = gemm.pf; } \
   }
 #else
-# define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER) LIBXSMM_UNUSED(ORIGINAL)
+# define LIBXSMM_GEMM_WRAPPER_NOBLAS(TYPE, ORIGINAL, CALLER) LIBXSMM_UNUSED(ORIGINAL)
 #endif
 
-#if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
-# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER) { \
+#if defined(__STATIC) && defined(LIBXSMM_GEMM_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && \
+  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/) && !defined(__CYGWIN__)
+# define LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL, CALLER) { \
     union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm; \
     gemm.pf = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))); \
     if (gemm.pv != (CALLER)) { ORIGINAL = gemm.pf; } \
   }
-# define LIBXSMM_GEMM_WRAP_STATIC_OK
+# define LIBXSMM_GEMM_WRAP_STATIC
 #else
-# define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER)
+# define LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL, CALLER)
 #endif
 
-#if defined(LIBXSMM_GEMM_WRAP_DYNAMIC_OK)
-# define LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER) \
+#if defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+# define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER) \
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { NULL }; \
       dlerror(); /* clear an eventual error status */ \
       gemm.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
       if (gemm.pv != (CALLER)) ORIGINAL = gemm.pf; \
-      LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER); \
+      LIBXSMM_GEMM_WRAPPER_NOBLAS(TYPE, ORIGINAL, CALLER); \
     }
 #else
-# define LIBXSMM_GEMM_WRAP_DYNAMIC LIBXSMM_GEMM_WRAP_NOBLAS
+# define LIBXSMM_GEMM_WRAPPER_DYNAMIC LIBXSMM_GEMM_WRAPPER_NOBLAS
 #endif
 
 #if defined(NDEBUG) /* library code is expected to be mute */
-# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
-    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER); \
-    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER); \
+# define LIBXSMM_GEMM_WRAPPER(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
+    LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL, CALLER); \
+    LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER); \
   }
 #else
-# define LIBXSMM_GEMM_WRAP(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
-    LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER); \
-    LIBXSMM_GEMM_WRAP_DYNAMIC(TYPE, ORIGINAL, CALLER); \
+# define LIBXSMM_GEMM_WRAPPER(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
+    LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL, CALLER); \
+    LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER); \
     if (0 == (ORIGINAL)) { \
       static LIBXSMM_TLS int libxsmm_gemm_wrap_error_ = 0; \
       if (0 == libxsmm_gemm_wrap_error_) { \
@@ -267,15 +259,15 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_EXT_GEMM_WEAK void LIBXSMM_FSYMBOL(d
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(
+#if defined(LIBXSMM_GEMM_WRAP_STATIC)
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
-
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float* b, const libxsmm_blasint*,
@@ -284,6 +276,7 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_GEMM_WEAK LIBXSMM_FSYMBOL(__wra
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
+#endif /*defined(LIBXSMM_GEMM_WRAP_STATIC)*/
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];

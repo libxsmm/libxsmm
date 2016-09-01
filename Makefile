@@ -116,8 +116,15 @@ ifneq (1,$(BETA))
 endif
 endif
 
+# Determines if the library is thread-safe
 THREADS ?= 1
+
+# 0: produces shared library files suitable for dynamic linkage
+# 1: produces library archives suitable for static linkage
 STATIC ?= 1
+
+# Determines if the library can act as a wrapper-library (GEMM)
+WRAP ?= 0
 
 # JIT backend is enabled by default
 JIT ?= 1
@@ -556,6 +563,12 @@ $(1): $(2) $(3) $(dir $(1))/.make
 endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
+ifneq (0,$(STATIC))
+ifneq (0,$(WRAP))
+  EXTCFLAGS += -DLIBXSMM_GEMM_WRAP
+endif
+endif
+
 ifeq (0,$(OMP))
 ifeq (,$(filter environment% override command%,$(origin OMP)))
   EXTCFLAGS += $(OMPFLAG)

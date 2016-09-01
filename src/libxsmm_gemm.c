@@ -41,20 +41,20 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_sgemm_function original = NULL;
-  LIBXSMM_GEMM_WRAP(float, original, caller);
-  assert(NULL != original);
+  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(float, original, caller);
+  assert(0 != original);
   return original;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_dgemm_function original = NULL;
-  LIBXSMM_GEMM_WRAP(double, original, caller);
-  assert(NULL != original);
+  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(double, original, caller);
+  assert(0 != original);
   return original;
 }
 
@@ -193,52 +193,4 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
     0 != beta ? *beta : ((double)LIBXSMM_BETA),
     c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 }
-
-
-#if defined(LIBXSMM_BUILD) /* implementation from "libxsmmext" takes precedence */
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_sgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-{
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
-    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-    LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
-    float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_WEAK void LIBXSMM_FSYMBOL(__wrap_dgemm)(
-  const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-{
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
-    LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-    LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
-    double, flags, tm, tn, tk, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

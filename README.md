@@ -56,7 +56,7 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines will open an internal parallel region by default, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_GEMM=1 (0:&#160;small-sized, 1:&#160;sequential, and 2:&#160;parallelized/default). The actual parallelism is based on "classic" OpenMP by default (thread-based), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) keeping the main library agnostic with respect to a particular threading runtime.
+A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines will open an internal parallel region by default, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_MP (0:&#160;small-sized, 1:&#160;sequential, and 2:&#160;parallelized/default). The actual parallelism is based on "classic" OpenMP by default (thread-based), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) keeping the main library agnostic with respect to a particular threading runtime.
 
 ```C
 /** OpenMP parallelized dense matrix multiplication (single/double-precision). */
@@ -269,12 +269,9 @@ make PREFIX=/path/to/libxsmm-install install
 ### Call Wrapper
 Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS&#160;X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
 
-There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` or `dgemm_` symbol by making `-Wl,--wrap=*gemm_ /path/to/libxsmm.a` (star to be replaced) part of the link-line and then relinking the application:
+There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` *and* the `dgemm_` symbol:
 
 ```
-gcc [...] -Wl,--wrap=sgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
-gcc [...] -Wl,--wrap=dgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
-gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmm.a /path/to/your_regular_blas.a
 gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmmext.a /path/to/libxsmm.a \
                                           /path/to/your_regular_blas.a
 ```
@@ -293,10 +290,10 @@ This case obviously requires to build a shared library of LIBXSMM:
 make STATIC=0
 ```
 
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_GEMM i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region. However, in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm` (in this order; see link-line above).
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_MP i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default when only linking libxsmm), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region (default when only linking libxsmmext). However, in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm`.
 
 ```
-LIBXSMM_GEMM=2 ./myapplication
+LIBXSMM_MP=0 ./myapplication
 ```
 
 Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
