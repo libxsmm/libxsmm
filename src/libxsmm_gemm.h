@@ -199,9 +199,8 @@ SINGLE_OUTER { \
 
 #if (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_GEMM_WRAP_NOBLAS(TYPE, ORIGINAL, CALLER) { \
-    const union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { \
-      .pf = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)) \
-    }; \
+    union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm; \
+    gemm.pf = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)); \
     if (0 == (ORIGINAL) && gemm.pv != (CALLER)) { ORIGINAL = gemm.pf; } \
   }
 #else
@@ -211,9 +210,8 @@ SINGLE_OUTER { \
 #if defined(__STATIC) && defined(LIBXSMM_BUILD) && !defined(__CYGWIN__) && \
   !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/)
 # define LIBXSMM_GEMM_WRAP_STATIC(TYPE, ORIGINAL, CALLER) { \
-    const union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm = { \
-      .pf = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))) \
-    }; \
+    union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } gemm; \
+    gemm.pf = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))); \
     if (gemm.pv != (CALLER)) { ORIGINAL = gemm.pf; } \
   }
 # define LIBXSMM_GEMM_WRAP_STATIC_OK
