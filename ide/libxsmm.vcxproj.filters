@@ -132,7 +132,7 @@
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom.h">
+    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_trans.h">
@@ -263,7 +263,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_custom.c">
+    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_ext_trans.c">
