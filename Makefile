@@ -129,7 +129,12 @@ endif
 # Profiling JIT code using Linux Perf
 # Support for jitdump requires to supply:
 # JITDUMP=/path/to/linux-kernel/tools/perf/util
-PERF ?= 0
+ifeq (,$(strip $(JITDUMP)))
+  PERF ?= 0
+else
+  PERF ?= 1
+  SYM ?= 1
+endif
 
 # OpenMP is disabled by default and LIBXSMM is
 # always agnostic wrt the threading runtime
@@ -519,7 +524,7 @@ ifneq (0,$(SYM))
 ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
   ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
-    ifneq (,$(JITDUMP))
+    ifneq (,$(strip $(JITDUMP)))
       DFLAGS += -DLIBXSMM_PERF_JITDUMP
       IFLAGS += -I$(JITDUMP)
     endif

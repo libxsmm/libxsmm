@@ -318,7 +318,7 @@ The tables are distinct between single-precision and double-precision, but eithe
 
 The TRY counter represents all attempts to register statically generated kernels and all attempts to dynamically generate and register kernels. The JIT and STA counters distinct the aforementioned event into dynamically (JIT) and statically (STA) generated code but also count only actually registered kernels. In case the capacity (O(*n*)&#160;=&#160;10<sup>5</sup>) of the code registry is exhausted, no more kernels can be registered although further attempts are not prevented. Registering many kernels (O(*n*)&#160;=&#160;10<sup>3</sup>) may ramp the number of hash key collisions (COL), which can degrade performance. The latter is prevented if the small thread-local cache is effectively utilized.
 
-Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under the THRESHOLD, the above table may be extended by one line if large kernels have been requested. This a sign of abusing the library since such kernel code may not be cache-blocked, and it might be better to implement a threshold-criterion (customized dispatch) or to look at "medium-sized" GEMM routines (`libxsmm_?gemm_omp`) already performing a tiled multiplication.
+Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under the THRESHOLD criterion, the above table is extended by one line if large kernels have been requested. This indicates a missing threshold-criterion (customized dispatch), or asks for cache-blocking the matrix multiplication. The latter is already implemented by LIBXSMM's "medium-sized" GEMM routines (`libxsmm_?gemm_omp`), which perform a tiled multiplication.
 
 **NOTE**: setting LIBXSMM_VERBOSE to a negative value will dump each generated JIT kernel to a file with each file being named similar to the function name shown in [Intel&#160;VTune](#profiling).
 
@@ -370,11 +370,11 @@ Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which 
 #### Linux perf
 There is both basic (`perf map`) and extended support (`jitdump`) when profiling an application, which is using LIBXSMM.
 
-* The basic support can be enabled at compile-time with PERF=1 along with SYM=1 (or DBG=1) using:  
-`make PERF=1 SYM=1`  
+* The basic support can be enabled at compile-time with PERF=1 (implies SYM=1) using:  
+`make PERF=1`  
 At runtime of the application, a map-file ('jit-*pid*.map') is generated ('/tmp' directory). This file is automatically read by "perf", and enriches the information about unknown code such as JIT'ted kernels.
-* The support for "jitdump" can be enabled by supplying JITDUMP when making the library:  
-`make PERF=1 SYM=1 JITDUMP=/path/to/linux-kernel/tools/perf/util`  
+* The support for "jitdump" can be enabled by supplying JITDUMP (implies PERF=1) when making the library:  
+`make JITDUMP=/path/to/linux-kernel/tools/perf/util`  
 At runtime of the application, a dump-file ('jit-*pid*.dump') is generated ('/tmp' directory) which includes additional information about JIT'ted kernels (such as addresses, symbol names, code size, and the code itself). The dump file can be injected into 'perf.data' (using `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of perf).
 
 **NOTE**: the extended support (jitdump) requires the 'jitdump.h' header file, which is part of the Linux kernel sources (under 'tools/perf/util'). This header file is provided under the GPLv2 license.
