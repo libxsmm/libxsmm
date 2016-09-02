@@ -64,6 +64,7 @@
     <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
     <ClInclude Include="..\src\libxsmm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
@@ -106,6 +107,7 @@
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.c" />
     <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>

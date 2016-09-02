@@ -153,6 +153,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -285,6 +288,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
