@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_main.h"
-#include "libxsmm_dnn_conv_fwd_custom.h"
+#include "libxsmm_dnn_conv_fwd_custom_custom.h"
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
@@ -240,7 +240,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.ofw_padded = handle->ofwp;
         descriptor.ofh_rb = handle->fwd_ofh_rb;
         descriptor.ofw_rb = handle->fwd_ofw_rb;
-        descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format & handle->filter_format);
+        descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         /* TODO check JIT errors */
         handle->code_fwd[0].sconv = libxsmm_create_sconv_forward(&descriptor);
@@ -1146,17 +1146,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (handle->filter_format) {
               case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-                libxsmm_dnn_convolve_st_fwd_custom(handle, start_thread, tid, num_threads);
+                libxsmm_dnn_convolve_st_fwd_custom_custom(handle, start_thread, tid, num_threads);
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-              }            
+              }
             }
           } break;
           case LIBXSMM_DNN_CONV_FORMAT_NHWC: {
             switch (handle->filter_format) {
               case LIBXSMM_DNN_CONV_FORMAT_RSCK: {
                 libxsmm_dnn_convolve_st_fwd_nhwc_rsck(handle, start_thread, tid, num_threads);
+              } break;
+              case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+                libxsmm_dnn_convolve_st_fwd_nhwc_custom(handle, start_thread, tid, num_threads);
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;

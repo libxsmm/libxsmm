@@ -28,11 +28,11 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_DNN_CONV_FWD_CUSTOM_H
-#define LIBXSMM_DNN_CONV_FWD_CUSTOM_H
+#ifndef LIBXSMM_DNN_CONV_FWD_CUSTOM_CUSTOM_H
+#define LIBXSMM_DNN_CONV_FWD_CUSTOM_CUSTOM_H
 
 #include "libxsmm_main.h"
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads);
 
-#endif /* LIBXSMM_DNN_CONV_FWD_CUSTOM_H */
+#endif /* LIBXSMM_DNN_CONV_FWD_CUSTOM_CUSTOM_H */
