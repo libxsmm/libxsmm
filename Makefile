@@ -124,6 +124,8 @@ THREADS ?= 1
 STATIC ?= 1
 
 # Determines if the library can act as a wrapper-library (GEMM)
+# 1: enables wrapping SGEMM and DGEMM
+# 2: enables wrapping DGEMM only
 WRAP ?= 0
 
 # JIT backend is enabled by default
@@ -565,7 +567,7 @@ endef
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifneq (0,$(STATIC))
 ifneq (0,$(WRAP))
-  EXTCFLAGS += -DLIBXSMM_GEMM_WRAP
+  EXTCFLAGS += -DLIBXSMM_GEMM_WRAP=$(WRAP)
 endif
 endif
 

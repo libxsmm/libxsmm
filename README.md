@@ -267,36 +267,25 @@ make PREFIX=/path/to/libxsmm-install install
 
 ## Running
 ### Call Wrapper
-Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS&#160;X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. Of course, using LIBXSMM's programming interface when performing the same multiplication multiple time in a consecutive fashion (batch-processing) allows to extract higher performance. However, using the call wrapper might motivate to make use of the LIBXSMM API.
+Since the library is binary compatible with existing GEMM calls (LAPACK/BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original LAPACK/BLAS. Currently this only works for the Linux OS (not validated under OS&#160;X), and it is also not sufficient to rely on a GNU tool chain under Microsoft Windows. There are two cases to consider:
 
-There are two cases to consider: (1)&#160;an application which is linking statically against LAPACK/BLAS, and (2)&#160;an application which is dynamically linked against LAPACK/BLAS. The first case requires to wrap the `sgemm_` *and* the `dgemm_` symbol:
+* An application which is linked statically against LAPACK/BLAS requires to wrap the `sgemm_` and the `dgemm_` symbol (an alternative is to wrap only `dgemm_`):  
+`gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmmext.a /path/to/libxsmm.a /path/to/your_regular_blas.a`  
+This also requires a special build of libxsmm(ext) library able to wrap SGEMM and DGEMM (WRAP=1) or DGEMM only (WRAP=2), e.g.:  
+`make WRAP=1`  
+Relinking the application as shown above can be often accomplished by copying, pasting, modifying the linker command, and then re-invoking the modified link step. This linker command often appears as console output of the application's "make" command (or a similar build system). The static link-time wrapper technique may only work with a GCC-compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain.
+* An application which is dynamically linked against LAPACK/BLAS allows for intercepting the GEMM calls at startup time (runtime) of the unmodified application by using the LD_PRELOAD mechanism:  
+`LD_PRELOAD=/path/to/libxsmmext.so ./myapplication`  
+This case obviously requires to build a shared library of LIBXSMM:  
+`make STATIC=0`
 
-```
-gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ /path/to/libxsmmext.a /path/to/libxsmm.a \
-                                          /path/to/your_regular_blas.a
-```
-
-Relinking the application is often accomplished by copying, pasting, and modifying the linker command as shown when running "make" (or a similar build system), and then just re-invoking the modified link step. Please note that this first case is also working for an application which is dynamically linked against LAPACK/BLAS. The static link-time wrapper technique in general may only work with a GCC-compatible tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. The latter unfortunately does not include Compiler&#160;6.1 or earlier under OS&#160;X, and it has not been tested with a later version of this tool chain.
-
-If an application is dynamically linked against LAPACK/BLAS, the unmodified application allows for intercepting these calls at startup time (runtime) by using the LD_PRELOAD mechanism:
-
-```
-LD_PRELOAD=/path/to/libxsmmext.so ./myapplication
-```
-
-This case obviously requires to build a shared library of LIBXSMM:
-
-```
-make STATIC=0
-```
-
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled using the environment variable LIBXSMM_MP i.e., 0:&#160;sequential below-threshold routine without OpenMP but with fallback to BLAS (default when only linking libxsmm), 1:&#160;OpenMP-parallelized but without internal parallel region, and 2:&#160;OpenMP-parallelized with internal parallel region (default when only linking libxsmmext). However, in case of the static wrapper, it is required to link against `libxsmmext` and `libxsmm`.
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled with the environment variable LIBXSMM_MP i.e., 0:&#160;calling sequential below-threshold routines without OpenMP (default when only linking 'libxsmm'), 1:&#160;OpenMP-parallelized behavior but without an internal parallel region, and 2:&#160;OpenMP-parallelized routines with internal parallel region (default when linking 'libxsmmext'). In any case, the wrapper mechanism also supports to falls back to BLAS.
 
 ```
 LIBXSMM_MP=0 ./myapplication
 ```
 
-Please note that calling SGEMM is more sensitive to dispatch-overhead when compared to multiplying the same matrix sizes in double-precision. In case of single-precision, an approach of using the call wrapper is often not able to show an advantage if not regressing with respect to performance (therefore SGEMM is likely asking for making use of the API). In contrast, the double-precision case can show up to two times the performance of a typical LAPACK/BLAS performance (and more when using the API for processing batches).
+**NOTE**: Using the same multiplication kernel in a consecutive fashion (batch-processing) allows to extract higher performance, when using LIBXSMM's native programming interface.
 
 ### Verbose Mode
 The verbose mode allows for an insight into the code dispatch mechanism by receiving a small tabulated statistic as soon as the library terminates. The design point for this functionality is to not impact the performance of any critical code path i.e., verbose mode is always enabled and does not require symbols (SYM=1) or debug code (DBG=1). The statistics appears (`stderr`) when the environment variable LIBXSMM_VERBOSE is set to a non-zero value. For example:
