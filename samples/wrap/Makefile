@@ -40,10 +40,10 @@ else
   DEPSTATIC = 0
 endif
 
-WRAP ?= 0
+XWRAP ?= 0
 ifneq (Darwin,$(UNAME))
 ifneq (0,$(DEPSTATIC))
-  WRAP = 1
+  XWRAP = $(WRAP)
 endif
 endif
 
@@ -90,15 +90,15 @@ ifeq (Darwin,$(UNAME))
 	$(info ================================================================================)
 endif
 
-ifneq (0,$(WRAP))
-ifneq (2,$(WRAP))
+ifneq (0,$(XWRAP))
+ifneq (2,$(XWRAP))
   WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
 else
   WRAP_FLAG = -Wl,--wrap=dgemm_
 endif
 endif
 
-ifneq (0,$(WRAP))
+ifneq (0,$(XWRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
