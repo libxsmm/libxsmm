@@ -84,8 +84,15 @@ if [ "Windows_NT" != "${OS}" ]; then
   CWD=${PWD}
   cd ${HERE}/build
   for TEST in ${NOBLAS}; do
-    make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
-    make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
+    if [ -e ${HERE}/../lib/libxsmm.a ] && [ -e ${HERE}/../lib/libxsmmext.a ]; then
+      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
+    fi
+    if [ -e ${HERE}/../lib/libxsmm.so ] && [ -e ${HERE}/../lib/libxsmmext.so ]; then
+      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
+    fi
+    if [ -e ${HERE}/../lib/libxsmm.dylib ] && [ -e ${HERE}/../lib/libxsmmext.dylib ]; then
+      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
+    fi
   done
   cd ${CWD}
 fi
