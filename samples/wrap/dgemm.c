@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   assert(0 != a && 0 != b && 0 != c);
 
 #if defined(_OPENMP)
-# pragma omp parallel
+# pragma omp parallel private(i, j)
 #endif
   {
 #if defined(_OPENMP)
