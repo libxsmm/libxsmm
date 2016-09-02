@@ -132,10 +132,36 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 
 #if defined(LIBXSMM_BUILD)
 
+LIBXSMM_API void libxsmmf_otrans(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
+LIBXSMM_API_DEFINITION void libxsmmf_otrans(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmmf_otrans(out, in, typesize, m, n, ld, ldo);
+}
+
+
+/** code variant for the Fortran interface, which does not produce a return value */
+LIBXSMM_API void libxsmmf_sotrans(float*, const float*, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
+LIBXSMM_API_DEFINITION void libxsmmf_sotrans(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmmf_otrans(out, in, sizeof(float), m, n, ld, ldo);
+}
+
+
 LIBXSMM_API_DEFINITION int libxsmm_sotrans(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
   return libxsmm_otrans(out, in, sizeof(float), m, n, ld, ldo);
+}
+
+
+/** code variant for the Fortran interface, which does not produce a return value */
+LIBXSMM_API void libxsmmf_dotrans(double*, const double*, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
+LIBXSMM_API_DEFINITION void libxsmmf_dotrans(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+{
+  libxsmmf_otrans(out, in, sizeof(double), m, n, ld, ldo);
 }
 
 

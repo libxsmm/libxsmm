@@ -303,37 +303,37 @@
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).
-          PURE FUNCTION libxsmm_otrans(output,                          &
-     &    input, typesize, m, n, ld, ldo) BIND(C)
+          PURE SUBROUTINE libxsmm_otrans(output,                        &
+     &    input, typesize, m, n, ld, ldo)                               &
+     &    BIND(C, NAME="libxsmmf_otrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN), VALUE :: typesize
-            INTEGER(C_INT) :: libxsmm_otrans
-          END FUNCTION
+          END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, single-precision).
-          FUNCTION libxsmm_sotrans(output,                              &
-     &    input, m, n, ld, ldo) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT, C_INT
+          PURE SUBROUTINE libxsmm_sotrans(output,                       &
+     &    input, m, n, ld, ldo)                                         &
+     &    BIND(C, NAME="libxsmmf_sotrans")
+            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_FLOAT), INTENT(OUT) :: output(ldo,*)
             REAL(C_FLOAT), INTENT(IN) :: input(ld,*)
-            INTEGER(C_INT) :: libxsmm_sotrans
-          END FUNCTION
+          END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, double-precision).
-          FUNCTION libxsmm_dotrans(output,                              &
-     &    input, m, n, ld, ldo) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE, C_INT
+          PURE SUBROUTINE libxsmm_dotrans(output,                       &
+     &    input, m, n, ld, ldo)                                         &
+     &    BIND(C, NAME="libxsmmf_dotrans")
+            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
             REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
-            INTEGER(C_INT) :: libxsmm_dotrans
-          END FUNCTION
+          END SUBROUTINE
 
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.

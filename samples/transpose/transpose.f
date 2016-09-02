@@ -43,7 +43,7 @@ PROGRAM transpose
 
   CHARACTER(32) :: argv
   CHARACTER :: trans
-  INTEGER :: argc, err
+  INTEGER :: argc
 
   argc = COMMAND_ARGUMENT_COUNT()
   IF (1 <= argc) THEN
@@ -93,9 +93,9 @@ PROGRAM transpose
 
   IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
     start = libxsmm_timer_tick();
-    err = libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
-    !err = libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-    err = libxsmm_dotrans(a, b, n, m, ldb, lda)
+    CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
+    !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
+    CALL libxsmm_dotrans(a, b, n, m, ldb, lda)
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   ELSE ! in-place
     start = libxsmm_timer_tick();
