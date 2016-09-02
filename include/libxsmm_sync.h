@@ -56,7 +56,8 @@
 #if defined(__GNUC__)
 # if !defined(LIBXSMM_GCCATOMICS)
 #   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) || \
-        /*TODO: version check*/defined(__clang__)
+      /*TODO: double-check exact version*/(defined(__INTEL_COMPILER) && (1300 <= __INTEL_COMPILER)) || \
+      /*TODO: version check*/defined(__clang__)
 #     define LIBXSMM_GCCATOMICS 1
 #   else
 #     define LIBXSMM_GCCATOMICS 0
