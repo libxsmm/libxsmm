@@ -209,7 +209,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** Construct symbol name from a given real type name (float or double). */
 #define LIBXSMM_ORIGINAL_GEMM(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
-#if (!defined(__BLAS) || (0 != __BLAS)) && !defined(LIBXSMM_BUILD) && !defined(LIBXSMM_BUILD_EXT)
+#if (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE) LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))
 #else
 # define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE) LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER, 0)
