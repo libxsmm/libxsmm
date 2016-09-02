@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -ne 3 ]
 then
   echo "Usage: `basename $0` arch mb iters numa; using default values: 128 100 1"
   MB=128
