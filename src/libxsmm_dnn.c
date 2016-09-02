@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_main.h"
 #include "libxsmm_dnn_conv_fwd_custom_custom.h"
+#include "libxsmm_dnn_conv_fwd_nhwc_custom.h"
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
