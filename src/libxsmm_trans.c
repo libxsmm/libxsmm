@@ -136,7 +136,7 @@ LIBXSMM_API void libxsmmf_otrans(void*, const void*, unsigned int, libxsmm_blasi
 LIBXSMM_API_DEFINITION void libxsmmf_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
 {
-  libxsmmf_otrans(out, in, typesize, m, n, ld, ldo);
+  libxsmm_otrans(out, in, typesize, m, n, ld, ldo);
 }
 
 
