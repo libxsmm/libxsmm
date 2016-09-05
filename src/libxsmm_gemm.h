@@ -187,13 +187,13 @@ SINGLE_OUTER { \
 }
 
 #if (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER) if (0 == (ORIGINAL)) { \
+# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, SYMBOL) if (0 == (ORIGINAL)) { \
     union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } libxsmm_gemm_wrapper_blas_; \
-    libxsmm_gemm_wrapper_blas_.pf = LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)); \
+    libxsmm_gemm_wrapper_blas_.pf = (SYMBOL); \
     if (libxsmm_gemm_wrapper_blas_.pv != (CALLER)) ORIGINAL = libxsmm_gemm_wrapper_blas_.pf; \
   }
 #else
-# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER) LIBXSMM_UNUSED(CALLER)
+# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, SYMBOL) LIBXSMM_UNUSED(CALLER)
 #endif
 
 #if defined(__STATIC) && defined(LIBXSMM_GEMM_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && \
@@ -217,10 +217,11 @@ SINGLE_OUTER { \
       dlerror(); /* clear an eventual error status */ \
       libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
       if (libxsmm_gemm_wrapper_dynamic_.pv != (CALLER)) ORIGINAL = libxsmm_gemm_wrapper_dynamic_.pf; \
-      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER); \
+      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))); \
     }
 #else
-# define LIBXSMM_GEMM_WRAPPER_DYNAMIC LIBXSMM_GEMM_WRAPPER_BLAS
+# define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER) LIBXSMM_GEMM_WRAPPER_BLAS( \
+    TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))
 #endif
 
 #if defined(NDEBUG) /* library code is expected to be mute */
