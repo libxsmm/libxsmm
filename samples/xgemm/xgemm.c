@@ -21,11 +21,12 @@ LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double
   const libxsmm_blasint minval = seed, addval = (nrows - 1) * ld + (ncols - 1);
   const libxsmm_blasint maxval = LIBXSMM_MAX(LIBXSMM_ABS(minval), addval);
   const double norm = 0 != maxval ? (scale / maxval) : scale;
-  libxsmm_blasint i, j;
+  libxsmm_blasint i;
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for private(i)
 #endif
   for (i = 0; i < ncols; ++i) {
+    libxsmm_blasint j;
     for (j = 0; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
       const double value = (double)(k + minval);
