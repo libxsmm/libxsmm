@@ -62,7 +62,8 @@ int main(void)
   const int ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 0, maxn = 0, maxk = 0, maxa = 0, maxb = 0, maxc = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
-  int test, nwarnings = 0, i, j;
+  int test, nwarnings = 0;
+  libxsmm_blasint i, j;
   double d2 = 0;
 
   for (test = 0; test < ntests; ++test) {
@@ -87,19 +88,19 @@ int main(void)
 
   for (j = 0; j < maxk; ++j) {
     for (i = 0; i < maxm; ++i) {
-      const int index = j * maxa + i;
+      const libxsmm_blasint index = j * maxa + i;
       a[index] = ((REAL_TYPE)1) / (index + 1);
     }
   }
   for (j = 0; j < maxn; ++j) {
     for (i = 0; i < maxk; ++i) {
-      const int index = j * maxb + i;
+      const libxsmm_blasint index = j * maxb + i;
       b[index] = ((REAL_TYPE)2) / (index + 1);
     }
   }
   for (j = 0; j < maxn; ++j) {
     for (i = 0; i < maxm; ++i) {
-      const int index = j * maxc + i;
+      const libxsmm_blasint index = j * maxc + i;
       c[index] = d[index] = 1000;
     }
   }
@@ -120,7 +121,7 @@ int main(void)
 
     for (j = 0; j < n[test]; ++j) {
       for (i = 0; i < m[test]; ++i) {
-        const int index = j * ldc[test] + i;
+        const libxsmm_blasint index = j * ldc[test] + i;
         const double d1 = c[index] - d[index];
         c[index] = d[index];
         dtest += d1 * d1;
