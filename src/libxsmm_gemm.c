@@ -108,11 +108,31 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if defined(LIBXSMM_GEMM_TILED)
+  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2))
+#endif
+  { /* below-threshold GEMM */
+    LIBXSMM_SGEMM(flags, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
+#if defined(LIBXSMM_GEMM_TILED)
+  else { /* tiled GEMM */
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+      LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+      LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((float)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
+#endif
 }
 
 
@@ -123,11 +143,31 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#if defined(LIBXSMM_GEMM_TILED)
+  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2))
+#endif
+  { /* below-threshold GEMM */
+    LIBXSMM_DGEMM(flags, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
+#if defined(LIBXSMM_GEMM_TILED)
+  else { /* tiled GEMM */
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
+      LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+      LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+      double, flags, tm, tn, tk, *m, *n, *k,
+      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+      0 != beta ? *beta : ((double)LIBXSMM_BETA),
+      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  }
+#endif
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

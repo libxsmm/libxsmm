@@ -45,7 +45,7 @@
 # define REAL_TYPE double
 #endif
 
-/*#define USE_LIBXSMM_BLAS*/
+/*#define USE_BLAS_VIA_LIBXSMM*/
 
 
 int main(void)
@@ -111,7 +111,7 @@ int main(void)
     LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
 
-# if defined(USE_LIBXSMM_BLAS)
+# if defined(USE_BLAS_VIA_LIBXSMM)
     LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 # else

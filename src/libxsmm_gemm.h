@@ -67,6 +67,11 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
+/** Enable tiled GEMM in non-ext. library */
+#if !defined(LIBXSMM_GEMM_TILED)
+/*# define LIBXSMM_GEMM_TILED*/
+#endif
+
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
   0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
   LIBXSMM_FEQ(1, ALPHA) && (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))

@@ -172,6 +172,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   else
 #endif
   {
+#if defined(LIBXSMM_GEMM_TILED)
+    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#else
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
@@ -180,6 +183,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
       0 != beta ? *beta : ((float)LIBXSMM_BETA),
       c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#endif
   }
 }
 
@@ -255,6 +259,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   else
 #endif
   {
+#if defined(LIBXSMM_GEMM_TILED)
+    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#else
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
@@ -263,6 +270,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
       0 != beta ? *beta : ((double)LIBXSMM_BETA),
       c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+#endif
   }
 }
 
