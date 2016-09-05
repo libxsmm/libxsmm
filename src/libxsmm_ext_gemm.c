@@ -34,19 +34,27 @@
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller, libxsmm_sgemm_function gemm)
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(float, original, caller, gemm);
+#if (!defined(__BLAS) || (0 != __BLAS))
+  LIBXSMM_GEMM_WRAPPER(float, original, caller, LIBXSMM_FSYMBOL(sgemm));
+#else
+  LIBXSMM_GEMM_WRAPPER(float, original, caller, 0);
+#endif
   assert(0 != original);
   return original;
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller, libxsmm_dgemm_function gemm)
+LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
   static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(double, original, caller, gemm);
+#if (!defined(__BLAS) || (0 != __BLAS))
+  LIBXSMM_GEMM_WRAPPER(double, original, caller, LIBXSMM_FSYMBOL(dgemm));
+#else
+  LIBXSMM_GEMM_WRAPPER(double, original, caller, 0);
+#endif
   assert(0 != original);
   return original;
 }

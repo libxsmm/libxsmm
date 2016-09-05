@@ -53,6 +53,16 @@
 # pragma offload_attribute(pop)
 #endif
 
+/** Undefine (disarm) MKL's DIRECT_CALL macros. */
+#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# if defined(sgemm_)
+#   undef sgemm_
+# endif
+# if defined(dgemm_)
+#   undef dgemm_
+# endif
+#endif
+
 #if !defined(LIBXSMM_GEMM_COLLAPSE)
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
@@ -254,6 +264,15 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, const double*, const libxsmm_blasint*, const double* b, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 #endif /*defined(LIBXSMM_GEMM_WRAP_STATIC)*/
+
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
+  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
