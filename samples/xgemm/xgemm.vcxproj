@@ -163,6 +163,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -202,6 +203,7 @@
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -243,6 +245,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -283,6 +286,7 @@
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -315,6 +319,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -351,6 +356,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
