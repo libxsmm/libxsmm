@@ -41,6 +41,28 @@
 # define LIBXSMM_CPU_DCACHESIZE 32768
 #endif
 
+/** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
+#if !defined(LIBXSMM_CTOR) && defined(__GNUC__) && !(defined(__INTEL_COMPILER) && !defined(LIBXSMM_BUILD))
+# if defined(LIBXSMM_BUILD_EXT) && defined(__STATIC)
+#   define LIBXSMM_INIT libxsmm_ext_init/*dummy*/ = libxsmm_init;
+    /**
+     * Global (dummy-)variable which is touched via LIBXSMM_INIT macro
+     * in order to keep the libxsmm_init/libxsmm_finalize symbols
+     * even when linking statically (or only linking libxsmmext).
+     */
+    LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*libxsmm_ext_init)(void);
+# else
+#   define LIBXSMM_INIT
+# endif
+# define LIBXSMM_CTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(constructor)
+# define LIBXSMM_DTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(destructor)
+# define LIBXSMM_CTOR
+#else /* lazy initialization */
+# define LIBXSMM_INIT libxsmm_init();
+# define LIBXSMM_CTOR_ATTRIBUTE
+# define LIBXSMM_DTOR_ATTRIBUTE
+#endif
+
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
 # define LIBXSMM_MIN_NTASKS(NT) 1
 #endif
