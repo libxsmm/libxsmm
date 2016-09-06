@@ -453,7 +453,7 @@ The code generator driver program accepts the following arguments:
 11. beta (0 or 1)
 12. Alignment override for A (1 auto, 0 no alignment)
 13. Alignment override for C (1 auto, 0 no alignment)
-14. Architecture (noarch, wsm, snb, hsw, knc, knl)
+14. Architecture (noarch, wsm, snb, hsw, knc, knl, skx)
 15. Prefetch strategy, see below enumeration (dense/dense_asm only)
 16. single precision (SP), or double precision (DP)
 17. CSC file (just required when 1. is "sparse"). Matrix market format.
