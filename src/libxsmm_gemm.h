@@ -76,27 +76,43 @@
   0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
   LIBXSMM_FEQ(1, ALPHA) && (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
-#define LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K) ((0 != libxsmm_mp && ((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K)))) ? 1 : 0)
+#define LIBXSMM_GEMM_TILED_ABOVE_THRESHOLD(M, N, K) (((LIBXSMM_MAX_M < (M)) || (LIBXSMM_MAX_N < (N)) || (LIBXSMM_MAX_K < (K))) ? 1 : 0)
 
-#define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_START, TYPE, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const libxsmm_blasint mm = LIBXSMM_MIN(TILE_M, (M) - (POS_H)), nn = LIBXSMM_MIN(TILE_N, (N) - (POS_I)), ic = (POS_I) * (LDC) + (POS_H); \
-  libxsmm_blasint j = 0, j_next = TILE_K; \
-  if (((TILE_M) == mm) && ((TILE_N) == nn)) { \
-    for (; j < max_j; j = j_next) { \
-      LIBXSMM_MMCALL_PRF((KERNEL_START).LIBXSMM_TPREFIX(TYPE, mm), \
-        (A) + (POS_H) + (LDA) * j, \
-        (B) + (POS_I) * (LDB) + j, \
-        (C) + ic, \
-        (A) + (POS_H) + (LDA) * j_next, \
-        (B) + (POS_I) * (LDB) + j_next, \
-        (C) + ic); \
-      j_next = j + (TILE_K); \
+#define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_INNER, TEMPDESC, TYPE, FLAGS, POS_H, POS_I, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+  const libxsmm_blasint libxsmm_gemm_tiled_kernel_mm_ = LIBXSMM_MIN(TILE_M, (M) - (POS_H)); \
+  const libxsmm_blasint libxsmm_gemm_tiled_kernel_nn_ = LIBXSMM_MIN(TILE_N, (N) - (POS_I)); \
+  TYPE *const libxsmm_gemm_tiled_kernel_c_ = (C) + (POS_I) * (LDC) + (POS_H); \
+  libxsmm_blasint libxsmm_gemm_tiled_kernel_j_ = 0, libxsmm_gemm_tiled_kernel_j_next_ = TILE_K; \
+  if (((TILE_M) == libxsmm_gemm_tiled_kernel_mm_) && ((TILE_N) == libxsmm_gemm_tiled_kernel_nn_)) { \
+    for (; libxsmm_gemm_tiled_kernel_j_ < libxsmm_tiled_gemm_max_j_; libxsmm_gemm_tiled_kernel_j_ = libxsmm_gemm_tiled_kernel_j_next_) { \
+      LIBXSMM_MMCALL_PRF((KERNEL_INNER).LIBXSMM_TPREFIX(TYPE, mm), \
+        (A) + (POS_H) + (LDA) * libxsmm_gemm_tiled_kernel_j_, \
+        (B) + (POS_I) * (LDB) + libxsmm_gemm_tiled_kernel_j_, \
+        libxsmm_gemm_tiled_kernel_c_, \
+        (A) + (POS_H) + (LDA) * libxsmm_gemm_tiled_kernel_j_next_, \
+        (B) + (POS_I) * (LDB) + libxsmm_gemm_tiled_kernel_j_next_, \
+        libxsmm_gemm_tiled_kernel_c_); \
+      libxsmm_gemm_tiled_kernel_j_next_ = libxsmm_gemm_tiled_kernel_j_ + (TILE_K); \
     } \
   } \
-  for (; j < (K); j = j_next) { /* remainder */ \
-    LIBXSMM_XGEMM(TYPE, libxsmm_blasint, FLAGS, mm, nn, LIBXSMM_MIN(TILE_K, (K) - j), \
-      ALPHA, (A) + j * (LDA) + (POS_H), LDA, (B) + (POS_I) * (LDB) + j, LDB, BETA, (C) + ic, LDC); \
-    j_next = j + (TILE_K); \
+  for (; libxsmm_gemm_tiled_kernel_j_ < (K); libxsmm_gemm_tiled_kernel_j_ = libxsmm_gemm_tiled_kernel_j_next_) { /* remainder */ \
+    LIBXSMM_GEMM_DESCRIPTOR(TEMPDESC, LIBXSMM_ALIGNMENT, FLAGS, \
+      libxsmm_gemm_tiled_kernel_mm_, libxsmm_gemm_tiled_kernel_nn_, LIBXSMM_MIN(TILE_K, (K) - libxsmm_gemm_tiled_kernel_j_), \
+      LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_NONE); \
+    const libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_outer_ = libxsmm_xmmdispatch(&(TEMPDESC)); \
+    const TYPE *const libxsmm_gemm_tiled_kernel_a_ = (A) + libxsmm_gemm_tiled_kernel_j_ * (LDA) + (POS_H); \
+    const TYPE *const libxsmm_gemm_tiled_kernel_b_ = (B) + (POS_I) * (LDB) + libxsmm_gemm_tiled_kernel_j_; \
+    if (0 != libxsmm_gemm_tiled_kernel_outer_.LIBXSMM_TPREFIX(TYPE, mm)) { \
+      LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_gemm_tiled_kernel_outer_.LIBXSMM_TPREFIX(TYPE, mm), \
+        libxsmm_gemm_tiled_kernel_a_, libxsmm_gemm_tiled_kernel_b_, libxsmm_gemm_tiled_kernel_c_); \
+    } \
+    else { \
+      LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, libxsmm_gemm_tiled_kernel_mm_, libxsmm_gemm_tiled_kernel_nn_, \
+        LIBXSMM_MIN(TILE_K, (K) - libxsmm_gemm_tiled_kernel_j_), \
+        ALPHA, libxsmm_gemm_tiled_kernel_a_, LDA, libxsmm_gemm_tiled_kernel_b_, LDB, \
+         BETA, libxsmm_gemm_tiled_kernel_c_, LDC); \
+    } \
+    libxsmm_gemm_tiled_kernel_j_next_ = libxsmm_gemm_tiled_kernel_j_ + (TILE_K); \
   } \
 }
 
@@ -111,83 +127,99 @@
 #define LIBXSMM_TILED_XGEMM(PARALLEL, SINGLE_OUTER, SINGLE_INNER, COLLAPSE, LOOP_START, KERNEL_START, SYNC, \
   MIN_TASKS, OVERHEAD, NT, TYPE, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 SINGLE_OUTER { \
-  const signed char scalpha = (signed char)(ALPHA), scbeta = (signed char)(BETA); \
-  const int sufficient_size = LIBXSMM_GEMM_TILED_THRESHOLD(M, N, K); \
-  libxsmm_blasint tile_m = 0, tile_n = 0, tile_k = 0, num_m = 0, num_n = 0, num_k = 0; \
-  libxsmm_xmmfunction xmm = { 0 }; \
+  const int libxsmm_tiled_gemm_above_threshold_ = LIBXSMM_GEMM_TILED_ABOVE_THRESHOLD(M, N, K); \
+  libxsmm_blasint libxsmm_tiled_gemm_tile_m_ = 0, libxsmm_tiled_gemm_tile_n_ = 0, libxsmm_tiled_gemm_tile_k_ = 0; \
+  libxsmm_blasint libxsmm_tiled_gemm_num_m_ = 0, libxsmm_tiled_gemm_num_n_ = 0, libxsmm_tiled_gemm_num_k_ = 0; \
+  libxsmm_xmmfunction libxsmm_tiled_gemm_xmm_ = { 0 }; \
   SINGLE_INNER \
-  if (0 != sufficient_size && LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)) { \
-    tile_m = LIBXSMM_MAX(TILE_M, 2); tile_n = LIBXSMM_MAX(TILE_N, 2); tile_k = LIBXSMM_MAX(TILE_K, 2); \
-    num_m = ((M) + tile_m - 1) / tile_m; num_n = ((N) + tile_n - 1) / tile_n; num_k = ((K) + tile_k - 1) / tile_k; \
+  if (0 != libxsmm_tiled_gemm_above_threshold_ && LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)) { \
+    libxsmm_tiled_gemm_tile_m_ = LIBXSMM_MAX(TILE_M, 2); libxsmm_tiled_gemm_tile_n_ = LIBXSMM_MAX(TILE_N, 2); libxsmm_tiled_gemm_tile_k_ = LIBXSMM_MAX(TILE_K, 2); \
+    libxsmm_tiled_gemm_num_m_ = ((M) + libxsmm_tiled_gemm_tile_m_ - 1) / libxsmm_tiled_gemm_tile_m_; \
+    libxsmm_tiled_gemm_num_n_ = ((N) + libxsmm_tiled_gemm_tile_n_ - 1) / libxsmm_tiled_gemm_tile_n_; \
+    libxsmm_tiled_gemm_num_k_ = ((K) + libxsmm_tiled_gemm_tile_k_ - 1) / libxsmm_tiled_gemm_tile_k_; \
     { /* opening scope for additional variable declarations */ \
-      const libxsmm_blasint num_t = (OVERHEAD(NT) <= num_k && 1 < (COLLAPSE)) \
-        ? (num_m * num_n) : (num_n <= num_m ? num_m : num_n); \
-      const libxsmm_blasint min_ntasks = MIN_TASKS(NT); \
-      libxsmm_gemm_descriptor desc; \
-      if (min_ntasks < num_t) { /* ensure enough parallel slack */ \
-        tile_m = (M) / num_m; tile_n = (N) / num_n; \
+      const libxsmm_blasint libxsmm_tiled_gemm_num_t_ = (OVERHEAD(NT) <= libxsmm_tiled_gemm_num_k_ && 1 < (COLLAPSE)) \
+        ? (libxsmm_tiled_gemm_num_m_ * libxsmm_tiled_gemm_num_n_) : (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_ ? libxsmm_tiled_gemm_num_m_ : libxsmm_tiled_gemm_num_n_); \
+      const libxsmm_blasint libxsmm_tiled_gemm_min_ntasks_ = MIN_TASKS(NT); \
+      libxsmm_gemm_descriptor libxsmm_tiled_gemm_desc_; \
+      if (libxsmm_tiled_gemm_min_ntasks_ < libxsmm_tiled_gemm_num_t_) { /* ensure enough parallel slack */ \
+        libxsmm_tiled_gemm_tile_m_ = (M) / libxsmm_tiled_gemm_num_m_; libxsmm_tiled_gemm_tile_n_ = (N) / libxsmm_tiled_gemm_num_n_; \
       } \
-      else if ((OVERHEAD(NT)) <= num_k) { \
-        const double ratio = sqrt(((double)min_ntasks) / num_t); \
-        tile_n = (int)(num_n * ratio /*+ 0.5*/); \
-        tile_m = (min_ntasks + tile_n - 1) / tile_n; \
+      else if ((OVERHEAD(NT)) <= libxsmm_tiled_gemm_num_k_) { \
+        const double libxsmm_tiled_gemm_ratio_ = sqrt(((double)libxsmm_tiled_gemm_min_ntasks_) / libxsmm_tiled_gemm_num_t_); \
+        libxsmm_tiled_gemm_tile_n_ = (int)(libxsmm_tiled_gemm_num_n_ * libxsmm_tiled_gemm_ratio_ /*+ 0.5*/); \
+        libxsmm_tiled_gemm_tile_m_ = (libxsmm_tiled_gemm_min_ntasks_ + libxsmm_tiled_gemm_tile_n_ - 1) / libxsmm_tiled_gemm_tile_n_; \
       } \
-      else if (num_n <= num_m) { \
-        tile_m = ((M) + min_ntasks - 1) / min_ntasks; \
+      else if (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_) { \
+        libxsmm_tiled_gemm_tile_m_ = ((M) + libxsmm_tiled_gemm_min_ntasks_ - 1) / libxsmm_tiled_gemm_min_ntasks_; \
       } \
       else { \
-        tile_n = ((N) + min_ntasks - 1) / min_ntasks; \
+        libxsmm_tiled_gemm_tile_n_ = ((N) + libxsmm_tiled_gemm_min_ntasks_ - 1) / libxsmm_tiled_gemm_min_ntasks_; \
       } \
       { /* adjust for non-square operand shapes */ \
-        float rm = 1.f, rn = ((float)(N)) / M, rk = ((float)(K)) / M; \
-        if (1.f < rn) { rm /= rn; rn = 1.f; rk /= rn; } \
-        if (1.f < rk) { rm /= rk; rn /= rk; rk = 1.f; } \
-        tile_m = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(tile_m * rm /*+ 0.5*/)), 8), M); \
-        tile_n = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(tile_n * rn /*+ 0.5*/)), 8), N); \
-        tile_k = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(tile_k * rk /*+ 0.5*/)), 8), K); \
+        float libxsmm_tiled_gemm_rm_ = 1.f, libxsmm_tiled_gemm_rn_ = ((float)(N)) / M, libxsmm_tiled_gemm_rk_ = ((float)(K)) / M; \
+        if (1.f < libxsmm_tiled_gemm_rn_) { libxsmm_tiled_gemm_rm_ /= libxsmm_tiled_gemm_rn_; libxsmm_tiled_gemm_rn_ = 1.f; libxsmm_tiled_gemm_rk_ /= libxsmm_tiled_gemm_rn_; } \
+        if (1.f < libxsmm_tiled_gemm_rk_) { libxsmm_tiled_gemm_rm_ /= libxsmm_tiled_gemm_rk_; libxsmm_tiled_gemm_rn_ /= libxsmm_tiled_gemm_rk_; libxsmm_tiled_gemm_rk_ = 1.f; } \
+        libxsmm_tiled_gemm_tile_m_ = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_gemm_tile_m_ * libxsmm_tiled_gemm_rm_ /*+ 0.5*/)), 8), M); \
+        libxsmm_tiled_gemm_tile_n_ = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_gemm_tile_n_ * libxsmm_tiled_gemm_rn_ /*+ 0.5*/)), 8), N); \
+        libxsmm_tiled_gemm_tile_k_ = LIBXSMM_MIN(LIBXSMM_MAX((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_gemm_tile_k_ * libxsmm_tiled_gemm_rk_ /*+ 0.5*/)), 8), K); \
       } \
-      LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, FLAGS, tile_m, tile_n, tile_k, \
-        LDA, LDB, LDC, scalpha, scbeta, libxsmm_gemm_prefetch); \
-      xmm = libxsmm_xmmdispatch(&desc); \
+      LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_gemm_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
+        libxsmm_tiled_gemm_tile_m_, libxsmm_tiled_gemm_tile_n_, libxsmm_tiled_gemm_tile_k_, \
+        LDA, LDB, LDC, ALPHA, BETA, libxsmm_gemm_prefetch); \
+      libxsmm_tiled_gemm_xmm_ = libxsmm_xmmdispatch(&libxsmm_tiled_gemm_desc_); \
     } \
   } \
-  if (0 != xmm.dmm) { \
-    const libxsmm_blasint max_j = ((K) / tile_k) * tile_k; \
-    libxsmm_blasint h = 0, i = 0; \
-    if ((OVERHEAD(NT)) <= num_k) { /* amortize overhead */ \
+  if (0 != libxsmm_tiled_gemm_xmm_.LIBXSMM_TPREFIX(TYPE, mm)) { \
+    const libxsmm_blasint libxsmm_tiled_gemm_max_j_ = ((K) / libxsmm_tiled_gemm_tile_k_) * libxsmm_tiled_gemm_tile_k_; \
+    libxsmm_blasint libxsmm_tiled_gemm_h_ = 0, libxsmm_tiled_gemm_i_ = 0; \
+    libxsmm_gemm_descriptor libxsmm_tiled_gemm_tempdesc_; \
+    if ((OVERHEAD(NT)) <= libxsmm_tiled_gemm_num_k_) { /* amortize overhead */ \
       PARALLEL LOOP_START(COLLAPSE) \
-      for (h = 0; h < (M); h += tile_m) { \
-        for (i = 0; i < (N); i += tile_n) { \
-          KERNEL_START(h, i) \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+      for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
+        for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
+          KERNEL_START(libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_) \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_gemm_xmm_, libxsmm_tiled_gemm_tempdesc_, TYPE, FLAGS, libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_, \
+            libxsmm_tiled_gemm_tile_m_, libxsmm_tiled_gemm_tile_n_, libxsmm_tiled_gemm_tile_k_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
-    else if (num_n <= num_m) { \
+    else if (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_) { \
       PARALLEL LOOP_START(COLLAPSE) \
-      for (h = 0; h < (M); h += tile_m) { \
-        KERNEL_START(h) \
-        for (i = 0; i < (N); i += tile_n) { \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+      for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
+        KERNEL_START(libxsmm_tiled_gemm_h_) \
+        for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_gemm_xmm_, libxsmm_tiled_gemm_tempdesc_, TYPE, FLAGS, libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_, \
+            libxsmm_tiled_gemm_tile_m_, libxsmm_tiled_gemm_tile_n_, libxsmm_tiled_gemm_tile_k_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
     else { \
       PARALLEL LOOP_START(COLLAPSE) \
-      for (i = 0; i < (N); i += tile_n) { \
-        KERNEL_START(i) \
-        for (h = 0; h < (M); h += tile_m) { \
-          LIBXSMM_GEMM_TILED_KERNEL(xmm, TYPE, FLAGS, h, i, tile_m, tile_n, tile_k, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+      for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
+        KERNEL_START(libxsmm_tiled_gemm_i_) \
+        for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_gemm_xmm_, libxsmm_tiled_gemm_tempdesc_, TYPE, FLAGS, libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_, \
+            libxsmm_tiled_gemm_tile_m_, libxsmm_tiled_gemm_tile_n_, libxsmm_tiled_gemm_tile_k_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
     } \
     SYNC \
   } \
-  else if (0 != sufficient_size && 0 != LIBXSMM_EXT_GEMM_BLAS) { /* BLAS fall-back */ \
-    LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+  else if (0 != libxsmm_tiled_gemm_above_threshold_ && 0 != LIBXSMM_EXT_GEMM_BLAS) { /* fall-back */ \
+    LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
   else { /* small problem size */ \
-    LIBXSMM_XGEMM(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_; \
+    LIBXSMM_GEMM_DESCRIPTOR_TYPE(libxsmm_tiled_gemm_smalldesc_, LIBXSMM_ALIGNMENT, FLAGS, M, N, K, \
+      LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_NONE); \
+    libxsmm_gemm_tiled_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_gemm_smalldesc_); \
+    if (0 != libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
+      LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm), A, B, C); \
+    } \
+    else { \
+      LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    } \
   } \
 }
 
