@@ -230,9 +230,9 @@ LIBXSMM_API int libxsmm_uid2prefetch2(int uid);
 /** Determines whether (OpenMP-)tasks are preferred over thread-style parallelization. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks /*= 0*/;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mp /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mt;
 /** Number of threads per core. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt /*= 2*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt;
 
 #endif /*LIBXSMM_MAIN_H*/
 

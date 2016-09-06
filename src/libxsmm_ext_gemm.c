@@ -113,8 +113,8 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
   LIBXSMM_INIT
 #if defined(_OPENMP)
-  if (0 != libxsmm_mp) { /* enable OpenMP support */
-    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* even: enable internal parallelization */
+  if (0 != libxsmm_mt) { /* enable OpenMP support */
+    if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)
       if (0 == libxsmm_tasks)
 # endif
@@ -200,8 +200,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_INIT
 #if defined(_OPENMP)
-  if (0 != libxsmm_mp) { /* enable OpenMP support */
-    if (0 == LIBXSMM_MOD2(libxsmm_mp, 2)) { /* even: enable internal parallelization */
+  if (0 != libxsmm_mt) { /* enable OpenMP support */
+    if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)
       if (0 == libxsmm_tasks)
 # endif

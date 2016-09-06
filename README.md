@@ -56,7 +56,7 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*
   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines will open an internal parallel region by default, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_MP (0:&#160;small-sized, 1:&#160;sequential, and 2:&#160;parallelized/default). The actual parallelism is based on "classic" OpenMP by default (thread-based), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) keeping the main library agnostic with respect to a particular threading runtime.
+A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. The associated routines will open an internal parallel region by default, however participating on an already opened parallel region (without relying on nested parallelism) is also possible by using the environment variable LIBXSMM_MT (0:&#160;small-sized, 1:&#160;sequential, and 2:&#160;parallelized/default). The actual parallelism is based on "classic" OpenMP by default (thread-based), but can be adjusted to OpenMP&#160;3.0 task-based parallelism (environment variable LIBXSMM_TASKS=1). At least the latter parallelization is dynamically scheduled. Please note that these routines are hosted by the extension library (libxsmmext) keeping the main library agnostic with respect to a particular threading runtime.
 
 ```C
 /** OpenMP parallelized dense matrix multiplication (single/double-precision). */
@@ -86,7 +86,7 @@ In order to achieve best performance with small convolutions for CNN on SIMD arc
 The main concept in LIBXSMM's frontend is that everything is circled around `libxsmm_dnn_conv_handle` which will define all properties of a layer operation. A handle can be created by describing the convolutional layer and calling a create function:
 
 ```C
-/** simplified LIBXSMM types which are needed to create a handle*/
+/** simplified LIBXSMM types which are needed to create a handle */
 
 /** Structure which describes the input and output of data (DNN). */
 typedef struct libxsmm_dnn_conv_desc {
@@ -276,10 +276,10 @@ The static link-time wrapper technique may only work with a GCC tool chain (GNU 
 * An application which is dynamically linked against LAPACK/BLAS allows for intercepting the GEMM calls at startup time (runtime) of the unmodified executable by using the LD_PRELOAD mechanism. The shared library of LIBXSMM (`make STATIC=0`) allows to intercept the GEMM calls of the application:  
 `LD_PRELOAD=/path/to/libxsmmext.so ./myapplication`
 
-The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled with the environment variable LIBXSMM_MP i.e., 0:&#160;calling sequential below-threshold routines without OpenMP (default when only linking 'libxsmm'), 1:&#160;OpenMP-parallelized behavior but without an internal parallel region, and 2:&#160;OpenMP-parallelized routines with internal parallel region (default when linking 'libxsmmext'). In any case, the wrapper mechanism also supports to fall back to BLAS.
+The behavior of the intercepted GEMM routines (statically wrapped or via LD_PRELOAD) can be controlled with the environment variable LIBXSMM_MT i.e., 0:&#160;calling sequential below-threshold routines without OpenMP (default when only linking 'libxsmm'), 1:&#160;OpenMP-parallelized behavior but without an internal parallel region, and 2:&#160;OpenMP-parallelized routines with internal parallel region (default when linking 'libxsmmext'). In any case, the wrapper mechanism also supports to fall back to BLAS.
 
 ```
-LIBXSMM_MP=0 ./myapplication
+LIBXSMM_MT=0 ./myapplication
 ```
 
 **NOTE**: Using the same multiplication kernel in a consecutive fashion (batch-processing) allows to extract higher performance, when using LIBXSMM's native programming interface.

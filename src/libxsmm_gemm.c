@@ -110,7 +110,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if defined(LIBXSMM_GEMM_TILED)
-  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2))
+  if (0 == LIBXSMM_MOD2(libxsmm_mt, 2))
 #endif
   { /* below-threshold GEMM */
     LIBXSMM_SGEMM(flags, *m, *n, *k,
@@ -145,7 +145,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
 #if defined(LIBXSMM_GEMM_TILED)
-  if (0 == LIBXSMM_MOD2(libxsmm_mp, 2))
+  if (0 == LIBXSMM_MOD2(libxsmm_mt, 2))
 #endif
   { /* below-threshold GEMM */
     LIBXSMM_DGEMM(flags, *m, *n, *k,

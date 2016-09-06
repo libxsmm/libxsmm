@@ -624,16 +624,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           }
         }
       }
-      libxsmm_mp = 2;
+      libxsmm_mt = 2;
       {
         /* behaviour of parallelized routines which are located in libxsmmext library
          * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
          * 1: (OpenMP-)parallelized but without internal parallel region,
          * 2: (OpenMP-)parallelized with internal parallel region"
          */
-        const char *const env = getenv("LIBXSMM_MP");
+        const char *const env = getenv("LIBXSMM_MT");
         if (0 != env && 0 != *env) {
-          libxsmm_mp = atoi(env);
+          libxsmm_mt = atoi(env);
         }
       }
       { 
