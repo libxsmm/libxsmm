@@ -756,7 +756,9 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     CTARGET = -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
-      ifneq (0,$(GCC)) # GCC (not Clang)
+      ifneq (0,$(INTEL)) # ICC (not Clang)
+        CTARGET = -msse3
+      else ifneq (0,$(GCC)) # GCC (not Clang)
         CTARGET = -msse3
       else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
         CTARGET = -msse4.2
