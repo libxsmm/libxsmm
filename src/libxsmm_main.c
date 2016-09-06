@@ -551,7 +551,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(const lib
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_get_prefetch(int prefetch)
+LIBXSMM_API_DEFINITION int libxsmm_prefetch2uid(int prefetch)
 {
   switch (prefetch) {
     case LIBXSMM_PREFETCH_SIGONLY:            return 2;
@@ -567,6 +567,23 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_get_prefetch(int prefetch)
       assert(LIBXSMM_PREFETCH_NONE == prefetch);
       return 0;
     }
+  }
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_uid2prefetch2(int uid)
+{
+  switch (uid) {
+    case  2: return LIBXSMM_PREFETCH_SIGONLY;
+    case  3: return LIBXSMM_PREFETCH_BL2_VIA_C;
+    case  4: return LIBXSMM_PREFETCH_AL2_AHEAD;
+    case  5: return LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
+    case  6: return LIBXSMM_PREFETCH_AL2;
+    case  7: return LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+    case  8: return LIBXSMM_PREFETCH_AL2_JPST;
+    case  9: return LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+    case 10: return LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;
+    default: return LIBXSMM_PREFETCH_NONE;
   }
 }
 
@@ -601,20 +618,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         const char *const env = getenv("LIBXSMM_PREFETCH");
         internal_prefetch = (LIBXSMM_X86_AVX512_MIC != internal_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C);
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
-          const int env_prefetch = atoi(env);
-          if (0 <= env_prefetch) {
-            switch (env_prefetch) {
-              case 2:  internal_prefetch = LIBXSMM_PREFETCH_SIGONLY; break;
-              case 3:  internal_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C; break;
-              case 4:  internal_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD; break;
-              case 5:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD; break;
-              case 6:  internal_prefetch = LIBXSMM_PREFETCH_AL2; break;
-              case 7:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C; break;
-              case 8:  internal_prefetch = LIBXSMM_PREFETCH_AL2_JPST; break;
-              case 9:  internal_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST; break;
-              case 10:  internal_prefetch = LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C; break;
-              default: internal_prefetch = LIBXSMM_PREFETCH_NONE;
-            }
+          const int uid = atoi(env);
+          if (0 <= uid) {
+            internal_prefetch = libxsmm_uid2prefetch2(uid);
           }
         }
       }
@@ -1023,7 +1029,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.gemm->m,   (unsigned int)request->descriptor.gemm->n,   (unsigned int)request->descriptor.gemm->k,
             (unsigned int)request->descriptor.gemm->lda, (unsigned int)request->descriptor.gemm->ldb, (unsigned int)request->descriptor.gemm->ldc,
-            request->descriptor.gemm->alpha, request->descriptor.gemm->beta, internal_get_prefetch(request->descriptor.gemm->prefetch));
+            request->descriptor.gemm->alpha, request->descriptor.gemm->beta, libxsmm_prefetch2uid(request->descriptor.gemm->prefetch));
         }
       }
       else { /* this case is not an actual error */
@@ -1050,7 +1056,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.ssoa->gemm->m,   (unsigned int)request->descriptor.ssoa->gemm->n,   (unsigned int)request->descriptor.ssoa->gemm->k,
             (unsigned int)request->descriptor.ssoa->gemm->lda, (unsigned int)request->descriptor.ssoa->gemm->ldb, (unsigned int)request->descriptor.ssoa->gemm->ldc,
-            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, internal_get_prefetch(request->descriptor.ssoa->gemm->prefetch));
+            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, libxsmm_prefetch2uid(request->descriptor.ssoa->gemm->prefetch));
         }
       }
       else { /* this case is not an actual error */
