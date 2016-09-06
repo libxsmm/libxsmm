@@ -139,17 +139,18 @@ SINGLE_OUTER { \
   libxsmm_xmmfunction libxsmm_tiled_gemm_xmm_ = { 0 }; \
   SINGLE_INNER \
   if (0 != libxsmm_tiled_gemm_above_threshold_ && LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)) { \
-    libxsmm_tiled_gemm_tile_m_ = LIBXSMM_MAX(TILE_M, 2); libxsmm_tiled_gemm_tile_n_ = LIBXSMM_MAX(TILE_N, 2); libxsmm_tiled_gemm_tile_k_ = LIBXSMM_MAX(TILE_K, 2); \
-    libxsmm_tiled_gemm_num_m_ = ((M) + libxsmm_tiled_gemm_tile_m_ - 1) / libxsmm_tiled_gemm_tile_m_; \
-    libxsmm_tiled_gemm_num_n_ = ((N) + libxsmm_tiled_gemm_tile_n_ - 1) / libxsmm_tiled_gemm_tile_n_; \
-    libxsmm_tiled_gemm_num_k_ = ((K) + libxsmm_tiled_gemm_tile_k_ - 1) / libxsmm_tiled_gemm_tile_k_; \
+    libxsmm_tiled_gemm_num_m_ = ((M) + TILE_M - 1) / TILE_M; \
+    libxsmm_tiled_gemm_num_n_ = ((N) + TILE_N - 1) / TILE_N; \
+    libxsmm_tiled_gemm_num_k_ = ((K) + TILE_K - 1) / TILE_K; \
     { /* opening scope for additional variable declarations */ \
       const libxsmm_blasint libxsmm_tiled_gemm_num_t_ = (OVERHEAD(NT) <= libxsmm_tiled_gemm_num_k_ && 1 < (COLLAPSE)) \
-        ? (libxsmm_tiled_gemm_num_m_ * libxsmm_tiled_gemm_num_n_) : (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_ ? libxsmm_tiled_gemm_num_m_ : libxsmm_tiled_gemm_num_n_); \
+        ? (libxsmm_tiled_gemm_num_m_ * libxsmm_tiled_gemm_num_n_) \
+        : (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_ ? libxsmm_tiled_gemm_num_m_ : libxsmm_tiled_gemm_num_n_); \
       const libxsmm_blasint libxsmm_tiled_gemm_min_ntasks_ = MIN_TASKS(NT); \
       libxsmm_gemm_descriptor libxsmm_tiled_gemm_desc_; \
       if (libxsmm_tiled_gemm_min_ntasks_ < libxsmm_tiled_gemm_num_t_) { /* ensure enough parallel slack */ \
-        libxsmm_tiled_gemm_tile_m_ = (M) / libxsmm_tiled_gemm_num_m_; libxsmm_tiled_gemm_tile_n_ = (N) / libxsmm_tiled_gemm_num_n_; \
+        libxsmm_tiled_gemm_tile_m_ = (M) / libxsmm_tiled_gemm_num_m_; \
+        libxsmm_tiled_gemm_tile_n_ = (N) / libxsmm_tiled_gemm_num_n_; \
       } \
       else if ((OVERHEAD(NT)) <= libxsmm_tiled_gemm_num_k_) { \
         const double libxsmm_tiled_gemm_ratio_ = sqrt(((double)libxsmm_tiled_gemm_min_ntasks_) / libxsmm_tiled_gemm_num_t_); \
@@ -158,8 +159,10 @@ SINGLE_OUTER { \
       } \
       else if (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_) { \
         libxsmm_tiled_gemm_tile_m_ = ((M) + libxsmm_tiled_gemm_min_ntasks_ - 1) / libxsmm_tiled_gemm_min_ntasks_; \
+        libxsmm_tiled_gemm_tile_n_ = (N) / libxsmm_tiled_gemm_num_n_; \
       } \
       else { \
+        libxsmm_tiled_gemm_tile_m_ = (M) / libxsmm_tiled_gemm_num_m_; \
         libxsmm_tiled_gemm_tile_n_ = ((N) + libxsmm_tiled_gemm_min_ntasks_ - 1) / libxsmm_tiled_gemm_min_ntasks_; \
       } \
       { /* adjust for non-square operand shapes */ \
@@ -168,7 +171,7 @@ SINGLE_OUTER { \
         if (1.f < libxsmm_tiled_gemm_rk_) { libxsmm_tiled_gemm_rm_ /= libxsmm_tiled_gemm_rk_; libxsmm_tiled_gemm_rn_ /= libxsmm_tiled_gemm_rk_; libxsmm_tiled_gemm_rk_ = 1.f; } \
         libxsmm_tiled_gemm_tile_m_ = LIBXSMM_MIN(LIBXSMM_UP2((int)(libxsmm_tiled_gemm_tile_m_ * libxsmm_tiled_gemm_rm_ /*+ 0.5*/), 8), M); \
         libxsmm_tiled_gemm_tile_n_ = LIBXSMM_MIN(LIBXSMM_UP2((int)(libxsmm_tiled_gemm_tile_n_ * libxsmm_tiled_gemm_rn_ /*+ 0.5*/), 8), N); \
-        libxsmm_tiled_gemm_tile_k_ = LIBXSMM_MIN(LIBXSMM_UP2((int)(libxsmm_tiled_gemm_tile_k_ * libxsmm_tiled_gemm_rk_ /*+ 0.5*/), 8), K); \
+        libxsmm_tiled_gemm_tile_k_ = LIBXSMM_MIN(LIBXSMM_UP2((int)((K) * libxsmm_tiled_gemm_rk_ / libxsmm_tiled_gemm_num_k_), 8), K); \
       } \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_gemm_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
         libxsmm_tiled_gemm_tile_m_, libxsmm_tiled_gemm_tile_n_, libxsmm_tiled_gemm_tile_k_, \
