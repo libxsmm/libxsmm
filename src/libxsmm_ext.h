@@ -48,7 +48,7 @@
 #   define LIBXSMM_EXT_TASKS
 # endif
 # define LIBXSMM_EXT_MIN_NTASKS(NT) LIBXSMM_MAX(7/*arbitrary factor*/ * omp_get_num_threads() / (NT), 1)
-# define LIBXSMM_EXT_OVERHEAD(NT) (/*arbitrary factor*/NT)
+# define LIBXSMM_EXT_OVERHEAD(NT) (/*arbitrary factor*/(NT))
 # define LIBXSMM_EXT_SINGLE LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_FOR_PARALLEL LIBXSMM_PRAGMA(omp parallel)
 # define LIBXSMM_EXT_FOR_LOOP(COLLAPSE) LIBXSMM_PRAGMA(omp for schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(COLLAPSE))
