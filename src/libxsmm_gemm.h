@@ -154,7 +154,7 @@ SINGLE_OUTER { \
       } \
       else if ((OVERHEAD(NT)) <= libxsmm_tiled_gemm_num_k_) { \
         const double libxsmm_tiled_gemm_ratio_ = sqrt(((double)libxsmm_tiled_gemm_min_ntasks_) / libxsmm_tiled_gemm_num_t_); \
-        libxsmm_tiled_gemm_tile_n_ = /*(int)*/(libxsmm_tiled_gemm_num_n_ * libxsmm_tiled_gemm_ratio_/* + 0.5*/); \
+        libxsmm_tiled_gemm_tile_n_ = (libxsmm_blasint)(libxsmm_tiled_gemm_num_n_ * libxsmm_tiled_gemm_ratio_/* + 0.5*/); \
         libxsmm_tiled_gemm_tile_m_ = (libxsmm_tiled_gemm_min_ntasks_ + libxsmm_tiled_gemm_tile_n_ - 1) / libxsmm_tiled_gemm_tile_n_; \
       } \
       else if (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_) { \
