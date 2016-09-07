@@ -210,6 +210,33 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
       if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
         handle->ifmblock = (conv_desc.C >=32) ? 32 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=32) ? 32 : conv_desc.K;
+
+        /* let's find out if we need a smaller blocking */
+        if ( conv_desc.C % handle->ifmblock != 0 ) {
+          if ( conv_desc.C % 16 == 0 ) {
+            handle->ifmblock = 16;
+          } else if ( conv_desc.C % 8 == 0 ) {
+            handle->ifmblock = 8;
+          } else {
+            noarch = 1;
+            *status = LIBXSMM_DNN_WARN_FALLBACK;
+            handle->ifmblock = 1;
+            handle->ofmblock = 1; 
+          }
+        }
+
+        if ( (conv_desc.K % handle->ofmblock != 0) && (noarch == 0) ) {
+          if ( conv_desc.K % 16 == 0 ) {
+            handle->ofmblock = 16;
+          } else if ( conv_desc.K % 8 == 0 ) {
+            handle->ofmblock = 8;
+          } else {
+            noarch = 1;
+            *status = LIBXSMM_DNN_WARN_FALLBACK;
+            handle->ifmblock = 1;
+            handle->ofmblock = 1; 
+          }
+        }
       }
       else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -217,34 +244,25 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle = 0;
         return handle;
       }
-#if 0
-      /* enable fallback if we are not using LIBXSMM format */
-      if ( (conv_desc.buffer_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) ||
-           (conv_desc.filter_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)     ) {
-        noarch = 1;
-        *status = LIBXSMM_DNN_WARN_FALLBACK;
-        handle->ifmblock = (conv_desc.C >=8) ? 8 : conv_desc.C;
-        handle->ofmblock = (conv_desc.K >=8) ? 8 : conv_desc.K;
-        handle->fwd_ofw_rb = 1;
-        handle->fwd_ofh_rb = 1;  
-      }
-#endif
     } else {
       *status = LIBXSMM_DNN_WARN_FALLBACK;
-      handle->ifmblock = (conv_desc.C >=8) ? 8 : conv_desc.C;
-      handle->ofmblock = (conv_desc.K >=8) ? 8 : conv_desc.K;
+      handle->ifmblock = 1;
+      handle->ofmblock = 1;
     }
+
     /* Let's calculate how many blocks we need */
     handle->blocksifm = conv_desc.C / handle->ifmblock;
     handle->blocksofm = conv_desc.K / handle->ofmblock;
+
     /* Let's check that we can actually block */
     if (conv_desc.C % handle->ifmblock != 0 ||
         conv_desc.K % handle->ofmblock != 0)
     {
-      *status = LIBXSMM_DNN_ERR_INVALID_BLOCKING;
-      free(handle);
-      handle = 0;
-      return handle;
+      *status = LIBXSMM_DNN_WARN_FALLBACK;
+      handle->ifmblock = 1;
+      handle->ofmblock = 1;
+      handle->blocksifm = conv_desc.C / handle->ifmblock;
+      handle->blocksofm = conv_desc.K / handle->ofmblock;
     }
 
     /* TODO: we need to add much more checks here .... */
@@ -288,7 +306,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
           handle->code_fwd[3].sconv = libxsmm_create_sconv_forward(&descriptor);
         } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
-          /* we don't do prefetching for AVX2 */
+          /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
           descriptor.unroll_kh = 0;
           descriptor.unroll_kw = 0;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;

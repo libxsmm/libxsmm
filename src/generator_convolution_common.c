@@ -33,6 +33,7 @@
 #include "generator_convolution_common.h"
 #include "generator_common.h"
 #include <libxsmm_macros.h>
+#include <libxsmm_main.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -218,7 +219,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
     exit(-1);
   }
 
-  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) ) {
+  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (libxsmm_get_target_archid() != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
     l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
 
@@ -322,7 +323,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     exit(-1);
   }
 
-  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) ) {
+  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (libxsmm_get_target_archid() != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
     l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
 
