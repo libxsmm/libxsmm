@@ -75,8 +75,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   }
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
     const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-      { { 72, 32, 16 }, { 72, 32, 16 } }, /*generic*/
-      { { 72, 32, 16 }, { 72, 32, 16 } }  /*knl*/
+      { { 96, 32, 16 }, { 96, 32, 16 } }, /*generic*/
+      { { 96, 32, 16 }, { 96, 32, 16 } }  /*knl*/
     };
     const char* env[3];
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
