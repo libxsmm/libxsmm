@@ -217,7 +217,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle = 0;
         return handle;
       }
-
+#if 0
       /* enable fallback if we are not using LIBXSMM format */
       if ( (conv_desc.buffer_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) ||
            (conv_desc.filter_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)     ) {
@@ -228,6 +228,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle->fwd_ofw_rb = 1;
         handle->fwd_ofh_rb = 1;  
       }
+#endif
     } else {
       *status = LIBXSMM_DNN_WARN_FALLBACK;
       handle->ifmblock = (conv_desc.C >=8) ? 8 : conv_desc.C;
@@ -288,6 +289,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
           handle->code_fwd[3].sconv = libxsmm_create_sconv_forward(&descriptor);
         } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
           /* we don't do prefetching for AVX2 */
+          descriptor.unroll_kh = 0;
+          descriptor.unroll_kw = 0;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
           handle->code_fwd[0].sconv = libxsmm_create_sconv_forward(&descriptor);
           handle->code_fwd[1].sconv = handle->code_fwd[0].sconv;
