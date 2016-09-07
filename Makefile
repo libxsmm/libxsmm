@@ -1160,6 +1160,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
@@ -1187,6 +1188,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
