@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 HERE=$(cd $(dirname $0); pwd -P)
 
@@ -25,9 +25,8 @@ pandoc -D latex \
 # LIBXSMM documentation
 iconv -t utf-8 README.md \
 | sed \
-  -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-  -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-  -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 | tee >( pandoc \
@@ -49,9 +48,8 @@ iconv -t utf-8 README.md \
 # CP2K recipe
 iconv -t utf-8 ${HERE}/documentation/cp2k.md \
 | sed \
-  -e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-  -e 's/\[!\[.\+\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=.\+)\](.\+)//' \
-  -e 's/\[\[.\+\](.\+)\]//' -e '/!\[.\+\](.\+)/{n;d}' \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 | tee >( pandoc \
