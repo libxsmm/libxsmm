@@ -613,9 +613,18 @@ else # GCC assumed
     CFLAGS += $(OPTFLAG) -funroll-loops
     FCFLAGS += $(OPTFLAG) -funroll-loops
     ifeq (0,$(COMPATIBLE))
-      CXXFLAGS += -ftree-vectorize -ffast-math
-      CFLAGS += -ftree-vectorize -ffast-math
-      FCFLAGS += -ftree-vectorize -ffast-math
+      CXXFLAGS += -ftree-vectorize
+      CFLAGS += -ftree-vectorize
+      FCFLAGS += -ftree-vectorize
+      ifneq (0,$(GCC))
+        CXXFLAGS += -ffast-math
+        CFLAGS += -ffast-math
+        FCFLAGS += -ffast-math
+      else ifneq (3,$(AVX))
+        CXXFLAGS += -ffast-math
+        CFLAGS += -ffast-math
+        FCFLAGS += -ffast-math
+      endif
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -flto -ffat-lto-objects
