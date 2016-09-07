@@ -481,10 +481,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
   {
     char title[256], range[256];
     {
-      unsigned int n = 0;
-      for (n = 0; 0 != target_arch[n] && n < sizeof(title); ++n) { /* toupper */
+      unsigned int n;
+      assert(strlen(target_arch) < sizeof(title));
+      for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
         const char c = target_arch[n];
-        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c);
+        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c); /* toupper */
       }
       LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
