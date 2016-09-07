@@ -271,13 +271,13 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
 # if defined(MAP_NORESERVE)
           | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
 # endif
-# if defined(MAP_HUGETLB)
-          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
-# endif
 # if defined(MAP_32BIT)
           | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_32BIT : 0)
 # endif
-# if defined(MAP_LOCKED) && 0
+# if defined(MAP_HUGETLB) && 0/*may be failing depending on system settings*/
+          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
+# endif
+# if defined(MAP_LOCKED) && 0/*disadvantage*/
           | MAP_LOCKED
 # endif
         ;
