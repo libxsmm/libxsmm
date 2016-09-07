@@ -1156,11 +1156,11 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		$(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/README.md \
 	| sed \
-		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
-		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
@@ -1184,11 +1184,11 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		$(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
 	| sed \
-		-e 's/https:\/\/raw\.githubusercontent\.com\/hfp\/libxsmm\/master\///' \
-		-e 's/\[!\[..*\](https:\/\/travis-ci.org\/hfp\/libxsmm.svg?branch=..*)\](..*)//' \
-		-e 's/\[\[..*\](..*)\]//' -e '/!\[..*\](..*)/{n;d}' \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \

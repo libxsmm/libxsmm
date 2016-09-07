@@ -127,7 +127,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 /** Helper macro determining the default prefetch strategy which is used for statically generated kernels. */
 #if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */
 # if defined(__MIC__) || (LIBXSMM_X86_AVX512_MIC == LIBXSMM_STATIC_TARGET_ARCH)
-#   define INTERNAL_PREFETCH LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C
+#   define INTERNAL_PREFETCH LIBXSMM_PREFETCH_AL2BL2_VIA_C
 # elif (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */
 #   define INTERNAL_PREFETCH LIBXSMM_PREFETCH_SIGONLY
 # endif
@@ -433,6 +433,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
     case LIBXSMM_X86_AVX512_MIC: {
       target_arch = "knl";
     } break;
+    case LIBXSMM_X86_AVX512: {
+      target_arch = "avx3";
+    } break;
     case LIBXSMM_X86_AVX2: {
       target_arch = "hsw";
     } break;
@@ -481,10 +484,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
   {
     char title[256], range[256];
     {
-      unsigned int n = 0;
-      for (n = 0; 0 != target_arch[n] && n < sizeof(title); ++n) { /* toupper */
+      unsigned int n;
+      assert(strlen(target_arch) < sizeof(title));
+      for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
         const char c = target_arch[n];
-        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c);
+        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c); /* toupper */
       }
       LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
@@ -616,7 +620,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set internal_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_PREFETCH");
-        internal_prefetch = (LIBXSMM_X86_AVX512_MIC != internal_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C);
+        internal_prefetch = (LIBXSMM_X86_AVX512_MIC != internal_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
@@ -874,6 +878,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
   switch (id) {
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_MIC:
+    case LIBXSMM_X86_AVX512:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE4_2:
@@ -934,11 +939,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (1 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("skx", arch) || 0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
+    else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
     else if (0 == strcmp("knl", arch) || 0 == strcmp("mic2", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
+      target_archid = LIBXSMM_X86_AVX512;
     }
     else if (0 == strcmp("hsw", arch) || 0 == strcmp("avx2", arch)) {
       target_archid = LIBXSMM_X86_AVX2;
