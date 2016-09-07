@@ -48,8 +48,7 @@
 
 /* individually enable intrinsic code paths */
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
-# define LIBXSMM_GEMM_DIFF_AVX512_CORE
-# define LIBXSMM_GEMM_DIFF_AVX512_MIC
+# define LIBXSMM_GEMM_DIFF_AVX512
 # define LIBXSMM_GEMM_DIFF_AVX2
 # define LIBXSMM_GEMM_DIFF_AVX
 # define LIBXSMM_GEMM_DIFF_SSE
@@ -70,11 +69,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_diff_init(int target_arch)
   internal_gemm_diffn_fn = libxsmm_gemm_diffn_imci;
   internal_gemm_diff_fn = libxsmm_gemm_diff_imci;
 #else
-  if (LIBXSMM_X86_AVX512_CORE <= target_arch) {
-    internal_gemm_diffn_fn = libxsmm_gemm_diffn_avx512;
-    internal_gemm_diff_fn = libxsmm_gemm_diff_avx2;
-  }
-  else if (LIBXSMM_X86_AVX512_MIC <= target_arch) {
+  if (LIBXSMM_X86_AVX512 <= target_arch) {
     internal_gemm_diffn_fn = libxsmm_gemm_diffn_avx512;
     internal_gemm_diff_fn = libxsmm_gemm_diff_avx2;
   }
@@ -290,9 +285,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descri
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH)
-  return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
 #elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
@@ -451,8 +444,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(c
 LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if (defined(LIBXSMM_GEMM_DIFF_AVX512_MIC)  && LIBXSMM_X86_AVX512_MIC  <= LIBXSMM_MAX_STATIC_TARGET_ARCH) || \
-    (defined(LIBXSMM_GEMM_DIFF_AVX512_CORE) && LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if (defined(LIBXSMM_GEMM_DIFF_AVX512) && LIBXSMM_X86_AVX512  <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
@@ -492,7 +484,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
 # endif
 #else
-# if !defined(NDEBUG) && (defined(LIBXSMM_GEMM_DIFF_AVX512_MIC) || defined(LIBXSMM_GEMM_DIFF_AVX512_CORE))
+# if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX512)
   { static LIBXSMM_TLS int once = 0;
     if (0 == once) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX-512 code path!\n");

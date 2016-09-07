@@ -433,6 +433,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
     case LIBXSMM_X86_AVX512_MIC: {
       target_arch = "knl";
     } break;
+    case LIBXSMM_X86_AVX512: {
+      target_arch = "avx3";
+    } break;
     case LIBXSMM_X86_AVX2: {
       target_arch = "hsw";
     } break;
@@ -875,6 +878,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
   switch (id) {
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_MIC:
+    case LIBXSMM_X86_AVX512:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
     case LIBXSMM_X86_SSE4_2:
@@ -935,11 +939,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (1 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("skx", arch) || 0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
+    else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
     else if (0 == strcmp("knl", arch) || 0 == strcmp("mic2", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
+    }
+    else if (0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
+      target_archid = LIBXSMM_X86_AVX512;
     }
     else if (0 == strcmp("hsw", arch) || 0 == strcmp("avx2", arch)) {
       target_archid = LIBXSMM_X86_AVX2;
