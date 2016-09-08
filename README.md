@@ -146,14 +146,14 @@ CHKERR_LIBXSMM_DNN(status);
 Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution could be executed by a threading environment of choice:
 
 ```C
-libxsmm_dnn_activation* libxsmm_input;
-libxsmm_dnn_activation* libxsmm_output;
+libxsmm_dnn_buffer* libxsmm_input;
+libxsmm_dnn_buffer* libxsmm_output;
 libxsmm_dnn_filter* libxsmm_filter;
 
 /* setup LIBXSMM layer information */
-libxsmm_input = libxsmm_dnn_create_input_activation_check(libxsmm_handle, &status);
+libxsmm_input = libxsmm_dnn_create_input_buffer_check(libxsmm_handle, &status);
 CHKERR_LIBXSMM_DNN(status);
-libxsmm_output = libxsmm_dnn_create_output_activation_check(libxsmm_handle, &status);
+libxsmm_output = libxsmm_dnn_create_output_buffer_check(libxsmm_handle, &status);
 CHKERR_LIBXSMM_DNN(status);
 libxsmm_filter = libxsmm_dnn_create_filter_check(libxsmm_handle, &status);
 CHKERR_LIBXSMM_DNN(status);
@@ -162,13 +162,13 @@ CHKERR_LIBXSMM_DNN(status);
 /* (mini-batch)(splits)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
 /* and the naive format for filters is: */
 /* (splits)(number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_activation(libxsmm_input, (void*)naive_input));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_activation(libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_buffer(libxsmm_input, (void*)naive_input));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_buffer(libxsmm_output));
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter));
 
 /* bind layer to handle */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_input_activation(libxsmm_handle, libxsmm_input));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_output_activation(libxsmm_handle, libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_input));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_output));
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter));
 
 /* run the convolution */
@@ -179,7 +179,7 @@ CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter));
 }
 
 /* copy out data */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_activation(libxsmm_output, (void*)naive_libxsmm_output));
+CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output));
 ```
 
 ## Build Instructions
