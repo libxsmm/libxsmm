@@ -746,14 +746,18 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifeq (0,$(shell $(CC) -E -mavx512f /dev/null 2> /dev/null > /dev/null; echo $$?))
+    ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
       ifneq (,$(MIC)) # specified
         ifneq (0,$(MIC)) # MIC
-          CTARGET += -mavx512pf -mavx512er
+          ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2> /dev/null > /dev/null; echo $$?))
+            CTARGET += -mavx512pf -mavx512er
+          endif
         else # SKX
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          #CTARGET += -mavx512ifma -mavx512vbmi
+          ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2> /dev/null > /dev/null; echo $$?))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+            #CTARGET += -mavx512ifma -mavx512vbmi
+          endif
         endif
       endif
     endif
