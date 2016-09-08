@@ -367,13 +367,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     /* TODO */
     /* deallocate code known to be not registered; no index attached */
     /* do not use libxsmm_release_kernel here! */
-    if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
-        libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) {
+    if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) /*&& (handle->avx2fallback == 0)*/ ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
       libxsmm_xfree(handle->code_fwd[1].pmm);
       libxsmm_xfree(handle->code_fwd[2].pmm);
       libxsmm_xfree(handle->code_fwd[3].pmm);
-    } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
+    } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) /*|| (handle->avx2fallback != 0)*/ ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
     } else {
       /* no kernel was JITed */
