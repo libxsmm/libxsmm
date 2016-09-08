@@ -88,8 +88,46 @@
 #   endif
 #   if defined(__clang__)
 #     if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
-#       define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       if defined(__APPLE__) && defined(__MACH__)
+#         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       else
+#         if (LIBXSMM_VERSION3(3, 8, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl"))
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#         elif (LIBXSMM_VERSION3(3, 4, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,avx512f,avx512cd,avx512pf,avx512er"))
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#         else
+#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2"))
+#           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#         endif
+#       endif
+#       if (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         if !defined(__AVX512F__)
+#           define __AVX512F__ 1
+#         endif
+#         if !defined(__AVX512CD__)
+#           define __AVX512CD__ 1
+#         endif
+#         if !defined(__AVX512PF__)
+#           define __AVX512PF__ 1
+#         endif
+#         if !defined(__AVX512ER__)
+#           define __AVX512ER__ 1
+#         endif
+#       endif
+#       if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         if !defined(__AVX512DQ__)
+#           define __AVX512DQ__ 1
+#         endif
+#         if !defined(__AVX512BW__)
+#           define __AVX512BW__ 1
+#         endif
+#         if !defined(__AVX512VL__)
+#           define __AVX512VL__ 1
+#         endif
+#       endif
 #       if !defined(__AVX2__)
 #         define __AVX2__ 1
 #       endif

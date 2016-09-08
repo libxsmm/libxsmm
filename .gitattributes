@@ -1,10 +1,11 @@
-version.txt merge=ours
-.gitattributes export-ignore
-.gitignore export-ignore
-.hooks export-ignore
-.travis.yml export-ignore
 .codecov export-ignore
 .env export-ignore
+.gitattributes export-ignore
+.gitconfig export-ignore
+.gitignore export-ignore
+.scan.sh export-ignore
+.travis.yml export-ignore
+.hooks export-ignore
 README.sh export-ignore
 documentation/*.pptx export-ignore
 samples/seissol/*.bound export-ignore
@@ -12,3 +13,4 @@ samples/seissol/*.neigh export-ignore
 samples/seissol/*.orient export-ignore
 samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
+version.txt merge=ours
