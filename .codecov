@@ -2,7 +2,7 @@
 #
 # This script is supposed to be source'd prior to building the library and samples using GNU GCC.
 # Executing "eval ${COVERAGE} (after building/running a case) yields code coverage information.
-# Prerequisite: source .env
+# Prerequisite: source .travis.env
 #
 MKDIR=$(which mkdir)
 FIND=$(which find)
@@ -41,6 +41,6 @@ if [ "${TRAVIS_BUILD_DIR}" != "" ]; then
     unset CODECOV
   fi
 else
-  echo "Please run \"source .env\" first!"
+  echo "Please run \"source .travis.env\" first!"
 fi
 

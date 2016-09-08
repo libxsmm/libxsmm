@@ -1,0 +1,13 @@
+*.c
+*.cpp
+*.h
+*.hpp
+*.f
+*.F90
+*.fh
+*.sh
+*.py
+*.yml
+*.txt
+*.md
+Makefile

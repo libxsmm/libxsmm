@@ -48,7 +48,7 @@ after_success:
   - eval ${CODECOV}
 
 before_script:
-  - source .env
+  - source .travis.env
 
 script:
   - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
