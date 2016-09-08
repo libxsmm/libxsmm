@@ -218,7 +218,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
     exit(-1);
   }
 
-  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX2) ) {
+  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
     l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
 
@@ -322,7 +322,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     exit(-1);
   }
 
-  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX2) ) {
+  if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
     l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
 
