@@ -150,6 +150,7 @@
     <None Include="..\.gitattributes" />
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
+    <None Include="..\.scan.sh" />
     <None Include="..\.state.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />

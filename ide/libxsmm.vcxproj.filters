@@ -328,6 +328,7 @@
     <None Include="..\.gitattributes" />
     <None Include="..\.state.sh" />
     <None Include="..\LICENSE" />
+    <None Include="..\.scan.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
