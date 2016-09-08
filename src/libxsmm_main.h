@@ -165,6 +165,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_convolution_forward_descriptor       bwd_desc;
   libxsmm_convolution_weight_update_descriptor wu_desc;
   */
+  int avx512avx2fallback;
   libxsmm_code_pointer code_fwd[4];
   libxsmm_code_pointer code_bwd[8];
   libxsmm_code_pointer code_upd[4];

@@ -154,6 +154,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     handle->ofw = (conv_desc.W - conv_desc.S) / conv_desc.v + 1;
     handle->ofhp = handle->ofh + 2*conv_desc.pad_h_out;
     handle->ofwp = handle->ofw + 2*conv_desc.pad_w_out;
+    handle->avx512avx2fallback = 0;
 
     /* now architecture specific */
     if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
@@ -368,12 +369,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     /* deallocate code known to be not registered; no index attached */
     /* do not use libxsmm_release_kernel here! */
     if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) /*&& (handle->avx2fallback == 0)*/ ) {
+          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
       libxsmm_xfree(handle->code_fwd[1].pmm);
       libxsmm_xfree(handle->code_fwd[2].pmm);
       libxsmm_xfree(handle->code_fwd[3].pmm);
-    } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) /*|| (handle->avx2fallback != 0)*/ ) {
+    } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
     } else {
       /* no kernel was JITed */
