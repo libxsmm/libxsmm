@@ -12,11 +12,15 @@ ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 PATTERNS="$(cat ${ROOTDIR}/.codefile)"
 MSG_TAG="[skip ci]"
 MSG_FILE=$1
+MSG_KIND=$2
 
-if [ "" != "${MSG_FILE}" ] && [ "0" != "$(grep -q "${MSG_TAG}" ${MSG_FILE} ; echo $?)" ]; then
-  for FILE in $(git diff --name-only); do
+if [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
+   [ "0" != "$(grep -qs -F "${MSG_TAG}" ${MSG_FILE}; echo $?)" ];
+then
+  for FILE in $(git diff --cached --name-only); do
+    BASENAME=$(basename ${FILE})
     for PATTERN in ${PATTERNS}; do
-      if [[ ${FILE} = ${PATTERN} ]]; then
+      if [[ ${BASENAME} = ${PATTERN} ]]; then
         exit 0
       fi
     done
