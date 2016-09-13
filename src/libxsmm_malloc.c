@@ -44,6 +44,10 @@
 # include <windows.h>
 #else
 # include <sys/mman.h>
+# if defined(MAP_HUGETLB) && defined(MAP_POPULATE)
+#   include <sys/utsname.h>
+#   include <string.h>
+# endif
 # include <errno.h>
 #endif
 #if defined(LIBXSMM_VTUNE)
@@ -262,7 +266,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
 # endif
 #else
         const int xflags = (0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? (PROT_READ | PROT_WRITE | PROT_EXEC) : (PROT_READ | PROT_WRITE));
-        const int mflags =
+        int mflags =
 # if defined(__APPLE__) && defined(__MACH__)
           MAP_PRIVATE | MAP_ANON
 # else
@@ -277,10 +281,26 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
 # if defined(MAP_HUGETLB) && 0/*may be failing depending on system settings*/
           | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
 # endif
+# if defined(MAP_UNINITIALIZED) /*unlikely to be available*/
+          | MAP_UNINITIALIZED
+# endif
 # if defined(MAP_LOCKED) && 0/*disadvantage*/
           | MAP_LOCKED
 # endif
         ;
+        /* prefault pages to avoid data race in Linux' page-fault handler pre-3.10.0-327 */
+# if defined(MAP_HUGETLB) && defined(MAP_POPULATE)
+        struct utsname osinfo;
+        if (0 != (MAP_HUGETLB & mflags) && 0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)) {
+          unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
+          if (4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch) &&
+            LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
+          {
+            /* TODO: lock across threads and processes */
+            mflags |= MAP_POPULATE;
+          }
+        }
+# endif
         alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
         alloc_size = internal_size + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
