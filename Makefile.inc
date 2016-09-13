@@ -124,9 +124,10 @@ ifeq (0,$(BLAS))
 endif
 endif
 
+EXTLIB = $(call libdir,$(LIBNAME)ext.$(LIBEXT)) $(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides a libxsmmext as a dummy library which satisfies BLAS symbols
-  BLASLIB = $(call libdir,$(LIBNAME)ext.$(LIBEXT))
+  BLASLIB = $(EXTLIB)
 else
   BLASLIB = $(NULL)
 endif

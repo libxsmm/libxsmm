@@ -101,15 +101,12 @@ endif
 ifneq (0,$(XWRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
-		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) (call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
-		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
+	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
 		$(XLIB_BEGIN) -l$(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(call libdir,$(LIBNAME)ext.$(LIBEXT))  \
-		$(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
