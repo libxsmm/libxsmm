@@ -96,14 +96,6 @@ typedef enum libxsmm_dnn_conv_algo {
   LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
 
-/** Denotes the element/pixel type of an image/channel. */
-typedef enum libxsmm_dnn_datatype {
-  LIBXSMM_DNN_DATATYPE_FP32,
-  LIBXSMM_DNN_DATATYPE_INT32,
-  LIBXSMM_DNN_DATATYPE_INT16,
-  LIBXSMM_DNN_DATATYPE_INT8
-} libxsmm_dnn_datatype;
-
 /** Structure which describes the input and output of data (DNN). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int N;                                       /* number of images in mini-batch */

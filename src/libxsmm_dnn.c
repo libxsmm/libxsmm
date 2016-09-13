@@ -293,6 +293,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.ofw_padded = handle->ofwp;
         descriptor.ofh_rb = handle->fwd_ofh_rb;
         descriptor.ofw_rb = handle->fwd_ofw_rb;
+        descriptor.datatype = handle->datatype;
         descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
         /* TODO check JIT errors */
         if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||

@@ -157,6 +157,15 @@ typedef enum libxsmm_dnn_conv_format{
 } libxsmm_dnn_conv_format;
 
 
+/** Denotes the element/pixel type of an image/channel. */
+typedef enum libxsmm_dnn_datatype {
+  LIBXSMM_DNN_DATATYPE_FP32,
+  LIBXSMM_DNN_DATATYPE_INT32,
+  LIBXSMM_DNN_DATATYPE_INT16,
+  LIBXSMM_DNN_DATATYPE_INT8
+} libxsmm_dnn_datatype;
+
+
 /**
  * Structure storing the convolution argument description.
  */
@@ -178,6 +187,7 @@ typedef struct libxsmm_convolution_forward_descriptor {
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
@@ -209,6 +219,7 @@ typedef struct libxsmm_convolution_backward_descriptor {
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
 /**
@@ -237,6 +248,7 @@ typedef struct libxsmm_convolution_weight_update_descriptor {
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
 
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 #endif /*LIBXSMM_TYPEDEFS_H*/
