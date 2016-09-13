@@ -4,6 +4,9 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl_service.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -57,7 +60,9 @@ int main(int argc, char* argv[])
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
     REAL_TYPE *const d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-
+#if defined(MKL_ENABLE_AVX512)
+    mkl_enable_instructions(MKL_ENABLE_AVX512);
+#endif
     init(42, a, scale, m, k, lda);
     init(24, b, scale, k, n, ldb);
     init(0, c, scale, m, n, ldc);
