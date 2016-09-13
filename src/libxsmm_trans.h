@@ -125,7 +125,7 @@
 #define LIBXSMM_OTRANS_MAIN(KERNEL_START, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LD, LDO) { \
   const libxsmm_blasint m = (M1) - (M0), n = (N1) - (N0); \
   if (m * n * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
-    KERNEL_START \
+    KERNEL_START(n) \
     { \
       LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LD, LDO) \
       /* fall-back code path which is generic with respect to the typesize */ \
