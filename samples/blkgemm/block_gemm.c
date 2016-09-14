@@ -48,6 +48,7 @@ typedef struct libxsmm_blk_gemm_handle {
   int bm;
   int bn;
   int bk;
+  libxsmm_smmfunction kernel;
 } libxsmm_blk_gemm_handle;
 
 void init_a( libxsmm_blk_gemm_handle* handle,
@@ -155,6 +156,36 @@ void compare_c( libxsmm_blk_gemm_handle* handle,
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
+void libxsmm_blk_sgemm( const libxsmm_blk_gemm_handle* handle, 
+                        const char transA, 
+                        const char transB, 
+                        const float* alpha, 
+                        const float* a, 
+                        const float* b, 
+                        const float* beta, 
+                        float* c ) {
+  int mb, nb, kb;
+#if defined(LIBXSMM_VLA)
+  typedef float (*LIBXSMM_RESTRICT a_type)[(handle->m)/(handle->bm)][handle->bk][handle->bm];
+  typedef float (*LIBXSMM_RESTRICT b_type)[(handle->k)/(handle->bk)][handle->bn][handle->bk];
+  typedef float (*LIBXSMM_RESTRICT c_type)[(handle->m)/(handle->bm)][handle->bn][handle->bm];
+
+  const a_type a_t = (a_type)a;
+  const b_type b_t = (b_type)b;
+  const c_type c_t = (c_type)c;
+
+  for ( nb = 0; nb < (handle->n)/(handle->bn); nb++ ) {
+    for ( mb = 0; mb < (handle->m)/(handle->bm); mb++ ) {
+      for ( kb = 0; kb < (handle->k)/(handle->bk); kb++ ) {
+        handle->kernel( &(a_t[kb][mb][0][0]), &(b_t[nb][kb][0][0]), &(c_t[nb][mb][0][0]) );
+      }
+    }
+  }
+#else
+#error this code only works with LIBXSMM_VLA being available.
+#endif
+}
+
 int main(int argc, char* argv []) {
   real *a, *b, *c, *a_gold, *b_gold, *c_gold;
   int M, N, K, LDA, LDB, LDC;
@@ -225,9 +256,24 @@ int main(int argc, char* argv []) {
   alpha = (real)1.0;
   beta = (real)1.0;
   flops = (double)M * (double)N * (double)K * (double)2.0 * (double)reps;
-  printf(" Running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, reps );
 
-  /* init random seed */
+  /* check for valide blocking and JIT-kernel */
+  if ( handle.m % handle.bm != 0 ) {
+    printf( " M needs to be a multiple of bm... exiting!\n" );
+    return -1;
+  }
+  if ( handle.n % handle.bn != 0 ) {
+    printf( " N needs to be a multiple of bn... exiting!\n" );
+    return -2;
+  }
+  if ( handle.k % handle.bk != 0 ) {
+    printf( " K needs to be a multiple of bk... exiting!\n" );
+    return -3;
+  }
+  handle.kernel = libxsmm_smmdispatch(handle.bm, handle.bn, handle.bk, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+  /* init random seed and print some info */
+  printf(" Running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, reps );
   srand48(1);
 
   /* allocate data */
@@ -240,29 +286,26 @@ int main(int argc, char* argv []) {
 
   /* init data */
   for ( l = 0; l < (size_t)M * (size_t)K; l++ ) {
-    a_gold[l] = (float)drand48();
+    a_gold[l] = (real)drand48();
   }
   for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
     b_gold[l] = (real)drand48();
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    c_gold[l] = (real)drand48();
+    c_gold[l] = (real)0.0;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    c[l]      = (real)drand48();
+    c[l]      = (real)0.0;
   }
   init_a( &handle, a, a_gold );
   init_b( &handle, b, b_gold );
 
   /* check result */
   /* run LIBXSEMM, trans, alpha and beta are ignored */
-#if 0
-  libxsmm_blk_sgemm( &handle, &trans, &trans, &alpha, a, b, &beta, c );
-#endif
+  libxsmm_blk_sgemm( &handle, trans, trans, &alpha, a, b, &beta, c );
   /* run BLAS */
   sgemm(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
   /* compare result */
-  init_c( &handle, c, c_gold );
   compare_c( &handle, c, c_gold );
 
   /* time BLAS */
@@ -277,9 +320,7 @@ int main(int argc, char* argv []) {
   /* time libxsmm */
   start = libxsmm_timer_tick();
   for ( i = 0; i < reps; i++ ) {
-#if 0
-    libxsmm_blk_sgemm( &handle, &trans, &trans, &alpha, a, b, &beta, c );
-#endif
+    libxsmm_blk_sgemm( &handle, trans, trans, &alpha, a, b, &beta, c );
   }
   end = libxsmm_timer_tick();
   total = libxsmm_timer_duration(start, end);
