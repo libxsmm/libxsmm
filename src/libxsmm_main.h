@@ -31,6 +31,12 @@
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
+#include "libxsmm_generator.h"
 #include <libxsmm_dnn.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */

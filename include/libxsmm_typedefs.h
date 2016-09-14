@@ -31,6 +31,8 @@
 #ifndef LIBXSMM_TYPEDEFS_H
 #define LIBXSMM_TYPEDEFS_H
 
+#include "libxsmm_macros.h"
+
 /**
  * Enumerates the available target architectures and instruction
  * set extensions as returned by libxsmm_get_target_archid().
@@ -251,5 +253,13 @@ typedef struct libxsmm_convolution_weight_update_descriptor {
   libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
+
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+/** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
+
 #endif /*LIBXSMM_TYPEDEFS_H*/
 
