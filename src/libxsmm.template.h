@@ -61,6 +61,9 @@
 #define LIBXSMM_SYNC $SYNC
 #define LIBXSMM_JIT $JIT
 $LIBXSMM_OFFLOAD_BUILD
+#include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
+#include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
@@ -69,13 +72,6 @@ typedef long long libxsmm_blasint;
 #else
 typedef int libxsmm_blasint;
 #endif
-
-/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
-/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
-/** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);

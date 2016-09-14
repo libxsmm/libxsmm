@@ -31,7 +31,8 @@
 #ifndef LIBXSMM_DNN_H
 #define LIBXSMM_DNN_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
 
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle libxsmm_dnn_conv_handle;
