@@ -55,8 +55,20 @@ fi
 
 for KEYWORD in $(cat ${KEYFILE}); do
   echo "Searching for ${KEYWORD}..."
+  # Search all commit messages regardless of the file type
+  REVS=$(git log -i --grep=${KEYWORD} --oneline | cut -d' ' -f1)
+  for REV in ${REVS}; do
+    # Unix timestamp (sort key)
+    STM=$(git show -s --format=%ct ${REV})
+    # Author information
+    WHO=$(git show -s --format=%an ${REV})
+    echo "Found ${REV} (${WHO})"
+    HITS+="${STM} ${REV}\n"
+    LF=true
+  done
+  # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS}; do
-    REVS=$(git log --all -i -G${KEYWORD} --oneline "${PATTERN}" | cut -d' ' -f1)
+    REVS=$(git log -i -G${KEYWORD} --oneline "${PATTERN}" | cut -d' ' -f1)
     for REV in ${REVS}; do
       # Unix timestamp (sort key)
       STM=$(git show -s --format=%ct ${REV})
