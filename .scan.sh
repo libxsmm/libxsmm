@@ -56,7 +56,7 @@ fi
 for KEYWORD in $(cat ${KEYFILE}); do
   echo "Searching for ${KEYWORD}..."
   for PATTERN in ${PATTERNS}; do
-    REVS=$(git log -i -G${KEYWORD} --oneline "${PATTERN}" | cut -d' ' -f1)
+    REVS=$(git log --all -i -G${KEYWORD} --oneline "${PATTERN}" | cut -d' ' -f1)
     for REV in ${REVS}; do
       # Unix timestamp (sort key)
       STM=$(git show -s --format=%ct ${REV})
