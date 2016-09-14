@@ -41,7 +41,7 @@
 
 typedef float real;
 
-typedef struct libxsmm_blk_gemm_handle {
+typedef struct libxsmm_blkgemm_handle {
   int m;
   int n;
   int k;
@@ -52,11 +52,11 @@ typedef struct libxsmm_blk_gemm_handle {
   int nb;
   int kb;
   libxsmm_smmfunction kernel;
-} libxsmm_blk_gemm_handle;
+} libxsmm_blkgemm_handle;
 
-void init_a( libxsmm_blk_gemm_handle* handle,
-             real* libxsmm_mat_dst,
-             real* colmaj_mat_src ) {
+void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
+                              float* libxsmm_mat_dst,
+                              float* colmaj_mat_src ) {
   int mb, kb, bm, bk;
 #if defined(LIBXSMM_VLA)
   typedef float (*LIBXSMM_RESTRICT dst_type)[handle->mb][handle->bk][handle->bm];
@@ -78,9 +78,9 @@ void init_a( libxsmm_blk_gemm_handle* handle,
 #endif
 }
 
-void init_b( libxsmm_blk_gemm_handle* handle,
-             real* libxsmm_mat_dst,
-             real* colmaj_mat_src ) {
+void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
+                              float* libxsmm_mat_dst,
+                              float* colmaj_mat_src ) {
   int kb, nb, bk, bn;
 #if defined(LIBXSMM_VLA)
   typedef float (*LIBXSMM_RESTRICT dst_type)[handle->kb][handle->bn][handle->bk];
@@ -102,9 +102,9 @@ void init_b( libxsmm_blk_gemm_handle* handle,
 #endif
 }
 
-void init_c( libxsmm_blk_gemm_handle* handle,
-             real* libxsmm_mat_dst,
-             real* colmaj_mat_src ) {
+void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
+                              float* libxsmm_mat_dst,
+                              float* colmaj_mat_src ) {
   int mb, nb, bm, bn;
 #if defined(LIBXSMM_VLA)
   typedef float (*LIBXSMM_RESTRICT dst_type)[handle->mb][handle->bn][handle->bm];
@@ -126,9 +126,9 @@ void init_c( libxsmm_blk_gemm_handle* handle,
 #endif
 }
 
-void compare_c( libxsmm_blk_gemm_handle* handle,
-                real* libxsmm_mat_dst,
-                real* colmaj_mat_src ) {
+void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
+                               real* libxsmm_mat_dst,
+                               real* colmaj_mat_src ) {
   int mb, nb, bm, bn;
   double max_error = 0.0;
   double src_norm = 0.0;
@@ -159,15 +159,15 @@ void compare_c( libxsmm_blk_gemm_handle* handle,
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
-void libxsmm_blk_sgemm( const libxsmm_blk_gemm_handle* handle, 
-                        const char transA, 
-                        const char transB, 
-                        const float* alpha, 
-                        const float* a, 
-                        const float* b, 
-                        const float* beta, 
-                        float* c ) {
-  int mb, nb, kb;
+void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle, 
+                            const char transA, 
+                            const char transB, 
+                            const float* alpha, 
+                            const float* a, 
+                            const float* b, 
+                            const float* beta, 
+                            float* c ) {
+  int mb, nb, kb, mb2, nb2, kb2;
 #if defined(LIBXSMM_VLA)
   typedef float (*LIBXSMM_RESTRICT a_type)[handle->mb][handle->bk][handle->bm];
   typedef float (*LIBXSMM_RESTRICT b_type)[handle->kb][handle->bn][handle->bk];
@@ -177,10 +177,36 @@ void libxsmm_blk_sgemm( const libxsmm_blk_gemm_handle* handle,
   const b_type b_t = (b_type)b;
   const c_type c_t = (c_type)c;
 
-  for ( nb = 0; nb < handle->nb; nb++ ) {
-    for ( mb = 0; mb < handle->mb; mb++ ) {
-      for ( kb = 0; kb < handle->kb; kb++ ) {
-        handle->kernel( &(a_t[kb][mb][0][0]), &(b_t[nb][kb][0][0]), &(c_t[nb][mb][0][0]) );
+  int mr = 8;
+  int nr = 8;
+  int kr = 4;
+
+  if ( (handle->mb % mr == 0) && (handle->nb % nr == 0) && (handle->kb % kr == 0) ) {
+#if 0
+    #pragma omp parallel for collapse(2) private(mb, nb, kb, mb2, nb2, kb2)
+#endif
+    for ( nb = 0; nb < handle->nb; nb+=nr ) {
+      for ( mb = 0; mb < handle->mb; mb+=mr ) {
+        for ( kb = 0; kb < handle->kb; kb+=kr ) {
+          for ( nb2 = nb; nb2 < nb+nr; nb2++ ) {
+            for ( mb2 = mb; mb2 < mb+mr; mb2++ ) {
+              for ( kb2 = kb; kb2 < kb+kr; kb2++ ) {
+                handle->kernel( &(a_t[kb2][mb2][0][0]), &(b_t[nb2][kb2][0][0]), &(c_t[nb2][mb2][0][0]) );
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+#if 0
+    #pragma omp parallel for collapse(2) private(mb, nb, kb)
+#endif
+    for ( nb = 0; nb < handle->nb; nb++ ) {
+      for ( mb = 0; mb < handle->mb; mb++ ) {
+        for ( kb = 0; kb < handle->kb; kb++ ) {
+          handle->kernel( &(a_t[kb][mb][0][0]), &(b_t[nb][kb][0][0]), &(c_t[nb][mb][0][0]) );
+        }
       }
     }
   }
@@ -198,7 +224,7 @@ int main(int argc, char* argv []) {
   int i, reps;
   size_t l;
   char trans;
-  libxsmm_blk_gemm_handle handle;
+  libxsmm_blkgemm_handle handle;
 
   /* init */
 /*
@@ -303,16 +329,16 @@ int main(int argc, char* argv []) {
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
     c[l]      = (real)0.0;
   }
-  init_a( &handle, a, a_gold );
-  init_b( &handle, b, b_gold );
+  libxsmm_blksgemm_init_a( &handle, a, a_gold );
+  libxsmm_blksgemm_init_b( &handle, b, b_gold );
 
   /* check result */
   /* run LIBXSEMM, trans, alpha and beta are ignored */
-  libxsmm_blk_sgemm( &handle, trans, trans, &alpha, a, b, &beta, c );
+  libxsmm_blksgemm_exec( &handle, trans, trans, &alpha, a, b, &beta, c );
   /* run BLAS */
   sgemm(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
   /* compare result */
-  compare_c( &handle, c, c_gold );
+  libxsmm_blksgemm_check_c( &handle, c, c_gold );
 
   /* time BLAS */
   start = libxsmm_timer_tick();
@@ -326,7 +352,7 @@ int main(int argc, char* argv []) {
   /* time libxsmm */
   start = libxsmm_timer_tick();
   for ( i = 0; i < reps; i++ ) {
-    libxsmm_blk_sgemm( &handle, trans, trans, &alpha, a, b, &beta, c );
+    libxsmm_blksgemm_exec( &handle, trans, trans, &alpha, a, b, &beta, c );
   }
   end = libxsmm_timer_tick();
   total = libxsmm_timer_duration(start, end);
