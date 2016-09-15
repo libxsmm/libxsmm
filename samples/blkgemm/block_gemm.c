@@ -38,6 +38,16 @@
 #include <math.h>
 #include <string.h>
 
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl_service.h>
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+/* note: this does not reproduce 48-bit RNG quality */
+# define drand48() ((double)rand() / RAND_MAX)
+# define srand48 srand
+#endif
+
 /** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
 void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
@@ -315,6 +325,10 @@ int main(int argc, char* argv []) {
   /* init random seed and print some info */
   printf(" Running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, reps );
   srand48(1);
+
+#if defined(MKL_ENABLE_AVX512) /* AVX-512 instruction support */
+  mkl_enable_instructions(MKL_ENABLE_AVX512);
+#endif
 
   /* allocate data */
   a      = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
