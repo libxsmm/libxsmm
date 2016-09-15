@@ -32,71 +32,19 @@
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
-  typedef float element_type;
-  const element_type *const inp = ((const element_type*)handle->input->data), *const wtp = ((element_type*)handle->filter->data);
-  element_type *const outp = ((element_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-  int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
-  /* number of tasks that could be run in parallel */
-  const int work = handle->desc.N * handle->blocksofm;
-  /* compute chunck size */
-  const int chunksize = (work % num_threads == 0) ? (work / num_threads) : ((work / num_threads) + 1);
-  /* compute thr_begin and thr_end */
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-#if defined(LIBXSMM_VLA)
-  typedef element_type (*LIBXSMM_RESTRICT input_data_type)[handle->blocksifm][handle->ifhp][handle->ifwp][handle->ifmblock];
-  typedef element_type (*LIBXSMM_RESTRICT weight_data_type)[handle->blocksifm][handle->desc.R][handle->desc.S][handle->ifmblock][handle->ofmblock];
-  typedef element_type (*LIBXSMM_RESTRICT output_data_type)[handle->blocksofm][handle->ofhp][handle->ofwp][handle->ofmblock];
-  const input_data_type input = (input_data_type)inp;
-  const weight_data_type weight = (weight_data_type)wtp;
-  const output_data_type output = (output_data_type)outp;
-#else
-  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
-  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
-  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
-  unsigned int ishape[5], wshape[6], oshape[5];
-  unsigned int indexi[5], indexw[6], indexo[5];
-  /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-  ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = (thr_end - thr_begin) / handle->blocksofm;
-  wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = (thr_end - thr_begin) % handle->blocksofm;
-  oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
-#endif
-  for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-    img = imgofm1 / handle->blocksofm;
-    ofm1 = imgofm1 % handle->blocksofm;
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        ij = oj * handle->desc.u;
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          ii = oi * handle->desc.v;
-          for (kj = 0; kj < handle->desc.R; ++kj) {
-            for (ki = 0; ki< handle->desc.S; ++ki) {
-              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-#if defined(LIBXSMM_VLA)
-                  output[img][ofm1][oj][oi][ofm2] += input[img][ifm1][ij+kj][ii+ki][ifm2] * weight[ofm1][ifm1][kj][ki][ifm2][ofm2];
-#else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                  size_t i, w, o;
-                  indexi[0] = ifm2; indexi[1] = ii + ki; indexi[2] = ij + kj; indexi[3] = ifm1; indexi[4] = img;
-                  indexw[0] = ofm2; indexw[1] = ifm2; indexw[2] = ki; indexw[3] = kj; indexw[4] = ifm1; indexw[5] = ofm1;
-                  indexo[0] = ofm2; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
-                  LIBXSMM_CALC_INDEX1(size_t, i, 5, indexi, ishape);
-                  LIBXSMM_CALC_INDEX1(size_t, w, 6, indexw, wshape);
-                  LIBXSMM_CALC_INDEX1(size_t, o, 5, indexo, oshape);
-                  output[o] += input[i] * weight[w];
-#endif
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  #include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
 }
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+{
+  typedef short element_input_type;
+  typedef int element_output_type;
+  typedef short element_filter_type;
+  #include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
+}
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
@@ -377,42 +325,43 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
 
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].sconv == 0) {
-    switch (handle->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        if (1 == handle->desc.splits) {
+    if (1 == handle->desc.splits) {
+      switch (handle->datatype) {
+        case LIBXSMM_DNN_DATATYPE_FP32: { 
           internal_convolve_st_fwd_custom_custom_fp32_fallback(handle, start_thread, tid, num_threads);
-        }
-        else {
-          status = LIBXSMM_DNN_ERR_GENERAL;
+        } break;
+        case LIBXSMM_DNN_DATATYPE_INT16: { 
+          internal_convolve_st_fwd_custom_custom_int16_fallback(handle, start_thread, tid, num_threads);
+        } break;
+        default: {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           return status;
         }
-      } break;
-      default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-        return status;
       }
+    } else {
+      status = LIBXSMM_DNN_ERR_GENERAL;
+      return status;
     }
   }
   else {
-    switch (handle->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        if (1 == handle->desc.splits) {
+    if (1 == handle->desc.splits) {
+      switch (handle->datatype) {
+        case LIBXSMM_DNN_DATATYPE_FP32: {
           if (handle->desc.N*handle->blocksofm >= num_threads) {
             internal_convolve_st_fwd_custom_custom_fp32_opt(handle, start_thread, tid, num_threads);
           }
           else {
             internal_convolve_st_fwd_custom_custom_fp32_img_parallel_opt(handle, start_thread, tid, num_threads);
           }
-        }
-        else {
-          status = LIBXSMM_DNN_ERR_GENERAL;
+        } break;
+        default: {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           return status;
         }
-      } break;
-      default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-        return status;
       }
+    } else {
+      status = LIBXSMM_DNN_ERR_GENERAL;
+      return status;
     }
   }
 

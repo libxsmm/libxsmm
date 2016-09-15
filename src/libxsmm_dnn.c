@@ -184,12 +184,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
       }
       else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
+#if 0
         handle->ifmblock = (conv_desc.C >=32) ? 32 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
-      }
-      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT8) {
-        handle->ifmblock = (conv_desc.C >=64) ? 64 : conv_desc.C;
-        handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
+#endif
+        *status = LIBXSMM_DNN_WARN_FALLBACK;
+        handle->ifmblock = 1;
+        handle->ofmblock = 1;
+        noarch = 1;
       }
       else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -238,6 +240,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             handle->ofmblock = 1; 
           }
         }
+      }
+      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
+        *status = LIBXSMM_DNN_WARN_FALLBACK;
+        handle->ifmblock = 1;
+        handle->ofmblock = 1;
+        noarch = 1;
       }
       else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -1112,7 +1120,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (handle->filter_format) {
               case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-                libxsmm_dnn_convolve_st_fwd_custom_custom(handle, start_thread, tid, num_threads);
+                status = libxsmm_dnn_convolve_st_fwd_custom_custom(handle, start_thread, tid, num_threads);
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
@@ -1122,10 +1130,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
           case LIBXSMM_DNN_CONV_FORMAT_NHWC: {
             switch (handle->filter_format) {
               case LIBXSMM_DNN_CONV_FORMAT_RSCK: {
-                libxsmm_dnn_convolve_st_fwd_nhwc_rsck(handle, start_thread, tid, num_threads);
+                status = libxsmm_dnn_convolve_st_fwd_nhwc_rsck(handle, start_thread, tid, num_threads);
               } break;
               case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-                libxsmm_dnn_convolve_st_fwd_nhwc_custom(handle, start_thread, tid, num_threads);
+                status = libxsmm_dnn_convolve_st_fwd_nhwc_custom(handle, start_thread, tid, num_threads);
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
