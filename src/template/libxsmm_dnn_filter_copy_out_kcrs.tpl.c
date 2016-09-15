@@ -29,6 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+  /* we do for-loops such that we could potentially leverage NUMA in future */
   int i1, i2, i3, i4, i5, i6, i7;
   int splits = filter->splits;
   int ifmb = filter->ifmb;

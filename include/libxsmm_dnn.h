@@ -174,7 +174,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* b
  * padding is defined by the handle (pitch/stride).
  */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm_dnn_buffer* buffer, const void* data, libxsmm_dnn_conv_format in_format);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data, libxsmm_dnn_conv_format in_format);
 /*LIBXSMM_API libxsmm_dnn_err_t libxsmm_conv_copyin_bias(const libxsmm_dnn_bias* bias, const void* data);*/
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_dnn_buffer* layer);
 
@@ -184,7 +184,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_dnn_buffer* 
  * padding is defined by the handle (pitch/stride).
  */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsmm_dnn_buffer* buffer, void* data, libxsmm_dnn_conv_format out_format);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data, libxsmm_dnn_conv_format out_format);
 /*LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_dnn_bias* bias, void* data);*/
 
 /** Run the convolution identified by the handle; may use threads internally. */
