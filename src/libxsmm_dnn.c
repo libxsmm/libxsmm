@@ -781,12 +781,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
                 typedef float element_type;
                 #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_INT32: {
                 typedef int element_type;
                 #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_INT16: {
                 typedef short element_type;
+                #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
                 #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
               } break;
               default: {
@@ -866,12 +870,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
                 typedef float element_type;
                 #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_INT32: {
                 typedef int element_type;
                 #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_INT16: {
                 typedef short element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
                 #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
               } break;
               default: {
