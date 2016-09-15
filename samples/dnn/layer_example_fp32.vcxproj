@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="fwd_layer_example.c" />
+    <ClCompile Include="layer_example_fp32.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>fwd_layer_example</ProjectName>
+    <ProjectName>layer_example_fp32</ProjectName>
     <ProjectGuid>{63B474A0-5BC5-4212-888E-88D30CAA791B}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
