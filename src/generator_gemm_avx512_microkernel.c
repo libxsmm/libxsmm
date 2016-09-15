@@ -54,6 +54,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
   unsigned int l_k_b_updates = 0;
   unsigned int l_displacement_k_a = 0;
   unsigned int l_k_a_update = 0;
+  unsigned int l_n_accs = 0;
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
@@ -61,6 +62,15 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
     return;
   }
 #endif
+
+  /* compute number of n accumulators to hide FMA latencies */
+  if (i_n_blocking >= 12) {
+    l_n_accs = 1;
+  } else if (i_n_blocking >= 6) {
+    l_n_accs = 2;
+  } else {
+    l_n_accs = 4;
+  }
 
   /* Intialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
@@ -97,6 +107,19 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
 
   l_displacement_k_b = 0;
   l_displacement_k_a = 0;
+
+  /* xor additional accumulator, if needed */
+  for ( l_k = 1; l_k < l_n_accs; l_k++) {
+    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           i_micro_kernel_config->vxor_instruction,
+                                           i_micro_kernel_config->vector_name,
+                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
+                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
+                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n );
+    }
+  }
 
   /* apply k blocking */
   for ( l_k = 0; l_k < i_k_blocking; l_k++ ) {
@@ -297,7 +320,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                l_disp,
                                                i_micro_kernel_config->vector_name,
                                                l_k%2,
-                                               i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
 #else
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
@@ -309,7 +332,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (l_k * i_micro_kernel_config->datatype_size)+(i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size * l_n),
                                                i_micro_kernel_config->vector_name,
                                                l_k%2,
-                                               i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
+                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
 #endif
     }
     l_displacement_k_b++;
@@ -334,6 +357,19 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_sub_instruction,
                                        i_gp_reg_mapping->gp_reg_b, 128*(i_micro_kernel_config->datatype_size)*l_k_b_updates );
+    }
+  }
+
+  /* add additional accumulators, if needed */
+  for ( l_k = 1; l_k < l_n_accs; l_k++) {
+    for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                           i_micro_kernel_config->instruction_set,
+                                           i_micro_kernel_config->vadd_instruction,
+                                           i_micro_kernel_config->vector_name,
+                                           i_micro_kernel_config->vector_reg_count - (i_n_blocking*(l_k+1)) + l_n,
+                                           i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n,
+                                           i_micro_kernel_config->vector_reg_count - i_n_blocking + l_n );
     }
   }
 }

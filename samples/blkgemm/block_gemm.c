@@ -323,7 +323,11 @@ int main(int argc, char* argv []) {
   handle.kernel = libxsmm_smmdispatch(handle.bm, handle.bn, handle.bk, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
   /* init random seed and print some info */
-  printf(" Running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, reps );
+  printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, reps );
+  printf(" working set size: A: %f, B: %f, C: %f, Total: %f in MiB\n", ((double)(M*K*sizeof(real)))/(1024.0*1024.0), 
+                                                                       ((double)(K*N*sizeof(real)))/(1024.0*1024.0), 
+                                                                       ((double)(M*N*sizeof(real)))/(1024.0*1024.0), 
+                                                                       ((double)(M*N*sizeof(real)+M*K*sizeof(real)+N*K*sizeof(real)))/(1024.0*1024.0) );
   srand48(1);
 
 #if defined(MKL_ENABLE_AVX512) /* AVX-512 instruction support */

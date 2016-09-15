@@ -771,71 +771,39 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != buffer) {
-    /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (buffer->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        switch (in_format) {
-          case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
-            switch (buffer->format) {
-              case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+    switch (in_format) {
+      case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
+        switch (buffer->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            switch (buffer->datatype) {
+              case LIBXSMM_DNN_DATATYPE_FP32: {
                 typedef float element_type;
-                int i1, i2, i3, i4, i5, i6;
-                int N = buffer->N;
-                int splits = buffer->splits;
-                int fmb = buffer->fmb;
-                int bfm = buffer->bfm;
-                int H = buffer->H;
-                int W = buffer->W;
-#if defined(LIBXSMM_VLA)
-                typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
-                typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
-                const handle_data_type handle_data = (handle_data_type)buffer->data;
-                const user_data_type user_data = (user_data_type)data;
-#else
-                element_type *const handle_data = (element_type*)buffer->data;
-                const element_type *const user_data = (const element_type*)data;
-                unsigned int hindexn[6], uindexn[5];
-                unsigned int hshape[6], ushape[5];
-                /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                hshape[0] = bfm; hshape[1] = W; hshape[2] = H; hshape[3] = fmb; hshape[4] = splits; hshape[5] = N;
-                ushape[0] = W; ushape[1] = H; ushape[2] = fmb * bfm; ushape[3] = splits; ushape[4] = N;
-#endif
-                for (i1 = 0; i1 < N; ++i1) {
-                  for (i2 = 0; i2 < splits; ++i2) {
-                    for (i3 = 0; i3 < fmb; ++i3) {
-                      for (i4 = 0; i4 < H; ++i4) {
-                        for (i5 = 0; i5 < W; ++i5) {
-                          for (i6 = 0; i6 < bfm; ++i6) {
-#if defined(LIBXSMM_VLA)
-                            handle_data[i1][i2][i3][i4][i5][i6] = user_data[i1][i2][i3*bfm+i6][i4][i5];
-#else
-                            size_t h, u;
-                            /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                            hindexn[0] = i6; hindexn[1] = i5; hindexn[2] = i4; hindexn[3] = i3; hindexn[4] = i2; hindexn[5] = i1;
-                            uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bfm + i6; uindexn[3] = i2; uindexn[4] = i1;
-                            LIBXSMM_CALC_INDEX1(size_t, h, 6, hindexn, hshape);
-                            LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
-                            handle_data[h] = user_data[u];
-#endif
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT32: {
+                typedef int element_type;
+                #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT16: {
+                typedef short element_type;
+                #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
+                #include <template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c>
               } break;
               default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
+                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
               }
             }
           } break;
           default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
       }
     }
   }
@@ -891,71 +859,39 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != buffer) {
-    /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (buffer->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        switch (out_format) {
-          case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
-            switch (buffer->format) {
-              case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+    switch (out_format) {
+      case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
+        switch (buffer->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            switch (buffer->datatype) {
+              case LIBXSMM_DNN_DATATYPE_FP32: {
                 typedef float element_type;
-                int i1, i2, i3, i4, i5, i6;
-                int N = buffer->N;
-                int splits = buffer->splits;
-                int fmb = buffer->fmb;
-                int bfm = buffer->bfm;
-                int H = buffer->H;
-                int W = buffer->W;
-#if defined(LIBXSMM_VLA)
-                typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
-                typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
-                const handle_data_type handle_data = (handle_data_type)buffer->data;
-                const user_data_type user_data = (user_data_type)data;
-#else
-                const element_type *const handle_data = (const element_type*)buffer->data;
-                element_type *const user_data = (element_type*)data;
-                unsigned int hindexn[6], uindexn[5];
-                unsigned int hshape[6], ushape[5];
-                /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                hshape[0] = bfm; hshape[1] = W; hshape[2] = H; hshape[3] = fmb; hshape[4] = splits; hshape[5] = N;
-                ushape[0] = W; ushape[1] = H; ushape[2] = fmb * bfm; ushape[3] = splits; ushape[4] = N;
-#endif
-                for (i1 = 0; i1 < N; ++i1) {
-                  for (i2 = 0; i2 < splits; ++i2) {
-                    for (i3 = 0; i3 < fmb; ++i3) {
-                      for (i4 = 0; i4 < H; ++i4) {
-                        for (i5 = 0; i5 < W; ++i5) {
-                          for (i6 = 0; i6 < bfm; ++i6) {
-#if defined(LIBXSMM_VLA)
-                            user_data[i1][i2][i3*bfm+i6][i4][i5] = handle_data[i1][i2][i3][i4][i5][i6];
-#else
-                            size_t h, u;
-                            /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                            hindexn[0] = i6; hindexn[1] = i5; hindexn[2] = i4; hindexn[3] = i3; hindexn[4] = i2; hindexn[5] = i1;
-                            uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bfm + i6; uindexn[3] = i2; uindexn[4] = i1;
-                            LIBXSMM_CALC_INDEX1(size_t, h, 6, hindexn, hshape);
-                            LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
-                            user_data[u] = handle_data[h];
-#endif
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT32: {
+                typedef int element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT16: {
+                typedef short element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
               } break;
               default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
               }
             }
           } break;
           default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
+            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
       }
     }
   }
@@ -967,65 +903,40 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter* filter, const void* data, libxsmm_dnn_conv_format in_format)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) {
-    /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (filter->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        typedef float element_type;
-        int i1, i2, i3, i4, i5, i6, i7;
-        int splits = filter->splits;
-        int ifmb = filter->ifmb;
-        int bifm = filter->bifm;
-        int ofmb = filter->ofmb;
-        int bofm = filter->bofm;
-        int R = filter->R;
-        int S = filter->S;
-#if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[ofmb][ifmb][R][S][bifm][bofm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[ofmb*bofm][ifmb*bifm][R][S];
-        const handle_data_type handle_data = (handle_data_type)filter->data;
-        const user_data_type user_data = (user_data_type)data;
-#else
-        element_type *const handle_data = (element_type*)filter->data;
-        const element_type *const user_data = (const element_type*)data;
-        unsigned int hindexn[7], uindexn[5];
-        unsigned int hshape[7], ushape[5];
-        /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-        hshape[0] = bofm; hshape[1] = bifm; hshape[2] = S; hshape[3] = R; hshape[4] = ifmb; hshape[5] = ofmb; hshape[6] = splits;
-        ushape[0] = S; ushape[1] = R; ushape[2] = ifmb * bifm; ushape[3] = ofmb * bofm; ushape[4] = splits;
-#endif
-        for (i1 = 0; i1 < splits; ++i1) {
-          for (i2 = 0; i2 < ofmb; ++i2) {
-            for (i3 = 0; i3 < ifmb; ++i3) {
-              for (i4 = 0; i4 < R; ++i4) {
-                for (i5 = 0; i5 < S; ++i5) {
-                  for (i6 = 0; i6 < bifm; ++i6) {
-                    for (i7 = 0; i7 < bofm; ++i7) {
-#if defined(LIBXSMM_VLA)
-                      handle_data[i1][i2][i3][i4][i5][i6][i7] = user_data[i1][i2*bofm+i7][i3*bifm+i6][i4][i5];
-#else
-                      size_t h, u;
-                      /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                      hindexn[0] = i7; hindexn[1] = i6; hindexn[2] = i5; hindexn[3] = i4; hindexn[4] = i3; hindexn[5] = i2; hindexn[6] = i1;
-                      uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bifm + i6; uindexn[3] = i2 * bofm + i7; uindexn[4] = i1;
-                      LIBXSMM_CALC_INDEX1(size_t, h, 7, hindexn, hshape);
-                      LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
-                      handle_data[h] = user_data[u];
-#endif
-                    }
-                  }
-                }
-              }
+    switch (in_format) {
+      case LIBXSMM_DNN_CONV_FORMAT_KCRS: {
+        switch (filter->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            switch (filter->datatype) {
+              case LIBXSMM_DNN_DATATYPE_FP32: {
+                typedef float element_type;
+                #include <template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT16: {
+                typedef short element_type;
+                #include <template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
+                #include <template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c>
+              } break;
+              default: {
+                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+              }  
             }
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
       }
     }
   }
@@ -1037,65 +948,44 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filter* filter, void* data, libxsmm_dnn_conv_format out_format)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != filter) {
-    /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (filter->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        typedef float element_type;
-        int i1, i2, i3, i4, i5, i6, i7;
-        int splits = filter->splits;
-        int ifmb = filter->ifmb;
-        int bifm = filter->bifm;
-        int ofmb = filter->ofmb;
-        int bofm = filter->bofm;
-        int R = filter->R;
-        int S = filter->S;
-#if defined(LIBXSMM_VLA)
-        typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[ofmb][ifmb][R][S][bifm][bofm];
-        typedef element_type (*LIBXSMM_RESTRICT user_data_type)[ofmb*bofm][ifmb*bifm][R][S];
-        const handle_data_type handle_data = (handle_data_type)filter->data;
-        const user_data_type user_data = (user_data_type)data;
-#else
-        const element_type *const handle_data = (const element_type*)filter->data;
-        element_type *const user_data = (element_type*)data;
-        unsigned int hindexn[7], uindexn[5];
-        unsigned int hshape[7], ushape[5];
-        /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-        hshape[0] = bofm; hshape[1] = bifm; hshape[2] = S; hshape[3] = R; hshape[4] = ifmb; hshape[5] = ofmb; hshape[6] = splits;
-        ushape[0] = S; ushape[1] = R; ushape[2] = ifmb * bifm; ushape[3] = ofmb * bofm; ushape[4] = splits;
-#endif
-        for (i1 = 0; i1 < splits; ++i1) {
-          for (i2 = 0; i2 < ofmb; ++i2) {
-            for (i3 = 0; i3 < ifmb; ++i3) {
-              for (i4 = 0; i4 < R; ++i4) {
-                for (i5 = 0; i5 < S; ++i5) {
-                  for (i6 = 0; i6 < bifm; ++i6) {
-                    for (i7 = 0; i7 < bofm; ++i7) {
-#if defined(LIBXSMM_VLA)
-                      user_data[i1][i2*bofm+i7][i3*bifm+i6][i4][i5] = handle_data[i1][i2][i3][i4][i5][i6][i7];
-#else
-                      size_t h, u;
-                      /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                      hindexn[0] = i7; hindexn[1] = i6; hindexn[2] = i5; hindexn[3] = i4; hindexn[4] = i3; hindexn[5] = i2; hindexn[6] = i1;
-                      uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bifm + i6; uindexn[3] = i2 * bofm + i7; uindexn[4] = i1;
-                      LIBXSMM_CALC_INDEX1(size_t, h, 7, hindexn, hshape);
-                      LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
-                      user_data[u] = handle_data[h];
-#endif
-                    }
-                  }
-                }
+    switch (out_format) {
+      case LIBXSMM_DNN_CONV_FORMAT_KCRS: {
+        switch (filter->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            switch (filter->datatype) {
+              case LIBXSMM_DNN_DATATYPE_FP32: {
+                typedef float element_type;
+                #include <template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT32: {
+                typedef int element_type;
+                #include <template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT16: {
+                typedef short element_type;
+                #include <template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef char element_type;
+                #include <template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c>
+              } break;
+              default: {
+                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
               }
             }
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
       }
     }
   }

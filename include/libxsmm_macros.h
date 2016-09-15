@@ -368,5 +368,16 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
+#if defined(LIBXSMM_OFFLOAD_BUILD) && \
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
+# if !defined(LIBXSMM_OFFLOAD_TARGET)
+#   define LIBXSMM_OFFLOAD_TARGET mic
+# endif
+#else
+# define LIBXSMM_OFFLOAD(A)
+#endif
+#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
+
 #endif /*LIBXSMM_MACROS_H*/
 
