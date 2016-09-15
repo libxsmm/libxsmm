@@ -857,70 +857,35 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
 
   if (0 != buffer) {
     /* we do for-loops such that we could potentially leverage NUMA in future */
-    switch (buffer->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
-        switch (out_format) {
-          case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
-            switch (buffer->format) {
-              case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+    switch (out_format) {
+      case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
+        switch (buffer->format) {
+          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
+            switch (buffer->datatype) {
+              case LIBXSMM_DNN_DATATYPE_FP32: {
                 typedef float element_type;
-                int i1, i2, i3, i4, i5, i6;
-                int N = buffer->N;
-                int splits = buffer->splits;
-                int fmb = buffer->fmb;
-                int bfm = buffer->bfm;
-                int H = buffer->H;
-                int W = buffer->W;
-#if defined(LIBXSMM_VLA)
-                typedef element_type (*LIBXSMM_RESTRICT handle_data_type)[splits][fmb][H][W][bfm];
-                typedef element_type (*LIBXSMM_RESTRICT user_data_type)[splits][fmb*bfm][H][W];
-                const handle_data_type handle_data = (handle_data_type)buffer->data;
-                const user_data_type user_data = (user_data_type)data;
-#else
-                const element_type *const handle_data = (const element_type*)buffer->data;
-                element_type *const user_data = (element_type*)data;
-                unsigned int hindexn[6], uindexn[5];
-                unsigned int hshape[6], ushape[5];
-                /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                hshape[0] = bfm; hshape[1] = W; hshape[2] = H; hshape[3] = fmb; hshape[4] = splits; hshape[5] = N;
-                ushape[0] = W; ushape[1] = H; ushape[2] = fmb * bfm; ushape[3] = splits; ushape[4] = N;
-#endif
-                for (i1 = 0; i1 < N; ++i1) {
-                  for (i2 = 0; i2 < splits; ++i2) {
-                    for (i3 = 0; i3 < fmb; ++i3) {
-                      for (i4 = 0; i4 < H; ++i4) {
-                        for (i5 = 0; i5 < W; ++i5) {
-                          for (i6 = 0; i6 < bfm; ++i6) {
-#if defined(LIBXSMM_VLA)
-                            user_data[i1][i2][i3*bfm+i6][i4][i5] = handle_data[i1][i2][i3][i4][i5][i6];
-#else
-                            size_t h, u;
-                            /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-                            hindexn[0] = i6; hindexn[1] = i5; hindexn[2] = i4; hindexn[3] = i3; hindexn[4] = i2; hindexn[5] = i1;
-                            uindexn[0] = i5; uindexn[1] = i4; uindexn[2] = i3 * bfm + i6; uindexn[3] = i2; uindexn[4] = i1;
-                            LIBXSMM_CALC_INDEX1(size_t, h, 6, hindexn, hshape);
-                            LIBXSMM_CALC_INDEX1(size_t, u, 5, uindexn, ushape);
-                            user_data[u] = handle_data[h];
-#endif
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT16: {
+                typedef int element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
+              } break;
+              case LIBXSMM_DNN_DATATYPE_INT8: {
+                typedef short element_type;
+                #include <template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c>
               } break;
               default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
               }
             }
           } break;
           default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
+            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
       }
     }
   }
