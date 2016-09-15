@@ -60,7 +60,7 @@
 #   define LIBXSMM_CALLER __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
-# elif defined(__GNUC__)
+# elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
 #   define LIBXSMM_CALLER __FUNCTION__
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)

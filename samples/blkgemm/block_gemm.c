@@ -26,18 +26,36 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
 #include <libxsmm.h>
 #include <libxsmm_timer.h>
 #include <libxsmm_malloc.h>
-#include <mkl.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl_service.h>
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+/* note: this does not reproduce 48-bit RNG quality */
+# define drand48() ((double)rand() / RAND_MAX)
+# define srand48 srand
+#endif
+
+/** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
+void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+/** Function prototype for DGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
+void LIBXSMM_FSYMBOL(dgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
 
 typedef float real;
 
@@ -312,6 +330,10 @@ int main(int argc, char* argv []) {
                                                                        ((double)(M*N*sizeof(real)+M*K*sizeof(real)+N*K*sizeof(real)))/(1024.0*1024.0) );
   srand48(1);
 
+#if defined(MKL_ENABLE_AVX512) /* AVX-512 instruction support */
+  mkl_enable_instructions(MKL_ENABLE_AVX512);
+#endif
+
   /* allocate data */
   a      = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
   b      = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 2097152 );
@@ -340,14 +362,14 @@ int main(int argc, char* argv []) {
   /* run LIBXSEMM, trans, alpha and beta are ignored */
   libxsmm_blksgemm_exec( &handle, trans, trans, &alpha, a, b, &beta, c );
   /* run BLAS */
-  sgemm(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
+  LIBXSMM_FSYMBOL(sgemm)(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
   /* compare result */
   libxsmm_blksgemm_check_c( &handle, c, c_gold );
 
   /* time BLAS */
   start = libxsmm_timer_tick();
   for ( i = 0; i < reps; i++ ) {
-    sgemm(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
+    LIBXSMM_FSYMBOL(sgemm)(&trans, &trans, &M, &N, &K, &alpha, a_gold, &LDA, b_gold, &LDB, &beta, c_gold, &LDC);
   }
   end = libxsmm_timer_tick();
   total = libxsmm_timer_duration(start, end);
