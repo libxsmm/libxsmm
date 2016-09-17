@@ -100,10 +100,11 @@
     } \
   } \
   for (; libxsmm_gemm_tiled_kernel_ij_ < (K); libxsmm_gemm_tiled_kernel_ij_ = libxsmm_gemm_tiled_kernel_pj_) { /* remainder */ \
+    libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_outer_; \
     LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_gemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
       libxsmm_gemm_tiled_kernel_mm_, libxsmm_gemm_tiled_kernel_nn_, LIBXSMM_MIN(TILE_K, (K) - libxsmm_gemm_tiled_kernel_ij_), \
       LDA, LDB, LDC, ALPHA, BETA, libxsmm_gemm_prefetch); \
-    const libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_outer_ = libxsmm_xmmdispatch(&libxsmm_tiled_gemm_kernel_desc_); \
+    libxsmm_gemm_tiled_kernel_outer_ = libxsmm_xmmdispatch(&libxsmm_tiled_gemm_kernel_desc_); \
     if (0 != libxsmm_gemm_tiled_kernel_outer_.LIBXSMM_TPREFIX(TYPE, mm)) { \
       LIBXSMM_MMCALL_PRF(libxsmm_gemm_tiled_kernel_outer_.LIBXSMM_TPREFIX(TYPE, mm), \
         libxsmm_gemm_tiled_kernel_ia_, libxsmm_gemm_tiled_kernel_ib_, libxsmm_gemm_tiled_kernel_ic_, \
