@@ -48,16 +48,12 @@
 # define srand48 srand
 #endif
 
+typedef float real;
+
 /** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
 void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
-/** Function prototype for DGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-void LIBXSMM_FSYMBOL(dgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-
-typedef float real;
+  const real*, const real*, const libxsmm_blasint*, const real*, const libxsmm_blasint*,
+  const real*, real*, const libxsmm_blasint*);
 
 typedef struct libxsmm_blkgemm_handle {
   int m;
@@ -73,135 +69,111 @@ typedef struct libxsmm_blkgemm_handle {
 } libxsmm_blkgemm_handle;
 
 void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
-                              float* libxsmm_mat_dst,
-                              float* colmaj_mat_src ) {
+                              real* libxsmm_mat_dst,
+                              real* colmaj_mat_src ) {
+  LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bk, handle->bm);
+  LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, kb, bm, bk;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT dst_type)[handle->mb][handle->bk][handle->bm];
-  typedef float (*LIBXSMM_RESTRICT src_type)[handle->m];
-  const dst_type dst = (dst_type)libxsmm_mat_dst;
-  const src_type src = (src_type)colmaj_mat_src;
 
   for ( kb = 0; kb < handle->kb; kb++ ) {
     for ( mb = 0; mb < handle->mb; mb++ ) {
       for ( bk = 0; bk < handle->bk; bk++ ) {
         for ( bm = 0; bm < handle->bm; bm++ ) {
-          dst[kb][mb][bk][bm] = src[(kb*handle->bk)+bk][(mb*handle->bm)+bm];
+          LIBXSMM_VLA_ACCESS(4, dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
+          LIBXSMM_VLA_ACCESS(2, src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
         }
       }
     }
   }
-#else
-#error this code only works with LIBXSMM_VLA being available.
-#endif
 }
 
 void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
-                              float* libxsmm_mat_dst,
-                              float* colmaj_mat_src ) {
+                              real* libxsmm_mat_dst,
+                              real* colmaj_mat_src ) {
+  LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->kb, handle->bn, handle->bk);
+  LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->k);
   int kb, nb, bk, bn;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT dst_type)[handle->kb][handle->bn][handle->bk];
-  typedef float (*LIBXSMM_RESTRICT src_type)[handle->k];
-  const dst_type dst = (dst_type)libxsmm_mat_dst;
-  const src_type src = (src_type)colmaj_mat_src;
 
   for ( nb = 0; nb < handle->nb; nb++ ) {
     for ( kb = 0; kb < handle->kb; kb++ ) {
       for ( bn = 0; bn < handle->bn; bn++ ) {
         for ( bk = 0; bk < handle->bk; bk++ ) {
-          dst[nb][kb][bn][bk] = src[(nb*handle->bn)+bn][(kb*handle->bk)+bk];
+          LIBXSMM_VLA_ACCESS(4, dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
+          LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
         }
       }
     }
   }
-#else
-#error this code only works with LIBXSMM_VLA being available.
-#endif
 }
 
 void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
-                              float* libxsmm_mat_dst,
-                              float* colmaj_mat_src ) {
+                              real* libxsmm_mat_dst,
+                              real* colmaj_mat_src ) {
+  LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
+  LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT dst_type)[handle->mb][handle->bn][handle->bm];
-  typedef float (*LIBXSMM_RESTRICT src_type)[handle->m];
-  const dst_type dst = (dst_type)libxsmm_mat_dst;
-  const src_type src = (src_type)colmaj_mat_src;
 
   for ( nb = 0; nb < handle->nb; nb++ ) {
     for ( mb = 0; mb < handle->mb; mb++ ) {
       for ( bn = 0; bn < handle->bn; bn++ ) {
         for ( bm = 0; bm < handle->bm; bm++ ) {
-          dst[nb][mb][bn][bm] = src[(nb*handle->bn)+bn][(mb*handle->bm)+bm];
+          LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
+          LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
         }
       }
     }
   }
-#else
-#error this code only works with LIBXSMM_VLA being available.
-#endif
 }
 
 void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
                                real* libxsmm_mat_dst,
                                real* colmaj_mat_src ) {
+  LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
+  LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
   double max_error = 0.0;
   double src_norm = 0.0;
   double dst_norm = 0.0;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT dst_type)[handle->mb][handle->bn][handle->bm];
-  typedef float (*LIBXSMM_RESTRICT src_type)[handle->m];
-  const dst_type dst = (dst_type)libxsmm_mat_dst;
-  const src_type src = (src_type)colmaj_mat_src;
 
   for ( nb = 0; nb < handle->nb; nb++ ) {
     for ( mb = 0; mb < handle->mb; mb++ ) {
       for ( bn = 0; bn < handle->bn; bn++ ) {
         for ( bm = 0; bm < handle->bm; bm++ ) {
-          double local_error = fabs((double)dst[nb][mb][bn][bm] - (double)src[(nb*handle->bn)+bn][(mb*handle->bm)+bm]);
+          const double dstval = (double)LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm);
+          const double srcval = (double)LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
+          const double local_error = fabs(dstval - srcval);
           if (local_error > max_error) {
             max_error = local_error;
           }
-          src_norm += (double)src[(nb*handle->bn)+bn][(mb*handle->bm)+bm];
-          dst_norm += (double)dst[nb][mb][bn][bm];
+          src_norm += srcval;
+          dst_norm += dstval;
         }
       }
     }
   }
-#else
-#error this code only works with LIBXSMM_VLA being available.
-#endif
+
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
 void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle, 
                             const char transA, 
                             const char transB, 
-                            const float* alpha, 
-                            const float* a, 
-                            const float* b, 
-                            const float* beta, 
-                            float* c ) {
+                            const real* alpha, 
+                            const real* a, 
+                            const real* b, 
+                            const real* beta, 
+                            real* c ) {
+  LIBXSMM_VLA_DECL(4, const real, a_t, a, handle->mb, handle->bk, handle->bm);
+  LIBXSMM_VLA_DECL(4, const real, b_t, b, handle->kb, handle->bn, handle->bk);
+  LIBXSMM_VLA_DECL(4,       real, c_t, c, handle->mb, handle->bn, handle->bm);
   int mb, nb, kb, mb2, nb2, kb2;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT a_type)[handle->mb][handle->bk][handle->bm];
-  typedef float (*LIBXSMM_RESTRICT b_type)[handle->kb][handle->bn][handle->bk];
-  typedef float (*LIBXSMM_RESTRICT c_type)[handle->mb][handle->bn][handle->bm];
-
-  const a_type a_t = (a_type)a;
-  const b_type b_t = (b_type)b;
-  const c_type c_t = (c_type)c;
-
   int mr = 8;
   int nr = 8;
   int kr = 4;
 
   if ( (handle->mb % mr == 0) && (handle->nb % nr == 0) && (handle->kb % kr == 0) ) {
-#if 0
-    #pragma omp parallel for collapse(2) private(mb, nb, kb, mb2, nb2, kb2)
+#if defined(_OPENMP)
+#   pragma omp parallel for collapse(2) private(mb, nb, kb, mb2, nb2, kb2)
 #endif
     for ( nb = 0; nb < handle->nb; nb+=nr ) {
       for ( mb = 0; mb < handle->mb; mb+=mr ) {
@@ -209,7 +181,10 @@ void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
           for ( nb2 = nb; nb2 < nb+nr; nb2++ ) {
             for ( mb2 = mb; mb2 < mb+mr; mb2++ ) {
               for ( kb2 = kb; kb2 < kb+kr; kb2++ ) {
-                handle->kernel( &(a_t[kb2][mb2][0][0]), &(b_t[nb2][kb2][0][0]), &(c_t[nb2][mb2][0][0]) );
+                handle->kernel(
+                  &LIBXSMM_VLA_ACCESS(4, a_t, kb2, mb2, 0, 0, handle->mb, handle->bk, handle->bm),
+                  &LIBXSMM_VLA_ACCESS(4, b_t, nb2, kb2, 0, 0, handle->kb, handle->bn, handle->bk),
+                  &LIBXSMM_VLA_ACCESS(4, c_t, nb2, mb2, 0, 0, handle->mb, handle->bn, handle->bm));
               }
             }
           }
@@ -217,20 +192,20 @@ void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
       }
     }
   } else {
-#if 0
-    #pragma omp parallel for collapse(2) private(mb, nb, kb)
+#if defined(_OPENMP)
+#   pragma omp parallel for collapse(2) private(mb, nb, kb)
 #endif
     for ( nb = 0; nb < handle->nb; nb++ ) {
       for ( mb = 0; mb < handle->mb; mb++ ) {
         for ( kb = 0; kb < handle->kb; kb++ ) {
-          handle->kernel( &(a_t[kb][mb][0][0]), &(b_t[nb][kb][0][0]), &(c_t[nb][mb][0][0]) );
+          handle->kernel(
+            &LIBXSMM_VLA_ACCESS(4, a_t, kb, mb, 0, 0, handle->mb, handle->bk, handle->bm),
+            &LIBXSMM_VLA_ACCESS(4, b_t, nb, kb, 0, 0, handle->kb, handle->bn, handle->bk),
+            &LIBXSMM_VLA_ACCESS(4, c_t, nb, mb, 0, 0, handle->mb, handle->bn, handle->bm));
         }
       }
     }
   }
-#else
-#error this code only works with LIBXSMM_VLA being available.
-#endif
 }
 
 int main(int argc, char* argv []) {

@@ -35,7 +35,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  #include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
+# include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
@@ -43,7 +43,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
   typedef short element_input_type;
   typedef int element_output_type;
   typedef short element_filter_type;
-  #include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
+# include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
@@ -69,24 +69,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 #endif
   const element_type *l_input, *l_wt;
   element_type* l_output;
-#if defined(LIBXSMM_VLA)
-  typedef element_type (*LIBXSMM_RESTRICT input_data_type)[handle->blocksifm][handle->ifhp][handle->ifwp][handle->ifmblock];
-  typedef element_type (*LIBXSMM_RESTRICT weight_data_type)[handle->blocksifm][handle->desc.R][handle->desc.S][handle->ifmblock][handle->ofmblock];
-  typedef element_type (*LIBXSMM_RESTRICT output_data_type)[handle->blocksofm][handle->ofhp][handle->ofwp][handle->ofmblock];
-  const input_data_type input = (input_data_type)inp;
-  const weight_data_type weight = (weight_data_type)wtp;
-  const output_data_type output = (output_data_type)outp;
-#else
-  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
-  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
-  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
-  unsigned int ishape[5], wshape[6], oshape[5];
-  unsigned int indexi[5], indexw[6], indexo[5];
-  /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-  ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = (thr_end - thr_begin) / handle->blocksofm;
-  wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = (thr_end - thr_begin) % handle->blocksofm;
-  oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
-#endif
+
+  LIBXSMM_VLA_DECL(5, element_type, input, inp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(6, element_type, weight, wtp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+  LIBXSMM_VLA_DECL(5, element_type, output, outp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
     img = imgofm1/handle->blocksofm;
     ofm1 = imgofm1%handle->blocksofm;
@@ -95,85 +82,49 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
         ij = oj * handle->desc.u;
         for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
           ii = oi * handle->desc.v;
-#if defined(LIBXSMM_VLA)
-          l_input = &(input[img][ifm1][ij][ii][0]);
-          l_wt = &(weight[ofm1][ifm1][0][0][0][0]);
-          l_output = &(output[img][ofm1][oj][oi][0]);
-#else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-          indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-          indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
-          indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
-          {
-            size_t i, w, o;
-            LIBXSMM_CALC_INDEX1(size_t, i, 5, indexi, ishape);
-            LIBXSMM_CALC_INDEX1(size_t, w, 6, indexw, wshape);
-            LIBXSMM_CALC_INDEX1(size_t, o, 5, indexo, oshape);
-            l_input = input + i;
-            l_wt = weight + w;
-            l_output = output + o;
-          }
-#endif
+          l_input  = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, 0,
+                      handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          l_wt     = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0,
+                      handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+          l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
+                      handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
           /* check we are not at the end */
           if (oj < handle->ofh-handle->fwd_ofh_rb) {
-# if defined(LIBXSMM_VLA)
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-              &(input[img][ifm1][(oj+handle->fwd_ofh_rb)*handle->desc.u][ii][0]), NULL, &(output[img][ofm1][oj+handle->fwd_ofh_rb][oi][0]));
-# else
-            size_t pi, po;
-            indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofh_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
-            indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
-            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-            jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
-# endif
+              &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, 0,
+                                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
+              &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, oi, 0,
+                                     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
           else {
             if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
-# if defined(LIBXSMM_VLA)
               jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                &(input[img+1][0][0][0][0]), &(weight[0][0][0][0][0][0]), &(output[img+1][0][0][0][0]));
-# else
-              size_t pi, pw, po;
-              indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img + 1;
-              /*indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = 0;*/
-              indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = 0; indexo[4] = img + 1;
-              LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-              pw = 0;/*LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);*/
-              LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-              jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
-# endif
+                &LIBXSMM_VLA_ACCESS(5, input, img + 1, 0, 0, 0, 0,
+                  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, 0, 0, 0, 0,
+                  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                &LIBXSMM_VLA_ACCESS(5, output, img + 1, 0, 0, 0, 0,
+                  handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
             }
             else {
               if ((ifm1+1 == handle->blocksifm)) {
-# if defined(LIBXSMM_VLA)
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                  &(input[img][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[img][ofm1+1][0][0][0]));
-# else
-                size_t pi, pw, po;
-                indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = 0; indexi[4] = img;
-                indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = 0; indexw[5] = ofm1 + 1;
-                indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1 + 1; indexo[4] = img;
-                LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-                LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
-                LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-                jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
-# endif
+                  &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, 0, 0,
+                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                  &LIBXSMM_VLA_ACCESS(6, weight, ofm1 + 1, 0, 0, 0, 0, 0,
+                    handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                  &LIBXSMM_VLA_ACCESS(5, output, img, ofm1 + 1, 0, 0, 0,
+                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
               }
               else {
-# if defined(LIBXSMM_VLA)
                 jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                  &(input[img][ifm1+1][0][0][0]), &(weight[ofm1][ifm1+1][0][0][0][0]), &(output[img][ofm1][0][0][0]));
-# else
-                size_t pi, pw, po;
-                indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
-                indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
-                indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1; indexo[4] = img;
-                LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-                LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
-                LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-                jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
-# endif
+                  &LIBXSMM_VLA_ACCESS(5, input, ifm1 + 1, 0, 0, 0, 0,
+                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                  &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1 + 1, 0, 0, 0, 0,
+                    handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                  &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
               }
             }
           }
@@ -217,24 +168,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 #endif
   const element_type *l_input, *l_wt;
   element_type* l_output;
-#if defined(LIBXSMM_VLA)
-  typedef element_type (*LIBXSMM_RESTRICT input_data_type)[handle->blocksifm][handle->ifhp][handle->ifwp][handle->ifmblock];
-  typedef element_type (*LIBXSMM_RESTRICT weight_data_type)[handle->blocksifm][handle->desc.R][handle->desc.S][handle->ifmblock][handle->ofmblock];
-  typedef element_type (*LIBXSMM_RESTRICT output_data_type)[handle->blocksofm][handle->ofhp][handle->ofwp][handle->ofmblock];
-  const input_data_type input = (input_data_type)inp;
-  const weight_data_type weight = (weight_data_type)wtp;
-  const output_data_type output = (output_data_type)outp;
-#else
-  const element_type *LIBXSMM_RESTRICT input = (const element_type*)inp;
-  const element_type *LIBXSMM_RESTRICT weight = (const element_type*)wtp;
-  element_type *LIBXSMM_RESTRICT output = (element_type*)outp;
-  unsigned int ishape[5], wshape[6], oshape[5];
-  unsigned int indexi[5], indexw[6], indexo[5];
-  /* arrays must be initialized separately to avoid warning about values not computable at init.-time */
-  ishape[0] = handle->ifmblock; ishape[1] = handle->ifwp; ishape[2] = handle->ifhp; ishape[3] = handle->blocksifm; ishape[4] = num_threads / handle->blocksofm;
-  wshape[0] = handle->ofmblock; wshape[1] = handle->ifmblock; wshape[2] = handle->desc.S; wshape[3] = handle->desc.R; wshape[4] = handle->blocksifm; wshape[5] = num_threads % handle->blocksofm;
-  oshape[0] = handle->ofmblock; oshape[1] = handle->ofwp; oshape[2] = handle->ofhp; oshape[3] = handle->blocksofm; oshape[4] = ishape[4];
-#endif
+
+  LIBXSMM_VLA_DECL(5, element_type, input, inp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(6, element_type, weight, wtp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+  LIBXSMM_VLA_DECL(5, element_type, output, outp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+
   /* avoid ouf of bounds (dirty) */
   start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
@@ -242,66 +180,37 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
       ij = oj * handle->desc.u;
       for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
         ii = oi * handle->desc.v;
-#if defined(LIBXSMM_VLA)
-        l_input = &(input[img][ifm1][ij][ii][0]);
-        l_wt = &(weight[ofm1][ifm1][0][0][0][0]);
-        l_output = &(output[img][ofm1][oj][oi][0]);
-#else /* index arrays must be initialized separately to avoid warning about values not computable at init.-time */
-        indexi[0] = 0; indexi[1] = ii; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-        indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1; indexw[5] = ofm1;
-        indexo[0] = 0; indexo[1] = oi; indexo[2] = oj; indexo[3] = ofm1; indexo[4] = img;
-        { size_t index1;
-          LIBXSMM_CALC_INDEX1(size_t, index1, 5, indexi, ishape);
-          l_input = input + index1;
-          LIBXSMM_CALC_INDEX1(size_t, index1, 6, indexw, wshape);
-          l_wt = weight + index1;
-          LIBXSMM_CALC_INDEX1(size_t, index1, 5, indexo, oshape);
-          l_output = output + index1;
-        }
-#endif
+        l_input  = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, 0,
+                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+        l_wt     = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0,
+                    handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+        l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
+                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
         /* check we are not at the end, we prefetch inside the image */
         if (oi < handle->ofw-handle->fwd_ofw_rb) {
-# if defined(LIBXSMM_VLA)
           jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-            &(input[img][ifm1][ij][(oi+handle->fwd_ofw_rb)*handle->desc.v][0]), NULL, &(output[img][ofm1][oj][oi+handle->fwd_ofw_rb][0]));
-# else
-          size_t pi, po;
-          indexi[0] = 0; indexi[1] = (oi + handle->fwd_ofw_rb) * handle->desc.v; indexi[2] = ij; indexi[3] = ifm1; indexi[4] = img;
-          indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofh_rb; indexo[3] = ofm1; indexo[4] = img;
-          LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-          LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-          jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
-# endif
+            &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, (oi + handle->fwd_ofw_rb) * handle->desc.v, 0,
+              handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
+            &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi + handle->fwd_ofw_rb, 0,
+              handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }
         else {
           if (oj < end_ofh-handle->fwd_ofh_rb) {
-# if defined(LIBXSMM_VLA)
             jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-              &(input[img][ifm1][(oj+handle->fwd_ofw_rb)*handle->desc.u][ii][0]), NULL, &(output[img][ofm1][oj+handle->fwd_ofw_rb][oi][0]));
-# else
-            size_t pi, po;
-            indexi[0] = 0; indexi[1] = ii; indexi[2] = (oj + handle->fwd_ofw_rb) * handle->desc.u; indexi[3] = ifm1; indexi[4] = img;
-            indexo[0] = 0; indexo[1] = oi; indexo[2] = oj + handle->fwd_ofw_rb; indexo[3] = ofm1; indexo[4] = img;
-            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-            jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output, &(input[pi]), NULL, &(output[po]));
-# endif
+              &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj + handle->fwd_ofw_rb) * handle->desc.u, ii, 0,
+                handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
+              &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofw_rb, oi, 0,
+                handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
           else {
-# if defined(LIBXSMM_VLA)
             jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-              &(input[img][ifm1+1][0][0][0]), &(weight[ofm1][ifm1+1][0][0][0][0]), &(output[img][ofm1][0][0][0]));
-# else
-            size_t pi, pw, po;
-            indexi[0] = 0; indexi[1] = 0; indexi[2] = 0; indexi[3] = ifm1 + 1; indexi[4] = img;
-            indexw[0] = 0; indexw[1] = 0; indexw[2] = 0; indexw[3] = 0; indexw[4] = ifm1 + 1; indexw[5] = ofm1;
-            indexo[0] = 0; indexo[1] = 0; indexo[2] = 0; indexo[3] = ofm1; indexo[4] = img;
-            LIBXSMM_CALC_INDEX1(size_t, pi, 5, indexi, ishape);
-            LIBXSMM_CALC_INDEX1(size_t, pw, 6, indexw, wshape);
-            LIBXSMM_CALC_INDEX1(size_t, po, 5, indexo, oshape);
-            jitted_sconv_fp_weight_pf(l_input, l_wt, l_output, &(input[pi]), &(weight[pw]), &(output[po]));
-# endif
+              &LIBXSMM_VLA_ACCESS(5, input, img, ifm1 + 1, 0, 0, 0,
+                handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+              &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1 + 1, 0, 0, 0, 0,
+                handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+              &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
         }
 #else

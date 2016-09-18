@@ -38,6 +38,7 @@
 #define LIBXSMM_CONCATENATE(A, B) LIBXSMM_CONCATENATE2(A, B)
 #define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE2(SYMBOL, _)
 #define LIBXSMM_UNIQUE(NAME) LIBXSMM_CONCATENATE(NAME, __LINE__)
+#define LIBXSMM_EXPAND(A) A
 
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) ((MAJOR) * 10000 + (MINOR) * 100 + (UPDATE))
 #define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) ((MAJOR) * 100000000 + (MINOR) * 1000000 + (UPDATE) * 10000 + (PATCH))
@@ -164,13 +165,6 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-/* For VLAs, check EXACTLY for C99 since a C11-conformant compiler may not provide VLAs */
-#if !defined(LIBXSMM_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
-    (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
-# define LIBXSMM_VLA
-#endif
-
 #if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
@@ -252,23 +246,53 @@
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
-#define LIBXSMM_CALC_SIZE1(TYPE, VARIABLE, NDIMS, SHAPE, INIT) { \
-  unsigned int libxsmm_calc_size1_i_ = 0; \
-  VARIABLE = LIBXSMM_MAX(INIT, 1); \
-  LIBXSMM_REPEAT(NDIMS, \
-    VARIABLE *= (TYPE)((SHAPE)[libxsmm_calc_size1_i_]); \
-    ++libxsmm_calc_size1_i_;) \
-}
-/* TODO: LIBXSMM_CALC_INDEX1 plus PITCH */
-#define LIBXSMM_CALC_INDEX1(TYPE, VARIABLE, NDIMS, INDEXN, SHAPE) { \
-  unsigned int libxsmm_calc_index1_i_ = 0; \
-  TYPE libxsmm_calc_index1_size_ = 1; \
-  VARIABLE = 0; \
-  LIBXSMM_REPEAT(NDIMS, \
-    VARIABLE += libxsmm_calc_index1_size_ * ((TYPE)(INDEXN)[libxsmm_calc_index1_i_]); \
-    libxsmm_calc_index1_size_ *= (TYPE)((SHAPE)[libxsmm_calc_index1_i_]); \
-    ++libxsmm_calc_index1_i_;) \
-}
+/* For VLAs, check EXACTLY for C99 since a C11-conformant compiler may not provide VLAs */
+#if !defined(LIBXSMM_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
+   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
+    (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
+# define LIBXSMM_VLA
+#endif
+
+#define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
+#define LIBXSMM_SELECT_ELEMENT_1(E0, E1, E2, E3, E4, E5, E6, E7) E0
+#define LIBXSMM_SELECT_ELEMENT_2(E0, E1, E2, E3, E4, E5, E6, E7) E1
+#define LIBXSMM_SELECT_ELEMENT_3(E0, E1, E2, E3, E4, E5, E6, E7) E2
+#define LIBXSMM_SELECT_ELEMENT_4(E0, E1, E2, E3, E4, E5, E6, E7) E3
+#define LIBXSMM_SELECT_ELEMENT_5(E0, E1, E2, E3, E4, E5, E6, E7) E4
+#define LIBXSMM_SELECT_ELEMENT_6(E0, E1, E2, E3, E4, E5, E6, E7) E5
+#define LIBXSMM_SELECT_ELEMENT_7(E0, E1, E2, E3, E4, E5, E6, E7) E6
+#define LIBXSMM_SELECT_ELEMENT_8(E0, E1, E2, E3, E4, E5, E6, E7) E7
+
+/* TODO: support leading dimension (pitch/stride) */
+#define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)LIBXSMM_EXPAND((__VA_ARGS__))
+#define LIBXSMM_INDEX1_1(I0) (1ULL * (I0))
+#define LIBXSMM_INDEX1_2(I0, I1, S1) (LIBXSMM_INDEX1_1(I0) * (S1) + I1)
+#define LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) (LIBXSMM_INDEX1_2(I0, I1, S1) * (S2) + (I2))
+#define LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) (LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) * (S3) + (I3))
+#define LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) (LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) * (S4) + (I4))
+#define LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) (LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) * (S5) + (I5))
+#define LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) (LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) * (S6) + (I6))
+#define LIBXSMM_INDEX1_8(I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, S7) (LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) * (S7) + (I7))
+
+#if defined(LIBXSMM_VLA)
+# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_CONCATENATE(LIBXSMM_VLA_ACCESS_, NDIMS)(ARRAY, __VA_ARGS__)
+# define LIBXSMM_VLA_ACCESS_0(ARRAY, ...) (ARRAY)
+# define LIBXSMM_VLA_ACCESS_1(ARRAY, I0, ...) ((ARRAY)[I0])
+# define LIBXSMM_VLA_ACCESS_2(ARRAY, I0, I1, ...) ((ARRAY)[I0][I1])
+# define LIBXSMM_VLA_ACCESS_3(ARRAY, I0, I1, I2, ...) ((ARRAY)[I0][I1][I2])
+# define LIBXSMM_VLA_ACCESS_4(ARRAY, I0, I1, I2, I3, ...) ((ARRAY)[I0][I1][I2][I3])
+# define LIBXSMM_VLA_ACCESS_5(ARRAY, I0, I1, I2, I3, I4, ...) ((ARRAY)[I0][I1][I2][I3][I4])
+# define LIBXSMM_VLA_ACCESS_6(ARRAY, I0, I1, I2, I3, I4, I5, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5])
+# define LIBXSMM_VLA_ACCESS_7(ARRAY, I0, I1, I2, I3, I4, I5, I6, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5][I6])
+# define LIBXSMM_VLA_ACCESS_8(ARRAY, I0, I1, I2, I3, I4, I5, I6, I7, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5][I6][I7])
+# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
+    ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT VARIABLE_NAME, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
+   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
+#else /* calculate linear index */
+# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) ((ARRAY)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
+# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
+    ELEMENT_TYPE *LIBXSMM_RESTRICT VARIABLE_NAME = (ELEMENT_TYPE *LIBXSMM_RESTRICT)(INIT_VALUE)
+#endif
 
 #if !defined(LIBXSMM_UNUSED)
 # if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/

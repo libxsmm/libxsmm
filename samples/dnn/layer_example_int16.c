@@ -38,12 +38,6 @@
 #include <libxsmm_malloc.h>
 #include <libxsmm_timer.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: later on, this leads to (correct but) different than expected norm-values */
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 typedef struct {
@@ -135,33 +129,16 @@ LIBXSMM_INLINE void compare_buf_int32(int* ref, int* test, long size, correctnes
 #if 0
 LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int N, int H, int W, int C)
 {
+  LIBXSMM_VLA_DECL(4,       float, output, nhwc, H, W, C);
+  LIBXSMM_VLA_DECL(4, const float,  input, nchw, C, H, W);
   int n, h, w, c;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT  input_type)[C][H][W];
-  typedef float (*LIBXSMM_RESTRICT  output_type)[H][W][C];
 
-  const input_type   input_t =  (input_type)nchw;
-  const output_type output_t = (output_type)nhwc;
-#else
-# if defined(_MSC_VER)
-  assert(0/*TODO*/);
-# else
-# error VLA is needed to run the convolution example
-# endif
-#endif
   for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
-#if defined(LIBXSMM_VLA)
-          output_t[n][h][w][c] = input_t[n][c][h][w];
-#else
-# if defined(_MSC_VER)
-          assert(0/*TODO*/);
-# else
-#         error VLA is needed to run the convolution example
-# endif
-#endif
+          LIBXSMM_VLA_ACCESS(4, output, n, h, w, c, H, W, C) =
+          LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
         }
       }
     }
@@ -171,33 +148,16 @@ LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int 
 
 LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int N, int H, int W, int C)
 {
+  LIBXSMM_VLA_DECL(4,       float, output, nchw, C, H, W);
+  LIBXSMM_VLA_DECL(4, const float,  input, nhwc, H, W, C);
   int n, h, w, c;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT  output_type)[C][H][W];
-  typedef float (*LIBXSMM_RESTRICT  input_type)[H][W][C];
 
-  const input_type   input_t =  (input_type)nhwc;
-  const output_type output_t = (output_type)nchw;
-#else
-# if defined(_MSC_VER)
-  assert(0/*TODO*/);
-# else
-# error VLA is needed to run the convolution example
-# endif
-#endif
   for ( n = 0; n < N; n++ ) {
     for ( h = 0; h < H; h++ ) {
       for ( w = 0; w < W; w++ ) {
         for ( c = 0; c < C; c++ ) {
-#if defined(LIBXSMM_VLA)
-          output_t[n][c][h][w] = input_t[n][h][w][c];
-#else
-# if defined(_MSC_VER)
-          assert(0/*TODO*/);
-# else
-#         error VLA is needed to run the convolution example
-# endif
-#endif
+          LIBXSMM_VLA_ACCESS(4, output, n, c, h, w, C, H, W) =
+          LIBXSMM_VLA_ACCESS(4,  input, n, h, w, c, H, W, C);
         }
       }
     }
@@ -207,33 +167,16 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
 
 LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K) 
 {
+  LIBXSMM_VLA_DECL(4,       float, output, rsck, S, C, K);
+  LIBXSMM_VLA_DECL(4, const float,  input, kcrs, C, R, S);
   int r, s, c, k;
-#if defined(LIBXSMM_VLA)
-  typedef float (*LIBXSMM_RESTRICT  input_type)[C][R][S];
-  typedef float (*LIBXSMM_RESTRICT  output_type)[S][C][K];
 
-  const input_type   input_t =  (input_type)kcrs;
-  const output_type output_t = (output_type)rsck;
-#else
-# if defined(_MSC_VER)
-  assert(0/*TODO*/);
-# else
-# error VLA is needed to run the convolution example
-# endif
-#endif
   for ( r = 0; r < R; r++ ) {
     for ( s = 0; s < S; s++ ) {
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
-#if defined(LIBXSMM_VLA)
-          output_t[r][s][c][k] = input_t[k][c][r][s];
-#else
-# if defined(_MSC_VER)
-          assert(0/*TODO*/);
-# else
-#         error VLA is needed to run the convolution example
-# endif
-#endif
+          LIBXSMM_VLA_ACCESS(4, output, r, s, c, k, S, C, K) =
+          LIBXSMM_VLA_ACCESS(4,  input, k, c, r, s, C, R, S);
         }
       }
     }
@@ -262,22 +205,10 @@ LIBXSMM_INLINE void naive_conv_int16(naive_conv_t* param, const short* input, in
   int nSplits   = param->nSplits;
   /* loop counters */
   int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
-#if defined(LIBXSMM_VLA)
-  typedef short (*LIBXSMM_RESTRICT  input_type)[nIfm][ifhp][ifwp];
-  typedef short (*LIBXSMM_RESTRICT filter_type)[nIfm][kh][kw];
-  typedef int   (*LIBXSMM_RESTRICT output_type)[nOfm][ofhp][ofwp];
-  const input_type   input_t =  (input_type)input;
-  const filter_type filter_t = (filter_type)filter;
-  const output_type output_t = (output_type)(output + (pad_w_out * ofwp + pad_h_out));
-#else
-  unsigned int ishape[4], fshape[4], oshape[4], indexi[4], indexf[4], indexo[4];
-  const short *LIBXSMM_RESTRICT  input_t = (const short*)input;
-  const short *LIBXSMM_RESTRICT filter_t = (const short*)filter;
-  int *LIBXSMM_RESTRICT output_t = (int*)(output + (pad_w_out * ofwp + pad_h_out));
-  ishape[0] = ifwp; ishape[1] = ifhp; ishape[2] = nIfm; ishape[3] = nImg;
-  fshape[0] =   kw; fshape[1] =   kh; fshape[2] = nIfm; fshape[3] = nOfm;
-  oshape[0] = ofwp; oshape[1] = ofhp; oshape[2] = nOfm; oshape[3] = nImg;
-#endif
+
+  LIBXSMM_VLA_DECL(4,         int, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4, const short,  input_t,  input, nIfm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4, const short, filter_t, filter, nIfm, kh, kw);
 
   if (nSplits != 1) {
     printf("nSplits != 1 not supported yet for naive code!\n");
@@ -296,18 +227,9 @@ LIBXSMM_INLINE void naive_conv_int16(naive_conv_t* param, const short* input, in
             ii = oi * stride_w;
             for (kj = 0; kj < kh; ++kj) {
               for (ki = 0; ki < kw; ++ki) {
-#if defined(__INTEL_COMPILER) || defined(LIBXSMM_VLA)
-                output_t[img][ofm][oj][oi] += (int)(input_t[img][ifm][ij+kj][ii+ki] * filter_t[ofm][ifm][kj][ki]);
-#else
-                size_t i, f, o;
-                indexi[0] = ii + ki; indexi[1] = ij + kj; indexi[2] = ifm; indexi[3] = img;
-                indexf[0] = ki; indexf[1] = kj; indexf[2] = ifm; indexf[3] = ofm;
-                indexo[0] = oi; indexo[1] = oj; indexo[2] = ofm; indexo[3] = img;
-                LIBXSMM_CALC_INDEX1(size_t, i, 4, indexi, ishape);
-                LIBXSMM_CALC_INDEX1(size_t, f, 4, indexf, fshape);
-                LIBXSMM_CALC_INDEX1(size_t, o, 4, indexo, oshape);
-                output_t[o] += (int)(input_t[i] * filter_t[f]);
-#endif
+                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += (int)(
+                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
+                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw));
               }
             }
           }
