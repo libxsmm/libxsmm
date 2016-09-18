@@ -35,7 +35,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-# include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
@@ -43,7 +43,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
   typedef short element_input_type;
   typedef int element_output_type;
   typedef short element_filter_type;
-# include <template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c>
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
