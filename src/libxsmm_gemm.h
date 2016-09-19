@@ -297,6 +297,13 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
+/** Helper function, which dumps all input and output data of a GEMM call. */
+LIBXSMM_API void libxsmm_gemm_dump(libxsmm_gemm_xflags precision, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,

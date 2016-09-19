@@ -31,11 +31,13 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_intrinsics_x86.h"
 #include "libxsmm_main.h"
+#include "libxsmm_dump.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -104,6 +106,50 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_gemm_dump(libxsmm_gemm_xflags precision, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc)
+{
+  const char ctransa = (0 != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'));
+  const char ctransb = (0 != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'));
+  char filename[256], extension_header[512];
+  size_t data_size[2], size[2];
+
+  if (0 != (LIBXSMM_GEMM_FLAG_F64PREC & precision)) {
+    LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c\nALPHA = %f", ctransa, 0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
+  }
+  else {
+    LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c\nALPHA = %f", ctransa, 0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
+  }
+  LIBXSMM_SNPRINTF(filename, sizeof(filename), "libxsmm_a_%p.mhd", a);
+  data_size[0] = *(0 != lda ? lda : m); data_size[1] = *k; size[0] = *m; size[1] = *k;
+  libxsmm_meta_image_write(filename, data_size, size, 2/*ndims*/, 1/*ncomponents*/, a,
+    0 != (LIBXSMM_GEMM_FLAG_F64PREC & precision) ? LIBXSMM_MHD_ELEMTYPE_F64 : LIBXSMM_MHD_ELEMTYPE_F32,
+    0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
+
+  LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c", ctransb);
+  LIBXSMM_SNPRINTF(filename, sizeof(filename), "libxsmm_b_%p.mhd", b);
+  data_size[0] = *(0 != ldb ? ldb : n); data_size[1] = *n; size[0] = *k; size[1] = *n;
+  libxsmm_meta_image_write(filename, data_size, size, 2/*ndims*/, 1/*ncomponents*/, b,
+    0 != (LIBXSMM_GEMM_FLAG_F64PREC & precision) ? LIBXSMM_MHD_ELEMTYPE_F64 : LIBXSMM_MHD_ELEMTYPE_F32,
+    0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
+
+  if (0 != (LIBXSMM_GEMM_FLAG_F64PREC & precision)) {
+    LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nBETA = %f", 0 != beta ? *((const double*)beta): LIBXSMM_BETA);
+  }
+  else {
+    LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nBETA = %f", 0 != beta ? *((const float*)beta): LIBXSMM_BETA);
+  }
+  LIBXSMM_SNPRINTF(filename, sizeof(filename), "libxsmm_c_%p.mhd", c);
+  data_size[0] = *(0 != ldc ? ldc : m); data_size[1] = *n; size[0] = *m; size[1] = *n;
+  libxsmm_meta_image_write(filename, data_size, size, 2/*ndims*/, 1/*ncomponents*/, c,
+    0 != (LIBXSMM_GEMM_FLAG_F64PREC & precision) ? LIBXSMM_MHD_ELEMTYPE_F64 : LIBXSMM_MHD_ELEMTYPE_F32,
+    0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
 }
 
 

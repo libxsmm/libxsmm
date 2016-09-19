@@ -220,11 +220,11 @@ SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_d
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
-OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o \
+OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o $(BLDDIR)/intel64/libxsmm_dump.o \
                $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_trans.o \
                $(BLDDIR)/intel64/libxsmm_dnn.o $(BLDDIR)/intel64/libxsmm_dnn_conv_fwd_custom_custom.o \
                $(BLDDIR)/intel64/libxsmm_dnn_conv_fwd_nhwc_rsck.o $(BLDDIR)/intel64/libxsmm_dnn_conv_fwd_nhwc_custom.o
-OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o \
+OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_dump.o \
                $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
                $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_custom_custom.o \
                $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwc_rsck.o $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwc_custom.o \
