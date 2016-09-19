@@ -721,7 +721,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           }
 #endif
           atexit(libxsmm_finalize);
-          LIBXSMM_ATOMIC_STORE(&internal_registry, result, LIBXSMM_ATOMIC_SEQ_CST);
+          LIBXSMM_ATOMIC_STORE((void**)&internal_registry, (void*)result, LIBXSMM_ATOMIC_SEQ_CST);
         }
         else {
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
