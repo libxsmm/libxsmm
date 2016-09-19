@@ -233,7 +233,7 @@ LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags,
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
 LIBXSMM_API int libxsmm_prefetch2uid(int prefetch);
-LIBXSMM_API int libxsmm_uid2prefetch2(int uid);
+LIBXSMM_API int libxsmm_uid2prefetch(int uid);
 
 /** Determines whether (OpenMP-)tasks are preferred over thread-style parallelization. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks /*= 0*/;

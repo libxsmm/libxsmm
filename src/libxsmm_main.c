@@ -575,7 +575,7 @@ LIBXSMM_API_DEFINITION int libxsmm_prefetch2uid(int prefetch)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_uid2prefetch2(int uid)
+LIBXSMM_API_DEFINITION int libxsmm_uid2prefetch(int uid)
 {
   switch (uid) {
     case  2: return LIBXSMM_PREFETCH_SIGONLY;
@@ -624,7 +624,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
-            internal_prefetch = libxsmm_uid2prefetch2(uid);
+            internal_prefetch = libxsmm_uid2prefetch(uid);
           }
         }
       }
