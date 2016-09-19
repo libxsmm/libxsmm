@@ -28,13 +28,13 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_timer.h>
-#include <libxsmm_malloc.h>
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <math.h>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -71,6 +71,11 @@ int main(int argc, char* argv[])
   const libxsmm_blasint lda = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldb = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
 
+  if (0 == strchr("oOiI", t)) {
+    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>]\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
@@ -106,9 +111,7 @@ int main(int argc, char* argv[])
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
     else {
-      if (('i' != t && 'I' != t)) {
-        fprintf(stderr, "In-place transpose assumed!\n");
-      }
+      assert('i' == t || 'I' == t);
       start = libxsmm_timer_tick();
       /*libxsmm_itrans(a, sizeof(REAL_TYPE), m, n, lda);*/
 #if defined(USE_SELF_VALIDATION)
