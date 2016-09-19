@@ -66,6 +66,7 @@
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.h" />
     <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
+    <ClInclude Include="..\src\libxsmm_dump.h" />
     <ClInclude Include="..\src\libxsmm_ext.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
@@ -116,6 +117,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dump.c" />
     <ClCompile Include="..\src\libxsmm_ext.c" />
     <ClCompile Include="..\src\libxsmm_ext_gemm.c" />
     <ClCompile Include="..\src\libxsmm_ext_trans.c" />
