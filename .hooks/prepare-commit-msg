@@ -14,6 +14,9 @@ MSG_TAG="[skip ci]"
 MSG_FILE=$1
 MSG_KIND=$2
 
+# disable wildcard expansion
+set -o noglob
+
 if [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
    [ "0" != "$(grep -qs -F "${MSG_TAG}" ${MSG_FILE}; echo $?)" ];
 then
