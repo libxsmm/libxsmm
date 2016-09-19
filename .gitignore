@@ -50,6 +50,7 @@ _*.txt
 *.soa
 *.csr
 *.dll
+*.mhd
 *.so
 *.o
 *.a
