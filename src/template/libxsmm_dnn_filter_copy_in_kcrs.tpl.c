@@ -40,7 +40,7 @@ int R = filter->R;
 int S = filter->S;
 
 LIBXSMM_VLA_DECL(7, element_type, handle_data, filter->data, ofmb, ifmb, R, S, bifm, bofm);
-LIBXSMM_VLA_DECL(5, element_type, user_data, data, ofmb*bofm, ifmb*bifm, R, S);
+LIBXSMM_VLA_DECL(5, const element_type, user_data, (element_type*)data, ofmb * bofm, ifmb * bifm, R, S);
 
 for (i1 = 0; i1 < splits; ++i1) {
   for (i2 = 0; i2 < ofmb; ++i2) {

@@ -39,7 +39,7 @@ int H = buffer->H;
 int W = buffer->W;
 
 LIBXSMM_VLA_DECL(6, element_type, handle_data, buffer->data, splits, fmb, H, W, bfm);
-LIBXSMM_VLA_DECL(5, element_type, user_data, data, splits, fmb * bfm, H, W);
+LIBXSMM_VLA_DECL(5, const element_type, user_data, (element_type*)data, splits, fmb * bfm, H, W);
 
 for (i1 = 0; i1 < N; ++i1) {
   for (i2 = 0; i2 < splits; ++i2) {
