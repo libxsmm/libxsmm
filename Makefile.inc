@@ -524,16 +524,6 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
   endif
-  ifneq (0,$(THREADS))
-    DFLAGS += -D_REENTRANT
-    CXXFLAGS += -pthread
-    CFLAGS += -pthread
-    ifneq (Windows_NT,$(UNAME))
-      CLDFLAGS += -pthread
-    endif
-  else
-    DFLAGS += -DLIBXSMM_NOSYNC
-  endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
     DFLAGS += -D__STATIC=1
@@ -719,16 +709,6 @@ else # GCC assumed
       LDFLAGS += $(OMPFLAG)
     endif
   endif
-  ifneq (0,$(THREADS))
-    DFLAGS += -D_REENTRANT
-    CXXFLAGS += -pthread
-    CFLAGS += -pthread
-    ifneq (Windows_NT,$(UNAME))
-      CLDFLAGS += -pthread
-    endif
-  else
-    DFLAGS += -DLIBXSMM_NOSYNC
-  endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     DUMMY = $(shell $(LD) -static -ldummydoesnotexist 2>&1)
@@ -798,6 +778,20 @@ ifneq (,$(strip $(FC)))
 ifeq (0,$(shell $(FC) -E $(CTARGET) /dev/null 2> /dev/null > /dev/null; echo $$?))
   FTARGET = $(CTARGET)
 endif
+endif
+
+ifneq (0,$(THREADS))
+  DFLAGS += -D_REENTRANT
+  CXXFLAGS += -pthread
+  CFLAGS += -pthread
+  ifneq (Windows_NT,$(UNAME))
+    CLDFLAGS += -pthread
+  endif
+else
+  DFLAGS += -DLIBXSMM_NO_SYNC
+endif
+ifeq (0,$(VLA))
+  DFLAGS += -DLIBXSMM_NO_VLA
 endif
 
 # Information which can be displayed by the actual Makefile

@@ -33,7 +33,7 @@
 
 #include <libxsmm.h>
 
-#if defined(LIBXSMM_NOSYNC)
+#if defined(LIBXSMM_NO_SYNC)
 # undef _REENTRANT
 #elif !defined(_REENTRANT)
 # define _REENTRANT

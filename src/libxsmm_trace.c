@@ -62,7 +62,7 @@ int mkstemp(char* filename_template);
 # include <sys/mman.h>
 # include <unistd.h>
 # include <fcntl.h>
-# if !defined(LIBXSMM_NOSYNC)
+# if !defined(LIBXSMM_NO_SYNC)
 #   include <pthread.h>
 # endif
 # if defined(__APPLE__) && defined(__MACH__)

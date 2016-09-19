@@ -150,7 +150,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #if defined(LIBXSMM_OPENMP)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
-#elif !defined(LIBXSMM_NOSYNC)
+#elif !defined(LIBXSMM_NO_SYNC)
 # if defined(LIBXSMM_TRYLOCK)
 #   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
       const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
@@ -380,7 +380,7 @@ return flux_entry.xmm
     PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH)
 #endif
 
-#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NOSYNC)
+#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NO_SYNC)
 # define INTERNAL_REGLOCK_COUNT 16
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_COUNT];
 #endif
@@ -597,7 +597,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
   /*const*/libxsmm_code_pointer* result;
   int i;
 #if !defined(LIBXSMM_OPENMP)
-# if !defined(LIBXSMM_NOSYNC)
+# if !defined(LIBXSMM_NO_SYNC)
   static int internal_reglock_check = 1; /* setup the locks in a thread-safe fashion */
   assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_COUNT * sizeof(*internal_reglock)));
   if (1 == LIBXSMM_ATOMIC_LOAD(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST)) {
@@ -738,7 +738,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #endif
     }
   }
-#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NOSYNC) /* release locks */
+#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NO_SYNC) /* release locks */
   for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
 #endif
   assert(result);
@@ -768,7 +768,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
   if (0 != registry) {
     int i;
 #if !defined(LIBXSMM_OPENMP)
-# if !defined(LIBXSMM_NOSYNC)
+# if !defined(LIBXSMM_NO_SYNC)
     /* acquire locks and thereby shortcut lazy initialization later on */
     for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 # endif
@@ -855,7 +855,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
         libxsmm_free(registry);
       }
     }
-#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NOSYNC) /* release locks */
+#if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NO_SYNC) /* release locks */
     for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
 #endif
   }

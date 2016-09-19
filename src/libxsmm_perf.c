@@ -217,7 +217,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     rec.pid = LIBXSMM_PERF_GETPID();
     rec.tid = (pid_t) syscall(__NR_gettid);
 
-#if !defined(LIBXSMM_NOSYNC)
+#if !defined(LIBXSMM_NO_SYNC)
     flockfile(fp);
 #endif
 
@@ -234,7 +234,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     }
     res += fwrite_unlocked((const void*) memory, size, 1, fp);
 
-#if !defined(LIBXSMM_NOSYNC)
+#if !defined(LIBXSMM_NO_SYNC)
     funlockfile(fp);
 #endif
 

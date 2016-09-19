@@ -247,7 +247,7 @@
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
 /* For VLAs, check EXACTLY for C99 since a C11-conformant compiler may not provide VLAs */
-#if !defined(LIBXSMM_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
+#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
    (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
     (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
 # define LIBXSMM_VLA
@@ -295,7 +295,7 @@
 # define LIBXSMM_VLA_ACCESS_8(ARRAY, I0, I1, I2, I3, I4, I5, I6, I7, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5][I6][I7])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
     ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT VARIABLE_NAME, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
-   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
+   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
 #else /* calculate linear index */
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) ((ARRAY)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
