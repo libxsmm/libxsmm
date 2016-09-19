@@ -174,9 +174,11 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   }
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
+    LIBXSMM_INIT
+    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
+    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
+    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
@@ -209,9 +211,11 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   }
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
+    LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
+    LIBXSMM_INIT
+    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
+    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
+    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,

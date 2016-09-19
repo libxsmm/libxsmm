@@ -106,12 +106,13 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
   LIBXSMM_INIT
+  tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
+  tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
+  tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
 #if defined(_OPENMP)
   if (0 != libxsmm_mt) { /* enable OpenMP support */
     if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
@@ -194,11 +195,12 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
+  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
   LIBXSMM_INIT
+  tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
+  tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
+  tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
 #if defined(_OPENMP)
   if (0 != libxsmm_mt) { /* enable OpenMP support */
     if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
