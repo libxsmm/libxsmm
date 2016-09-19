@@ -28,11 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
-#include <libxsmm_timer.h>
-#include <libxsmm_malloc.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

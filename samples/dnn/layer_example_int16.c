@@ -28,6 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -35,8 +36,6 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#include <libxsmm_malloc.h>
-#include <libxsmm_timer.h>
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 

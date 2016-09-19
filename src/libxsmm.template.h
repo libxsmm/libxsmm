@@ -65,6 +65,9 @@ $LIBXSMM_OFFLOAD_BUILD
 #include "libxsmm_typedefs.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
+#include "libxsmm_malloc.h"
+#include "libxsmm_timer.h"
+#include "libxsmm_sync.h"
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 #if (0 != LIBXSMM_ILP64)

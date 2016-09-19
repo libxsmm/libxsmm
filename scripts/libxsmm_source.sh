@@ -52,7 +52,6 @@ cat << EOM
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
 
-#include "libxsmm_timer.h"
 #include "libxsmm_dnn.h"
 
 /**

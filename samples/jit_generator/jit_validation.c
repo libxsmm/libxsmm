@@ -28,10 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm.h>
-#include <libxsmm_timer.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

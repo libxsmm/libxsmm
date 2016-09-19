@@ -29,9 +29,6 @@
 /* Maciej Debski (Google Inc.)
 ******************************************************************************/
 #include "libxsmm_perf.h"
-#if defined(LIBXSMM_PERF_JITDUMP)
-# include <libxsmm_timer.h>
-#endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
