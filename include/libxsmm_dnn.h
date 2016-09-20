@@ -200,6 +200,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* h
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(const float* input1, const float* input2, float* output,
                                                            const float* ipf1, const float* ipf2, const float* opf);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, const short* input2, int* output,
+                                                           const short* ipf1, const short* ipf2, const int* opf);
+
+/** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; } libxsmm_xconvfunction;
+
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
 
@@ -208,6 +214,15 @@ LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_co
 
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
+
+/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
+
+/** Code generation routine for a convolution kernel as specified by descriptor. */
+LIBXSMM_API void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
 
 #endif
 #endif /*LIBXSMM_DNN_H*/

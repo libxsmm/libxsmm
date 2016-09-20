@@ -86,11 +86,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_custom_fp
   /* compute thr_begin and thr_end */
   const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].sconv;
-  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].sconv;
-  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].sconv;*/
+  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].xconv.sconv;
+  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].xconv.sconv;
+  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].xconv.sconv;*/
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].sconv;
+  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].xconv.sconv;
 #endif
   const float *l_input, *l_wt;
   float* l_output;
@@ -169,11 +169,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_custom_fp
   const int ofm1 = l_tidgroup % handle->blocksofm;
   int start_ofh = l_l2_ts * (ltid % l_l1_gs);
   const int end_ofh = ((start_ofh + l_l2_ts) <= handle->ofh) ? (start_ofh + l_l2_ts) : handle->ofh;
-  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].sconv;
-  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].sconv;
-  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].sconv;*/
+  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].xconv.sconv;
+  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].xconv.sconv;
+  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].xconv.sconv;*/
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].sconv;
+  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].xconv.sconv;
 #endif
   const float *l_input, *l_wt;
   float* l_output;
@@ -234,7 +234,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_custom
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_fwd[0].sconv == 0) {
+  if (handle->code_fwd[0].xconv.sconv == 0) {
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_FP32: {
         if (1 == handle->desc.splits) {
