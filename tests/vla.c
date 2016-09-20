@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define ELEMENT_TYPE short
+
 
 int main(/*int argc, char* argv[]*/)
 {
   int ni = 9, nj = 7, nk = 3, i, j, k, linear = 0, result = EXIT_SUCCESS;
-  int* in1 = (int*)malloc(ni * nj * nk * sizeof(int));
-  LIBXSMM_VLA_DECL(3, const int, in3, in1, nj, nk);
+  ELEMENT_TYPE* in1 = (ELEMENT_TYPE*)malloc(ni * nj * nk * sizeof(ELEMENT_TYPE));
+  LIBXSMM_VLA_DECL(3, const ELEMENT_TYPE, in3, in1, nj, nk);
 
   assert(0 != in1);
   for (i = 0; i < (ni * nj * nk); ++i) in1[i] = i;
