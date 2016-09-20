@@ -215,6 +215,15 @@ LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_co
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
 
+/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
+
+/** Code generation routine for a convolution kernel as specified by descriptor. */
+LIBXSMM_API void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
+
 #endif
 #endif /*LIBXSMM_DNN_H*/
 

@@ -184,14 +184,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
       }
       else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
-#if 0
         handle->ifmblock = (conv_desc.C >=32) ? 32 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
-#endif
-        *status = LIBXSMM_DNN_WARN_FALLBACK;
-        handle->ifmblock = 1;
-        handle->ofmblock = 1;
-        noarch = 1;
+        if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
+          *status = LIBXSMM_DNN_WARN_FALLBACK;
+          handle->ifmblock = 1;
+          handle->ofmblock = 1;
+          noarch = 1;
+        }
       }
       else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -308,22 +308,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
         {
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
-          handle->code_fwd[1].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[2].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
-          handle->code_fwd[3].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
         } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
           /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
           descriptor.unroll_kh = 0;
           descriptor.unroll_kw = 0;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
-          handle->code_fwd[1].xconv.sconv = handle->code_fwd[0].xconv.sconv;
-          handle->code_fwd[2].xconv.sconv = handle->code_fwd[0].xconv.sconv;
-          handle->code_fwd[3].xconv.sconv = handle->code_fwd[0].xconv.sconv;
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+          handle->code_fwd[1].pmm = handle->code_fwd[0].pmm;
+          handle->code_fwd[2].pmm = handle->code_fwd[0].pmm;
+          handle->code_fwd[3].pmm = handle->code_fwd[0].pmm;
         } else {
           /* shouldn't happend */
         }
@@ -1298,6 +1298,77 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
   }
 #endif
   return code.xconv.sconv;
+}
+
+LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_forward(
+  const libxsmm_convolution_forward_descriptor* descriptor)
+{
+  libxsmm_code_pointer code = { 0 };
+  LIBXSMM_INIT
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cfwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CFWD;
+    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_desc = 0;
+    if (0 == error_desc) {
+      fprintf(stderr, "LIBXSMM: invalid descriptor (forward convolution)!\n");
+      error_desc = 1;
+    }
+  }
+#endif
+  return code.pmm;
+}
+
+
+LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_backward(
+  const libxsmm_convolution_backward_descriptor* descriptor)
+{
+  libxsmm_code_pointer code = { 0 };
+  LIBXSMM_INIT
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cbwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CBWD;
+    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_desc = 0;
+    if (0 == error_desc) {
+      fprintf(stderr, "LIBXSMM: invalid descriptor (backward convolution)!\n");
+      error_desc = 1;
+    }
+  }
+#endif
+  return code.pmm;
+}
+
+
+LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_update_weights(
+  const libxsmm_convolution_weight_update_descriptor* descriptor)
+{
+  libxsmm_code_pointer code = { 0 };
+  LIBXSMM_INIT
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cupd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CUPD;
+    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+  }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    static LIBXSMM_TLS int error_desc = 0;
+    if (0 == error_desc) {
+      fprintf(stderr, "LIBXSMM: invalid convolution descriptor (weight update)!\n");
+      error_desc = 1;
+    }
+  }
+#endif
+  return code.pmm;
 }
 
 #endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
