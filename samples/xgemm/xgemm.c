@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
   const double scale = 1.0 / nrepeat, gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
   const REAL_TYPE alpha = 1, beta = 1;
+  int result = EXIT_SUCCESS;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
@@ -144,6 +145,7 @@ int main(int argc, char* argv[])
         }
       }
       fprintf(stdout, "\tdiff=%f\n", diff);
+      if (1.0 < diff) result = EXIT_FAILURE;
     }
 
     libxsmm_free(a);
@@ -153,5 +155,5 @@ int main(int argc, char* argv[])
   }
   fprintf(stdout, "Finished\n");
 
-  return EXIT_SUCCESS;
+  return result;
 }

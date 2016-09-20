@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint n = 3 < argc ? atoi(argv[3]) : m;
   const libxsmm_blasint lda = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldb = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
+  int result = EXIT_SUCCESS;
 
   if (0 == strchr("oOiI", t)) {
     fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>]\n", argv[0]);
@@ -178,6 +179,7 @@ int main(int argc, char* argv[])
       }
       else {
         fprintf(stderr, "Validation failed!\n");
+        result = EXIT_FAILURE;
       }
     }
     libxsmm_free(c);
@@ -185,6 +187,6 @@ int main(int argc, char* argv[])
     libxsmm_free(a);
     libxsmm_free(b);
   }
-  return EXIT_SUCCESS;
+  return result;
 }
 
