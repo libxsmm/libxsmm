@@ -77,12 +77,16 @@ tests: test
 test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh
 
+ifneq (Darwin,$(UNAME))
+  TEST_EXTLIB = $(EXTLIB)
+endif
+
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
 ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(LD) -o $(1) $(2) \
-		$(EXTLIB) $(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(TEST_EXTLIB) $(call libdir, $(LIBNAME).$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(1)
@@ -99,7 +103,7 @@ ifneq (,$(wildcard $(LIBNAME)f.$(LIBEXT)))
 ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(FC) -o $(1) $(2) $(call libdir, $(LIBNAME)f.$(LIBEXT)) \
-		$(EXTLIB) $(call libdir, $(LIBNAME).$(LIBEXT)) \
+		$(TEST_EXTLIB) $(call libdir, $(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(1)
