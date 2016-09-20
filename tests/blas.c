@@ -68,14 +68,14 @@ int main(void)
   libxsmm_blasint ldc[]   = { 1, 3, 240,    16, 350, 350, 350, 350, 350,  5 };
   const REAL_TYPE alpha[] = { 1, 1,   1,     1,   1,   1,   1,   1,   1,  1 };
   const REAL_TYPE beta[]  = { 1, 1,   1,     0,   0,   0,   0,   0,   0,  0 };
-  const int ntests = sizeof(m) / sizeof(*m);
+  const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 0, maxn = 0, maxk = 0, maxa = 0, maxb = 0, maxc = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
   int test, nwarnings = 0;
   libxsmm_blasint i, j;
   double d2 = 0;
 
-  for (test = 0; test < ntests; ++test) {
+  for (test = start; test < ntests; ++test) {
     MAXREDUCE(test, m, maxm, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
     MAXREDUCE(test, n, maxn, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
     MAXREDUCE(test, k, maxk, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
@@ -114,7 +114,7 @@ int main(void)
     }
   }
 
-  for (test = 0; test < ntests; ++test) {
+  for (test = start; test < ntests; ++test) {
     double dtest = 0;
 
     LIBXSMM_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
