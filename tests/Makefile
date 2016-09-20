@@ -79,12 +79,7 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
-ifneq (0,$(BLAS))
-$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(dir $(1))/.make
-	$(LD) -o $(1) $(2) \
-		$(call libdir, $(LIBNAME).$(LIBEXT)) \
-		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
+ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(LD) -o $(1) $(2) \
 		$(call libdir, $(LIBNAME).$(LIBEXT)) \
@@ -102,13 +97,7 @@ define DEFINE_LINK_FC_RULE
 ifneq (,$(strip $(FC)))
 ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
 ifneq (,$(wildcard $(LIBNAME)f.$(LIBEXT)))
-ifneq (0,$(BLAS))
-$(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(dir $(1))/.make
-	$(FC) -o $(1) $(2) \
-		$(call libdir, $(LIBNAME)f.$(LIBEXT)) \
-		$(call libdir, $(LIBNAME).$(LIBEXT)) \
-		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
-else ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
+ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 	$(FC) -o $(1) $(2) \
 		$(call libdir, $(LIBNAME)f.$(LIBEXT)) \
