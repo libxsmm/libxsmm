@@ -29,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
+    <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
@@ -61,7 +62,6 @@
     <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
-    <ClInclude Include="..\src\libxsmm.template.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h" />
     <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.h" />
@@ -76,6 +76,8 @@
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_trans.h" />
+    <ClInclude Include="..\src\template\libxsmm.h" />
+    <ClInclude Include="..\src\template\libxsmm_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
@@ -166,7 +168,7 @@
     <None Include="..\scripts\libxsmm_source.sh" />
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
-    <None Include="..\src\libxsmm.template.f" />
+    <None Include="..\src\template\libxsmm.f" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

@@ -10,6 +10,9 @@
     <Filter Include="scripts">
       <UniqueIdentifier>{13af66c8-51ff-4b9e-94fe-53a686556d47}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\template">
+      <UniqueIdentifier>{c4a6fa16-23e9-4fb6-9148-c47da5e490e6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libxsmm.h">
@@ -19,9 +22,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_hash.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm.template.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_frontend.h">
@@ -158,6 +158,15 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dump.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm.h">
+      <Filter>src\template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_config.h">
+      <Filter>src\template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_config.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -301,9 +310,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\libxsmm.template.f">
-      <Filter>src</Filter>
-    </None>
     <None Include="..\include\libxsmm.f">
       <Filter>include</Filter>
     </None>
@@ -335,6 +341,9 @@
     <None Include="..\.state.sh" />
     <None Include="..\LICENSE" />
     <None Include="..\.scan.sh" />
+    <None Include="..\src\template\libxsmm.f">
+      <Filter>src\template</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
