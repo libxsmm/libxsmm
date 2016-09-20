@@ -96,10 +96,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
   if (handle->code_fwd[0].xconv.sconv == 0) {
     if (1 == handle->desc.splits) {
       switch (handle->datatype) {
-        case LIBXSMM_DNN_DATATYPE_FP32: { 
+        case LIBXSMM_DNN_DATATYPE_FP32: {
           internal_convolve_st_fwd_custom_custom_fp32_fallback(handle, start_thread, tid, num_threads);
         } break;
-        case LIBXSMM_DNN_DATATYPE_INT16: { 
+        case LIBXSMM_DNN_DATATYPE_INT16: {
           internal_convolve_st_fwd_custom_custom_int16_fallback(handle, start_thread, tid, num_threads);
         } break;
         default: {

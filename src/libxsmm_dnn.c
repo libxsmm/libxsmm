@@ -133,7 +133,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     return 0;
   }
 
-  handle = (libxsmm_dnn_conv_handle*)malloc(sizeof(libxsmm_dnn_conv_handle));  
+  handle = (libxsmm_dnn_conv_handle*)malloc(sizeof(libxsmm_dnn_conv_handle));
 
   if (0 != handle) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
@@ -224,7 +224,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             noarch = 1;
             *status = LIBXSMM_DNN_WARN_FALLBACK;
             handle->ifmblock = 1;
-            handle->ofmblock = 1; 
+            handle->ofmblock = 1;
           }
         }
 
@@ -237,7 +237,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             noarch = 1;
             *status = LIBXSMM_DNN_WARN_FALLBACK;
             handle->ifmblock = 1;
-            handle->ofmblock = 1; 
+            handle->ofmblock = 1;
           }
         }
       }
@@ -935,7 +935,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-              }  
+              }
             }
           } break;
           default: {

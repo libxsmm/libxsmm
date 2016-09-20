@@ -163,7 +163,7 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
 }
 
 
-LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K) 
+LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K)
 {
   LIBXSMM_VLA_DECL(4,       float, output, rsck, S, C, K);
   LIBXSMM_VLA_DECL(4, const float,  input, kcrs, C, R, S);
@@ -239,7 +239,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_filter, *naive_libxsmm_output;
-  float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc; 
+  float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
   naive_param.ofh = ofh;
   naive_param.ofw = ofw;
   naive_param.pad_h_in = 0;
-  naive_param.pad_w_in = 0; 
+  naive_param.pad_w_in = 0;
   naive_param.pad_h_out = pad_h_out;
   naive_param.pad_w_out = pad_w_out;
   naive_param.kh = kh;

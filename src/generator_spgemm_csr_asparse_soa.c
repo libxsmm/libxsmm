@@ -126,7 +126,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
 
   /* test if we should generate a dense version */
   if ( i_row_idx[i_xgemm_desc->m] == (unsigned int)(i_xgemm_desc->m*i_xgemm_desc->k) ) {
-    l_gen_m_trips = 1; 
+    l_gen_m_trips = 1;
     l_is_dense = 1;
   } else {
     l_gen_m_trips = i_xgemm_desc->m;
@@ -184,7 +184,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
           if (l_b_offset >= 8192) {
             l_b_total_offset += l_b_offset;
             libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_b,
-                                             l_b_offset);            
+                                             l_b_offset);
             l_b_offset = 0;
           }
 
@@ -220,9 +220,9 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
     /* adjust B pointer */
     if (l_b_total_offset > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_gp_reg_mapping.gp_reg_b,
-                                       l_b_total_offset);            
+                                       l_b_total_offset);
     }
- 
+
     /* generate M loop */
     if (l_is_dense != 0 ) {
       /* advance A pointer */
@@ -234,7 +234,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
       libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
     }
   }
-  
+
   /* close asm */
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }

@@ -53,7 +53,7 @@ libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->co
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
 libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
-const element_input_type *l_input; 
+const element_input_type *l_input;
 const element_filter_type *l_wt;
 element_output_type* l_output;
 

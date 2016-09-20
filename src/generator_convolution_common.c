@@ -261,7 +261,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                             i_conv_kernel_config->vmove_instruction,
                                             i_gp_reg_mapping->gp_reg_output,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) +
                                             ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
                                             ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ),
                                             i_conv_kernel_config->vector_name,
@@ -272,7 +272,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                               LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
                                               i_gp_reg_mapping->gp_reg_output_pf,
                                               LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                              ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) +
                                               ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
                                               ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ) );
           }
@@ -359,7 +359,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                             i_conv_kernel_config->vmove_instruction,
                                             i_gp_reg_mapping->gp_reg_output,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) + 
+                                            ( l_i * i_conv_desc->ofw_padded * l_lead_dim * i_conv_kernel_config->datatype_size) +
                                             ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size ) +
                                             ( l_k * i_conv_kernel_config->vector_length * i_conv_kernel_config->datatype_size ),
                                             i_conv_kernel_config->vector_name,

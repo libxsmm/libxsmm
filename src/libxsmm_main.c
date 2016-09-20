@@ -640,7 +640,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           libxsmm_mt = atoi(env);
         }
       }
-      { 
+      {
         const char *const env = getenv("LIBXSMM_TASKS");
         if (0 != env && 0 != *env) {
           libxsmm_tasks = atoi(env);
