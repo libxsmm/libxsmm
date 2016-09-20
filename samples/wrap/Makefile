@@ -85,9 +85,11 @@ all: $(XFILES)
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (Darwin,$(UNAME))
+ifneq (0,$(XWRAP))
 	$(info ================================================================================)
 	$(info The static link-time wrapper mechanism is not supported under OS X!)
 	$(info ================================================================================)
+endif
 endif
 
 ifneq (0,$(XWRAP))
