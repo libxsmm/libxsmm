@@ -51,18 +51,36 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
 }
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+{
+  typedef short element_input_type;
+  typedef int element_output_type;
+  typedef short element_filter_type;
+  typedef libxsmm_wconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
+}
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
 }
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+{
+  typedef short element_input_type;
+  typedef int element_output_type;
+  typedef short element_filter_type;
+  typedef libxsmm_wconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
+}
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
 {
@@ -75,7 +93,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_fwd[0].sconv == 0) {
+  if (handle->code_fwd[0].xconv.sconv == 0) {
     if (1 == handle->desc.splits) {
       switch (handle->datatype) {
         case LIBXSMM_DNN_DATATYPE_FP32: { 
@@ -103,6 +121,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           }
           else {
             internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(handle, start_thread, tid, num_threads);
+          }
+        } break;
+        case LIBXSMM_DNN_DATATYPE_INT16: {
+          if (handle->desc.N*handle->blocksofm >= num_threads) {
+            internal_convolve_st_fwd_custom_custom_int16_opt(handle, start_thread, tid, num_threads);
+          }
+          else {
+            internal_convolve_st_fwd_custom_custom_int16_opt_img_par(handle, start_thread, tid, num_threads);
           }
         } break;
         default: {

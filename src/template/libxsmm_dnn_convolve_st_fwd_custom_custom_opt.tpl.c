@@ -39,11 +39,11 @@ const int chunksize = (work % num_threads == 0) ? (work / num_threads) : (work /
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].sconv;
-libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].sconv;
-/*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].sconv;*/
+libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+/*libxsmm_convfunction jitted_conv_fp_weightnooutput_pf = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;*/
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].sconv;
+libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 const element_input_type *l_input; 
 const element_filter_type *l_wt;
@@ -71,7 +71,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
         /* check we are not at the end */
         if (oj < handle->ofh-handle->fwd_ofh_rb) {
-          jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
+          jitted_conv_fp_noweight_pf(l_input, l_wt, l_output,
             &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, 0,
                                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, oi, 0,
@@ -79,7 +79,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
         }
         else {
           if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
-            jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
+            jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
               &LIBXSMM_VLA_ACCESS(5, input, img + 1, 0, 0, 0, 0,
                 handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
               &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, 0, 0, 0, 0,
@@ -89,7 +89,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
           }
           else {
             if ((ifm1+1 == handle->blocksifm)) {
-              jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
+              jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
                 &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                 &LIBXSMM_VLA_ACCESS(6, weight, ofm1 + 1, 0, 0, 0, 0, 0,
@@ -98,7 +98,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
                   handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
             }
             else {
-              jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
+              jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
                 &LIBXSMM_VLA_ACCESS(5, input, ifm1 + 1, 0, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                 &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1 + 1, 0, 0, 0, 0,
@@ -109,7 +109,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
           }
         }
 #else
-        jitted_sconv_fp_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL);
+        jitted_conv_fp_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL);
 #endif
       }
     }

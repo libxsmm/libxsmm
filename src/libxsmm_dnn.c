@@ -308,22 +308,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
         {
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[0].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
-          handle->code_fwd[1].sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[1].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[2].sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[2].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
-          handle->code_fwd[3].sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[3].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
         } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
           /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
           descriptor.unroll_kh = 0;
           descriptor.unroll_kw = 0;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].sconv = libxsmm_create_sconv_forward(&descriptor);
-          handle->code_fwd[1].sconv = handle->code_fwd[0].sconv;
-          handle->code_fwd[2].sconv = handle->code_fwd[0].sconv;
-          handle->code_fwd[3].sconv = handle->code_fwd[0].sconv;
+          handle->code_fwd[0].xconv.sconv = libxsmm_create_sconv_forward(&descriptor);
+          handle->code_fwd[1].xconv.sconv = handle->code_fwd[0].xconv.sconv;
+          handle->code_fwd[2].xconv.sconv = handle->code_fwd[0].xconv.sconv;
+          handle->code_fwd[3].xconv.sconv = handle->code_fwd[0].xconv.sconv;
         } else {
           /* shouldn't happend */
         }
@@ -338,7 +338,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.kh = handle->kh;
         descriptor.stride_w = handle->stridew;
         descriptor.stride_h = handle->strideh;
-        handle->code_bwd.sconv = libxsmm_create_sconv_backward(&descriptor);
+        handle->code_bwd.xconv = libxsmm_create_sconv_backward(&descriptor);
       }
       /* TODO weight update path */
       { libxsmm_convolution_weight_update_descriptor descriptor;
@@ -348,15 +348,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         /*descriptor.kh = handle->kh;*/
         descriptor.stride_w = handle->stridew;
         descriptor.stride_h = handle->strideh;
-        handle->code_upd.sconv = libxsmm_create_sconv_update_weights(&descriptor);
+        handle->code_upd.xconv = libxsmm_create_sconv_update_weights(&descriptor);
       }
 #endif
     }
     else {
-      handle->code_fwd[0].sconv = 0;
-      handle->code_fwd[1].sconv = 0;
-      handle->code_fwd[2].sconv = 0;
-      handle->code_fwd[3].sconv = 0;
+      handle->code_fwd[0].xconv.sconv = 0;
+      handle->code_fwd[1].xconv.sconv = 0;
+      handle->code_fwd[2].xconv.sconv = 0;
+      handle->code_fwd[3].xconv.sconv = 0;
       /* TODO Backward path */
       /* TODO weight update path */
     }
@@ -1166,21 +1166,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
         && 0 != handle->data_weight
         && 0 != handle->data_output)
       {
-        convolution = handle->code_fwd.sconv;
+        convolution = handle->code_fwd.xconv;
       } break;
       case LIBXSMM_DNN_KIND_BWD: if (
            0 != handle->data_input
         && 0 != handle->data_weight
         && 0 != handle->data_output)
       {
-        convolution = handle->code_bwd.sconv;
+        convolution = handle->code_bwd.xconv;
       } break;
       case LIBXSMM_DNN_KIND_UPD: if (
            0 != handle->data_input
         && 0 != handle->data_weight
         && 0 != handle->data_output)
       {
-        convolution = handle->code_upd.sconv;
+        convolution = handle->code_upd.xconv;
       } break;
     }
   }
@@ -1249,7 +1249,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_forward(
     }
   }
 #endif
-  return code.sconv;
+  return code.xconv.sconv;
 }
 
 
@@ -1273,7 +1273,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_backward(
     }
   }
 #endif
-  return code.sconv;
+  return code.xconv.sconv;
 }
 
 
@@ -1297,7 +1297,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
     }
   }
 #endif
-  return code.sconv;
+  return code.xconv.sconv;
 }
 
 #endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
