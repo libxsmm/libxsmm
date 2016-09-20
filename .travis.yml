@@ -86,13 +86,13 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
-    make -e PREFIX=${UPLOAD_DIR} WRAP=1 install-artifacts tests test-wrap &&
+    make -e PREFIX=${UPLOAD_DIR} WRAP=1 install-artifacts test-wrap &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
-    make -e PREFIX=${UPLOAD_DIR} WRAP=1 STATIC=1 install-artifacts tests test-wrap &&
+    make -e PREFIX=${UPLOAD_DIR} WRAP=1 STATIC=1 install-artifacts test-wrap &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
-    make -e PREFIX=${UPLOAD_DIR} WRAP=1 STATIC=0 install-artifacts tests test-wrap &&
+    make -e PREFIX=${UPLOAD_DIR} WRAP=1 STATIC=0 install-artifacts test-wrap &&
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
