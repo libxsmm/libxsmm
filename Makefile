@@ -199,6 +199,7 @@ INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(wo
 NINDICES = $(words $(INDICES))
 
 HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
           $(SRCDIR)/libxsmm_gemm_diff.c \
           $(SRCDIR)/libxsmm_cpuid_x86.c \
           $(SRCDIR)/libxsmm_hash.c \
