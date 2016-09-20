@@ -179,6 +179,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
     tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
     tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
     tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+    assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
