@@ -44,8 +44,16 @@
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
-
-/*#define USE_BLAS_VIA_LIBXSMM*/
+#if !defined(NON_DEFAULT_REFERENCE_BLAS)
+# define REFERENCE_BLAS LIBXSMM_BLAS_GEMM_SYMBOL
+#else
+# define REFERENCE_BLAS LIBXSMM_XBLAS_SYMBOL
+#endif
+#if !defined(NON_DEFAULT_LIBXSMM_BLAS)
+# define LIBXSMM_BLAS LIBXSMM_XGEMM_SYMBOL
+#else
+# define LIBXSMM_BLAS LIBXSMM_YGEMM_SYMBOL
+#endif
 
 
 int main(void)
@@ -108,16 +116,12 @@ int main(void)
 
   for (test = 0; test < ntests; ++test) {
     double dtest = 0;
-    LIBXSMM_XGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+
+    LIBXSMM_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
 
-# if defined(USE_BLAS_VIA_LIBXSMM)
-    LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+    REFERENCE_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
-# else
-    LIBXSMM_BLAS_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
-      alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
-# endif
 
     for (j = 0; j < n[test]; ++j) {
       for (i = 0; i < m[test]; ++i) {
