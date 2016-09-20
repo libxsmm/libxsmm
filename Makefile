@@ -346,12 +346,11 @@ ifneq (nopf,$(PREFETCH_SCHEME))
   SUPPRESS_UNUSED_PREFETCH_WARNINGS = $(NULL)  LIBXSMM_UNUSED(A_prefetch); LIBXSMM_UNUSED(B_prefetch); LIBXSMM_UNUSED(C_prefetch);~
 endif
 
-.PHONY: cheader
-cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/libxsmm.template.h $(ROOTDIR)/version.txt \
-                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                     $(HEADERS)
+.PHONY: config
+config: $(INCDIR)/libxsmm_config.h
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
+                            $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
+                            $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -363,9 +362,10 @@ $(INCDIR)/libxsmm.h: .state $(INCDIR)/.make $(SCRDIR)/libxsmm_interface.py \
 	@cp $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.h \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
+		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
 	$(info ================================================================================)
 	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
@@ -406,6 +406,14 @@ endif
 	$(info ================================================================================)
 endif
 
+.PHONY: cheader
+cheader: $(INCDIR)/libxsmm.h
+$(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
+                     $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
+                     $(INCDIR)/libxsmm_config.h $(HEADERS)
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
+		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) > $@
+
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
 $(INCDIR)/libxsmm_source.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_source.sh
@@ -413,25 +421,18 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_source.sh
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: .state $(INCDIR)/.make $(BLDDIR)/.make \
-                     $(SRCDIR)/libxsmm.template.f $(ROOTDIR)/version.txt \
-                     $(SCRDIR)/libxsmm_interface.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make .state \
+                     $(ROOTDIR)/version.txt $(INCDIR)/libxsmm_config.h \
+                     $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
-	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
-		$(ROOTDIR)/.hooks/install.sh; \
-	fi
-ifeq (0,$(OFFLOAD))
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
+	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
+		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) | \
+	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
+		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
 	sed '/ATTRIBUTES OFFLOAD:MIC/d' > $@
-else
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/libxsmm.template.f \
-		$(PRECISION) $(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
-		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) $(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
-endif
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h

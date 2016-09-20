@@ -1,7 +1,7 @@
 .hooks/.commit
 My Amplifier*
 bin/libxsmm_generator
-include/stream_update_kernels.f
+include/libxsmm_config.h
 include/libxsmm_source.h
 include/libxsmm.f
 include/libxsmm.h

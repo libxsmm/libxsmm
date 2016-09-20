@@ -44,23 +44,6 @@
 /** Patch number counting commits since the last version stamp. */
 #define LIBXSMM_VERSION_PATCH $PATCH
 
-/** Parameters the library and static kernels were built for. */
-#define LIBXSMM_ALIGNMENT $ALIGNMENT
-#define LIBXSMM_PREFETCH $PREFETCH
-#define LIBXSMM_MAX_MNK $MAX_MNK
-#define LIBXSMM_MAX_M $MAX_M
-#define LIBXSMM_MAX_N $MAX_N
-#define LIBXSMM_MAX_K $MAX_K
-#define LIBXSMM_AVG_M $AVG_M
-#define LIBXSMM_AVG_N $AVG_N
-#define LIBXSMM_AVG_K $AVG_K
-#define LIBXSMM_FLAGS $FLAGS
-#define LIBXSMM_ILP64 $ILP64
-#define LIBXSMM_ALPHA $ALPHA
-#define LIBXSMM_BETA $BETA
-#define LIBXSMM_SYNC $SYNC
-#define LIBXSMM_JIT $JIT
-$LIBXSMM_OFFLOAD_BUILD
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 #include "libxsmm_generator.h"
