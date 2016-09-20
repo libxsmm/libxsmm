@@ -46,11 +46,12 @@ const int img = l_tidgroup / handle->blocksofm;
 const int ofm1 = l_tidgroup % handle->blocksofm;
 int start_ofh = l_l2_ts * (ltid % l_l1_gs);
 const int end_ofh = ((start_ofh + l_l2_ts) <= handle->ofh) ? (start_ofh + l_l2_ts) : handle->ofh;
-libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].pmm;
-libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].pmm;
-/*libxsmm_convfunction jitted_conv_fp_weightnooutput_pf = (libxsmm_convfunction)handle->code_fwd[3].pmm;*/
+/* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
+libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+/*libxsmm_convfunction jitted_conv_fp_weightnooutput_pf = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;*/
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].pmm;
+libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 const element_input_type *l_input; 
 const element_filter_type *l_wt;

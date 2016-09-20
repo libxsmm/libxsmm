@@ -39,11 +39,12 @@ const int chunksize = (work % num_threads == 0) ? (work / num_threads) : (work /
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].pmm;
-libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].pmm;
-/*libxsmm_convfunction jitted_conv_fp_weightnooutput_pf = (libxsmm_convfunction)handle->code_fwd[3].pmm;*/
+/* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
+libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+/*libxsmm_convfunction jitted_conv_fp_weightnooutput_pf = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;*/
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].pmm;
+libxsmm_convfunction jitted_conv_fp_no_pf = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 const element_input_type *l_input; 
 const element_filter_type *l_wt;
