@@ -92,7 +92,7 @@
     for (; libxsmm_gemm_tiled_kernel_ij_ < (MAX_J); libxsmm_gemm_tiled_kernel_ij_ = libxsmm_gemm_tiled_kernel_pj_) { \
       LIBXSMM_MMCALL_PRF((KERNEL_INNER).LIBXSMM_TPREFIX(TYPE, mm), \
         libxsmm_gemm_tiled_kernel_ia_, libxsmm_gemm_tiled_kernel_ib_, libxsmm_gemm_tiled_kernel_ic_, \
-        libxsmm_gemm_tiled_kernel_pa_, libxsmm_gemm_tiled_kernel_pb_, libxsmm_gemm_tiled_kernel_ic_);*/ \
+        libxsmm_gemm_tiled_kernel_pa_, libxsmm_gemm_tiled_kernel_pb_, libxsmm_gemm_tiled_kernel_ic_); \
       libxsmm_gemm_tiled_kernel_ia_ = libxsmm_gemm_tiled_kernel_pa_; libxsmm_gemm_tiled_kernel_ib_ = libxsmm_gemm_tiled_kernel_pb_; \
       libxsmm_gemm_tiled_kernel_pj_ += (TILE_K); \
       libxsmm_gemm_tiled_kernel_pa_ += (TILE_K) * (LDA); \
