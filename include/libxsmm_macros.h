@@ -248,13 +248,6 @@
 #define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((unsigned long long)(POINTER), ALIGNMENT)), NPOT)
 
-/* For VLAs, check EXACTLY for C99 since a C11-conformant compiler may not provide VLAs */
-#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
-    (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
-# define LIBXSMM_VLA
-#endif
-
 #if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
@@ -269,7 +262,24 @@
 #define LIBXSMM_SELECT_ELEMENT_7(E0, E1, E2, E3, E4, E5, E6, E7) E6
 #define LIBXSMM_SELECT_ELEMENT_8(E0, E1, E2, E3, E4, E5, E6, E7) E7
 
-/* TODO: support leading dimension (pitch/stride) */
+/**
+ * For VLAs, check EXACTLY for C99 since a C11-conforming compiler may not provide VLAs.
+ * However, some compilers (Intel) may signal support for VLA even with strict ANSI (C89).
+ * To ultimately disable VLA-support, define LIBXSMM_NO_VLA (make VLA=0).
+ * VLA-support is signaled by LIBXSMM_VLA.
+ */
+#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
+   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
+    (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
+# define LIBXSMM_VLA
+#endif
+
+/**
+ * LIBXSMM_INDEX1 calculates the linear address for a given set of (multiple) indexes/bounds.
+ * Syntax: LIBXSMM_INDEX1(<ndims>, <i0>, ..., <i(ndims-1)>, <s1>, ..., <s(ndims-1)>).
+ * Please note that the leading dimension (s0) is omitted in the above syntax!
+ * TODO: support leading dimension (pitch/stride).
+ */
 #if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
@@ -284,6 +294,16 @@
 #define LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) (LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) * (S6) + (I6))
 #define LIBXSMM_INDEX1_8(I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, S7) (LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) * (S7) + (I7))
 
+ /**
+ * LIBXSMM_VLA_DECL declares an array according to the given set of (multiple) bounds.
+ * Syntax: LIBXSMM_VLA_DECL(<ndims>, <elem-type>, <var-name>, <init>, <s1>, ..., <s(ndims-1)>).
+ * The element type can be "const" or otherwise qualified; initial value must be (const)element-type*.
+ * Please note that the syntax is similar to LIBXSMM_INDEX1, and the leading dimension (s0) is omitted!
+ *
+ * LIBXSMM_VLA_ACCESS gives the array element according to the given set of (multiple) indexes/bounds.
+ * Syntax: LIBXSMM_VLA_ACCESS(<ndims>, <array>, <i0>, ..., <i(ndims-1)>, <s1>, ..., <s(ndims-1)>).
+ * Please note that the syntax is similar to LIBXSMM_INDEX1, and the leading dimension (s0) is omitted!
+ */
 #if defined(LIBXSMM_VLA)
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_CONCATENATE(LIBXSMM_VLA_ACCESS_, NDIMS)(ARRAY, __VA_ARGS__)
 # define LIBXSMM_VLA_ACCESS_0(ARRAY, ...) (ARRAY)
@@ -301,7 +321,7 @@
 #else /* calculate linear index */
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) ((ARRAY)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
-    ELEMENT_TYPE *LIBXSMM_RESTRICT VARIABLE_NAME = /*(ELEMENT_TYPE *LIBXSMM_RESTRICT)*/(INIT_VALUE)
+    ELEMENT_TYPE *LIBXSMM_RESTRICT VARIABLE_NAME = /*(ELEMENT_TYPE*)*/(INIT_VALUE)
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
