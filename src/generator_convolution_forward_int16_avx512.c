@@ -372,7 +372,6 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma( libxsmm_ge
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
   unsigned int l_k_updates = 0;
-  unsigned int l_w;
   unsigned int l_accs;
   unsigned int l_reg_block;
   l_displacement_k = 0;
@@ -561,7 +560,6 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( l
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
   unsigned int l_k_updates = 0;
-  unsigned int l_w;
   unsigned int l_m;
   l_displacement_k = 0;
 
