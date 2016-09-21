@@ -160,11 +160,12 @@
   MIN_TASKS, OVERHEAD, NT, TYPE, FLAGS, TILE_M, TILE_N, TILE_K, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 SINGLE_OUTER { \
   const int libxsmm_tiled_xgemm_above_threshold_ = LIBXSMM_GEMM_TILED_ABOVE_THRESHOLD(M, N, K); \
+  const int libxsmm_tiled_xgemm_no_bypass_ = LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA); \
   libxsmm_blasint libxsmm_tiled_xgemm_tm_ = 0, libxsmm_tiled_xgemm_tn_ = 0, libxsmm_tiled_xgemm_tk_ = 0; \
   libxsmm_blasint libxsmm_tiled_xgemm_num_m_ = 0, libxsmm_tiled_xgemm_num_n_ = 0, libxsmm_tiled_xgemm_num_k_ = 0; \
   libxsmm_xmmfunction libxsmm_tiled_xgemm_xmm_ = { 0 }; \
   SINGLE_INNER \
-  if (0 != libxsmm_tiled_xgemm_above_threshold_ && LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA)) { \
+  if (0 != libxsmm_tiled_xgemm_above_threshold_ && 0 != libxsmm_tiled_xgemm_no_bypass_) { \
     libxsmm_tiled_xgemm_num_m_ = LIBXSMM_MAX(((M) + (TILE_M) - 1) / (TILE_M), 4); \
     libxsmm_tiled_xgemm_num_n_ = LIBXSMM_MAX(((N) + (TILE_N) - 1) / (TILE_N), 2); \
     libxsmm_tiled_xgemm_num_k_ = ((K) + (TILE_K) - 1) / (TILE_K); \
@@ -241,7 +242,9 @@ SINGLE_OUTER { \
     } \
     SYNC \
   } \
-  else if (0 != libxsmm_tiled_xgemm_above_threshold_ && 0 != LIBXSMM_EXT_GEMM_BLAS) { /* fall-back */ \
+  else if ((0 != libxsmm_tiled_xgemm_above_threshold_ || 0 == libxsmm_tiled_xgemm_no_bypass_) && \
+    0 != LIBXSMM_EXT_GEMM_BLAS) /* fall-back */ \
+  { \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
   else { /* small problem size */ \
