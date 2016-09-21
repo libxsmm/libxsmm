@@ -29,7 +29,6 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_sync.h>
-#include <libxsmm_malloc.h>
 #include "libxsmm_intrinsics_x86.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

@@ -42,9 +42,6 @@
 # include "libxsmm_perf.h"
 #endif
 
-#include <libxsmm_malloc.h>
-#include <libxsmm_sync.h>
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif

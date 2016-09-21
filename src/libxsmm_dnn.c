@@ -28,18 +28,20 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm.h>
 #include "libxsmm_main.h"
 #include "libxsmm_dnn_conv_fwd_custom_custom.h"
 #include "libxsmm_dnn_conv_fwd_nhwc_custom.h"
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
-#include <libxsmm_malloc.h>
-#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
 #include <string.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if !defined(NDEBUG)
 # include <stdio.h>
 #endif
