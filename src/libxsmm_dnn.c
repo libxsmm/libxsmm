@@ -186,12 +186,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
 #endif
 
       /* calculate blockings */
-      if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
+      if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) {
         handle->ifmblock = (conv_desc.C >=16) ? 16 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
         handle->ifm_lp_block = 1;
       }
-      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
+      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) {
         handle->ifmblock = (conv_desc.C >=16) ? 16 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
         handle->ifm_lp_block = 2;
@@ -220,7 +220,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
       handle->fwd_ofh_rb = 1;
 
       /* calculate blockings */
-      if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
+      if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) {
         handle->ifmblock = (conv_desc.C >=32) ? 32 : conv_desc.C;
         handle->ofmblock = (conv_desc.K >=32) ? 32 : conv_desc.K;
         handle->ifm_lp_block = 1;
@@ -252,7 +252,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
           }
         }
       }
-      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_INT16) {
+      else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) {
         *status = LIBXSMM_DNN_WARN_FALLBACK;
         handle->ifmblock = 1;
         handle->ofmblock = 1;
@@ -485,10 +485,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t internal_dnn_typesize(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
-    case LIBXSMM_DNN_DATATYPE_FP32:  return 4;
-    case LIBXSMM_DNN_DATATYPE_INT32: return 4;
-    case LIBXSMM_DNN_DATATYPE_INT16: return 2;
-    case LIBXSMM_DNN_DATATYPE_INT8:  return 1;
+    case LIBXSMM_DNN_DATATYPE_F32:  return 4;
+    case LIBXSMM_DNN_DATATYPE_I32: return 4;
+    case LIBXSMM_DNN_DATATYPE_I16: return 2;
+    case LIBXSMM_DNN_DATATYPE_I8:  return 1;
     /* no error expected as enumeration really arrives at an enum; compiler-checked */
     default: return 1;
   }
@@ -605,11 +605,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer_chec
     buffer->W = handle->ofwp;
     buffer->format = handle->buffer_format;
     buffer->lpb = 1;
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_FP32) {
+    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) {
       buffer->datatype = handle->datatype;
     }
     else {
-      buffer->datatype = LIBXSMM_DNN_DATATYPE_INT32;
+      buffer->datatype = LIBXSMM_DNN_DATATYPE_I32;
     }
     /* allocate raw data, we always have a 4 byte wide type!! */
     result = libxsmm_xmalloc(&buffer->data,
@@ -872,19 +872,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
         switch (buffer->format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (buffer->datatype) {
-              case LIBXSMM_DNN_DATATYPE_FP32: {
+              case LIBXSMM_DNN_DATATYPE_F32: {
                 typedef float element_type;
 #               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT32: {
+              case LIBXSMM_DNN_DATATYPE_I32: {
                 typedef int element_type;
 #               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_I16: {
                 typedef short element_type;
 #               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_I8: {
                 typedef char element_type;
 #               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
               } break;
@@ -921,19 +921,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_d
   if (0 != buffer) {
     /* use for-loops to potentially leverage NUMA in the future */
     switch (buffer->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_F32: {
         float* fp32_data = (float*)buffer->data;
         for (i = 0; i < size; ++i) fp32_data[i] = 0.0f;
       } break;
-      case LIBXSMM_DNN_DATATYPE_INT32: {
+      case LIBXSMM_DNN_DATATYPE_I32: {
         int* int32_data = (int*)buffer->data;
         for (i = 0; i < size; ++i) int32_data[i] = 0;
       } break;
-      case LIBXSMM_DNN_DATATYPE_INT16: {
+      case LIBXSMM_DNN_DATATYPE_I16: {
         short* int16_data = (short*)buffer->data;
         for (i = 0; i < size; ++i) int16_data[i] = 0;
       } break;
-      case LIBXSMM_DNN_DATATYPE_INT8: {
+      case LIBXSMM_DNN_DATATYPE_I8: {
         char* int8_data = (char*)buffer->data;
         for (i = 0; i < size; ++i) int8_data[i] = 0;
       } break;
@@ -960,19 +960,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
         switch (buffer->format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (buffer->datatype) {
-              case LIBXSMM_DNN_DATATYPE_FP32: {
+              case LIBXSMM_DNN_DATATYPE_F32: {
                 typedef float element_type;
 #               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT32: {
+              case LIBXSMM_DNN_DATATYPE_I32: {
                 typedef int element_type;
 #               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_I16: {
                 typedef short element_type;
 #               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_I8: {
                 typedef char element_type;
 #               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
               } break;
@@ -1009,15 +1009,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm
         switch (filter->format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (filter->datatype) {
-              case LIBXSMM_DNN_DATATYPE_FP32: {
+              case LIBXSMM_DNN_DATATYPE_F32: {
                 typedef float element_type;
 #               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_I16: {
                 typedef short element_type;
 #               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_I8: {
                 typedef char element_type;
 #               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
               } break;
@@ -1054,19 +1054,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsm
         switch (filter->format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (filter->datatype) {
-              case LIBXSMM_DNN_DATATYPE_FP32: {
+              case LIBXSMM_DNN_DATATYPE_F32: {
                 typedef float element_type;
 #               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT32: {
+              case LIBXSMM_DNN_DATATYPE_I32: {
                 typedef int element_type;
 #               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT16: {
+              case LIBXSMM_DNN_DATATYPE_I16: {
                 typedef short element_type;
 #               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
               } break;
-              case LIBXSMM_DNN_DATATYPE_INT8: {
+              case LIBXSMM_DNN_DATATYPE_I8: {
                 typedef char element_type;
 #               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
               } break;
@@ -1151,8 +1151,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_
       && handle->blocksofm == buffer->fmb
       && buffer->lpb == 1
       && ((handle->buffer_format & buffer->format) > 0)
-      && ((handle->datatype == LIBXSMM_DNN_DATATYPE_FP32 && buffer->datatype == LIBXSMM_DNN_DATATYPE_FP32)
-        || (buffer->datatype == LIBXSMM_DNN_DATATYPE_INT32)))
+      && ((handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && buffer->datatype == LIBXSMM_DNN_DATATYPE_F32)
+        || (buffer->datatype == LIBXSMM_DNN_DATATYPE_I32)))
     {
       handle->output = (libxsmm_dnn_buffer*)buffer;
     }

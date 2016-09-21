@@ -53,7 +53,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   /* select datatype */
   switch (i_conv_desc->datatype)
   {
-    case LIBXSMM_DNN_DATATYPE_FP32:
+    case LIBXSMM_DNN_DATATYPE_F32:
     {
       if ( (strcmp(i_arch, "knl") == 0) ||
            (strcmp(i_arch, "skx") == 0)    ) {
@@ -68,7 +68,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
       }
       break;
     }
-    case LIBXSMM_DNN_DATATYPE_INT16:
+    case LIBXSMM_DNN_DATATYPE_I16:
     {
       if ( (strcmp(i_arch, "skx") == 0) ) {
         /* call actual kernel generation with revised parameters */
@@ -101,7 +101,7 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
   /* select datatype */
   switch (i_conv_desc->datatype)
   {
-    case LIBXSMM_DNN_DATATYPE_FP32:
+    case LIBXSMM_DNN_DATATYPE_F32:
     {
       if ( (strcmp(i_arch, "knl") == 0) ||
            (strcmp(i_arch, "skx") == 0)    ) {
@@ -136,7 +136,7 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
   /* select datatype */
   switch (i_conv_desc->datatype)
   {
-    case LIBXSMM_DNN_DATATYPE_FP32:
+    case LIBXSMM_DNN_DATATYPE_F32:
     {
       if ( (strcmp(i_arch, "knl") == 0) ||
            (strcmp(i_arch, "skx") == 0)    ) {
@@ -173,9 +173,9 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_FP32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
-  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_INT16 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 ) {
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
@@ -231,9 +231,9 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
   }
 
   /* add signature to code string */
-  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_FP32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
-  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_INT16 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 ) {
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");

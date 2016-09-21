@@ -235,7 +235,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
     switch (handle->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
           internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(handle, start_thread, tid, num_threads);
         }
@@ -251,7 +251,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
     }
   } else {
     switch (handle->datatype) {
-      case LIBXSMM_DNN_DATATYPE_FP32: {
+      case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
           if (handle->desc.N*handle->blocksofm >= num_threads) {
             internal_convolve_st_fwd_nhwc_rsck_fp32_opt(handle, start_thread, tid, num_threads);

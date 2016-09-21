@@ -144,13 +144,13 @@ int main(int argc, char* argv []) {
   switch (l_prec)
   {
     case 0:
-      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
       break;
     case 1:
-      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_INT16;
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_I16;
       break;
     default:
-      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
       break;
   }
   l_conv_desc.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;

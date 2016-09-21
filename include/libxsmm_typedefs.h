@@ -160,10 +160,10 @@ typedef enum libxsmm_dnn_conv_format{
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
-  LIBXSMM_DNN_DATATYPE_FP32,
-  LIBXSMM_DNN_DATATYPE_INT32,
-  LIBXSMM_DNN_DATATYPE_INT16,
-  LIBXSMM_DNN_DATATYPE_INT8
+  LIBXSMM_DNN_DATATYPE_F32,
+  LIBXSMM_DNN_DATATYPE_I32,
+  LIBXSMM_DNN_DATATYPE_I16,
+  LIBXSMM_DNN_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
 /**

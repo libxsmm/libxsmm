@@ -114,7 +114,7 @@ typedef enum libxsmm_dnn_conv_algo {
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_conv_datatype {
-  LIBXSMM_DNN_DATATYPE_FP32
+  LIBXSMM_DNN_DATATYPE_F32
 } libxsmm_dnn_datatype;
 
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
@@ -137,7 +137,7 @@ libxsmm_dnn_conv_handle* libxsmm_handle;
 conv_desc.N = ...
 /* create handle */
 libxsmm_handle = libxsmm_dnn_create_conv_handle_check(conv_desc,
-  LIBXSMM_DNN_DATATYPE_FP32,
+  LIBXSMM_DNN_DATATYPE_F32,
   LIBXSMM_DNN_CONV_ALGO_DIRECT,
   &status);
 CHKERR_LIBXSMM_DNN(status);
