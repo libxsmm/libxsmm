@@ -285,7 +285,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                                              i_conv_desc->unroll_kw == 0 ? 1 : l_kw_trips, i_conv_desc->unroll_kh == 0 ? 1 : l_kh_trips);
 
 
-     if ( (i_conv_desc->unroll_kw == 0) && (i_conv_desc->kw > 1)) { 
+     if ( (i_conv_desc->unroll_kw == 0) && (i_conv_desc->kw > 1)) {
       /* Add 40 to input */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
@@ -808,7 +808,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_weight,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        ((l_k)*  (i_conv_kernel_config->vector_length)*(i_conv_kernel_config->datatype_size)) 
+                                        ((l_k)*  (i_conv_kernel_config->vector_length)*(i_conv_kernel_config->datatype_size))
                                         - (l_k_3 * i_conv_desc->kw * i_conv_desc->ofm_block * (i_conv_kernel_config->vector_length) * i_conv_kernel_config->datatype_size  ),
                                         i_conv_kernel_config->vector_name, 0,
                                         0, 0 );

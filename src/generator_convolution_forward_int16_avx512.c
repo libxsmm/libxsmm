@@ -41,7 +41,7 @@
 
 /* vector striding to enable packed loads for integer instruction */
 /* @TODO fix this hack */
-#define INPUTS_PER_32BIT 2 
+#define INPUTS_PER_32BIT 2
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_forward_int16_avx512_kernel( libxsmm_generated_code*           io_generated_code,
@@ -79,11 +79,11 @@ void libxsmm_generator_convolution_forward_int16_avx512_kernel( libxsmm_generate
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
 
-  l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE; 
+  l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
   l_conv_kernel_config.vector_reg_count = 32;
   l_conv_kernel_config.vector_length = 16;
   l_conv_kernel_config.datatype_size = 4;
-  l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS; 
+  l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
   l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDWD;
   l_conv_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
@@ -263,7 +263,7 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop( libxsmm_generat
 
     /* select architecture */
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
-      libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( io_generated_code, i_gp_reg_mapping, 
+      libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                           i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     }
   } else {
@@ -272,7 +272,7 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop( libxsmm_generat
 
     /* select architecture */
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
-      libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma( io_generated_code, i_gp_reg_mapping, 
+      libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma( io_generated_code, i_gp_reg_mapping,
                                                                  i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     }
   }
@@ -668,7 +668,7 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( l
                                           l_input_idx, l_scale,
                                           l_disp,
                                           i_conv_kernel_config->vector_name,
-                                          1, 0, 0 );        
+                                          1, 0, 0 );
 
         /* 16bit integer MADD with horizontal add */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
