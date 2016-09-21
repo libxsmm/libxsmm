@@ -47,12 +47,10 @@
 #endif
 
 
-LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double scale, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld);
-LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double scale, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
 {
-  const libxsmm_blasint minval = seed, addval = (nrows - 1) * ld + (ncols - 1);
-  const libxsmm_blasint maxval = LIBXSMM_MAX(LIBXSMM_ABS(minval), addval);
-  const double norm = 0 != maxval ? (scale / maxval) : scale;
+  const double seed1 = seed + 1;
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -61,8 +59,7 @@ LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst, double
     libxsmm_blasint j;
     for (j = 0; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      const double value = (double)(k + minval);
-      dst[k] = (REAL_TYPE)(norm * (value - 0.5 * addval));
+      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
     }
   }
 }
@@ -77,7 +74,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldb = LIBXSMM_DEFAULT(k, 5 < argc ? atoi(argv[5]) : 0);
   const libxsmm_blasint ldc = LIBXSMM_DEFAULT(m, 6 < argc ? atoi(argv[6]) : 0);
   const int nrepeat = LIBXSMM_DEFAULT(13, 7 < argc ? atoi(argv[7]) : 0);
-  const double scale = 1.0 / nrepeat, gflops = 2.0 * m * n * k * 1E-9;
+  const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
   const REAL_TYPE alpha = 1, beta = 1;
   int result = EXIT_SUCCESS;
@@ -93,10 +90,10 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    init(42, a, scale, m, k, lda);
-    init(24, b, scale, k, n, ldb);
-    init(0, c, scale, m, n, ldc);
-    init(0, d, scale, m, n, ldc);
+    init(42, a, m, k, lda);
+    init(24, b, k, n, ldb);
+    init( 0, c, m, n, ldc);
+    init( 0, d, m, n, ldc);
 
     /* warmup BLAS library (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);

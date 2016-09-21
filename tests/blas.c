@@ -56,6 +56,24 @@
 #endif
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+{
+  const double seed1 = seed + 1;
+  libxsmm_blasint i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < ncols; ++i) {
+    libxsmm_blasint j;
+    for (j = 0; j < nrows; ++j) {
+      const libxsmm_blasint k = i * ld + j;
+      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
+    }
+  }
+}
+
+
 int main(void)
 {
 #if !defined(__BLAS) || (0 != __BLAS)
@@ -95,24 +113,10 @@ int main(void)
   d = (REAL_TYPE*)malloc(maxc * maxn * sizeof(REAL_TYPE));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
 
-  for (j = 0; j < maxk; ++j) {
-    for (i = 0; i < maxm; ++i) {
-      const libxsmm_blasint index = j * maxa + i;
-      a[index] = ((REAL_TYPE)1) / (index + 1);
-    }
-  }
-  for (j = 0; j < maxn; ++j) {
-    for (i = 0; i < maxk; ++i) {
-      const libxsmm_blasint index = j * maxb + i;
-      b[index] = ((REAL_TYPE)2) / (index + 1);
-    }
-  }
-  for (j = 0; j < maxn; ++j) {
-    for (i = 0; i < maxm; ++i) {
-      const libxsmm_blasint index = j * maxc + i;
-      c[index] = d[index] = 1000;
-    }
-  }
+  init(42, a, maxm, maxk, maxa);
+  init(24, b, maxk, maxn, maxb);
+  init( 0, c, maxm, maxn, maxc);
+  init( 0, d, maxm, maxn, maxc);
 
   for (test = start; test < ntests; ++test) {
     double dtest = 0;
@@ -123,11 +127,11 @@ int main(void)
     REFERENCE_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-    for (j = 0; j < n[test]; ++j) {
-      for (i = 0; i < m[test]; ++i) {
-        const libxsmm_blasint index = j * ldc[test] + i;
-        const double d1 = c[index] - d[index];
-        c[index] = d[index];
+    for (i = 0; i < n[test]; ++i) {
+      for (j = 0; j < m[test]; ++j) {
+        const libxsmm_blasint h = i * ldc[test] + j;
+        const double d1 = c[h] - d[h];
+        c[h] = d[h]; /* count error only once */
         dtest += d1 * d1;
       }
     }
