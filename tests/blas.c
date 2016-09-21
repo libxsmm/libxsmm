@@ -137,7 +137,15 @@ int main(void)
   free(a); free(b);
   free(c); free(d);
 
-  return 0.001 > d2 ? EXIT_SUCCESS : EXIT_FAILURE;
+  if (0.001 > d2) {
+    return EXIT_SUCCESS;
+  }
+  else {
+# if defined(_DEBUG)
+    fprintf(stderr, "diff=%f\n", d2);
+# endif
+    return EXIT_FAILURE;
+  }
 #else
 # if defined(_DEBUG)
   fprintf(stderr, "Warning: skipped the actual test due to missing BLAS support!\n");
