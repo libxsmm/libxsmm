@@ -87,8 +87,8 @@
 
 #if defined(LIBXSMM_GEMM_TILED_INNER_FALLBACK)
 # define LIBXSMM_GEMM_TILED_FALLBACK_CHECK(CONDITION) if (CONDITION)
-# define LIBXSMM_GEMM_TILED_FALLBACK(TYPE, FLAGS, TILE_M, TILE_N, TILE_K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) else { \
-    LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, TILE_M, TILE_N, TILE_K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+# define LIBXSMM_GEMM_TILED_FALLBACK(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) else { \
+    LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   }
 #else
 # define LIBXSMM_GEMM_TILED_FALLBACK_CHECK(CONDITION)
@@ -105,16 +105,16 @@
   const TYPE* libxsmm_tiled_xgemm_kernel_pb_ = libxsmm_tiled_xgemm_kernel_ib_ + (libxsmm_tiled_xgemm_kernel_tk_); \
   TYPE *const libxsmm_tiled_xgemm_kernel_ic_ = (C) + (POS_J) * (LDC) + (POS_I), libxsmm_tiled_xgemm_kernel_beta_ = BETA; \
   libxsmm_gemm_descriptor libxsmm_tiled_xgemm_kernel_desc_; \
-  libxsmm_xmmfunction libxsmm_tiled_xgemm_kernel_ = { 0 }; \
+  libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_ = { 0 }; \
   libxsmm_blasint libxsmm_tiled_xgemm_kernel_k_ = 0; \
   if (((TILE_M) == libxsmm_tiled_xgemm_kernel_tm_) && ((TILE_N) == libxsmm_tiled_xgemm_kernel_tn_) && ((TILE_K) == libxsmm_tiled_xgemm_kernel_tk_)) { \
     if (libxsmm_tiled_xgemm_kernel_k_ < (MAX_K)) { /* peel */ \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, TILE_M, TILE_N, TILE_K, \
         LDA, LDB, LDC, ALPHA, BETA, libxsmm_gemm_prefetch); \
-      libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
-      LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
+      libxsmm_gemm_tiled_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
+      LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
       { \
-        LIBXSMM_MMCALL_PRF(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), \
+        LIBXSMM_MMCALL_PRF(libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm), \
           libxsmm_tiled_xgemm_kernel_ia_, libxsmm_tiled_xgemm_kernel_ib_, libxsmm_tiled_xgemm_kernel_ic_, \
           libxsmm_tiled_xgemm_kernel_pa_, libxsmm_tiled_xgemm_kernel_pb_, libxsmm_tiled_xgemm_kernel_ic_); \
       } \
@@ -142,10 +142,10 @@
     LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
       libxsmm_tiled_xgemm_kernel_tm_, libxsmm_tiled_xgemm_kernel_tn_, (K) - libxsmm_tiled_xgemm_kernel_k_, \
       LDA, LDB, LDC, ALPHA, libxsmm_tiled_xgemm_kernel_beta_, libxsmm_gemm_prefetch); \
-    libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
-    LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
+    libxsmm_gemm_tiled_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
+    LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
     { \
-      LIBXSMM_MMCALL_PRF(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), \
+      LIBXSMM_MMCALL_PRF(libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm), \
         libxsmm_tiled_xgemm_kernel_ia_, libxsmm_tiled_xgemm_kernel_ib_, libxsmm_tiled_xgemm_kernel_ic_, \
         libxsmm_tiled_xgemm_kernel_pa_, libxsmm_tiled_xgemm_kernel_pb_, libxsmm_tiled_xgemm_kernel_ic_); \
     } \
@@ -163,7 +163,7 @@ SINGLE_OUTER { \
   const int libxsmm_tiled_xgemm_no_bypass_ = LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA); \
   libxsmm_blasint libxsmm_tiled_xgemm_tm_ = 0, libxsmm_tiled_xgemm_tn_ = 0, libxsmm_tiled_xgemm_tk_ = 0; \
   libxsmm_blasint libxsmm_tiled_xgemm_num_m_ = 0, libxsmm_tiled_xgemm_num_n_ = 0, libxsmm_tiled_xgemm_num_k_ = 0; \
-  libxsmm_xmmfunction libxsmm_tiled_xgemm_xmm_ = { 0 }; \
+  libxsmm_xmmfunction libxsmm_tiled_xgemm_kernel_ = { 0 }; \
   SINGLE_INNER \
   if (0 != libxsmm_tiled_xgemm_above_threshold_ && 0 != libxsmm_tiled_xgemm_no_bypass_) { \
     libxsmm_tiled_xgemm_num_m_ = LIBXSMM_MAX(((M) + (TILE_M) - 1) / (TILE_M), 4); \
@@ -204,10 +204,10 @@ SINGLE_OUTER { \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
         libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, \
         LDA, LDB, LDC, ALPHA, 1/*beta*/, libxsmm_gemm_prefetch); \
-      libxsmm_tiled_xgemm_xmm_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_desc_); \
+      libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_desc_); \
     } \
   } \
-  if (0 != libxsmm_tiled_xgemm_xmm_.LIBXSMM_TPREFIX(TYPE, mm)) { \
+  if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
     const libxsmm_blasint libxsmm_tiled_xgemm_max_k_ = ((K) / libxsmm_tiled_xgemm_tk_) * libxsmm_tiled_xgemm_tk_; \
     libxsmm_blasint libxsmm_tiled_xgemm_i_ = 0, libxsmm_tiled_xgemm_j_ = 0; \
     if ((OVERHEAD(NT)) <= libxsmm_tiled_xgemm_num_k_) { /* amortize overhead */ \
@@ -215,7 +215,7 @@ SINGLE_OUTER { \
       for (libxsmm_tiled_xgemm_i_ = 0; libxsmm_tiled_xgemm_i_ < (M); libxsmm_tiled_xgemm_i_ += libxsmm_tiled_xgemm_tm_) { \
         for (libxsmm_tiled_xgemm_j_ = 0; libxsmm_tiled_xgemm_j_ < (N); libxsmm_tiled_xgemm_j_ += libxsmm_tiled_xgemm_tn_) { \
           KERNEL_START(libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_) \
-          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_xmm_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_kernel_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
             libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
@@ -225,7 +225,7 @@ SINGLE_OUTER { \
       for (libxsmm_tiled_xgemm_i_ = 0; libxsmm_tiled_xgemm_i_ < (M); libxsmm_tiled_xgemm_i_ += libxsmm_tiled_xgemm_tm_) { \
         KERNEL_START(libxsmm_tiled_xgemm_i_) \
         for (libxsmm_tiled_xgemm_j_ = 0; libxsmm_tiled_xgemm_j_ < (N); libxsmm_tiled_xgemm_j_ += libxsmm_tiled_xgemm_tn_) { \
-          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_xmm_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_kernel_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
             libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
@@ -235,7 +235,7 @@ SINGLE_OUTER { \
       for (libxsmm_tiled_xgemm_j_ = 0; libxsmm_tiled_xgemm_j_ < (N); libxsmm_tiled_xgemm_j_ += libxsmm_tiled_xgemm_tn_) { \
         KERNEL_START(libxsmm_tiled_xgemm_j_) \
         for (libxsmm_tiled_xgemm_i_ = 0; libxsmm_tiled_xgemm_i_ < (M); libxsmm_tiled_xgemm_i_ += libxsmm_tiled_xgemm_tm_) { \
-          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_xmm_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
+          LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_kernel_, TYPE, FLAGS, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_, libxsmm_tiled_xgemm_max_k_, \
             libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
         } \
       } \
@@ -248,15 +248,15 @@ SINGLE_OUTER { \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
   else { /* small problem size */ \
-    libxsmm_xmmfunction libxsmm_tiled_xgemm_kernel_; \
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(libxsmm_tiled_xgemm_smalldesc_, LIBXSMM_ALIGNMENT, FLAGS, M, N, K, \
       LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_NONE); \
     libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_smalldesc_); \
-    LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
-    { \
+    if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
       LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), A, B, C); \
     } \
-    LIBXSMM_GEMM_TILED_FALLBACK(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    else { \
+      LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    } \
   } \
 }
 
