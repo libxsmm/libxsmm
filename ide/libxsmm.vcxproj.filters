@@ -168,6 +168,9 @@
     <ClInclude Include="..\include\libxsmm_config.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_forward_int16_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -306,6 +309,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dump.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_forward_int16_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
