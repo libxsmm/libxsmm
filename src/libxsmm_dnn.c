@@ -34,9 +34,9 @@
 #include "libxsmm_dnn_conv_fwd_nhwc_custom.h"
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
 
-//#define STATIC_AVX512BW
+/*#define STATIC_AVX512BW*/
 #ifdef STATIC_AVX512BW
-#include <conv_asm.h>
+# include <conv_asm.h>
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
