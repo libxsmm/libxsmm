@@ -38,6 +38,7 @@
 #include "generator_convolution_common.h"
 #include "generator_convolution_forward_avx2.h"
 #include "generator_convolution_forward_avx512.h"
+#include "generator_convolution_forward_int16_avx512.h"
 #include "generator_convolution_backward_avx512.h"
 #include "generator_convolution_weight_update_avx512.h"
 
@@ -49,16 +50,40 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-  if ( (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0)    ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-  } else if ( (strcmp(i_arch, "hsw") == 0) ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
-  } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+  /* select datatype */
+  switch (i_conv_desc->datatype)
+  {
+    case LIBXSMM_DNN_DATATYPE_FP32:
+    {
+      if ( (strcmp(i_arch, "knl") == 0) ||
+           (strcmp(i_arch, "skx") == 0)    ) {
+        /* call actual kernel generation with revised parameters */
+        libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+      } else if ( (strcmp(i_arch, "hsw") == 0) ) {
+        /* call actual kernel generation with revised parameters */
+        libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
+      } else {
+        libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+        return;
+      }
+      break;
+    }
+    case LIBXSMM_DNN_DATATYPE_INT16:
+    {
+      if ( (strcmp(i_arch, "skx") == 0) ) {
+        /* call actual kernel generation with revised parameters */
+        libxsmm_generator_convolution_forward_int16_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+      } else {
+        libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+        return;
+      }
+      break;
+    }
+    default:
+    {
+      exit(-1);
+      break;
+    }
   }
 
   /* add instruction set mismatch check to code, footer */
@@ -68,25 +93,31 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*                        io_generated_code,
-                                                   const libxsmm_convolution_backward_descriptor*  i_conv_desc,
-                                                   const char*                                    i_arch ) {
+                                                    const libxsmm_convolution_backward_descriptor* i_conv_desc,
+                                                    const char*                                    i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-  if ( (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0)    ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_backward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-  }
-#if 0
- else if ( (strcmp(i_arch, "hsw") == 0) ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
-  }
-#endif
-else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+  /* select datatype */
+  switch (i_conv_desc->datatype)
+  {
+    case LIBXSMM_DNN_DATATYPE_FP32:
+    {
+      if ( (strcmp(i_arch, "knl") == 0) ||
+           (strcmp(i_arch, "skx") == 0)    ) {
+        /* call actual kernel generation with revised parameters */
+        libxsmm_generator_convolution_backward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+      } else {
+        libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+        return;
+      }
+      break;
+    }
+    default:
+    {
+      exit(-1);
+      break;
+    }
   }
 
   /* add instruction set mismatch check to code, footer */
@@ -102,20 +133,26 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-  if ( (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0)    ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-  }
-#if 0
- else if ( (strcmp(i_arch, "hsw") == 0) ) {
-    /* call actual kernel generation with revised parameters */
-    libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
-  }
-#endif
-else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+  /* select datatype */
+  switch (i_conv_desc->datatype)
+  {
+    case LIBXSMM_DNN_DATATYPE_FP32:
+    {
+      if ( (strcmp(i_arch, "knl") == 0) ||
+           (strcmp(i_arch, "skx") == 0)    ) {
+        /* call actual kernel generation with revised parameters */
+        libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+      } else {
+        libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+        return;
+      }
+      break;
+    }
+    default:
+    {
+      exit(-1);
+      break;
+    }
   }
 
   /* add instruction set mismatch check to code, footer */
@@ -136,7 +173,14 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  libxsmm_convfunction_signature( &l_generated_code, i_routine_name );
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_FP32 ) {
+    libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_INT16 ) {
+    libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
+    exit(-1);
+  }
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_convolution_forward_kernel( &l_generated_code, i_conv_desc, i_arch );
@@ -187,7 +231,14 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
   }
 
   /* add signature to code string */
-  libxsmm_convfunction_signature( &l_generated_code, i_routine_name );
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_FP32 ) {
+    libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_INT16 ) {
+    libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
+  } else {
+    fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
+    exit(-1);
+  }
 
   /* generate the actual kernel code for current description depending on the architecture */
   libxsmm_generator_convolution_forward_kernel( &l_generated_code, i_conv_desc, i_arch );

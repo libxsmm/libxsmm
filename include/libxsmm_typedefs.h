@@ -158,7 +158,6 @@ typedef enum libxsmm_dnn_conv_format{
   LIBXSMM_DNN_CONV_FORMAT_NCHW_RSCK = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_RSCK
 } libxsmm_dnn_conv_format;
 
-
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_FP32,
@@ -166,7 +165,6 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_INT16,
   LIBXSMM_DNN_DATATYPE_INT8
 } libxsmm_dnn_datatype;
-
 
 /**
  * Structure storing the convolution argument description.
@@ -230,6 +228,7 @@ typedef struct libxsmm_convolution_backward_descriptor {
 typedef struct libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int kh;                              /* kernel height */
   unsigned int blocks_ofm;
   unsigned int blocks_ifm;
   unsigned int ofm_block;                       /* should be VLEN */
@@ -249,6 +248,7 @@ typedef struct libxsmm_convolution_weight_update_descriptor {
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
 
+  unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_conv_format format;
   libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */

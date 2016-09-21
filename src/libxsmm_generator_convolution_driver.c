@@ -53,6 +53,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    ifw_padded\n");
   printf("    stride_h\n");
   printf("    stride_w\n");
+  printf("    precision (0=FP32,1=INT16)\n");
   printf("    ARCH: knl, skx\n");
   printf("\n\n");
 }
@@ -77,9 +78,10 @@ int main(int argc, char* argv []) {
   int l_stride_w = 0;   /* this we use for offsets in the input */
   int l_ofw_rb = 0;     /* UR, register block of ofw */
   int l_ofh_rb = 0;     /* register block of ofh */
+  int l_prec = 0;
 
   /* check argument count for a valid range */
-  if ( argc != 19 ) {
+  if ( argc != 20 ) {
     print_help();
     return -1;
   }
@@ -104,9 +106,10 @@ int main(int argc, char* argv []) {
   l_ifw_padded = atoi(argv[15]);
   l_stride_h = atoi(argv[16]);
   l_stride_w = atoi(argv[17]);
+  l_prec = atoi(argv[18]);
 
   /* arch specific stuff */
-  l_arch = argv[18];
+  l_arch = argv[19];
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
@@ -138,7 +141,20 @@ int main(int argc, char* argv []) {
   l_conv_desc.ifw_padded = l_ifw_padded;
   l_conv_desc.stride_h = l_stride_h;
   l_conv_desc.stride_w = l_stride_w;
+  switch (l_prec)
+  {
+    case 0:
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;
+      break;
+    case 1:
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_INT16;
+      break;
+    default:
+      l_conv_desc.datatype = LIBXSMM_DNN_DATATYPE_FP32;
+      break;
+  }
   l_conv_desc.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+  l_conv_desc.format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
 
   /* generate code */
   if ( strcmp(l_type, "inlineasm")  == 0 ) {

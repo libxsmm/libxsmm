@@ -79,6 +79,10 @@
 #define LIBXSMM_X86_INSTR_VMOVDDUP       10006
 #define LIBXSMM_X86_INSTR_VMOVSD         10007
 #define LIBXSMM_X86_INSTR_VMOVSS         10008
+#define LIBXSMM_X86_INSTR_VPBROADCASTB   10025
+#define LIBXSMM_X86_INSTR_VPBROADCASTW   10026
+#define LIBXSMM_X86_INSTR_VPBROADCASTD   10027
+#define LIBXSMM_X86_INSTR_VPBROADCASTQ   10028
 /* SSE */
 #define LIBXSMM_X86_INSTR_MOVAPD         10009
 #define LIBXSMM_X86_INSTR_MOVUPD         10010
@@ -140,6 +144,15 @@
 #define LIBXSMM_X86_INSTR_VFMSUB231SS    20027
 #define LIBXSMM_X86_INSTR_VFNMADD231SS   20028
 #define LIBXSMM_X86_INSTR_VFNMSUB231SS   20029
+/* AVX512, IMCI Integer XOR as there is no FP */
+#define LIBXSMM_X86_INSTR_VPXORD         20044
+/* additional integer stuff */
+#define LIBXSMM_X86_INSTR_VPADDQ         20045
+#define LIBXSMM_X86_INSTR_VPADDD         20046
+#define LIBXSMM_X86_INSTR_VPADDW         20047
+#define LIBXSMM_X86_INSTR_VPADDB         20048
+#define LIBXSMM_X86_INSTR_VPMADDWD       20049
+#define LIBXSMM_X86_INSTR_VPMADDUBSW     20050
 /* SSE */
 #define LIBXSMM_X86_INSTR_XORPD          20030
 #define LIBXSMM_X86_INSTR_MULPD          20031
@@ -155,8 +168,6 @@
 #define LIBXSMM_X86_INSTR_MULSS          20041
 #define LIBXSMM_X86_INSTR_ADDSS          20042
 #define LIBXSMM_X86_INSTR_SUBSS          20043
-/* AVX512, IMCI Integer XOR as there is no FP */
-#define LIBXSMM_X86_INSTR_VPXORD         20044
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000
@@ -407,8 +418,12 @@ void libxsmm_strncpy( char*        o_dest,
                       unsigned int i_src_length );
 
 LIBXSMM_INTERNAL_API
-void libxsmm_convfunction_signature( libxsmm_generated_code*         io_generated_code,
-                                     const char*                     i_routine_name     );
+void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
+                                          const char*                     i_routine_name     );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
+                                           const char*                     i_routine_name     );
 
 #endif /* GENERATOR_COMMON_H */
 

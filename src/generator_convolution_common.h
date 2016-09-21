@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.) and Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_DENSE_COMMON_H
@@ -124,6 +124,11 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                                                          const libxsmm_convolution_weight_update_descriptor*     i_conv_desc );
 
 LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_weight_update_transpose_store_weight( libxsmm_generated_code*                           io_generated_code,
+                                                         const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
+                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                         const libxsmm_convolution_weight_update_descriptor*     i_conv_desc );
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_header_ofm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                     const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -169,6 +174,12 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_code*                                 io_generated_code,
+                                                              const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
+                                                              const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
+                                                              const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc) ;
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_weight_update_transpose_load_weight( libxsmm_generated_code*                                 io_generated_code,
                                                               const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                               const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
                                                               const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc) ;

@@ -1140,8 +1140,9 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
 # endif
         {
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_supd_%s_%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_p%i.conv", target_arch/*code path name*/,
-            (unsigned int)request->descriptor.cupd->kw/*kernel width*/, (unsigned int)request->descriptor.cupd->unroll_kw/*width*/,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_supd_%s_%ux%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i.conv", target_arch/*code path name*/,
+            (unsigned int)request->descriptor.cupd->kw/*kernel width*/, (unsigned int)request->descriptor.cupd->kh/*kernel height*/,
+            (unsigned int)request->descriptor.cupd->unroll_kw/*width*/,
             (int)request->descriptor.cupd->stride_w/*input offset*/, (int)request->descriptor.cupd->stride_h/*output offsets*/,
             (unsigned int)request->descriptor.cupd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cupd->ofm_block/*VLEN*/,
             (unsigned int)request->descriptor.cupd->ifw_padded, (unsigned int)request->descriptor.cupd->ifh_padded,
@@ -1152,6 +1153,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             (unsigned int)request->descriptor.cupd->ofw/*ofw*/, (unsigned int)request->descriptor.cupd->ofw_unroll/*ofw_unroll*/,
             (unsigned int)request->descriptor.cupd->ofh/*ofh*/, (unsigned int)request->descriptor.cupd->ofh_unroll/*ofh_unroll*/,
             (unsigned int)request->descriptor.cupd->ifm_unroll/*ifm unroll*/,
+            (unsigned int)request->descriptor.cupd->transpose_ofw_ifm/*transpose_ofw_ifm*/,
             (int)request->descriptor.cupd->prefetch/*binary OR'd prefetch flags*/);
         }
       }

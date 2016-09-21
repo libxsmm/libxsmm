@@ -107,6 +107,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
   int W;                            /* width of image */
+  int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_conv_format format;   /* format of activation buffer */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
@@ -117,6 +118,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
   int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
+  int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
 };
@@ -130,6 +132,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int bofm;                         /* sized of blocked feature maps, in a block */
   int R;                            /* height of filter kernel */
   int S;                            /* width of filter kernel */
+  int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_conv_format format;   /* format of filter buffer */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
@@ -156,6 +159,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int blocksofm;
   int fwd_ofw_rb;
   int fwd_ofh_rb;
+  int ifm_lp_block;              /* additional blocking for low precision datatypes of ifm */
 
   /* internal data representation */
   libxsmm_dnn_buffer* input;

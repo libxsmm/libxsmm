@@ -229,6 +229,18 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VMOVSS:
       libxsmm_strncpy(o_instr_name, "vmovss", i_instr_name_max_length, 6 );
       break;
+    case LIBXSMM_X86_INSTR_VPBROADCASTB:
+      libxsmm_strncpy(o_instr_name, "vpbroadcastb", i_instr_name_max_length, 12 );
+      break;
+    case LIBXSMM_X86_INSTR_VPBROADCASTW:
+      libxsmm_strncpy(o_instr_name, "vpbroadcastw", i_instr_name_max_length, 12 );
+      break;
+    case LIBXSMM_X86_INSTR_VPBROADCASTD:
+      libxsmm_strncpy(o_instr_name, "vpbroadcastd", i_instr_name_max_length, 12 );
+      break;
+    case LIBXSMM_X86_INSTR_VPBROADCASTQ:
+      libxsmm_strncpy(o_instr_name, "vpbroadcastq", i_instr_name_max_length, 12 );
+      break;
     /* SSE vector moves */
     case LIBXSMM_X86_INSTR_MOVAPD:
       libxsmm_strncpy(o_instr_name, "movapd", i_instr_name_max_length, 6 );
@@ -390,6 +402,24 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     /* XOR AVX512,IMCI */
     case LIBXSMM_X86_INSTR_VPXORD:
       libxsmm_strncpy(o_instr_name, "vpxord", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_VPADDB:
+      libxsmm_strncpy(o_instr_name, "vpaddb", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_VPADDW:
+      libxsmm_strncpy(o_instr_name, "vpaddw", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_VPADDD:
+      libxsmm_strncpy(o_instr_name, "vpaddd", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_VPADDQ:
+      libxsmm_strncpy(o_instr_name, "vpaddq", i_instr_name_max_length, 6 );
+      break;
+    case LIBXSMM_X86_INSTR_VPMADDWD:
+      libxsmm_strncpy(o_instr_name, "vpmaddwd", i_instr_name_max_length, 8 );
+      break;
+    case LIBXSMM_X86_INSTR_VPMADDUBSW:
+      libxsmm_strncpy(o_instr_name, "vpmaddubsw", i_instr_name_max_length, 10 );
       break;
     /* GP instructions */
     case LIBXSMM_X86_INSTR_ADDQ:
@@ -902,8 +932,8 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
-void libxsmm_convfunction_signature( libxsmm_generated_code*         io_generated_code,
-                                     const char*                     i_routine_name     ) {
+void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
+                                          const char*                     i_routine_name     ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
@@ -913,9 +943,26 @@ void libxsmm_convfunction_signature( libxsmm_generated_code*         io_generate
   } else if ( io_generated_code->code_type == 1 ) {
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* inputptr, const float* weightptr, float* outputptr, const float* inputpfptr, const float* weightpfptr) {\n", i_routine_name);
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* inputptr, const float* weightptr, float* outputptr, const float* inputpfptr, const float* weightpfptr, const float* outputpfptr) {\n", i_routine_name);
   }
 
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
+                                           const char*                     i_routine_name     ) {
+  char l_new_code[512];
+  int l_max_code_length = 511;
+  int l_code_length = 0;
+
+  if ( io_generated_code->code_type > 1 ) {
+    return;
+  } else if ( io_generated_code->code_type == 1 ) {
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
+  } else {
+    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* inputptr, const short* weightptr, int* outputptr, const short* inputpfptr, const short* weightpfptr, const int* outputpfptr) {\n", i_routine_name);
+  }
+
+  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+}
