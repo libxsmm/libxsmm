@@ -91,9 +91,9 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
           else {
             if ((ifm1+1 == handle->blocksifm)) {
               jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
-                &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0,
+                &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->ifm_lp_block),
-                &LIBXSMM_VLA_ACCESS(7, weight, ofm1 + 1, 0, 0, 0, 0, 0,
+                &LIBXSMM_VLA_ACCESS(7, weight, ofm1 + 1, 0, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->ifm_lp_block),
                 &LIBXSMM_VLA_ACCESS(5, output, img, ofm1 + 1, 0, 0, 0,
                   handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
@@ -102,7 +102,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
               jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
                 &LIBXSMM_VLA_ACCESS(6, input, ifm1 + 1, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->ifm_lp_block),
-                &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0,
+                &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->ifm_lp_block),
                 &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
