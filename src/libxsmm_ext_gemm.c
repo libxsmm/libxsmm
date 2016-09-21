@@ -34,7 +34,7 @@
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-#if !defined(__STATIC)
+#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
   static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
@@ -51,8 +51,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
   assert(0 != original);
   return original;
 }
+#endif
 
-
+#if !defined(__STATIC)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
