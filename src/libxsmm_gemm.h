@@ -32,7 +32,6 @@
 #define LIBXSMM_GEMM_H
 
 #include <libxsmm.h>
-#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -181,7 +180,7 @@ SINGLE_OUTER { \
     const libxsmm_blasint libxsmm_tiled_gemm_max_j_ = ((K) / libxsmm_tiled_gemm_tile_k_) * libxsmm_tiled_gemm_tile_k_; \
     libxsmm_blasint libxsmm_tiled_gemm_h_ = 0, libxsmm_tiled_gemm_i_ = 0; \
     if ((OVERHEAD(NT)) <= libxsmm_tiled_gemm_num_k_) { /* amortize overhead */ \
-      PARALLEL LOOP_START(COLLAPSE) \
+      PARALLEL LOOP_START(COLLAPSE, libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_) \
       for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
         for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
           KERNEL_START(libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_) \
@@ -191,7 +190,7 @@ SINGLE_OUTER { \
       } \
     } \
     else if (libxsmm_tiled_gemm_num_n_ <= libxsmm_tiled_gemm_num_m_) { \
-      PARALLEL LOOP_START(COLLAPSE) \
+      PARALLEL LOOP_START(COLLAPSE, libxsmm_tiled_gemm_h_, libxsmm_tiled_gemm_i_) \
       for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
         KERNEL_START(libxsmm_tiled_gemm_h_) \
         for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
@@ -201,7 +200,7 @@ SINGLE_OUTER { \
       } \
     } \
     else { \
-      PARALLEL LOOP_START(COLLAPSE) \
+      PARALLEL LOOP_START(COLLAPSE, libxsmm_tiled_gemm_i_, libxsmm_tiled_gemm_h_) \
       for (libxsmm_tiled_gemm_i_ = 0; libxsmm_tiled_gemm_i_ < (N); libxsmm_tiled_gemm_i_ += libxsmm_tiled_gemm_tile_n_) { \
         KERNEL_START(libxsmm_tiled_gemm_i_) \
         for (libxsmm_tiled_gemm_h_ = 0; libxsmm_tiled_gemm_h_ < (M); libxsmm_tiled_gemm_h_ += libxsmm_tiled_gemm_tile_m_) { \
