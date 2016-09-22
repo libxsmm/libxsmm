@@ -91,19 +91,26 @@ The main concept in LIBXSMM's frontend is that everything is circled around `lib
 /** simplified LIBXSMM types which are needed to create a handle */
 
 /** Structure which describes the input and output of data (DNN). */
-typedef struct libxsmm_dnn_conv_desc {
-  int N;           /* number of images in mini-batch */
-  int C;           /* number of input feature maps */
-  int H;           /* height of input image */
-  int W;           /* width of input image */
-  int K;           /* number of output feature maps */
-  int R;           /* height of filter kernel */
-  int S;           /* width of filter kernel */
-  int u;           /* vertical stride */
-  int v;           /* horizontal stride */
-  int pad_h;       /* height of zero-padding */
-  int pad_w;       /* width of zero-padding */
-  int splits;      /* number of splits */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
+  int N;                                       /* number of images in mini-batch */
+  int C;                                       /* number of input feature maps */
+  int H;                                       /* height of input image */
+  int W;                                       /* width of input image */
+  int K;                                       /* number of output feature maps */
+  int R;                                       /* height of filter kernel */
+  int S;                                       /* width of filter kernel */
+  int u;                                       /* vertical stride */
+  int v;                                       /* horizontal stride */
+  int pad_h_in;                                /* height of zero-padding in input buffer, ignored */
+  int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
+  int pad_h_out;                               /* height of zero-padding in output buffer */
+  int pad_w_out;                               /* width of zero-padding in output buffer */
+  int splits;                                  /* number of splits */
+  libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
+  libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
+  libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
+  libxsmm_dnn_conv_fuse_ops fuse_ops;          /* used ops into convolutoions */
+  libxsmm_dnn_datatype datatype;               /* dataytpes use for all buffers */
 } libxsmm_dnn_conv_desc;
 
 /** Type of algorithm used for convolutions. */
@@ -136,10 +143,7 @@ libxsmm_dnn_conv_handle* libxsmm_handle;
 /* setting conv_desc values.... */
 conv_desc.N = ...
 /* create handle */
-libxsmm_handle = libxsmm_dnn_create_conv_handle_check(conv_desc,
-  LIBXSMM_DNN_DATATYPE_F32,
-  LIBXSMM_DNN_CONV_ALGO_DIRECT,
-  &status);
+libxsmm_handle = libxsmm_dnn_create_conv_handle_check(conv_desc, &status);
 CHKERR_LIBXSMM_DNN(status);
 ```
 
