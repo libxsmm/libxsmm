@@ -266,36 +266,36 @@ lib_mic: clib_mic flib_mic ext_mic
 .PHONY: lib_hst
 lib_hst: clib_hst flib_hst ext_hst
 
-PREFETCH_ID = 0
+PREFETCH_UID = 0
 PREFETCH_SCHEME = nopf
 PREFETCH_TYPE = 0
 
 ifneq (0,$(shell echo $$((2 <= $(PREFETCH) && $(PREFETCH) <= 10))))
-  PREFETCH_ID = $(PREFETCH)
+  PREFETCH_UID = $(PREFETCH)
 else ifeq (1,$(PREFETCH)) # auto
-  PREFETCH_ID = 1
+  PREFETCH_UID = 1
 else ifeq (pfsigonly,$(PREFETCH))
-  PREFETCH_ID = 2
+  PREFETCH_UID = 2
 else ifeq (BL2viaC,$(PREFETCH))
-  PREFETCH_ID = 3
+  PREFETCH_UID = 3
 else ifeq (curAL2,$(PREFETCH))
-  PREFETCH_ID = 4
+  PREFETCH_UID = 4
 else ifeq (curAL2_BL2viaC,$(PREFETCH))
-  PREFETCH_ID = 5
+  PREFETCH_UID = 5
 else ifeq (AL2,$(PREFETCH))
-  PREFETCH_ID = 6
+  PREFETCH_UID = 6
 else ifeq (AL2_BL2viaC,$(PREFETCH))
-  PREFETCH_ID = 7
+  PREFETCH_UID = 7
 else ifeq (AL2jpst,$(PREFETCH))
-  PREFETCH_ID = 8
+  PREFETCH_UID = 8
 else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
-  PREFETCH_ID = 9
+  PREFETCH_UID = 9
 else ifeq (AL2_BL2viaC_CL2,$(PREFETCH))
-  PREFETCH_ID = 10
+  PREFETCH_UID = 10
 endif
 
 # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
-ifeq (1,$(PREFETCH_ID))
+ifeq (1,$(PREFETCH_UID))
   # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
   # select "pfsigonly" for statically generated code.
   PREFETCH_SCHEME = pfsigonly
@@ -305,31 +305,31 @@ ifeq (1,$(PREFETCH_ID))
       PREFETCH_SCHEME_MIC = AL2_BL2viaC_CL2
     endif
   endif
-else ifeq (2,$(PREFETCH_ID))
+else ifeq (2,$(PREFETCH_UID))
   PREFETCH_SCHEME = pfsigonly
   PREFETCH_TYPE = 1
-else ifeq (3,$(PREFETCH_ID))
+else ifeq (3,$(PREFETCH_UID))
   PREFETCH_SCHEME = BL2viaC
   PREFETCH_TYPE = 8
-else ifeq (4,$(PREFETCH_ID))
+else ifeq (4,$(PREFETCH_UID))
   PREFETCH_SCHEME = curAL2
-  PREFETCH_TYPE = 2
-else ifeq (5,$(PREFETCH_ID))
-  PREFETCH_SCHEME = curAL2_BL2viaC
-  PREFETCH_TYPE = $(shell echo $$((8 | 2)))
-else ifeq (6,$(PREFETCH_ID))
-  PREFETCH_SCHEME = AL2
   PREFETCH_TYPE = 16
-else ifeq (7,$(PREFETCH_ID))
-  PREFETCH_SCHEME = AL2_BL2viaC
+else ifeq (5,$(PREFETCH_UID))
+  PREFETCH_SCHEME = curAL2_BL2viaC
   PREFETCH_TYPE = $(shell echo $$((8 | 16)))
-else ifeq (8,$(PREFETCH_ID))
+else ifeq (6,$(PREFETCH_UID))
+  PREFETCH_SCHEME = AL2
+  PREFETCH_TYPE = 2
+else ifeq (7,$(PREFETCH_UID))
+  PREFETCH_SCHEME = AL2_BL2viaC
+  PREFETCH_TYPE = $(shell echo $$((8 | 2)))
+else ifeq (8,$(PREFETCH_UID))
   PREFETCH_SCHEME = AL2jpst
   PREFETCH_TYPE = 4
-else ifeq (9,$(PREFETCH_ID))
+else ifeq (9,$(PREFETCH_UID))
   PREFETCH_SCHEME = AL2jpst_BL2viaC
   PREFETCH_TYPE = $(shell echo $$((8 | 4)))
-else ifeq (10,$(PREFETCH_ID))
+else ifeq (10,$(PREFETCH_UID))
   PREFETCH_SCHEME = AL2_BL2viaC_CL2
   PREFETCH_TYPE = $(shell echo $$((8 | 2 | 32)))
 endif
