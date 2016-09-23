@@ -864,16 +864,19 @@ endif
 ifeq (1,$(MKL)) # sequential
   DFLAGS += -D__MKL=1
   IFLAGS += -I$(MKLROOT)/include
+  ifneq (Darwin,$(UNAME))
+    MKL_ARCH = intel64
+  endif
   ifeq (0,$(BLAS_STATIC)) # shared
-    LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
+    LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
     LDFLAGS += -Wl,--start-group \
-      $(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-      $(MKLROOT)/lib/intel64/libmkl_core.$(SLIBEXT) \
-      $(MKLROOT)/lib/intel64/libmkl_sequential.$(SLIBEXT) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
     -Wl,--end-group
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"--start-group \
@@ -892,19 +895,19 @@ else ifneq (0,$(MKL)) # multi-threaded
   IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
-      LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
+      LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
       ifneq (0,$(OFFLOAD))
         LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
       endif
     else # assuming GNU toolchain
-      LDFLAGS += -L$(MKLROOT)/lib/intel64 -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
+      LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
     endif
   else # static
     ifneq (0,$(INTEL))
       LDFLAGS += -Wl,--start-group \
-        $(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/intel64/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/intel64/libmkl_intel_thread.$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
       -Wl,--end-group
       ifneq (0,$(OFFLOAD))
         LDFLAGS += -qoffload-option,mic,ld,"--start-group \
@@ -915,9 +918,9 @@ else ifneq (0,$(MKL)) # multi-threaded
       endif
     else # assuming GNU toolchain
       LDFLAGS += -Wl,--start-group \
-        $(MKLROOT)/lib/intel64/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/intel64/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/intel64/libmkl_gnu_thread.$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
+        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
       -Wl,--end-group $(LIBDL)
     endif
   endif
