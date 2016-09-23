@@ -611,10 +611,10 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   unsigned int l_m = 0;
 
 #if !defined(NDEBUG)
-  /* SKX code path selection */
+  /* AVX512 code path selection */
   unsigned int l_avx512_classic = 0;
   if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
-    l_skx_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
+    l_avx512_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
   }
 
   /* Do some test if it's possible to generated the requested code.
@@ -720,10 +720,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
   /* @TODO fix this test */
 #if !defined(NDEBUG)
-  /* SKX code path selection */
+  /* AVX512 code path selection */
   unsigned int l_avx512_classic = 0;
   if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
-    l_skx_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
+    l_avx512_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
   }
 
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
