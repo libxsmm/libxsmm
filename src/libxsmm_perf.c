@@ -79,13 +79,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t libxsmm_perf_padding_len(size_t len) 
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_init()
 {
+  const long pid = (long)LIBXSMM_PERF_GETPID();
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
   char file_name[64];
 #if defined(LIBXSMM_PERF_JITDUMP)
   int fd, page_size, res;
   struct jitheader header;
   size_t padding_len;
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", LIBXSMM_PERF_GETPID());
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", pid);
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
   if (fd < 0) {
@@ -119,7 +120,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   header.version    = JITHEADER_VERSION;
   header.elf_mach   = 62;  /* EM_X86_64 */
   header.total_size = sizeof(header) + padding_len;
-  header.pid        = LIBXSMM_PERF_GETPID();
+  header.pid        = pid;
   header.timestamp  = libxsmm_timer_xtick();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
@@ -137,7 +138,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   }
 
 #else
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", LIBXSMM_PERF_GETPID());
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", pid);
   fp = fopen(file_name, "w+");
   if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");

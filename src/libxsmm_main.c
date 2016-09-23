@@ -1027,6 +1027,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > internal_verbose_mode)
 # endif
         {
+          const int uid = libxsmm_prefetch2uid(request->descriptor.gemm->prefetch);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.smxm", target_arch/*code path name*/,
             0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.gemm->flags) ? 'd' : 's',
@@ -1034,7 +1035,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.gemm->m,   (unsigned int)request->descriptor.gemm->n,   (unsigned int)request->descriptor.gemm->k,
             (unsigned int)request->descriptor.gemm->lda, (unsigned int)request->descriptor.gemm->ldb, (unsigned int)request->descriptor.gemm->ldc,
-            request->descriptor.gemm->alpha, request->descriptor.gemm->beta, libxsmm_prefetch2uid(request->descriptor.gemm->prefetch));
+            request->descriptor.gemm->alpha, request->descriptor.gemm->beta, uid);
         }
       }
       else { /* this case is not an actual error */
@@ -1054,6 +1055,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > internal_verbose_mode)
 # endif
         {
+          const int uid = libxsmm_prefetch2uid(request->descriptor.ssoa->gemm->prefetch);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.ssoa", target_arch/*code path name*/,
             0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.ssoa->gemm->flags) ? 'd' : 's',
@@ -1061,7 +1063,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.ssoa->gemm->m,   (unsigned int)request->descriptor.ssoa->gemm->n,   (unsigned int)request->descriptor.ssoa->gemm->k,
             (unsigned int)request->descriptor.ssoa->gemm->lda, (unsigned int)request->descriptor.ssoa->gemm->ldb, (unsigned int)request->descriptor.ssoa->gemm->ldc,
-            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, libxsmm_prefetch2uid(request->descriptor.ssoa->gemm->prefetch));
+            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, uid);
         }
       }
       else { /* this case is not an actual error */
