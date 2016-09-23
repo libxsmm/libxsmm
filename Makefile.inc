@@ -545,11 +545,11 @@ ifneq (0,$(INTEL))
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   LIBGFORTRAN = $(shell $(FLD) $(SLDFLAGS) -lgfortran -Wl,-t 2> /dev/null | grep gfortran)
-  ifneq (,$(shell echo $(LIBGFORTRAN)))
-    ifneq (,$(shell echo $(LIBGFORTRAN) | grep succeeded))
-      LIBGFORTRAN := $(abspath $(shell echo $(LIBGFORTRAN) | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+  ifneq (,$(shell echo "$(LIBGFORTRAN)"))
+    ifneq (,$(shell echo "$(LIBGFORTRAN)" | grep succeeded))
+      LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
     else
-      LIBGFORTRAN := $(abspath $(shell echo $(LIBGFORTRAN) | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+      LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
     endif
     LIBGFCPATH = $(dir $(LIBGFORTRAN))
     LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
@@ -834,16 +834,16 @@ ifeq (Darwin,$(UNAME))
 endif
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-  OMPLIB = $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
-  ifneq (,$(shell echo $(OMPLIB) | grep succeeded))
-    OMPLIB = $(call libdir,$(abspath $(shell echo $(OMPLIB) | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+  OMPLIB := $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
+  ifneq (,$(shell echo "$(OMPLIB)" | grep succeeded))
+    OMPLIB := $(call libdir,$(abspath $(shell echo "$(OMPLIB)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
   else ifneq (,$(OMPLIB))
-    OMPLIB = $(call libdir,$(abspath $(shell echo $(OMPLIB) | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+    OMPLIB := $(call libdir,$(abspath $(shell echo "$(OMPLIB)" | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
   else
-    OMPLIB = -l$(OMPRT)
+    OMPLIB := -l$(OMPRT)
   endif
 else
-  OMPLIB = $(NULL)
+  OMPLIB := $(NULL)
 endif
 
 MAKE_ILP64 = 0
@@ -941,12 +941,10 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(INTEL))
     ifeq (0,$(OMP))
-    ifneq (,$(strip $(OMPRT)))
-      LDFLAGS += $(call libdir,$(OMPRT))
+      LDFLAGS += $(OMPLIB)
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"-l$(call libdir,$(OMPRT))"
+        LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
       endif
-    endif
     endif
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
