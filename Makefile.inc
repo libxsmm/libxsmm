@@ -163,7 +163,7 @@ endif
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-  OMPLIB = $(patsubst lib%,%,$(OMP))
+  OMPRT = $(patsubst lib%,%,$(OMP))
 endif
 
 # Automatically pickup the environment (make -e not needed),
@@ -220,9 +220,6 @@ endif
 ifeq (0,$(FORTRAN))
   FC = $(NULL)
 endif
-
-# linker setup
-LD = $(CC)
 
 CXX_VERSION_STRING = $(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
@@ -305,6 +302,14 @@ else ifneq (0,$(INTEL))
     FORTRAN = 0
   endif
 endif
+endif
+
+# linker setup
+LD = $(CC)
+ifneq (,$(strip $(FC)))
+  FLD = $(FC)
+else
+  FLD = $(LD)
 endif
 
 # compiler names
@@ -516,8 +521,8 @@ ifneq (0,$(INTEL))
     CXXFLAGS += -fno-exceptions
   endif
   OMPFLAG = -fopenmp -qoverride_limits
-  ifeq (,$(strip $(OMPLIB)))
-    OMPLIB = iomp5
+  ifeq (,$(strip $(OMPRT)))
+    OMPRT = iomp5
   endif
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG)
@@ -539,12 +544,13 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-  ifneq (,$(strip $(FC)))
-    LIBGFORTRAN = $(abspath $(shell $(FC) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
-  else
-    LIBGFORTRAN = $(abspath $(shell $(LD) $(SLDFLAGS) -lgfortran -Wl,--verbose 2> /dev/null | grep libgfortran | grep succeeded | sed "s/..* \(..*\) succeeded/\1/" | head -n1))
-  endif
-  ifneq (,$(LIBGFORTRAN))
+  LIBGFORTRAN = $(shell $(FLD) $(SLDFLAGS) -lgfortran -Wl,-t 2> /dev/null | grep gfortran)
+  ifneq (,$(shell echo $(LIBGFORTRAN)))
+    ifneq (,$(shell echo $(LIBGFORTRAN) | grep succeeded))
+      LIBGFORTRAN := $(abspath $(shell echo $(LIBGFORTRAN) | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+    else
+      LIBGFORTRAN := $(abspath $(shell echo $(LIBGFORTRAN) | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+    endif
     LIBGFCPATH = $(dir $(LIBGFORTRAN))
     LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
     ifeq (3,$(GCC)) # prune link-line
@@ -692,8 +698,8 @@ else # GCC assumed
     THREADS = 0
     OMP = 0
   endif
-  ifeq (,$(strip $(OMPLIB)))
-    OMPLIB = gomp
+  ifeq (,$(strip $(OMPRT)))
+    OMPRT = gomp
   endif
   ifneq (0,$(OMP))
     # clang: OMP=libomp
@@ -703,7 +709,7 @@ else # GCC assumed
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo "$$?"))
+    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
       CXXFLAGS += $(OMPFLAG)
       CFLAGS += $(OMPFLAG)
       FCFLAGS += $(OMPFLAG)
@@ -826,7 +832,17 @@ ifeq (Darwin,$(UNAME))
   FLDFLAGS += -Wa,-q
   FCFLAGS += -Wa,-q
 endif
-ifeq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPLIB) 2>&1 | grep -q "\-l$(OMPLIB)"; echo "$$?"))
+
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
+  OMPLIB = $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
+  ifneq (,$(shell echo $(OMPLIB) | grep succeeded))
+    OMPLIB = $(call libdir,$(abspath $(shell echo $(OMPLIB) | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+  else ifneq (,$(OMPLIB))
+    OMPLIB = $(call libdir,$(abspath $(shell echo $(OMPLIB) | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+  else
+    OMPLIB = -l$(OMPRT)
+  endif
+else
   OMPLIB = $(NULL)
 endif
 
@@ -925,10 +941,10 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   ifneq (0,$(INTEL))
     ifeq (0,$(OMP))
-    ifneq (,$(strip $(OMPLIB)))
-      LDFLAGS += -l$(OMPLIB)
+    ifneq (,$(strip $(OMPRT)))
+      LDFLAGS += $(call libdir,$(OMPRT))
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"-l$(OMPLIB)"
+        LDFLAGS += -qoffload-option,mic,ld,"-l$(call libdir,$(OMPRT))"
       endif
     endif
     endif

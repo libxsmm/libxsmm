@@ -106,7 +106,7 @@ ifneq (0,$(OMP))
 	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 else ifneq (,$(strip $(OMPLIB)))
 	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
-		$(XLIB_BEGIN) -l$(OMPLIB) $(XLIB_END)
+		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
 	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 endif
