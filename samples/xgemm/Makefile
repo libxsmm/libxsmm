@@ -68,7 +68,7 @@ XFILES := $(OUTDIR)/$(OUTNAME)
 all: $(XFILES)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT)
-	$(LD) -o $@ $(OBJECTS) $(call libdir,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

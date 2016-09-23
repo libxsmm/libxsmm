@@ -69,14 +69,14 @@ all: $(XFILES)
 
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT) $(LIBNAME)ext.$(LIBEXT)
-	$(FC) -o $@ $(FTNOBJS) $(EXTLIB) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
+	$(FC) -o $@ $(FTNOBJS) $(EXTLIB) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT)
-	$(LD) -o $@ $(OBJECTS) $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

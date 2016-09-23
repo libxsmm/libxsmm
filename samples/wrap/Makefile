@@ -103,12 +103,12 @@ endif
 ifneq (0,$(XWRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
+	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap

@@ -69,23 +69,23 @@ all: $(XFILES)
 
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
-	$(FC) -o $@ $(FTNOBJS) $(call libdir,$(LIBNAME)f.$(LIBEXT)) $(call libdir,$(LIBNAME).$(LIBEXT)) \
+	$(FC) -o $@ $(FTNOBJS) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)
 endif
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make
-	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/dispatched: $(OUTDIR)/.make $(BLDDIR)/dispatched-cpp.o
-	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o
-	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o
-	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(call libdir,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

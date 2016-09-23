@@ -132,26 +132,30 @@ ifneq (Darwin,$(UNAME))
   XLIB_END = -Wl,--no-as-needed
 endif
 
-EXTLIB = $(call libdir,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
+ifneq (Darwin,$(UNAME))
+  abslibrpath = -Wl,--rpath=$(dir $(abspath $1))
+else
+  abslibrpath = $(NULL)
+endif
+
+# Conditional abspath/link-line generator function
+ABSLIBS ?= 0
+ifneq (0,$(ABSLIBS))
+  abslibpath = -L$(dir $(abspath $1)) $(call abslibrpath,$1)
+else
+  abslibpath = -L$(dir $(abspath $1))
+endif
+abslibfile = $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
+  $(abspath $1))
+abslib = $(call abslibpath,$1) $(call abslibfile,$1)
+
+EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides a libxsmmext as a dummy library which satisfies BLAS symbols
   BLASLIB = $(EXTLIB)
 else
   BLASLIB = $(NULL)
-endif
-
-# Conditional abspath/link-line generator function
-ABSLIBS ?= 0
-ifneq (0,$(DEPSTATIC))
-  libdir = $(abspath $1)
-else ifneq (0,$(ABSLIBS))
-  ifneq (Darwin,$(UNAME))
-    libdir = $(abspath $1) -Wl,--rpath=$(dir $(abspath $1))
-  else
-    libdir = $(abspath $1)
-  endif
-else
-  libdir = -L$(dir $(abspath $1)) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
 
 # Embedd soname into shared library
@@ -551,13 +555,9 @@ else # GCC assumed
     else
       LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
     endif
-    LIBGFCPATH = $(dir $(LIBGFORTRAN))
-    LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
-    ifeq (3,$(GCC)) # prune link-line
-      LIBGFORTRAN = -lgfortran
-    endif
-    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
+    LDFLAGS := $(LDFLAGS) $(call abslibpath,$(LIBGFORTRAN))
+    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
   else
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
@@ -836,9 +836,9 @@ endif
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
   OMPLIB := $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
   ifneq (,$(shell echo "$(OMPLIB)" | grep succeeded))
-    OMPLIB := $(call libdir,$(abspath $(shell echo "$(OMPLIB)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+    OMPLIB := $(call abslib,$(abspath $(shell echo "$(OMPLIB)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
   else ifneq (,$(OMPLIB))
-    OMPLIB := $(call libdir,$(abspath $(shell echo "$(OMPLIB)" | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+    OMPLIB := $(call abslib,$(abspath $(shell echo "$(OMPLIB)" | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
   else
     OMPLIB := -l$(OMPRT)
   endif
@@ -969,7 +969,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(STATIC))
     ifneq (,$(LIBGFORTRAN))
-      CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
+      CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
     endif
     endif
     QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
@@ -999,7 +999,7 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS \
-    $(EXCLUDE_STATE) CPUFLAGS TESTSIZE DUMMY libdir soname extname objname,$V), \
+    $(EXCLUDE_STATE) CPUFLAGS TESTSIZE DUMMY abslib soname extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
 
