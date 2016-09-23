@@ -132,22 +132,22 @@ ifneq (Darwin,$(UNAME))
   XLIB_END = -Wl,--no-as-needed
 endif
 
+ifneq (Darwin,$(UNAME))
+  abslibrpath = -Wl,--rpath=$(dir $(abspath $1))
+else
+  abslibrpath = $(NULL)
+endif
+
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
-ifneq (0,$(DEPSTATIC))
-  abslibpath = $(NULL)
-  abslibfile = $(abspath $1)
-else ifneq (0,$(ABSLIBS))
-  ifneq (Darwin,$(UNAME))
-    abslibpath = -Wl,--rpath=$(dir $(abspath $1))
-  else
-    abslibpath = $(NULL)
-  endif
-  abslibfile = $(abspath $1)
+ifneq (0,$(ABSLIBS))
+  abslibpath = -L$(dir $(abspath $1)) $(call abslibrpath,$1)
 else
   abslibpath = -L$(dir $(abspath $1))
-  abslibfile = -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
+abslibfile = $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
+  $(abspath $1))
 abslib = $(call abslibpath,$1) $(call abslibfile,$1)
 
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
@@ -555,12 +555,7 @@ else # GCC assumed
     else
       LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
     endif
-    #LIBGFCPATH = $(dir $(LIBGFORTRAN))
-    #LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
     LDFLAGS := $(LDFLAGS) $(call abslibpath,$(LIBGFORTRAN))
-    #ifeq (3,$(GCC)) # prune link-line
-      #LIBGFORTRAN = -lgfortran
-    #endif
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
   else
@@ -974,7 +969,7 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifneq (0,$(STATIC))
     ifneq (,$(LIBGFORTRAN))
-      CLDFLAGS += $(XLIB_BEGIN) $(LIBGFORTRAN) -lm $(XLIB_END)
+      CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
     endif
     endif
     QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
