@@ -39,6 +39,7 @@
 #include <math.h>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_trans.h>
+# include <mkl_service.h>
 #elif defined(__OPENBLAS)
 # include <openblas/cblas.h>
 #endif
@@ -91,7 +92,9 @@ int main(int argc, char* argv[])
     unsigned long long start;
     libxsmm_blasint i = 0, j;
     double duration;
-
+#if defined(MKL_ENABLE_AVX512)
+    mkl_enable_instructions(MKL_ENABLE_AVX512);
+#endif
     fprintf(stdout, "m=%i n=%i lda=%i ldb=%i size=%.fMB (%s, %s)\n", m, n, lda, ldb,
       1.0 * size / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP",
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
