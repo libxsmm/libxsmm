@@ -135,19 +135,20 @@ endif
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
 ifneq (0,$(DEPSTATIC))
-  abslibdir = $(NULL)
-  abslib = $(abspath $1)
+  abslibpath = $(NULL)
+  abslibfile = $(abspath $1)
 else ifneq (0,$(ABSLIBS))
   ifneq (Darwin,$(UNAME))
-    abslibdir = -Wl,--rpath=$(dir $(abspath $1))
+    abslibpath = -Wl,--rpath=$(dir $(abspath $1))
   else
-    abslibdir = $(NULL)
+    abslibpath = $(NULL)
   endif
-  abslib = $(call abslibdir,$1) $(abspath $1)
+  abslibfile = $(abspath $1)
 else
-  abslibdir = -L$(dir $(abspath $1))
-  abslib = $(call abslibdir,$1) -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
+  abslibpath = -L$(dir $(abspath $1))
+  abslibfile = -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1))
 endif
+abslib = $(call abslibpath,$1) $(call abslibfile,$1)
 
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
@@ -554,13 +555,14 @@ else # GCC assumed
     else
       LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
     endif
-    LIBGFCPATH = $(dir $(LIBGFORTRAN))
-    LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
-    ifeq (3,$(GCC)) # prune link-line
-      LIBGFORTRAN = -lgfortran
-    endif
-    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(LIBGFORTRAN) -lm $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(LIBGFORTRAN) -lm $(XLIB_END)
+    #LIBGFCPATH = $(dir $(LIBGFORTRAN))
+    #LDFLAGS := $(LDFLAGS) -L$(LIBGFCPATH) -Wl,-rpath=$(LIBGFCPATH)
+    LDFLAGS := $(LDFLAGS) $(call abslibpath,$(LIBGFORTRAN))
+    #ifeq (3,$(GCC)) # prune link-line
+      #LIBGFORTRAN = -lgfortran
+    #endif
+    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
   else
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
