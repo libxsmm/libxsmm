@@ -308,7 +308,7 @@ int main(int argc, char* argv []) {
   handle.mb = handle.m / handle.bm;
   handle.nb = handle.n / handle.bn;
   handle.kb = handle.k / handle.bk;
-  libxsmm_gemm_prefetch_type mypf = LIBXSMM_PREFETCH_AL2;
+  /*libxsmm_gemm_prefetch_type mypf = LIBXSMM_PREFETCH_AL2;*/
   handle.kernel = libxsmm_smmdispatch(handle.bm, handle.bn, handle.bk, NULL, NULL, NULL, NULL, NULL, NULL, NULL /*&mypf*/);
 
   /* init random seed and print some info */
