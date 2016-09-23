@@ -126,6 +126,8 @@ endif
 
 # C Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
+  XGROUP_BEGIN = -Wl,--start-group
+  XGROUP_END = -Wl,--end-group
   XLIB_BEGIN = -Wl,--as-needed
   XLIB_END = -Wl,--no-as-needed
 endif
@@ -872,11 +874,11 @@ ifeq (1,$(MKL)) # sequential
       LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
-    LDFLAGS += -Wl,--start-group \
+    LDFLAGS += $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
-    -Wl,--end-group
+    $(XGROUP_END)
     ifneq (0,$(OFFLOAD))
       LDFLAGS += -qoffload-option,mic,ld,"--start-group \
         $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -903,11 +905,11 @@ else ifneq (0,$(MKL)) # multi-threaded
     endif
   else # static
     ifneq (0,$(INTEL))
-      LDFLAGS += -Wl,--start-group \
+      LDFLAGS += $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
-      -Wl,--end-group
+      $(XGROUP_END)
       ifneq (0,$(OFFLOAD))
         LDFLAGS += -qoffload-option,mic,ld,"--start-group \
           $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -916,11 +918,11 @@ else ifneq (0,$(MKL)) # multi-threaded
         --end-group"
       endif
     else # assuming GNU toolchain
-      LDFLAGS += -Wl,--start-group \
+      LDFLAGS += $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
-      -Wl,--end-group $(LIBDL)
+      $(XGROUP_END) $(LIBDL)
     endif
   endif
   ifneq (0,$(INTEL))
