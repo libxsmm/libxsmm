@@ -849,11 +849,9 @@ ifneq (,$(strip $(MKLROOT)))
 else
   MKL = 0
 endif
-
 ifneq (0,$(MKL))
   DFLAGS += -D__CBLAS
 endif
-
 ifeq (1,$(MKL_DIRECT))
   ifeq (1,$(MKL))
     DFLAGS += -DMKL_DIRECT_CALL_SEQ
@@ -861,13 +859,13 @@ ifeq (1,$(MKL_DIRECT))
     DFLAGS += -DMKL_DIRECT_CALL
   endif
 endif
+ifneq (Darwin,$(UNAME))
+  MKL_ARCH = intel64
+endif
 
 ifeq (1,$(MKL)) # sequential
   DFLAGS += -D__MKL=1
   IFLAGS += -I$(MKLROOT)/include
-  ifneq (Darwin,$(UNAME))
-    MKL_ARCH = intel64
-  endif
   ifeq (0,$(BLAS_STATIC)) # shared
     LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
     ifneq (0,$(OFFLOAD))
