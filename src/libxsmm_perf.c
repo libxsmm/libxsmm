@@ -86,7 +86,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   int fd, page_size, res;
   struct jitheader header;
   size_t padding_len;
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%i.dump", pid);
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%li.dump", pid);
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
   if (fd < 0) {
@@ -138,7 +138,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init()
   }
 
 #else
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%i.map", pid);
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%li.map", pid);
   fp = fopen(file_name, "w+");
   if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");
