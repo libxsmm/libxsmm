@@ -9,10 +9,12 @@ if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
-  export PATH=${PATH}:${HERE}/../../lib
+  export PATH=${PATH}:${HERE}/../lib
 else
   if [ "" != "$(which ldd)" ]; then
     LDD=ldd
+  elif [ "" != "$(which otool)" ]; then
+    LDD="otool -L"
   else
     LDD=echo
   fi
@@ -28,7 +30,7 @@ fi
 MICTPERC=3
 
 if [ "-mic" != "$1" ]; then
-  if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.so)" ]; then
+  if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       KMP_AFFINITY=compact,granularity=fine,1 \

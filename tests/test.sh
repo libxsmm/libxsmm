@@ -19,6 +19,8 @@ if [ "Windows_NT" = "${OS}" ]; then
 else
   if [ "" != "$(which ldd)" ]; then
     LDD=ldd
+  elif [ "" != "$(which otool)" ]; then
+    LDD="otool -L"
   else
     LDD=echo
   fi
@@ -38,7 +40,7 @@ for TEST in ${TESTS}; do
   if [ "0" != "$(echo ${DISABLED} | grep -q ${NAME}; echo $?)" ]; then
     ERROR=$({
     if [ "-mic" != "$1" ]; then
-      if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.so)" ]; then
+      if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
         ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
           DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
           KMP_AFFINITY=scatter,granularity=fine,1 \
