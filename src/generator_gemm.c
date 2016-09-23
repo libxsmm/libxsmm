@@ -43,11 +43,16 @@
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
-                                     const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                     const char*                     i_arch ) {
+                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                    const char*                     i_arch ) {
   /* apply the alignement override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
+  /* AVX512 code path selection, classic is an AVX2 pumped up version, non-classic is KNL optimized */
+  unsigned int l_avx512_classic = 0;
+  if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
+    l_avx512_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
+  }
 
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
@@ -118,9 +123,12 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     libxsmm_generator_gemm_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "knc") == 0) ||
        (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0)    ) {
+       (strcmp(i_arch, "skx") == 0 && l_avx512_classic == 0)    ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+  } else if ( (strcmp(i_arch, "skx") == 0) ) {
+    /* call actual kernel generation with revised parameters */
+    libxsmm_generator_gemm_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );

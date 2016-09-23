@@ -40,6 +40,7 @@
 #include "generator_gemm_sse3_microkernel.h"
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_gemm_avx2_microkernel.h"
+#include "generator_gemm_avx512_microkernel_nobcst.h"
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*        io_generated_code,
@@ -59,6 +60,11 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
   unsigned int l_n_done = 0;
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
+
+  /* as we have 32 registers, we can block more aggessively */
+  if ( (strcmp(i_arch, "skx") == 0) ) {
+    l_n_blocking = 6;
+  }
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
@@ -82,6 +88,8 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
     l_generator_microkernel = libxsmm_generator_gemm_avx_microkernel;
   } else if ( (strcmp(i_arch, "hsw") == 0) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel;
+  } else if ( (strcmp(i_arch, "skx") == 0) ) {
+    l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nobcst;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
@@ -193,6 +201,12 @@ void libxsmm_generator_gemm_sse3_avx_avx2_kernel( libxsmm_generated_code*       
       l_n_blocking = 1;
     } else if (l_n_blocking == 3) {
       l_n_blocking = 2;
+    } else if (l_n_blocking == 4) {
+      l_n_blocking = 3;
+    } else if (l_n_blocking == 5) {
+      l_n_blocking = 4;
+    } else if (l_n_blocking == 6) {
+      l_n_blocking = 5;
     } else {
       /* we are done with n_blocking */
     }
@@ -220,6 +234,10 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_get_inital_m_blocking( libxsmm
     l_m_blocking = 32;
   } else if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
     l_m_blocking = 16;
+  } else if ( (strcmp( i_arch, "skx" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+    l_m_blocking = 64;
+  } else if ( (strcmp( i_arch, "skx" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+    l_m_blocking = 32;
   } else { }
 
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -313,6 +331,32 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_update_m_blocking( libxsmm_mic
       l_m_blocking = 8;
     } else if (i_current_m_blocking == 16) {
       l_m_blocking = 12;
+    } else {
+      /* we are done with m_blocking */
+    }
+  } else if ( (strcmp( i_arch, "skx" ) == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0 ) {
+    if (i_current_m_blocking == 16) {
+      l_m_blocking = 1;
+      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 32) {
+      l_m_blocking = 16;
+    } else if (i_current_m_blocking == 48) {
+      l_m_blocking = 32;
+    } else if (i_current_m_blocking == 64) {
+      l_m_blocking = 48;
+    } else {
+      /* we are done with m_blocking */
+    }
+  } else if ( (strcmp( i_arch, "skx" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
+    if (i_current_m_blocking == 8) {
+      l_m_blocking = 1;
+      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+    } else if (i_current_m_blocking == 16) {
+      l_m_blocking = 8;
+    } else if (i_current_m_blocking == 24) {
+      l_m_blocking = 16;
+    } else if (i_current_m_blocking == 32) {
+      l_m_blocking = 24;
     } else {
       /* we are done with m_blocking */
     }

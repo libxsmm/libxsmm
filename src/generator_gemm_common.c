@@ -189,7 +189,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
       }
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPD;
@@ -207,7 +207,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       } else {
         io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
-      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_UNDEF;
+      io_micro_kernel_config->b_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
       io_micro_kernel_config->b_shuff_instruction = LIBXSMM_X86_INSTR_UNDEF;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0 ) {
         io_micro_kernel_config->c_vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
@@ -611,6 +611,12 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   unsigned int l_m = 0;
 
 #if !defined(NDEBUG)
+  /* SKX code path selection */
+  unsigned int l_avx512_classic = 0;
+  if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
+    l_skx_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
+  }
+
   /* Do some test if it's possible to generated the requested code.
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
@@ -623,8 +629,13 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE    ) {
+             ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE && l_avx512_classic == 0)    ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
+    }
+  } else if ( ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE && l_avx512_classic != 0 )  ) {
+    if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
@@ -709,6 +720,12 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
 
   /* @TODO fix this test */
 #if !defined(NDEBUG)
+  /* SKX code path selection */
+  unsigned int l_avx512_classic = 0;
+  if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
+    l_skx_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
+  }
+
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2    ) {
@@ -718,8 +735,13 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-             i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE    ) {
+             ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE && l_avx512_classic == 0)    ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      return;
+    }
+  } else if ( ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE && l_avx512_classic != 0)    ) {
+    if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
