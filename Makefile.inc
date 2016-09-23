@@ -124,6 +124,12 @@ ifeq (0,$(BLAS))
 endif
 endif
 
+# C Compiler is used for link stage
+ifneq (Darwin,$(UNAME))
+  XLIB_BEGIN = -Wl,--as-needed
+  XLIB_END = -Wl,--no-as-needed
+endif
+
 EXTLIB = $(call libdir,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides a libxsmmext as a dummy library which satisfies BLAS symbols
@@ -186,8 +192,6 @@ ifneq (0,$(INTEL))
     endif
     endif
   endif
-  XLIB_BEGIN = -Wl,--as-needed
-  XLIB_END = -Wl,--no-as-needed
   # disable CPUID check
   COMPATIBLE = 1
 else
@@ -318,11 +322,6 @@ else ifeq (0,$(shell $(CC) --version 2> /dev/null | grep -q "Free Software Found
   GCC = 1
 endif
 ifeq (1,$(GCC))
-  # C Compiler is used for link stage
-  ifneq (Darwin,$(UNAME))
-    XLIB_BEGIN = -Wl,--as-needed
-    XLIB_END = -Wl,--no-as-needed
-  endif
   ifneq (,$(findstring g++,$(CXX_NAME)))
     GCC = 2
   else ifeq (GCC,$(shell $(CXX) --version 2> /dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
