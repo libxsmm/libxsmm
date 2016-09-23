@@ -348,11 +348,7 @@
 
 #if (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
-# if defined(__CYGWIN__)
-#   define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weakref)
-#else
-#   define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
-# endif
+# define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
 #else
 # define LIBXSMM_ATTRIBUTE_WEAK
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
