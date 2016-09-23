@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
       /* validate against result computed by alternative routine */
       for (i = 0; i < m; ++i) {
         for (j = 0; j < n; ++j) {
-          if (b[i*ldb+j] != c[i*ldb+j]) {
+          if (0 == LIBXSMM_FEQ(b[i*ldb+j], c[i*ldb+j])) {
             i = m + 1; /* leave outer loop as well */
             break;
           }
