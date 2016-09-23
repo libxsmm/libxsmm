@@ -37,7 +37,7 @@
 #include <libxsmm_macros.h>
 #include "generator_common.h"
 #include "generator_gemm_common.h"
-#include "generator_gemm_sse3_avx_avx2.h"
+#include "generator_gemm_sse3_avx_avx2_avx512.h"
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_noarch.h"
 
@@ -120,7 +120,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
        (strcmp(i_arch, "snb") == 0) ||
        (strcmp(i_arch, "hsw") == 0)    ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "knc") == 0) ||
        (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "skx") == 0 && l_avx512_classic == 0)    ) {
@@ -128,7 +128,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "skx") == 0) ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_sse3_avx_avx2_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
