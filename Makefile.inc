@@ -132,30 +132,28 @@ ifneq (Darwin,$(UNAME))
   XLIB_END = -Wl,--no-as-needed
 endif
 
-ifneq (Darwin,$(UNAME))
-  absliblpath = $(strip $(if $(filter ./,$(dir $1)), $(NULL), \
-    -Wl,--rpath=$(dir $(abspath $1))))
-else
-  absliblpath = $(strip $(if $(filter ./,$(dir $1)), $(NULL), \
-    -Xlinker -rpath -Xlinker $(dir $(abspath $1))))
-endif
-absliblpath = $(strip $(if $(filter ./,$(dir $1)), \
-  -L$(dir $(abspath $1)), $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  -L$(dir $(abspath $1)), $(NULL))))
-
-# Conditional abspath/link-line generator function
+# Enable absolute library paths
 ABSLIBS ?= 0
+
+ifneq (Darwin,$(UNAME))
+  abslibrpath = $(strip $(if $(wildcard $1), \
+    -Wl,--rpath=$(dir $(abspath $1)),$(NULL)))
+else
+  abslibrpath = $(strip $(if $(wildcard $1), \
+    -Xlinker -rpath -Xlinker $(dir $(abspath $1)),$(NULL)))
+endif
+
+absliblpath = $(strip $(if $(wildcard $1), \
+  -L$(dir $(abspath $1)),$(NULL)))
+abslibfile = $(strip $(if $(wildcard $1), \
+  -l$(patsubst lib%,%,$(basename $(notdir $1))),$(if $1,-l$1,$(NULL))))
+
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call absliblpath,$1) $(call abslibrpath,$1))
-  abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-    $(if $(filter ./,$(dir $1)), -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
-    $(abspath $1)), $(abspath $1)))
 else
   abslibpath = $(strip $(call absliblpath,$1))
-  abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-    -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
-    $(abspath $1)))
 endif
+
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
@@ -862,10 +860,12 @@ else
 endif
 
 ifeq (Darwin,$(UNAME))
+ifneq (,$(OMPLIBFILE))
   ifeq (0,$(ABSLIBS))
     LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
   endif
   LDFLAGS += $(call abslib,$(OMPLIBFILE))
+endif
 endif
 
 MAKE_ILP64 = 0
