@@ -130,28 +130,27 @@ ifneq (Darwin,$(UNAME))
   XGROUP_END = -Wl,--end-group
   XLIB_BEGIN = -Wl,--as-needed
   XLIB_END = -Wl,--no-as-needed
+  XRPATH = -Wl,--rpath=$(NULL)
+else
+  XRPATH = -Xlinker -rpath -Xlinker $(NULL)
 endif
 
 # Enable absolute library paths
 ABSLIBS ?= 0
 
-ifneq (Darwin,$(UNAME))
-  abslibrpath = $(strip $(if $(wildcard $1), \
-    -Wl,--rpath=$(dir $(abspath $1)),$(NULL)))
-else
-  abslibrpath = $(strip $(if $(wildcard $1), \
-    -Xlinker -rpath -Xlinker $(dir $(abspath $1)),$(NULL)))
-endif
-
+abslibrpath = $(strip $(if $(wildcard $1),$(XRPATH)$(dir $(abspath $1)),$(NULL)))
 absliblpath = $(strip $(if $(wildcard $1), \
   -L$(dir $(abspath $1)),$(NULL)))
 abslibfile = $(strip $(if $(wildcard $1), \
-  -l$(patsubst lib%,%,$(basename $(notdir $1))),$(if $1,-l$1,$(NULL))))
+  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+    -l$(patsubst lib%,%,$(basename $(notdir $1))), \
+    $(NULL)), \
+  $(if $1,-l$1,$(NULL))))
 
 ifneq (0,$(ABSLIBS))
-  abslibpath = $(strip $(call absliblpath,$1) $(call abslibrpath,$1))
+  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
 else
-  abslibpath = $(strip $(call absliblpath,$1))
+  abslibpath = $(call absliblpath,$1)
 endif
 
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
