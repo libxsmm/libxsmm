@@ -144,8 +144,7 @@ absliblpath = $(strip $(if $(wildcard $1), \
 abslibfile = $(strip $(if $(wildcard $1), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))), \
-    $(NULL)), \
-  $(if $1,-l$1,$(NULL))))
+    $(NULL)),$(NULL)))
 
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
