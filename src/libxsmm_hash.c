@@ -365,7 +365,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const
 {
 #if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  (!defined(__clang__) || defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH))
+  (!defined(__clang__) || defined(__INTEL_COMPILER) || defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH))
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
 # if !defined(__MIC__)
