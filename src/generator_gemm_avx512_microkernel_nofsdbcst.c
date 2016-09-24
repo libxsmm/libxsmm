@@ -33,17 +33,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "generator_gemm_avx512_microkernel_nobcst.h"
+#include "generator_gemm_avx512_microkernel_nofsdbcst.h"
 #include "generator_x86_instructions.h"
 
 LIBXSMM_INTERNAL_API_DEFINITION
-void libxsmm_generator_gemm_avx512_microkernel_nobcst( libxsmm_generated_code*             io_generated_code,
-                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                       const unsigned int                 i_m_blocking,
-                                                       const unsigned int                 i_n_blocking,
-                                                       const int                          i_offset )
+void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code*             io_generated_code,
+                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                          const unsigned int                 i_m_blocking,
+                                                          const unsigned int                 i_n_blocking,
+                                                          const int                          i_offset )
 {
   /* deriving register blocking from kernel config */
   unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
@@ -55,7 +55,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nobcst( libxsmm_generated_code*  
   unsigned int l_vec_reg_acc_start = 32 - (i_n_blocking * l_m_blocking);
 
 #if !defined(NDEBUG)
-  if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
+  if ( (i_n_blocking > 6) || (i_n_blocking < 1) ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }

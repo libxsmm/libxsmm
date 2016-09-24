@@ -167,6 +167,11 @@ void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
   int nr = 8;
   int kr = 4;
 
+  if ( (*beta != (real)1.0) || (*alpha != (real)1.0) ) {
+    printf(" alpha and beta need to be 1.0\n" );
+    exit(-1);
+  }
+
 #if 0
   if ( (handle->mb % mr == 0) && (handle->nb % nr == 0) && (handle->kb % kr == 0) ) {
 #if defined(_OPENMP)
