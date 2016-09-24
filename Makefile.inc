@@ -137,18 +137,24 @@ ifneq (Darwin,$(UNAME))
 else
   abslibrpath = $(NULL)
 endif
+absliblpath = $(strip $(if $(filter ./,$(dir $1)), \
+  -L$(dir $(abspath $1)), $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  -L$(dir $(abspath $1)), $(NULL))))
 
 # Conditional abspath/link-line generator function
 ABSLIBS ?= 0
 ifneq (0,$(ABSLIBS))
-  abslibpath = -L$(dir $(abspath $1)) $(call abslibrpath,$1)
+  abslibpath = $(strip $(call absliblpath,$1) $(call abslibrpath,$1))
+  abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+    $(if $(filter ./,$(dir $1)), -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
+    $(abspath $1)), $(abspath $1)))
 else
-  abslibpath = -L$(dir $(abspath $1))
+  abslibpath = $(strip $(call absliblpath,$1))
+  abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+    -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
+    $(abspath $1)))
 endif
-abslibfile = $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  -l$(patsubst lib%.$(DLIBEXT),%,$(notdir $1)), \
-  $(abspath $1))
-abslib = $(call abslibpath,$1) $(call abslibfile,$1)
+abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
@@ -834,17 +840,24 @@ ifeq (Darwin,$(UNAME))
 endif
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-  OMPLIB := $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
-  ifneq (,$(shell echo "$(OMPLIB)" | grep succeeded))
-    OMPLIB := $(call abslib,$(abspath $(shell echo "$(OMPLIB)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
-  else ifneq (,$(OMPLIB))
-    OMPLIB := $(call abslib,$(abspath $(shell echo "$(OMPLIB)" | sed "s/..* (\(..*\)).*/\1/" | head -n1)))
+  OMPLIBFILE := $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
+  ifneq (,$(shell echo "$(OMPLIBFILE)" | grep succeeded))
+    OMPLIBFILE := $(abspath $(shell echo "$(OMPLIBFILE)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+  else ifneq (,$(OMPLIBFILE))
+    OMPLIBFILE := $(abspath $(shell echo "$(OMPLIBFILE)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
+  endif
+  ifneq (,$(strip $(OMPLIBFILE)))
+    OMPLIB = $(strip $(call abslib,$(OMPLIBFILE)))
   else
-    OMPLIB := -l$(OMPRT)
+    OMPLIB = -l$(OMPRT)
   endif
 else
-  OMPLIB := $(NULL)
+  OMPLIB = $(NULL)
 endif
+
+#ifeq (Darwin,$(UNAME))
+#  LDFLAGS += $(call abslibfile,$(OMPLIBFILE))
+#endif
 
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
