@@ -139,12 +139,9 @@ endif
 ABSLIBS ?= 0
 
 abslibrpath = $(strip $(if $(wildcard $1),$(XRPATH)$(dir $(abspath $1)),$(NULL)))
-absliblpath = $(strip $(if $(wildcard $1), \
-  -L$(dir $(abspath $1)),$(NULL)))
-abslibfile = $(strip $(if $(wildcard $1), \
-  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-    -l$(patsubst lib%,%,$(basename $(notdir $1))), \
-    $(NULL)),$(NULL)))
+absliblpath = $(strip $(if $(wildcard $1),-L$(dir $(abspath $1)),-L$(dir $1)))
+abslibfile = $(strip $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+  -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)))
 
 ifneq (0,$(ABSLIBS))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
