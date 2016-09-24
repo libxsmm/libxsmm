@@ -133,9 +133,11 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifneq (Darwin,$(UNAME))
-  abslibrpath = -Wl,--rpath=$(dir $(abspath $1))
+  absliblpath = $(strip $(if $(filter ./,$(dir $1)), $(NULL), \
+    -Wl,--rpath=$(dir $(abspath $1))))
 else
-  abslibrpath = -Xlinker -rpath -Xlinker $(dir $(abspath $1))
+  absliblpath = $(strip $(if $(filter ./,$(dir $1)), $(NULL), \
+    -Xlinker -rpath -Xlinker $(dir $(abspath $1))))
 endif
 absliblpath = $(strip $(if $(filter ./,$(dir $1)), \
   -L$(dir $(abspath $1)), $(if $(filter .$(DLIBEXT),$(suffix $1)), \
