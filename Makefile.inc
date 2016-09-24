@@ -135,7 +135,7 @@ endif
 ifneq (Darwin,$(UNAME))
   abslibrpath = -Wl,--rpath=$(dir $(abspath $1))
 else
-  abslibrpath = $(NULL)
+  abslibrpath = -Xlinker -rpath -Xlinker $(dir $(abspath $1))
 endif
 absliblpath = $(strip $(if $(filter ./,$(dir $1)), \
   -L$(dir $(abspath $1)), $(if $(filter .$(DLIBEXT),$(suffix $1)), \
@@ -698,7 +698,11 @@ else # GCC assumed
   ifneq (clang,$(CC))
     OMPFLAG = -fopenmp
   else ifneq (Windows_NT,$(UNAME))
-    OMPFLAG = -fopenmp
+    ifneq (Darwin,$(UNAME))
+      OMPFLAG = -fopenmp
+    else
+      OMPFLAG = -openmp
+    endif
   endif
   ifeq (,$(OMPFLAG))
     THREADS = 0
@@ -855,9 +859,12 @@ else
   OMPLIB = $(NULL)
 endif
 
-#ifeq (Darwin,$(UNAME))
-#  LDFLAGS += $(call abslibfile,$(OMPLIBFILE))
-#endif
+ifeq (Darwin,$(UNAME))
+  ifeq (0,$(ABSLIBS))
+    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
+  endif
+  LDFLAGS += $(call abslib,$(OMPLIBFILE))
+endif
 
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
