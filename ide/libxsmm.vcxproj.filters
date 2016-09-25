@@ -75,9 +75,6 @@
     <ClInclude Include="..\src\generator_gemm_noarch.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -171,6 +168,12 @@
     <ClInclude Include="..\src\generator_convolution_forward_int16_avx512.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -216,9 +219,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_noarch.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c">
@@ -312,6 +312,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_convolution_forward_int16_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
