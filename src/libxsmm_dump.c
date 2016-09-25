@@ -132,6 +132,9 @@ LIBXSMM_API_DEFINITION int libxsmm_meta_image_write(const char* filename,
     if (0 < extension_size) {
       fwrite(extension, 1, extension_size, file);
     }
+
+    /* release file handle */
+    fclose(file);
   }
   else {
     result = EXIT_FAILURE;
