@@ -488,7 +488,11 @@ ifneq (0,$(INTEL))
       CTARGET = -xAVX
     else ifneq (0,$(SSE))
       ifeq (1,$(SSE)) # default
-        CTARGET = -xSSE3
+        ifneq (Darwin,$(UNAME))
+          CTARGET = -xSSE3
+        else # no systems with less than SSE4.2 
+          CTARGET = -xSSE4.2
+        endif
       else ifeq (3,$(SSE))
         CTARGET = -xSSE3
       else ifeq (4,$(SSE))
@@ -764,11 +768,10 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     CTARGET = -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
-      ifneq (0,$(INTEL)) # ICC (not Clang)
+      ifneq (Darwin,$(UNAME))
         CTARGET = -msse3
-      else ifneq (0,$(GCC)) # GCC (not Clang)
-        CTARGET = -msse3
-      else # SSE4.2 req. to prevent backend error in Clang with CRC32 instr.
+      else
+        # prevents Clang backend error with CRC32/other instructions
         CTARGET = -msse4.2
       endif
     else ifeq (2,$(SSE))
