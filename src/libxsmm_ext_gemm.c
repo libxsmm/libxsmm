@@ -121,7 +121,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       if (0 == libxsmm_tasks)
 # endif
       {
-        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_FOR_SINGLE,
           LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
@@ -148,7 +148,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       if (0 == libxsmm_tasks)
 # endif
       {
-        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_FOR_SINGLE,
           LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
@@ -210,7 +210,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       if (0 == libxsmm_tasks)
 # endif
       {
-        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+        LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_FOR_PARALLEL, LIBXSMM_NOOP, LIBXSMM_EXT_FOR_SINGLE,
           LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           double, flags, tm, tn, tk, *m, *n, *k,
@@ -237,7 +237,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       if (0 == libxsmm_tasks)
 # endif
       {
-        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_SINGLE,
+        LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP, LIBXSMM_EXT_FOR_SINGLE,
           LIBXSMM_GEMM_COLLAPSE, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_EXT_FOR_SYNC,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           double, flags, tm, tn, tk, *m, *n, *k,
