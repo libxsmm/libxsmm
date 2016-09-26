@@ -246,6 +246,12 @@ Of course, both mechanisms (M/N/K and MNK based) can be combined using the same 
 
 At the expense of a limited functionality (`libxsmm_?gemm`), the latter method also works with FORTRAN&#160;77 (otherwise the FORTRAN&#160;2003 standard is necessary).
 
+To adjust for a tool chain which fails to consume more advanced GCC flags (but pretends to be GCC compatible), one may raise the compatibility:
+
+```
+make COMPATIBLE=1
+```
+
 ## Installation
 Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE3 (SSE4.2 under OS&#160;X) allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
