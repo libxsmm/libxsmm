@@ -80,10 +80,10 @@
 # define LIBXSMM_EXT_TSK_SYNC LIBXSMM_EXT_FOR_SYNC
 #endif
 
-#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
-# define LIBXSMM_EXT_FOR_SINGLE LIBXSMM_EXT_SINGLE
-#else
+#if defined(_CRAYC)
 # define LIBXSMM_EXT_FOR_SINGLE LIBXSMM_NOOP
+#else
+# define LIBXSMM_EXT_FOR_SINGLE LIBXSMM_EXT_SINGLE
 #endif
 
 #endif /*LIBXSMM_EXT_H*/
