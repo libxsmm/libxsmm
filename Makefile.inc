@@ -697,7 +697,11 @@ else # GCC assumed
   endif
   # account for missing TLS/OMP
   ifneq (clang,$(CC))
-    OMPFLAG = -fopenmp
+    ifeq (0,$(COMPATIBLE))
+      OMPFLAG = -fopenmp
+    else ifneq (0,$(OMP))
+      OMPFLAG = -fopenmp
+    endif
   else ifneq (Windows_NT,$(UNAME))
     ifneq (Darwin,$(UNAME))
       OMPFLAG = -fopenmp
