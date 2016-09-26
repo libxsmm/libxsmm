@@ -569,11 +569,9 @@ else # GCC assumed
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  CXXFLAGS += -Wall -Wno-unused-function
-  CFLAGS += -Wall -Wno-unused-function
   ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -Wno-attributes
-    CFLAGS += -Wno-attributes
+    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
   endif
   ifneq (Windows_NT,$(UNAME))
     CXXFLAGS += -fPIC
@@ -614,13 +612,13 @@ else # GCC assumed
     FMFLAGS += -I
   endif
   ifeq (0,$(DBG))
-    CXXFLAGS += $(OPTFLAG) -funroll-loops
-    CFLAGS += $(OPTFLAG) -funroll-loops
-    FCFLAGS += $(OPTFLAG) -funroll-loops
+    CXXFLAGS += $(OPTFLAG)
+    CFLAGS += $(OPTFLAG)
+    FCFLAGS += $(OPTFLAG)
     ifeq (0,$(COMPATIBLE))
-      CXXFLAGS += -ftree-vectorize
-      CFLAGS += -ftree-vectorize
-      FCFLAGS += -ftree-vectorize
+      CXXFLAGS += -funroll-loops -ftree-vectorize
+      CFLAGS += -funroll-loops -ftree-vectorize
+      FCFLAGS += -funroll-loops -ftree-vectorize
       ifneq (0,$(GCC))
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
@@ -740,6 +738,7 @@ else # GCC assumed
   endif
 endif
 
+ifeq (0,$(COMPATIBLE))
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
@@ -785,6 +784,7 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   endif
 endif
 endif
+endif
 
 # Take user's TARGET request into account
 ifneq (undefined,$(origin TARGET))
@@ -798,10 +798,12 @@ endif
 
 ifneq (0,$(THREADS))
   DFLAGS += -D_REENTRANT
-  CXXFLAGS += -pthread
-  CFLAGS += -pthread
-  ifneq (Windows_NT,$(UNAME))
-    CLDFLAGS += -pthread
+  ifeq (0,$(COMPATIBLE))
+    CXXFLAGS += -pthread
+    CFLAGS += -pthread
+    ifneq (Windows_NT,$(UNAME))
+      CLDFLAGS += -pthread
+    endif
   endif
 else
   DFLAGS += -DLIBXSMM_NO_SYNC
