@@ -422,7 +422,9 @@ ifneq (0,$(INTEL))
   CFLAGS += -fPIC -Wall -diag-disable 1879,3415,10006,10010,10411,13003
   LDFLAGS += -fPIC -diag-disable 1879,3415,10006,10010,10411
   FCFLAGS += -fPIC -diag-disable 10006,10010,10411,13003
-  FCMTFLAGS += -threads
+  ifneq (0,$(THREADS))
+    FCMTFLAGS += -threads
+  endif
   CPEDANTIC += -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
   FPEDANTIC += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   ifeq (1,$(PEDANTIC))
@@ -719,7 +721,7 @@ else # GCC assumed
     endif
   endif
   ifeq (,$(OMPFLAG))
-    THREADS = 0
+    THREADS ?= 0
     OMP = 0
   endif
   ifeq (,$(strip $(OMPRT)))
