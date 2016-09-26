@@ -719,9 +719,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #endif
           atexit(libxsmm_finalize);
           {
-            void *const pv_registry = &internal_registry, *pa_registry[] = { 0 };
-            pa_registry[0] = pv_registry;
-            LIBXSMM_ATOMIC_STORE(pa_registry, (void*)result, LIBXSMM_ATOMIC_SEQ_CST);
+            void *const pv_registry = &internal_registry;
+            LIBXSMM_ATOMIC_STORE((void**)pv_registry, (void*)result, LIBXSMM_ATOMIC_SEQ_CST);
           }
         }
         else {
