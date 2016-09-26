@@ -321,9 +321,18 @@ endif
 
 # compiler names
 CXX_NAME = $(shell $(CXX) --version 2> /dev/null | head -n1 | cut -d" " -f1)
+ifeq (,$(strip $(CXX_NAME)))
+  CXX_NAME = $(basename $(notdir $(CXX)))
+endif
 CC_NAME = $(shell $(CC) --version 2> /dev/null | head -n1 | cut -d" " -f1)
+ifeq (,$(strip $(CC_NAME)))
+  CC_NAME = $(basename $(notdir $(CC)))
+endif
 ifneq (,$(strip $(FC)))
   FC_NAME = $(firstword $(notdir $(FC)))
+endif
+ifeq (,$(strip $(FC_NAME)))
+  FC_NAME = $(basename $(notdir $(FC)))
 endif
 
 # native GCC?
