@@ -269,7 +269,7 @@
  * VLA-support is signaled by LIBXSMM_VLA.
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || defined(__INTEL_COMPILER) || \
+   (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__INTEL_COMPILER) && !defined(_WIN32)) || \
     (defined(__GNUC__) && !defined(__STRICT_ANSI__))/*depends on above C99-check*/)
 # define LIBXSMM_VLA
 #endif
