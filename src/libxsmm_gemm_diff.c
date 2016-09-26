@@ -133,9 +133,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_desc
 LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  (!defined(__clang__) || defined(__INTEL_COMPILER) || defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH))
+#if defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   assert(4 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
