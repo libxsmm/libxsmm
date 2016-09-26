@@ -579,13 +579,15 @@ else # GCC assumed
     FCFLAGS += -fPIC
     LDFLAGS += -fPIC
   endif
-  CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-  FPEDANTIC += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
-               -Wcharacter-truncation -Wline-truncation \
-               -Wconversion -Wconversion-extra -Wextra \
-               -Wimplicit-interface -Wimplicit-procedure \
-               -Wintrinsics-std -Wreal-q-constant \
-               -Wrealloc-lhs -Wrealloc-lhs-all
+  ifeq (0,$(COMPATIBLE))
+    CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
+    FPEDANTIC += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
+                 -Wcharacter-truncation -Wline-truncation \
+                 -Wconversion -Wconversion-extra -Wextra \
+                 -Wimplicit-interface -Wimplicit-procedure \
+                 -Wintrinsics-std -Wreal-q-constant \
+                 -Wrealloc-lhs -Wrealloc-lhs-all
+  endif
   ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
     FPEDANTIC += -Wuse-without-only
   endif
