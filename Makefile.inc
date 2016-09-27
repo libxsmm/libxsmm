@@ -98,11 +98,7 @@ OMP ?= 0
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 ifeq (0,$(OMP))
-  ifneq (Windows_NT,$(UNAME))
-    THREADS ?= 0
-  else # Cygwin: no TLS available
-    THREADS = 0
-  endif
+  THREADS ?= 0
 endif
 
 # Code conformance (beyond -Wall)

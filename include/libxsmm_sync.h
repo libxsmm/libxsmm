@@ -39,18 +39,28 @@
 # define _REENTRANT
 #endif
 
-#if defined(_REENTRANT)
-# if (defined(_WIN32) && !defined(__GNUC__))
-#   define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-# elif defined(__GNUC__)
-#   define LIBXSMM_TLS __thread
-# elif defined(__cplusplus)
-#   define LIBXSMM_TLS thread_local
+#if !defined(LIBXSMM_TLS)
+# if defined(_REENTRANT) && !defined(LIBXSMM_NO_TLS)
+#   if defined(__CYGWIN__) && defined(__clang__)
+#     define LIBXSMM_NO_TLS
+#     define LIBXSMM_TLS
+#   else
+#     if (defined(_WIN32) && !defined(__GNUC__))
+#       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
+#     elif defined(__GNUC__)
+#       define LIBXSMM_TLS __thread
+#     elif defined(__cplusplus)
+#       define LIBXSMM_TLS thread_local
+#     else
+#       error Missing TLS support!
+#     endif
+#   endif
 # else
-#   error Missing TLS support!
+#   if !defined(LIBXSMM_NO_TLS)
+#     define LIBXSMM_NO_TLS
+#   endif
+#   define LIBXSMM_TLS
 # endif
-#else
-# define LIBXSMM_TLS
 #endif
 
 #if defined(__GNUC__)
