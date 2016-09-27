@@ -113,6 +113,11 @@ BLAS ?= 0
 
 # Prefer to link statically against BLAS library
 BLAS_STATIC ?= 1
+ifneq (0,$(BLAS_STATIC))
+  BLASLIBEXT ?= $(SLIBEXT)
+else
+  BLASLIBEXT ?= $(DLIBEXT)
+endif
 
 # Explicitly disables BLAS by user's intervention
 # Makefile defines what happens (perhaps nothing)
@@ -156,9 +161,9 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides a libxsmmext as a dummy library which satisfies BLAS symbols
-  BLASLIB = $(EXTLIB)
+  BLASLIB ?= $(EXTLIB)
 else
-  BLASLIB = $(NULL)
+  BLASLIB ?= $(NULL)
 endif
 
 # Embedd soname into shared library
@@ -991,30 +996,36 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
   LDFLAGS += -lpthread -lm $(LIBDL)
 else ifneq (0,$(BLAS)) # generic
-  ifneq (1,$(BLAS))
-    BLAS_THREADS = o
-  endif
-  # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-  OPENBLAS = $(shell $(LD) $(SLDFLAGS) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
-  ifneq (0,$(OPENBLAS))
-    LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
-    # OpenBLAS also carries the CBLAS bits
-    DFLAGS += -D__OPENBLAS -D__CBLAS
-  else
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -lblas$(BLAS_BITS)
+  ifeq (,$(strip $(BLASLIB)))
+    ifneq (1,$(BLAS))
+      BLAS_THREADS = o
+    endif
+    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
+    OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
+      grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
+
+    ifneq (0,$(OPENBLAS))
+      LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+      # OpenBLAS also carries the CBLAS bits
+      DFLAGS += -D__OPENBLAS -D__CBLAS
     else
-      LDFLAGS += -lblas$(BLAS_BITS).dll
+      ifneq (Windows_NT,$(UNAME))
+        LDFLAGS += -lblas$(BLAS_BITS)
+      else
+        LDFLAGS += -lblas$(BLAS_BITS).dll
+      endif
+      ifneq (0,$(STATIC))
+      ifneq (,$(LIBGFORTRAN))
+        CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+      endif
+      endif
+      QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
+      ifneq (0,$(QUADMATH))
+        CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+      endif
     endif
-    ifneq (0,$(STATIC))
-    ifneq (,$(LIBGFORTRAN))
-      CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-    endif
-    endif
-    QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-    ifneq (0,$(QUADMATH))
-      CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
-    endif
+  else # BLAS library is specified via BLASLIB
+    LDFLAGS += $(call abslib,$(BLASDIR)/lib$(BLASLIB).$(BLASLIBEXT))
   endif
 endif
 
