@@ -195,6 +195,12 @@ To generate the interface of the library inside of the 'include' directory and t
 make
 ```
 
+If the build process is not successful, it may help to avoid more advanced GCC flags. This is useful with a tool chain, which pretends to be GCC-compatible but actually fails to consume the aforementioned flags. In such a case (CCE, etc.) one may raise the compatibility:
+
+```
+make COMPATIBLE=1
+```
+
 By default, only the non-coprocessor targets are built (OFFLOAD=0 and KNC=0). In general, the subfolders of the 'lib' directory are separating the build targets where the 'mic' folder is containing the native library (KNC=1) targeting the Intel&#160;Xeon&#160;Phi coprocessor ("KNC"), and the 'intel64' folder is storing either the hybrid archive made of CPU and coprocessor code (OFFLOAD=1), or an archive which is only containing the CPU code. By default, an OFFLOAD=1 implies KNC=1.
 
 To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the following commands:
@@ -245,12 +251,6 @@ Of course, both mechanisms (M/N/K and MNK based) can be combined using the same 
 * Optionally declaring `libxsmm_?gemm` (BLAS signature), and by linking against 'libxsmm'.
 
 At the expense of a limited functionality (`libxsmm_?gemm`), the latter method also works with FORTRAN&#160;77 (otherwise the FORTRAN&#160;2003 standard is necessary).
-
-To adjust for a tool chain which fails to consume more advanced GCC flags (but pretends to be GCC compatible), one may raise the compatibility:
-
-```
-make COMPATIBLE=1
-```
 
 ## Installation
 Installing LIBXSMM makes possibly the most sense when combining the [JIT backend](#jit-backend) (enabled by default) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1|2|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE3 (SSE4.2 under OS&#160;X) allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
