@@ -485,7 +485,7 @@ ifneq (0,$(INTEL))
     endif
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
-  ifeq (0,$(COMPATIBLE))
+    ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
       ifeq (3,$(AVX))
         ifeq (0,$(MIC))
@@ -519,19 +519,20 @@ ifneq (0,$(INTEL))
         CTARGET = -xHost
       endif
     endif
-  else ifeq (3,$(AVX))
-    ifneq (,$(MIC)) # specified
-      ifneq (0,$(MIC)) # MIC
-        CTARGET = -xMIC-AVX512
-      else # SKX
-        CTARGET = -xCORE-AVX512
-      endif
-    else
-      CTARGET = -xCOMMON-AVX512
     endif
-  else ifeq (2,$(AVX))
-    CTARGET = -march=core-avx2
-  endif
+    ifeq (3,$(AVX))
+      ifneq (,$(MIC)) # specified
+        ifneq (0,$(MIC)) # MIC
+          CTARGET = -xMIC-AVX512
+        else # SKX
+          CTARGET = -xCORE-AVX512
+        endif
+      else
+        CTARGET = -xCOMMON-AVX512
+      endif
+    else ifeq (2,$(AVX))
+      CTARGET = -march=core-avx2
+    endif
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
