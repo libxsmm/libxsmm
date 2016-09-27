@@ -759,7 +759,6 @@ else # GCC assumed
   endif
 endif
 
-ifeq (0,$(COMPATIBLE))
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
@@ -803,7 +802,6 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   else ifneq (0,$(AVX))
     CTARGET = -march=native
   endif
-endif
 endif
 endif
 
