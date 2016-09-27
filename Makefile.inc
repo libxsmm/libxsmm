@@ -807,12 +807,22 @@ endif
 endif
 endif
 
-# Take user's TARGET request into account
+# take user's TARGET into account
 ifneq (undefined,$(origin TARGET))
   CTARGET = $(TARGET)
 endif
-ifneq (,$(strip $(FC)))
-ifeq (0,$(shell $(FC) -E $(CTARGET) /dev/null 2> /dev/null > /dev/null; echo $$?))
+
+# check target flags by feeding an ad-hoc C program into the compiler
+ifneq (0,$(shell TESTFILE=$$(mktemp checkXXXXXX.c); echo "int main(void) { return 0; }" > $${TESTFILE}; \
+  $(CC) $(CTARGET) $${TESTFILE} 2> /dev/null > /dev/null; echo $$?; rm $${TESTFILE}))
+# revoke target flags
+  CTARGET = $(NULL)
+endif
+
+ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
+ifneq (0,$(shell TESTFILE=$$(mktemp checkXXXXXX.f); echo "      PROGRAM test" > $${TESTFILE}; echo "      END PROGRAM" >> $${TESTFILE}; \
+  $(FC) $(CTARGET) $${TESTFILE} 2> /dev/null > /dev/null; echo $$?; rm $${TESTFILE}))
+# inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
 endif
