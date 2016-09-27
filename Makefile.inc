@@ -201,8 +201,6 @@ ifneq (0,$(INTEL))
     endif
     endif
   endif
-  # disable CPUID check
-  COMPATIBLE = 1
 else
   ifeq (,$(notdir $(shell which $(CXX) 2> /dev/null)))
     CXX = g++
@@ -483,36 +481,38 @@ ifneq (0,$(INTEL))
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifeq (0,$(COMPATIBLE))
-    ifeq (3,$(AVX))
-      ifeq (0,$(MIC))
-        ifneq (file,$(origin MIC))
-          CTARGET = -xCORE-AVX512
+    ifeq (,$(filter environment% default automatic,$(origin COMPATIBLE)))
+      ifeq (3,$(AVX))
+        ifeq (0,$(MIC))
+          ifneq (file,$(origin MIC))
+            CTARGET = -xCORE-AVX512
+          else
+            CTARGET = -xCOMMON-AVX512
+          endif
         else
-          CTARGET = -xCOMMON-AVX512
+          CTARGET = -xMIC-AVX512
         endif
-      else
-        CTARGET = -xMIC-AVX512
-      endif
-    else ifeq (2,$(AVX))
-      CTARGET = -xCORE-AVX2
-    else ifeq (1,$(AVX))
-      CTARGET = -xAVX
-    else ifneq (0,$(SSE))
-      ifeq (1,$(SSE)) # default
-        ifneq (Darwin,$(UNAME))
+      else ifeq (2,$(AVX))
+        CTARGET = -xCORE-AVX2
+      else ifeq (1,$(AVX))
+        CTARGET = -xAVX
+      else ifneq (0,$(SSE))
+        ifeq (1,$(SSE)) # default
+          ifneq (Darwin,$(UNAME))
+            CTARGET = -xSSE3
+          else # no systems with less than SSE4.2 
+            CTARGET = -xSSE4.2
+          endif
+        else ifeq (3,$(SSE))
           CTARGET = -xSSE3
-        else # no systems with less than SSE4.2 
+        else ifeq (4,$(SSE))
           CTARGET = -xSSE4.2
+        else
+          CTARGET = -xSSE$(SSE)
         endif
-      else ifeq (3,$(SSE))
-        CTARGET = -xSSE3
-      else ifeq (4,$(SSE))
-        CTARGET = -xSSE4.2
-      else
-        CTARGET = -xSSE$(SSE)
+      else ifneq (0,$(AVX))
+        CTARGET = -xHost
       endif
-    else ifneq (0,$(AVX))
-      CTARGET = -xHost
     endif
   else ifeq (3,$(AVX))
     ifneq (,$(MIC)) # specified
@@ -706,20 +706,19 @@ else # GCC assumed
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
   endif
-  # account for missing TLS/OMP
-  ifneq (clang,$(CC))
-    ifeq (0,$(COMPATIBLE))
-      OMPFLAG = -fopenmp
-    else ifneq (0,$(OMP))
-      OMPFLAG = -fopenmp
-    endif
-  else ifneq (Windows_NT,$(UNAME))
-    ifneq (Darwin,$(UNAME))
+  ifeq (0,$(COMPATIBLE))
+    ifneq (clang,$(CC))
       OMPFLAG = -fopenmp
     else
       OMPFLAG = -openmp
     endif
   endif
+  ifeq (,$(OMPFLAG))
+  ifeq (,$(filter environment% default automatic,$(origin OMP)))
+    OMPFLAG = -fopenmp
+  endif
+  endif
+  # account for missing TLS/OMP
   ifeq (,$(OMPFLAG))
     THREADS ?= 0
     OMP = 0
