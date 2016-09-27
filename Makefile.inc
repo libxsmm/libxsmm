@@ -485,7 +485,7 @@ ifneq (0,$(INTEL))
   endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifeq (0,$(COMPATIBLE))
-    ifeq (,$(filter environment% default automatic,$(origin COMPATIBLE)))
+    ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
       ifeq (3,$(AVX))
         ifeq (0,$(MIC))
           ifneq (file,$(origin MIC))
@@ -713,12 +713,10 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
       OMPFLAG = -fopenmp
-    else
-      OMPFLAG = -openmp
     endif
   endif
   ifeq (,$(OMPFLAG))
-  ifeq (,$(filter environment% default automatic,$(origin OMP)))
+  ifneq (,$(filter environment% override command%,$(origin OMP)))
     OMPFLAG = -fopenmp
   endif
   endif
@@ -731,6 +729,7 @@ else # GCC assumed
     OMPRT = gomp
   endif
   ifneq (0,$(OMP))
+  ifneq (,$(OMPFLAG))
     # clang: OMP=libomp
     ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
       CXXFLAGS += $(OMPFLAG)=$(OMP)
@@ -744,6 +743,7 @@ else # GCC assumed
       FCFLAGS += $(OMPFLAG)
       LDFLAGS += $(OMPFLAG)
     endif
+  endif
   endif
   ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
