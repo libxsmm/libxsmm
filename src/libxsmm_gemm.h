@@ -62,8 +62,16 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_GEMM_COLLAPSE)
-# define LIBXSMM_GEMM_COLLAPSE 2
+#if defined(_CRAYC)
+# define LIBXSMM_EXT_FOR_SINGLE LIBXSMM_NOOP
+# if !defined(LIBXSMM_GEMM_COLLAPSE)
+#   define LIBXSMM_GEMM_COLLAPSE 1
+# endif
+#else
+# define LIBXSMM_EXT_FOR_SINGLE LIBXSMM_EXT_SINGLE
+# if !defined(LIBXSMM_GEMM_COLLAPSE)
+#   define LIBXSMM_GEMM_COLLAPSE 2
+# endif
 #endif
 
 /** Enable tiled GEMM in non-ext. library */
