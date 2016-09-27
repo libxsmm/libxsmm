@@ -707,7 +707,7 @@ else # GCC assumed
     CXXFLAGS += -fno-exceptions
   endif
   ifeq (0,$(COMPATIBLE))
-    ifneq (clang,$(CC))
+    ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
       OMPFLAG = -fopenmp
     else
       OMPFLAG = -openmp
