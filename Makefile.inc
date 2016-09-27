@@ -811,15 +811,15 @@ ifneq (undefined,$(origin TARGET))
 endif
 
 # check target flags by feeding an ad-hoc C program into the compiler
-ifneq (0,$(shell TESTFILE=$$(mktemp checkXXXXXX.c); OUTFILE=$$(mktemp outXXXXXX.exe); echo "int main(void) { return 0; }" > $${TESTFILE}; \
-  $(CC) $(CTARGET) $${TESTFILE} 2> /dev/null > /dev/null -o $${OUTFILE}; echo $$?; rm $${TESTFILE} $${OUTFILE}))
+ifneq (0,$(shell FINFILE=$$(mktemp checkXXXXXX.c); FOUTFILE=$$(mktemp cXXXXXX.exe); echo "int main(void) { return 0; }" > $${FINFILE}; \
+  $(CC) $(CTARGET) $${FINFILE} 2> /dev/null > /dev/null -o $${FOUTFILE}; echo $$?; rm $${FINFILE} $${FOUTFILE}))
 # revoke target flags
   CTARGET = $(NULL)
 endif
 
 ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifneq (0,$(shell TESTFILE=$$(mktemp checkXXXXXX.f);  OUTFILE=$$(mktemp outXXXXXX.exe); echo "      PROGRAM test" > $${TESTFILE}; echo "      END PROGRAM" >> $${TESTFILE}; \
-  $(FC) $(CTARGET) $${TESTFILE} 2> /dev/null > /dev/null -o $${OUTFILE}; echo $$?; rm $${TESTFILE} $${OUTFILE}))
+ifeq (0,$(shell CINFILE=$$(mktemp checkXXXXXX.f); COUTFILE=$$(mktemp fXXXXXX.exe); echo "      PROGRAM test" > $${CINFILE}; echo "      END PROGRAM" >> $${CINFILE}; \
+  $(FC) $(CTARGET) $${CINFILE} -o $${COUTFILE}; echo $$?; rm $${CINFILE} $${COUTFILE}))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
