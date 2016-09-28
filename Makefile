@@ -110,9 +110,9 @@ endif
 # 0: C  = A * B
 # 1: C += A * B
 BETA ?= 1
-ifneq (0,$(BETA))
 ifneq (1,$(BETA))
-  $(error BETA needs to be eiter 0 or 1)
+ifneq (0,$(BETA))
+  $(error BETA needs to be either 0 or 1)
 endif
 endif
 
