@@ -146,6 +146,24 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
           l_ivectype += 3;
           break;
+       case LIBXSMM_X86_INSTR_VPBROADCASTD:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastd not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 ) 
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastd and store?\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x01;
+          l_penultimate += 0x48;
+          l_num2 += 1;
+          l_num3 += 0x21;
+          l_sizereg = 4;
+          break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
           l_bytes = 5;
           if ( i_vector_name=='x' )
@@ -862,6 +880,14 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
           break;
+       case LIBXSMM_X86_INSTR_VPADDD:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA5;
+          break;      
+       case LIBXSMM_X86_INSTR_VPMADDWD:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0x9C;
+          break;      
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
           l_fpadj  += 0x5f;
