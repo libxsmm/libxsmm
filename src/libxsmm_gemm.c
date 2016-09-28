@@ -153,6 +153,36 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_dump(libxsmm_gemm_xflags precision, con
 }
 
 
+LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((float)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+  LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k,
+    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
+    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+    0 != beta ? *beta : ((double)LIBXSMM_BETA),
+    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+}
+
+
 #if defined(LIBXSMM_BUILD)
 
 LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb,
@@ -229,8 +259,6 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #endif
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
-
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char*, const char*,
@@ -264,32 +292,26 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char* transa, c
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* transb,
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_sgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* transb,
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
-  LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+  libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
+
+#endif /*defined(LIBXSMM_BUILD)*/
 
