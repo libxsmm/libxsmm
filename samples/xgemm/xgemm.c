@@ -73,10 +73,11 @@ int main(int argc, char* argv[])
   const libxsmm_blasint lda = LIBXSMM_DEFAULT(m, 4 < argc ? atoi(argv[4]) : 0);
   const libxsmm_blasint ldb = LIBXSMM_DEFAULT(k, 5 < argc ? atoi(argv[5]) : 0);
   const libxsmm_blasint ldc = LIBXSMM_DEFAULT(m, 6 < argc ? atoi(argv[6]) : 0);
-  const int nrepeat = LIBXSMM_DEFAULT(13, 7 < argc ? atoi(argv[7]) : 0);
+  const REAL_TYPE alpha = (REAL_TYPE)(7 < argc ? atof(argv[7]) : 1.0);
+  const REAL_TYPE beta  = (REAL_TYPE)(8 < argc ? atof(argv[8]) : 1.0);
+  const int nrepeat = LIBXSMM_DEFAULT(13, 9 < argc ? atoi(argv[9]) : 0);
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
-  const REAL_TYPE alpha = 1, beta = 1;
   int result = EXIT_SUCCESS;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
