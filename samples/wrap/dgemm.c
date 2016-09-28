@@ -52,8 +52,9 @@ int main(int argc, char* argv[])
   const int lda = 4 < argc ? atoi(argv[4]) : m;
   const int ldb = 5 < argc ? atoi(argv[5]) : k;
   const int ldc = 6 < argc ? atoi(argv[6]) : m;
+  const double alpha = 7 < argc ? atof(argv[7]) : 1.0;
+  const double beta = 8 < argc ? atof(argv[8]) : 1.0;
   const char transa = 'N', transb = 'N';
-  const double alpha = 1.0, beta = 1.0;
   double *a = 0, *b = 0, *c = 0;
   int i, j;
 
