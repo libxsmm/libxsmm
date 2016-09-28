@@ -469,6 +469,23 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_number(unsigned int n, char default_unit, char* unit)
+{
+  unsigned int number = n;
+  assert(0 != unit);
+  *unit = default_unit;
+  if ((1000 * 1000) <= n) {
+    number = n / (1000 * 1000);
+    *unit = 'm';
+  }
+  else if (9999 < n) {
+    number = n / 1000;
+    *unit = 'k';
+  }
+  return number;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* ostream,
   const char* target_arch, int precision, unsigned int linebreaks, unsigned int indent)
 {
@@ -485,7 +502,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
     0 != statistic_big.ntry || 0 != statistic_big.njit || 0 != statistic_big.nsta || 0 != statistic_big.ncol ||
     0 != statistic_xxx.ntry || 0 != statistic_xxx.njit || 0 != statistic_xxx.nsta || 0 != statistic_xxx.ncol)
   {
-    char title[256], range[256];
+    char title[256], range[256], unit[4];
+    unsigned int counter[4];
     {
       unsigned int n;
       assert(strlen(target_arch) < sizeof(title));
@@ -496,20 +514,36 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
       LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
     }
-    fprintf(ostream, "%*s%-10s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY" ,"JIT", "STA", "COL");
-    LIBXSMM_SNPRINTF(range, sizeof(range), "%u..%u",                          0u, internal_statistic_sml);
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", range,
-      statistic_sml.ntry, statistic_sml.njit, statistic_sml.nsta, statistic_sml.ncol);
+    fprintf(ostream, "%*s%-8s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY" ,"JIT", "STA", "COL");
+    LIBXSMM_SNPRINTF(range, sizeof(range), "%u..%u", 0u, internal_statistic_sml);
+    counter[0] = internal_print_number(statistic_sml.ntry, ' ', unit + 0);
+    counter[1] = internal_print_number(statistic_sml.njit, ' ', unit + 1);
+    counter[2] = internal_print_number(statistic_sml.nsta, ' ', unit + 2);
+    counter[3] = internal_print_number(statistic_sml.ncol, ' ', unit + 3);
+    fprintf(ostream, "%*s%8s %6u%c %5u%c %5u%c %5u%c\n", (int)indent, "", range,
+      counter[0], unit[0], counter[1], unit[1], counter[2], unit[2], counter[3], unit[3]);
     LIBXSMM_SNPRINTF(range, sizeof(range), "%u..%u", internal_statistic_sml + 1u, internal_statistic_med);
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", range,
-      statistic_med.ntry, statistic_med.njit, statistic_med.nsta, statistic_med.ncol);
+    counter[0] = internal_print_number(statistic_med.ntry, ' ', unit + 0);
+    counter[1] = internal_print_number(statistic_med.njit, ' ', unit + 1);
+    counter[2] = internal_print_number(statistic_med.nsta, ' ', unit + 2);
+    counter[3] = internal_print_number(statistic_med.ncol, ' ', unit + 3);
+    fprintf(ostream, "%*s%8s %6u%c %5u%c %5u%c %5u%c\n", (int)indent, "", range,
+      counter[0], unit[0], counter[1], unit[1], counter[2], unit[2], counter[3], unit[3]);
     LIBXSMM_SNPRINTF(range, sizeof(range), "%u..%u", internal_statistic_med + 1u, internal_statistic_mnk);
-    fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", range,
-      statistic_big.ntry, statistic_big.njit, statistic_big.nsta, statistic_big.ncol);
+    counter[0] = internal_print_number(statistic_big.ntry, ' ', unit + 0);
+    counter[1] = internal_print_number(statistic_big.njit, ' ', unit + 1);
+    counter[2] = internal_print_number(statistic_big.nsta, ' ', unit + 2);
+    counter[3] = internal_print_number(statistic_big.ncol, ' ', unit + 3);
+    fprintf(ostream, "%*s%8s %6u%c %5u%c %5u%c %5u%c\n", (int)indent, "", range,
+      counter[0], unit[0], counter[1], unit[1], counter[2], unit[2], counter[3], unit[3]);
     if (0 != statistic_xxx.ntry || 0 != statistic_xxx.njit || 0 != statistic_xxx.nsta || 0 != statistic_xxx.ncol) {
       LIBXSMM_SNPRINTF(range, sizeof(range), "> %u", internal_statistic_mnk);
-      fprintf(ostream,  "%*s%10s %6u %6u %6u %6u\n", (int)indent, "", range,
-        statistic_xxx.ntry, statistic_xxx.njit, statistic_xxx.nsta, statistic_xxx.ncol);
+      counter[0] = internal_print_number(statistic_xxx.ntry, ' ', unit + 0);
+      counter[1] = internal_print_number(statistic_xxx.njit, ' ', unit + 1);
+      counter[2] = internal_print_number(statistic_xxx.nsta, ' ', unit + 2);
+      counter[3] = internal_print_number(statistic_xxx.ncol, ' ', unit + 3);
+      fprintf(ostream, "%*s%8s %6u%c %5u%c %5u%c %5u%c\n", (int)indent, "", range,
+        counter[0], unit[0], counter[1], unit[1], counter[2], unit[2], counter[3], unit[3]);
     }
     printed = 1;
   }
