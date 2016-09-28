@@ -236,6 +236,7 @@ LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags,
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
+LIBXSMM_API void libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
 LIBXSMM_API int libxsmm_prefetch2uid(int prefetch);
 LIBXSMM_API int libxsmm_uid2prefetch(int uid);
 

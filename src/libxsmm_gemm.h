@@ -255,6 +255,7 @@ SINGLE_OUTER { \
     0 != LIBXSMM_EXT_GEMM_BLAS) /* fall-back */ \
   { \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
+    if (0 == libxsmm_tiled_xgemm_no_bypass_) libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0); \
   } \
   else { /* small problem size */ \
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(libxsmm_tiled_xgemm_smalldesc_, LIBXSMM_ALIGNMENT, FLAGS, M, N, K, \
