@@ -423,7 +423,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
               (strcmp( i_arch, "skx" ) == 0)    ) {
     if ((strcmp( i_arch, "knc" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_IMCI;
-      fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI redirecting to fullvector, please fix the generation code!!!\n");
+      fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_scalar, IMCI redirecting to fullvector, please fix the generation code!!!\n");
       libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
     } else if ((strcmp( i_arch, "knl" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_MIC;
