@@ -52,7 +52,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
   /* register blocking counter in m */
   unsigned int l_m = 0;
   /* start register of accumulator */
-  unsigned int l_vec_reg_acc_start = 32 - (i_n_blocking * l_m_blocking);
+  unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
 #if !defined(NDEBUG)
   if ( (i_n_blocking > 6) || (i_n_blocking < 1) ) {
