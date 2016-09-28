@@ -86,6 +86,10 @@ script:
     eval ${RUNXCOV} && eval ${UPLOAD} && make -e clean
 
   - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
+    make -e ECFLAGS="-DUSE_HEADER_ONLY ${ECFLAGS}" test-cp2k &&
+    eval ${RUNXCOV} && make -e clean
+
+  - source .codecov $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
     make -e WRAP=1 test-wrap &&
     eval ${RUNXCOV} && make -e clean
 

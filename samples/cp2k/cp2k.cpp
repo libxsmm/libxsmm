@@ -28,8 +28,11 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-
+#if !defined(USE_HEADER_ONLY)
+# include <libxsmm.h>
+#else
+# include <libxsmm_source.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
