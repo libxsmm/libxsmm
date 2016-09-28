@@ -117,6 +117,9 @@ endif
 .PHONY: test
 test: $(OUTDIR)/.make $(OUTDIR)/dgemm-test.sh $(XFILES)
 	@bash $(OUTDIR)/dgemm-test.sh $(shell echo $$(($(TESTSIZE) * 1000)))
+	@bash $(OUTDIR)/dgemm-test.sh 350 16 20 350 35 350 1 0
+	@bash $(OUTDIR)/dgemm-test.sh 200 200 200 256 256 256 1 0
+	@bash $(OUTDIR)/dgemm-test.sh 24 23 21 32 32 32 -1 0.5
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(LIBNAME).$(LIBEXT)
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
