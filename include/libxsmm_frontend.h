@@ -233,8 +233,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #else
 # define LIBXSMM_INLINE_XGEMM(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-  const TYPE libxsmm_inline_xgemm_alpha_ = (TYPE)(1 == (ALPHA) ? 1 : (-1 == (ALPHA) ? -1 : (ALPHA))); \
-  const TYPE libxsmm_inline_xgemm_beta_ = (TYPE)(1 == (BETA) ? 1 : (0 == (BETA) ? 0 : (BETA))); \
+  const TYPE libxsmm_inline_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_inline_xgemm_beta_ = (TYPE)(BETA); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
   assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
   /* TODO: remove/adjust precondition if anything other than NN is supported */ \
