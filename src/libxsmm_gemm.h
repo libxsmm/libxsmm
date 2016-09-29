@@ -261,7 +261,7 @@ SINGLE_OUTER { \
     else { /* fall-back */ \
       assert(0 != LIBXSMM_EXT_GEMM_BLAS); \
       LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-      if (LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
+      if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
         const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
         const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
         const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
@@ -275,7 +275,7 @@ SINGLE_OUTER { \
   else { /* fall-back */ \
     assert(0 != LIBXSMM_EXT_GEMM_BLAS); \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-    if (LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
+    if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
       const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
       const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
       const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
