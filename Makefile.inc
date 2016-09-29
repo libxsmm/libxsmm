@@ -999,18 +999,18 @@ else ifneq (0,$(MKL)) # multi-threaded
       $(XGROUP_END) $(LIBDL)
     endif
   endif
-  ifneq (0,$(INTEL))
-    ifeq (0,$(OMP))
-      LDFLAGS += $(OMPLIB)
-      ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
-      endif
-    endif
-    ifneq (0,$(OFFLOAD))
-      LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
-    endif
+  ifeq (0,$(OMP))
+    LDFLAGS += $(OMPLIB)
   endif
   LDFLAGS += -lpthread -lm $(LIBDL)
+  ifneq (0,$(INTEL))
+  ifneq (0,$(OFFLOAD))
+    LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
+    ifeq (0,$(OMP))
+      LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
+    endif
+  endif
+  endif
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
