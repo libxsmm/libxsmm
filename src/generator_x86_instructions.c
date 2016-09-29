@@ -884,6 +884,17 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_fpadj2 -= 0x80;
           l_fpadj  += 0xA5;
           break;      
+       case LIBXSMM_X86_INSTR_VPADDQ:
+          l_fpadj  += 0x7b;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDW:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA4;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDB:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA3;
+          break;
        case LIBXSMM_X86_INSTR_VPMADDWD:
           l_fpadj2 -= 0x80;
           l_fpadj  += 0x9C;
