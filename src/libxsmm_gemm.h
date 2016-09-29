@@ -268,7 +268,7 @@ SINGLE_OUTER { \
         libxsmm_gemm_print(0 < libxsmm_verbosity ? stderr : 0, LIBXSMM_GEMM_TYPEFLAG(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(M), &(N), &(K), \
           &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
-        fprintf(stderr, "\n"); \
+        if (0 < libxsmm_verbosity) fprintf(stderr, "\n"); \
       } \
     } \
   } \
@@ -282,7 +282,7 @@ SINGLE_OUTER { \
       libxsmm_gemm_print(0 < libxsmm_verbosity ? stderr : 0, LIBXSMM_GEMM_TYPEFLAG(TYPE), \
         &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(M), &(N), &(K), \
         &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
-      fprintf(stderr, "\n"); \
+      if (0 < libxsmm_verbosity) fprintf(stderr, "\n"); \
     } \
   } \
 }
