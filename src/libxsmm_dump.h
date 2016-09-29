@@ -56,7 +56,7 @@ LIBXSMM_API const char* libxsmm_meta_image_typeinfo(libxsmm_mhd_elemtype elemtyp
 
 /**
  * Save a file using an extended data format, which is compatible with
- * the Meta Image Format. The file may be suitable for visual inspection
+ * the Meta Image Format. The file is suitable for visual inspection
  * using e.g., ITK-SNAP or ParaView.
  */
 LIBXSMM_API int libxsmm_meta_image_write(const char* filename,

@@ -81,12 +81,12 @@ LIBXSMM_API const char* libxsmm_get_target_arch(void);
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
-LIBXSMM_API int libxsmm_get_verbose_mode(void);
+LIBXSMM_API int libxsmm_get_verbosity(void);
 /**
  * Set the level of verbosity (0: off, positive value: verbosity level,
  * negative value: maximum verbosity, which also dumps JIT-code)
  */
-LIBXSMM_API void libxsmm_set_verbose_mode(int mode);
+LIBXSMM_API void libxsmm_set_verbosity(int mode);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
@@ -170,6 +170,19 @@ LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
 #else
 { return libxsmm_itrans(inout, sizeof(double), m, n, ld); }
 #endif
+
+/**
+ * Utility function, which either prints information about the GEMM call
+ * or dumps (FILE/ostream=0) all input and output data into MHD files.
+ * The Meta Image Format (MHD) is suitable for visual inspection using e.g.,
+ * ITK-SNAP or ParaView.
+ */
+LIBXSMM_API void libxsmm_gemm_print(void* ostream,
+  libxsmm_gemm_xflags precision, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
 LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,

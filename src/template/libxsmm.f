@@ -251,8 +251,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbose_mode
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbose_mode
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_xtick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
@@ -290,14 +290,14 @@
           END SUBROUTINE
 
           ! Get the level of verbosity.
-          PURE FUNCTION libxsmm_get_verbose_mode() BIND(C)
+          PURE FUNCTION libxsmm_get_verbosity() BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_verbose_mode
+            INTEGER(C_INT) :: libxsmm_get_verbosity
           END FUNCTION
 
           ! Set the level of verbosity (0: off, positive value: verbosity level,
           ! negative value: maximum verbosity, which also dumps JIT-code).
-          SUBROUTINE libxsmm_set_verbose_mode(mode) BIND(C)
+          SUBROUTINE libxsmm_set_verbosity(mode) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: mode
           END SUBROUTINE

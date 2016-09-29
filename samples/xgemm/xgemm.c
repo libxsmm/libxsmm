@@ -100,14 +100,9 @@ int main(int argc, char* argv[])
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 
-    fprintf(stdout, "%s('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-                    "      %g/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-                    "                  %p/*b*/, %i/*ldb*/,\n"
-                    "       %g/*beta*/, %p/*c*/, %i/*ldc*/)\n",
-      LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(REAL_TYPE, gemm)),
-      transa, transb, m, n, k, alpha, (const void*)a, lda,
-                                      (const void*)b, ldb,
-                                beta, (const void*)c, ldc);
+    libxsmm_gemm_print(stdout, LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
+      &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+    fprintf(stdout, "\n\n");
 
     { /* Tiled xGEMM */
       int i; double duration;

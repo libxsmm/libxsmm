@@ -236,12 +236,20 @@ LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags,
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
 LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
-LIBXSMM_API void libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
+/** Updates counters of the statistic, which is shown at program termination. */
+LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
+
 LIBXSMM_API int libxsmm_prefetch2uid(int prefetch);
 LIBXSMM_API int libxsmm_uid2prefetch(int uid);
 
-/** Determines whether (OpenMP-)tasks are preferred over thread-style parallelization. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks /*= 0*/;
+/** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
+/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
+/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_prefetch;
+/** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mt;
 /** Number of threads per core. */
