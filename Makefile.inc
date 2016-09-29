@@ -812,15 +812,22 @@ ifneq (undefined,$(origin TARGET))
 endif
 
 # check target flags by feeding an ad-hoc C program into the compiler
-ifneq (0,$(shell FINFILE=$$(mktemp checkXXXXXX.c); FOUTFILE=$$(mktemp cXXXXXX.exe); echo "int main(void) { return 0; }" > $${FINFILE}; \
-  $(CC) $(CTARGET) $${FINFILE} 2> /dev/null > /dev/null -o $${FOUTFILE}; echo $$?; rm $${FINFILE} $${FOUTFILE}))
+ifneq (0,$(shell CINFILE=$$(mktemp checkXXXXXX.c); \
+  echo "int main(void) { return 0; }" > $${CINFILE}; \
+  CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
+  if [ "" = "$${CTEST}" ]; then echo $$?; else echo 1; fi; \
+  rm -f $$(basename $${CINFILE} .c)*))
 # revoke target flags
   CTARGET = $(NULL)
 endif
 
 ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell CINFILE=$$(mktemp checkXXXXXX.f); COUTFILE=$$(mktemp fXXXXXX.exe); echo "      PROGRAM test" > $${CINFILE}; echo "      END PROGRAM" >> $${CINFILE}; \
-  $(FC) $(CTARGET) $${CINFILE} -o $${COUTFILE}; echo $$?; rm $${CINFILE} $${COUTFILE}))
+ifeq (0,$(shell FINFILE=$$(mktemp checkXXXXXX.f); \
+  echo "      PROGRAM test" > $${FINFILE}; \
+  echo "      END PROGRAM" >> $${FINFILE}; \
+  FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
+  if [ "" = "$${FTEST}" ]; then echo $$?; else echo 1; fi; \
+  rm -f $$(basename $${FINFILE} .f)*))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
