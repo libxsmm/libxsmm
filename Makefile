@@ -258,7 +258,7 @@ all: lib samples
 headers: cheader cheader_only fheader
 
 .PHONY: interface
-interface: headers
+interface: headers module
 
 .PHONY: lib_mic
 lib_mic: clib_mic flib_mic ext_mic
@@ -437,7 +437,8 @@ $(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make .state \
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) $(INCDIR)/libxsmm.h
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
+                              $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm.mod $(INCDIR)/mic/libxsmm.mod
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
@@ -634,22 +635,36 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-module_mic: $(BLDDIR)/mic/libxsmm-mod.o
+module_mic: $(BLDDIR)/mic/libxsmm-mod.o $(INCDIR)/mic/libxsmm.mod
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
+$(INCDIR)/mic/libxsmm.mod: $(BLDDIR)/mic/libxsmm-mod.o
+	@cp $(BLDDIR)/mic/libxsmm.mod $@ 2> /dev/null || true
+	@cp $(BLDDIR)/mic/LIBXSMM.mod $@ 2> /dev/null || true
 else
 .PHONY: $(BLDDIR)/mic/libxsmm-mod.o
+.PHONY: $(INCDIR)/mic/libxsmm.mod
 endif
+else
+.PHONY: $(BLDDIR)/mic/libxsmm-mod.o
+.PHONY: $(INCDIR)/mic/libxsmm.mod
 endif
+else
+.PHONY: $(BLDDIR)/mic/libxsmm-mod.o
+.PHONY: $(INCDIR)/mic/libxsmm.mod
 endif
 
 .PHONY: module_hst
 ifneq (,$(strip $(FC)))
-module_hst: $(BLDDIR)/intel64/libxsmm-mod.o
+module_hst: $(BLDDIR)/intel64/libxsmm-mod.o $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+$(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
+	@cp $(BLDDIR)/intel64/libxsmm.mod $@ 2> /dev/null || true
+	@cp $(BLDDIR)/intel64/LIBXSMM.mod $@ 2> /dev/null || true
 else
 .PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
+.PHONY: $(INCDIR)/libxsmm.mod
 endif
 
 .PHONY: module
