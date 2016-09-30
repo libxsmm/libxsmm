@@ -159,7 +159,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int blocksofm;
   int fwd_ofw_rb;
   int fwd_ofh_rb;
-  int ifm_lp_block;              /* additional blocking for low precision datatypes of ifm */
+  int fm_lp_block;              /* additional blocking for low precision datatypes of feature maps */
 
   /* internal data representation */
   libxsmm_dnn_buffer* input;
