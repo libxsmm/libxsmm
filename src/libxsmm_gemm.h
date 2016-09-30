@@ -220,7 +220,7 @@ SINGLE_OUTER { \
   if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
     const int libxsmm_tiled_xgemm_amortized_ = (OVERHEAD(NT) * libxsmm_tiled_xgemm_tn_) < (K); \
     const libxsmm_blasint libxsmm_tiled_xgemm_max_k_ = ((K) / libxsmm_tiled_xgemm_tk_) * libxsmm_tiled_xgemm_tk_; \
-    libxsmm_blasint libxsmm_tiled_xgemm_m_ = M, libxsmm_tiled_xgemm_n_ = N, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_; \
+    libxsmm_blasint libxsmm_tiled_xgemm_m_ = M, libxsmm_tiled_xgemm_n_ = N, libxsmm_tiled_xgemm_i_ = 0, libxsmm_tiled_xgemm_j_ = 0; \
     libxsmm_blasint libxsmm_tiled_xgemm_dm_ = libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_dn_ = libxsmm_tiled_xgemm_tn_; \
     libxsmm_blasint libxsmm_tiled_xgemm_swap_ = 0; \
     if ((1 == (COLLAPSE) || 0 == libxsmm_tiled_xgemm_amortized_) && \
