@@ -273,8 +273,12 @@ typedef struct libxsmm_gp_reg_mapping_struct {
 typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
-  unsigned int vector_length;
-  unsigned int datatype_size;
+  unsigned int vector_length_in;
+  unsigned int datatype_size_in;
+  unsigned int vector_length_out;
+  unsigned int datatype_size_out;
+  unsigned int vector_length_wt;
+  unsigned int datatype_size_wt;
   unsigned int vmove_instruction;
   unsigned int vfma_instruction;
   unsigned int vxor_instruction;
