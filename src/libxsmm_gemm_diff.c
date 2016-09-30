@@ -116,7 +116,8 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff_sw(const libxsmm_gemm_desc
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW))
   return 0 != memcmp(reference, desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
 #else
-  const unsigned *const ia = (const unsigned int*)reference, *const ib = (const unsigned int*)desc;
+  typedef unsigned int LIBXSMM_MAY_ALIAS uia_type;
+  const uia_type *const ia = (const uia_type*)reference, *const ib = (const uia_type*)desc;
   const unsigned int end = (LIBXSMM_GEMM_DESCRIPTOR_SIZE >> 2/*LOG2(sizeof(int))*/);
   unsigned int result, i;
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
