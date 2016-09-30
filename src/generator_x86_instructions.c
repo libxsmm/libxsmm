@@ -432,6 +432,25 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
           break;
+       case LIBXSMM_X86_INSTR_VPADDD:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA5;
+          break;      
+       case LIBXSMM_X86_INSTR_VPADDQ:
+          l_fpadj  += 0x7b;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDW:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA4;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDB:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA3;
+          break;
+       case LIBXSMM_X86_INSTR_VPMADDWD:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0x9C;
+          break;
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
           l_fpadj  += 0x5f;
@@ -879,26 +898,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
-          break;
-       case LIBXSMM_X86_INSTR_VPADDD:
-          l_fpadj2 -= 0x80;
-          l_fpadj  += 0xA5;
-          break;      
-       case LIBXSMM_X86_INSTR_VPADDQ:
-          l_fpadj  += 0x7b;
-          break;
-       case LIBXSMM_X86_INSTR_VPADDW:
-          l_fpadj2 -= 0x80;
-          l_fpadj  += 0xA4;
-          break;
-       case LIBXSMM_X86_INSTR_VPADDB:
-          l_fpadj2 -= 0x80;
-          l_fpadj  += 0xA3;
-          break;
-       case LIBXSMM_X86_INSTR_VPMADDWD:
-          l_fpadj2 -= 0x80;
-          l_fpadj  += 0x9C;
-          break;      
+          break;    
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
           l_fpadj  += 0x5f;
