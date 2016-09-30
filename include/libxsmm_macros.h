@@ -354,7 +354,7 @@
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if (defined(__GNUC__)
+#if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
 #else
 # define LIBXSMM_MAY_ALIAS
