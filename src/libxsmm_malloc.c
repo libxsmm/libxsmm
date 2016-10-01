@@ -180,10 +180,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_malloc_info(const volatile void
   }
 #if !defined(NDEBUG)
   else {
-    static LIBXSMM_TLS int info_error = 0;
-    if (0 == info_error) {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: attachment error for memory buffer %p!\n", memory);
-      info_error = 1;
     }
     result = EXIT_FAILURE;
   }
@@ -209,7 +208,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0;
 #if !defined(NDEBUG)
-      static LIBXSMM_TLS int alloc_error = 0;
+      static int error_once = 0;
 #endif
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
       /* executable buffers based on regular memory allocation are not supported */
@@ -265,10 +264,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           buffer = malloc(alloc_size);
         }
 # if !defined(NDEBUG) /* library code is expected to be mute */
-        if (alloc_failed == buffer && 0 == alloc_error) { /* OS-specific error message */
+        if (alloc_failed == buffer && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
           fprintf(stderr, "LIBXSMM: VirtualAlloc error #%lu for size %llu with flags=%i!\n",
             (unsigned long)GetLastError(), (unsigned long long)alloc_size, xflags);
-          alloc_error = 1;
         }
 # endif
 #else
@@ -332,12 +330,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
 #   endif
           )
 # if !defined(NDEBUG)
-          /* library code is expected to be mute */) {
-            static LIBXSMM_TLS int madvise_error = 0;
-            if (0 == madvise_error) {
-              madvise_error = errno;
+          /* library code is expected to be mute */)
+          { static int error_once = 0;
+            if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
               fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
-                strerror(madvise_error), madvise_error, buffer,
+                strerror(errno), errno, buffer,
                 (unsigned long long)alloc_size);
             }
           }
@@ -346,10 +343,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
 # endif
         }
 # if !defined(NDEBUG) /* library code is expected to be mute */
-        else if (alloc_failed == buffer && 0 == alloc_error) {
-          alloc_error = errno;
+        else if (alloc_failed == buffer && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
           fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %llu with flags=%i)!\n",
-            strerror(alloc_error), alloc_error, (unsigned long long)alloc_size, xflags);
+            strerror(errno), errno, (unsigned long long)alloc_size, xflags);
         }
 # endif
 # if !defined(MADV_NOHUGEPAGE) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
@@ -387,10 +383,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
       }
       else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-        if (0 == alloc_error) {
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
           fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n",
             (unsigned long long)alloc_size, flags);
-          alloc_error = 1;
         }
 #endif
         result = EXIT_FAILURE;
@@ -436,11 +431,10 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
         const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
         if (0 != munmap(buffer, alloc_size)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
-          static LIBXSMM_TLS int munmap_error = 0;
-          if (0 == munmap_error) {
-            munmap_error = errno;
+          static int error_once = 0;
+          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
-              strerror(munmap_error), munmap_error, buffer, (unsigned long long)alloc_size);
+              strerror(errno), errno, buffer, (unsigned long long)alloc_size);
           }
 # endif
           result = EXIT_FAILURE;

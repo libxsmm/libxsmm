@@ -58,7 +58,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 {
   int result = EXIT_SUCCESS;
 #if !defined(NDEBUG) /* library code is expected to be mute */
-  static LIBXSMM_TLS int trans_error = 0;
+  static int error_once = 0;
 #endif
   LIBXSMM_INIT
 
@@ -90,9 +90,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
     }
     else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-      if (0 == trans_error) {
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
         fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
-        trans_error = 1;
       }
 #endif
       result = EXIT_FAILURE;
@@ -100,7 +99,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   }
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    if (0 == trans_error) {
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       if (ld < m && ldo < n) {
         fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
       }
@@ -111,7 +110,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         assert(ldo < n);
         fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
       }
-      trans_error = 1;
     }
 #endif
     result = EXIT_FAILURE;

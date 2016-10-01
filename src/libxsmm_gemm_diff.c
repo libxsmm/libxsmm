@@ -151,10 +151,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_sse(con
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_SSE) /* library code is expected to be mute */
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter SSE code path!\n");
-      once = 1;
     }
   }
 # endif
@@ -202,10 +201,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx(con
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX) /* library code is expected to be mute */
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
-      once = 1;
     }
   }
 # endif
@@ -245,10 +243,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx2(co
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX2) /* library code is expected to be mute */
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-      once = 1;
     }
   }
 # endif
@@ -375,10 +372,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx(co
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX) /* library code is expected to be mute */
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX code path!\n");
-      once = 1;
     }
   }
 # endif
@@ -429,10 +425,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(c
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX2) /* library code is expected to be mute */
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-      once = 1;
     }
   }
 # endif
@@ -485,10 +480,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512
 # endif
 #else
 # if !defined(NDEBUG) && defined(LIBXSMM_GEMM_DIFF_AVX512)
-  { static LIBXSMM_TLS int once = 0;
-    if (0 == once) {
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: unable to enter AVX-512 code path!\n");
-      once = 1;
     }
   }
 # endif

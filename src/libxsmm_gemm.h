@@ -69,11 +69,11 @@
 /*# define LIBXSMM_GEMM_TILED*/
 #endif
 
-#if !defined(LIBXSMM_EXT_GEMM_BLAS)
+#if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
-#   define LIBXSMM_EXT_GEMM_BLAS 1
+#   define LIBXSMM_NO_BLAS 0
 # else
-#   define LIBXSMM_EXT_GEMM_BLAS 0
+#   define LIBXSMM_NO_BLAS 1
 # endif
 #endif
 
@@ -265,7 +265,7 @@ SINGLE_OUTER { \
       LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), A, B, C); \
     } \
     else { /* fall-back */ \
-      assert(0 != LIBXSMM_EXT_GEMM_BLAS); \
+      assert(0 == LIBXSMM_NO_BLAS); \
       LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
       if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
         const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
@@ -279,7 +279,7 @@ SINGLE_OUTER { \
     } \
   } \
   else { /* fall-back */ \
-    assert(0 != LIBXSMM_EXT_GEMM_BLAS); \
+    assert(0 == LIBXSMM_NO_BLAS); \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
     if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, M, N, K, 1, 0)) { \
       const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
@@ -341,10 +341,9 @@ SINGLE_OUTER { \
     LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL, CALLER); \
     LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER); \
     if (0 == (ORIGINAL)) { \
-      static LIBXSMM_TLS int libxsmm_gemm_wrapper_error_ = 0; \
-      if (0 == libxsmm_gemm_wrapper_error_) { \
+      static int libxsmm_gemm_wrapper_error_once_ = 0; \
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_gemm_wrapper_error_once_, 1, LIBXSMM_ATOMIC_RELAXED)) { \
         fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n"); \
-        libxsmm_gemm_wrapper_error_ = 1; \
       } \
     } \
   }
@@ -379,11 +378,11 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, double*, const libxsmm_blasint*);
 #endif
 
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(sgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemm)(
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
