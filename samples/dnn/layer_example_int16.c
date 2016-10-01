@@ -470,9 +470,9 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GFLOP  = %.5g\n", flops*1e-9);
+  printf("GOP  = %.5g\n", flops*1e-9);
   printf("fp time = %.5g\n", ((double)(l_total/iters)));
-  printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+  printf("GOPS  = %.5g\n", (flops*1e-9)/l_total);
 
   printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
@@ -580,9 +580,9 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9);
+  printf("GOP (NHWC,RSCK)  = %.5g\n", flops*1e-9);
   printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
-  printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
+  printf("GOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
   printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
@@ -693,9 +693,9 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GFLOP (NHWC,custom)  = %.5g\n", flops*1e-9);
+  printf("GOP (NHWC,custom)  = %.5g\n", flops*1e-9);
   printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
-  printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
+  printf("GOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
   printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
