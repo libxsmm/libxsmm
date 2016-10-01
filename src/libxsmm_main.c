@@ -1040,6 +1040,28 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
+LIBXSMM_API_DEFINITION char* libxsmm_get_precision_string(libxsmm_dnn_datatype datatype)
+{
+  switch (datatype) {
+    case LIBXSMM_DNN_DATATYPE_F32:
+      return "f32";
+      break;
+    case LIBXSMM_DNN_DATATYPE_I32:
+      return "i32";
+      break;
+    case LIBXSMM_DNN_DATATYPE_I16:
+      return "i16";
+      break;
+    case LIBXSMM_DNN_DATATYPE_I8:
+      return "i8";
+      break;
+    default:
+      return "unk";
+      break;
+  }
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
@@ -1070,8 +1092,8 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         {
           const int uid = libxsmm_prefetch2uid(request->descriptor.gemm->prefetch);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.smxm", target_arch/*code path name*/,
-            0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.gemm->flags) ? 'd' : 's',
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.mxm", target_arch/*code path name*/,
+            0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.gemm->flags) ? "f64" : "f32",
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.gemm->m,   (unsigned int)request->descriptor.gemm->n,   (unsigned int)request->descriptor.gemm->k,
@@ -1098,8 +1120,8 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         {
           const int uid = libxsmm_prefetch2uid(request->descriptor.ssoa->gemm->prefetch);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%c%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.ssoa", target_arch/*code path name*/,
-            0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.ssoa->gemm->flags) ? 'd' : 's',
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.ssoa", target_arch/*code path name*/,
+            0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.ssoa->gemm->flags) ? "f64" : "f32",
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.ssoa->gemm->m,   (unsigned int)request->descriptor.ssoa->gemm->n,   (unsigned int)request->descriptor.ssoa->gemm->k,
@@ -1123,8 +1145,10 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > libxsmm_verbosity)
 # endif
         {
+
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_sfwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv", target_arch/*code path name*/,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_fwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv", 
+            libxsmm_get_precision_string(request->descriptor.cfwd->datatype)/*precision*/, target_arch/*code path name*/,
             (unsigned int)request->descriptor.cfwd->kw/*kernel width*/, (unsigned int)request->descriptor.cfwd->kh/*kernel height*/,
             (unsigned int)request->descriptor.cfwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cfwd->unroll_kh/*height*/,
             (int)request->descriptor.cfwd->stride_w/*input offset*/, (int)request->descriptor.cfwd->stride_h/*output offsets*/,
@@ -1153,7 +1177,8 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
 # endif
         {
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_sbwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%u_v%u_pa%u_p%i.conv", target_arch/*code path name*/,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%u_v%u_pa%u_p%i.conv", 
+            libxsmm_get_precision_string(request->descriptor.cbwd->datatype)/*precision*/, target_arch/*code path name*/,
             (unsigned int)request->descriptor.cbwd->kw/*kernel width*/, (unsigned int)request->descriptor.cbwd->kh/*kernel height*/,
             (unsigned int)request->descriptor.cbwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cbwd->unroll_kh/*height*/,
             (int)request->descriptor.cbwd->stride_w/*input offset*/, (int)request->descriptor.cbwd->stride_h/*output offsets*/,
@@ -1183,7 +1208,8 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
 # endif
         {
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_supd_%s_%ux%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i.conv", target_arch/*code path name*/,
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%ux%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i.conv", 
+            libxsmm_get_precision_string(request->descriptor.cupd->datatype)/*precision*/, target_arch/*code path name*/,
             (unsigned int)request->descriptor.cupd->kw/*kernel width*/, (unsigned int)request->descriptor.cupd->kh/*kernel height*/,
             (unsigned int)request->descriptor.cupd->unroll_kw/*width*/,
             (int)request->descriptor.cupd->stride_w/*input offset*/, (int)request->descriptor.cupd->stride_h/*output offsets*/,

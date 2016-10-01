@@ -186,6 +186,7 @@ typedef struct libxsmm_convolution_forward_descriptor {
   unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
+  unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_conv_format format;
   libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */

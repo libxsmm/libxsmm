@@ -59,8 +59,8 @@ element_output_type* l_output;
 
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
 /* avoid ouf of bounds (dirty) */
 start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
@@ -69,35 +69,35 @@ for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
     ij = oj * handle->desc.u;
     for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
       ii = oi * handle->desc.v;
-      l_input  = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, 0,
-                  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      l_wt     = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0,
-                  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+      l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ij, ii, 0, 0,
+                  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+      l_wt     = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
+                  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
       l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
                     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
       /* check we are not at the end, we prefetch inside the image */
       if (oi < handle->ofw-handle->fwd_ofw_rb) {
         jitted_conv_fp_noweight_pf(l_input, l_wt, l_output,
-          &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, (oi + handle->fwd_ofw_rb) * handle->desc.v, 0,
-            handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
+          &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ij, (oi + handle->fwd_ofw_rb) * handle->desc.v, 0, 0,
+            handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
           &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi + handle->fwd_ofw_rb, 0,
             handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
       }
       else {
         if (oj < end_ofh-handle->fwd_ofh_rb) {
           jitted_conv_fp_noweight_pf(l_input, l_wt, l_output,
-            &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj + handle->fwd_ofw_rb) * handle->desc.u, ii, 0,
-              handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), NULL,
+            &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, (oj + handle->fwd_ofw_rb) * handle->desc.u, ii, 0, 0,
+              handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofw_rb, oi, 0,
               handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }
         else {
           jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
-            &LIBXSMM_VLA_ACCESS(5, input, img, ifm1 + 1, 0, 0, 0,
-              handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
-            &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1 + 1, 0, 0, 0, 0,
-              handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+            &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + 1, 0, 0, 0, 0,
+              handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
+            &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
+              handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
               handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }
