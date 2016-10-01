@@ -1039,7 +1039,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
-LIBXSMM_API_DEFINITION char* libxsmm_get_precision_string(libxsmm_dnn_datatype datatype)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* libxsmm_get_precision_string(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DNN_DATATYPE_F32:
