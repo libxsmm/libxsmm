@@ -30,3 +30,45 @@
 ******************************************************************************/
 #include "libxsmm_ext.h"
 
+
+#if defined(LIBXSMM_BUILD) && \
+  ((defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)) || \
+   (1 == LIBXSMM_NO_BLAS))
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+#if (0 == LIBXSMM_NO_BLAS)
+  libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#elif !defined(NDEBUG) /* library code is expected to be mute */
+  static int error_once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+  }
+#endif
+}
+
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
+  const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+#if (0 == LIBXSMM_NO_BLAS)
+  libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#elif !defined(NDEBUG) /* library code is expected to be mute */
+  static int error_once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+  }
+#endif
+}
+
+#endif
+
