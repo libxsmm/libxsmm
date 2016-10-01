@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
   /* computing first logical thread */
@@ -38,7 +38,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   /* number of tasks that could be run in parallel */
   const int work = handle->desc.N * handle->blocksofm;
   /* compute chunck size */
-  const int chunksize = (work % num_threads == 0) ? (work / num_threads) : ((work / num_threads) + 1);
+  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
   /* compute thr_begin and thr_end */
   const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
@@ -74,7 +74,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
   /* computing first logical thread */
@@ -82,7 +82,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   /* number of tasks that could be run in parallel */
   const int work = handle->desc.N*handle->blocksofm;
   /* compute chunck size */
-  const int chunksize = (work % num_threads == 0) ? (work / num_threads) : (work / num_threads) + 1;
+  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
   /* compute thr_begin and thr_end */
   const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
@@ -150,7 +150,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   int ifm1, oj, ij, oi, ii;
   /* calculate local thread ids */
@@ -159,7 +159,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
   const int l_l1 = handle->desc.N * handle->blocksofm;
   const int l_l3 = handle->ofh / handle->fwd_ofh_rb;
   /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
-  const int l_l1_gs = num_threads / l_l1;
+  const int l_l1_gs = handle->desc.threads / l_l1;
   /* number of elemens of ofh loop per thread */
   const int l_l2_ts = (l_l3 % l_l1_gs == 0) ? (l_l3 / l_l1_gs) : ((l_l3 / l_l1_gs) + 1);
   /* get group id */
@@ -222,7 +222,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -237,7 +237,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
-          internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(handle, start_thread, tid, num_threads);
+          internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(handle, start_thread, tid);
         }
         else {
           status = LIBXSMM_DNN_ERR_GENERAL;
@@ -253,11 +253,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
-          if (handle->desc.N*handle->blocksofm >= num_threads) {
-            internal_convolve_st_fwd_nhwc_rsck_fp32_opt(handle, start_thread, tid, num_threads);
+          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+            internal_convolve_st_fwd_nhwc_rsck_fp32_opt(handle, start_thread, tid);
           }
           else {
-            internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(handle, start_thread, tid, num_threads);
+            internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(handle, start_thread, tid);
           }
         }
         else {

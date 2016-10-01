@@ -77,7 +77,7 @@ typedef enum libxsmm_dnn_conv_kind {
   LIBXSMM_DNN_CONV_KIND_UPD
 } libxsmm_dnn_conv_kind;
 
-typedef enum libxsmm_dnn_conv_fuse_ops {
+typedef enum libxsmm_dnn_conv_fuse_op {
   /* we fuse nothing into convolution */
   LIBXSMM_DNN_CONV_FUSE_NONE = 0
 #if 0
@@ -87,7 +87,12 @@ typedef enum libxsmm_dnn_conv_fuse_ops {
   /* we fase fase ReLU calculation into convolution Op */
   LIBXSMM_DNN_CONV_FUSE_RELU = 2
 #endif
-} libxsmm_dnn_conv_fuse_ops;
+} libxsmm_dnn_conv_fuse_op;
+
+typedef enum libxsmm_dnn_conv_option {
+  /* we get default settings */
+  LIBXSMM_DNN_CONV_OPTION_NONE = 0
+} libxsmm_dnn_conv_option;
 
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
@@ -113,10 +118,12 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_h_out;                               /* height of zero-padding in output buffer */
   int pad_w_out;                               /* width of zero-padding in output buffer */
   int splits;                                  /* number of splits */
+  int threads;                                 /* number of threads to use when running convolution */
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
-  libxsmm_dnn_conv_fuse_ops fuse_ops;          /* used ops into convolutoions */
+  libxsmm_dnn_conv_fuse_op fuse_ops;           /* used ops into convolutoions */
+  libxsmm_dnn_conv_option options;             /* additional options */
   libxsmm_dnn_datatype datatype;               /* dataytpes use for all buffers */
 } libxsmm_dnn_conv_desc;
 
@@ -192,7 +199,7 @@ LIBXSMM_API void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_d
 
 /** Run the convolution identified by the handle; takes a thread id. */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind,
-  /*unsigned*/int start_thread, /*unsigned*/int tid, /*unsigned*/int num_threads);
+  /*unsigned*/int start_thread, /*unsigned*/int tid );
 
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 

@@ -36,7 +36,7 @@ const int ltid = tid - start_thread;
 const int l_l1 = handle->desc.N * handle->blocksofm;
 const int l_l3 = handle->ofh / handle->fwd_ofh_rb;
 /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
-const int l_l1_gs = num_threads / l_l1;
+const int l_l1_gs = handle->desc.threads / l_l1;
 /* number of elemens of ofh loop per thread */
 const int l_l2_ts = (l_l3 % l_l1_gs == 0) ? (l_l3 / l_l1_gs) : ((l_l3 / l_l1_gs) + 1);
 /* get group id */

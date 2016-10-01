@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_conv_fwd_custom_custom.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef float element_input_type;
   typedef float element_output_type;
@@ -38,7 +38,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef short element_input_type;
   typedef int element_output_type;
@@ -46,7 +46,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef float element_input_type;
   typedef float element_output_type;
@@ -55,7 +55,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef short element_input_type;
   typedef int element_output_type;
@@ -64,7 +64,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef float element_input_type;
   typedef float element_output_type;
@@ -73,7 +73,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_int16_opt_img_par(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   typedef short element_input_type;
   typedef int element_output_type;
@@ -82,7 +82,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_custom_custom_
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
 }
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid, int num_threads)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -97,10 +97,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
     if (1 == handle->desc.splits) {
       switch (handle->datatype) {
         case LIBXSMM_DNN_DATATYPE_F32: {
-          internal_convolve_st_fwd_custom_custom_fp32_fallback(handle, start_thread, tid, num_threads);
+          internal_convolve_st_fwd_custom_custom_fp32_fallback(handle, start_thread, tid);
         } break;
         case LIBXSMM_DNN_DATATYPE_I16: {
-          internal_convolve_st_fwd_custom_custom_int16_fallback(handle, start_thread, tid, num_threads);
+          internal_convolve_st_fwd_custom_custom_int16_fallback(handle, start_thread, tid);
         } break;
         default: {
           status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -116,19 +116,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
     if (1 == handle->desc.splits) {
       switch (handle->datatype) {
         case LIBXSMM_DNN_DATATYPE_F32: {
-          if (handle->desc.N*handle->blocksofm >= num_threads) {
-            internal_convolve_st_fwd_custom_custom_fp32_opt(handle, start_thread, tid, num_threads);
+          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+            internal_convolve_st_fwd_custom_custom_fp32_opt(handle, start_thread, tid);
           }
           else {
-            internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(handle, start_thread, tid, num_threads);
+            internal_convolve_st_fwd_custom_custom_fp32_opt_img_par(handle, start_thread, tid);
           }
         } break;
         case LIBXSMM_DNN_DATATYPE_I16: {
-          if (handle->desc.N*handle->blocksofm >= num_threads) {
-            internal_convolve_st_fwd_custom_custom_int16_opt(handle, start_thread, tid, num_threads);
+          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+            internal_convolve_st_fwd_custom_custom_int16_opt(handle, start_thread, tid);
           }
           else {
-            internal_convolve_st_fwd_custom_custom_int16_opt_img_par(handle, start_thread, tid, num_threads);
+            internal_convolve_st_fwd_custom_custom_int16_opt_img_par(handle, start_thread, tid);
           }
         } break;
         default: {

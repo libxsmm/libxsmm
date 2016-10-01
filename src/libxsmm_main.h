@@ -144,7 +144,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_dnn_conv_algo algo;
   libxsmm_dnn_conv_format buffer_format;
   libxsmm_dnn_conv_format filter_format;
-  libxsmm_dnn_conv_fuse_ops fuse_ops;
+  libxsmm_dnn_conv_fuse_op fuse_ops;
+  libxsmm_dnn_conv_option options;
 
   /* additional size for iternal data types */
   int ifhp;
