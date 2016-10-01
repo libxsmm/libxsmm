@@ -639,7 +639,7 @@ module_mic: $(BLDDIR)/mic/libxsmm-mod.o $(INCDIR)/mic/libxsmm.mod
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
 $(INCDIR)/mic/libxsmm.mod: $(BLDDIR)/mic/libxsmm-mod.o
-	@cp $(BLDDIR)/mic/libxsmm.mod $@ 2> /dev/null || true
+	@cp $(BLDDIR)/mic/libxsmm.mod $@ 2> /dev/null || \
 	@cp $(BLDDIR)/mic/LIBXSMM.mod $@ 2> /dev/null || true
 else
 .PHONY: $(BLDDIR)/mic/libxsmm-mod.o
@@ -660,7 +660,7 @@ module_hst: $(BLDDIR)/intel64/libxsmm-mod.o $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 $(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
-	@cp $(BLDDIR)/intel64/libxsmm.mod $@ 2> /dev/null || true
+	@cp $(BLDDIR)/intel64/libxsmm.mod $@ 2> /dev/null || \
 	@cp $(BLDDIR)/intel64/LIBXSMM.mod $@ 2> /dev/null || true
 else
 .PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
