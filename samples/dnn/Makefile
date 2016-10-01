@@ -62,7 +62,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/layer_example_fp32 $(OUTDIR)/layer_example_int16
+XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16
 
 .PHONY: all
 all: $(XFILES)
@@ -75,11 +75,11 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)
 endif
 
-$(OUTDIR)/layer_example_fp32: $(OUTDIR)/.make $(BLDDIR)/layer_example_fp32-c.o
-	$(LD) -o $@ $(BLDDIR)/layer_example_fp32-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o
+	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/layer_example_int16: $(OUTDIR)/.make $(BLDDIR)/layer_example_int16-c.o
-	$(LD) -o $@ $(BLDDIR)/layer_example_int16-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/layer_example_i16: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16-c.o
+	$(LD) -o $@ $(BLDDIR)/layer_example_i16-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
