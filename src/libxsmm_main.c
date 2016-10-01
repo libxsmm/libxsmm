@@ -1040,11 +1040,9 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request_in, unsigned int regindex, libxsmm_code_pointer* code)
+LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
-  typedef libxsmm_build_request LIBXSMM_MAY_ALIAS request_type;
-  const request_type *const request = (const request_type*)request_in;
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
   libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
@@ -1241,7 +1239,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request_i
 # endif
   free(generated_code.generated_code); /* free temporary/initial code buffer */
 #else /* unsupported platform */
-  LIBXSMM_UNUSED(request_in); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
+  LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
   assert(LIBXSMM_X86_AVX > libxsmm_target_archid);
 #endif
