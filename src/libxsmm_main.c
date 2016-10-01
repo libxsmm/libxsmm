@@ -838,7 +838,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
 #if defined(LIBXSMM_PERF)
         libxsmm_perf_finalize();
 #endif
-
         /* make internal registry globally unavailable */
         LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
         internal_registry_keys = 0;
