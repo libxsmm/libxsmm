@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_ext.h"
+#include <libxsmm.h>
 
 
 #if defined(LIBXSMM_BUILD) && \
