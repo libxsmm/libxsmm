@@ -1295,7 +1295,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
 LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind)
 {
 #if defined(_OPENMP)
-# pragma omp parallel num_threads(handle.conv_desc.threads)
+# pragma omp parallel num_threads(handle->desc.threads)
   {
     const int tid = omp_get_thread_num();
     internal_convolve_st(handle, kind, 0, tid);
