@@ -24,6 +24,9 @@ endif
 CMAIN = "main\s*(.*)"
 FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 
+# PIC: PIC or pic
+PIC=pic
+
 # Optimization level
 OPT ?= 2
 
@@ -421,10 +424,10 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -fPIC -Wall -diag-disable 1879,3415,10006,10010,10411,13003
-  CFLAGS += -fPIC -Wall -diag-disable 1879,3415,10006,10010,10411,13003
-  LDFLAGS += -fPIC -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += -fPIC -diag-disable 10006,10010,10411,13003
+  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
+  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
+  LDFLAGS += -f$(PIC) -diag-disable 1879,3415,10006,10010,10411
+  FCFLAGS += -f$(PIC) -diag-disable 10006,10010,10411,13003
   ifneq (0,$(THREADS))
     FCMTFLAGS += -threads
   endif
@@ -591,10 +594,10 @@ else # GCC assumed
     CFLAGS += -Wall -Wno-unused-function -Wno-attributes
   endif
   ifneq (Windows_NT,$(UNAME))
-    CXXFLAGS += -fPIC
-    CFLAGS += -fPIC
-    FCFLAGS += -fPIC
-    LDFLAGS += -fPIC
+    CXXFLAGS += -f$(PIC)
+    CFLAGS += -f$(PIC)
+    FCFLAGS += -f$(PIC)
+    LDFLAGS += -f$(PIC)
   endif
   ifeq (0,$(COMPATIBLE))
     CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
@@ -702,7 +705,7 @@ else # GCC assumed
       CFLAGS := -g $(CFLAGS) -fsanitize=thread -fno-omit-frame-pointer
       FCFLAGS := -g $(FCFLAGS) -fsanitize=thread -fno-omit-frame-pointer
       LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -ltsan -fno-omit-frame-pointer
-      ELDFLAGS := -pie
+      #ELDFLAGS := -pie
     else
       CXXFLAGS := -g3 -gdwarf-2 $(CXXFLAGS)
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
