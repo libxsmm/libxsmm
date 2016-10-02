@@ -88,11 +88,11 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
                                                       unsigned int                       i_n_blocking ) {
   /* set function pointers for AVX512 and IMCI */
   unsigned int (*l_generator_microkernel_kloop)( libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                                 const libxsmm_gemm_descriptor*, const char*, unsigned int );
+                                                 const libxsmm_gemm_descriptor*, const char*, unsigned int ) = 0;
   void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int );
+                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int ) = 0;
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int );
+                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int ) = 0;
   unsigned int l_k_unrolled;
   unsigned int l_m_done;
 

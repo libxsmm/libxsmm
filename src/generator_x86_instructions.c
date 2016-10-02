@@ -1494,9 +1494,9 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
     /* unsigned int l_maxsize = 1024; */
-    int l_sizereg;
-    int l_instr_offset;
-    int l_instr_offset2;
+    int l_sizereg = 0;
+    int l_instr_offset = 0;
+    int l_instr_offset2 = 0;
 
     if ( l_maxsize - i < 20 )
     {

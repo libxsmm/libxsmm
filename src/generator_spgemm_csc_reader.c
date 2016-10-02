@@ -144,8 +144,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         }
       /* now we read the actual content */
       } else {
-        unsigned int l_row, l_column;
-        double l_value;
+        unsigned int l_row = 0, l_column = 0;
+        double l_value = 0;
         /* read a line of content */
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
           libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
