@@ -109,8 +109,8 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
-  libxsmm_dnn_conv_fuse_ops fuse_ops;          /* used ops into convolutoions */
-  libxsmm_dnn_datatype datatype;               /* dataytpes use for all buffers */
+  libxsmm_dnn_conv_fuse_ops fuse_ops;          /* used ops into convolutions */
+  libxsmm_dnn_datatype datatype;               /* datatypes use for all buffers */
 } libxsmm_dnn_conv_desc;
 
 /** Type of algorithm used for convolutions. */
