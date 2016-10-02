@@ -35,7 +35,7 @@
 #include "libxsmm_intrinsics_x86.h"
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__pgnu_vsn)
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
     __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
 #else
@@ -50,7 +50,7 @@
 #endif
 
 /** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__pgnu_vsn)
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
     ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
   )
