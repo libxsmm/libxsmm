@@ -74,6 +74,9 @@ void LIBXSMM_FSYMBOL(sgemm)(
     fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
   }
 #endif
+  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
 }
 
 
@@ -94,6 +97,9 @@ void LIBXSMM_FSYMBOL(dgemm)(
     fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
   }
 #endif
+  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
 }
 #endif
 #endif /*defined(LIBXSMM_BUILD)*/
