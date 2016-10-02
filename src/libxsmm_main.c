@@ -269,7 +269,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #define INTERNAL_FIND_CODE(DESCRIPTOR, CODE) \
-  libxsmm_code_pointer flux_entry; \
+  libxsmm_code_pointer flux_entry = { 0 }; \
 { \
   INTERNAL_FIND_CODE_CACHE_DECL(cache_id, cache_keys, cache, cache_hit) \
   unsigned int hash, diff = 0, diff0 = 0, i0; \
