@@ -8,7 +8,7 @@ ENV=$(which env)
 # NOBLAS tests (which are header-only based) need additional adjustment on the link-line.
 # Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
 #
-#NOBLAS="dispatch vla"
+NOBLAS="dispatch vla"
 #DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then

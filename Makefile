@@ -231,16 +231,18 @@ OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_dump.o \
                $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwc_rsck.o $(BLDDIR)/mic/libxsmm_dnn_conv_fwd_nhwc_custom.o \
                $(BLDDIR)/mic/libxsmm_malloc.o $(BLDDIR)/mic/libxsmm_sync.o \
                $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
-KERNELOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
-KERNELOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
-EXTOBJS_HST = $(BLDDIR)/intel64/libxsmm_ext.o \
-              $(BLDDIR)/intel64/libxsmm_ext_gemm.o $(BLDDIR)/intel64/libxsmm_ext_trans.o
-EXTOBJS_MIC = $(BLDDIR)/mic/libxsmm_ext.o \
-              $(BLDDIR)/mic/libxsmm_ext_gemm.o $(BLDDIR)/mic/libxsmm_ext_trans.o
+KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
+EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
+               $(BLDDIR)/intel64/libxsmm_ext_gemm.o $(BLDDIR)/intel64/libxsmm_ext_trans.o
+EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
+               $(BLDDIR)/mic/libxsmm_ext_gemm.o $(BLDDIR)/mic/libxsmm_ext_trans.o
+NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
+NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
 OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
-          $(KERNELOBJS_HST) $(KERNELOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC)
+          $(KRNOBJS_HST) $(KRNOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC) $(NOBLAS_HST) $(NOBLAS_MIC)
 ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
@@ -261,10 +263,10 @@ headers: cheader cheader_only fheader
 interface: headers module
 
 .PHONY: lib_mic
-lib_mic: clib_mic flib_mic ext_mic
+lib_mic: clib_mic flib_mic ext_mic noblas_mic
 
 .PHONY: lib_hst
-lib_hst: clib_hst flib_hst ext_hst
+lib_hst: clib_hst flib_hst ext_hst noblas_hst
 
 PREFETCH_UID = 0
 PREFETCH_SCHEME = nopf
@@ -590,7 +592,7 @@ $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   -mmic)))
-$(foreach OBJ,$(KERNELOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   -mmic $(CPEDANTIC))))
@@ -598,13 +600,16 @@ $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   -mmic $(EXTCFLAGS))))
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(SRCDIR)/libxsmm_ext.c, \
+  $(INCDIR)/libxsmm.h, \
+  -mmic $(DNOBLAS)))
 endif
 endif
 
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, $(CTARGET))))
-$(foreach OBJ,$(KERNELOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
+$(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(CPEDANTIC) $(CTARGET))))
 $(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
@@ -619,6 +624,8 @@ $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
 $(foreach OBJ,$(OBJFILES_GEN_CONV_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, $(NULL))))
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(SRCDIR)/libxsmm_ext.c, \
+  $(INCDIR)/libxsmm.h, $(CTARGET) $(DNOBLAS)))
 
 .PHONY: compile_mic
 ifneq (0,$(MIC))
@@ -701,26 +708,26 @@ $(BINDIR)/libxsmm_conv_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONV_BIN) $(OUT
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KERNELOBJS_MIC)
+$(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ -mmic -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_MIC) $(KERNELOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ -mmic -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
-	$(AR) -rs $@ $(OBJFILES_MIC) $(KERNELOBJS_MIC)
+	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
 endif
 endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING)
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LD) -o $@ -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
-	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KERNELOBJS_HST) $(OBJJITPROFILING)
+	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
 
 .PHONY: flib_mic
@@ -789,6 +796,38 @@ endif
 else # static
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
 	$(AR) -rs $@ $(EXTOBJS_HST)
+endif
+
+.PHONY: noblas_mic
+ifneq (0,$(MIC))
+ifneq (0,$(MPSS))
+noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
+ifeq (0,$(STATIC))
+$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
+	$(LD) -o $@ -mmic -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
+else
+$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
+	$(AR) -rs $@ $(NOBLAS_MIC)
+endif
+endif
+endif
+
+.PHONY: noblas_hst
+noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+ifeq (0,$(STATIC))
+$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
+ifeq (Darwin,$(UNAME))
+	$(LD) -o $@ -shared $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+else
+	$(LD) -o $@ -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+endif
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
+	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
+else # static
+$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
+	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
 .PHONY: samples

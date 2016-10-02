@@ -77,6 +77,7 @@ tests: test
 test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh
 
+TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
 ifneq (Darwin,$(UNAME))
   TEST_EXTLIB = $(EXTLIB)
 endif
@@ -88,7 +89,7 @@ $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAM
 ifneq (0,$(BLAS))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) $(TEST_EXTLIB) $(call abslib, $(LIBNAME).$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 else
-	$(LD) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) $(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
 endif
 else
 .PHONY: $(1)
@@ -105,9 +106,11 @@ ifneq (,$(wildcard $(LIBNAME)f.$(LIBEXT)))
 ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
 ifneq (0,$(BLAS))
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(TEST_EXTLIB) $(call abslib, $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(TEST_EXTLIB) \
+		$(call abslib, $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) \
+		$(TEST_NOBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 endif
 else
 .PHONY: $(1)

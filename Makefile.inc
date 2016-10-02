@@ -125,9 +125,10 @@ endif
 # Explicitly disables BLAS by user's intervention
 # Makefile defines what happens (perhaps nothing)
 NOBLAS ?= 0
+DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  DFLAGS += -D__BLAS=0
+  DFLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
 endif
