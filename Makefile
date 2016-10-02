@@ -405,6 +405,9 @@ ifeq (1,$(BLAS))
 	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
 endif
 	$(info ================================================================================)
+else ifneq (0,$(NOBLAS))
+	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))
+	$(info ================================================================================)
 endif
 
 .PHONY: cheader
