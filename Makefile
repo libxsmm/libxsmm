@@ -420,12 +420,12 @@ $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
-$(INCDIR)/libxsmm_source.h: $(INCDIR)/libxsmm.h $(SCRDIR)/libxsmm_source.sh
+$(INCDIR)/libxsmm_source.h: $(SCRDIR)/libxsmm_source.sh
 	@$(SCRDIR)/libxsmm_source.sh > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make .state \
+$(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
                      $(ROOTDIR)/version.txt $(INCDIR)/libxsmm_config.h \
                      $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
@@ -441,7 +441,7 @@ $(INCDIR)/libxsmm.f: $(INCDIR)/.make $(BLDDIR)/.make .state \
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
-                              $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm.mod $(INCDIR)/mic/libxsmm.mod
+                              $(INCDIR)/libxsmm.h
 	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
@@ -638,12 +638,13 @@ $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
-module_mic: $(BLDDIR)/mic/libxsmm-mod.o $(INCDIR)/mic/libxsmm.mod
+module_mic: $(INCDIR)/mic/libxsmm.mod
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
 $(INCDIR)/mic/libxsmm.mod: $(BLDDIR)/mic/libxsmm-mod.o
-	@cp $(BLDDIR)/mic/libxsmm.mod $@ 2> /dev/null || true
-	@cp $(BLDDIR)/mic/LIBXSMM.mod $@ 2> /dev/null || true
+	@if [ -e $(BLDDIR)/mic/libxsmm.mod ]; then cp $(BLDDIR)/mic/libxsmm.mod $@; fi
+	@if [ -e $(BLDDIR)/mic/LIBXSMM.mod ]; then cp $(BLDDIR)/mic/libxsmm.mod $@; fi
+	@touch $@
 else
 .PHONY: $(BLDDIR)/mic/libxsmm-mod.o
 .PHONY: $(INCDIR)/mic/libxsmm.mod
@@ -659,12 +660,13 @@ endif
 
 .PHONY: module_hst
 ifneq (,$(strip $(FC)))
-module_hst: $(BLDDIR)/intel64/libxsmm-mod.o $(INCDIR)/libxsmm.mod
+module_hst: $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 $(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
-	@cp $(BLDDIR)/intel64/libxsmm.mod $@ 2> /dev/null || true
-	@cp $(BLDDIR)/intel64/LIBXSMM.mod $@ 2> /dev/null || true
+	@if [ -e $(BLDDIR)/intel64/libxsmm.mod ]; then cp $(BLDDIR)/intel64/libxsmm.mod $@; fi
+	@if [ -e $(BLDDIR)/intel64/LIBXSMM.mod ]; then cp $(BLDDIR)/intel64/libxsmm.mod $@; fi
+	@touch $@
 else
 .PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
 .PHONY: $(INCDIR)/libxsmm.mod
@@ -727,12 +729,12 @@ ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 	$(FC) -o $@ -mmic -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
-$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(BLDDIR)/mic/libxsmm-mod.o $(OUTDIR)/mic/.make
+$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
 endif
 else
@@ -745,12 +747,12 @@ endif
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/libxsmm.$(LIBEXT)
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
 	$(FC) -o $@ -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR).$(VERSION_MINOR)
 	@ln -fs $(notdir $@) $@.$(VERSION_MAJOR)
 else
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(BLDDIR)/intel64/libxsmm-mod.o $(OUTDIR)/.make
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 else
