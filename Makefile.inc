@@ -930,13 +930,13 @@ else
   MKL = 0
 endif
 ifneq (0,$(MKL))
-  DFLAGS += -D__CBLAS
+  BLAS_DFLAGS += -D__CBLAS
 endif
 ifeq (1,$(MKL_DIRECT))
   ifeq (1,$(MKL))
-    DFLAGS += -DMKL_DIRECT_CALL_SEQ
+    BLAS_DFLAGS += -DMKL_DIRECT_CALL_SEQ
   else ifneq (0,$(MKL))
-    DFLAGS += -DMKL_DIRECT_CALL
+    BLAS_DFLAGS += -DMKL_DIRECT_CALL
   endif
 endif
 ifneq (Darwin,$(UNAME))
@@ -944,59 +944,59 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  DFLAGS += -D__MKL=1
-  IFLAGS += -I$(MKLROOT)/include
+  BLAS_DFLAGS += -D__MKL=1
+  BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
-    LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
+    BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
     ifneq (0,$(OFFLOAD))
-      LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
+      BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
-    LDFLAGS += $(XGROUP_BEGIN) \
+    BLAS_LDFLAGS += $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
     $(XGROUP_END)
     ifneq (0,$(OFFLOAD))
-      LDFLAGS += -qoffload-option,mic,ld,"--start-group \
+      BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
         $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/mic/libmkl_sequential.$(SLIBEXT) \
       --end-group"
     endif
   endif
-  LDFLAGS += -lpthread -lm $(LIBDL)
+  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
   ifneq (0,$(OFFLOAD))
-    LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
+    BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  DFLAGS += -D__MKL=$(MKL)
-  IFLAGS += -I$(MKLROOT)/include
+  BLAS_DFLAGS += -D__MKL=$(MKL)
+  BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
-      LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
+      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
+        BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
       endif
     else # assuming GNU toolchain
-      LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
+      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
     endif
   else # static
     ifneq (0,$(INTEL))
-      LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
       $(XGROUP_END)
       ifneq (0,$(OFFLOAD))
-        LDFLAGS += -qoffload-option,mic,ld,"--start-group \
+        BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
           $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
           $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
           $(MKLROOT)/lib/mic/libmkl_intel_thread.$(SLIBEXT) \
         --end-group"
       endif
     else # assuming GNU toolchain
-      LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
@@ -1004,14 +1004,14 @@ else ifneq (0,$(MKL)) # multi-threaded
     endif
   endif
   ifeq (0,$(OMP))
-    LDFLAGS += $(OMPLIB)
+    BLAS_LDFLAGS += $(OMPLIB)
   endif
-  LDFLAGS += -lpthread -lm $(LIBDL)
+  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
-    LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
+    BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
     ifeq (0,$(OMP))
-      LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
+      BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
     endif
   endif
   endif
@@ -1025,35 +1025,47 @@ else ifneq (0,$(BLAS)) # generic
       grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
 
     ifneq (0,$(OPENBLAS))
-      LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+      BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
-      DFLAGS += -D__OPENBLAS -D__CBLAS
+      BLAS_DFLAGS += -D__OPENBLAS -D__CBLAS
     else
       ifneq (Windows_NT,$(UNAME))
-        LDFLAGS += -lblas$(BLAS_BITS)
+        BLAS_LDFLAGS += -lblas$(BLAS_BITS)
       else
-        LDFLAGS += -lblas$(BLAS_BITS).dll
+        BLAS_LDFLAGS += -lblas$(BLAS_BITS).dll
       endif
       ifneq (0,$(STATIC))
       ifneq (,$(LIBGFORTRAN))
-        CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
       endif
       endif
       QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
       ifneq (0,$(QUADMATH))
-        CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
       endif
     endif
   else # BLAS library is specified via BLASLIB
-    LDFLAGS += $(call abslib,$(BLASDIR)/lib$(BLASLIB).$(BLASLIBEXT))
+    BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/lib$(BLASLIB).$(BLASLIBEXT))
   endif
 endif
 
-# cleanup and extra flags
-CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+# no-BLAS flags: cleanup and extra flags
+NOBLAS_CXXFLAGS = $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS = $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS = $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS = $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS = $(strip $(CLDFLAGS))
+NOBLAS_DFLAGS = $(strip $(DFLAGS))
+NOBLAS_IFLAGS = $(strip $(IFLAGS))
+
+# regular flags: cleanup
+CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
+FCFLAGS := $(strip $(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
+CFLAGS := $(strip $(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
+LDFLAGS := $(strip $(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CLDFLAGS := $(strip $(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
+DFLAGS := $(strip $(NOBLAS_DFLAGS) $(BLAS_DFLAGS))
+IFLAGS := $(strip $(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
