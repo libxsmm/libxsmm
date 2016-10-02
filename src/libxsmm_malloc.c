@@ -192,7 +192,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_malloc_info(const volatile void
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra)
+LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const volatile void* memory, size_t* size, int* flags, void** extra)
 {
   return internal_malloc_info(memory, size, flags, extra, 0/*internal*/);
 }

@@ -222,7 +222,7 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
-LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
+LIBXSMM_API int libxsmm_malloc_info(const volatile void* memory, size_t* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, int alignment, int flags,
