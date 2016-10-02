@@ -295,7 +295,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   /* register blocking counter  */
   unsigned int l_i, l_j, l_k, l_accs;
   /* block-feature map offset, leading dimension */
-  unsigned int l_lead_dim;
+  unsigned int l_lead_dim = 0;
 
 #if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.

@@ -370,7 +370,7 @@ return flux_entry.xmm
 
 #if defined(LIBXSMM_GEMM_DIFF_MASK_A) /* no padding i.e., LIBXSMM_GEMM_DESCRIPTOR_SIZE */
 # define INTERNAL_DISPATCH(TYPE, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) \
-    INTERNAL_DISPATCH_MAIN(TYPE, libxsmm_gemm_descriptor descriptor, &descriptor, \
+    INTERNAL_DISPATCH_MAIN(TYPE, libxsmm_gemm_descriptor descriptor = { 0 }, &descriptor, \
     PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH)
 #else /* padding: LIBXSMM_GEMM_DESCRIPTOR_SIZE -> LIBXSMM_ALIGNMENT */
 # define INTERNAL_DISPATCH(TYPE, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) { \
