@@ -1326,7 +1326,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 {
   void* extra = 0;
   LIBXSMM_INIT
-  if (EXIT_SUCCESS == libxsmm_malloc_info(jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
+  if (EXIT_SUCCESS == libxsmm_malloc_info((const volatile void*)jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int regindex = *((const unsigned int*)extra);
     if (LIBXSMM_REGSIZE <= regindex) {
       libxsmm_xfree((const volatile void*)jit_code);
