@@ -45,7 +45,7 @@
 #     define LIBXSMM_NO_TLS
 #     define LIBXSMM_TLS
 #   else
-#     if (defined(_WIN32) && !defined(__GNUC__))
+#     if (defined(_WIN32) && !defined(__GNUC__)) || defined(__pgnu_vsn)
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
 #     elif defined(__GNUC__)
 #       define LIBXSMM_TLS __thread

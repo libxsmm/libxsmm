@@ -36,7 +36,7 @@
 #endif
 #if defined(_WIN32)
 # include <Windows.h>
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__pgnu_vsn)
 # include <sys/time.h>
 # include <time.h>
 #endif
