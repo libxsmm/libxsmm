@@ -1042,21 +1042,11 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* libxsmm_get_precision_string(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
-    case LIBXSMM_DNN_DATATYPE_F32:
-      return "f32";
-      break;
-    case LIBXSMM_DNN_DATATYPE_I32:
-      return "i32";
-      break;
-    case LIBXSMM_DNN_DATATYPE_I16:
-      return "i16";
-      break;
-    case LIBXSMM_DNN_DATATYPE_I8:
-      return "i8";
-      break;
-    default:
-      return "unk";
-      break;
+    case LIBXSMM_DNN_DATATYPE_F32: return "f32";
+    case LIBXSMM_DNN_DATATYPE_I32: return "i32";
+    case LIBXSMM_DNN_DATATYPE_I16: return "i16";
+    case LIBXSMM_DNN_DATATYPE_I8:  return "i8";
+    default: return "unk"; /* unknown */
   }
 }
 
