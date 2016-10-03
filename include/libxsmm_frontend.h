@@ -182,8 +182,8 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
-#define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB, MM, NN, KK, A, B, C) \
-  int FLAGS = (0 != (TRANSA) /* use NN, etc. rather than N due to below char. constant */ \
+#define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB) \
+  int FLAGS = (0 != (TRANSA) \
     ? (('N' == *(TRANSA) || 'n' == *(TRANSA)) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
                                               : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) \
     : LIBXSMM_FLAGS); \
@@ -191,7 +191,6 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     ? (('N' == *(TRANSB) || 'n' == *(TRANSB)) ? ((FLAGS) & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
                                               : ((FLAGS) |  LIBXSMM_GEMM_FLAG_TRANS_B)) \
     : (FLAGS)); \
-  assert(0 != (MM) && 0 != (NN) && 0 != (KK) && 0 != (A) && 0 != (B) && 0 != (C))
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)

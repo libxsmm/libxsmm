@@ -193,7 +193,7 @@ LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
   LIBXSMM_SGEMM(flags, *m, *n, *k,
     0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
@@ -211,7 +211,7 @@ LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
 #if defined(LIBXSMM_BUILD)
 ;
 #else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb, m, n, k, a, b, c);
+{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
   LIBXSMM_DGEMM(flags, *m, *n, *k,
     0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
     a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
