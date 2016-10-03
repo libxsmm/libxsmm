@@ -327,11 +327,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           )
 # if !defined(NDEBUG)
           /* library code is expected to be mute */)
-          { static int error_once = 0;
+          {
             if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+              const char *const error_message = strerror(errno);
               fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
-                strerror(errno), errno, buffer,
-                (unsigned long long)alloc_size);
+                error_message, errno, buffer, (unsigned long long)alloc_size);
             }
           }
 # else
@@ -340,8 +340,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
         }
 # if !defined(NDEBUG) /* library code is expected to be mute */
         else if (alloc_failed == buffer && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          const char *const error_message = strerror(errno);
           fprintf(stderr, "LIBXSMM: %s (mmap error #%i for size %llu with flags=%i)!\n",
-            strerror(errno), errno, (unsigned long long)alloc_size, xflags);
+            error_message, errno, (unsigned long long)alloc_size, xflags);
         }
 # endif
 # if !defined(MADV_NOHUGEPAGE) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(__CYGWIN__)
@@ -429,8 +430,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 # if !defined(NDEBUG) /* library code is expected to be mute */
           static int error_once = 0;
           if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+            const char *const error_message = strerror(errno);
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
-              strerror(errno), errno, buffer, (unsigned long long)alloc_size);
+              error_message, errno, buffer, (unsigned long long)alloc_size);
           }
 # endif
           result = EXIT_FAILURE;
@@ -494,8 +496,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
       if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
+        const char *const error_message = strerror(errno);
         fprintf(stderr, "LIBXSMM: %s (mprotect warning #%i for range %p+%llu with flags=%i)!\n",
-          strerror(errno), errno, buffer, (unsigned long long)alloc_size, xflags);
+          error_message, errno, buffer, (unsigned long long)alloc_size, xflags);
       }
 # endif
 #endif
