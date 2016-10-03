@@ -211,12 +211,8 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
       static int error_once = 0;
 #endif
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
-      /* executable buffers based on regular memory allocation are not supported */
-      if (0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
-        flags |= LIBXSMM_MALLOC_FLAG_MMAP;
-      }
 #if !defined(LIBXSMM_MALLOC_MMAP)
-      if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+      if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
         alloc_alignment = 0 <= alignment ? libxsmm_alignment(size, (size_t)alignment) : ((size_t)(-alignment));
         alloc_size = internal_size + alloc_alignment - 1;
         buffer = malloc(alloc_size);
@@ -460,7 +456,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
   int result = internal_malloc_info(memory, &size, &alloc_flags, &buffer, 0/*internal*/);
 #endif
 #if !defined(NDEBUG)
-  static LIBXSMM_TLS int revoke_error = 0;
+  static int error_once = 0;
 #endif
   if (0 != buffer && EXIT_SUCCESS == result) {
     if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
@@ -492,16 +488,16 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
       int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
       if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
       if (0 != (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
-      if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)) {
-# if !defined(NDEBUG) /* library code is expected to be mute */
-        if (0 == revoke_error) {
-          revoke_error = errno;
-          fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%llu with flags=%i)!\n",
-            strerror(revoke_error), revoke_error, buffer, (unsigned long long)alloc_size, xflags);
-        }
-# endif
-        result = EXIT_FAILURE;
+# if defined(NDEBUG) /* treat mprotect errors as soft errors */
+      mprotect(buffer, alloc_size/*entire memory region*/, xflags);
+# else /* library code is expected to be mute */
+      if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM: %s (mprotect warning #%i for range %p+%llu with flags=%i)!\n",
+          strerror(errno), errno, buffer, (unsigned long long)alloc_size, xflags);
       }
+# endif
 #endif
     }
 #if defined(LIBXSMM_PERF)
