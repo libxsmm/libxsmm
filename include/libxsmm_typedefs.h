@@ -87,7 +87,7 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
 } libxsmm_gemm_prefetch_type;
 
-/* compatible for all older codes */
+/** Provided for compatibility with older codes. */
 typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type;
 
 /** Flag enumeration which can be binary ORed. */
@@ -166,10 +166,8 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
-/**
- * Structure storing the convolution argument description.
- */
-typedef struct libxsmm_convolution_forward_descriptor {
+/** Structure storing the convolution argument description. */
+typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int kh;                              /* kernel height */
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kh;                       /* kernel height, unrolled */
@@ -192,10 +190,8 @@ typedef struct libxsmm_convolution_forward_descriptor {
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
-/**
- * Structure storing the convolution backward argument description.
- */
-typedef struct libxsmm_convolution_backward_descriptor {
+/** Structure storing the convolution backward argument description. */
+typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int blocks_ofm;
@@ -223,10 +219,9 @@ typedef struct libxsmm_convolution_backward_descriptor {
   libxsmm_dnn_datatype datatype;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
-/**
- * Structure storing the convolution weight update argument description.
- */
-typedef struct libxsmm_convolution_weight_update_descriptor {
+
+/** Structure storing the convolution weight update argument description. */
+typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int kh;                              /* kernel height */

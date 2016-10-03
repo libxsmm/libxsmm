@@ -92,7 +92,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xmm;
 } libxsmm_code_pointer;
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_csr_soa_descriptor {
+typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
