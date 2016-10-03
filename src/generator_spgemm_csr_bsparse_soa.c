@@ -75,7 +75,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_soa_width;
   unsigned int l_max_cols = 0;
 
-  libxsmm_micro_kernel_config l_micro_kernel_config;
+  libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 

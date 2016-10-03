@@ -75,7 +75,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_b_offset;
   unsigned int l_b_total_offset;
 
-  libxsmm_micro_kernel_config l_micro_kernel_config;
+  libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
