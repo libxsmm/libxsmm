@@ -40,8 +40,8 @@ int R = filter->R;
 int S = filter->S;
 int lpb = filter->lpb;
 
-LIBXSMM_VLA_DECL(5, element_type, user_data, data, ofmb * bofm, ifmb * bifm * lpb, R, S);
-LIBXSMM_VLA_DECL(8, const element_type, handle_data, filter->data, ofmb, ifmb, R, S, bifm, bofm, lpb);
+LIBXSMM_VLA_DECL(5, element_type, user_data, (element_type*)data, ofmb * bofm, ifmb * bifm * lpb, R, S);
+LIBXSMM_VLA_DECL(8, const element_type, handle_data, (const element_type*)filter->data, ofmb, ifmb, R, S, bifm, bofm, lpb);
 
 for (i1 = 0; i1 < splits; ++i1) {
   for (i2 = 0; i2 < ofmb; ++i2) {
