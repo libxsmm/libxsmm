@@ -1217,16 +1217,16 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
-		-e "s/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/" \
-		-e "s/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/" > \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
 		$(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/README.md \
 	| sed \
-		-e "s/\[\[..*\](..*)\]//g" \
-		-e "s/\[!\[..*\](..*)\](..*)//g" \
-		-e "s/<sub>/~/g" -e "s/<\/sub>/~/g" \
-		-e "s/<sup>/^/g" -e "s/<\/sup>/^/g" \
-		-e "s/----*//g" \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
@@ -1245,16 +1245,16 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
-		-e "s/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/" \
-		-e "s/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/" > \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
 		$(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
 	| sed \
-		-e "s/\[\[..*\](..*)\]//g" \
-		-e "s/\[!\[..*\](..*)\](..*)//g" \
-		-e "s/<sub>/~/g" -e "s/<\/sub>/~/g" \
-		-e "s/<sup>/^/g" -e "s/<\/sup>/^/g" \
-		-e "s/----*//g" \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
