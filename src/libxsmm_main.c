@@ -1039,7 +1039,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* libxsmm_get_precision_string(libxsmm_dnn_datatype datatype)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_precision_string(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DNN_DATATYPE_F32: return "f32";
@@ -1134,7 +1134,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision = libxsmm_get_precision_string(request->descriptor.cfwd->datatype);
+          const char *const precision = internal_get_precision_string(request->descriptor.cfwd->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_fwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv", 
             precision, target_arch/*code path name*/,
@@ -1165,7 +1165,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision = libxsmm_get_precision_string(request->descriptor.cbwd->datatype);
+          const char *const precision = internal_get_precision_string(request->descriptor.cbwd->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%u_v%u_pa%u_p%i.conv", 
             precision, target_arch/*code path name*/,
@@ -1197,7 +1197,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision = libxsmm_get_precision_string(request->descriptor.cupd->datatype);
+          const char *const precision = internal_get_precision_string(request->descriptor.cupd->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%ux%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i.conv", 
             precision, target_arch/*code path name*/,
