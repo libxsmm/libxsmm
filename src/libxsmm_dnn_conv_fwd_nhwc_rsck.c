@@ -32,193 +32,30 @@
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
-  int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
-  /* computing first logical thread */
-  const int ltid = tid - start_thread;
-  /* number of tasks that could be run in parallel */
-  const int work = handle->desc.N * handle->blocksofm;
-  /* compute chunck size */
-  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
-  /* compute thr_begin and thr_end */
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-
-  float *const out = ((float*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->blocksofm;
-  LIBXSMM_VLA_DECL(5, float, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-  LIBXSMM_VLA_DECL(5, const float, input, (float*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-  LIBXSMM_VLA_DECL(6, const float, weight, (float*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-
-  for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-    img = imgofm1 / handle->blocksofm;
-    ofm1 = imgofm1 % handle->blocksofm;
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        ij = oj * handle->desc.u;
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          ii = oi * handle->desc.v;
-          for (kj = 0; kj < handle->desc.R; ++kj) {
-            for (ki = 0; ki< handle->desc.S; ++ki) {
-              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                  LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock) +=
-                    LIBXSMM_VLA_ACCESS(5, input, img, ij + kj, ii + ki, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock)
-                  * LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_fallback.tpl.c"
 }
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
-  int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
-  /* computing first logical thread */
-  const int ltid = tid-start_thread;
-  /* number of tasks that could be run in parallel */
-  const int work = handle->desc.N*handle->blocksofm;
-  /* compute chunck size */
-  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].xconv.sconv;
-  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].xconv.sconv;
-  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].xconv.sconv;*/
-#if defined(LIBXSMM_CONV_NO_PREFETCH)
-  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].xconv.sconv;
-#endif
-  const float *l_input, *l_wt;
-  float* l_output;
-
-  float *const out = ((float*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->blocksofm;
-  LIBXSMM_VLA_DECL(5, float, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-  LIBXSMM_VLA_DECL(5, const float, input, (float*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-  LIBXSMM_VLA_DECL(6, const float, weight, (float*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-
-  for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-    img = imgofm1/handle->blocksofm;
-    ofm1 = imgofm1%handle->blocksofm;
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
-        ij = oj * handle->desc.u;
-        for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
-          ii = oi * handle->desc.v;
-          l_input  = &LIBXSMM_VLA_ACCESS(5, input, img, ij, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-          l_wt     = &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-          l_output = &LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-#if !defined(LIBXSMM_CONV_NO_PREFETCH)
-          /* check we are not at the end */
-          if (oj < handle->ofh-handle->fwd_ofh_rb) {
-            jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-              &LIBXSMM_VLA_ACCESS(5, input, img, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock), NULL,
-              &LIBXSMM_VLA_ACCESS(5, output, img, oj + handle->fwd_ofh_rb, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-          }
-          else {
-            if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
-              jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                &LIBXSMM_VLA_ACCESS(5, input, img + 1, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock),
-                &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, 0, 0, 0, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
-                &LIBXSMM_VLA_ACCESS(5, output, img + 1, 0, 0, 0, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-            }
-            else {
-              if ((ifm1+1 == handle->blocksifm)) {
-                jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                  &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock),
-                  &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, 0, 0, ofm1 + 1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
-                  &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1 + 1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-              }
-              else {
-                jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-                  &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1 + 1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock),
-                  &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, ifm1 + 1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
-                  &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-              }
-            }
-          }
-#else
-          jitted_sconv_fp_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL);
-#endif
-        }
-      }
-    }
-  }
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt.tpl.c"
 }
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
-  int ifm1, oj, ij, oi, ii;
-  /* calculate local thread ids */
-  const int ltid = tid - start_thread;
-  /* calculate group sizes */
-  const int l_l1 = handle->desc.N * handle->blocksofm;
-  const int l_l3 = handle->ofh / handle->fwd_ofh_rb;
-  /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
-  const int l_l1_gs = handle->desc.threads / l_l1;
-  /* number of elemens of ofh loop per thread */
-  const int l_l2_ts = (l_l3 % l_l1_gs == 0) ? (l_l3 / l_l1_gs) : ((l_l3 / l_l1_gs) + 1);
-  /* get group id */
-  const int l_tidgroup = ltid / l_l1_gs;
-  /* compute img and ofm1 based on group */
-  const int img = l_tidgroup / handle->blocksofm;
-  const int ofm1 = l_tidgroup % handle->blocksofm;
-  int start_ofh = l_l2_ts * (ltid % l_l1_gs);
-  const int end_ofh = ((start_ofh + l_l2_ts) <= handle->ofh) ? (start_ofh + l_l2_ts) : handle->ofh;
-  libxsmm_sconvfunction jitted_sconv_fp_noweight_pf = handle->code_fwd[1].xconv.sconv;
-  libxsmm_sconvfunction jitted_sconv_fp_weight_pf = handle->code_fwd[2].xconv.sconv;
-  /*libxsmm_sconvfunction jitted_sconv_fp_weightnooutput_pf = handle->code_fwd[3].xconv.sconv;*/
-#if defined(LIBXSMM_CONV_NO_PREFETCH)
-  libxsmm_sconvfunction jitted_sconv_fp_no_pf = handle->code_fwd[0].xconv.sconv;
-#endif
-  const float *l_input, *l_wt;
-  float* l_output;
-
-  float *const out = ((float*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->blocksofm;
-  LIBXSMM_VLA_DECL(5, float, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-  LIBXSMM_VLA_DECL(5, const float, input, (float*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-  LIBXSMM_VLA_DECL(6, const float, weight, (float*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-
-  /* avoid ouf of bounds (dirty) */
-  start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
-  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
-      ij = oj * handle->desc.u;
-      for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
-        ii = oi * handle->desc.v;
-        l_input  = &LIBXSMM_VLA_ACCESS(5, input, img, ij, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        l_wt     = &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-        l_output = &LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-#if !defined(LIBXSMM_CONV_NO_PREFETCH)
-        /* check we are not at the end, we prefetch inside the image */
-        if (oi < handle->ofw-handle->fwd_ofw_rb) {
-          jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-            &LIBXSMM_VLA_ACCESS(5, input, img, ij, (oi + handle->fwd_ofw_rb) * handle->desc.v, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock), NULL,
-            &LIBXSMM_VLA_ACCESS(5, output, img, oj, oi + handle->fwd_ofw_rb, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-        }
-        else {
-          if (oj < end_ofh-handle->fwd_ofh_rb) {
-            jitted_sconv_fp_noweight_pf(l_input, l_wt, l_output,
-              &LIBXSMM_VLA_ACCESS(5, input, img, (oj + handle->fwd_ofw_rb) * handle->desc.u, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock), NULL,
-              &LIBXSMM_VLA_ACCESS(5, output, img, oj + handle->fwd_ofw_rb, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-          }
-          else {
-            jitted_sconv_fp_weight_pf(l_input, l_wt, l_output,
-              &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1+1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock),
-              &LIBXSMM_VLA_ACCESS(6, weight, 0, 0, ifm1+1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
-          }
-        }
-#else
-        jitted_sconv_fp_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL);
-#endif
-      }
-    }
-  }
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt_img_par.tpl.c"
 }
 
 
