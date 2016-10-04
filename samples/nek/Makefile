@@ -62,7 +62,10 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
+
+ifneq (,$(strip $(FC)))
+  XFILES := $(OUTDIR)/axhm $(OUTDIR)/grad $(OUTDIR)/rstr $(OUTDIR)/libstream_update_kernels.$(SLIBEXT)
+endif
 
 .PHONY: all
 all: $(XFILES)
