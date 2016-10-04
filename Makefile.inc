@@ -623,7 +623,7 @@ else # GCC assumed
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += -ffree-form
-    FMFLAGS += $(FSTD) $(FPEDANTIC) #-pedantic -Wunused-variable $(FWARNEXTRA)
+    FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
     CSTD = -std=c89
     CXXFLAGS += $(CPEDANTIC)
