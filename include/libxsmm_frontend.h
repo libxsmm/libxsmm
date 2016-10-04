@@ -212,7 +212,11 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
       &libxsmm_blas_xgemm_beta_, (TYPE*)(C), &libxsmm_blas_xgemm_ldc_); \
   }
 #else
-# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+    LIBXSMM_UNUSED(LDA); LIBXSMM_UNUSED(LDB); LIBXSMM_UNUSED(LDC); \
+    LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(K); \
+    LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C); \
+    LIBXSMM_UNUSED(ALPHA); LIBXSMM_UNUSED(BETA)
 #endif
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (single-precision). */
