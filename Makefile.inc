@@ -433,19 +433,23 @@ ifneq (0,$(INTEL))
     FCMTFLAGS += -threads
   endif
   CPEDANTIC += -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
-  FPEDANTIC += -std03 -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
+  FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   ifeq (1,$(PEDANTIC))
-    CPEDANTIC += -std=c99
-    CFLAGS += -std=c99 -Wcheck
+    FSTD = -std03
+    CSTD = -std=c99
+    CXXFLAGS += -Wcheck
+    CFLAGS += $(CSTD) -Wcheck
+    FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
     FCFLAGS += -free
-    FMFLAGS += $(FPEDANTIC) -diag-disable 10010
   else ifneq (0,$(PEDANTIC))
-    CPEDANTIC += -std=c89
-    CFLAGS += $(CPEDANTIC)
-    FCFLAGS += $(FPEDANTIC)
+    FSTD = -std03
+    CSTD = -std=c89
+    CXXFLAGS += $(CPEDANTIC)
+    CFLAGS += $(CSTD) $(CPEDANTIC)
+    FCFLAGS += $(FSTD) $(FPEDANTIC)
     FMFLAGS += -fixed
   else
-    CPEDANTIC += -std=c89
+    CSTD = -std=c89
     FCFLAGS += -free
   endif
   # flag specifying output directory must be last
@@ -601,31 +605,32 @@ else # GCC assumed
     LDFLAGS += -f$(PIC)
   endif
   ifeq (0,$(COMPATIBLE))
+    FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FPEDANTIC += -std=f2003 -pedantic -Wunused-variable -Wc-binding-type \
+    FPEDANTIC += -pedantic -Wunused-variable -Wc-binding-type \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wintrinsics-std -Wreal-q-constant \
                  -Wrealloc-lhs -Wrealloc-lhs-all
-  endif
-  ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
-    FPEDANTIC += -Wuse-without-only
+    ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
+      FWARNEXTRA = -Wuse-without-only
+    endif
+    FPEDANTIC += $(FWARNEXTRA)
   endif
   ifeq (1,$(PEDANTIC))
-    CPEDANTIC += -std=c99
-    CFLAGS += $(CPEDANTIC)
+    CSTD = -std=c99
+    CXXFLAGS += $(CPEDANTIC)
+    CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += -ffree-form
-    FMFLAGS += -std=f2003 -pedantic -Wunused-variable
-    ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
-      FMFLAGS += -Wuse-without-only
-    endif
+    FMFLAGS += $(FSTD) $(FPEDANTIC) #-pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
-    CPEDANTIC += -std=c89
-    CFLAGS += $(CPEDANTIC)
-    FCFLAGS += $(FPEDANTIC)
+    CSTD = -std=c89
+    CXXFLAGS += $(CPEDANTIC)
+    CFLAGS += $(CSTD) $(CPEDANTIC)
+    FCFLAGS += $(FSTD) $(FPEDANTIC)
   else ifeq (0,$(COMPATIBLE))
-    CPEDANTIC += -std=c89
+    CSTD = -std=c89
     FCFLAGS += -ffree-form
   endif
   ifeq (0,$(COMPATIBLE))
