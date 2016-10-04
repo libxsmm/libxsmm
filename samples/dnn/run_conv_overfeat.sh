@@ -12,9 +12,16 @@ else
   NUMA=$3
 fi
 
+CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
+if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
+  if [ "0" != "$((NUMA < $(numactl -H | grep "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
+    NUMACTL="numactl --membind=${NUMA}"
+  fi
+fi
+
 # Usage: ./conv_knl_jit iters inpWidth inpHeight minibatch nIfm nOfm kw kh pad stride splits
-numactl --membind=${NUMA} ./layer_example_f32 ${ITERS} 231 231  ${MB}    3   96 11 11 0 4 1
-numactl --membind=${NUMA} ./layer_example_f32 ${ITERS}  28  28  ${MB}   96  256  5  5 0 1 1
-numactl --membind=${NUMA} ./layer_example_f32 ${ITERS}  14  14  ${MB}  256  512  3  3 1 1 1
-numactl --membind=${NUMA} ./layer_example_f32 ${ITERS}  14  14  ${MB}  512 1024  3  3 1 1 1
-numactl --membind=${NUMA} ./layer_example_f32 ${ITERS}  14  14  ${MB} 1024 1024  3  3 0 1 1
+${NUMACTL} ./layer_example_f32 ${ITERS} 231 231  ${MB}    3   96 11 11 0 4 1
+${NUMACTL} ./layer_example_f32 ${ITERS}  28  28  ${MB}   96  256  5  5 0 1 1
+${NUMACTL} ./layer_example_f32 ${ITERS}  14  14  ${MB}  256  512  3  3 1 1 1
+${NUMACTL} ./layer_example_f32 ${ITERS}  14  14  ${MB}  512 1024  3  3 1 1 1
+${NUMACTL} ./layer_example_f32 ${ITERS}  14  14  ${MB} 1024 1024  3  3 0 1 1
