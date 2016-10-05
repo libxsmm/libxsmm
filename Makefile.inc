@@ -433,8 +433,9 @@ ifneq (0,$(INTEL))
   ifneq (0,$(THREADS))
     FCMTFLAGS += -threads
   endif
-  CPEDANTIC += -Wcheck -Wremarks -diag-disable 177,1419,2547,10382
+  CPEDANTIC += -Wcheck -diag-disable 177,1419,2547,10382
   FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
+  CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     FSTD = -std03
     CSTD = -std=c99
@@ -446,7 +447,7 @@ ifneq (0,$(INTEL))
     FSTD = -std03
     CSTD = -std=c89
     CXXFLAGS += $(CPEDANTIC)
-    CFLAGS += $(CSTD) $(CPEDANTIC)
+    CFLAGS += $(CSTD) $(CPEDANTIC) $(CWARNEXTRA)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
     FMFLAGS += -fixed
   else
