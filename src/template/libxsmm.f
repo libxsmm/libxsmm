@@ -448,13 +448,13 @@
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
+            NULLIFY(construct_smmfunction%fn1)
             construct_smmfunction%fn0 => fn0
-            construct_smmfunction%fn1 => NULL()
           ELSE
             CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn1)
-            construct_smmfunction%fn0 => NULL()
+            NULLIFY(construct_smmfunction%fn0)
             construct_smmfunction%fn1 => fn1
           END IF
         END FUNCTION
@@ -493,13 +493,13 @@
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn0)
+            NULLIFY(construct_dmmfunction%fn1)
             construct_dmmfunction%fn0 => fn0
-            construct_dmmfunction%fn1 => NULL()
           ELSE
             CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
      &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
      &        fn1)
-            construct_dmmfunction%fn0 => NULL()
+            NULLIFY(construct_dmmfunction%fn0)
             construct_dmmfunction%fn1 => fn1
           END IF
         END FUNCTION
