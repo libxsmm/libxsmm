@@ -575,8 +575,9 @@
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
-          CALL libxsmm_smmcall_abx(fn,                                  &
-     &      C_LOC(srealptr(a)), C_LOC(srealptr(b)), C_LOC(srealptr(c)))
+          REAL(C_FLOAT), POINTER :: ra, rb, rc
+          ra => srealptr(a); rb => srealptr(b); rc => srealptr(c)
+          CALL libxsmm_smmcall_abx(fn, C_LOC(ra), C_LOC(rb), C_LOC(rc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
@@ -584,8 +585,9 @@
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
-          CALL libxsmm_dmmcall_abx(fn,                                  &
-     &      C_LOC(drealptr(a)), C_LOC(drealptr(b)), C_LOC(drealptr(c)))
+          REAL(C_DOUBLE), POINTER :: ra, rb, rc
+          ra => drealptr(a); rb => drealptr(b); rc => drealptr(c)
+          CALL libxsmm_dmmcall_abx(fn, C_LOC(ra), C_LOC(rb), C_LOC(rc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
@@ -594,8 +596,10 @@
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
+          REAL(C_FLOAT), POINTER :: ra, rb, rc
+          ra => srealptr(a); rb => srealptr(b); rc => srealptr(c)
           CALL libxsmm_smmcall_prx(fn,                                  &
-     &      C_LOC(srealptr(a)), C_LOC(srealptr(b)), C_LOC(srealptr(c)), &
+     &      C_LOC(ra), C_LOC(rb), C_LOC(rc),                            &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
@@ -605,8 +609,10 @@
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
+          REAL(C_DOUBLE), POINTER :: ra, rb, rc
+          ra => drealptr(a); rb => drealptr(b); rc => drealptr(c)
           CALL libxsmm_dmmcall_prx(fn,                                  &
-     &      C_LOC(drealptr(a)), C_LOC(drealptr(b)), C_LOC(drealptr(c)), &
+     &      C_LOC(ra), C_LOC(rb), C_LOC(rc),                            &
      &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
         END SUBROUTINE
 
