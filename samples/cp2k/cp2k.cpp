@@ -42,6 +42,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
+#include <string>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
