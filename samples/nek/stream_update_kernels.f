@@ -67,6 +67,24 @@ MODULE STREAM_UPDATE_KERNELS
       INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
     END SUBROUTINE
 
+    SUBROUTINE stream_update_var_helmholtz( i_g1, i_g2, i_g3, i_tm1, i_tm2, i_tm3, &
+                                            i_a, i_b, io_c, i_h1, i_h2, i_length ) &
+                                          BIND(C, name='stream_update_var_helmholtz')
+      IMPORT :: C_DOUBLE, C_INT
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g1
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g2
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_g3
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm1
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm2
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_tm3
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_a
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_b
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(INOUT) :: io_c
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_h1
+      REAL(KIND=C_DOUBLE), DIMENSION(*), INTENT(IN)    :: i_h2
+      INTEGER(C_INT),      VALUE,        INTENT(IN)    :: i_length
+    END SUBROUTINE
+
     SUBROUTINE stream_vector_compscale( i_a, i_b, io_c, i_length ) &
                                             BIND(C, name='stream_vector_compscale')
       IMPORT :: C_DOUBLE, C_INT
