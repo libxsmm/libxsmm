@@ -439,23 +439,21 @@
               TYPE(C_FUNPTR) :: sdispatch
             END FUNCTION
           END INTERFACE
+          NULLIFY(construct_smmfunction%fn0)
+          NULLIFY(construct_smmfunction%fn1)
+          fn0 => construct_smmfunction%fn0
+          fn1 => construct_smmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
-     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
-     &        fn0)
-            NULLIFY(construct_smmfunction%fn1)
-            construct_smmfunction%fn0 => fn0
+            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
+     &        alpha, beta, flags, prefetch), fn0)
           ELSE
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k,                     &
-     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
-     &        fn1)
-            NULLIFY(construct_smmfunction%fn0)
-            construct_smmfunction%fn1 => fn1
+            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
+     &        alpha, beta, flags, prefetch), fn1)
           END IF
         END FUNCTION
 
@@ -484,23 +482,21 @@
               TYPE(C_FUNPTR) :: ddispatch
             END FUNCTION
           END INTERFACE
+          NULLIFY(construct_dmmfunction%fn0)
+          NULLIFY(construct_dmmfunction%fn1)
+          fn0 => construct_dmmfunction%fn0
+          fn1 => construct_dmmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
-     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
-     &        fn0)
-            NULLIFY(construct_dmmfunction%fn1)
-            construct_dmmfunction%fn0 => fn0
+            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
+     &         alpha, beta, flags, prefetch), fn0)
           ELSE
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k,                     &
-     &        lda, ldb, ldc, alpha, beta, flags, prefetch),             &
-     &        fn1)
-            NULLIFY(construct_dmmfunction%fn0)
-            construct_dmmfunction%fn1 => fn1
+            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
+     &         alpha, beta, flags, prefetch), fn1)
           END IF
         END FUNCTION
 
