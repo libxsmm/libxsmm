@@ -70,6 +70,9 @@ endif
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 $(OUTDIR)/libstream_update_kernels.$(SLIBEXT): $(OUTDIR)/.make $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
 	$(AR) -rs $@ $(BLDDIR)/stream_update_kernels-c.o $(BLDDIR)/stream_update_kernels-f.o
 

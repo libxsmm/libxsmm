@@ -82,6 +82,9 @@ XFILES := $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (Darwin,$(UNAME))

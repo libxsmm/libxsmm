@@ -70,6 +70,9 @@ XFILES  := $(addprefix $(OUTDIR)/,$(basename $(notdir \
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 .PHONY: tests
 tests: test
 

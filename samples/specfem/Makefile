@@ -91,6 +91,9 @@ endif
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 $(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS)
 ifneq (0,$(KNC))
 ifneq (0,$(MPSS))

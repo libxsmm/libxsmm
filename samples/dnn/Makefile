@@ -67,6 +67,9 @@ XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT)
 	$(FC) -o $@ $(FTNOBJS) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \

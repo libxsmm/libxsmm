@@ -67,6 +67,9 @@ XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/$(OUTNAME)f
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT) $(LIBNAME)ext.$(LIBEXT)
 	$(FC) -o $@ $(FTNOBJS) $(EXTLIB) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \

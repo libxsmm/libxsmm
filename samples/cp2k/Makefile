@@ -67,6 +67,9 @@ XFILES := $(OUTDIR)/$(OUTNAME)
 .PHONY: all
 all: $(XFILES)
 
+.PHONY: compile
+compile: $(OBJECTS) $(FTNOBJS)
+
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS)
 	$(XLD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
