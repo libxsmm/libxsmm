@@ -39,6 +39,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
+#include <string>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
@@ -50,31 +51,36 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(REAL_TYPE)
+# define REAL_TYPE double
+#endif
+
 #define MAX_SIZE (80 * 80)
 
 
-template<int Seed>
-struct LIBXSMM_RETARGETABLE init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, double scale, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? ncols : ld;
-    const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
-    const int maxval = std::max(std::abs(minval), addval);
-    const double norm = 0 != maxval ? (scale / maxval) : scale;
-    for (int i = 0; i < nrows; ++i) {
-      for (int j = 0; j < ncols; ++j) {
-        const double value = static_cast<double>(i * ldx + j + minval);
-        dst[i*ldx+j] = static_cast<T>(norm * (value - 0.5 * addval));
-      }
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+{
+  const double seed1 = seed + 1;
+  libxsmm_blasint i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < ncols; ++i) {
+    libxsmm_blasint j;
+    for (j = 0; j < nrows; ++j) {
+      const libxsmm_blasint k = i * ld + j;
+      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
     }
   }
-};
+}
 
 
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-    typedef double T;
+    typedef REAL_TYPE T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
     const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
@@ -83,11 +89,11 @@ int main(int argc, char* argv[])
     const int s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
-    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
+    const double gflops = 2.0 * s * m * n * k * 1E-9;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
+      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
@@ -98,9 +104,9 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (int i = 0; i < s; ++i) {
-      init<42>(a + i * asize, scale, m, k, i);
-      init<24>(b + i * bsize, scale, k, n, i);
-      init<22>(c + i * csize, scale, m, n, i);
+      init(42 + i, a + i * asize, m, k, m);
+      init(24 + i, b + i * bsize, k, n, k);
+      init(22 + i, c + i * csize, m, n, m);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -118,7 +124,7 @@ int main(int argc, char* argv[])
 
       const libxsmm_mmfunction<T> xmm(m, n, k);
       if (!xmm) {
-        throw std::runtime_error("no specialized routine found!");
+        throw std::runtime_error(std::string("no specialized routine found!"));
       }
 
       { // batched
