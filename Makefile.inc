@@ -320,6 +320,7 @@ endif
 
 # linker setup
 LD = $(CC)
+XLD = $(CXX)
 ifneq (,$(strip $(FC)))
   FLD = $(FC)
 else

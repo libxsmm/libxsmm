@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
-    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
+    const double gflops = 2.0 * s * m * n * k * 1E-9;
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
