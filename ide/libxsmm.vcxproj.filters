@@ -129,7 +129,7 @@
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.h">
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_trans.h">
@@ -142,12 +142,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_perf.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dump.h">
@@ -275,7 +269,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_custom_custom.c">
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_malloc.c">
@@ -288,12 +282,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_perf.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_rsck.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_conv_fwd_nhwc_custom.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dump.c">

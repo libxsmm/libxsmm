@@ -30,9 +30,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include "libxsmm_main.h"
-#include "libxsmm_dnn_conv_fwd_custom_custom.h"
-#include "libxsmm_dnn_conv_fwd_nhwc_custom.h"
-#include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
+#include "libxsmm_dnn_convolution_forward.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
