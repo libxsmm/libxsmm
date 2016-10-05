@@ -99,9 +99,9 @@ private:
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
-  const double seed1 = seed + 1;
+  const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
     const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
-    const double gflops = 2.0 * s * m * n * k * 1E-9;
+    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
@@ -206,8 +206,8 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for CP2K_SCHEDULE
 #endif
     for (int i = 0; i < s; ++i) {
-      init(42 + i, a + i * asize, m, k, m);
-      init(24 + i, b + i * bsize, k, n, k);
+      init(42 + i, a + i * asize, m, k, m, scale);
+      init(24 + i, b + i * bsize, k, n, k, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

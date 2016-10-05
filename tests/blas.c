@@ -57,9 +57,9 @@
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
-  const double seed1 = seed + 1;
+  const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -113,10 +113,10 @@ int main(void)
   d = (REAL_TYPE*)malloc(maxc * maxn * sizeof(REAL_TYPE));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
 
-  init(42, a, maxm, maxk, maxa);
-  init(24, b, maxk, maxn, maxb);
-  init( 0, c, maxm, maxn, maxc);
-  init( 0, d, maxm, maxn, maxc);
+  init(42, a, maxm, maxk, maxa, 1.0);
+  init(24, b, maxk, maxn, maxb, 1.0);
+  init( 0, c, maxm, maxn, maxc, 1.0);
+  init( 0, d, maxm, maxn, maxc, 1.0);
 
   for (test = start; test < ntests; ++test) {
     double dtest = 0;

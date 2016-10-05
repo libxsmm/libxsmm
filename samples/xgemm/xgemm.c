@@ -48,9 +48,9 @@
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
-  const double seed1 = seed + 1;
+  const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -91,10 +91,10 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    init(42, a, m, k, lda);
-    init(24, b, k, n, ldb);
-    init( 0, c, m, n, ldc);
-    init( 0, d, m, n, ldc);
+    init(42, a, m, k, lda, 1.0);
+    init(24, b, k, n, ldb, 1.0);
+    init( 0, c, m, n, ldc, 1.0);
+    init( 0, d, m, n, ldc, 1.0);
 
     /* warmup BLAS library (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);

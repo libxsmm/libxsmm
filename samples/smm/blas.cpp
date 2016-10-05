@@ -60,9 +60,9 @@
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
-  const double seed1 = seed + 1;
+  const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     const int s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
-    const double gflops = 2.0 * s * m * n * k * 1E-9;
+    const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -116,11 +116,11 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (int i = 0; i < s; ++i) {
-      init(42 + i, a + i * asize, m, k, m);
-      init(24 + i, b + i * bsize, k, n, k);
-      init(22 + i, c + i * csize, m, n, m);
+      init(42 + i, a + i * asize, m, k, m, scale);
+      init(24 + i, b + i * bsize, k, n, k, scale);
+      init(22 + i, c + i * csize, m, n, m, scale);
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-      init(22 + i, d + i * csize, m, n, m);
+      init(22 + i, d + i * csize, m, n, m, scale);
 #endif
     }
 
