@@ -36,7 +36,7 @@ cat << EOM
 
 #if !defined(LIBXSMM_INTERNAL_API)
 # if defined(__cplusplus)
-#   define LIBXSMM_INTERNAL_API
+#   define LIBXSMM_INTERNAL_API LIBXSMM_INLINE
 # else
 #   define LIBXSMM_INTERNAL_API static
 # endif
