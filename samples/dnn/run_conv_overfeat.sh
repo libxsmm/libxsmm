@@ -19,7 +19,6 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-# Usage: ./conv_knl_jit iters inpWidth inpHeight minibatch nIfm nOfm kw kh pad stride splits
 ${NUMACTL} ./layer_example_f32 ${ITERS} 231 231  ${MB}    3   96 11 11 0 4 1
 ${NUMACTL} ./layer_example_f32 ${ITERS}  28  28  ${MB}   96  256  5  5 0 1 1
 ${NUMACTL} ./layer_example_f32 ${ITERS}  14  14  ${MB}  256  512  3  3 1 1 1
