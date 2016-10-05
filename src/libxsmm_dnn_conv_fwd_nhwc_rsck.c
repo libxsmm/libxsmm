@@ -30,35 +30,6 @@
 ******************************************************************************/
 #include "libxsmm_dnn_conv_fwd_nhwc_rsck.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
-{
-  typedef float element_input_type;
-  typedef float element_output_type;
-  typedef float element_filter_type;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_fallback.tpl.c"
-}
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
-{
-  typedef float element_input_type;
-  typedef float element_output_type;
-  typedef float element_filter_type;
-  typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt.tpl.c"
-}
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
-{
-  typedef float element_input_type;
-  typedef float element_output_type;
-  typedef float element_filter_type;
-  typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt_img_par.tpl.c"
-}
-
-
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(libxsmm_dnn_conv_handle* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -74,7 +45,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
     switch (handle->datatype) {
       case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
-          internal_convolve_st_fwd_nhwc_rsck_fp32_fallback(handle, start_thread, tid);
+          typedef float element_input_type;
+          typedef float element_output_type;
+          typedef float element_filter_type;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_fallback.tpl.c"
         }
         else {
           status = LIBXSMM_DNN_ERR_GENERAL;
@@ -91,10 +65,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
       case LIBXSMM_DNN_DATATYPE_F32: {
         if (1 == handle->desc.splits) {
           if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-            internal_convolve_st_fwd_nhwc_rsck_fp32_opt(handle, start_thread, tid);
+            typedef float element_input_type;
+            typedef float element_output_type;
+            typedef float element_filter_type;
+            typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt.tpl.c"
           }
           else {
-            internal_convolve_st_fwd_nhwc_rsck_fp32_img_parallel_opt(handle, start_thread, tid);
+            typedef float element_input_type;
+            typedef float element_output_type;
+            typedef float element_filter_type;
+            typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt_img_par.tpl.c"
           }
         }
         else {
