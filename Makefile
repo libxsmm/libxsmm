@@ -1133,6 +1133,13 @@ tests: build-tests
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
+.PHONY: test-cpp
+test-cpp: $(INCDIR)/libxsmm_source.h
+	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
+		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
+		ECXXFLAGS="-DUSE_HEADER_ONLY $(ECXXFLAGS)" compile
+
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
 $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
@@ -1340,11 +1347,16 @@ clean-all: clean
 .PHONY: realclean-all
 realclean-all: realclean
 	@cd $(TSTDIR)           && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/barrier   && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/cp2k      && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/dispatch  && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/dnn       && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/nek       && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/smm       && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/specfem   && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/transpose && $(MAKE) --no-print-directory realclean
 	@cd $(SPLDIR)/wrap      && $(MAKE) --no-print-directory realclean
+	@cd $(SPLDIR)/xgemm     && $(MAKE) --no-print-directory realclean
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
