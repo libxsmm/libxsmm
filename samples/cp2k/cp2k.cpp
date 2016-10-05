@@ -98,25 +98,27 @@ private:
 #endif
 
 
-template<int Seed>
-struct LIBXSMM_RETARGETABLE init {
-  template<typename T> init(T *LIBXSMM_RESTRICT dst, double scale, int nrows, int ncols, int n = 0, int ld = 0) {
-    const int ldx = 0 == ld ? ncols : ld;
-    const int minval = n + Seed, addval = (nrows - 1) * ldx + (ncols - 1);
-    const int maxval = std::max(std::abs(minval), addval);
-    const double norm = 0 != maxval ? (scale / maxval) : scale;
-    for (int i = 0; i < nrows; ++i) {
-      for (int j = 0; j < ncols; ++j) {
-        const double value = static_cast<double>(i * ldx + j + minval);
-        dst[i*ldx+j] = static_cast<T>(norm * (value - 0.5 * addval));
-      }
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld)
+{
+  const double seed1 = seed + 1;
+  libxsmm_blasint i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < ncols; ++i) {
+    libxsmm_blasint j;
+    for (j = 0; j < nrows; ++j) {
+      const libxsmm_blasint k = i * ld + j;
+      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
     }
   }
-};
+}
 
 
 template<typename T>
-LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
 {
   const int ld = 0 == ld_src ? ncols : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
@@ -145,15 +147,19 @@ LIBXSMM_RETARGETABLE void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT
 
 
 template<typename T>
-LIBXSMM_RETARGETABLE double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *LIBXSMM_RESTRICT result, int nrows, int ncols, int ld = 0)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *LIBXSMM_RESTRICT result, int nrows, int ncols, int ld = 0)
 {
   const int ldx = 0 == ld ? ncols : ld;
   double diff = 0;
   for (int i = 0; i < nrows; ++i) {
     for (int j = 0; j < ncols; ++j) {
       const int k = i * ldx + j;
-      const double d = static_cast<double>(expect[k] - result[k]);
-      diff = std::max(diff, d * d);
+      const double a = expect[k];
+      const double b = result[k];
+      const double d1 = a - b;
+      const double d2 = d1 * d1;
+      diff = std::max(diff, d2);
     }
   }
   return diff;
@@ -178,7 +184,7 @@ int main(int argc, char* argv[])
 
     const int csize = m * n;
     if ((CP2K_MAX_SIZE) < csize) {
-      throw std::runtime_error("The size M x N is exceeding CP2K_MAX_SIZE!");
+      throw std::runtime_error(std::string("The size M x N is exceeding CP2K_MAX_SIZE!"));
     }
 
     const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
@@ -189,7 +195,7 @@ int main(int argc, char* argv[])
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
+      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
     T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
@@ -200,8 +206,8 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for CP2K_SCHEDULE
 #endif
     for (int i = 0; i < s; ++i) {
-      init<42>(a + i * asize, scale, m, k, i);
-      init<24>(b + i * bsize, scale, k, n, i);
+      init(42 + i, a + i * asize, m, k, m);
+      init(24 + i, b + i * bsize, k, n, k);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -217,6 +223,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
+      const T zero = 0;
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
@@ -224,7 +231,7 @@ int main(int argc, char* argv[])
         ~raii() { delete[] expect; }
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
-      std::fill_n(expect, csize, T(0));
+      std::fill_n(expect, csize, zero);
       double diff = 0;
 #else
       T *const expect = c;
@@ -233,7 +240,7 @@ int main(int argc, char* argv[])
       const libxsmm_mmfunction<T> xmm(m, n, k);
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
-        std::fill_n(expect, csize, T(0));
+        std::fill_n(expect, csize, zero);
 #if defined(_OPENMP) && (!defined(CP2K_CHECK) || 1 < (CP2K_CHECK))
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
@@ -257,7 +264,7 @@ int main(int argc, char* argv[])
 
       { // LAPACK/BLAS3 (reference)
         fprintf(stdout, "LAPACK/BLAS...\n");
-        std::fill_n(c, csize, T(0));
+        std::fill_n(c, csize, zero);
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -295,7 +302,7 @@ int main(int argc, char* argv[])
 
       { // inline an optimized implementation
         fprintf(stdout, "Inlined...\n");
-        std::fill_n(c, csize, T(0));
+        std::fill_n(c, csize, zero);
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -332,7 +339,7 @@ int main(int argc, char* argv[])
 
       { // auto-dispatched
         fprintf(stdout, "Dispatched...\n");
-        std::fill_n(c, csize, T(0));
+        std::fill_n(c, csize, zero);
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
@@ -369,7 +376,7 @@ int main(int argc, char* argv[])
 
       if (xmm) { // specialized routine
         fprintf(stdout, "Specialized...\n");
-        std::fill_n(c, csize, T(0));
+        std::fill_n(c, csize, zero);
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
