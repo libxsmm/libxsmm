@@ -42,7 +42,6 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
-#include <string>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
@@ -185,7 +184,7 @@ int main(int argc, char* argv[])
 
     const int csize = m * n;
     if ((CP2K_MAX_SIZE) < csize) {
-      throw std::runtime_error(std::string("The size M x N is exceeding CP2K_MAX_SIZE!"));
+      throw "The size M x N is exceeding CP2K_MAX_SIZE!";
     }
 
     const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
@@ -428,6 +427,10 @@ int main(int argc, char* argv[])
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
+    result = EXIT_FAILURE;
+  }
+  catch(const char* message) {
+    fprintf(stderr, "Error: %s\n", message);
     result = EXIT_FAILURE;
   }
   catch(...) {

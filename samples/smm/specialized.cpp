@@ -39,7 +39,6 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
-#include <string>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
@@ -123,9 +122,7 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       const libxsmm_mmfunction<T> xmm(m, n, k);
-      if (!xmm) {
-        throw std::runtime_error(std::string("no specialized routine found!"));
-      }
+      if (!xmm) throw "no specialized routine found!";
 
       { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
@@ -214,6 +211,10 @@ int main(int argc, char* argv[])
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
+    result = EXIT_FAILURE;
+  }
+  catch(const char* message) {
+    fprintf(stderr, "Error: %s\n", message);
     result = EXIT_FAILURE;
   }
   catch(...) {
