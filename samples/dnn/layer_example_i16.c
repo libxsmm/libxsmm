@@ -470,7 +470,7 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GOP  = %.5g\n", flops*1e-9);
+  printf("GOP  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS  = %.5g\n", (flops*1e-9)/l_total);
 
@@ -580,7 +580,7 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GOP (NHWC,RSCK)  = %.5g\n", flops*1e-9);
+  printf("GOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
@@ -693,7 +693,7 @@ int main(int argc, char* argv[])
   l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
-  printf("GOP (NHWC,custom)  = %.5g\n", flops*1e-9);
+  printf("GOP (NHWC,custom)  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
