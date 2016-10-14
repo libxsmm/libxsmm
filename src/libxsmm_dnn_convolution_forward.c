@@ -71,9 +71,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
             if (handle->desc.u == 1 && handle->desc.v == 1) {
-#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
             } else {
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
             }
@@ -84,9 +84,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
             if (handle->desc.u == 1 && handle->desc.v == 1) {
-#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
             } else {
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
             }
@@ -99,9 +99,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
             typedef short element_filter_type;
             typedef libxsmm_wconvfunction libxsmm_convfunction;
             if (handle->desc.u == 1 && handle->desc.v == 1) {
-#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
             } else {
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
             }
@@ -112,9 +112,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
             typedef short element_filter_type;
             typedef libxsmm_wconvfunction libxsmm_convfunction;
             if (handle->desc.u == 1 && handle->desc.v == 1) {
-#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
             } else {
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
             }
