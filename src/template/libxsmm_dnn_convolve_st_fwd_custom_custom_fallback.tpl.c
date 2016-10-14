@@ -33,7 +33,7 @@ int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->desc.N * handle->blocksofm;
+const int work = handle->desc.N * handle->blocksofm * handle->desc.splits;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */

@@ -42,63 +42,82 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
 
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
-    if (1 == handle->desc.splits) {
-      switch (handle->datatype) {
-        case LIBXSMM_DNN_DATATYPE_F32: {
-          typedef float element_input_type;
-          typedef float element_output_type;
-          typedef float element_filter_type;
+    switch (handle->datatype) {
+      case LIBXSMM_DNN_DATATYPE_F32: {
+        typedef float element_input_type;
+        typedef float element_output_type;
+        typedef float element_filter_type;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
-        } break;
-        case LIBXSMM_DNN_DATATYPE_I16: {
-          typedef short element_input_type;
-          typedef int element_output_type;
-          typedef short element_filter_type;
+      } break;
+      case LIBXSMM_DNN_DATATYPE_I16: {
+        typedef short element_input_type;
+        typedef int element_output_type;
+        typedef short element_filter_type;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
-        } break;
-        default: {
-          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-          return status;
-        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        return status;
       }
-    } else {
-      status = LIBXSMM_DNN_ERR_GENERAL;
-      return status;
     }
   }
   else {
     if (1 == handle->desc.splits) {
       switch (handle->datatype) {
         case LIBXSMM_DNN_DATATYPE_F32: {
-          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+          if (handle->desc.N*handle->blocksofm*handle->desc.splits >= handle->desc.threads) {
             typedef float element_input_type;
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
+            if (handle->desc.u == 1 && handle->desc.v == 1) {
+#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
+#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+            } else {
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
+            }
           }
           else {
             typedef float element_input_type;
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
+            if (handle->desc.u == 1 && handle->desc.v == 1) {
+#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+            } else {
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+            }
           }
         } break;
         case LIBXSMM_DNN_DATATYPE_I16: {
-          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+          if (handle->desc.N*handle->blocksofm*handle->desc.splits >= handle->desc.threads) {
             typedef short element_input_type;
             typedef int element_output_type;
             typedef short element_filter_type;
             typedef libxsmm_wconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt.tpl.c"
+            if (handle->desc.u == 1 && handle->desc.v == 1) {
+#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
+#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+            } else {
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
+            }
           }
           else {
             typedef short element_input_type;
             typedef int element_output_type;
             typedef short element_filter_type;
             typedef libxsmm_wconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_opt_img_par.tpl.c"
+            if (handle->desc.u == 1 && handle->desc.v == 1) {
+#define LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+#undef LIBXSMM_DNN_INTERNAL_STRIDE_ONE
+            } else {
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+            }
           }
         } break;
         default: {
@@ -155,14 +174,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_custom
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_custom_opt.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_custom.tpl.c"
           }
           else {
             typedef float element_input_type;
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_custom_opt_img_par.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_custom_img_par.tpl.c"
           }
         }
         else {
@@ -220,14 +239,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck.tpl.c"
           }
           else {
             typedef float element_input_type;
             typedef float element_output_type;
             typedef float element_filter_type;
             typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_opt_img_par.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_fwd_nhwc_rsck_img_par.tpl.c"
           }
         }
         else {

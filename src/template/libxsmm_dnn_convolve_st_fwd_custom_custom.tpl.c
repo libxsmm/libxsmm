@@ -29,11 +29,14 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
+int imgofm1, img, ofm1, ifm1, oj, oi;
+#if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
+int ij, ii;
+#endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
-/* number of tasks that could be run in parallel */
-const int work = handle->desc.N*handle->blocksofm;
+/* number of tasks that could be run in parallel, we handle splits as an additional image here */
+const int work = handle->desc.N*handle->blocksofm*handle->desc.splits;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
@@ -60,11 +63,19 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
   ofm1 = imgofm1%handle->blocksofm;
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
     for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
+#if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
       ij = oj * handle->desc.u;
+#endif
       for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
+#if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
         ii = oi * handle->desc.v;
+
         l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ij, ii, 0, 0,
                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+#else
+        l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj, oi, 0, 0,
+                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+#endif
         l_wt     = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
                     handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
         l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
@@ -73,8 +84,13 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
         /* check we are not at the end */
         if (oj < handle->ofh-handle->fwd_ofh_rb) {
           jitted_conv_fp_noweight_pf(l_input, l_wt, l_output,
+#if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
             &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, 0, 0,
                                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
+#else
+            &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj + handle->fwd_ofh_rb, oi, 0, 0,
+                                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
+#endif
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, oi, 0,
                                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }

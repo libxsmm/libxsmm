@@ -207,15 +207,10 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
   LIBXSMM_VLA_DECL(4, const float,  input_t,  input, nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
 
-  if (nSplits != 1) {
-    printf("nSplits != 1 not supported yet for naive code!\n");
-    exit(1);
-  }
-
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
-  for (img = 0; img < nImg; ++img) {
+  for (img = 0; img < nImg*nSplits; ++img) {
     for (ofm = 0; ofm < nOfm; ++ofm) {
       for (ifm = 0; ifm < nIfm; ++ifm) {
         for (oj = 0; oj < ofh; ++oj) {
