@@ -49,6 +49,9 @@ const int img = l_tidgroup / handle->blocksofm;
 const int ofm1 = l_tidgroup % handle->blocksofm;
 int start_ofh = l_l2_ts * (ltid % l_l1_gs);
 const int end_ofh = ((start_ofh + l_l2_ts) <= handle->ofh) ? (start_ofh + l_l2_ts) : handle->ofh;
+#if defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_SPLITS)
+const int split = img%handle->desc.splits;
+#endif
 /* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
 libxsmm_convfunction jitted_conv_fp_noweight_pf = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 libxsmm_convfunction jitted_conv_fp_weight_pf = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
@@ -63,7 +66,11 @@ element_output_type* l_output;
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+#if defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_SPLITS)
+LIBXSMM_VLA_DECL(8, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+#else
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+#endif
 
 /* avoid ouf of bounds (dirty) */
 start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
@@ -81,8 +88,13 @@ for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
       l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj, oi, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 #endif
+#if defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_SPLITS)
+      l_wt     = &LIBXSMM_VLA_ACCESS(8, weight, split, ofm1, ifm1, 0, 0, 0, 0, 0,
+                  handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+#else
       l_wt     = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+#endif
       l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
                     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -114,8 +126,13 @@ for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
           jitted_conv_fp_weight_pf(l_input, l_wt, l_output,
             &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + 1, 0, 0, 0, 0,
               handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
+#if defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_SPLITS)
+            &LIBXSMM_VLA_ACCESS(8, weight, split, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
+              handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
+#else
             &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
               handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
+#endif
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
               handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }

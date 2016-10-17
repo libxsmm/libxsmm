@@ -201,17 +201,18 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
   int stride_w  = param->stride_w;
   int nSplits   = param->nSplits;
   /* loop counters */
-  int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
+  int img, ofm, ifm, oj, oi, ij, ii, kj, ki, split;
 
   LIBXSMM_VLA_DECL(4,       float, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4, const float,  input_t,  input, nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+  LIBXSMM_VLA_DECL(5, const float, filter_t, filter, nOfm, nIfm, kh, kw);
 
 #if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki, split)
 #endif
   for (img = 0; img < nImg*nSplits; ++img) {
     for (ofm = 0; ofm < nOfm; ++ofm) {
+      split = img%nSplits;
       for (ifm = 0; ifm < nIfm; ++ifm) {
         for (oj = 0; oj < ofh; ++oj) {
           ij = oj * stride_h;
@@ -221,7 +222,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
               for (ki = 0; ki < kw; ++ki) {
                 LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+                * LIBXSMM_VLA_ACCESS(5, filter_t, split, ofm, ifm, kj, ki, nOfm, nIfm, kh, kw);
               }
             }
           }
@@ -332,30 +333,30 @@ int main(int argc, char* argv[])
   printf("PARAMS: ITERS:%d  Threads:%d\n", iters, nThreads);
   printf(" InImg %dx%d Padded (%dx%d)\n", ifh, ifw, ifhp, ifwp);
   printf("OutImg %dx%d Padded (%dx%d)\n", ofh, ofw, ofhp, ofwp);
-  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIfm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nOfm*ofhp*ofwp*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nSplits*nImg*nIfm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Output (MB): %10.2f MiB\n", (double)(nSplits*nImg*nOfm*ofhp*ofwp*sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIfm*ifhp*ifwp*   sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOfm*ofhp*ofwp*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Weight     : %10.2f MiB\n", (double)(nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Weight     : %10.2f MiB\n", (double)(nSplits*nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
-  naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_filter          = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  input_nhwc            = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  output_nhwc           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_output_nhwc     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  naive_input           = (float*)libxsmm_aligned_malloc( nSplits*nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_output          = (float*)libxsmm_aligned_malloc( nSplits*nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nSplits*nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_filter          = (float*)libxsmm_aligned_malloc( nSplits*nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  input_nhwc            = (float*)libxsmm_aligned_malloc( nSplits*nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  output_nhwc           = (float*)libxsmm_aligned_malloc( nSplits*nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_nhwc     = (float*)libxsmm_aligned_malloc( nSplits*nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  filter_rsck           = (float*)libxsmm_aligned_malloc( nSplits*nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
 
   /* initialize data */
-  init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
-  zero_buf(naive_output,         nImg*nOfm*ofhp*ofwp);
-  zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
-  init_buf(naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
-  naive_copy_NCHW_to_NHWC(naive_input, input_nhwc, nImg, ifhp, ifwp, nIfm);
-  zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
-  zero_buf(naive_output_nhwc,    nImg*nOfm*ofhp*ofwp);
+  init_buf(naive_input,          nSplits*nImg*nIfm*ifhp*ifwp, 0, 0);
+  zero_buf(naive_output,         nSplits*nImg*nOfm*ofhp*ofwp);
+  zero_buf(naive_libxsmm_output, nSplits*nImg*nOfm*ofhp*ofwp);
+  init_buf(naive_filter,         nSplits*nOfm*nIfm*kh*kw, 0, 0);
+  naive_copy_NCHW_to_NHWC(naive_input, input_nhwc, nImg*nSplits, ifhp, ifwp, nIfm);
+  zero_buf(output_nhwc,          nSplits*nImg*nOfm*ofhp*ofwp);
+  zero_buf(naive_output_nhwc,    nSplits*nImg*nOfm*ofhp*ofwp);
   naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
 
   printf("\n");
@@ -429,7 +430,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
 
   /* compare */
-  compare_buf(naive_output, naive_libxsmm_output, nImg*nOfm*ofhp*ofwp, &norms);
+  compare_buf(naive_output, naive_libxsmm_output, nSplits*nImg*nOfm*ofhp*ofwp, &norms);
   printf("             1-norm of reference: %f\n", norms.one_norm_ref);
   printf("              1-norm of JIT-code: %f\n", norms.one_norm_test);
   printf("       L2-error-norm of JIT-code: %f\n", norms.l2_rel_err);
@@ -455,7 +456,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+  flops = (double)nSplits * (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time = %.5g\n", ((double)(l_total/iters)));
@@ -470,6 +471,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_handle( libxsmm_handle ) );
+
+  if ( nSplits > 1 ) {
+    printf("\n\n\n");
+    exit(0);
+  }
 
   printf("\n");
   printf("##########################################\n");
@@ -535,7 +541,7 @@ int main(int argc, char* argv[])
   naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
   /* compare */
-  compare_buf(naive_output, naive_output_nhwc, nImg*nOfm*ofhp*ofwp, &norms);
+  compare_buf(naive_output, naive_output_nhwc, nSplits*nImg*nOfm*ofhp*ofwp, &norms);
   printf("             1-norm of reference: %f\n", norms.one_norm_ref);
   printf("              1-norm of JIT-code: %f\n", norms.one_norm_test);
   printf("       L2-error-norm of JIT-code: %f\n", norms.l2_rel_err);
@@ -562,7 +568,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+  flops = (double)nSplits * (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
@@ -648,7 +654,7 @@ int main(int argc, char* argv[])
   naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
   /* compare */
-  compare_buf(naive_output, naive_output_nhwc, nImg*nOfm*ofhp*ofwp, &norms);
+  compare_buf(naive_output, naive_output_nhwc, nSplits*nImg*nOfm*ofhp*ofwp, &norms);
   printf("             1-norm of reference: %f\n", norms.one_norm_ref);
   printf("              1-norm of JIT-code: %f\n", norms.one_norm_test);
   printf("       L2-error-norm of JIT-code: %f\n", norms.l2_rel_err);
@@ -675,7 +681,7 @@ int main(int argc, char* argv[])
   }
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+  flops = (double)nSplits * (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP (NHWC,custom)  = %.5g\n", flops*1e-9/(double)iters);
   printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
