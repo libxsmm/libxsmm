@@ -131,7 +131,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #if defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_SPLITS)
                 &LIBXSMM_VLA_ACCESS(8, weight, split, ofm1 + 1, 0, 0, 0, 0, 0, 0,
-                  handle-blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
+                  handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
 #else
                 &LIBXSMM_VLA_ACCESS(7, weight, ofm1 + 1, 0, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
