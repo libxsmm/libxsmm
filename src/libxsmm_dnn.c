@@ -170,8 +170,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
       }
       else {
 #endif
-        for (i = 28; i > 1; --i) {
-          if (handle->ofw % i == 0) break;
+        if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
+          for (i = 28; i > 1; --i) {
+            if (handle->ofw % i == 0) break;
+          }
+        } else {
+          for (i = 27; i > 1; --i) {
+            if (handle->ofw % i == 0) break;
+          }
         }
         handle->fwd_ofw_rb = i;
         handle->fwd_ofh_rb = 1;
