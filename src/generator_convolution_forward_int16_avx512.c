@@ -614,7 +614,21 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( l
         l_disp = (l_k*i_conv_kernel_config->datatype_size)+(l_n*i_conv_kernel_config->datatype_size*i_conv_desc->stride_w*i_conv_desc->ifm_block)
                    + (l_m*i_conv_desc->ifw_padded*i_conv_desc->ifm_block*i_conv_kernel_config->datatype_size);
 #endif
+#if 1
+        /* This replacement code only works for LIBXSMM format */
+        l_disp = (l_k*i_conv_kernel_config->datatype_size_in*i_conv_desc->fm_lp_block)
+                   + (l_n*i_conv_kernel_config->datatype_size_in*i_conv_desc->stride_w*i_conv_desc->ifm_block*i_conv_desc->fm_lp_block)
+                   + (l_m*i_conv_desc->ifw_padded*i_conv_desc->ifm_block*i_conv_desc->fm_lp_block*i_conv_kernel_config->datatype_size_in);
 
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          i_conv_kernel_config->instruction_set,
+                                          LIBXSMM_X86_INSTR_VPBROADCASTD,
+                                          l_input_reg,
+                                          l_input_idx, l_scale,
+                                          l_disp,
+                                          i_conv_kernel_config->vector_name,
+                                          1, 0, 0 );
+#else
         /* select the base register */
         if (l_m == 1) {
           if ( l_n > 8 ) {
@@ -670,6 +684,7 @@ void libxsmm_generator_convolution_forward_int16_avx512_ifmloop_sfma_two_rows( l
                                           l_disp,
                                           i_conv_kernel_config->vector_name,
                                           1, 0, 0 );
+#endif
 
         /* 16bit integer MADD with horizontal add */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,

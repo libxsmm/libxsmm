@@ -296,7 +296,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
           descriptor.unroll_kw = 1;
         }
         if (handle->datatype == LIBXSMM_DNN_DATATYPE_I16 && 
-            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
+            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE &&
+            conv_desc.R > 1 && conv_desc.S > 1 && handle->fwd_ofh_rb == 1) {
           /* we need 3 instrad of 1 instruction for FMA -> do not perform any unrolling in kh/kw to control code size */
           descriptor.unroll_kh = 0;
           descriptor.unroll_kw = 0;
