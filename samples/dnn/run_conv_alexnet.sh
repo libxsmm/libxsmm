@@ -1,15 +1,17 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
-  echo "Usage: `basename $0` mb iters numa; using default values: 256 100 1"
+  echo "Usage: `basename $0` mb iters numa; using default values: 256 100 1 f32"
   MB=256
   ITERS=100
   NUMA=1
+  BIN=f32
 else
   MB=$1
   ITERS=$2
   NUMA=$3
+  BIN=$4
 fi
 
 CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
@@ -19,8 +21,8 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-${NUMACTL} ./layer_example_f32 ${ITERS} 227 227  ${MB}    3   96 11 11 0 4 1
-${NUMACTL} ./layer_example_f32 ${ITERS}  31  31  ${MB}   96  256  5  5 0 1 2
-${NUMACTL} ./layer_example_f32 ${ITERS}  15  15  ${MB}  256  384  3  3 1 1 1
-${NUMACTL} ./layer_example_f32 ${ITERS}  15  15  ${MB}  384  384  3  3 1 1 2
-${NUMACTL} ./layer_example_f32 ${ITERS}  15  15  ${MB}  384  256  3  3 0 1 2
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 227 227  ${MB}    3   96 11 11 0 4 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  31  31  ${MB}   96  256  5  5 0 1 2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  256  384  3  3 1 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  384  3  3 1 1 2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  256  3  3 0 1 2
