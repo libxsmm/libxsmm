@@ -152,16 +152,20 @@
         ! two wrapped backend procedure pointers (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
-            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS, POINTER :: fn1
+            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS,                     &
+     &                                      POINTER :: fn0 => NULL()
+            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS,                     &
+     &                                      POINTER :: fn1 => NULL()
         END TYPE
 
         ! Generic function type which is representing either one of the
         ! two wrapped backend procedure pointers (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
-            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS, POINTER :: fn1
+            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS,                     &
+     &                                      POINTER :: fn0 => NULL()
+            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS,                     &
+     &                                      POINTER :: fn1 => NULL()
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
@@ -439,10 +443,6 @@
               TYPE(C_FUNPTR) :: sdispatch
             END FUNCTION
           END INTERFACE
-          NULLIFY(construct_smmfunction%fn0)
-          NULLIFY(construct_smmfunction%fn1)
-          fn0 => construct_smmfunction%fn0
-          fn1 => construct_smmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
@@ -451,9 +451,11 @@
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
      &        alpha, beta, flags, prefetch), fn0)
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(fn0, NULL())
           ELSE
             CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
      &        alpha, beta, flags, prefetch), fn1)
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(NULL(), fn1)
           END IF
         END FUNCTION
 
@@ -482,10 +484,6 @@
               TYPE(C_FUNPTR) :: ddispatch
             END FUNCTION
           END INTERFACE
-          NULLIFY(construct_dmmfunction%fn0)
-          NULLIFY(construct_dmmfunction%fn1)
-          fn0 => construct_dmmfunction%fn0
-          fn1 => construct_dmmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
@@ -494,9 +492,11 @@
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
      &         alpha, beta, flags, prefetch), fn0)
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(fn0, NULL())
           ELSE
             CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
      &         alpha, beta, flags, prefetch), fn1)
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(NULL(), fn1)
           END IF
         END FUNCTION
 
