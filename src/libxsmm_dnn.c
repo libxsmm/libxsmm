@@ -140,8 +140,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     memset(handle, 0, sizeof(*handle));
     /* initialize known handle components */
     handle->desc = conv_desc;
-    /* at min. we have 1 split */
-    handle->desc.splits = (conv_desc.splits <= 1) ? 1 : conv_desc.splits;
     handle->datatype = conv_desc.datatype;
     handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     handle->buffer_format = conv_desc.buffer_format;
@@ -512,7 +510,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_input_buffer_check
   if (handle != 0 && buffer != 0) {
     /* set properties of the buffer according to convolution handle */
     buffer->N = handle->desc.N;
-    buffer->splits = handle->desc.splits;
     buffer->fmb = handle->blocksifm;
     buffer->bfm = handle->ifmblock;
     buffer->H = handle->ifhp;
@@ -522,7 +519,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_input_buffer_check
     buffer->lpb = handle->fm_lp_block;
     /* allocate raw data */
     result = libxsmm_xmalloc(&buffer->data,
-        buffer->N * buffer->splits * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * internal_dnn_typesize(buffer->datatype),
+        buffer->N * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * internal_dnn_typesize(buffer->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
@@ -555,7 +552,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer_check(c
   if (handle != 0 && buffer != 0 && data != 0) {
     /* set properties of the buffer according to convolution handle */
     buffer->N = handle->desc.N;
-    buffer->splits = handle->desc.splits;
     buffer->fmb = handle->blocksifm;
     buffer->bfm = handle->ifmblock;
     buffer->H = handle->ifhp;
@@ -599,7 +595,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer_chec
   if (handle != 0 && buffer != 0) {
     /* set properties of the buffer according to convolution handle */
     buffer->N = handle->desc.N;
-    buffer->splits = handle->desc.splits;
     buffer->fmb = handle->blocksofm;
     buffer->bfm = handle->ofmblock;
     buffer->H = handle->ofhp;
@@ -614,7 +609,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer_chec
     }
     /* allocate raw data, we always have a 4 byte wide type!! */
     result = libxsmm_xmalloc(&buffer->data,
-        buffer->N * buffer->splits * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * internal_dnn_typesize(buffer->datatype),
+        buffer->N * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * internal_dnn_typesize(buffer->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
@@ -647,7 +642,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer_check(
   if (handle != 0 && buffer != 0 && data != 0) {
     /* set properties of the buffer according to convolution handle */
     buffer->N = handle->desc.N;
-    buffer->splits = handle->desc.splits;
     buffer->fmb = handle->blocksofm;
     buffer->bfm = handle->ofmblock;
     buffer->H = handle->ofhp;
@@ -710,7 +704,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const
 
   if (handle != 0 && filter != 0) {
     /* set properties of the buffer according to convolution handle */
-    filter->splits = handle->desc.splits;
     filter->ifmb = handle->blocksifm;
     filter->bifm = handle->ifmblock;
     filter->ofmb = handle->blocksofm;
@@ -722,7 +715,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const
     filter->lpb = handle->fm_lp_block;
     /* allocate raw data */
     result = libxsmm_xmalloc(&filter->data,
-        filter->splits * filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * filter->lpb * internal_dnn_typesize(filter->datatype),
+        filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * filter->lpb * internal_dnn_typesize(filter->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
@@ -754,7 +747,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter_check(const l
 
   if (handle != 0 && filter != 0 && data != 0) {
     /* set properties of the buffer according to convolution handle */
-    filter->splits = handle->desc.splits;
     filter->ifmb = handle->blocksifm;
     filter->bifm = handle->ifmblock;
     filter->ofmb = handle->blocksofm;
@@ -820,14 +812,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const lib
 
   if (handle != 0 && bias != 0) {
     /* set properties of the buffer according to convolution handle */
-    bias->splits = handle->desc.splits;
     bias->fmb = handle->blocksifm;
     bias->bfm = handle->ifmblock;
     bias->datatype = handle->datatype;
     bias->lpb = handle->fm_lp_block;
     /* allocate raw data, we always have a 4 byte wide type!! */
     result = libxsmm_xmalloc(&bias->data,
-        bias->splits * bias->fmb * bias->bfm * bias->lpb * internal_dnn_typesize(bias->datatype),
+        bias->fmb * bias->bfm * bias->lpb * internal_dnn_typesize(bias->datatype),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
   }
   else {
@@ -915,7 +906,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_dnn_buffer* buffer)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const size_t size = (size_t)buffer->N * (size_t)buffer->splits * (size_t)buffer->fmb
+  const size_t size = (size_t)buffer->N * (size_t)buffer->fmb
                     * (size_t)buffer->bfm * (size_t)buffer->H * (size_t)buffer->W;
   size_t i;
 
@@ -1115,7 +1106,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_d
   if (handle != 0 && buffer != 0) {
     /* check if format matches */
     if ( handle->desc.N == buffer->N
-      && handle->desc.splits == buffer->splits
       && handle->ifwp == buffer->W
       && handle->ifhp == buffer->H
       && handle->ifmblock == buffer->bfm
@@ -1145,7 +1135,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_
   if (handle != 0 && buffer != 0) {
     /* check if format matches */
     if ( handle->desc.N == buffer->N
-      && handle->desc.splits == buffer->splits
       && handle->ofwp == buffer->W
       && handle->ofhp == buffer->H
       && handle->ofmblock == buffer->bfm
@@ -1175,8 +1164,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_con
 
   if (handle != 0 && filter != 0) {
     /* check if format matches */
-    if ( handle->desc.splits == filter->splits
-      && handle->desc.R == filter->R
+    if ( handle->desc.R == filter->R
       && handle->desc.S == filter->S
       && handle->ifmblock == filter->bifm
       && handle->blocksifm == filter->ifmb

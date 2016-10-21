@@ -30,28 +30,25 @@
 ******************************************************************************/
 
 /* use for-loops to potentially leverage NUMA in the future */
-int i1, i2, i3, i4, i5, i6, i7;
+int i1, i2, i3, i4, i5, i6;
 int N = buffer->N;
-int splits = buffer->splits;
 int fmb = buffer->fmb;
 int bfm = buffer->bfm;
 int H = buffer->H;
 int W = buffer->W;
 int lpb = buffer->lpb;
 
-LIBXSMM_VLA_DECL(7, element_type, handle_data, (element_type*)buffer->data, splits, fmb, H, W, bfm, lpb);
-LIBXSMM_VLA_DECL(5, const element_type, user_data, (const element_type*)data, splits, fmb * bfm * lpb, H, W);
+LIBXSMM_VLA_DECL(6, element_type, handle_data, (element_type*)buffer->data, fmb, H, W, bfm, lpb);
+LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
 
 for (i1 = 0; i1 < N; ++i1) {
-  for (i2 = 0; i2 < splits; ++i2) {
-    for (i3 = 0; i3 < fmb; ++i3) {
-      for (i4 = 0; i4 < H; ++i4) {
-        for (i5 = 0; i5 < W; ++i5) {
-          for (i6 = 0; i6 < bfm; ++i6) {
-            for (i7 = 0; i7 < lpb; ++i7) {
-              LIBXSMM_VLA_ACCESS(7, handle_data, i1, i2, i3, i4, i5, i6, i7, splits, fmb, H, W, bfm, lpb) =
-              LIBXSMM_VLA_ACCESS(5, user_data, i1, i2, (i3*bfm*lpb) + (i6*lpb) + i7, i4, i5, splits, fmb * bfm * lpb, H, W);
-            }
+  for (i2 = 0; i2 < fmb; ++i2) {
+    for (i3 = 0; i3 < H; ++i3) {
+      for (i4 = 0; i4 < W; ++i4) {
+        for (i5 = 0; i5 < bfm; ++i5) {
+          for (i6 = 0; i6 < lpb; ++i6) {
+            LIBXSMM_VLA_ACCESS(6, handle_data, i1, i2, i3, i4, i5, i6, fmb, H, W, bfm, lpb) =
+            LIBXSMM_VLA_ACCESS(4, user_data, i1, (i2*bfm*lpb) + (i5*lpb) + i6, i3, i4, fmb * bfm * lpb, H, W);
           }
         }
       }

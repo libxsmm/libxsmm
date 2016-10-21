@@ -117,7 +117,6 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
   int pad_h_out;                               /* height of zero-padding in output buffer */
   int pad_w_out;                               /* width of zero-padding in output buffer */
-  int splits;                                  /* number of splits */
   int threads;                                 /* number of threads to use when running convolution */
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
@@ -176,7 +175,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsmm_dnn_filte
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* bias);
 
 /**
- * Copy-in from a plain format such as input := [img][splits][ofm][ifm].
+ * Copy-in from a plain format such as input := [N][C][H][W] or [N][H][W][C]
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */
@@ -186,7 +185,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_dnn_buffer* layer);
 
 /**
- * Copy-out into a plain format such as output := [img][splits][ofm][ifm].
+ * Copy-out into a plain format such as output := [N][C][H][W] or [N][H][W][C]
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */

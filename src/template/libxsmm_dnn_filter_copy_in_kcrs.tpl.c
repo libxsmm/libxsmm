@@ -29,9 +29,8 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-/* use for-loops to potentially leverage NUMA in the future */
-int i1, i2, i3, i4, i5, i6, i7, i8;
-int splits = filter->splits;
+/* @TODO: use for-loops to potentially leverage NUMA in the future */
+int i1, i2, i3, i4, i5, i6, i7;
 int ifmb = filter->ifmb;
 int bifm = filter->bifm;
 int ofmb = filter->ofmb;
@@ -40,20 +39,18 @@ int R = filter->R;
 int S = filter->S;
 int lpb = filter->lpb;
 
-LIBXSMM_VLA_DECL(8, element_type, handle_data, (element_type*)filter->data, ofmb, ifmb, R, S, bifm, bofm, lpb);
-LIBXSMM_VLA_DECL(5, const element_type, user_data, (const element_type*)data, ofmb * bofm, ifmb * bifm * lpb, R, S);
+LIBXSMM_VLA_DECL(7, element_type, handle_data, (element_type*)filter->data, ifmb, R, S, bifm, bofm, lpb);
+LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, ifmb * bifm * lpb, R, S);
 
-for (i1 = 0; i1 < splits; ++i1) {
-  for (i2 = 0; i2 < ofmb; ++i2) {
-    for (i3 = 0; i3 < ifmb; ++i3) {
-      for (i4 = 0; i4 < R; ++i4) {
-        for (i5 = 0; i5 < S; ++i5) {
-          for (i6 = 0; i6 < bifm; ++i6) {
-            for (i7 = 0; i7 < bofm; ++i7) {
-              for (i8 = 0; i8 < lpb; ++i8) {
-                LIBXSMM_VLA_ACCESS(8, handle_data, i1, i2, i3, i4, i5, i6, i7, i8, ofmb, ifmb, R, S, bifm, bofm, lpb) =
-                LIBXSMM_VLA_ACCESS(5, user_data, i1, i2 * bofm + i7, (i3*bifm*lpb) + (i6*lpb) + i8, i4, i5, ofmb * bofm, ifmb * bifm * lpb, R, S);
-              }
+for (i1 = 0; i1 < ofmb; ++i1) {
+  for (i2 = 0; i2 < ifmb; ++i2) {
+    for (i3 = 0; i3 < R; ++i3) {
+      for (i4 = 0; i4 < S; ++i4) {
+        for (i5 = 0; i5 < bifm; ++i5) {
+          for (i6 = 0; i6 < bofm; ++i6) {
+            for (i7 = 0; i7 < lpb; ++i7) {
+              LIBXSMM_VLA_ACCESS(7, handle_data, i1, i2, i3, i4, i5, i6, i7, ifmb, R, S, bifm, bofm, lpb) =
+              LIBXSMM_VLA_ACCESS(4, user_data, i1 * bofm + i6, (i2*bifm*lpb) + (i5*lpb) + i7, i3, i4, ifmb * bifm * lpb, R, S);
             }
           }
         }
@@ -61,3 +58,4 @@ for (i1 = 0; i1 < splits; ++i1) {
     }
   }
 }
+

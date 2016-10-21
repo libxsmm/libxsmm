@@ -29,11 +29,11 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, split;
+int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->desc.N * handle->blocksofm * handle->desc.splits;
+const int work = handle->desc.N * handle->blocksofm;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
@@ -43,12 +43,11 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
 for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
   img = imgofm1 / handle->blocksofm;
   ofm1 = imgofm1 % handle->blocksofm;
-  split = img%handle->desc.splits;
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
     for (oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
@@ -60,7 +59,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
               for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
                 LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) += (element_output_type)(
                   LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
-                * LIBXSMM_VLA_ACCESS(7, weight, split, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksofm, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
+                * LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
               }
             }
           }
