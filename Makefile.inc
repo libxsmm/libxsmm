@@ -1054,7 +1054,7 @@ else ifneq (0,$(BLAS)) # generic
   else # BLAS library is specified via BLASLIB
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
-        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
+        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
       else
         BLAS_LDFLAGS += $(call abslib,$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
