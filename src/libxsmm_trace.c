@@ -147,9 +147,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mi
   if (0 != filter_maxnsyms) { /* enabled */
 # if defined(_WIN32) || defined(__CYGWIN__)
     SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-    result = FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE)
-      ? EXIT_SUCCESS
-      : GetLastError();
+    result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
 # else
     result = pthread_key_create(&internal_trace_key, internal_delete);
 # endif
@@ -185,9 +183,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
   if (0 == initialized) {
     LIBXSMM_ATOMIC_STORE(&internal_trace_initialized, -1/*disable*/, LIBXSMM_ATOMIC_SEQ_CST);
 # if defined(_WIN32) || defined(__CYGWIN__)
-    result = FALSE != SymCleanup(GetCurrentProcess())
-      ? EXIT_SUCCESS
-      : GetLastError();
+    result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
 # else
     result = pthread_key_delete(internal_trace_key);
 # endif
