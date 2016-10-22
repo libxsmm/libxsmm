@@ -34,11 +34,9 @@
 #include <math.h>
 #include <string.h>
 
-#include <immintrin.h>
-
 static unsigned int g_jit_code_reps = 0;
 
-void print_help() {
+void print_help(void) {
   printf("\n\n");
   printf("Usage (dense*dense=dense):\n");
   printf("    M\n");
@@ -427,16 +425,16 @@ int main(int argc, char* argv []) {
     l_alpha, l_beta, l_prefetch);
 
   if ( l_single_precision == 0 ) {
-    l_a_d = (double*)_mm_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(double), 64);
-    l_b_d = (double*)_mm_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(double), 64);
-    l_c_d = (double*)_mm_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
-    l_c_gold_d = (double*)_mm_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
+    l_a_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(double), 64);
+    l_b_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(double), 64);
+    l_c_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
+    l_c_gold_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
     init_double(l_a_d, l_b_d, l_c_d, l_c_gold_d, &l_xgemm_desc);
   } else {
-    l_a_f = (float*)_mm_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(float), 64);
-    l_b_f = (float*)_mm_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(float), 64);
-    l_c_f = (float*)_mm_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
-    l_c_gold_f = (float*)_mm_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
+    l_a_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(float), 64);
+    l_b_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(float), 64);
+    l_c_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
+    l_c_gold_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
     init_float(l_a_f, l_b_f, l_c_f, l_c_gold_f, &l_xgemm_desc);
   }
 
@@ -473,15 +471,15 @@ int main(int argc, char* argv []) {
 
   /* free */
   if ( l_single_precision == 0 ) {
-    _mm_free(l_a_d);
-    _mm_free(l_b_d);
-    _mm_free(l_c_d);
-    _mm_free(l_c_gold_d);
+    libxsmm_free(l_a_d);
+    libxsmm_free(l_b_d);
+    libxsmm_free(l_c_d);
+    libxsmm_free(l_c_gold_d);
   } else {
-    _mm_free(l_a_f);
-    _mm_free(l_b_f);
-    _mm_free(l_c_f);
-    _mm_free(l_c_gold_f);
+    libxsmm_free(l_a_f);
+    libxsmm_free(l_b_f);
+    libxsmm_free(l_c_f);
+    libxsmm_free(l_c_gold_f);
   }
 
   printf("------------------------------------------------\n");
