@@ -62,7 +62,8 @@ def itertools_product(*args):
         yield tuple(prod)
 
 
-def load_mnklist(argv, threshold, inputformat = 0, resultset = set([])):
+def load_mnklist(argv, threshold, inputformat = 0, resultset = None):
+    if (None == resultset): resultset = set()
     if (0 == inputformat): # indexes format
         resultset = set(map(lambda mnk: tuple(map(int, mnk.split("_"))), argv))
     elif (-1 == inputformat): # new input format
