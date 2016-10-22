@@ -865,7 +865,7 @@ ifneq (,$(strip $(FC)))
   GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
   FINFO = Fortran: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
-  GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
+  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(CXX_NAME) $(CXX_VERSION_STRING))
   FINFO = Fortran: <none>
 endif
 CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
