@@ -30,9 +30,7 @@
 ## Hans Pabst (Intel Corp.)
 ###############################################################################
 import itertools
-import operator
 import sys, os
-import re
 
 try:
     from functools import reduce
