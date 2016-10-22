@@ -36,21 +36,26 @@
 #if defined(_WIN32)
 # include <process.h>
 # define LIBXSMM_PERF_GETPID _getpid
+# define LIBXSMM_MAX_PATH MAX_PATH
 #else
+# include <linux/limits.h>
 # include <unistd.h>
 # define LIBXSMM_PERF_GETPID getpid
+# define LIBXSMM_MAX_PATH PATH_MAX
 #endif
-#include <stdio.h>
+# include <stdio.h>
+# include <stdlib.h>
 #if defined(LIBXSMM_PERF_JITDUMP)
-# include <string.h> /* included in front of <jitdump.h> */
-/* make JITDUMP=/path/to/linux-kernel/tools/perf/util */
-# include <jitdump.h>
+# include <string.h>
+# include "perf_jitdump.h"
 # include <sys/mman.h>
 # include <sys/types.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <syscall.h>
 # include <fcntl.h>
+# include <errno.h>
+# include <time.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -67,28 +72,58 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE FILE * fp;
 #if defined(LIBXSMM_PERF_JITDUMP)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* marker_addr;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int code_index /*= 0*/;
-
-/* Records in jit dump file are padded to 8 bytes. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE char zeros[8];  /* for padding. */
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t libxsmm_perf_padding_len(size_t len) {
-  return PADDING_8ALIGNED(len);
-}
 #endif
 
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 {
   const long pid = (long)LIBXSMM_PERF_GETPID();
-  /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
-  char file_name[64];
+  char file_name[LIBXSMM_MAX_PATH];
 #if defined(LIBXSMM_PERF_JITDUMP)
+  char file_path[LIBXSMM_MAX_PATH];
   int fd, page_size, res;
-  struct jitheader header;
-  size_t padding_len;
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "jit-%li.dump", pid);
+  struct jitdump_file_header header;
+  char * path_base;
+  char date[64];
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
 
-  fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0666);
+  path_base = getenv("JITDUMPDIR");
+  if(path_base == NULL) {
+    path_base = getenv("HOME");
+  }
+  if(path_base == NULL) {
+    path_base = getenv(".");
+  }
+
+  LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/", path_base);
+  res = mkdir(file_path, S_IRWXU);
+  if(res < 0 && errno != EEXIST) {
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug dir\n");
+    goto error;
+  }
+
+  LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/jit", path_base);
+  res = mkdir(file_path, S_IRWXU);
+  if(res < 0 && errno != EEXIST) {
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug/jit dir\n");
+    goto error;
+  }
+
+  strftime(date, sizeof(date), "%Y%m%d", &tm);
+
+  LIBXSMM_SNPRINTF(file_path, sizeof(file_path),
+           "%s/.debug/jit/libxsmm-jit-%s.XXXXXX", path_base, date);
+  path_base = mkdtemp(file_path);
+  if(path_base == NULL) {
+    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create temporary dir\n");
+    goto error;
+  }
+
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "%s/jit-%i.dump", path_base,
+                   getpid());
+
+  fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0600);
   if (fd < 0) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open file\n");
     goto error;
@@ -114,12 +149,11 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
     goto error;
   }
 
-  padding_len = libxsmm_perf_padding_len(sizeof(header));
   memset(&header, 0, sizeof(header));
-  header.magic      = JITHEADER_MAGIC;
-  header.version    = JITHEADER_VERSION;
+  header.magic      = JITDUMP_MAGIC;
+  header.version    = JITDUMP_VERSION;
   header.elf_mach   = 62;  /* EM_X86_64 */
-  header.total_size = sizeof(header) + padding_len;
+  header.total_size = sizeof(header);
   header.pid        = pid;
   header.timestamp  = libxsmm_timer_xtick();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
@@ -128,13 +162,6 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header.\n");
     goto error;
-  }
-  if (padding_len > 0) {
-    res = fwrite(&zeros, padding_len, 1, fp);
-    if (res != 1) {
-      LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header padding.\n");
-      goto error;
-    }
   }
 
 #else
@@ -161,18 +188,19 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
 {
 #if defined(LIBXSMM_PERF_JITDUMP)
   int res, page_size;
-  struct jr_code_close rec;
+  struct jitdump_record_header hdr;
 
   if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: jit dump file not opened\n");
     goto error;
   }
 
-  memset(&rec, 0, sizeof(rec));
-  rec.p.id = JIT_CODE_CLOSE;
-  rec.p.total_size = sizeof(rec);
-  rec.p.timestamp = libxsmm_timer_xtick();
-  res = fwrite(&rec, sizeof(rec), 1, fp);
+  memset(&hdr, 0, sizeof(hdr));
+  hdr.id = JITDUMP_CODE_CLOSE;
+  hdr.total_size = sizeof(hdr);
+  hdr.timestamp = libxsmm_timer_xtick();
+  res = fwrite(&hdr, sizeof(hdr), 1, fp);
+
   if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
     goto error;
@@ -203,15 +231,18 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
   assert(memory != NULL && size != 0);
   if (fp != NULL) {
 #if defined(LIBXSMM_PERF_JITDUMP)
-    int res, expected_res;
-    struct jr_code_load rec;
+    int res;
+    struct jitdump_record_header hdr;
+    struct jitdump_record_code_load rec;
     size_t name_len = strlen(name) + 1;
-    size_t padding_len = libxsmm_perf_padding_len(sizeof(rec) + name_len);
 
+    memset(&hdr, 0, sizeof(hdr));
     memset(&rec, 0, sizeof(rec));
-    rec.p.id = JIT_CODE_LOAD;
-    rec.p.total_size = sizeof(rec) + name_len + padding_len + size;
-    rec.p.timestamp = libxsmm_timer_xtick();
+
+    hdr.id = JITDUMP_CODE_LOAD;
+    hdr.total_size = sizeof(hdr) + sizeof(rec) + name_len + size;
+    hdr.timestamp = libxsmm_timer_xtick();
+
     rec.code_size = size;
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
@@ -222,17 +253,14 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     flockfile(fp);
 #endif
 
+    /* This will be unique as we hold the file lock. */
     rec.code_index = code_index++;
 
     /* Count number of written items to check for errors. */
     res = 0;
-    expected_res = 3;
+    res += fwrite_unlocked(&hdr, sizeof(hdr), 1, fp);
     res += fwrite_unlocked(&rec, sizeof(rec), 1, fp);
     res += fwrite_unlocked(name, name_len, 1, fp);
-    if (padding_len > 0) {
-      res += fwrite_unlocked(&zeros, padding_len, 1, fp);
-      expected_res++;
-    }
     res += fwrite_unlocked((const void*) memory, size, 1, fp);
 
 #if !defined(LIBXSMM_NO_SYNC)
@@ -241,7 +269,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
 
     fflush(fp);
 
-    assert(res == expected_res);
+    assert(res == 4); /* Expected 4 items written above */
 
 #else
     fprintf(fp, "%llx %lx %s\n", (unsigned long long)/*uintptr_t*/memory, (unsigned long)size, name);
