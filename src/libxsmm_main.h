@@ -102,7 +102,6 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor
 /** Structure which describes an activation layer. */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int N;                            /* number of images in mini-batch */
-  int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
@@ -115,7 +114,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
 
 /** Structure which describes a bias. */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
-  int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int lpb;                          /* low precision blocking factor */
@@ -125,7 +123,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
 
 /** Structure which describes a filter */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
-  int splits;                       /* number of splits */
   int ifmb;                         /* number of feature map blocks */
   int bifm;                         /* sized of blocked feature maps, in a block */
   int ofmb;                         /* number of feature map blocks */

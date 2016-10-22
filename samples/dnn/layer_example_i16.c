@@ -57,7 +57,6 @@ typedef struct {
   int kw;
   int stride_h;
   int stride_w;
-  int nSplits;
 } naive_conv_t;
 
 typedef struct {
@@ -201,18 +200,12 @@ LIBXSMM_INLINE void naive_conv_int16(naive_conv_t* param, const short* input, in
   int kw        = param->kw;
   int stride_h  = param->stride_h;
   int stride_w  = param->stride_w;
-  int nSplits   = param->nSplits;
   /* loop counters */
   int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
 
   LIBXSMM_VLA_DECL(4,         int, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4, const short,  input_t,  input, nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const short, filter_t, filter, nIfm, kh, kw);
-
-  if (nSplits != 1) {
-    printf("nSplits != 1 not supported yet for naive code!\n");
-    exit(1);
-  }
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -261,7 +254,6 @@ int main(int argc, char* argv[])
   int kw = 3;             /* filter width, "S" */
   int pad = 1;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
-  int nSplits = 1;        /* splits */
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
 #else
@@ -281,7 +273,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t status;
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride splits\n", argv[0]);
+    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride\n", argv[0]);
     return 0;
   }
   srand(1);
@@ -298,7 +290,6 @@ int main(int argc, char* argv[])
   if (argc > i) kh         = atoi(argv[i++]);
   if (argc > i) pad        = atoi(argv[i++]);
   if (argc > i) stride     = atoi(argv[i++]);
-  if (argc > i) nSplits    = atoi(argv[i++]);
 
   stride_w = stride;
   stride_h = stride;
@@ -331,7 +322,6 @@ int main(int argc, char* argv[])
   naive_param.kw = kw;
   naive_param.stride_h = stride_h;
   naive_param.stride_w = stride_w;
-  naive_param.nSplits = nSplits;
 
   /* print some summary */
   printf("##########################################\n");
@@ -391,7 +381,6 @@ int main(int argc, char* argv[])
   conv_desc.pad_w_in = 0;
   conv_desc.pad_h_out = pad_h_out;
   conv_desc.pad_w_out = pad_w_out;
-  conv_desc.splits = nSplits;
   conv_desc.threads = nThreads;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
   conv_desc.buffer_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
@@ -474,8 +463,8 @@ int main(int argc, char* argv[])
   printf("fp time = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-     ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+  printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      (flops*1e-9)/l_total, norms.max_rel_err, norms.max_abs_err, norms.l2_rel_err, norms.one_norm_ref, norms.one_norm_test );
 
   /* clean-up */
@@ -507,7 +496,6 @@ int main(int argc, char* argv[])
   conv_desc.pad_w_in = 0;
   conv_desc.pad_h_out = pad_h_out;
   conv_desc.pad_w_out = pad_w_out;
-  conv_desc.splits = nSplits;
   conv_desc.threads = nThreads;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
   conv_desc.buffer_format = LIBXSMM_DNN_CONV_FORMAT_NHWC;
@@ -584,8 +572,8 @@ int main(int argc, char* argv[])
   printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-     ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+  printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      (flops*1e-9)/l_total, norms.max_rel_err, norms.max_abs_err, norms.l2_rel_err, norms.one_norm_ref, norms.one_norm_test );
 
   /* clean-up */
@@ -614,7 +602,6 @@ int main(int argc, char* argv[])
   conv_desc.pad_w_in = 0;
   conv_desc.pad_h_out = pad_h_out;
   conv_desc.pad_w_out = pad_w_out;
-  conv_desc.splits = nSplits;
   conv_desc.threads = nThreads;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
   conv_desc.buffer_format = LIBXSMM_DNN_CONV_FORMAT_NHWC;
@@ -697,8 +684,8 @@ int main(int argc, char* argv[])
   printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
   printf("GOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-     ifw, ifh, kw, kh, stride, pad, nSplits, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+  printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      (flops*1e-9)/l_total, norms.max_rel_err, norms.max_abs_err, norms.l2_rel_err, norms.one_norm_ref, norms.one_norm_test );
 
   /* clean-up */

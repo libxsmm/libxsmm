@@ -105,7 +105,6 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
   int pad_h_out;                               /* height of zero-padding in output buffer */
   int pad_w_out;                               /* width of zero-padding in output buffer */
-  int splits;                                  /* number of splits */
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
@@ -163,9 +162,9 @@ libxsmm_filter = libxsmm_dnn_create_filter_check(libxsmm_handle, &status);
 CHKERR_LIBXSMM_DNN(status);
 
 /* copy in data to LIBXSMM format: naive format is: */
-/* (mini-batch)(splits)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
+/* (mini-batch)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
 /* and the naive format for filters is: */
-/* (splits)(number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
+/* (number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_buffer(libxsmm_input, (void*)naive_input));
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_buffer(libxsmm_output));
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter));

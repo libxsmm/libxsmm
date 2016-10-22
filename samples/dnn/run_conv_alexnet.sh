@@ -21,8 +21,8 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 227 227  ${MB}    3   96 11 11 0 4 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  31  31  ${MB}   96  256  5  5 0 1 2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  256  384  3  3 1 1 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  384  3  3 1 1 2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  256  3  3 0 1 2
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 227 227  ${MB}    3   96 11 11 0 4
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  31  31  ${MB}   96  256  5  5 0 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  256  384  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  384  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  15  15  ${MB}  384  256  3  3 0 1
