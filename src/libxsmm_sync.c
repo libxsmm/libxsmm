@@ -58,6 +58,11 @@
 # define LIBXSMM_SYNC_MALLOC(SIZE, ALIGNMENT) libxsmm_aligned_malloc(SIZE, -(ALIGNMENT))
 # define LIBXSMM_SYNC_FREE(BUFFER) libxsmm_free(BUFFER)
 #endif
+#if defined(__MIC__)
+# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
+#else
+# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
+#endif
 
 
 /* internal counter type which is guaranteed to be atomic when using certain methods */
