@@ -33,8 +33,9 @@
 
 #include <libxsmm.h>
 
-LIBXSMM_API void libxsmm_perf_init();
-LIBXSMM_API void libxsmm_perf_finalize();
+
+LIBXSMM_API void libxsmm_perf_init(void);
+LIBXSMM_API void libxsmm_perf_finalize(void);
 LIBXSMM_API void libxsmm_perf_write_code(
   const volatile void* memory, size_t size,
   const char* name);

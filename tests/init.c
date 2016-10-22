@@ -38,8 +38,8 @@
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int initialized /*= 0*/;
 
 
-LIBXSMM_API void init(); /* declaration */
-LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void init()
+LIBXSMM_API void init(void); /* declaration */
+LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void init(void)
 {
   initialized = 1;
 }

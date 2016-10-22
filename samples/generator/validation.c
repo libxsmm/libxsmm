@@ -94,7 +94,7 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-void run_test() {
+void run_test(void) {
   /* allocate */
 #ifdef STREAM_A_B
   REALTYPE* l_a = (REALTYPE*)_mm_malloc(MY_LDA * MY_K * sizeof(REALTYPE) * STREAM_A_B_SIZE, 64);

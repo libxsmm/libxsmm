@@ -77,7 +77,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE size_t libxsmm_perf_padding_len(size_t len) 
 #endif
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_init()
+LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 {
   const long pid = (long)LIBXSMM_PERF_GETPID();
   /* needs to hold "jit-<pid>.dump" or "perf-<pid>.map" */
@@ -157,7 +157,7 @@ error:
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_finalize()
+LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
 {
 #if defined(LIBXSMM_PERF_JITDUMP)
   int res, page_size;
