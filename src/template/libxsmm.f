@@ -36,8 +36,7 @@
      &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
-        PRIVATE ::  construct_smmfunction,                              &
-     &              construct_dmmfunction,                              &
+        PRIVATE ::  construct_smmfunction, construct_dmmfunction,       &
      &              srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
@@ -491,11 +490,11 @@
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &         alpha, beta, flags, prefetch), fn0)
+     &        alpha, beta, flags, prefetch), fn0)
             construct_dmmfunction = LIBXSMM_DMMFUNCTION(fn0, NULL())
           ELSE
             CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &         alpha, beta, flags, prefetch), fn1)
+     &        alpha, beta, flags, prefetch), fn1)
             construct_dmmfunction = LIBXSMM_DMMFUNCTION(NULL(), fn1)
           END IF
         END FUNCTION
