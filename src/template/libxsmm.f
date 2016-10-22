@@ -37,7 +37,7 @@
         IMPLICIT NONE
 
         PRIVATE ::  construct_smmfunction, construct_dmmfunction,       &
-     &              srealptr, drealptr
+     &              construct_fn0, construct_fn1, srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
@@ -417,6 +417,20 @@
           drealptr => a(LBOUND(a,1),LBOUND(a,2))
         END FUNCTION
 
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn0
+        FUNCTION construct_fn0(cfn) RESULT(fn)
+          PROCEDURE(LIBXSMM_MMFUNCTION0), POINTER :: fn
+          TYPE(C_FUNPTR), INTENT(IN) :: cfn
+          CALL C_F_PROCPOINTER(cfn, fn)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn1
+        FUNCTION construct_fn1(cfn) RESULT(fn)
+          PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn
+          TYPE(C_FUNPTR), INTENT(IN) :: cfn
+          CALL C_F_PROCPOINTER(cfn, fn)
+        END FUNCTION
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
         TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -424,10 +438,6 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
-          PROCEDURE(LIBXSMM_MMFUNCTION0), POINTER :: fn0
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
-          PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
@@ -448,13 +458,13 @@
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn0)
-            construct_smmfunction = LIBXSMM_SMMFUNCTION(fn0, NULL())
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
+     &        construct_fn0(sdispatch(m, n, k, lda, ldb, ldc,           &
+     &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn1)
-            construct_smmfunction = LIBXSMM_SMMFUNCTION(NULL(), fn1)
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
+     &        NULL(), construct_fn1(sdispatch(m, n, k, lda, ldb, ldc,   &
+     &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
 
@@ -465,10 +475,6 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
-          PROCEDURE(LIBXSMM_MMFUNCTION0), POINTER :: fn0
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
-          PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
@@ -489,13 +495,13 @@
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn0)
-            construct_dmmfunction = LIBXSMM_DMMFUNCTION(fn0, NULL())
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
+     &        construct_fn0(ddispatch(m, n, k, lda, ldb, ldc,           &
+     &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn1)
-            construct_dmmfunction = LIBXSMM_DMMFUNCTION(NULL(), fn1)
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
+     &        NULL(), construct_fn1(ddispatch(m, n, k, lda, ldb, ldc,   &
+     &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
 
