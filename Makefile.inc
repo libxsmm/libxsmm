@@ -574,8 +574,6 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     SLDFLAGS += -static
-  else
-    LDFLAGS += -shared
   endif
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
@@ -765,8 +763,6 @@ else # GCC assumed
     ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo "$$?"))
       SLDFLAGS += -static
     endif
-  else
-    LDFLAGS += -shared
   endif
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
