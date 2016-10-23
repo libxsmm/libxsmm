@@ -1246,7 +1246,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "%s (error #%u)\n",
+      LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "%s (error #%u)\n",
         LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
         generated_code.last_error);
     }
