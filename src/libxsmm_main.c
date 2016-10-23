@@ -1073,7 +1073,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-        LIBXSMM_NO_OFFLOAD(libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -1099,7 +1099,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
       if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (request->descriptor.ssoa->gemm->flags))/*only double-precision*/) {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-        LIBXSMM_NO_OFFLOAD(libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.ssoa->gemm, target_arch,
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.ssoa->gemm, target_arch,
           request->descriptor.ssoa->row_ptr, request->descriptor.ssoa->column_idx,
           (const double*)request->descriptor.ssoa->values);
 # if !defined(LIBXSMM_VTUNE)
@@ -1128,7 +1128,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-        LIBXSMM_NO_OFFLOAD(libxsmm_generator_convolution_forward_kernel, &generated_code, request->descriptor.cfwd, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_forward_kernel, &generated_code, request->descriptor.cfwd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -1159,7 +1159,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-        LIBXSMM_NO_OFFLOAD(libxsmm_generator_convolution_backward_kernel, &generated_code, request->descriptor.cbwd, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_backward_kernel, &generated_code, request->descriptor.cbwd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -1191,7 +1191,7 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-        LIBXSMM_NO_OFFLOAD(libxsmm_generator_convolution_weight_update_kernel, &generated_code, request->descriptor.cupd, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_weight_update_kernel, &generated_code, request->descriptor.cupd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -1246,7 +1246,9 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "%s (error #%u)\n", libxsmm_strerror(generated_code.last_error), generated_code.last_error);
+      fprintf(stderr, "%s (error #%u)\n",
+        LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
+        generated_code.last_error);
     }
   }
 # endif
