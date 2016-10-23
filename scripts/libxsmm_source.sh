@@ -55,27 +55,16 @@ cat << EOM
 #include "libxsmm_dnn.h"
 
 /**
- * This header is intentionally called "libxsmm_source.h" since the followings blocks
- * include *internal* header and source files, and thereby exposes LIBXSMM's implementation.
- * This so-called "header-only" usage model gives up the clearly defined binary interface
- * including the support for hot-fixes after deployment (shared library), and requires
- * to rebuild client code for every (internal) change within LIBXSMM. Please make sure to
- * only rely on the public interface as the internal implementation may change without
- * further notice.
+ * This header is intentionally called "libxsmm_source.h" since the followings block
+ * includes *internal* files, and thereby exposes LIBXSMM's implementation.
+ * The so-called "header-only" usage model gives up the clearly defined binary interface
+ * (including support for hot-fixes after deployment), and requires to rebuild client
+ * code for every (internal) change of LIBXSMM. Please make sure to only rely on the
+ * public interface as the internal implementation may change without notice.
  */
-
 EOM
 
 HERE=$(cd $(dirname $0); pwd -P)
-
-for FILE in $(ls -1 ${HERE}/../src/*.h); do
-  BASENAME=$(basename ${FILE})
-  if [ "" != "$(echo ${BASENAME} | grep -v '.template.')" ]; then
-    echo "#include \"../src/${BASENAME}\""
-  fi
-done
-
-echo
 
 # good-enough pattern to match a main function, and to exclude this translation unit
 for FILE in $(grep -L "main\s*(.*)" ${HERE}/../src/*.c); do

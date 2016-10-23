@@ -35,6 +35,14 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <math.h>
+#if defined(__linux__)
+# include <syscall.h>
+#endif
+#if defined(_WIN32)
+# include <process.h>
+#else
+# include <unistd.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -290,5 +298,30 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barri
   LIBXSMM_SYNC_FREE(barrier->threads);
 #endif
   LIBXSMM_SYNC_FREE(barrier);
+}
+
+
+LIBXSMM_API_DEFINITION unsigned int libxsmm_get_pid(void)
+{
+#if defined(_WIN32)
+  return (unsigned int)_getpid();
+#else
+  return (unsigned int)getpid();
+#endif
+}
+
+
+LIBXSMM_API_DEFINITION unsigned int libxsmm_get_tid(void)
+{
+#if defined(__linux__)
+  return (unsigned int)syscall(__NR_gettid);
+#else /* fallback */
+  static LIBXSMM_TLS unsigned int tid = (unsigned int)(-1);
+  if ((unsigned int)(-1) == tid) {
+    static unsigned int tc = 0; tid = tc;
+    LIBXSMM_ATOMIC_ADD_FETCH(&tc, 1, LIBXSMM_ATOMIC_RELAXED);
+  }
+  return tid;
+#endif
 }
 
