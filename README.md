@@ -365,7 +365,7 @@ to the `mpirun` command line. Please notice the `:4=exclusive` which is unrelate
 Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which belong to a module named "libxsmm.jit". The function name as well as the module name are supplied by LIBXSMM using the aforementioned JIT Profiling API. For instance "libxsmm_hsw_dnn_23x23x23_23_23_23_a1_b1_p0::smxm" encodes an Intel&#160;AVX2 ("hsw") double-precision kernel ("d") for small dense matrix multiplications which is multiplying matrices without transposing them ("nn"). The rest of the name encodes M=N=K=LDA=LDB=LDC=23, Alpha=Beta=1.0 (all similar to GEMM), and no prefetch strategy ("p0").
 
 #### Linux perf
-There is both basic (`perf map`) and extended support (`jitdump`) when profiling an application which is using LIBXSMM.
+There is both basic (`perf map`) and extended support (`jitdump`) when profiling an application which is using LIBXSMM. To enable perf support you need to set environment LIBXSMM_VERBOSE to a negative value on runtime.
 
 * The basic support can be enabled at compile-time with PERF=1 (implies SYM=1) using:  
 `make PERF=1`  
