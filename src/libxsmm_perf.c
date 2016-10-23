@@ -33,29 +33,32 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(_WIN32)
-# include <process.h>
-# define LIBXSMM_PERF_GETPID _getpid
-# define LIBXSMM_MAX_PATH MAX_PATH
-#else
-# include <linux/limits.h>
-# include <unistd.h>
-# define LIBXSMM_PERF_GETPID getpid
-# define LIBXSMM_MAX_PATH PATH_MAX
-#endif
-# include <stdio.h>
-# include <stdlib.h>
-#if defined(LIBXSMM_PERF_JITDUMP)
-# include <string.h>
-# include "perf_jitdump.h"
+#include "perf_jitdump.h"
+#include <stdio.h>
+#include <stdlib.h>
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
+# include <string.h>
 # include <sys/types.h>
 # include <sys/types.h>
 # include <sys/stat.h>
-# include <syscall.h>
 # include <fcntl.h>
 # include <errno.h>
 # include <time.h>
+#endif
+#if defined(_WIN32)
+# include <windows.h>
+# define LIBXSMM_MAX_PATH MAX_PATH
+#else
+# if defined(__linux__)
+#   include <linux/limits.h>
+#   define LIBXSMM_MAX_PATH PATH_MAX
+# elif defined(PATH_MAX)
+#   define LIBXSMM_MAX_PATH PATH_MAX
+# else /* fallback */
+#   define LIBXSMM_MAX_PATH 1024
+# endif
+# include <unistd.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -69,7 +72,7 @@
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE FILE * fp;
-#if defined(LIBXSMM_PERF_JITDUMP)
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* marker_addr;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int code_index /*= 0*/;
 #endif
@@ -77,9 +80,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int code_index /*= 0*/;
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 {
-  const long pid = (long)LIBXSMM_PERF_GETPID();
+  const uint32_t pid = (uint32_t)libxsmm_get_pid();
   char file_name[LIBXSMM_MAX_PATH];
-#if defined(LIBXSMM_PERF_JITDUMP)
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   char file_path[LIBXSMM_MAX_PATH];
   int fd, page_size, res;
   struct jitdump_file_header header;
@@ -87,6 +90,16 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   char date[64];
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
+
+  /* initialize global variables */
+  JITDUMP_MAGIC = 'J' << 24 | 'i' << 16 | 'T' << 8 | 'D';
+  JITDUMP_MAGIC_SWAPPED = 'J' | 'i' << 8 | 'T' << 16 | 'D' << 24;
+  JITDUMP_VERSION = 1;
+  JITDUMP_FLAGS_ARCH_TIMESTAMP = 1ULL /*<< 0*/;
+  JITDUMP_CODE_LOAD = 0;
+  JITDUMP_CODE_MOVE = 1;
+  JITDUMP_CODE_DEBUG_INFO = 2;
+  JITDUMP_CODE_CLOSE = 3;
 
   path_base = getenv("JITDUMPDIR");
   if(path_base == NULL) {
@@ -120,8 +133,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
     goto error;
   }
 
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "%s/jit-%i.dump", path_base,
-                   getpid());
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "%s/jit-%u.dump", path_base, pid);
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0600);
   if (fd < 0) {
@@ -165,7 +177,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   }
 
 #else
-  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%li.map", pid);
+  LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%u.map", pid);
   fp = fopen(file_name, "w+");
   if (fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");
@@ -186,7 +198,7 @@ error:
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
 {
-#if defined(LIBXSMM_PERF_JITDUMP)
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   int res, page_size;
   struct jitdump_record_header hdr;
 
@@ -230,7 +242,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
   assert(name && *name);
   assert(memory != NULL && size != 0);
   if (fp != NULL) {
-#if defined(LIBXSMM_PERF_JITDUMP)
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
     int res;
     struct jitdump_record_header hdr;
     struct jitdump_record_code_load rec;
@@ -246,8 +258,8 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     rec.code_size = size;
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
-    rec.pid = LIBXSMM_PERF_GETPID();
-    rec.tid = (pid_t) syscall(__NR_gettid);
+    rec.pid = (uint32_t) libxsmm_get_pid();
+    rec.tid = (uint32_t) libxsmm_get_tid();
 
 #if !defined(LIBXSMM_NO_SYNC)
     flockfile(fp);

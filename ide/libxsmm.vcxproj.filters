@@ -165,6 +165,9 @@
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\perf_jitdump.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">

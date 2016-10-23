@@ -112,6 +112,9 @@
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
 #endif
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #if defined(_REENTRANT)
 # if defined(_WIN32) /*TODO*/
 #   define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
@@ -122,7 +125,8 @@
 #   define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
 #   define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
 #   define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-# else /* PThreads: include <pthread.h> */
+# else
+#   include <pthread.h>
 #   define LIBXSMM_LOCK_ACQUIRED 0
 #   define LIBXSMM_LOCK_TYPE pthread_mutex_t
 #   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
@@ -142,6 +146,9 @@
 # define LIBXSMM_LOCK_TRYLOCK(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_LOCK_RELEASE(LOCK) LIBXSMM_UNUSED(LOCK)
 #endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
 /** Opaque type which represents a barrier. */
@@ -155,6 +162,11 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid);
 LIBXSMM_API void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid);
 /** Release the resources associated with this barrier. */
 LIBXSMM_API void libxsmm_barrier_release(const libxsmm_barrier* barrier);
+
+/** Utility function to receive the process ID of the calling process. */
+LIBXSMM_API unsigned int libxsmm_get_pid(void);
+/** Utility function to receive the thread ID of the calling thread. */
+LIBXSMM_API unsigned int libxsmm_get_tid(void);
 
 #endif /*LIBXSMM_SYNC_H*/
 

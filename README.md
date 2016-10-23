@@ -365,13 +365,12 @@ Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which 
 
 #### Linux perf
 There is both basic (`perf map`) and extended support (`jitdump`) when profiling an application which is using LIBXSMM.
-To enable perf support you need to set environment LIBXSMM_VERBOSE to a negative value on runtime.
 
-* The basic support can be enabled at compile-time with PERF=1 (implies SYM=1) using:
-`make PERF=1`
+* The basic support can be enabled at compile-time with PERF=1 (implies SYM=1) using:  
+`make PERF=1`  
 At runtime of the application, a map-file ('jit-*pid*.map') is generated ('/tmp' directory). This file is automatically read by "perf", and enriches the information about unknown code such as JIT'ted kernels.
 * The support for "jitdump" can be enabled by supplying JITDUMP=1 (implies PERF=1) when making the library:  
-`make JITDUMP=1`
+`make JITDUMP=1`  
 At runtime of the application, a dump-file ('jit-*pid*.dump') is generated (in perf debug directory, usually `$HOME/.debug/jit/`) which includes additional information about JIT'ted kernels (such as addresses, symbol names, code size, and the code itself). The dump file can be injected into 'perf.data' (using `perf inject -j`), and it enables an annotated view of the assembly in perf's report (requires a reasonably recent version of perf).
 
 ### Tuning

@@ -136,11 +136,30 @@ ifneq (0,$(JIT))
 endif
 
 # Profiling JIT code using Linux Perf
-# Support for jitdump requires to supply JITDUMP=1
-ifeq (0,$(JITDUMP))
-  PERF ?= 0
-else
+# PERF=0: disabled (default)
+# PERF=1: enabled (without JITDUMP)
+# PERF=2: enabled (with JITDUMP)
+#
+# Additional support for jitdump
+# JITDUMP=0: disabled (default)
+# JITDUMP=1: enabled
+# PERF=2: enabled
+#
+ifneq (,$(PERF))
+ifneq (0,$(PERF))
+ifneq (1,$(PERF))
+  JITDUMP ?= 1
+endif
+endif
+endif
+JITDUMP ?= 0
+
+ifneq (0,$(JITDUMP))
   PERF ?= 1
+endif
+
+PERF ?= 0
+ifneq (0,$(PERF))
   SYM ?= 1
 endif
 
@@ -535,10 +554,10 @@ endif
 
 ifneq (0,$(JIT))
 ifneq (0,$(SYM))
-ifeq (,$(filter Darwin Windows_NT,$(UNAME)))
-  ifeq (1,$(PERF))
+ifeq (,$(filter Darwin,$(UNAME)))
+  ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
-    ifeq (1,$(JITDUMP))
+    ifneq (0,$(JITDUMP))
       DFLAGS += -DLIBXSMM_PERF_JITDUMP
     endif
   endif
