@@ -45,6 +45,12 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
     ${SED} -nr "/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){${NUM}}$//p" | \
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//')
+  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    export TRAVIS_BUILD_DIR=.
+  fi
+  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
+    export TRAVIS_OS_NAME=$(uname)
+  fi
   eval ${TEST}
 fi
 
