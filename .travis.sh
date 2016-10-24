@@ -35,22 +35,38 @@ SED=$(which sed)
 TR=$(which tr)
 
 if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
-  NUM=1
-  if [ "" != "$1" ]; then
-    NUM=$1
-    shift
-  fi
-  TEST=$( \
-    ${SED} -e '/^\s*script:\s*$/,$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
-    ${SED} -nr "/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){${NUM}}$//p" | \
-    ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
-    ${SED} -e 's/\s\s*$//')
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${HERE}
   fi
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
     export TRAVIS_OS_NAME=$(uname)
   fi
-  eval ${TEST}
+  if [ "" != "$1" ]; then
+    CASE=$1
+  else
+    CASE=1
+  fi
+  while TEST=$(eval " \
+    ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
+    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${CASE}}$//p\" | \
+    ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
+    ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
+  do
+    # print header if all test cases are selected
+    if [ "" = "$1" ]; then
+      echo "================================================================================"
+      echo "Test Case #${CASE}"
+    fi
+
+    # run the actual test case
+    eval ${TEST}
+
+    # increment the case number if all cases are selected or leave the loop
+    if [ "" = "$1" ]; then
+      CASE=$((CASE+1))
+    else # dummy/exit case
+      CASE=1000
+    fi
+  done
 fi
 
