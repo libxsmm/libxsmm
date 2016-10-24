@@ -46,7 +46,7 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//')
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export TRAVIS_BUILD_DIR=.
+    export TRAVIS_BUILD_DIR=${HERE}
   fi
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
     export TRAVIS_OS_NAME=$(uname)
