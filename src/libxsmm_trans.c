@@ -80,7 +80,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   LIBXSMM_INIT
 
   if (ld >= m && ldo >= n) {
-    if (out != in) {
+    if (out != in || 1/*TODO: in-place transpose is not implemented yet*/) {
       internal_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
     }
     else if (ld == ldo) {

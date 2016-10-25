@@ -63,7 +63,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   LIBXSMM_INIT
 
   if (ld >= m && ldo >= n) {
-    if (out != in) {
+    if (out != in || 1/*TODO: in-place transpose is not implemented yet*/) {
 #if defined(LIBXSMM_EXT_TASKS)
       if (0 != libxsmm_mt) { /* enable OpenMP support */
         if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
