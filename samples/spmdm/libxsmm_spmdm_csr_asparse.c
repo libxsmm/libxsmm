@@ -36,7 +36,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <omp.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: this does not reproduce 48-bit RNG quality */
 # define drand48() ((double)rand() / RAND_MAX)
@@ -365,14 +367,14 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
      }
    }
    rowidx_ptr[nrows] = cnt;
-   #if 0
+#  if 0
    printf("cnt: %d\n", cnt);
    for(i = 0; i <= nrows; i++) {
      for(j = slice.rowidx[i]; j < slice.rowidx[i+1]; j++) {
        printf("(%d, %d): %f ", i, colidx_ptr[j], values_ptr[j]);
      }
    }
-   #endif
+#  endif
 }
 
 void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
@@ -427,14 +429,14 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
      }
    }
    rowidx_ptr[nrows] = cnt;
-   #if 0
+#  if 0
    printf("cnt: %d\n", cnt);
    for(i = 0; i <= nrows; i++) {
      for(j = slice.rowidx[i]; j < slice.rowidx[i+1]; j++) {
        printf("(%d, %d): %f ", i, colidx_ptr[j], values_ptr[j]);
      }
    }
-   #endif
+#  endif
 }
 
 
@@ -452,11 +454,18 @@ void libxsmm_spmdm_createSparseSlices_fp32( const libxsmm_spmdm_handle* handle,
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel for collapse(2)
+# if defined(_OPENMP)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
     for ( kb = 0; kb < k_blocks; kb++ ) {
       for ( mb = 0; mb < m_blocks; mb++ ) {
-        int tid = omp_get_thread_num();
-        int nthreads = omp_get_num_threads();
+#       if defined(_OPENMP)
+        const int nthreads = omp_get_num_threads();
+        const int tid = omp_get_thread_num();
+#       else
+        const int nthreads = 1;
+        const int tid = 0;
+#       endif
         libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads, shufmasks, shufmasks2);
       }
     }
@@ -476,11 +485,18 @@ void libxsmm_spmdm_createSparseSlices_bfloat16( const libxsmm_spmdm_handle* hand
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel for collapse(2)
+# if defined(_OPENMP)
+#   pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
     for ( kb = 0; kb < k_blocks; kb++ ) {
       for ( mb = 0; mb < m_blocks; mb++ ) {
-        int tid = omp_get_thread_num();
-        int nthreads = omp_get_num_threads();
+#       if defined(_OPENMP)
+        const int nthreads = omp_get_num_threads();
+        const int tid = omp_get_thread_num();
+#       else
+        const int nthreads = 1;
+        const int tid = 0;
+#       endif
         libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads, shufmasks, shufmasks2);
       }
     }
@@ -535,23 +551,23 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
   num_full_regs = 0; // (num_n / SIMD_WIDTH_FP32);
   last_n_start = num_full_regs*SIMD_WIDTH_FP32;
 
-  #if 0
+# if 0
   printf("Block: m_overall_start: %d, m_overall_end: %d, num_m: %d, num_m_aligned: %d\n", m_overall_start, m_overall_end, num_m, num_m_aligned);
   printf("Block: n_overall_start: %d, n_overall_end: %d, num_n: %d, last_block_n: %d\n", n_overall_start, n_overall_end, num_n, last_block_n);
   printf("Block: k_blocks: %d\n", k_blocks);
-  #endif
+# endif
   // Copy in C matrix to buffer
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
   if(!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (num_regs)
+      LIBXSMM_PRAGMA_UNROLL_N(num_regs)
       for (n = 0; n < num_regs; n++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
       }
     }
   } else {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (2)
+      LIBXSMM_PRAGMA_UNROLL_N(2)
       for (n = 0; n < num_full_regs; n++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
       }
@@ -577,14 +593,14 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
     ptr_dense = B + k_overall_start*handle->n + n_overall_start;
     if(!last_block_n) {
       for (k = 0; k < num_k; k++) {
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + n*SIMD_WIDTH_FP32));
         }
       }
     } else {
       for (k = 0; k < num_k; k++) {
-        #pragma unroll (2)
+        LIBXSMM_PRAGMA_UNROLL_N(2)
         for (n = 0; n < num_full_regs; n++) {
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + n*SIMD_WIDTH_FP32));
         }
@@ -593,13 +609,13 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
         }
       }
     }
-    #if 0
+#   if 0
     printf("B_col\n");
     for (k = 0; k < num_k; k++) {
       printf(" %lf ", ptr_dense[k*handle->n]);
     }
     printf("\n");
-    #endif
+#   endif
     scratch_C_base = scratch_C - m_overall_start*num_regs*SIMD_WIDTH_FP32;
     scratch_B_base = scratch_B; // - k_overall_start*num_regs*SIMD_WIDTH_FP32;
 
@@ -627,7 +643,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
       if(!last_block_n)
       {
         int64_t j = 0, j2 = 0;
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           sum[n] = _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32);
           sum[n+num_regs] = _MM_LOAD_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32);
@@ -637,7 +653,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
@@ -646,7 +662,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
@@ -654,12 +670,12 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
         for (; j2 < num_j_2; j2++) {
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
           }
         }
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32, sum[n]);
           _MM_STORE_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32, sum[n+num_regs]);
@@ -667,7 +683,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
       }
       else {
         int64_t j = 0, j2 = 0;
-        #pragma unroll (2)
+        LIBXSMM_PRAGMA_UNROLL_N(2)
         for (n = 0; n < num_full_regs; n++) {
           sum[n] = _MM_SETZERO_FP32();
           sum[n+num_regs] = _MM_SETZERO_FP32();
@@ -677,7 +693,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (2)
+          LIBXSMM_PRAGMA_UNROLL_N(2)
           for (n = 0; n < num_full_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
@@ -690,7 +706,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (2)
+          LIBXSMM_PRAGMA_UNROLL_N(2)
           for (n = 0; n < num_full_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
@@ -701,7 +717,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
         for (; j2 < num_j_2; j2++) {
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (2)
+          LIBXSMM_PRAGMA_UNROLL_N(2)
           for (n = 0; n < num_full_regs; n++) {
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
           }
@@ -709,7 +725,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
             result_m_index_2[n] += sp_col_dense_index_2[n]*sp_v_ptr_base_2[j2];
           }
         }
-        #pragma unroll (2)
+        LIBXSMM_PRAGMA_UNROLL_N(2)
         for (n = 0; n < num_full_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n], _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32)));
           _MM_STORE_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+num_regs], _MM_LOAD_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32)));
@@ -733,33 +749,33 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
 
       if(!last_block_n) {
         int64_t j = 0;
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           sum[n] = _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32);
         }
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
         }
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32, sum[n]);
         }
       }
       else {
         int64_t j = 0;
-        #pragma unroll (2)
+        LIBXSMM_PRAGMA_UNROLL_N(2)
         for (n = 0; n < num_full_regs; n++) {
           sum[n] = _MM_SETZERO_FP32();
         }
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (2)
+          LIBXSMM_PRAGMA_UNROLL_N(2)
           for (n = 0; n < num_full_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
@@ -767,32 +783,32 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
             result_m_index[n] += sp_col_dense_index[n]*sp_v_ptr_base[j];
           }
         }
-        #pragma unroll (2)
+        LIBXSMM_PRAGMA_UNROLL_N(2)
         for (n = 0; n < num_full_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32, _MM_ADD_FP32(sum[n], _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32)));
         }
       }
     }
   } // kb
-  #if 0
+# if 0
   for (m = 0; m < 3; m++) {
     for (n = 0; n < num_n; n++) {
       printf("%f ", scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n]);
     }
     printf("\n");
   }
-  #endif
+# endif
   // Copy out C matrix
   if(!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (num_regs)
+      LIBXSMM_PRAGMA_UNROLL_N(num_regs)
       for (n = 0; n < num_regs; n++) {
         _MM_STORE_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
       }
     }
   } else {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (2)
+      LIBXSMM_PRAGMA_UNROLL_N(2)
       for (n = 0; n < num_full_regs; n++) {
         _MM_STORE_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
       }
@@ -848,16 +864,16 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
   num_n = (n_overall_end - n_overall_start);
   last_block_n = (num_n != n_block_size);
   SIMDTYPE_INT32 vzero = _MM_SETZERO_INT32();
-  #if 0
+# if 0
   printf("Block: m_overall_start: %d, m_overall_end: %d, num_m: %d, num_m_aligned: %d\n", m_overall_start, m_overall_end, num_m, num_m_aligned);
   printf("Block: n_overall_start: %d, n_overall_end: %d, num_n: %d, last_block_n: %d\n", n_overall_start, n_overall_end, num_n, last_block_n);
   printf("Block: k_blocks: %d\n", k_blocks);
-  #endif
+# endif
   // Copy in C matrix to buffer
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
   if(!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (num_regs/2)
+      LIBXSMM_PRAGMA_UNROLL_N(num_regs/2)
       for (n = 0; n < num_regs/2; n++) {
         SIMDTYPE_INT32 vload =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_result + m*handle->n + 2*n*SIMD_WIDTH_FP32));
         SIMDTYPE_FP32 v1, v2;
@@ -893,7 +909,7 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
     ptr_dense = B + k_overall_start*handle->n + n_overall_start;
     if(!last_block_n) {
       for (k = 0; k < num_k; k++) {
-        #pragma unroll (num_regs/2)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs/2)
         for (n = 0; n < num_regs/2; n++) {
           SIMDTYPE_INT32 vload =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*n*SIMD_WIDTH_FP32));
           SIMDTYPE_FP32 v1, v2;
@@ -912,13 +928,13 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
         }
       }
     }
-    #if 0
+#   if 0
     printf("B_col\n");
     for (k = 0; k < num_k; k++) {
       printf(" %lf ", ptr_dense[k*handle->n]);
     }
     printf("\n");
-    #endif
+#   endif
     scratch_C_base = scratch_C - m_overall_start*num_regs*SIMD_WIDTH_FP32;
     scratch_B_base = scratch_B; // - k_overall_start*num_regs*SIMD_WIDTH_FP32;
 
@@ -946,7 +962,7 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
       if(!last_block_n)
       {
         int64_t j = 0, j2 = 0;
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           sum[n] = _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32);
           sum[n+num_regs] = _MM_LOAD_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32);
@@ -956,7 +972,7 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
@@ -965,7 +981,7 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
@@ -973,12 +989,12 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
         for (; j2 < num_j_2; j2++) {
           const float* const __restrict__ sp_col_dense_index_2 = scratch_B_base + sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
           }
         }
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32, sum[n]);
           _MM_STORE_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32, sum[n+num_regs]);
@@ -1029,19 +1045,19 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
 
       if(!last_block_n) {
         int64_t j = 0;
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           sum[n] = _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32);
         }
         for (; j < num_j; j++) {
           const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
-          #pragma unroll (num_regs)
+          LIBXSMM_PRAGMA_UNROLL_N(num_regs)
           for (n = 0; n < num_regs; n++) {
             sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
           }
         }
-        #pragma unroll (num_regs)
+        LIBXSMM_PRAGMA_UNROLL_N(num_regs)
         for (n = 0; n < num_regs; n++) {
           _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32, sum[n]);
         }
@@ -1058,18 +1074,18 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
       }
     }
   } // kb
-  #if 0
+# if 0
   //for (m = 0; m < 3; m++) {
   //  for (n = 0; n < num_n; n++) {
   //    printf("%f ", scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n]);
   //  }
   //  printf("\n");
   //}
-  #endif
+# endif
   // Copy out C matrix
   if(!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      #pragma unroll (num_regs/2)
+      LIBXSMM_PRAGMA_UNROLL_N(num_regs/2)
       for (n = 0; n < num_regs/2; n++) {
         SIMDTYPE_FP32 vload1 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*n*SIMD_WIDTH_FP32);
         SIMDTYPE_FP32 vload2 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*n+1)*SIMD_WIDTH_FP32);
@@ -1101,11 +1117,18 @@ void libxsmm_spmdm_compute_fp32( const libxsmm_spmdm_handle* handle,
   int mb, nb;
   // Parallelization is over a 4X1 block grid of the output
   int num_m_blocks = 1;
-  #pragma omp parallel for collapse(2)
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
   for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
     for ( nb = 0; nb < n_blocks; nb++ ) {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
       libxsmm_spmdm_compute_fp32_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
     }
   }
@@ -1124,11 +1147,18 @@ void libxsmm_spmdm_compute_bfloat16( const libxsmm_spmdm_handle* handle,
 
   // Parallelization is over a 4X1 block grid of the output
   int num_m_blocks = 1;
-  #pragma omp parallel for collapse(2)
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
   for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
     for ( nb = 0; nb < n_blocks; nb++ ) {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
       libxsmm_spmdm_compute_bfloat16_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
     }
   }
@@ -1242,29 +1272,40 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel
+# if defined(_OPENMP)
+#   pragma omp parallel
+# endif
     {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
-      //double st = omp_get_wtime();
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
+      //unsigned long long st = libxsmm_timer_tick();
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for ( kb = 0; kb < k_blocks; kb++ ) {
         for ( mb = 0; mb < m_blocks; mb++ ) {
           libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads, shufmasks, shufmasks2);
         }
       }
-      //double end = omp_get_wtime();
-      #if 1
+      //unsigned long long end = libxsmm_timer_tick();
+#     if 1
       int num_m_blocks = 1;
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
         for ( nb = 0; nb < n_blocks; nb++ ) {
           libxsmm_spmdm_compute_fp32_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
         }
       }
-      #endif
-      //double end2 = omp_get_wtime();
-      //printf("T1: %lf, T2: %lf\n", (end - st), (end2 - end));
+#     endif
+      //unsigned long long end2 = libxsmm_timer_tick();
+      //printf("T1: %lf, T2: %lf\n", libxsmm_timer_duration(st, end), libxsmm_timer_duration(end, end2));
     }
   }
 
@@ -1290,29 +1331,40 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel
+# if defined(_OPENMP)
+#   pragma omp parallel
+# endif
     {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
-      //double st = omp_get_wtime();
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
+      //unsigned long long st = libxsmm_timer_tick();
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for ( kb = 0; kb < k_blocks; kb++ ) {
         for ( mb = 0; mb < m_blocks; mb++ ) {
           libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads, shufmasks, shufmasks2);
         }
       }
-      //double end = omp_get_wtime();
-      #if 1
+      //unsigned long long end = libxsmm_timer_tick();
+#     if 1
       int num_m_blocks = 1;
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
         for ( nb = 0; nb < n_blocks; nb++ ) {
           libxsmm_spmdm_compute_bfloat16_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
         }
       }
-      #endif
-      //double end2 = omp_get_wtime();
-      //printf("T1: %lf, T2: %lf\n", (end - st), (end2 - end));
+#     endif
+      //unsigned long long end2 = libxsmm_timer_tick();
+      //printf("T1: %lf, T2: %lf\n", libxsmm_timer_duration(st, end), libxsmm_timer_duration(end, end2));
     }
   }
 
@@ -1329,7 +1381,8 @@ int main(int argc, char **argv)
   int M, N, K;
   real alpha, beta;
   int reps;
-  double start, end, flops;
+  unsigned long long start, end;
+  double flops;
   char trans;
   int i, j, k;
 
@@ -1366,11 +1419,11 @@ int main(int argc, char **argv)
   K = handle.k;
   alpha = (real)1.0;
   beta = (real)1.0;
-  #ifdef USE_BFLOAT
+# ifdef USE_BFLOAT
   handle.datatype =  LIBXSMM_SPMDM_DATATYPE_BFLOAT16;
-  #else
+# else
   handle.datatype =  LIBXSMM_SPMDM_DATATYPE_F32;
-  #endif
+# endif
   handle.mb = (handle.m + handle.bm - 1) / handle.bm;
   handle.nb = (handle.n + handle.bn - 1) / handle.bn;
   handle.kb = (handle.k + handle.bk - 1) / handle.bk;
@@ -1389,25 +1442,25 @@ int main(int argc, char **argv)
   size_t l;
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
     double random = drand48();
-    #ifdef USE_BFLOAT
+#   ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
     uint16_t val = (random_int>>16);
-    #else
+#   else
     float  val = (float)random;
-    #endif
+#   endif
     if(random > 0.85) A_gold[l] = val;
     else              A_gold[l] = (real)0.0;
   }
   for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
     double random = drand48();
-    #ifdef USE_BFLOAT
+#   ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
     uint16_t val = (random_int>>16);
-    #else
+#   else
     float  val = (float)random;
-    #endif
+#   endif
     B_gold[l] = val;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
@@ -1417,7 +1470,7 @@ int main(int argc, char **argv)
     C[l]      = (real)0.0;
   }
   flops = (double)M * (double)N * (double)K * 2.0;
-  #if 0
+# if 0
   printf("First row A: \n");
   for( l = 0; l < (size_t)K; l++ ) printf("%lf ", A_gold[l]);
   printf("\n");
@@ -1427,7 +1480,7 @@ int main(int argc, char **argv)
   double sum = C_gold[0];
   for( l = 0; l < (size_t)K; l++ ) sum += A_gold[l] * B_gold[N*l];
   printf("Sum: %lf\n", sum);
-  #endif
+# endif
 
   /* Initialize shuffle masks for the computation */
   __m256i shufmasks_32[256];
@@ -1439,41 +1492,43 @@ int main(int argc, char **argv)
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and trans */
   /* TODO: fix alpha, beta and trans inputs */
-  #ifdef USE_BFLOAT
+# ifdef USE_BFLOAT
   libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse, shufmasks_32, shufmasks_16);
-  #else
+# else
   libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse, shufmasks_32, shufmasks_16);
-  #endif
+# endif
 
   /* Checks */
   /* Has A been correctly converted? */
   libxsmm_test_a ( &handle, A_gold, trans, A_sparse);
 
   /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
-  #pragma omp parallel for collapse(2)
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
   for(i = 0; i < M; i++) {
     for(j = 0; j < N; j++) {
       float sum = 0.0;
       for(k = 0; k < K; k++) {
-        #ifdef USE_BFLOAT
+#       ifdef USE_BFLOAT
         uint16_t Atmp = A_gold[i*K + k];
         int Atmp_int  = Atmp; Atmp_int <<= 16;
         float Aval = *(float *)&Atmp_int;
         uint16_t Btmp = B_gold[k*N + j];
         int Btmp_int  = Btmp; Btmp_int <<= 16;
         float Bval = *(float *)&Btmp_int;
-        #else
+#       else
         float Aval = A_gold[i*K + k];
         float Bval = B_gold[k*N + j];
-        #endif
+#       endif
         sum += Aval * Bval;
       }
-      #ifdef USE_BFLOAT
+#     ifdef USE_BFLOAT
       int v = *(int *)(&sum);
       uint16_t Cval = (v >> 16);
-      #else
+#     else
       float Cval = sum;
-      #endif
+#     endif
       C_gold[i*N + j] += Cval;
     }
   }
@@ -1483,15 +1538,15 @@ int main(int argc, char **argv)
   libxsmm_spmdm_check_c( &handle, C, C_gold );
 
   /* Timing loop starts */
-  start = omp_get_wtime();
+  start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
-    #ifdef USE_BFLOAT
+#   ifdef USE_BFLOAT
     libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse, shufmasks_32, shufmasks_16);
-    #else
+#   else
     libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse, shufmasks_32, shufmasks_16);
-    #endif
+#   endif
   }
-  end = omp_get_wtime();
-  printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", (end - start), (end - start)*1.0/reps, flops/1000./1000./1000./1000./(end-start)*reps);
+  end = libxsmm_timer_tick();
+  printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
 }
 

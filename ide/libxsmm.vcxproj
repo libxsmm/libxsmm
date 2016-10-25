@@ -146,13 +146,15 @@
     <ClCompile Include="..\src\libxsmm_trans.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\.codecov" />
-    <None Include="..\.env" />
+    <None Include="..\.codecov.env" />
+    <None Include="..\.codefile" />
     <None Include="..\.gitattributes" />
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
     <None Include="..\.scan.sh" />
     <None Include="..\.state.sh" />
+    <None Include="..\.travis.env" />
+    <None Include="..\.travis.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
     <None Include="..\LICENSE" />

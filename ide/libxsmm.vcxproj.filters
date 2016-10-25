@@ -321,8 +321,6 @@
     <None Include="..\README.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\.gitignore" />
-    <None Include="..\.codecov" />
-    <None Include="..\.env" />
     <None Include="..\Makefile.inc" />
     <None Include="..\scripts\libxsmm_source.sh">
       <Filter>scripts</Filter>
@@ -335,6 +333,10 @@
     <None Include="..\src\template\libxsmm.f">
       <Filter>src\template</Filter>
     </None>
+    <None Include="..\.codecov.env" />
+    <None Include="..\.codefile" />
+    <None Include="..\.travis.env" />
+    <None Include="..\.travis.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
