@@ -15,6 +15,7 @@ ide/r*ah
 tmp
 .state
 .make
+codecov-*.txt
 keywords.txt
 notes.txt
 err*.txt
