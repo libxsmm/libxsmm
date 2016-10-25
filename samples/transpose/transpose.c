@@ -53,6 +53,14 @@
 # define USE_SELF_VALIDATION
 #endif
 
+#if !defined(OTRANS)
+# if defined(USE_SELF_VALIDATION)
+#   define OTRANS libxsmm_otrans_omp
+# else
+#   define OTRANS libxsmm_otrans
+# endif
+#endif
+
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
@@ -107,7 +115,7 @@ int main(int argc, char* argv[])
 
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      libxsmm_otrans_omp(b, a, sizeof(REAL_TYPE), m, n, ldi, ldo);
+      OTRANS(b, a, sizeof(REAL_TYPE), m, n, ldi, ldo);
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
       libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldo, ldi);
