@@ -9,7 +9,6 @@
 *.py
 *.env
 *.yml
-.codecov
 .codefile
 Makefile
 Makefile.inc

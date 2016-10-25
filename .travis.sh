@@ -41,11 +41,16 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
     export TRAVIS_OS_NAME=$(uname)
   fi
+  # should run after the above variables are set
+  source ${HERE}/.travis.env
+
+  # set the initial case number
   if [ "" != "$1" ]; then
     CASE=$1
   else
     CASE=1
   fi
+
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
     ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${CASE}}$//p\" | \
