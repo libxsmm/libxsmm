@@ -62,8 +62,9 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
   LIBXSMM_INIT
 
-  if (ldi >= m && ldo >= n) {
-    if (out != in || 1/*TODO: in-place transpose is not implemented yet*/) {
+  assert(0 < typesize);
+  if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
+    if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS)
       if (0 != libxsmm_mt) { /* enable OpenMP support */
         if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
@@ -86,7 +87,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       }
     }
     else if (ldi == ldo) {
-      libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
+      result = libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
     }
     else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -100,7 +101,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      if (ldi < m && ldo < n) {
+      if (0 == out || 0 == in) {
+        fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
+      }
+      else if (ldi < m && ldo < n) {
         fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
       }
       else if (ldi < m) {

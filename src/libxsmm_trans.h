@@ -143,7 +143,7 @@
   else { \
     const int libxsmm_otrans_main_chunksize_ = LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE); \
     if (libxsmm_otrans_main_chunksize_ < libxsmm_otrans_main_n_) { \
-      const libxsmm_blasint libxsmm_otrans_main_ni_ = (N0) + libxsmm_trans_chunksize; \
+      const libxsmm_blasint libxsmm_otrans_main_ni_ = (N0) + libxsmm_otrans_main_chunksize_; \
       (FN)(OUT, IN, TYPESIZE, M0, M1, N0, libxsmm_otrans_main_ni_, LDI, LDO); \
       (FN)(OUT, IN, TYPESIZE, M0, M1, libxsmm_otrans_main_ni_, N1, LDI, LDO); \
     } \
