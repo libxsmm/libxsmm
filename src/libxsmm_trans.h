@@ -43,7 +43,7 @@
 # define LIBXSMM_TRANS_TYPEOPT
 #endif
 
-#define LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
+#define LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
   const char *const a = (const char*)(IN); \
   char *const b = (char*)(OUT); \
   libxsmm_blasint i, j; \
@@ -51,7 +51,7 @@
   for (i = M0; i < (M1); ++i) { \
     LIBXSMM_PRAGMA_NONTEMPORAL \
     for (j = N0; j < (N1); ++j) { \
-      const char *const aji = a + (TYPESIZE) * (j * (LD) + i); \
+      const char *const aji = a + (TYPESIZE) * (j * (LDI) + i); \
       char *const bij = b + (TYPESIZE) * (i * (LDO) + j); \
       for (k = 0; k < (TYPESIZE); ++k) { \
         bij[k] = aji[k]; \
@@ -60,7 +60,7 @@
   } \
 }
 
-#define LIBXSMM_OTRANS(TYPE, OUT, IN, M0, M1, N0, N1, N, LD, LDO) { \
+#define LIBXSMM_OTRANS(TYPE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
   if (libxsmm_trans_chunksize == (N) && 0 == LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT)) { \
     const TYPE *const a = (const TYPE*)(IN); \
     TYPE *const b = (TYPE*)(OUT); \
@@ -71,7 +71,7 @@
         LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
         for (j = N0; j < (N0) + (LIBXSMM_TRANS_MAX_CHUNKSIZE); ++j) { \
           /* use consecutive stores and strided loads */ \
-          b[i*(LDO)+j] = a[j*(LD)+i]; \
+          b[i*(LDO)+j] = a[j*(LDI)+i]; \
         } \
       } \
     } \
@@ -82,38 +82,38 @@
         LIBXSMM_PRAGMA_VALIGNED_VARS(b) \
         for (j = N0; j < (N0) + (LIBXSMM_TRANS_MIN_CHUNKSIZE); ++j) { \
           /* use consecutive stores and strided loads */ \
-          b[i*(LDO)+j] = a[j*(LD)+i]; \
+          b[i*(LDO)+j] = a[j*(LDI)+i]; \
         } \
       } \
     } \
   } \
   else { /* remainder tile */ \
-    LIBXSMM_OTRANS_GENERIC(sizeof(TYPE), OUT, IN, M0, M1, N0, N1, N, LD, LDO); \
+    LIBXSMM_OTRANS_GENERIC(sizeof(TYPE), OUT, IN, M0, M1, N0, N1, N, LDI, LDO); \
   } \
 }
 
 #if defined(LIBXSMM_TRANS_TYPEOPT)
-# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LD, LDO) \
+# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LDI, LDO) \
     switch(TYPESIZE) { \
       case 1: { \
-        LIBXSMM_OTRANS(char, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(char, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       } break; \
       case 2: { \
-        LIBXSMM_OTRANS(short, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(short, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       } break; \
       case 4: { \
-        LIBXSMM_OTRANS(float, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(float, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       } break; \
       case 8: { \
-        LIBXSMM_OTRANS(double, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(double, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       } break; \
       case 16: { \
         typedef struct dvec2_t { double value[2]; } dvec2_t; \
-        LIBXSMM_OTRANS(dvec2_t, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+        LIBXSMM_OTRANS(dvec2_t, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       } break; \
       default:
 #else
-# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LD, LDO) {
+# define LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, N, LDI, LDO) {
 #endif
 #define LIBXSMM_OTRANS_TYPEOPT_END }
 
@@ -122,33 +122,33 @@
  * optimization such as using a loop with bounds which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_OTRANS_MAIN(KERNEL_START, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LD, LDO) { \
+#define LIBXSMM_OTRANS_MAIN(KERNEL_START, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LDI, LDO) { \
   /*const*/ libxsmm_blasint m = (M1) - (M0), n = (N1) - (N0); \
   if (m * n * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
     KERNEL_START(n) \
     { \
-      LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LD, LDO) \
+      LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, n, LDI, LDO) \
       /* fall-back code path which is generic with respect to the typesize */ \
-      LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, n, LD, LDO); \
+      LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, n, LDI, LDO); \
       LIBXSMM_OTRANS_TYPEOPT_END \
     } \
   } \
   else if (m >= n) { \
     const libxsmm_blasint mi = ((M0) + (M1)) / 2; \
-    (FN)(OUT, IN, TYPESIZE, M0, mi, N0, N1, LD, LDO); \
-    (FN)(OUT, IN, TYPESIZE, mi, M1, N0, N1, LD, LDO); \
+    (FN)(OUT, IN, TYPESIZE, M0, mi, N0, N1, LDI, LDO); \
+    (FN)(OUT, IN, TYPESIZE, mi, M1, N0, N1, LDI, LDO); \
   } \
   else { \
     if (libxsmm_trans_chunksize < n) { \
       const libxsmm_blasint ni = (N0) + libxsmm_trans_chunksize; \
-      (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
-      (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
+      (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LDI, LDO); \
+      (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LDI, LDO); \
     } \
     else \
     { \
       const libxsmm_blasint ni = ((N0) + (N1)) / 2; \
-      (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LD, LDO); \
-      (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LD, LDO); \
+      (FN)(OUT, IN, TYPESIZE, M0, M1, N0, ni, LDI, LDO); \
+      (FN)(OUT, IN, TYPESIZE, M0, M1, ni, N1, LDI, LDO); \
     } \
   } \
 }
