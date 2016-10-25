@@ -98,6 +98,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmmext", "libxsmmext.vc
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "otrans", "..\tests\trans.vcxproj", "{C9CA7758-C0C9-4A50-9757-115410B599B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -324,6 +329,18 @@ Global
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}.symbols|Win32.Build.0 = symbols|Win32
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}.symbols|x64.ActiveCfg = symbols|x64
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}.symbols|x64.Build.0 = symbols|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.debug|Win32.ActiveCfg = debug|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.debug|Win32.Build.0 = debug|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.debug|x64.ActiveCfg = debug|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.debug|x64.Build.0 = debug|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.release|Win32.ActiveCfg = release|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.release|Win32.Build.0 = release|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.release|x64.ActiveCfg = release|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.release|x64.Build.0 = release|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|Win32.ActiveCfg = symbols|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|Win32.Build.0 = symbols|Win32
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|x64.ActiveCfg = symbols|x64
+		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -347,5 +364,6 @@ Global
 		{326EBB80-794E-4E06-BA06-85CFE26F7C3C} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{63B474A0-5BC5-4212-888E-88D30CAA791B} = {E2249458-2416-4A36-99D3-FB73A59427C1}
 		{B630C58A-2F0D-4D77-97EF-CC4956EED41F} = {E2249458-2416-4A36-99D3-FB73A59427C1}
+		{C9CA7758-C0C9-4A50-9757-115410B599B0} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 EndGlobal

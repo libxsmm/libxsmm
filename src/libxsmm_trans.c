@@ -79,12 +79,13 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
 #endif
   LIBXSMM_INIT
 
-  if (ldi >= m && ldo >= n) {
-    if (out != in || 1/*TODO: in-place transpose is not implemented yet*/) {
+  assert(0 < typesize);
+  if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
+    if (out != in) {
       internal_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
     }
     else if (ldi == ldo) {
-      libxsmm_itrans(out, typesize, m, n, ldi);
+      result = libxsmm_itrans(out, typesize, m, n, ldi);
     }
     else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -98,7 +99,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      if (ldi < m && ldo < n) {
+      if (0 == out || 0 == in) {
+        fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
+      }
+      else if (ldi < m && ldo < n) {
         fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
       }
       else if (ldi < m) {
@@ -120,10 +124,53 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
 LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
-  LIBXSMM_UNUSED(inout); LIBXSMM_UNUSED(typesize); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(ldi);
-  assert(0/*TODO: not yet implemented!*/);
+  int result = EXIT_SUCCESS;
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  static int error_once = 0;
+#endif
   LIBXSMM_INIT
-  return EXIT_FAILURE;
+
+  if (0 != inout) {
+    if (m == n) { /* some fallback; still warned as "not implemented" */
+      libxsmm_blasint i, j;
+      for (i = 0; i < n; ++i) {
+        for (j = 0; j < i; ++j) {
+          char *const a = ((char*)inout) + (i * ldi + j) * typesize;
+          char *const b = ((char*)inout) + (j * ldi + i) * typesize;
+          unsigned int k;
+          for (k = 0; k < typesize; ++k) {
+            const char tmp = a[k];
+            a[k] = b[k];
+            b[k] = tmp;
+          }
+        }
+      }
+    }
+    else {
+#if !defined(NDEBUG) /* library code is expected to be mute */
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        fprintf(stderr, "LIBXSMM: in-place transpose is not implemented yet!\n");
+      }
+#endif
+      assert(0/*TODO: proper implementation is pending*/);
+      result = EXIT_FAILURE;
+    }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: performance warning - in-place transpose is not yet implemented!\n");
+    }
+#endif
+  }
+  else {
+#if !defined(NDEBUG) /* library code is expected to be mute */
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: the transpose input/output is NULL!\n");
+    }
+#endif
+    result = EXIT_FAILURE;
+  }
+
+  return result;
 }
 
 
