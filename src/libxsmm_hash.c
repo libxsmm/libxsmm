@@ -32,7 +32,7 @@
 #define LIBXSMM_HASH_C
 
 #include "libxsmm_hash.h"
-#include "libxsmm_intrinsics_x86.h"
+#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

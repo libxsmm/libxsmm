@@ -32,7 +32,7 @@
 #define LIBXSMM_CPUID_X86_C
 
 #include "libxsmm_cpuid_x86.h"
-#include "libxsmm_intrinsics_x86.h"
+#include <libxsmm_intrinsics_x86.h>
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
