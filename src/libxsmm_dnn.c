@@ -167,15 +167,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
       if ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (conv_desc.S == 1)) {
         handle->fwd_ofw_rb = handle->ofw;
         handle->fwd_ofh_rb = 2;
+        /* on AVX512_CORE and int this only works for smaller 14 */
+        if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) && 
+             (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) && 
+             (handle->ofw > 12) ) {
+          handle->fwd_ofh_rb = 1;
+        }
       }
       else {
 #endif
-        if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
-          for (i = 28; i > 1; --i) {
+        /* we need additional temp registers when running with int on AVX512_CORE */
+        if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) && 
+             (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) ) {
+          for (i = 26; i > 1; --i) {
             if (handle->ofw % i == 0) break;
           }
         } else {
-          for (i = 27; i > 1; --i) {
+          for (i = 28; i > 1; --i) {
             if (handle->ofw % i == 0) break;
           }
         }
