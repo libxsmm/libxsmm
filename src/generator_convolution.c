@@ -72,7 +72,11 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     {
       if ( (strcmp(i_arch, "skx") == 0) ) {
         /* call actual kernel generation with revised parameters */
+#if 1
+        libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+#else
         libxsmm_generator_convolution_forward_int16_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
+#endif
       } else {
         libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
         return;
