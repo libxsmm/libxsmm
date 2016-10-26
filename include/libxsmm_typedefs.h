@@ -186,7 +186,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int stride_w;                        /* this we use for offsets in the input */
   unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
@@ -216,7 +217,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
 
@@ -246,7 +248,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
 
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 

@@ -82,7 +82,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
   }
   l_conv_kernel_config.vector_reg_count = 32;
-  if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32) {
+  if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
     l_conv_kernel_config.vector_length_in = 16;
     l_conv_kernel_config.datatype_size_in = 4;
     l_conv_kernel_config.vector_length_out = 16;
@@ -91,7 +91,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.datatype_size_wt = 4;
     l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
-  } else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16) {
+  } else if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I32) {
     l_conv_kernel_config.vector_length_in = 32;
     l_conv_kernel_config.datatype_size_in = 2;
     l_conv_kernel_config.vector_length_out = 16;
@@ -132,7 +132,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.l_ld_ifm_fil = i_conv_desc->ifm_block * i_conv_desc->blocks_ifm;
     l_conv_kernel_config.l_ld_ofm_fil = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
     l_found_fil_format = 1;
-    if (i_conv_desc->datatype != LIBXSMM_DNN_DATATYPE_F32) { 
+    if (i_conv_desc->datatype_in != LIBXSMM_DNN_DATATYPE_F32) { 
       fprintf( stderr, " LIBXSMM Error: libxsmm_generator_convolution_forward_avx512_kernel: unsupported datatype for RSCK filter storage\n" );
       return;
     }
@@ -568,7 +568,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
         /* shouldn't happen.... */
       }
 
-      if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
+      if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  i_conv_kernel_config->instruction_set,
                                                  i_conv_kernel_config->vfma_instruction,
@@ -580,7 +580,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
                                                  i_conv_kernel_config->vector_name,
                                                  l_k%4,
                                                  i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-      } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 ) {
+      } else if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
 #if 0
         l_input_reg = i_gp_reg_mapping->gp_reg_input;
         l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
@@ -814,7 +814,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
           /* shouldn't happen.... */
         }
 
-        if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
+        if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                    i_conv_kernel_config->instruction_set,
                                                    i_conv_kernel_config->vfma_instruction,
@@ -826,7 +826,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
                                                    i_conv_kernel_config->vector_name,
                                                    l_k%4,
                                                    i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
-        } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 ) {
+        } else if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
 #if 0
           l_input_reg = i_gp_reg_mapping->gp_reg_input;
           l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
