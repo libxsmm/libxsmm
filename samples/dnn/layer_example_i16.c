@@ -86,7 +86,7 @@ LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initO
   int i;
   zero_buf_int16(buf, size);
   for (i = 0; i < size; ++i) {
-    buf[i] = (initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7)-3 );
+    buf[i] = (short)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7)-3));
   }
 }
 
