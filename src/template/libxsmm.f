@@ -307,10 +307,10 @@
 
           ! Transpose a matrix (out-of-place form).
           PURE SUBROUTINE libxsmm_otrans(output,                        &
-     &    input, typesize, m, n, ld, ldo)                               &
+     &    input, typesize, m, n, ldi, ldo)                              &
      &    BIND(C, NAME="libxsmmf_otrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN), VALUE :: typesize
@@ -318,24 +318,24 @@
 
           ! Transpose a matrix (out-of-place form, single-precision).
           PURE SUBROUTINE libxsmm_sotrans(output,                       &
-     &    input, m, n, ld, ldo)                                         &
+     &    input, m, n, ldi, ldo)                                        &
      &    BIND(C, NAME="libxsmmf_sotrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_FLOAT), INTENT(OUT) :: output(ldo,*)
-            REAL(C_FLOAT), INTENT(IN) :: input(ld,*)
+            REAL(C_FLOAT), INTENT(IN) :: input(ldi,*)
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, double-precision).
           PURE SUBROUTINE libxsmm_dotrans(output,                       &
-     &    input, m, n, ld, ldo)                                         &
+     &    input, m, n, ldi, ldo)                                        &
      &    BIND(C, NAME="libxsmmf_dotrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
-            REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
+            REAL(C_DOUBLE), INTENT(IN) :: input(ldi,*)
           END SUBROUTINE
 
           ! Impure function which returns the current clock tick of a

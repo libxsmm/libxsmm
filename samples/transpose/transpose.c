@@ -53,6 +53,14 @@
 # define USE_SELF_VALIDATION
 #endif
 
+#if !defined(OTRANS)
+# if defined(USE_SELF_VALIDATION)
+#   define OTRANS libxsmm_otrans_omp
+# else
+#   define OTRANS libxsmm_otrans
+# endif
+#endif
+
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
@@ -69,8 +77,8 @@ int main(int argc, char* argv[])
   const char t = (char)(1 < argc ? *argv[1] : 'o');
   const libxsmm_blasint m = 2 < argc ? atoi(argv[2]) : 4096;
   const libxsmm_blasint n = 3 < argc ? atoi(argv[3]) : m;
-  const libxsmm_blasint lda = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
-  const libxsmm_blasint ldb = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
+  const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
+  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
   int result = EXIT_SUCCESS;
 
   if (0 == strchr("oOiI", t)) {
@@ -82,11 +90,11 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * (('o' == t || 'O' == t) ? n : lda) * sizeof(REAL_TYPE));
-    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(ldi * (('o' == t || 'O' == t) ? n : ldi) * sizeof(REAL_TYPE));
+    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldo) * sizeof(REAL_TYPE));
     /* validate against result computed by Intel MKL */
 #if !defined(USE_SELF_VALIDATION)
-    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldb * (('o' == t || 'O' == t) ? m : ldb) * sizeof(REAL_TYPE));
+    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldo) * sizeof(REAL_TYPE));
 #endif
     const unsigned int size = m * n * sizeof(REAL_TYPE);
     unsigned long long start;
@@ -95,32 +103,32 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    fprintf(stdout, "m=%i n=%i lda=%i ldb=%i size=%.fMB (%s, %s)\n", m, n, lda, ldb,
+    fprintf(stdout, "m=%i n=%i ldi=%i ldo=%i size=%.fMB (%s, %s)\n", m, n, ldi, ldo,
       1.0 * size / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP",
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
     for (i = 0; i < n; ++i) {
       for (j = 0; j < m; ++j) {
-        a[i*lda+j] = initial_value(i, j, m);
+        a[i*ldi+j] = initial_value(i, j, m);
       }
     }
 
     if (('o' == t || 'O' == t)) {
       start = libxsmm_timer_tick();
-      libxsmm_otrans_omp(b, a, sizeof(REAL_TYPE), m, n, lda, ldb);
+      OTRANS(b, a, sizeof(REAL_TYPE), m, n, ldi, ldo);
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
-      libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldb, lda);
+      libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldo, ldi);
 #endif
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
     else {
       assert('i' == t || 'I' == t);
       start = libxsmm_timer_tick();
-      /*libxsmm_itrans(a, sizeof(REAL_TYPE), m, n, lda);*/
+      /*libxsmm_itrans(a, sizeof(REAL_TYPE), m, n, ldi);*/
 #if defined(USE_SELF_VALIDATION)
       /* without Intel MKL, construct an invariant result and check against it */
-      /*libxsmm_itrans(a, sizeof(REAL_TYPE), n, m, lda);*/
+      /*libxsmm_itrans(a, sizeof(REAL_TYPE), n, m, ldi);*/
 #endif
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
@@ -129,7 +137,7 @@ int main(int argc, char* argv[])
     /* without Intel MKL, check against a known result (invariant) */
     for (i = 0; i < n; ++i) {
       for (j = 0; j < m; ++j) {
-        if (initial_value(i, j, m) != a[i*lda+j]) {
+        if (initial_value(i, j, m) != a[i*ldi+j]) {
           i = n + 1; /* leave outer loop as well */
           break;
         }
@@ -153,9 +161,9 @@ int main(int argc, char* argv[])
       if (('o' == t || 'O' == t)) {
         start = libxsmm_timer_tick();
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1/*alpha*/, a, lda, c, ldb);
+        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1/*alpha*/, a, ldi, c, ldo);
 #elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
-        LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, m, n, 1/*alpha*/, a, lda, c, ldb);
+        LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, m, n, 1/*alpha*/, a, ldi, c, ldo);
 #else
 #       error No alternative transpose routine available!
 #endif
@@ -169,7 +177,7 @@ int main(int argc, char* argv[])
       /* validate against result computed by alternative routine */
       for (i = 0; i < m; ++i) {
         for (j = 0; j < n; ++j) {
-          if (0 == LIBXSMM_FEQ(b[i*ldb+j], c[i*ldb+j])) {
+          if (0 == LIBXSMM_FEQ(b[i*ldo+j], c[i*ldo+j])) {
             i = m + 1; /* leave outer loop as well */
             break;
           }
