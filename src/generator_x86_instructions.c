@@ -76,13 +76,16 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const char              i_vector_name,
                                        const unsigned int      i_vec_reg_number_0,
                                        const unsigned int      i_use_masking,
-                                       const unsigned int      i_is_store ) {
+                                       const unsigned int      i_is_store ) 
+{
+/* Greg asks: do we still need this condition? It seems to me this works now
 #ifndef NDEBUG
   if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
     return;
   }
 #endif
+*/
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
@@ -163,6 +166,132 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_num2 += 1;
           l_num3 += 0x21;
           l_sizereg = 4;
+          break;
+       case LIBXSMM_X86_INSTR_VPBROADCASTQ:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastq not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastq and store?\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x81;
+          l_penultimate += 0x49;
+          l_num2 += 1;
+          l_num3 += 0x21;
+          l_sizereg = 8;
+          break;
+       case LIBXSMM_X86_INSTR_VPBROADCASTB:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastb not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastb and store?\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x01;
+          l_penultimate += 0x68;
+          l_num2 += 1;
+          l_num3 += 0x21;
+          l_sizereg = 1;
+          break;
+       case LIBXSMM_X86_INSTR_VPBROADCASTW:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastw not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          if ( i_is_store == 1 )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastw and store?\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x01;
+          l_penultimate += 0x69;
+          l_num2 += 1;
+          l_num3 += 0x21;
+          l_sizereg = 2;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQA32:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqa32 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x01;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQA64:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqa64 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x81;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU8:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu8 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x03;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU16:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu16 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x83;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU32:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu32 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x02;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU64:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu64 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x82;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
           break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
           l_bytes = 5;
@@ -267,13 +396,17 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        }
        l_wow -= 0x20;
     }
+
     if ( i_is_store == 1 )
     {
        l_aligned += 1;
-       if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
+       //if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
     } else {
-       if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number;
+       //The following addition of 0x80 appears broken...
+       //if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number;
     }
+    if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
+
     if ( l_num == 0 ) l_vregoffset = 0x90;
     else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
     else if ( l_num == 2 ) l_vregoffset = 0x80;
