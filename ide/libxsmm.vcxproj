@@ -43,7 +43,6 @@
     <ClInclude Include="..\src\generator_convolution_common.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
-    <ClInclude Include="..\src\generator_convolution_forward_int16_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h" />
@@ -86,7 +85,6 @@
     <ClCompile Include="..\src\generator_convolution_common.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
-    <ClCompile Include="..\src\generator_convolution_forward_int16_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
