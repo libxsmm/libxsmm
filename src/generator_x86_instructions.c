@@ -221,6 +221,78 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_num3 += 0x21;
           l_sizereg = 2;
           break;
+       case LIBXSMM_X86_INSTR_VMOVDQA32:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqa32 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x01;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQA64:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqa64 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x81;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU8:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu8 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x03;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU16:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu16 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x83;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU32:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu32 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x02;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVDQU64:
+          l_bytes = 5;
+          if ( i_vector_name=='x' || i_vector_name=='y' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovdqu64 not yet implemented for xmm/ymm\n");
+             exit(-1);
+          }
+          l_ivectype2 += 0x82;
+          l_penultimate += 0x5f;
+          l_num3 += 0x21;
+          l_sizereg = 64;
+          break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
           l_bytes = 5;
           if ( i_vector_name=='x' )
