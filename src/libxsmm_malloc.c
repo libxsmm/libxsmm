@@ -134,7 +134,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 
 
 #if defined(LIBXSMM_VTUNE)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* code,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const volatile void* code,
   unsigned int code_id, size_t code_size, const char* code_name,
   LIBXSMM_VTUNE_JIT_DESC_TYPE* desc)
 {
