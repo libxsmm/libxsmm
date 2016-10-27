@@ -91,7 +91,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.datatype_size_wt = 4;
     l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
-  } else if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I32) {
+  } else if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {
     l_conv_kernel_config.vector_length_in = 32;
     l_conv_kernel_config.datatype_size_in = 2;
     l_conv_kernel_config.vector_length_out = 16;
