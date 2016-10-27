@@ -84,19 +84,19 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
         if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
           LIBXSMM_CPUID_X86(7, eax, ebx, ecx, edx);
 
-          /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512PF(0x04000000),
-             AVX512ER(0x08000000) */
-          if (0x1C010000 == (0x1C010000 & ebx)) {
-            target_arch = LIBXSMM_X86_AVX512_MIC;
-          }
-          /* AVX512F(0x00010000), AVX512CD(0x10000000), AVX512DQ(0x00020000),
-             AVX512BW(0x40000000), AVX512VL(0x80000000) */
-          else if (0xD0030000 == (0xD0030000 & ebx)) {
-            target_arch = LIBXSMM_X86_AVX512_CORE;
-          }
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
-          else if (0x10010000 == (0x10010000 & ebx)) {
-            target_arch = LIBXSMM_X86_AVX512;
+          if (0x10010000 == (0x10010000 & ebx)) { /* Common */
+            /* AVX512DQ(0x00020000), AVX512BW(0x40000000), AVX512VL(0x80000000) */
+            if (0xC0020000 == (0xC0020000 & ebx)) { /* SKX (Core) */
+              target_arch = LIBXSMM_X86_AVX512_CORE;
+            }
+            /* AVX512PF(0x04000000), AVX512ER(0x08000000) */
+            else if (0x0C000000 == (0x0C000000 & ebx)) { /* KNL (MIC) */
+              target_arch = LIBXSMM_X86_AVX512_MIC;
+            }
+            else { /* Common */
+              target_arch = LIBXSMM_X86_AVX512;
+            }
           }
         }
         else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
