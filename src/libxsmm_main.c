@@ -978,7 +978,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
-    else if (0 == strcmp("knl", arch) || 0 == strcmp("mic2", arch)) {
+    else if (0 == strcmp("knl", arch) || 0 == strcmp("mic", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
     }
     else if (0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
