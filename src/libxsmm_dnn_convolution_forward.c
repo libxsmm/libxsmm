@@ -47,7 +47,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
       typedef float element_output_type;
       typedef float element_filter_type;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_fallback.tpl.c"
-    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       typedef short element_input_type;
       typedef int element_output_type;
       typedef short element_filter_type;
@@ -85,7 +85,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
         }
       }
-    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         typedef short element_input_type;
         typedef int element_output_type;
