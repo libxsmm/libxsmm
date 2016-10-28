@@ -36,16 +36,21 @@
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
-# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
-    __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
+# if (4294967295U < (__UINTPTR_MAX__))
+#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
+      __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
+# else
+LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
+#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
+# endif
 #else
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
     int libxsmm_cpuid_x86_[4]; \
     __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
-    EAX = libxsmm_cpuid_x86_[0]; \
-    EBX = libxsmm_cpuid_x86_[1]; \
-    ECX = libxsmm_cpuid_x86_[2]; \
-    EDX = libxsmm_cpuid_x86_[3]; \
+    EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
+    EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
+    ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
+    EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
   }
 #endif
 
