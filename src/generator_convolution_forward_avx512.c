@@ -410,6 +410,168 @@ void libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( l
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_forward_avx512_advance_input_strides( libxsmm_generated_code*                           io_generated_code,
+                                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                                         const libxsmm_convolution_forward_descriptor*     i_conv_desc,
+                                                                         const int                                         i_advance_offset ) {
+  /* first base pointer */
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                     i_gp_reg_mapping->gp_reg_input, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  /* advance the second base pointer only if it's needed */
+  if ( i_conv_desc->ofw_rb > 8 ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_help_4, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  }
+  /* advance the third base pointer only if it's needed */
+  if ( i_conv_desc->ofw_rb > 17 ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_help_5, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  }
+  /* advance the fourth base pointer only if it's needed */
+  if ( i_conv_desc->ofw_rb > 26 ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_help_6, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  }
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_forward_avx512_advance_input_strides_two_rows( libxsmm_generated_code*                           io_generated_code,
+                                                                                  const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                                  const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                                                  const libxsmm_convolution_forward_descriptor*     i_conv_desc,
+                                                                                  const int                                         i_advance_offset ) {
+  /* base pointers for frist 9 image columns */ 
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                     i_gp_reg_mapping->gp_reg_input, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                     i_gp_reg_mapping->gp_reg_help_5, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+
+  /* advance the second base pointer only if it's needed */
+  if ( i_conv_desc->ofw_rb > 8 ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_help_4, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+    libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_help_6, i_advance_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+  }
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides( const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                          const int                                         i_stride_num,
+                                                                                unsigned int*                               o_input_reg,
+                                                                                unsigned int*                               o_input_idx,
+                                                                                unsigned int*                               o_scale ) {
+  /* init output variables */
+  *o_input_reg = i_gp_reg_mapping->gp_reg_input;
+  *o_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+  *o_scale = 0;
+
+  /* select the base register */
+  if ( i_stride_num > 26 ) {
+    *o_input_reg = i_gp_reg_mapping->gp_reg_help_6;
+  } else if ( i_stride_num > 17 ) {
+    *o_input_reg = i_gp_reg_mapping->gp_reg_help_5;
+  } else if ( i_stride_num > 8 ) {
+    *o_input_reg = i_gp_reg_mapping->gp_reg_help_4;
+  } else {
+    *o_input_reg = i_gp_reg_mapping->gp_reg_input;
+  }
+
+  /* select scale and index */
+  if ( i_stride_num % 9 == 0 ) {
+    *o_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+    *o_scale = 0;
+  } else if ( i_stride_num % 9 == 1 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 2 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 2;
+  } else if ( i_stride_num % 9 == 3 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_1;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 4 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 4;
+  } else if ( i_stride_num % 9 == 5 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_2;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 6 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_1;
+    *o_scale = 2;
+  } else if ( i_stride_num % 9 == 7 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_3;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 8 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 8;
+  } else {
+    /* shouldn't happen.... */
+  }
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_rows( const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                                   const int                                         i_row_num,
+                                                                                   const int                                         i_stride_num,
+                                                                                         unsigned int*                               o_input_reg,
+                                                                                         unsigned int*                               o_input_idx,
+                                                                                         unsigned int*                               o_scale ) {
+  /* init output variables */
+  *o_input_reg = i_gp_reg_mapping->gp_reg_input;
+  *o_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+  *o_scale = 0;
+
+  /* select the base register */
+  if ( i_row_num == 1 ) {
+    if ( i_stride_num > 8 ) {
+      *o_input_reg = i_gp_reg_mapping->gp_reg_help_6;
+    } else {
+      *o_input_reg = i_gp_reg_mapping->gp_reg_help_5;
+    }
+  } else {
+    if ( i_stride_num > 8 ) {
+      *o_input_reg = i_gp_reg_mapping->gp_reg_help_4;
+    } else {
+      *o_input_reg = i_gp_reg_mapping->gp_reg_input;
+    }
+  }
+
+  /* select scale and index */
+  if ( i_stride_num % 9 == 0 ) {
+    *o_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+    *o_scale = 0;
+  } else if ( i_stride_num % 9 == 1 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 2 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 2;
+  } else if ( i_stride_num % 9 == 3 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_1;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 4 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 4;
+  } else if ( i_stride_num % 9 == 5 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_2;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 6 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_1;
+    *o_scale = 2;
+  } else if ( i_stride_num % 9 == 7 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_3;
+    *o_scale = 1;
+  } else if ( i_stride_num % 9 == 8 ) {
+    *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
+    *o_scale = 8;
+  } else {
+    /* shouldn't happen.... */
+  }
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generated_code*                           io_generated_code,
                                                                 const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                                 const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -447,23 +609,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
         l_displacement_k -= 128;
         l_k_updates++;
       }
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                       i_gp_reg_mapping->gp_reg_input, l_input_offset*i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      /* advance the second base pointer only if it's needed */
-      if ( i_conv_desc->ofw_rb > 8 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_4, l_input_offset*i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      }
-      /* advance the third base pointer only if it's needed */
-      if ( i_conv_desc->ofw_rb > 17 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_5, l_input_offset*i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      }
-      /* advance the fourth base pointer only if it's needed */
-      if ( i_conv_desc->ofw_rb > 26 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_6, l_input_offset*i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      }
+      libxsmm_generator_convolution_forward_avx512_advance_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, 
+                                                                            i_conv_desc, l_input_offset );
     }
 
     if ( l_k == 0 ) {
@@ -521,53 +668,11 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
       /* determining base, idx and scale values */
-      /* default values */
-      l_input_reg = i_gp_reg_mapping->gp_reg_input;
-      l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
-      l_scale = 0;
+      libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides( i_gp_reg_mapping, l_n, &l_input_reg, &l_input_idx, &l_scale );
+      /* set displacement */
       l_disp = l_displacement_k * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block;
 
-      /* select the base register */
-      if ( l_n > 26 ) {
-        l_input_reg = i_gp_reg_mapping->gp_reg_help_6;
-      } else if ( l_n > 17 ) {
-        l_input_reg = i_gp_reg_mapping->gp_reg_help_5;
-      } else if ( l_n > 8 ) {
-        l_input_reg = i_gp_reg_mapping->gp_reg_help_4;
-      } else {
-        l_input_reg = i_gp_reg_mapping->gp_reg_input;
-      }
-      if ( l_n % 9 == 0 ) {
-        l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
-        l_scale = 0;
-      } else if ( l_n % 9 == 1 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-        l_scale = 1;
-      } else if ( l_n % 9 == 2 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-        l_scale = 2;
-      } else if ( l_n % 9 == 3 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_1;
-        l_scale = 1;
-      } else if ( l_n % 9 == 4 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-        l_scale = 4;
-      } else if ( l_n % 9 == 5 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_2;
-        l_scale = 1;
-      } else if ( l_n % 9 == 6 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_1;
-        l_scale = 2;
-      } else if ( l_n % 9 == 7 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_3;
-        l_scale = 1;
-      } else if ( l_n % 9 == 8 ) {
-        l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-        l_scale = 8;
-      } else {
-        /* shouldn't happen.... */
-      }
-
+      /* depending on datatype emit the needed FMA(-sequence) */
       if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  i_conv_kernel_config->instruction_set,
@@ -620,6 +725,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
         /* shouldn't happen as error was thrown above */
       }
 
+      /* handle prefetches for input and weights */
       if ( (l_n == 2) && (l_k < i_conv_desc->ifw_padded) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
@@ -694,18 +800,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
         l_k_updates++;
       }
 
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                       i_gp_reg_mapping->gp_reg_input, l_input_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                       i_gp_reg_mapping->gp_reg_help_5, l_input_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-
-      /* advance the second base pointer only if it's needed */
-      if ( i_conv_desc->ofw_rb > 8 ) {
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_4, l_input_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-        libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                         i_gp_reg_mapping->gp_reg_help_6, l_input_offset * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-      }
+      libxsmm_generator_convolution_forward_avx512_advance_input_strides_two_rows( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, 
+                                                                                     i_conv_desc, l_input_offset );
     }
 
     if ( l_k == 0 ) {
@@ -757,63 +853,15 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
     for ( l_m = 0; l_m < i_conv_desc->ofh_rb; l_m++) {
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
         /* determining base, idx and scale values */
-        /* default values */
-        l_input_reg = i_gp_reg_mapping->gp_reg_input;
-        l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
-        l_scale = 0;
+        libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_rows( i_gp_reg_mapping, l_m, l_n, &l_input_reg, &l_input_idx, &l_scale );
+        /* set displacement */
         l_disp = l_displacement_k*i_conv_kernel_config->datatype_size_in;
 #if 0
         /* This replacement code only works for LIBXSMM format */
         l_disp = (l_k*i_conv_kernel_config->datatype_size)+(l_n*i_conv_kernel_config->datatype_size*i_conv_desc->stride_w*i_conv_desc->ifm_block)
                    + (l_m*i_conv_desc->ifw_padded*i_conv_desc->ifm_block*i_conv_kernel_config->datatype_size);
 #endif
-
-        /* select the base register */
-        if (l_m == 1) {
-          if ( l_n > 8 ) {
-            l_input_reg = i_gp_reg_mapping->gp_reg_help_6;
-          } else {
-            l_input_reg = i_gp_reg_mapping->gp_reg_help_5;
-          }
-        } else {
-          if ( l_n > 8 ) {
-            l_input_reg = i_gp_reg_mapping->gp_reg_help_4;
-          } else {
-            l_input_reg = i_gp_reg_mapping->gp_reg_input;
-          }
-        }
-        /* select scale and index */
-        if ( l_n % 9 == 0 ) {
-          l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
-          l_scale = 0;
-        } else if ( l_n % 9 == 1 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-         l_scale = 1;
-        } else if ( l_n % 9 == 2 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-          l_scale = 2;
-        } else if ( l_n % 9 == 3 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_1;
-         l_scale = 1;
-        } else if ( l_n % 9 == 4 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-          l_scale = 4;
-        } else if ( l_n % 9 == 5 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_2;
-          l_scale = 1;
-        } else if ( l_n % 9 == 6 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_1;
-          l_scale = 2;
-        } else if ( l_n % 9 == 7 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_3;
-          l_scale = 1;
-        } else if ( l_n % 9 == 8 ) {
-          l_input_idx = i_gp_reg_mapping->gp_reg_help_0;
-          l_scale = 8;
-        } else {
-          /* shouldn't happen.... */
-        }
-
+        /* depending on datatype emit the needed FMA(-sequence) */
         if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                    i_conv_kernel_config->instruction_set,
@@ -866,6 +914,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
           /* shouldn't happen as error was thrown above */
         }
 
+        /* handle prefetches for input and weights */
         if ( (l_n == 3) && (l_k < i_conv_desc->ifw_padded) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
