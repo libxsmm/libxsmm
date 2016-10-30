@@ -2,7 +2,7 @@
 
 if [ $# -ne 4 ]
 then
-  echo "Usage: `basename $0` mb iters numa; using default values: 256 100 1 f32"
+  echo "Usage: `basename $0` mb iters numa; using default values: 256 1000 1 f32"
   MB=256
   ITERS=1000
   NUMA=1

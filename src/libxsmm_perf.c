@@ -284,7 +284,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory,
     assert(res == 4); /* Expected 4 items written above */
 
 #else
-    fprintf(fp, "%llx %lx %s\n", (unsigned long long)/*uintptr_t*/memory, (unsigned long)size, name);
+    fprintf(fp, "%llx %lx %s\n", (unsigned long long)((uintptr_t)memory), (unsigned long)size, name);
     fflush(fp);
 #endif
   }

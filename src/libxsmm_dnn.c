@@ -200,7 +200,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
         handle->fm_lp_block = 1;
       }
-      else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I32) ) {
+      else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
         handle->ifmblock = (conv_desc.C >=16) ? 16 : conv_desc.C/2;
         handle->ofmblock = (conv_desc.K >=16) ? 16 : conv_desc.K;
         handle->fm_lp_block = 2;
