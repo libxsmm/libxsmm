@@ -855,7 +855,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
         /* determining base, idx and scale values */
         libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_rows( i_gp_reg_mapping, l_m, l_n, &l_input_reg, &l_input_idx, &l_scale );
         /* set displacement */
-        l_disp = l_displacement_k*i_conv_kernel_config->datatype_size_in;
+        l_disp = l_displacement_k * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block;
 #if 0
         /* This replacement code only works for LIBXSMM format */
         l_disp = (l_k*i_conv_kernel_config->datatype_size)+(l_n*i_conv_kernel_config->datatype_size*i_conv_desc->stride_w*i_conv_desc->ifm_block)
