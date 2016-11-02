@@ -515,7 +515,7 @@ ifneq (0,$(INTEL))
         ifeq (1,$(SSE)) # default
           ifneq (Darwin,$(UNAME))
             CTARGET = -xSSE3
-          else # no systems with less than SSE4.2 
+          else # no systems with less than SSE4.2
             CTARGET = -xSSE4.2
           endif
         else ifeq (3,$(SSE))

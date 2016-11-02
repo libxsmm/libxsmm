@@ -76,7 +76,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const char              i_vector_name,
                                        const unsigned int      i_vec_reg_number_0,
                                        const unsigned int      i_use_masking,
-                                       const unsigned int      i_is_store ) 
+                                       const unsigned int      i_is_store )
 {
 /* Greg asks: do we still need this condition? It seems to me this works now
 #ifndef NDEBUG
@@ -156,7 +156,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
              fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastd not yet implemented for xmm/ymm\n");
              exit(-1);
           }
-          if ( i_is_store == 1 ) 
+          if ( i_is_store == 1 )
           {
              fprintf(stderr,"libxsmm_instruction_vec_move: vpbroadcastd and store?\n");
              exit(-1);
@@ -403,7 +403,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        /*if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;*/
     } else {
        /*The following addition of 0x80 appears broken...
-         if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number;*/
+        if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number; */
     }
     if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
 
@@ -568,7 +568,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VPADDD:
           l_fpadj2 -= 0x80;
           l_fpadj  += 0xA5;
-          break;      
+          break;
        case LIBXSMM_X86_INSTR_VPADDQ:
           l_fpadj  += 0x7b;
           break;
@@ -1044,7 +1044,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
-          break;    
+          break;
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
           l_fpadj  += 0x5f;
