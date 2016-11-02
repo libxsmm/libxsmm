@@ -272,9 +272,9 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
           ij = oj * stride_h;
           for(oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w;
-            for(kj = 0; kj < kh; ++kj) { 
+            for(kj = 0; kj < kh; ++kj) {
               for(ki = 0; ki < kw; ++ki) {
-                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) += 
+                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) +=
                   LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp)
                 * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
@@ -320,10 +320,10 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
           ij = oj * stride_h;
           for(oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w;
-            for(kj = 0; kj < kh; ++kj) { 
+            for(kj = 0; kj < kh; ++kj) {
               for(ki = 0; ki < kw; ++ki) {
                 LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw) +=
-                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) 
+                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
                 * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
               }
             }
@@ -630,9 +630,9 @@ int main(int argc, char* argv[])
   printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      (flops*1e-9)/l_total, norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
-  
-  /* @TODO check if not OFM > 15 is better, or calling fallback code */ 
-  if (stride == 1) { 
+
+  /* @TODO check if not OFM > 15 is better, or calling fallback code */
+  if (stride == 1) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");

@@ -92,7 +92,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
   unsigned int l_vec_reg_acc_start = 16;
   unsigned int l_found_act_format = 0;
   unsigned int l_found_fil_format = 0;
-  unsigned int l_m, l_n; 
+  unsigned int l_m, l_n;
 
   /* define gp register mapping */
   /* NOTE: do not use RSP, RBP,
@@ -197,7 +197,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
                                         l_conv_kernel_config.vmove_instruction,
                                         l_gp_reg_mapping.gp_reg_weight,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        (l_m * l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt) + 
+                                        (l_m * l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt) +
                                           (l_n * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt),
                                         l_conv_kernel_config.vector_name,
                                         l_vec_reg_acc_start + l_m + (l_n * l_ofm_blocking), 0, 0 );
@@ -205,7 +205,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
   }
 
   /* loop over ofh and ofw and compute weight update for blocked weights */
-  libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_conv_kernel_config, 
+  libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_conv_kernel_config,
                                                                   i_conv_desc, l_ifm_blocking, l_ofm_blocking, l_vec_reg_acc_start );
 
   /* store weights */
@@ -216,7 +216,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
                                         l_conv_kernel_config.vmove_instruction,
                                         l_gp_reg_mapping.gp_reg_weight,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        (l_m * l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt) + 
+                                        (l_m * l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt) +
                                           (l_n * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt),
                                         l_conv_kernel_config.vector_name,
                                         l_vec_reg_acc_start + l_m + (l_n * l_ofm_blocking), 0, 1 );
@@ -226,11 +226,11 @@ Example for ofm_block = 32, ifm_block%2 == 0
   /* advance weight and input pointers */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_weight, l_ifm_blocking * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
-  
+
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input, l_ifm_blocking * l_conv_kernel_config.datatype_size_in );
 
-  /* close ifm loop */ 
+  /* close ifm loop */
   libxsmm_generator_convolution_footer_ifm_loop( io_generated_code, &l_loop_label_tracker, &l_conv_kernel_config,
                                                    l_gp_reg_mapping.gp_reg_ifmInner_loop, i_conv_desc->ifm_block );
 
@@ -300,15 +300,15 @@ void libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( libxsmm_gener
                                                i_vec_reg_acc_start + l_m + (l_n * i_ofm_blocking) );
     }
   }
-  
+
   /* close ofw loop */
   libxsmm_generator_convolution_footer_oi_loop( io_generated_code, io_loop_label_tracker, i_conv_kernel_config, i_gp_reg_mapping->gp_reg_oi_loop, i_conv_desc->ofw );
 
   /* advance input pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_input, 
-                                     (i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in) 
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_input,
+                                     (i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in)
                                         - (i_conv_desc->ofw * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in) );
- 
+
   /* advance output pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_output,
                                      (i_conv_desc->ofw_padded * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out)
@@ -318,8 +318,8 @@ void libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( libxsmm_gener
   libxsmm_generator_convolution_footer_oj_loop( io_generated_code, io_loop_label_tracker, i_conv_kernel_config, i_gp_reg_mapping->gp_reg_oj_loop, i_conv_desc->ofh );
 
   /* reset input pointer */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_input, 
-                                     i_conv_desc->ofh * i_conv_desc->stride_h * i_conv_desc->ifw_padded 
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_sub_instruction, i_gp_reg_mapping->gp_reg_input,
+                                     i_conv_desc->ofh * i_conv_desc->stride_h * i_conv_desc->ifw_padded
                                        * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
 
   /* reset output pointer */

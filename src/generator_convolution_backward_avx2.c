@@ -174,7 +174,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
                                           l_conv_kernel_config.vmove_instruction,
                                           l_gp_reg_mapping.gp_reg_input,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_m * l_conv_kernel_config.vector_length_in * l_conv_kernel_config.datatype_size_in) + 
+                                          (l_m * l_conv_kernel_config.vector_length_in * l_conv_kernel_config.datatype_size_in) +
                                             (l_n * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in),
                                           l_conv_kernel_config.vector_name,
                                           l_vec_reg_acc_start + l_m + (l_n * l_ifm_blocking), 0, 0 );
@@ -196,7 +196,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
                                           l_conv_kernel_config.vmove_instruction,
                                           l_gp_reg_mapping.gp_reg_input,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_m * l_conv_kernel_config.vector_length_in * l_conv_kernel_config.datatype_size_in) + 
+                                          (l_m * l_conv_kernel_config.vector_length_in * l_conv_kernel_config.datatype_size_in) +
                                             (l_n * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in),
                                           l_conv_kernel_config.vector_name,
                                           l_vec_reg_acc_start + l_m + (l_n * l_ifm_blocking), 0, 1 );
