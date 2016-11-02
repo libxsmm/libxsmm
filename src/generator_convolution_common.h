@@ -48,6 +48,19 @@ void libxsmm_generator_convolution_footer_oi_loop( libxsmm_generated_code*      
                                                    const unsigned int                            i_oi );
 
 LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_header_oj_loop( libxsmm_generated_code*                   io_generated_code,
+                                                   libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                   const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
+                                                   const unsigned int                        i_gp_reg_oj_loop );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_footer_oj_loop( libxsmm_generated_code*                       io_generated_code,
+                                                   libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                   const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
+                                                   const unsigned int                            i_gp_reg_oj_loop,
+                                                   const unsigned int                            i_oj );
+
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_header_kh_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,

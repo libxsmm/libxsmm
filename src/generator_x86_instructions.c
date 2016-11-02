@@ -403,7 +403,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        /*if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;*/
     } else {
        /*The following addition of 0x80 appears broken...
-         if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number;*/
+        if ( i_use_masking != 0 ) l_maskingoff = 0x80 + i_mask_reg_number; */
     }
     if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
 

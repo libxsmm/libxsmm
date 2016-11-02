@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Hans Pabst (Intel Corp.), Rajkishore Barik (Intel Corp. )
 ******************************************************************************/
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
@@ -158,6 +158,10 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int blocksofm;
   int fwd_ofw_rb;
   int fwd_ofh_rb;
+  int bwd_ofw_rb;
+  int bwd_ofh_rb;
+  int upd_ofw_rb;
+  int upd_ofh_rb;
   int fm_lp_block;              /* additional blocking for low precision datatypes of feature maps */
 
   /* internal data representation */
@@ -166,7 +170,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_dnn_buffer* input_relu;
   libxsmm_dnn_filter* filter;
   libxsmm_dnn_bias* bias;
-  void* scratch;
+  void* scratch1;
+  void* scratch2;
+/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
+  void* scratch3;
+/*#endif*/
 
   /* JIT-generated convolution code */
   /*
@@ -176,8 +184,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   */
   int avx512avx2fallback;
   libxsmm_code_pointer code_fwd[4];
-  libxsmm_code_pointer code_bwd[8];
-  libxsmm_code_pointer code_upd[4];
+  libxsmm_code_pointer code_bwd[4];
+  libxsmm_code_pointer code_upd[6];
 };
 
 typedef enum libxsmm_build_kind {
