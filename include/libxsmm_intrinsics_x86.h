@@ -67,6 +67,10 @@
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
 #   include <immintrin.h>
+# elif defined(_CRAYC) /*TODO: version check*/
+#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   define LIBXSMM_INTRINSICS/*no need for target flags*/
+#   include <immintrin.h>
 # elif defined(_MSC_VER) /*TODO: version check*/
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
