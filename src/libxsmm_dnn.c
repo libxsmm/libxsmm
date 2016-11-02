@@ -433,9 +433,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.stride_w = conv_desc.v;
         descriptor.blocks_ofm = handle->blocksofm;
         descriptor.blocks_ifm = handle->blocksifm;
-        //ORIG::descriptor.ofm_block= ((nOfm % VLEN == 0) ? VLEN : 1);
+        /* ORIG::descriptor.ofm_block= ((nOfm % VLEN == 0) ? VLEN : 1); */
         descriptor.ofm_block = handle->ofmblock;
-        //ORIG::descriptor.ifm_block = VLEN;
+        /* ORIG::descriptor.ifm_block = VLEN; */
         descriptor.ifm_block = handle->ifmblock;
         descriptor.ofh_padded = handle->ofhp;
         descriptor.ofw_padded = handle->ofwp;
@@ -453,8 +453,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
         {
           /* control code size */
-          const unsigned int max_code_size = 20000;//16384;
-          const unsigned int bp_each_iter_code_size = 12; //16;
+          const unsigned int max_code_size = 20000/*16384*/;
+          const unsigned int bp_each_iter_code_size = 12/*16*/;
           if ((descriptor.ofw * descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size)) {
             descriptor.ofw_unroll = 1;
             descriptor.unroll_kw = 1;
@@ -532,7 +532,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
           } else {
             descriptor.ofw_unroll = 0;
             descriptor.unroll_kw = 0;
-            descriptor.unroll_kh = 1; // always unroll kh
+            descriptor.unroll_kh = 1; /* always unroll kh */
           }
 
           /* NONE */
@@ -588,16 +588,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
         {
-          descriptor.ifm_unroll = 1;
           const unsigned int wu_each_iter_code_size = 10 * (descriptor.ifm_block == 1 ? descriptor.kw : descriptor.ifm_block);
           const unsigned int wu_max_code_size = 20000;
+          int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
+          descriptor.ifm_unroll = 1;
 
-          int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size;
           for(i = LIBXSMM_MIN(upper_limit_ofw_rb, handle->ofw); i >= 1; i--) {
             if(handle->ofw % i == 0) break;
           }
           descriptor.ofw_rb =  i;
-          int upper_limit_ofh_rb = wu_max_code_size / (descriptor.ofw_rb * wu_each_iter_code_size);
+          upper_limit_ofh_rb = wu_max_code_size / (descriptor.ofw_rb * wu_each_iter_code_size);
           for(i = LIBXSMM_MIN(upper_limit_ofh_rb, handle->ofh); i >= 1; i--) {
             if(handle->ofh % i == 0) break;
           }
@@ -659,7 +659,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         } else {
           /* shouldn't happend */
         }
-      } // end of weight-update handle
+      } /* end of weight-update handle */
       {
         /* Populating scratch register for transpose */
         libxsmm_xmalloc(&handle->scratch1,
@@ -668,12 +668,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
 
         handle->scratch2 = libxsmm_barrier_create(handle->desc.threads, 1);
 
-//#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
         /* allocate raw data */
         libxsmm_xmalloc(&handle->scratch3,
           handle->desc.N * handle->blocksifm * handle->ifmblock * handle->desc.H * handle->desc.W * handle->fm_lp_block * internal_dnn_typesize(handle->datatype_in),
           LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
-//#endif
+/*#endif*/
       }
     }
     else {
@@ -695,9 +695,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
       handle->code_upd[5].xconv.sconv = 0;
       handle->scratch1 = 0;
       handle->scratch2 = 0;
-//#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
       handle->scratch3 = 0;
-//#endif
+/*#endif*/
     }
   }
   else {
@@ -745,10 +745,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     /*freeing the scratch*/
     if(handle->scratch1 != 0) libxsmm_xfree(handle->scratch1);
     /*freeing the scratch barrier: Throwing memory error right now*/
-    //if(handle->scratch2 != 0) libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);
-//#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+    /*if(handle->scratch2 != 0) libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);*/
+/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
     if(handle->scratch3 != 0) libxsmm_xfree(handle->scratch3);
-//#endif
+/*#endif*/
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_conv_handle*)handle);
   }

@@ -247,7 +247,7 @@ void libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( libxsmm_gener
                                                                    const unsigned int                                      i_ifm_blocking,
                                                                    const unsigned int                                      i_ofm_blocking,
                                                                    const unsigned int                                      i_vec_reg_acc_start ) {
-  unsigned int l_n, l_m, l_k;
+  unsigned int l_n, l_m;
 
   /* start ofh loop */
   libxsmm_generator_convolution_header_oj_loop( io_generated_code, io_loop_label_tracker, i_conv_kernel_config, i_gp_reg_mapping->gp_reg_oj_loop );

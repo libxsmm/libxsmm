@@ -28,7 +28,7 @@
  ******************************************************************************/
 /* Rajkishore Barik (Intel Corp.)
  ******************************************************************************/
-int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, kh, kw, ifm1ofm1, ifh, ofh;
+int imgifm1, img, ofm1, ifm1, oj, ij, kj, ki, ifm2, ofm2, kh, kw, ifm1ofm1, ifh, ofh;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -57,10 +57,12 @@ LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 
 /* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
 libxsmm_convfunction jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
-libxsmm_sconvfunction jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
+#if defined(LIBXSMM_CONV_NO_PREFETCH)
 libxsmm_convfunction jitted_conv_bp_peeled_no_pf = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
+#else
+libxsmm_sconvfunction jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
 libxsmm_sconvfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)handle->code_bwd[3].xconv.sconv;
-
+#endif
 
 element_input_type *l_input;
 element_filter_type *l_wt;
@@ -78,8 +80,8 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   ifm1 = ifm1ofm1%handle->blocksifm;
   for(kj=0; kj < kh; ++kj) {
     for(ki=0; ki < kw; ++ki) {
-      // TODO Enable this later
-      //transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);
+      /* TODO: enable this later */
+      /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
       for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
           LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kj, ki, ofm2, ifm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
@@ -99,172 +101,172 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
     /* NON PEELED PROLOGUE VERSION */
-    if(kh == 3) { // 3x3 convolution
+    if(kh == 3) { /* 3x3 convolution */
 
-      //Unroll 1
+      /* Unroll 1 */
       ij = 0; kj=2, oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      // prefetch ij=2; kj=0
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+0+1][0][0]));
+      /* prefetch ij=2; kj=0 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+0+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-0-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+2-kh+0+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 2
+      /* Unroll 2 */
       ij = 1; kj=1, oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      // prefetch ij=2; kj=1
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+1+1][0][0]));
+      /* prefetch ij=2; kj=1 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+1+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 3
+      /* Unroll 3 */
       ij = 1; kj=2, oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      // prefetch for ij = 2 and kj=2
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+2+1][0][0]));
+      /* prefetch for ij = 2 and kj=2 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+2+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-    } else if (kh == 5) { // kh=5
-      //Unroll 1
+    } else if (kh == 5) { /* kh=5 */
+      /* Unroll 1 */
       ij = 0; kj=4; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 2 kj=4
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+4+1][0][0]));
+      /* prefetch for ij= 2 kj=4 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+4+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+2-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 2
+      /* Unroll 2 */
       ij = 1; kj=3; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 3 kj=1
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+1+1][0][0]));
+      /* prefetch for ij= 3 kj=1 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+1+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+2-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 3
+      /* Unroll 3 */
       ij = 1; kj=4; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 3 kj=2
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+2+1][0][0]));
+      /* prefetch for ij= 3 kj=2 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+2+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+2-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 4
+      /* Unroll 4 */
       ij = 2; kj=2; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 3 kj=3
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+3+1][0][0]));
+      /* prefetch for ij= 3 kj=3 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+3+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 5
+      /* Unroll 5 */
       ij = 2; kj=3; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 3 kj=4
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+4+1][0][0]));
+      /* prefetch for ij= 3 kj=4 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+4+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 6
+      /* Unroll 6 */
       ij = 2; kj=4; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 4 kj=0
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+0+1][0][0]));
+      /* prefetch for ij= 4 kj=0 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ij+2-kh+0+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-0-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+2-kh+0+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 7
+      /* Unroll 7 */
       ij = 3; kj=1; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 4 kj=1
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+1+1][0][0]));
+      /* prefetch for ij= 4 kj=1 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+1+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 8
+      /* Unroll 8 */
       ij = 3; kj=2; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 4 kj=2
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+2+1][0][0]));
+      /* prefetch for ij= 4 kj=2 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+2+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 9
+      /* Unroll 9 */
       ij = 3; kj=3; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 4 kj=3
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+3+1][0][0]));
+      /* prefetch for ij= 4 kj=3 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+3+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij+1-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 10
+      /* Unroll 10 */
       ij = 3; kj=4; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij= 4 kj=4
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+4+1][0][0]));
+      /* prefetch for ij= 4 kj=4 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), &(tr_wt[ofm1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1][ij+1-kh+4+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
@@ -289,7 +291,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ij-kh+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //jitted_conv_bp_peeled_noweight_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), NULL, &(del_out[img][ofm1][ij+1-kh+1][0][0]));
+      /*jitted_conv_bp_peeled_noweight_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), NULL, &(del_out[img][ofm1][ij+1-kh+1][0][0]));*/
       jitted_conv_bp_peeled_noweight_pf(l_input, l_wt, l_output,
                                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij+1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                                         NULL,
@@ -301,173 +303,173 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     /* NON PEELED EPILOGUE VERSION */
     if (kh==3) {
 
-      if ( (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) ) { //prefetch next img, kj=2, ij=0
-        ij=ifh-2; kj=0; oj=ij-kh+kj+1;//ifh-2-3+0+1 = ifh-4
+      if ( (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) ) { /* prefetch next img, kj=2, ij=0 */
+        ij=ifh-2; kj=0; oj=ij-kh+kj+1; /* ifh-2-3+0+1 = ifh-4 */
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch ij=0 and kj =2
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][0][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][-kh+2+1][0][0]));
+        /* prefetch ij=0 and kj =2 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][0][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][-kh+2+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, -kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        ij=ifh-2; kj=1; oj=ij-kh+kj+1;//ifh-2-3+1+1 = ifh-3
+        ij=ifh-2; kj=1; oj=ij-kh+kj+1; /* ifh-2-3+1+1 = ifh-3 */
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch ij=1 and kj =1
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-1-1][0][0][0]), &(del_out[img+1][0][1-kh+1+1][0][0]));
+        /* prefetch ij=1 and kj =1 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-1-1][0][0][0]), &(del_out[img+1][0][1-kh+1+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0, kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 1-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        ij=ifh-1; kj=0; oj=ij-kh+kj+1;//ifh-1-3+0+1 = ifh-3
+        ij=ifh-1; kj=0; oj=ij-kh+kj+1; /* ifh-1-3+0+1 = ifh-3 */
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch ij=1, kj=2
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][1-kh+2+1][0][0]));
+        /* prefetch ij=1, kj=2 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][1-kh+2+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 1-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
       } else {
-        if (ofm1+1 == handle->blocksofm) { // prefecth next ifm1, kj=2, ij = 0
-          ij=ifh-2; kj=0; oj=ij-kh+kj+1;//ifh-2-3+0+1 = ifh-4
+        if (ofm1+1 == handle->blocksofm) { /* prefecth next ifm1, kj=2, ij = 0 */
+          ij=ifh-2; kj=0; oj=ij-kh+kj+1; /* ifh-2-3+0+1 = ifh-4 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=0 and kj =2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][0][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][-kh+2+1][0][0]));
+          /* prefetch ij=0 and kj =2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][0][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, -kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-          ij=ifh-2; kj=1; oj=ij-kh+kj+1;//ifh-2-3+1+1 = ifh-3
+          ij=ifh-2; kj=1; oj=ij-kh+kj+1; /* ifh-2-3+1+1 = ifh-3 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=1 and kj =1
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-1-1][0][0][0]), &(del_out[img][0][1-kh+1+1][0][0]));
+          /* prefetch ij=1 and kj =1 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-1-1][0][0][0]), &(del_out[img][0][1-kh+1+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 1-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-          ij=ifh-1; kj=0; oj=ij-kh+kj+1;//ifh-1-3+0+1 = ifh-3
+          ij=ifh-1; kj=0; oj=ij-kh+kj+1; /* ifh-1-3+0+1 = ifh-3 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=1, kj=2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][1-kh+2+1][0][0]));
+          /* prefetch ij=1, kj=2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][1-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 1-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
         } else {
-          ij=ifh-2; kj=0; oj=ij-kh+kj+1;//ifh-2-3+0+1 = ifh-4
+          ij=ifh-2; kj=0; oj=ij-kh+kj+1; /* ifh-2-3+0+1 = ifh-4 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=0 and kj =2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][0][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][-kh+2+1][0][0]));
+          /* prefetch ij=0 and kj =2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][0][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, -kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-          ij=ifh-2; kj=1; oj=ij-kh+kj+1;//ifh-2-3+1+1 = ifh-3
+          ij=ifh-2; kj=1; oj=ij-kh+kj+1; /* ifh-2-3+1+1 = ifh-3 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=1 and kj =1
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+1+1][0][0]));
+          /* prefetch ij=1 and kj =1 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+1+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, 1-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-          ij=ifh-1; kj=0; oj=ij-kh+kj+1;//ifh-1-3+0+1 = ifh-3
+          ij=ifh-1; kj=0; oj=ij-kh+kj+1; /* ifh-1-3+0+1 = ifh-3 */
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch ij=1, kj=2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+2+1][0][0]));
+          /* prefetch ij=1, kj=2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, 1-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-        } //if (ofm1+1 == nBOfm)
-      } // if ( (ofm1+1 == nBOfm) &&  (ifm1+1 == nBIfm) )
-    } else if (kh==5)  {  //kh =5
-      //Unroll 1
-      ij = ifh-4; kj=0; oj=ij-kh+kj+1; //ifh-8
+        } /* if (ofm1+1 == nBOfm) */
+      } /* if ( (ofm1+1 == nBOfm) &&  (ifm1+1 == nBIfm) ) */
+    } else if (kh==5)  {  /* kh =5 */
+      /* Unroll 1 */
+      ij = ifh-4; kj=0; oj=ij-kh+kj+1; /* ifh-8 */
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij=ifh-3 kj=1
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-3][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ifh-3-kh+1+1][0][0]));
+      /* prefetch for ij=ifh-3 kj=1 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-3][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ifh-3-kh+1+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ifh-3, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ifh-3-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 2
+      /* Unroll 2 */
       ij = ifh-4; kj=1; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij=ifh-3 kj=2
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-3][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ifh-3-kh+2+1][0][0]));
+      /* prefetch for ij=ifh-3 kj=2 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-3][0][0]), &(tr_wt[ofm1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1][ifh-3-kh+2+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ifh-3, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ifh-3-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 3
+      /* Unroll 3 */
       ij = ifh-4; kj=2; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij=ifh-2 kj=0
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ifh-2-kh+0+1][0][0]));
+      /* prefetch for ij=ifh-2 kj=0 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-2][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ifh-2-kh+0+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ifh-2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-0-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ifh-2-kh+0+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 4
+      /* Unroll 4 */
       ij = ifh-4; kj=3; oj=ij-kh+kj+1;
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij=ifh-2 kj=1
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-2][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ifh-2-kh+1+1][0][0]));
+      /* prefetch for ij=ifh-2 kj=1 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-2][0][0]), &(tr_wt[ofm1][ifm1][kh-1-1][0][0][0]), &(del_out[img][ofm1][ifh-2-kh+1+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ifh-2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-1-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, ifh-2-kh+1+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                        );
 
-      //Unroll 5
-      ij = ifh-3; kj=0; oj=ij-kh+kj+1; // ifh-4
+      /* Unroll 5 */
+      ij = ifh-3; kj=0; oj=ij-kh+kj+1; /* ifh-4 */
       l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
       l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-      //prefetch for ij=ifh-1 kj=0
-      //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-1][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ifh-1-kh+0+1][0][0]));
+      /* prefetch for ij=ifh-1 kj=0 */
+      /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ifh-1][0][0]), &(tr_wt[ofm1][ifm1][kh-0-1][0][0][0]), &(del_out[img][ofm1][ifh-1-kh+0+1][0][0]));*/
       jitted_conv_bp_pf(l_input, l_wt, l_output,
                         &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ifh-1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1,  kh-0-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
@@ -475,196 +477,196 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
                        );
 
 
-      if ( (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) ) { //prefetch next img, kj=4, ij=0
-        //Unroll 6
+      if ( (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) ) { /* prefetch next img, kj=4, ij=0 */
+        /* Unroll 6 */
         ij = ifh-3; kj=1; oj=ij-kh+kj+1;
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch for ij=0 kj=4
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][0][0][0]), &(tr_wt[0][0][kh-4-1][0][0][0]), &(del_out[img+1][0][-kh+4+1][0][0]));
+        /* prefetch for ij=0 kj=4 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][0][0][0]), &(tr_wt[0][0][kh-4-1][0][0][0]), &(del_out[img+1][0][-kh+4+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, -kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        //Unroll 7
+        /* Unroll 7 */
         ij = ifh-3; kj=2; oj=ij-kh+kj+1;
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch for ij=1 kj=3
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-3-1][0][0][0]), &(del_out[img+1][0][1-kh+3+1][0][0]));
+        /* prefetch for ij=1 kj=3 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-3-1][0][0][0]), &(del_out[img+1][0][1-kh+3+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 1-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        //Unroll 8
+        /* Unroll 8 */
         ij = ifh-2; kj=0; oj=ij-kh+kj+1;
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch for ij=1 kj=4
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-4-1][0][0][0]), &(del_out[img+1][0][1-kh+4+1][0][0]));
+        /* prefetch for ij=1 kj=4 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-4-1][0][0][0]), &(del_out[img+1][0][1-kh+4+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 1-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        //Unroll 9
+        /* Unroll 9 */
         ij = ifh-2; kj=1; oj=ij-kh+kj+1;
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        //prefetch for ij=2 kj=2
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][2-kh+2+1][0][0]));
+        /* prefetch for ij=2 kj=2 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][2-kh+2+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 2-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
 
-        //Unroll 10
+        /* Unroll 10 */
         ij = ifh-1; kj=0; oj=ij-kh+kj+1;
         l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-        // ij=2 kj=3
-        //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-3-1][0][0][0]), &(del_out[img+1][0][2-kh+3+1][0][0]));
+        /* ij=2 kj=3 */
+        /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-3-1][0][0][0]), &(del_out[img+1][0][2-kh+3+1][0][0]));*/
         jitted_conv_bp_pf(l_input, l_wt, l_output,
                           &LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, 0,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                           &LIBXSMM_VLA_ACCESS(5, del_out, img+1, 0, 2-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                          );
       } else {
-        if (ofm1+1 == handle->blocksofm) { // prefecth next ifm1,  kj=4, ij=0
-          //Unroll 6
+        if (ofm1+1 == handle->blocksofm) { /* prefecth next ifm1,  kj=4, ij=0 */
+          /* Unroll 6 */
           ij = ifh-3; kj=1; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=0 kj=4
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][0][0][0]), &(tr_wt[0][ifm1+1][kh-4-1][0][0][0]), &(del_out[img][0][-kh+4+1][0][0]));
+          /* prefetch for ij=0 kj=4 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][0][0][0]), &(tr_wt[0][ifm1+1][kh-4-1][0][0][0]), &(del_out[img][0][-kh+4+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, ifm1+1,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 0-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 7
+          /* Unroll 7 */
           ij = ifh-3; kj=2; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=1 kj=3
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][1-kh+3+1][0][0]));
+          /* prefetch for ij=1 kj=3 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][1-kh+3+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 0-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 8
+          /* Unroll 8 */
           ij = ifh-2; kj=0; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=1 kj=4
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-4-1][0][0][0]), &(del_out[img][0][1-kh+4+1][0][0]));
+          /* prefetch for ij=1 kj=4 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-4-1][0][0][0]), &(del_out[img][0][1-kh+4+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, ifm1+1,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 1-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 9
+          /* Unroll 9 */
           ij = ifh-2; kj=1; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=2 kj=2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][2-kh+2+1][0][0]));
+          /* prefetch for ij=2 kj=2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][2-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, ifm1+1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 2-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 10
+          /* Unroll 10 */
           ij = ifh-1; kj=0; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          // ij=2 kj=3
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][2-kh+3+1][0][0]));
+          /* ij=2 kj=3 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][2-kh+3+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1+1, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, 0, 2-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
         } else {
-          //Unroll 6
+          /* Unroll 6 */
           ij = ifh-3; kj=1; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=0 kj=4
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][0][0][0]), &(tr_wt[ofm1+1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1+1][-kh+4+1][0][0]));
+          /* prefetch for ij=0 kj=4 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][0][0][0]), &(tr_wt[ofm1+1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1+1][-kh+4+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, -kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
-          //Unroll 7
+          /* Unroll 7 */
           ij = ifh-3; kj=2; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=1 kj=3
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+3+1][0][0]));
+          /* prefetch for ij=1 kj=3 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+3+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, 1-kh+3+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 8
+          /* Unroll 8 */
           ij = ifh-2; kj=0; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          //prefetch for ij=1 kj=4
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+4+1][0][0]));
+          /* prefetch for ij=1 kj=4 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][1][0][0]), &(tr_wt[ofm1+1][ifm1][kh-4-1][0][0][0]), &(del_out[img][ofm1+1][1-kh+4+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 1, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-4-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, 1-kh+4+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 9
+          /* Unroll 9 */
           ij = ifh-2; kj=1; oj=ij-kh+kj+1;
-          l_input =  &(del_input[img][ifm1][ij][0][0]);
-          l_wt = &(tr_wt[ofm1][ifm1][kh-kj-1][0][0][0]);
-          l_output = &(del_out[img][ofm1][oj][0][0]);
-          //prefetch for ij=2 kj=2
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][2][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][2-kh+2+1][0][0]));
+          l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+          l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+          /* prefetch for ij=2 kj=2 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][2][0][0]), &(tr_wt[ofm1+1][ifm1][kh-2-1][0][0][0]), &(del_out[img][ofm1+1][2-kh+2+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-2-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1+1, 2-kh+2+1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock)
                            );
 
-          //Unroll 10
+          /* Unroll 10 */
           ij = ifh-1; kj=0; oj=ij-kh+kj+1;
           l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-          // ij=2 kj=3
-          //jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][2][0][0]), &(tr_wt[ofm1+1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1+1][2-kh+3+1][0][0]));
+          /* ij=2 kj=3 */
+          /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][2][0][0]), &(tr_wt[ofm1+1][ifm1][kh-3-1][0][0][0]), &(del_out[img][ofm1+1][2-kh+3+1][0][0]));*/
           jitted_conv_bp_pf(l_input, l_wt, l_output,
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 2, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                             &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1+1, ifm1,  kh-3-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
@@ -685,7 +687,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
         }
       }
     }
-#else //NO_PREFETCH
+#else /* NO_PREFETCH */
     for(ij=0; ij < kh-1; ++ij) {
       for(kj=0; kj < kh; ++kj) {
         oj = ij - kh + kj + 1;
