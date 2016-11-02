@@ -89,13 +89,6 @@ typedef enum libxsmm_dnn_conv_fuse_op {
 #endif
 } libxsmm_dnn_conv_fuse_op;
 
-typedef enum libxsmm_dnn_conv_option {
-  /* we get default settings */
-  LIBXSMM_DNN_CONV_OPTION_NONE = 0,
-  /* activations are stored unsigned */
-  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1
-} libxsmm_dnn_conv_option;
-
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
   /** let the library decide */
@@ -212,8 +205,11 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(const float* input1, 
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, const short* input2, int* output,
                                                            const short* ipf1, const short* ipf2, const int* opf);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char* input1, const char* input2, short* output,
+                                                             const unsigned char* ipf1, const char* ipf2, const short* opf);
+
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; } libxsmm_xconvfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; } libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);

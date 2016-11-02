@@ -289,6 +289,7 @@ typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int vector_length_wt;
   unsigned int datatype_size_wt;
   unsigned int vmove_instruction;
+  unsigned int vbcst_instruction;
   unsigned int vfma_instruction;
   unsigned int vxor_instruction;
   unsigned int vadd_instruction;

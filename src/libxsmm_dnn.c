@@ -433,6 +433,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.fm_lp_block = handle->fm_lp_block;
         descriptor.datatype_in = handle->datatype_in;
         descriptor.datatype_out = handle->datatype_out;
+        descriptor.option = handle->desc.options;
         descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
         /* TODO check JIT errors */
         if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
@@ -484,6 +485,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.peeled = 0;
         descriptor.datatype_in = handle->datatype_in;
         descriptor.datatype_out = handle->datatype_out;
+        descriptor.option = handle->desc.options;
         descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
 
         /* TODO check JIT errors */
@@ -620,6 +622,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
         descriptor.ofw_unroll = 0;
         descriptor.datatype_in = handle->datatype_in;
         descriptor.datatype_out = handle->datatype_out;
+        descriptor.option = handle->desc.options;
         descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
 
         /* TODO check JIT errors */
