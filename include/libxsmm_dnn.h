@@ -91,7 +91,9 @@ typedef enum libxsmm_dnn_conv_fuse_op {
 
 typedef enum libxsmm_dnn_conv_option {
   /* we get default settings */
-  LIBXSMM_DNN_CONV_OPTION_NONE = 0
+  LIBXSMM_DNN_CONV_OPTION_NONE = 0,
+  /* activations are stored unsigned */
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1
 } libxsmm_dnn_conv_option;
 
 /** Type of algorithm used for convolutions. */

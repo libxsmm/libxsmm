@@ -27,13 +27,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="layer_example_i16.c" />
+    <ClCompile Include="layer_example_i16i32.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>layer_example_i16</ProjectName>
+    <ProjectName>layer_example_i16i32</ProjectName>
     <ProjectGuid>{B630C58A-2F0D-4D77-97EF-CC4956EED41F}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
