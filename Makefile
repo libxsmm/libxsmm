@@ -269,13 +269,13 @@ ifneq (,$(strip $(FC)))
 endif
 
 .PHONY: libxsmm
-libxsmm: lib
+libxsmm: lib generator
 
 .PHONY: lib
 lib: headers drytest lib_hst lib_mic
 
 .PHONY: all
-all: lib samples
+all: libxsmm samples
 
 .PHONY: headers
 headers: cheader cheader_only fheader
@@ -1389,7 +1389,7 @@ INSTALL_ROOT = .
 endif
 
 .PHONY: install-minimal
-install-minimal: lib generator
+install-minimal: libxsmm
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing binaries..."
@@ -1438,7 +1438,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@cp -v $(BINDIR)/libxsmm_gemm_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@cp -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
