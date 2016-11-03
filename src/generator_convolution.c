@@ -63,8 +63,8 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
       return;
     }
   } else if ( (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || 
-              (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I16 
-                     && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED > 0)) ) {
+              (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I16 
+                     && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
     if ( (strcmp(i_arch, "skx") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
