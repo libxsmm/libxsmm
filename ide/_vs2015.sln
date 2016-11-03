@@ -42,6 +42,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3CB9C5CC-5235-45C4-868C-DDCCB22B482B}"
 	ProjectSection(SolutionItems) = preProject
 		..\tests\Makefile = ..\tests\Makefile
+		..\tests\README.md = ..\tests\README.md
 		..\tests\test.sh = ..\tests\test.sh
 	EndProjectSection
 EndProject
@@ -77,6 +78,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "headeronly", "..\tests\headeronly.vcxproj", "{88C3F7F5-A3AA-4974-B928-5EE69BC17C31}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dnn", "dnn", "{E2249458-2416-4A36-99D3-FB73A59427C1}"
+	ProjectSection(SolutionItems) = preProject
+		..\samples\dnn\Makefile = ..\samples\dnn\Makefile
+		..\samples\dnn\run_conv_alexnet.sh = ..\samples\dnn\run_conv_alexnet.sh
+		..\samples\dnn\run_conv_deepbench.sh = ..\samples\dnn\run_conv_deepbench.sh
+		..\samples\dnn\run_conv_googlenetv1.sh = ..\samples\dnn\run_conv_googlenetv1.sh
+		..\samples\dnn\run_conv_overfeat.sh = ..\samples\dnn\run_conv_overfeat.sh
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vla", "..\tests\vla.vcxproj", "{326EBB80-794E-4E06-BA06-85CFE26F7C3C}"
 	ProjectSection(ProjectDependencies) = postProject
