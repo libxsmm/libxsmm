@@ -47,7 +47,7 @@
 #   else
 #     if (defined(_WIN32) && !defined(__GNUC__)) || defined(__PGI)
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-#     elif defined(__GNUC__)
+#     elif defined(__GNUC__) || defined(_CRAYC)
 #       define LIBXSMM_TLS __thread
 #     elif defined(__cplusplus)
 #       define LIBXSMM_TLS thread_local
