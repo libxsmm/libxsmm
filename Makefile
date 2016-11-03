@@ -841,7 +841,7 @@ noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifeq (Darwin,$(UNAME))
-	$(LD) -o $@ -shared $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else
 	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 endif
