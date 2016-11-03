@@ -45,9 +45,6 @@
     <ClInclude Include="..\src\libxsmm_trace.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_intrinsics_x86.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_gemm_diff.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -167,6 +164,12 @@
     </ClInclude>
     <ClInclude Include="..\src\perf_jitdump.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_sync.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

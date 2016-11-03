@@ -33,9 +33,11 @@
     <ClInclude Include="..\include\libxsmm_dnn.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
+    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
+    <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
@@ -70,7 +72,6 @@
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
-    <ClInclude Include="..\src\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
