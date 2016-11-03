@@ -809,7 +809,7 @@ ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
 ifeq (Darwin,$(UNAME))
-	$(LD) -o $@ -shared $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 else
 	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
@@ -1330,14 +1330,14 @@ ifneq ($(abspath $(BINDIR)),$(abspath .))
 endif
 endif
 ifneq (,$(wildcard $(OUTDIR)))
-	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	@rm -f $(OUTDIR)/libxsmmf.$(LIBEXT) $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
-	@rm -f $(OUTDIR)/libxsmmext.$(LIBEXT) $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
-	@rm -f $(OUTDIR)/libxsmmnoblas.$(LIBEXT) $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
-	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)
+	@rm -f $(OUTDIR)/libxsmm.$(LIBEXT)* $(OUTDIR)/mic/libxsmm.$(LIBEXT)*
+	@rm -f $(OUTDIR)/libxsmmf.$(LIBEXT)* $(OUTDIR)/mic/libxsmmf.$(LIBEXT)*
+	@rm -f $(OUTDIR)/libxsmmext.$(LIBEXT)* $(OUTDIR)/mic/libxsmmext.$(LIBEXT)*
+	@rm -f $(OUTDIR)/libxsmmnoblas.$(LIBEXT)* $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)*
+	@rm -f $(OUTDIR)/libxsmmgen.$(LIBEXT)*
 endif
 ifneq (,$(wildcard $(BINDIR)))
-	@rm -f $(BINDIR)/libxsmm_gemm_generator
+	@rm -f $(BINDIR)/libxsmm_*_generator
 endif
 	@rm -f *.gcno *.gcda *.gcov
 	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
@@ -1345,6 +1345,7 @@ endif
 	@rm -f $(SPLDIR)/nek/grad-perf.sh
 	@rm -f $(SPLDIR)/nek/axhm-perf.sh
 	@rm -f $(SPLDIR)/nek/rstr-perf.sh
+	@rm -f $(INCDIR)/libxsmm_config.h
 	@rm -f $(INCDIR)/libxsmm_source.h
 	@rm -f $(INCDIR)/libxsmm.modmic
 	@rm -f $(INCDIR)/libxsmm.mod
@@ -1434,10 +1435,12 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@cp -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
 	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
 	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
+	@echo
+	@echo "LIBXSMM installing stand-alone generators..."
+	@cp -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
 endif
 
 .PHONY: install
