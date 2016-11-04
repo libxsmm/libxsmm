@@ -2,7 +2,7 @@
 
 if [ $# -ne 3 ]
 then
-  echo "Usage: `basename $0` iters numa (1-mcdram/0-DDR); using default values: 100 1 f32"
+  echo "Usage: `basename $0` iters numa (1-mcdram/0-DDR); using default values: 1000 1 f32"
   ITERS=1000
   NUMA=1
   BIN=f32
