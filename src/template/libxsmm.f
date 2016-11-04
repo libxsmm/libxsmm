@@ -419,16 +419,18 @@
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn3
         FUNCTION construct_fn3(cfn) RESULT(fn)
-          PROCEDURE(LIBXSMM_MMFUNCTION3), POINTER :: fn
+          PROCEDURE(LIBXSMM_MMFUNCTION3), POINTER :: fn, tmp
           TYPE(C_FUNPTR), INTENT(IN) :: cfn
-          CALL C_F_PROCPOINTER(cfn, fn)
+          CALL C_F_PROCPOINTER(cfn, tmp)
+          fn => tmp
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn6
         FUNCTION construct_fn6(cfn) RESULT(fn)
-          PROCEDURE(LIBXSMM_MMFUNCTION6), POINTER :: fn
+          PROCEDURE(LIBXSMM_MMFUNCTION6), POINTER :: fn, tmp
           TYPE(C_FUNPTR), INTENT(IN) :: cfn
-          CALL C_F_PROCPOINTER(cfn, fn)
+          CALL C_F_PROCPOINTER(cfn, tmp)
+          fn => tmp
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction

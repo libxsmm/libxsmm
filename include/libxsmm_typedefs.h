@@ -166,6 +166,13 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
+typedef enum libxsmm_dnn_conv_option {
+  /* we get default settings */
+  LIBXSMM_DNN_CONV_OPTION_NONE = 0,
+  /* activations are stored unsigned */
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1
+} libxsmm_dnn_conv_option;
+
 /** Structure storing the convolution argument description. */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int kh;                              /* kernel height */
@@ -186,6 +193,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int stride_w;                        /* this we use for offsets in the input */
   unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
@@ -217,6 +225,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
@@ -248,6 +257,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
 
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_conv_format format;
+  libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
