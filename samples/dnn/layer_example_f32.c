@@ -26,7 +26,8 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar, Rajkishore Barik (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar, 
+   Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -627,9 +628,9 @@ int main(int argc, char* argv[])
   printf("fp time = %.5g\n", ((double)(l_total/iters)));
   printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+  printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-     (flops*1e-9)/l_total, norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+     norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
   /* @TODO check if not OFM > 15 is better, or calling fallback code */
   if (stride == 1) {
@@ -659,9 +660,9 @@ int main(int argc, char* argv[])
     printf("bp time = %.5g\n", ((double)(l_total/iters)));
     printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-       (flops*1e-9)/l_total, norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+       norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
   }
 
   printf("##########################################\n");
@@ -690,9 +691,9 @@ int main(int argc, char* argv[])
   printf("wu time = %.5g\n", ((double)(l_total/iters)));
   printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+  printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-     (flops*1e-9)/l_total, norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+     norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
@@ -797,9 +798,9 @@ int main(int argc, char* argv[])
   printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
   printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+  printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-     (flops*1e-9)/l_total, norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+     norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
@@ -910,9 +911,9 @@ int main(int argc, char* argv[])
   printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
   printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
-  printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+  printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-     (flops*1e-9)/l_total, norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+     norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
