@@ -102,6 +102,12 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported format when requesting a convolution!";
     case LIBXSMM_DNN_ERR_INVALID_FORMAT_KCRS:
       return "LIBXSMM DNN Error: KCRS format is currently not natively supported by LIBXSMM!";
+    case LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL:
+      return "LIBXSMM DNN Error: Invalid format was specified!";
+    case LIBXSMM_DNN_ERR_CREATE_LAYOUT:
+      return "LIBXSMM DNN Error: Layout creation failed!";
+    case LIBXSMM_DNN_ERR_INVALID_LAYOUT:
+      return "LIBXSMM DNN Error: Invalid layout was specified!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
@@ -865,7 +871,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer_check(c
     buffer->format = in_format;
     buffer->datatype = handle->datatype_in;
     buffer->lpb = handle->fm_lp_block;
+    /* NHWC */
     if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      buffer->data = (void*)data;
+    /* custom LIBXSMM format */
+    } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
       buffer->data = (void*)data;
     } else {
       *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
@@ -882,6 +892,89 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer_check(c
   }
 
   return buffer;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_conv_handle* handle) {
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_get_input_buffer_datalayout_check( handle, &status );
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+  libxsmm_dnn_conv_datalayout* layout;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+  layout = 0;
+   
+  if (handle != 0) {
+    layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
+    memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
+
+    if (layout != 0) {
+      if (handle->buffer_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM > 0) {
+        if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+          layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(5*sizeof(libxsmm_dnn_conv_dimtype));
+          layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
+
+          layout->num_dims = 5;
+          layout->dim_size[0] = handle->ifmblock; 
+          layout->dim_size[1] = handle->ifwp;
+          layout->dim_size[2] = handle->ifhp;
+          layout->dim_size[3] = handle->blocksifm;
+          layout->dim_size[4] = handle->desc.N;
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
+          layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_N;
+        } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ) {
+          layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(6*sizeof(libxsmm_dnn_conv_dimtype));
+          layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+
+          layout->num_dims = 6;
+          layout->dim_size[0] = handle->fm_lp_block; 
+          layout->dim_size[1] = handle->ifmblock; 
+          layout->dim_size[2] = handle->ifwp;
+          layout->dim_size[3] = handle->ifhp;
+          layout->dim_size[4] = handle->blocksifm;
+          layout->dim_size[5] = handle->desc.N;
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_W;
+          layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_H;
+          layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[5] = LIBXSMM_DNN_CONV_DIMTYPE_N;
+        } else {
+          free(layout);
+          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        }
+      } else if (handle->buffer_format & LIBXSMM_DNN_CONV_FORMAT_NHWC > 0) {
+        layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(4*sizeof(libxsmm_dnn_conv_dimtype));
+        layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
+
+        layout->num_dims = 4;
+        layout->dim_size[0] = handle->ifmblock * handle->blocksifm; 
+        layout->dim_size[1] = handle->ifwp;
+        layout->dim_size[2] = handle->ifhp;
+        layout->dim_size[3] = handle->desc.N;
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+        layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
+        layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
+        layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_N;
+      } else {
+        free(layout);
+        *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      }
+    } else {
+      *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return layout;
 }
 
 
@@ -951,7 +1044,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer_check(
     buffer->format = in_format;
     buffer->datatype = handle->datatype_out;
     buffer->lpb = 1;
+    /* NHWC */
     if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      buffer->data = (void*)data;
+    /* custom LIBXSMM format */
+    } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
       buffer->data = (void*)data;
     } else {
       *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
@@ -968,6 +1065,72 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer_check(
   }
 
   return buffer;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_conv_handle* handle) {
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_get_output_buffer_datalayout_check( handle, &status );
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+  libxsmm_dnn_conv_datalayout* layout;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+  layout = 0;
+   
+  if (handle != 0) {
+    layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
+    memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
+
+    if (layout != 0) {
+      if (handle->buffer_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM > 0) {
+        if ( (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
+          layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(5*sizeof(libxsmm_dnn_conv_dimtype));
+          layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
+
+          layout->num_dims = 5;
+          layout->dim_size[0] = handle->ofmblock; 
+          layout->dim_size[1] = handle->ifwp;
+          layout->dim_size[2] = handle->ifhp;
+          layout->dim_size[3] = handle->blocksofm;
+          layout->dim_size[4] = handle->desc.N;
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
+          layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_N;
+        } else {
+          free(layout);
+          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        }
+      } else if (handle->buffer_format & LIBXSMM_DNN_CONV_FORMAT_NHWC > 0) {
+        layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(4*sizeof(libxsmm_dnn_conv_dimtype));
+        layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
+
+        layout->num_dims = 4;
+        layout->dim_size[0] = handle->ofmblock * handle->blocksofm; 
+        layout->dim_size[1] = handle->ifwp;
+        layout->dim_size[2] = handle->ifhp;
+        layout->dim_size[3] = handle->desc.N;
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+        layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
+        layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
+        layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_N;
+      } else {
+        free(layout);
+        *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      }
+    } else {
+      *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return layout;
 }
 
 
@@ -1058,7 +1221,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter_check(const l
     filter->format = in_format;
     filter->datatype = handle->datatype_in;
     filter->lpb = handle->fm_lp_block;
+    /* RSCK */
     if ( ((handle->filter_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_RSCK ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
+      filter->data = (void*)data;
+    /* custom LIBXSMM format */
+    } else if ( ((handle->filter_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_CONV_FORMAT_PTR ) > 0) ) {
       filter->data = (void*)data;
     } else {
       *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
@@ -1076,6 +1243,95 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter_check(const l
   }
 
   return filter;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_conv_handle* handle) {
+  libxsmm_dnn_err_t status;
+  return libxsmm_dnn_get_filter_datalayout_check( handle, &status );
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+  libxsmm_dnn_conv_datalayout* layout;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+  layout = 0;
+   
+  if (handle != 0) {
+    layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
+    memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
+
+    if (layout != 0) {
+      if (handle->filter_format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM > 0) {
+        if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+          layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(6*sizeof(libxsmm_dnn_conv_dimtype));
+          layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+
+          layout->num_dims = 6;
+          layout->dim_size[0] = handle->ofmblock; 
+          layout->dim_size[1] = handle->ifmblock; 
+          layout->dim_size[2] = handle->desc.S;
+          layout->dim_size[3] = handle->desc.R;
+          layout->dim_size[4] = handle->blocksofm;
+          layout->dim_size[5] = handle->blocksofm;
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_K;
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_S;
+          layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_R;
+          layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[5] = LIBXSMM_DNN_CONV_DIMTYPE_K;
+        } else if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) ||
+                    ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)  && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16)) || 
+                    ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)  && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32))    ) {
+          layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(7*sizeof(libxsmm_dnn_conv_dimtype));
+          layout->dim_size = (unsigned int*) malloc(7*sizeof(unsigned int));
+
+          layout->num_dims = 7;
+          layout->dim_size[0] = handle->fm_lp_block; 
+          layout->dim_size[1] = handle->ofmblock; 
+          layout->dim_size[2] = handle->ifmblock; 
+          layout->dim_size[3] = handle->desc.S;
+          layout->dim_size[4] = handle->desc.R;
+          layout->dim_size[5] = handle->blocksofm;
+          layout->dim_size[6] = handle->blocksofm;
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_K;
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_S;
+          layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_R;
+          layout->dim_type[5] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[6] = LIBXSMM_DNN_CONV_DIMTYPE_K;
+        } else {
+          free(layout);
+          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        }
+      } else if (handle->filter_format & LIBXSMM_DNN_CONV_FORMAT_RSCK > 0) {
+        layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(4*sizeof(libxsmm_dnn_conv_dimtype));
+        layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
+
+        layout->num_dims = 4;
+        layout->dim_size[0] = handle->ofmblock * handle->blocksofm; 
+        layout->dim_size[1] = handle->ofmblock * handle->blocksofm;
+        layout->dim_size[2] = handle->desc.S;
+        layout->dim_size[3] = handle->desc.K;
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_K; 
+        layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+        layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_S;
+        layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_R;
+      } else {
+        free(layout);
+        *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      }
+    } else {
+      *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return layout;
 }
 
 
@@ -1150,6 +1406,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_BIAS;
+  }
+
+  return status;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_conv_datalayout* layout) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != layout) {
+    free(layout->dim_type);
+    free(layout->dim_size); 
+    free(layout);
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
   }
 
   return status;
