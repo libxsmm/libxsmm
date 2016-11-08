@@ -34,6 +34,17 @@
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle libxsmm_dnn_conv_handle;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer libxsmm_dnn_buffer;
@@ -153,6 +164,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
 
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
+LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
