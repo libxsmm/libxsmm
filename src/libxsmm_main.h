@@ -250,6 +250,8 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int
 LIBXSMM_API int libxsmm_prefetch2uid(int prefetch);
 LIBXSMM_API int libxsmm_uid2prefetch(int uid);
 
+LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
+
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
