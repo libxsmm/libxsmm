@@ -112,6 +112,16 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDUBSW;
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDW;
     l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTW;
+  } else if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {
+    l_conv_kernel_config.vector_length_in = 64;
+    l_conv_kernel_config.datatype_size_in = 1;
+    l_conv_kernel_config.vector_length_out = 16;
+    l_conv_kernel_config.datatype_size_out = 4;
+    l_conv_kernel_config.vector_length_wt = 64;
+    l_conv_kernel_config.datatype_size_wt = 1;
+    l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDUBSW;
+    l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
+    l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
   } else {
     fprintf( stderr, " LIBXSMM Error: libxsmm_generator_convolution_forward_avx512_kernel: unsupported datatype\n" );
     return;
@@ -170,6 +180,30 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                                    l_gp_reg_mapping.gp_reg_weight, l_gp_reg_mapping.gp_reg_output,
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
+
+  /* load an additoinal temp register with 32 16bit 1s */
+  if (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, 65537 );
+    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
+
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+                                      l_conv_kernel_config.instruction_set,
+                                      l_conv_kernel_config.vbcst_instruction,
+                                      LIBXSMM_X86_GP_REG_RSP ,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
+                                      l_conv_kernel_config.vector_name, 6, 0, 0 );
+/*
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                             l_conv_kernel_config.instruction_set,
+                                             l_conv_kernel_config.vxor_instruction,
+                                             l_conv_kernel_config.vector_name,
+                                             6,
+                                             6,
+                                             6 );
+*/
+
+    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
+  }
 
   /* oj loop */
   /*libxsmm_generator_convolution_header_oj_loop(  io_generated_code, &l_loop_label_tracker,
@@ -734,6 +768,44 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
                                                  5,
                                                  i_conv_kernel_config->vector_reg_count - l_reg_block + l_n,
                                                  i_conv_kernel_config->vector_reg_count - l_reg_block + l_n  );
+      } else if ( (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 
+                     && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)                                     ) {
+        /* broadcast in quadruples of 8 bit values */
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          i_conv_kernel_config->instruction_set,
+                                          i_conv_kernel_config->vbcst_instruction,
+                                          l_input_reg,
+                                          l_input_idx, l_scale,
+                                          l_disp,
+                                          i_conv_kernel_config->vector_name,
+                                          4, 0, 0 );
+
+        /* 8/16bit integer MADD with horizontal add */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vfma_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 l_k%4,
+                                                 4,
+                                                 5 );
+
+        /* 16/32bit integer MADD with horizontal add */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VPMADDWD,
+                                                 i_conv_kernel_config->vector_name,
+                                                 5,
+                                                 6,
+                                                 5 );
+
+        /* 32bit integer accumulation without saturation into running result buffer */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vadd_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 5,
+                                                 i_conv_kernel_config->vector_reg_count - l_reg_block + l_n,
+                                                 i_conv_kernel_config->vector_reg_count - l_reg_block + l_n  );
       } else {
         /* shouldn't happen as error was thrown above */
       }
@@ -918,6 +990,44 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
                                                    5 );
 
           /* 16/32bit integer accumulation without saturation into running result buffer */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   i_conv_kernel_config->vadd_instruction,
+                                                   i_conv_kernel_config->vector_name,
+                                                   5,
+                                                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb),
+                                                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb)  );
+        } else if ( (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 
+                       && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)  ) {
+          /* broadcast in quadruples of 8 bit values */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            i_conv_kernel_config->instruction_set,
+                                            i_conv_kernel_config->vbcst_instruction,
+                                            l_input_reg,
+                                            l_input_idx, l_scale,
+                                            l_disp,
+                                            i_conv_kernel_config->vector_name,
+                                            4, 0, 0 );
+
+          /* 8/16bit integer MADD with horizontal add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   i_conv_kernel_config->vfma_instruction,
+                                                   i_conv_kernel_config->vector_name,
+                                                   l_k%4,
+                                                   4,
+                                                   5 );
+
+          /* 16/32bit integer MADD with horizontal add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   LIBXSMM_X86_INSTR_VPMADDWD,
+                                                   i_conv_kernel_config->vector_name,
+                                                   5,
+                                                   6,
+                                                   5 );
+
+          /* 32bit integer accumulation without saturation into running result buffer */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_conv_kernel_config->instruction_set,
                                                    i_conv_kernel_config->vadd_instruction,
