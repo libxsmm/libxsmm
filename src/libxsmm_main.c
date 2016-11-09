@@ -1038,6 +1038,18 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_default_gemm_prefetch(void)
+{
+  return (libxsmm_gemm_prefetch_type)libxsmm_gemm_prefetch;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_default_gemm_prefetch(libxsmm_gemm_prefetch_type strategy)
+{
+  libxsmm_gemm_prefetch = strategy;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_precision_string(libxsmm_dnn_datatype datatype)
 {
   switch (datatype) {
