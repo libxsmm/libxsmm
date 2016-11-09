@@ -64,9 +64,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
 LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 {
   int config = 0;
-  const char *const prefetch_env = getenv("LIBXSMM_GEMM_PREFETCH");
+  const char *const prefetch_env = getenv("LIBXSMM_TILED_GEMM_PREFETCH");
   const int uid = (0 == prefetch_env || 0 == *prefetch_env) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(prefetch_env);
-  libxsmm_gemm_prefetch = 0 <= uid ? libxsmm_uid2prefetch(uid) : prefetch;
+  libxsmm_tiled_gemm_prefetch = 0 <= uid ? libxsmm_uid2prefetch(uid) : prefetch;
 
 #if defined(__MIC__) || (LIBXSMM_X86_AVX512_MIC == LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_UNUSED(archid);
