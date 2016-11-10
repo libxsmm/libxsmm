@@ -237,17 +237,24 @@ int main(int argc, char* argv[])
   b_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_stiff, mat_b_rowptr, mat_b_colidx, mat_b_values ).dmm;
   c_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_stiff, mat_c_rowptr, mat_c_colidx, mat_c_values ).dmm;
   st_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, mat_st_values ).dmm;
+  if ( a_kernel == 0 || b_kernel == 0 || c_kernel == 0 || st_kernel == 0 ) {
+    printf("one of the kernels could not be built -> exit!");
+    exit(-1);
+  }
   printf("done!\n\n");
 
   /* create unkowns and tunkowns */
-  printf("allocating and initializing fake data... ");
+  printf("allocating and initializing fake data... \n");
+  printf("   q: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+  printf("  qt: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+#ifdef _OPENMP
+  printf("   t: %f MiB\n", ((double)(omp_get_max_threads()*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+#else
+  printf("   t: %f MiB\n", ((double)(num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+#endif
   q = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
   qt = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
-#ifdef _OPENMP
-  t = (double*)libxsmm_aligned_malloc( omp_get_max_threads()*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
-#else
-  t = (double*)libxsmm_aligned_malloc( num_modes*num_quants*num_cfr*sizeof(double), 2097152);
-#endif
+
   #pragma omp parallel for private(i,j)
   for ( i = 0; i < num_elems; i++ ) {
     for ( j = 0; j < elem_size; j++) {
@@ -260,16 +267,7 @@ int main(int argc, char* argv[])
       qt[i*elem_size + j] = drand48();
     }
   }
-#ifdef _OPENMP
-  #pragma omp parallel for private(i,j)
-  for ( i = 0; i < omp_get_max_threads(); i++ ) {
-#else
-  for ( i = 0; i < 1; i++ ) {
-#endif
-    for ( j = 0; j < elem_size; j++) {
-      t[i*elem_size + j] = drand48();
-    }
-  }
+
   printf("done!\n\n");
   
   /* benchmark single core all kernels */
@@ -327,23 +325,20 @@ int main(int argc, char* argv[])
 
   gettimeofday(&l_start, NULL);
   for ( i = 0; i < num_reps; i++) {
-    #pragma omp parallel private(i, tp)
+    #pragma omp parallel private(i, j)
     {
-#ifdef _OPENMP
-      tp = t+(omp_get_thread_num()*elem_size);
-#else
-      tp = t;
-#endif
-      #pragma omp for private(i)
-      for ( i = 0; i < num_elems; i++ ) { 
-        st_kernel( mat_st_values, qt+(i*elem_size), tp );
-        a_kernel( tp, mat_a_values, q+(i*elem_size) );
+      __attribute__((aligned(64))) double tp[20*8*9];
+      
+      #pragma omp for private(j)
+      for ( j = 0; j < num_elems; j++ ) { 
+        st_kernel( mat_st_values, qt+(j*elem_size), tp );
+        a_kernel( tp, mat_a_values, q+(j*elem_size) );
 
-        st_kernel( mat_st_values, qt+(i*elem_size), tp );
-        b_kernel( tp, mat_b_values, q+(i*elem_size) );
+        st_kernel( mat_st_values, qt+(j*elem_size), tp );
+        b_kernel( tp, mat_b_values, q+(j*elem_size) );
 
-        st_kernel( mat_st_values, qt+(i*elem_size), tp );
-        c_kernel( tp, mat_c_values, q+(i*elem_size) );
+        st_kernel( mat_st_values, qt+(j*elem_size), tp );
+        c_kernel( tp, mat_c_values, q+(j*elem_size) );
       }
     }
   }
