@@ -351,6 +351,7 @@ int main(int argc, char* argv[])
   l_total = sec(l_start, l_end);
   printf("%fs for vol (asm)\n", l_total);
   printf("%f GFLOPS for vol (asm)\n", ((double)((double)num_elems * (double)num_reps * 3.0 * ((double)num_quants + (double)num_modes) * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
+  printf("%f GiB/s for vol (asm)\n", (double)((double)num_elems * (double)elem_size * 8.0 * 3.0 * (double)num_reps) / (l_total * 1024.0*1024.0*1024.0) );
   printf("done!\n\n");
 
 
