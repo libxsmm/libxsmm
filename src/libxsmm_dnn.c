@@ -142,7 +142,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
   libxsmm_dnn_err_t*        status)
 {
   libxsmm_dnn_conv_handle* handle = 0;
-  int noarch = 1;
   *status = LIBXSMM_DNN_SUCCESS;
 
   /* currently we don't support NCHW */
