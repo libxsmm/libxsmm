@@ -305,6 +305,18 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: mode
           END SUBROUTINE
 
+          ! Get the default prefetch strategy.
+          PURE FUNCTION libxsmm_get_default_gemm_prefetch() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_default_gemm_prefetch
+          END FUNCTION
+
+          ! Set the default prefetch strategy.
+          SUBROUTINE libxsmm_set_default_gemm_prefetch(strategy) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: strategy
+          END SUBROUTINE
+
           ! Transpose a matrix (out-of-place form).
           PURE SUBROUTINE libxsmm_otrans(output,                        &
      &    input, typesize, m, n, ldi, ldo)                              &
