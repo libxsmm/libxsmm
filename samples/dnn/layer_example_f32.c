@@ -543,8 +543,8 @@ int main(int argc, char* argv[])
   printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
   printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
 
-  /* @TODO check if not OFM > 15 is better, or calling fallback code */
-  if (stride == 1) {
+  /* @TODO calling fallback code */
+  if (stride == 1 && nIfm > 3) {
     printf("##########################################\n");
     printf("#   Correctness - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -632,8 +632,8 @@ int main(int argc, char* argv[])
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
-  /* @TODO check if not OFM > 15 is better, or calling fallback code */
-  if (stride == 1) {
+  /* @TODO calling fallback code */
+  if (stride == 1 && nIfm > 3) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
