@@ -911,6 +911,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 
 LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 {
+  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_MIC:
@@ -921,22 +922,21 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_SSE4_1:
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_TARGET_ARCH_GENERIC: {
-      libxsmm_target_archid = id;
+      target_archid = id;
     } break;
     default: if (LIBXSMM_X86_GENERIC <= id) {
-      libxsmm_target_archid = LIBXSMM_X86_GENERIC;
+      target_archid = LIBXSMM_X86_GENERIC;
     }
     else {
-      libxsmm_target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+      target_archid = libxsmm_cpuid_x86();
     }
   }
-
+  LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 #if !defined(NDEBUG) /* library code is expected to be mute */
   {
-    const int target_archid = libxsmm_target_archid;
     const int cpuid = libxsmm_cpuid_x86();
-    if (cpuid < target_archid) {
-      const char *const target_arch = internal_get_target_arch(target_archid);
+    if (cpuid < libxsmm_target_archid) {
+      const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
@@ -1020,7 +1020,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     }
   }
 #endif
-  libxsmm_target_archid = target_archid;
+  LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
@@ -1034,7 +1034,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_verbosity(void)
 LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 {
   LIBXSMM_INIT
-  libxsmm_verbosity = level;
+  LIBXSMM_ATOMIC_STORE(&libxsmm_verbosity, level, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
@@ -1046,7 +1046,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_default_gemm_prefe
 
 LIBXSMM_API_DEFINITION void libxsmm_set_default_gemm_prefetch(libxsmm_gemm_prefetch_type strategy)
 {
-  libxsmm_gemm_prefetch = strategy;
+  LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
