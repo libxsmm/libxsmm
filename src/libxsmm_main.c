@@ -351,7 +351,9 @@ return flux_entry.xmm
   if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) && \
     LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_)) \
   { \
-    const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) ? LIBXSMM_PREFETCH/*adopted from FE-option*/ : *(PREFETCH)); \
+    const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) \
+      ? LIBXSMM_PREFETCH_NONE/*NULL-pointer is give; do not adopt LIBXSMM_PREFETCH (prefetches must be specified explicitly)*/ \
+      : *(PREFETCH)); /*adopt the explicitly specified prefetch strategy*/ \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
       (signed char)(internal_dispatch_main_alpha_), (signed char)(internal_dispatch_main_beta_), \
