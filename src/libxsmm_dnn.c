@@ -176,7 +176,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     handle->ofhp = handle->ofh + 2*conv_desc.pad_h_out;
     handle->ofwp = handle->ofw + 2*conv_desc.pad_w_out;
     handle->avx512avx2fallback = 0;
-    /* @TODO set all other fields to 0 */
+    handle->ifmblock = 1;
+    handle->ofmblock = 1;
+    handle->blocksifm = conv_desc.C;
+    handle->blocksofm = conv_desc.K;
+    handle->fwd_ofw_rb = 1;
+    handle->fwd_ofw_rb_2 = 0;
+    handle->fwd_ofh_rb = 1;
+    handle->bwd_ofw_rb = 1;
+    handle->bwd_ofh_rb = 1;
+    handle->upd_ofw_rb = 1;
+    handle->upd_ofh_rb = 1;
+    handle->fm_lp_block = 1;
+
     /* Set algorithm to use */
     if (conv_desc.algo == LIBXSMM_DNN_CONV_ALGO_AUTO) {
       handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
