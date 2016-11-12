@@ -65,14 +65,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     if ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (handle->desc.S == 1)) {
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
-      /* on AVX512_CORE and int this only works for smaller 14 */
-      if ( (((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) &&
-           (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)) ||
-           ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) ) &&
+      /* on AVX512_CORE and int this only works for smaller 13 */
+      if ( (((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ||
+           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) &&
+           (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)) &&
            (handle->ofw > 12) ) {
         handle->fwd_ofh_rb = 1;
       }
@@ -88,6 +84,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
            (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16) &&
            (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) ) {
         for (i = 26; i > 1; --i) {
+          if (handle->ofw % i == 0) break;
+        }
+      /* for 32 accumuation we need even one register more */
+      } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
+           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) &&
+           (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED)  ) {
+        for (i = 25; i > 1; --i) {
           if (handle->ofw % i == 0) break;
         }
       } else {
@@ -153,6 +156,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         noarch = 1;
       }
     }
+    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) 
+                 && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+      handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/4;
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
+      handle->fm_lp_block = 4;
+      if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
+        status = LIBXSMM_DNN_WARN_FALLBACK;
+        handle->ifmblock = 1;
+        handle->ofmblock = 1;
+        handle->fm_lp_block = 1;
+        noarch = 1;
+      }
+    }
     else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       free(handle);
@@ -167,11 +183,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     noarch = 0;
 
     /* get max. blocking forward */
-    for (i = LIBXSMM_MIN(3, handle->ofw); i > 1; --i) {
-      if (handle->ofw % i == 0) break;
-    }
-    handle->fwd_ofw_rb = i;
     handle->fwd_ofh_rb = 1;
+    if ( handle->ofw > 3 ) {
+      handle->fwd_ofw_rb = 3;
+      handle->fwd_ofw_rb_2 = handle->ofw % 3;
+    } else {
+      handle->fwd_ofw_rb = handle->ofw;
+      handle->fwd_ofw_rb_2 = 0;
+    }
 
     /* get max. blocking backward */
     for(i = LIBXSMM_MIN(3, handle->ofw); i > 1; i--) {
@@ -240,6 +259,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fm_lp_block = 1;
       noarch = 1;
     }
+    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) 
+                && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+      status = LIBXSMM_DNN_WARN_FALLBACK;
+      handle->ifmblock = 1;
+      handle->ofmblock = 1;
+      handle->fm_lp_block = 1;
+      noarch = 1;
+    }
     else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       free(handle);
@@ -283,17 +310,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
       }
-      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) &&
-           (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           handle->desc.R > 1 && handle->desc.S > 1 && handle->fwd_ofh_rb == 1 ) {
-        /* we need 3 instrad of 1 instruction for FMA -> do not perform any unrolling in kh/kw to control code size */
-        descriptor.unroll_kh = 0;
-        descriptor.unroll_kw = 0;
-      }
-      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) &&
+      if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ||
+           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ) &&
            (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
            handle->desc.R > 1 && handle->desc.S > 1 && handle->fwd_ofh_rb == 1 ) {
         /* we need 3 instrad of 1 instruction for FMA -> do not perform any unrolling in kh/kw to control code size */
@@ -337,7 +355,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kw = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-        handle->code_fwd[1].pmm = handle->code_fwd[0].pmm;
+        if (handle->fwd_ofw_rb_2 != 0) {
+          descriptor.ofw_rb = handle->fwd_ofw_rb_2;
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
+        } else {
+          handle->code_fwd[1].pmm = handle->code_fwd[0].pmm;
+        }
         handle->code_fwd[2].pmm = handle->code_fwd[0].pmm;
         handle->code_fwd[3].pmm = handle->code_fwd[0].pmm;
       } else {

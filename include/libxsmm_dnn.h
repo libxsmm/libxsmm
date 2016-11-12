@@ -80,6 +80,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL     100022
 #define LIBXSMM_DNN_ERR_CREATE_LAYOUT              100023
 #define LIBXSMM_DNN_ERR_INVALID_LAYOUT             100024
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH           100025
 
 /** Kinds of supported convolution operations. */
 typedef enum libxsmm_dnn_conv_kind {
@@ -258,8 +259,11 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, 
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char* input1, const char* input2, short* output,
                                                              const unsigned char* ipf1, const char* ipf2, const short* opf);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(const unsigned char* input1, const char* input2, int* output,
+                                                             const unsigned char* ipf1, const char* ipf2, const int* opf);
+
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; } libxsmm_xconvfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_busconvfunction budconv; } libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
