@@ -110,6 +110,8 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Layout creation failed!";
     case LIBXSMM_DNN_ERR_INVALID_LAYOUT:
       return "LIBXSMM DNN Error: Invalid layout was specified!";
+    case LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH:
+      return "LIBXSMM DNN Error: Unsupported architecture!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
@@ -214,35 +216,36 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) { /* it is not an error attempting to destroy a NULL-handle */
-    /* deallocate data components; not an error to deallocate a NULL-pointer */
-    /* TODO */
-    /* deallocate code known to be not registered; no index attached */
-    /* do not use libxsmm_release_kernel here! */
+    /* deallocate data components; not an error to deallocate a NULL-pointer 
+       deallocate code known to be not registered; no index attached 
+       do not use libxsmm_release_kernel here! */
     if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
       libxsmm_xfree(handle->code_fwd[1].pmm);
       libxsmm_xfree(handle->code_fwd[2].pmm);
       libxsmm_xfree(handle->code_fwd[3].pmm);
-    /* TODO Backward path */
       libxsmm_xfree(handle->code_bwd[0].pmm);
       libxsmm_xfree(handle->code_bwd[1].pmm);
       libxsmm_xfree(handle->code_bwd[2].pmm);
       libxsmm_xfree(handle->code_bwd[3].pmm);
-    /* TODO weight update path */
       libxsmm_xfree(handle->code_upd[0].pmm);
       libxsmm_xfree(handle->code_upd[1].pmm);
       libxsmm_xfree(handle->code_upd[2].pmm);
       libxsmm_xfree(handle->code_upd[3].pmm);
+      libxsmm_xfree(handle->code_upd[4].pmm);
+      libxsmm_xfree(handle->code_upd[5].pmm);
     } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
-    /* TODO Backward path */
+      if (handle->fwd_ofw_rb_2 != 0) {
+        libxsmm_xfree(handle->code_fwd[1].pmm);
+      }
       libxsmm_xfree(handle->code_bwd[0].pmm);
-    /* TODO weight update path */
       libxsmm_xfree(handle->code_upd[0].pmm);
     } else {
       /* no kernel was JITed */
     }
+
     /*Deallocate scratch in handle*/
     /*freeing the scratch*/
     if(handle->scratch1 != 0) libxsmm_xfree(handle->scratch1);

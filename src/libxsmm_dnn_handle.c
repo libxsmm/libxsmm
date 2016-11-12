@@ -183,11 +183,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     noarch = 0;
 
     /* get max. blocking forward */
-    for (i = LIBXSMM_MIN(3, handle->ofw); i > 1; --i) {
-      if (handle->ofw % i == 0) break;
-    }
-    handle->fwd_ofw_rb = i;
     handle->fwd_ofh_rb = 1;
+    if ( handle->ofw > 3 ) {
+      handle->fwd_ofw_rb = 3;
+      handle->fwd_ofw_rb_2 = handle->ofw % 3;
+    } else {
+      handle->fwd_ofw_rb = handle->ofw;
+      handle->fwd_ofw_rb_2 = 0;
+    }
 
     /* get max. blocking backward */
     for(i = LIBXSMM_MIN(3, handle->ofw); i > 1; i--) {
@@ -352,7 +355,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kw = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-        handle->code_fwd[1].pmm = handle->code_fwd[0].pmm;
+        if (handle->fwd_ofw_rb_2 != 0) {
+          descriptor.ofw_rb = handle->fwd_ofw_rb_2;
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
+        } else {
+          handle->code_fwd[1].pmm = handle->code_fwd[0].pmm;
+        }
         handle->code_fwd[2].pmm = handle->code_fwd[0].pmm;
         handle->code_fwd[3].pmm = handle->code_fwd[0].pmm;
       } else {

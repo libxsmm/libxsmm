@@ -101,7 +101,8 @@ unsigned int stride_h = handle->desc.u;
 kh = handle->desc.R;
 kw = handle->desc.S;
 
-if ( libxsmm_get_target_archid() != LIBXSMM_X86_AVX2 ) {
+if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
 if(handle->ifmblock == 1) {
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -549,7 +550,7 @@ if(handle->ifmblock == 1) {
     }
 #endif
   }
-} else {
+} else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
   for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
@@ -564,4 +565,7 @@ if(handle->ifmblock == 1) {
       }
     }
   }
+/* should never happen, this is just an additional check */
+} else {
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 }

@@ -80,6 +80,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL     100022
 #define LIBXSMM_DNN_ERR_CREATE_LAYOUT              100023
 #define LIBXSMM_DNN_ERR_INVALID_LAYOUT             100024
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH           100025
 
 /** Kinds of supported convolution operations. */
 typedef enum libxsmm_dnn_conv_kind {
