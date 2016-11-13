@@ -90,9 +90,9 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
 LIBXSMM_API void libxsmm_set_verbosity(int mode);
 
 /** Get the default prefetch strategy. */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_default_gemm_prefetch(void);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */
-LIBXSMM_API void libxsmm_set_default_gemm_prefetch(libxsmm_gemm_prefetch_type strategy);
+LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);

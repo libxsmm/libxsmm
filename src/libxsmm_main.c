@@ -356,7 +356,7 @@ return flux_entry.xmm
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
       (signed char)(internal_dispatch_main_alpha_), (signed char)(internal_dispatch_main_beta_), \
-      (0 > internal_dispatch_main_prefetch_ ? libxsmm_gemm_prefetch/*auto-dispatched*/ : internal_dispatch_main_prefetch_)); \
+      (0 > internal_dispatch_main_prefetch_ ? libxsmm_gemm_auto_prefetch/*auto-dispatched*/ : internal_dispatch_main_prefetch_)); \
     { \
       INTERNAL_FIND_CODE(DESC, code).LIBXSMM_TPREFIX(TYPE, mm); \
     } \
@@ -655,11 +655,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        libxsmm_gemm_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
+        libxsmm_gemm_auto_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
-            libxsmm_gemm_prefetch = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
           }
         }
       }
@@ -727,7 +727,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       if (EXIT_SUCCESS == init_code)
 #endif
       {
-        libxsmm_gemm_init(libxsmm_target_archid, libxsmm_gemm_prefetch);
+        libxsmm_gemm_init(libxsmm_target_archid, libxsmm_gemm_auto_prefetch);
         libxsmm_gemm_diff_init(libxsmm_target_archid);
         libxsmm_trans_init(libxsmm_target_archid);
         libxsmm_hash_init(libxsmm_target_archid);
@@ -1039,15 +1039,15 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_default_gemm_prefetch(void)
+LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void)
 {
-  return (libxsmm_gemm_prefetch_type)libxsmm_gemm_prefetch;
+  return (libxsmm_gemm_prefetch_type)libxsmm_gemm_auto_prefetch;
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_default_gemm_prefetch(libxsmm_gemm_prefetch_type strategy)
+LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy)
 {
-  LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
@@ -1288,7 +1288,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
     LIBXSMM_INIT
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
-      backend_descriptor.prefetch = (unsigned char)libxsmm_gemm_prefetch;
+      backend_descriptor.prefetch = (unsigned char)libxsmm_gemm_auto_prefetch;
       descriptor = &backend_descriptor;
     }
     {

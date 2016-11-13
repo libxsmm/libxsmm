@@ -258,7 +258,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
