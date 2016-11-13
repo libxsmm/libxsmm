@@ -880,6 +880,7 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
+    FLDFLAGS += -lpthread
     ifneq (Windows_NT,$(UNAME))
       CLDFLAGS += -pthread
     endif
