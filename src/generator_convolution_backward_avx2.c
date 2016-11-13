@@ -272,7 +272,7 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
                                      i_conv_desc->kw * i_conv_kernel_config->l_ld_ifm_fil * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt  );
   }
 
-  if ( i_ofw_rb_trips > 1 ) {
+  if ( (i_ofw_rb_trips > 1) || (i_conv_desc->ofw > 3 && i_conv_desc->ofw < 6) ) {
     /* advance input */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
@@ -283,7 +283,9 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
                                      i_conv_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_output,
                                      i_ofw_rb *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  );
+  }
 
+  if ( i_ofw_rb_trips > 1 ) {
     /* close oi loop with blocking */
     libxsmm_generator_convolution_footer_oi_loop( io_generated_code, i_loop_label_tracker,
                                                   i_conv_kernel_config, i_gp_reg_mapping->gp_reg_oi_loop, i_ofw_rb_trips );
