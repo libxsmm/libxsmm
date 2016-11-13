@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SYNC_H
 #define LIBXSMM_SYNC_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
 
 #if defined(LIBXSMM_NO_SYNC)
 # undef _REENTRANT

@@ -30,7 +30,8 @@
 ******************************************************************************/
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include <libxsmm_macros.h>
+
+#include <libxsmm_cpuid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

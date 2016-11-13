@@ -69,7 +69,7 @@
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h" />
-    <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
+    <ClInclude Include="..\src\libxsmm_cpuid.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dump.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />

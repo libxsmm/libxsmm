@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_trans.h"
 #include "libxsmm_main.h"
+#include <libxsmm_cpuid.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

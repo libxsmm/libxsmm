@@ -49,6 +49,7 @@
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_malloc.h"
+#include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
 #include "libxsmm_sync.h"
 

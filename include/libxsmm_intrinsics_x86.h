@@ -31,8 +31,7 @@
 #ifndef LIBXSMM_INTRINSICS_X86_H
 #define LIBXSMM_INTRINSICS_X86_H
 
-#include <libxsmm_typedefs.h>
-#include <libxsmm_macros.h>
+#include "libxsmm_cpuid.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_TIMER_H
 #define LIBXSMM_TIMER_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
 
 
 /** Returns the current clock tick of a monotonic timer source; uses a platform-specific resolution. */

@@ -31,8 +31,16 @@
 #ifndef LIBXSMM_CPUID_X86_C
 #define LIBXSMM_CPUID_X86_C
 
-#include "libxsmm_cpuid_x86.h"
+#include <libxsmm_cpuid.h>
 #include <libxsmm_intrinsics_x86.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <assert.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 /** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
