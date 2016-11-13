@@ -35,6 +35,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <assert.h>
+#include <stdint.h>
 #include <math.h>
 #if defined(__linux__)
 # include <syscall.h>
