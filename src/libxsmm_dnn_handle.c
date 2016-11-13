@@ -192,11 +192,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fwd_ofw_rb_2 = 0;
     }
 
-    /* get max. blocking backward */
-    for(i = LIBXSMM_MIN(3, handle->ofw); i > 1; i--) {
-      if(handle->ofw % i == 0) break;
-    }
-    handle->bwd_ofw_rb = i;
+    /* get max. blocking backward, ofw is blocked internally */
+    handle->bwd_ofw_rb = handle->ofw;
     handle->bwd_ofh_rb = 1;
 
 #define LIBXSMM_UPD_OFH_BLOCKING
