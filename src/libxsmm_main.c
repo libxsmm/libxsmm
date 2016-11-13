@@ -28,8 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_intrinsics_x86.h>
-#include <libxsmm_cpuid.h>
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
@@ -41,6 +39,7 @@
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif
+#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
