@@ -1,5 +1,5 @@
 # [LIBXSMM](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm.pdf)
-[![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE) [![Travis CI](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip) [![Travis Mirror](https://badge.buildkite.com/63b5dc4095f460f1c011ae782f8e67ec0b8a6a9732d8abe3c7.svg)](https://buildkite.com/intel/travis-mirror "Build status")
+[![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE) [![Travis CI](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/archive/master.zip) [![Travis Mirror](https://badge.buildkite.com/63b5dc4095f460f1c011ae782f8e67ec0b8a6a9732d8abe3c7.svg)](https://buildkite.com/intel/intel-2017 "Build status")
 
 LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications as well as for deep learning primitives such as small convolutions targeting Intel Architecture (x86). The library is generating code for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the [Intel&#160;Xeon&#160;Phi processor family&#160;("KNL")](https://software.intel.com/en-us/articles/what-disclosures-has-intel-made-about-knights-landing) and future Intel&#160;Xeon processors. Small convolutions are currently only optimized for Intel&#160;AVX&#8209;512. Historically the library was solely targeting the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all aforementioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond.
 
@@ -123,7 +123,7 @@ typedef enum libxsmm_dnn_conv_datatype {
   LIBXSMM_DNN_DATATYPE_F32
 } libxsmm_dnn_datatype;
 
-LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
+libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
   libxsmm_dnn_conv_desc   conv_desc,
   libxsmm_dnn_datatype    conv_datatype,
   libxsmm_dnn_conv_algo   conv_algo,
@@ -183,6 +183,42 @@ CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter));
 
 /* copy out data */
 CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output));
+```
+
+## Service Functions
+For convenient operation of the library and to ease integration there are a number of routines are available, which do not exactly belong to the core functionality of LIBXSMM (SMM or DNN domain). These routines are nevertheless part of the API, and users are encouraged to rely on these routines. There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines which are only available with the C interface.
+
+There are ID based and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the CPUID features. The latter may degrade performance (if a lower set of instruction set extensions is requested), which can be still useful for studying the performance impact. There is no additional check implemented if an unsupported set of instructions set extensions is requested, and JIT generated code may be executed right away (unknown instruction exception). This functionality is available for the C and Fortran interface, and there is an environment variable which corresponds to `libxsmm_set_target_arch` (LIBXSMM_TARGET).
+
+```C
+int libxsmm_get_target_archid(void);
+void libxsmm_set_target_archid(int id);
+
+const char* libxsmm_get_target_arch(void);
+void libxsmm_set_target_arch(const char* arch);
+```
+
+The [Verbose Mode](#verbose-mode) (level of verbosity) can be controlled using the C or Fortran API, and there is an environment variable which corresponds `libxsmm_set_verbosity` (LIBXSMM_VERBOSE).
+
+```C
+int libxsmm_get_verbosity(void);
+void libxsmm_set_verbosity(int level);
+```
+
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. The "tick" function (`libxsmm_timer_tick`) is based on a monotonic timer source, which uses a platform-specific resolution. The counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily measuring CPU cycles due to a varying CPU clock speed (Turbo Boost), different clock domains depending on the instructions executed, and other reasons (out-of-scope).
+
+```C
+unsigned long long libxsmm_timer_tick(void);
+double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
+```
+
+Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically chosen alignment). The automatic alignment is also exposed by a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
+**NOTE**: `libxsmm_free` must be used to deallocate the memory.
+
+```C
+void* libxsmm_aligned_malloc(size_t size, int alignment);
+void* libxsmm_malloc(size_t size);
+void libxsmm_free(const volatile void* memory);
 ```
 
 ## Build Instructions
