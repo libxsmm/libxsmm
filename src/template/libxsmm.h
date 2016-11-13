@@ -87,7 +87,7 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
  * Set the level of verbosity (0: off, positive value: verbosity level,
  * negative value: maximum verbosity, which also dumps JIT-code)
  */
-LIBXSMM_API void libxsmm_set_verbosity(int mode);
+LIBXSMM_API void libxsmm_set_verbosity(int level);
 
 /** Get the default prefetch strategy. */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
