@@ -55,7 +55,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION unsigned long long libxsmm_timer_tick(void)
+LIBXSMM_INLINE unsigned long long internal_timer_tick(void)
 {
 #if defined(_WIN32)
   LARGE_INTEGER t;
@@ -73,16 +73,13 @@ LIBXSMM_API_DEFINITION unsigned long long libxsmm_timer_tick(void)
 }
 
 
-LIBXSMM_API_DEFINITION /*LIBXSMM_INTRINSICS*/ unsigned long long libxsmm_timer_xtick(void)
+LIBXSMM_API_DEFINITION /*LIBXSMM_INTRINSICS*/ unsigned long long libxsmm_timer_tick(void)
 {
   unsigned long long result;
 #if defined(LIBXSMM_TIMER_RDTSC)
   LIBXSMM_TIMER_RDTSC(result);
 #else
-  LIBXSMM_MESSAGE("================================================================================")
-  LIBXSMM_MESSAGE("LIBXSMM: Support for the RDTSC intrinsic appears to be unavailable!")
-  LIBXSMM_MESSAGE("================================================================================")
-  result = libxsmm_timer_tick();
+  result = internal_timer_tick();
 #endif
   return result;
 }

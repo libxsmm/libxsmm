@@ -34,11 +34,12 @@
 #include "libxsmm_macros.h"
 
 
-/** Returns the current clock tick of a monotonic timer source; uses a platform-specific resolution. */
+/**
+ * Returns the current clock tick of a monotonic timer source;
+ * uses a platform-specific resolution.
+ * The counter does not necessarily count CPU cycles.
+ */
 LIBXSMM_API unsigned long long libxsmm_timer_tick(void);
-
-/** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
-LIBXSMM_API unsigned long long libxsmm_timer_xtick(void);
 
 /** Returns the duration (in seconds) between two values received by libxsmm_timer_tick. */
 LIBXSMM_API double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
