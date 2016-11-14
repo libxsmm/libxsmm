@@ -17,7 +17,7 @@ IF "%VS_COMNTOOLS%" == "" (
     GOTO SELECT_VS_VERSION
   )
 )
-IF EXIST "%VS_COMNTOOLS%..\IDE\devenv.exe" (
+IF EXIST %VS_COMNTOOLS%..\IDE\devenv.exe (
   SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
 )
 
@@ -36,7 +36,7 @@ IF "%ICPP_COMPILER%" == "" (
     GOTO SELECT_ICL_VERSION
   )
 )
-IF EXIST "%ICPP_COMPILER%bin\compilervars.bat" (
+IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
   IF "%PROCESSOR_ARCHITECTURE%" == "x86" (
     CALL "%ICPP_COMPILER%bin\compilervars.bat" ia32 vs%VS_VERSION%
   ) ELSE (
