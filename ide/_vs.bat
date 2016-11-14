@@ -43,8 +43,10 @@ IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
     CALL "%ICPP_COMPILER%bin\compilervars.bat" intel64 vs%VS_VERSION%
   )
 ) ELSE (
-  SET/A ICL_VERSION-=1
-  GOTO SELECT_ICL_VERSION
+  IF %ICL_VERSION% GTR 12 (
+    SET/A ICL_VERSION-=1
+    GOTO SELECT_ICL_VERSION
+  )
 )
 
 SET MPI_ROOT=%I_MPI_ROOT:-RT=%
