@@ -28,10 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CPUID_X86_C
-#define LIBXSMM_CPUID_X86_C
-
-#include <libxsmm_cpuid.h>
 #include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -42,7 +38,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-/** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
+/** Execute CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
 # if (4294967295U < (__SIZE_MAX__))
 #   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
@@ -132,4 +128,3 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 
-#endif /* LIBXSMM_CPUID_X86_C */
