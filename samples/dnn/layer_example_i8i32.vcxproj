@@ -34,7 +34,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>layer_example_i8i32</ProjectName>
-    <ProjectGuid>{B630C58A-2F0D-4D77-97EF-CC4956EED41F}</ProjectGuid>
+    <ProjectGuid>{E5AF3D43-4860-4F28-8674-D641A954C7C9}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

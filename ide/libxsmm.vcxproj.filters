@@ -75,9 +75,6 @@
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_cpuid.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_asparse.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -179,6 +176,12 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_cpuid.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_handle.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -318,6 +321,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_convolution_weight_update.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_handle.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

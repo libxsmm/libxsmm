@@ -17,7 +17,9 @@ IF "%VS_COMNTOOLS%" == "" (
     GOTO SELECT_VS_VERSION
   )
 )
-SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
+IF EXIST "%VS_COMNTOOLS%..\IDE\devenv.exe" (
+  SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
+)
 
 SET ICL_VERSION=%2
 IF "%ICL_VERSION%" == "" SET ICL_VERSION=20
