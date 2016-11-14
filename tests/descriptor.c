@@ -42,7 +42,7 @@
  */
 int main(void)
 {
-  const int cpuid_archid = libxsmm_cpuid_x86();
+  const int cpuid_archid = libxsmm_cpuid();
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
   union { libxsmm_gemm_descriptor descriptor; char simd[LIBXSMM_ALIGNMENT]; } a, b;
   unsigned int i, result = EXIT_SUCCESS;

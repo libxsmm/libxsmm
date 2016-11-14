@@ -929,13 +929,13 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
       target_archid = LIBXSMM_X86_GENERIC;
     }
     else {
-      target_archid = libxsmm_cpuid_x86();
+      target_archid = libxsmm_cpuid();
     }
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 #if !defined(NDEBUG) /* library code is expected to be mute */
   {
-    const int cpuid = libxsmm_cpuid_x86();
+    const int cpuid = libxsmm_cpuid();
     if (cpuid < libxsmm_target_archid) {
       const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
@@ -1009,11 +1009,11 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
   }
 
   if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CORE < target_archid) {
-    target_archid = libxsmm_cpuid_x86();
+    target_archid = libxsmm_cpuid();
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
-    const int cpuid = libxsmm_cpuid_x86();
+    const int cpuid = libxsmm_cpuid();
     if (cpuid < target_archid) {
       const char *const target_arch = internal_get_target_arch(target_archid);
       fprintf(stderr, "LIBXSMM: \"%s\" code will fail to run on \"%s\"!\n",
