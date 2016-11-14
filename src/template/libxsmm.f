@@ -257,6 +257,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_xtick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
@@ -351,8 +352,13 @@
 
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.
-          ! The counter does not necessarily count CPU cycles.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
+            IMPORT :: C_LONG_LONG
+          END FUNCTION
+
+          ! Impure function which returns the current tick of a (monotonic)
+          ! platform-specific counter; not necessarily CPU cycles.
+          INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_xtick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
 
