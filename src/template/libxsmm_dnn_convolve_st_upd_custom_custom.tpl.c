@@ -31,10 +31,10 @@
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
-int i, j, ofm1ifm1img, ifm2, ofm2;
+int i, j, ofm1ifm1img;
 #endif
 #if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM)
-int ii, ij, imgifm1;
+int ii, ij, imgifm1, ifm2, ofm2;
 #endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
