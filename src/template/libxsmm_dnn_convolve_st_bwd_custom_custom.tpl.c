@@ -74,7 +74,9 @@ kw = handle->desc.S;
 ifh=handle->desc.H;
 ofh=handle->ofh;
 
-libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, tid);
+/* lazy barrier init */
+libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+
 for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   ofm1 = ifm1ofm1/handle->blocksifm;
   ifm1 = ifm1ofm1%handle->blocksifm;
@@ -91,7 +93,7 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     }
   }
 }
-libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, tid);
+libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {

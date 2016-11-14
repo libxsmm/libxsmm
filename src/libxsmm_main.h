@@ -164,6 +164,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int upd_ofw_rb;
   int upd_ofh_rb;
   int fm_lp_block;              /* additional blocking for low precision datatypes of feature maps */
+  int upd_use_thread_fil;
 
   /* internal data representation */
   libxsmm_dnn_buffer* input;
@@ -176,6 +177,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
   void* scratch3;
 /*#endif*/
+  void* scratch4;
 
   /* JIT-generated convolution code */
   /*

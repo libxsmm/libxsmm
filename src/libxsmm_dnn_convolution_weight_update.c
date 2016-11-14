@@ -55,24 +55,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-#endif
+      if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+#define LIBXSMM_WU_PER_THREAD_ALLOCATION
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#if 0
+#undef LIBXSMM_WU_PER_THREAD_ALLOCATION
       }
       else {
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_img_par.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
       }
-#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
