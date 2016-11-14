@@ -70,8 +70,10 @@
 #endif
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
-#else
+#elif !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
+#else
+# define LIBXSMM_SYNC_PAUSE(DELAY)
 #endif
 
 

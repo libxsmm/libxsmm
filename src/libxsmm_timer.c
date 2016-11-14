@@ -36,7 +36,7 @@
 #endif
 #if defined(_WIN32)
 # include <Windows.h>
-#elif defined(__GNUC__) || defined(__PGI)
+#elif defined(__GNUC__) || defined(__PGI) || defined(_CRAYC)
 # include <sys/time.h>
 # include <time.h>
 #endif
@@ -44,7 +44,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(_CRAYC)) && \
+#if (defined(__GNUC__) || defined(__INTEL_COMPILER)) && \
   ((4294967295U < (__SIZE_MAX__)) || defined(_WIN64) || defined(_CRAYC))
 # define LIBXSMM_TIMER_RDTSC(CYCLE) { unsigned long long libxsmm_timer_rdtsc_hi_; \
     __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \

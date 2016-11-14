@@ -48,7 +48,7 @@
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
 #   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
 # endif
-#else
+#elif !defined(_CRAYC)
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
     int libxsmm_cpuid_x86_[4]; \
     __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
@@ -57,6 +57,8 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
     ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
     EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
   }
+#else
+# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) LIBXSMM_X86_AVX
 #endif
 
 /** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
@@ -64,12 +66,14 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
     ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
   )
-#else
+#elif !defined(_CRAYC)
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
     unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
     EAX = (int)libxsmm_xgetbv_; \
     EDX = (int)(libxsmm_xgetbv_ >> 32); \
   }
+#else
+# define LIBXSMM_XGETBV(XCR, EAX, EDX)
 #endif
 
 

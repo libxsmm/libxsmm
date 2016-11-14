@@ -363,7 +363,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned 
 
 LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
+#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
   ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
   !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
