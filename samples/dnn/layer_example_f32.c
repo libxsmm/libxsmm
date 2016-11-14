@@ -46,10 +46,6 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
-
 typedef struct {
   int nImg;
   int nIfm;
@@ -366,8 +362,7 @@ int main(int argc, char* argv[])
   int nThreads = 1;       /* number of threads */
 #endif
 
-  /*unsigned long long l_start, l_end;*/
-  struct timeval l_start, l_end;
+  unsigned long long l_start, l_end;
   double l_total = 0.0;
   double flops = 0.0;
   int i;
@@ -611,8 +606,7 @@ int main(int argc, char* argv[])
   printf("#   Performance - FWD (custom-Storage)   #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
-  gettimeofday(&l_start, NULL);
-  /*l_start = libxsmm_timer_tick();*/
+  l_start = libxsmm_timer_tick();
   for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -626,10 +620,8 @@ int main(int argc, char* argv[])
       libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  /*l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);*/
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -646,8 +638,7 @@ int main(int argc, char* argv[])
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
     /* run LIBXSMM convolution for performance */
-    gettimeofday(&l_start, NULL);
-    /*l_start = libxsmm_timer_tick();*/
+    l_start = libxsmm_timer_tick();
     for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -661,10 +652,8 @@ int main(int argc, char* argv[])
         libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid );
       }
     }
-    gettimeofday(&l_end, NULL);
-    l_total = sec(l_start, l_end);
-    /*l_end = libxsmm_timer_tick();
-    l_total = libxsmm_timer_duration(l_start, l_end);*/
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
     flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
     printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -680,8 +669,7 @@ int main(int argc, char* argv[])
   printf("#   Performance - UPD (custom-Storage)   #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
-  gettimeofday(&l_start, NULL);
-  /*l_start = libxsmm_timer_tick();*/
+  l_start = libxsmm_timer_tick();
   for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -695,10 +683,8 @@ int main(int argc, char* argv[])
       libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  /*l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);*/
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -790,8 +776,7 @@ int main(int argc, char* argv[])
   printf("#  Performance - FWD (NHWC/RSCK-Storage)  #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
-  gettimeofday(&l_start, NULL);
-  /*l_start = libxsmm_timer_tick();*/
+  l_start = libxsmm_timer_tick();
   for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -805,10 +790,8 @@ int main(int argc, char* argv[])
       libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  /*l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);*/
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
@@ -906,8 +889,7 @@ int main(int argc, char* argv[])
   printf("# Performance - FWD(NHWC/custom-Storage) #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
-  gettimeofday(&l_start, NULL);
-  /*l_start = libxsmm_timer_tick();*/
+  l_start = libxsmm_timer_tick();
   for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -921,10 +903,8 @@ int main(int argc, char* argv[])
       libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid );
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  /*l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);*/
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
   printf("GFLOP (NHWC,custom)  = %.5g\n", flops*1e-9/(double)iters);
