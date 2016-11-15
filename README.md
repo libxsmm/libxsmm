@@ -205,7 +205,8 @@ int libxsmm_get_verbosity(void);
 void libxsmm_set_verbosity(int level);
 ```
 
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" function (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily measuring CPU cycles due to a varying CPU clock speed (Turbo Boost), different clock domains depending on the instructions executed, and other reasons (out-of-scope).
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" function (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily measuring CPU cycles due to a varying CPU clock speed (Turbo Boost), different clock domains depending on the instructions executed, and other reasons (out of scope).  
+**NOTE**: `libxsmm_timer_xtick` is not directly suitable for `libxsmm_timer_duration` (seconds).
 
 ```C
 unsigned long long libxsmm_timer_tick(void);
