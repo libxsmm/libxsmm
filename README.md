@@ -186,9 +186,11 @@ CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxs
 ```
 
 ## Service Functions
-For convenient operation of the library and to ease integration there are a number of routines are available, which do not exactly belong to the core functionality of LIBXSMM (SMM or DNN domain). These routines are nevertheless part of the API, and users are encouraged to rely on these routines. There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines which are only available with the C interface.
+For convenient operation of the library and to ease integration, a number of service routines are available. They do not exactly belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to rely on these routines of the API. There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines which are only available with the C interface.
 
-There are ID based and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the CPUID features. The latter may degrade performance (if a lower set of instruction set extensions is requested), which can be still useful for studying the performance impact. There is no additional check implemented if an unsupported set of instructions set extensions is requested, and JIT generated code may be executed right away (unknown instruction exception). This functionality is available for the C and Fortran interface, and there is an environment variable which corresponds to `libxsmm_set_target_arch` (LIBXSMM_TARGET).
+### Getting and Setting the Target Architecture
+There are ID based and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance (if a lower set of instruction set extensions is requested), which can be still useful for studying the performance impact of different instruction set extensions. This functionality is available for the C and Fortran interface, and there is an environment variable which corresponds to `libxsmm_set_target_arch` (LIBXSMM_TARGET).  
+**NOTE**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
 
 ```C
 int libxsmm_get_target_archid(void);
@@ -198,14 +200,16 @@ const char* libxsmm_get_target_arch(void);
 void libxsmm_set_target_arch(const char* arch);
 ```
 
-The [Verbose Mode](#verbose-mode) (level of verbosity) can be controlled using the C or Fortran API, and there is an environment variable which corresponds `libxsmm_set_verbosity` (LIBXSMM_VERBOSE).
+### Getting and Setting the Verbosity
+The [Verbose Mode](#verbose-mode) (level of verbosity) can be controlled using the C or Fortran API, and there is an environment variable which corresponds to `libxsmm_set_verbosity` (LIBXSMM_VERBOSE).
 
 ```C
 int libxsmm_get_verbosity(void);
 void libxsmm_set_verbosity(int level);
 ```
 
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" function (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily measuring CPU cycles due to a varying CPU clock speed (Turbo Boost), different clock domains depending on the instructions executed, and other reasons (out of scope).  
+### Timer Facility
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" functions (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily counting real CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).  
 **NOTE**: `libxsmm_timer_xtick` is not directly suitable for `libxsmm_timer_duration` (seconds).
 
 ```C
@@ -214,6 +218,7 @@ unsigned long long libxsmm_timer_xtick(void);
 double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
 ```
 
+### Memory Allocation
 Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically chosen alignment). The automatic alignment is also exposed by a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: `libxsmm_free` must be used to deallocate the memory.
 
