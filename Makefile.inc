@@ -1057,7 +1057,11 @@ else ifneq (0,$(MKL)) # multi-threaded
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
-      BLAS_THREADS = o
+      ifneq (0,$(OMP))
+        BLAS_THREADS = o
+      else
+        BLAS_THREADS = p
+      endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
