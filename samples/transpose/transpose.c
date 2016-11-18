@@ -79,10 +79,11 @@ int main(int argc, char* argv[])
   const libxsmm_blasint n = 3 < argc ? atoi(argv[3]) : m;
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
-  int result = EXIT_SUCCESS;
+  const int r = 6 < argc ? atoi(argv[6]) : 0;
+  int result = EXIT_SUCCESS, km = m, kn = n, kldi = ldi, kldo = ldo, k;
 
   if (0 == strchr("oOiI", t)) {
-    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>]\n", argv[0]);
+    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|1]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -95,16 +96,17 @@ int main(int argc, char* argv[])
     /* validate against result computed by Intel MKL */
 #if !defined(USE_SELF_VALIDATION)
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldo) * sizeof(REAL_TYPE));
+    double duration2 = 0;
 #endif
-    const unsigned int size = m * n * sizeof(REAL_TYPE);
+    double duration = 0;
+    unsigned int size = 0;
     unsigned long long start;
     libxsmm_blasint i = 0, j;
-    double duration;
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     fprintf(stdout, "m=%i n=%i ldi=%i ldo=%i size=%.fMB (%s, %s)\n", m, n, ldi, ldo,
-      1.0 * size / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP",
+      1.0 * (m * n * sizeof(REAL_TYPE)) / (1 << 20), 8 == sizeof(REAL_TYPE) ? "DP" : "SP",
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
     for (i = 0; i < n; ++i) {
@@ -113,90 +115,93 @@ int main(int argc, char* argv[])
       }
     }
 
-    if (('o' == t || 'O' == t)) {
-      start = libxsmm_timer_tick();
-      OTRANS(b, a, sizeof(REAL_TYPE), m, n, ldi, ldo);
-#if defined(USE_SELF_VALIDATION)
-      /* without Intel MKL, construct an invariant result and check against it */
-      libxsmm_otrans(a, b, sizeof(REAL_TYPE), n, m, ldo, ldi);
-#endif
-      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-    }
-    else {
-      assert('i' == t || 'I' == t);
-      start = libxsmm_timer_tick();
-      /*libxsmm_itrans(a, sizeof(REAL_TYPE), m, n, ldi);*/
-#if defined(USE_SELF_VALIDATION)
-      /* without Intel MKL, construct an invariant result and check against it */
-      /*libxsmm_itrans(a, sizeof(REAL_TYPE), n, m, ldi);*/
-#endif
-      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-    }
+    for (k = (0 == r ? -1 : 0); k < r && i <= n; ++k) {
+      if (0 != r) {
+        const int rldi = (rand() % ldi) + 1;
+        const int rldo = (rand() % ldo) + 1;
+        km = (rand() % m) + 1; kn = (rand() % n) + 1;
+        kldi = LIBXSMM_MAX(rldi, km);
+        kldo = LIBXSMM_MAX(rldo, kn);
+      }
+      size += km * kn * sizeof(REAL_TYPE);
 
-#if defined(USE_SELF_VALIDATION)
-    /* without Intel MKL, check against a known result (invariant) */
-    for (i = 0; i < n; ++i) {
-      for (j = 0; j < m; ++j) {
-        if (initial_value(i, j, m) != a[i*ldi+j]) {
-          i = n + 1; /* leave outer loop as well */
-          break;
+      if (('o' == t || 'O' == t)) {
+        start = libxsmm_timer_tick();
+        OTRANS(b, a, sizeof(REAL_TYPE), km, kn, kldi, kldo);
+#if defined(USE_SELF_VALIDATION) /* construct an invariant/known result */
+        libxsmm_otrans(a, b, sizeof(REAL_TYPE), kn, km, kldo, kldi);
+#endif
+        duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      }
+      else {
+        assert('i' == t || 'I' == t);
+        start = libxsmm_timer_tick();
+        /*libxsmm_itrans(a, sizeof(REAL_TYPE), km, kn, kldi);*/
+#if defined(USE_SELF_VALIDATION) /* construct an invariant/known result */
+        /*libxsmm_itrans(a, sizeof(REAL_TYPE), kn, km, kldi);*/
+#endif
+        duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      }
+
+#if defined(USE_SELF_VALIDATION) /* check against an invariant/known result */
+      for (i = 0; i < kn; ++i) {
+        for (j = 0; j < km; ++j) {
+          if (initial_value(i, j, km) != a[i*kldi+j]) {
+            i = n + 1; /* leave outer loop as well */
+            break;
+          }
         }
       }
-    }
+#else /* Intel MKL or OpenBLAS transpose interface available */
+      if (('o' == t || 'O' == t)) {
+        start = libxsmm_timer_tick();
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', km, kn, 1/*alpha*/, a, kldi, c, kldo);
+#elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
+        LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, km, kn, 1/*alpha*/, a, kldi, c, kldo);
+#else
+#       error No alternative transpose routine available!
 #endif
+        duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      }
+      else {
+        start = libxsmm_timer_tick();
+        /* TODO: call in-place variant */
+        duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      }
+      /* validate against result computed by alternative routine */
+      for (i = 0; i < km; ++i) {
+        for (j = 0; j < kn; ++j) {
+          if (0 == LIBXSMM_FEQ(b[i*kldo+j], c[i*kldo+j])) {
+            i = LIBXSMM_MAX(m, n) + 1; /* leave outer loop as well */
+            break;
+          }
+        }
+      }
+#endif
+    }
 
     if (i <= n) {
       if (0 < duration) {
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size / (duration * (1 << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+#if !defined(USE_SELF_VALIDATION)
+      if (0 < duration2) {
+        fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
+      }
+#endif
     }
-#if defined(USE_SELF_VALIDATION)
     else {
-      fprintf(stderr, "Validation failed!\n");
+      fprintf(stderr, "Validation failed for m=%i, n=%i, ldi=%i, and ldo=%i!\n", km, kn, kldi, kldo);
+      result = EXIT_FAILURE;
     }
-#else /* Intel MKL or OpenBLAS transpose interface available */
-    {
-      double duration2;
-      if (('o' == t || 'O' == t)) {
-        start = libxsmm_timer_tick();
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))('C', 'T', m, n, 1/*alpha*/, a, ldi, c, ldo);
-#elif defined(__OPENBLAS) /* tranposes are not really covered by the common CBLAS interface */
-        LIBXSMM_CONCATENATE(cblas_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))(CblasColMajor, CblasTrans, m, n, 1/*alpha*/, a, ldi, c, ldo);
-#else
-#       error No alternative transpose routine available!
-#endif
-        duration2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      }
-      else {
-        start = libxsmm_timer_tick();
-        /* TODO: call in-place variant */
-        duration2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      }
-      /* validate against result computed by alternative routine */
-      for (i = 0; i < m; ++i) {
-        for (j = 0; j < n; ++j) {
-          if (0 == LIBXSMM_FEQ(b[i*ldo+j], c[i*ldo+j])) {
-            i = m + 1; /* leave outer loop as well */
-            break;
-          }
-        }
-      }
-      if (i <= m) {
-        if (0 < duration2) {
-          fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
-        }
-      }
-      else {
-        fprintf(stderr, "Validation failed!\n");
-        result = EXIT_FAILURE;
-      }
-    }
-    libxsmm_free(c);
-#endif
+
     libxsmm_free(a);
     libxsmm_free(b);
+#if !defined(USE_SELF_VALIDATION)
+    libxsmm_free(c);
+#endif
   }
   return result;
 }
