@@ -79,7 +79,6 @@
 #elif !defined(USE_SELF_VALIDATION)
 # define USE_SELF_VALIDATION
 #endif
-#define USE_SELF_VALIDATION
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE REAL_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
@@ -135,7 +134,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    for (k = (0 == r ? -1 : 0); k < r && i <= n; ++k) {
+    for (k = (0 == r ? -1 : 0); k < r && EXIT_SUCCESS == result; ++k) {
       if (0 != r) {
         const int rldi = (rand() % ldi) + 1;
         km = (rand() % m) + 1;
@@ -183,13 +182,13 @@ int main(int argc, char* argv[])
       for (i = 0; i < km; ++i) {
         for (j = 0; j < kn; ++j) {
           const REAL_TYPE u = b[i*kldo+j];
-#if defined(USE_SELF_VALIDATION) /* check against a known result */
-          const REAL_TYPE v = initial_value(j, i, km);
+#if defined(USE_SELF_VALIDATION)
+          const REAL_TYPE v = a[j*kldi+i];
 #else /* check against an alternative/external implementation */
           const REAL_TYPE v = c[i*kldo+j];
 #endif
           if (0 == LIBXSMM_FEQ(u, v)) {
-            i = km + 1; /* leave outer loop as well */
+            i += km; /* leave outer loop as well */
             result = EXIT_FAILURE;
             break;
           }
