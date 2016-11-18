@@ -983,7 +983,7 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_DFLAGS += -D__MKL=1
+  BLAS_DFLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -1009,7 +1009,7 @@ ifeq (1,$(MKL)) # sequential
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_DFLAGS += -D__MKL=$(MKL)
+  BLAS_DFLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
@@ -1070,8 +1070,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS))
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
-      BLAS_DFLAGS += -D__OPENBLAS -D__CBLAS
+      BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
     else
+      BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))
         BLAS_LDFLAGS += -lblas$(BLAS_BITS)
       else
@@ -1088,6 +1089,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
   else # BLAS library is specified via BLASLIB
+    BLAS_DFLAGS += -D__BLAS=$(BLAS)
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
         BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
