@@ -64,17 +64,27 @@
 
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # if !defined(OTRANS2)
-#   define OTRANS2 LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))
+#   define OTRANS2(TC, TT, M, N, ALPHA, A, LDI, B, LDO) \
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy)) \
+      (*(TC), *(TT), *(M), *(N), *(ALPHA), A, *(LDI), B, *(LDO))
 # endif
 # if !defined(ITRANS2)
-#   define ITRANS2 LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, imatcopy))
+#   define ITRANS2(TC, TT, M, N, ALPHA, A, LDI, LDO) \
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, imatcopy)) \
+      (*(TC), *(TT), *(M), *(N), *(ALPHA), A, *(LDI), *(LDO))
 # endif
 #elif defined(__OPENBLAS)
 # if !defined(OTRANS2)
-#   define OTRANS2 LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, omatcopy))
+#   define OTRANS2(TC, TT, M, N, ALPHA, A, LDI, B, LDO) \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, omatcopy)) \
+      ((char*)(TC), (char*)(TT), (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
+        (REAL_TYPE*)(ALPHA), A, (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO))
 # endif
 # if !defined(ITRANS2)
-#   define ITRANS2 LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, imatcopy))
+#   define ITRANS2(TC, TT, M, N, ALPHA, A, LDI, LDO) \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, imatcopy)) \
+      ((char*)(TC), (char*)(TT), (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
+        (REAL_TYPE*)(ALPHA), A, (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO))
 # endif
 #elif !defined(USE_SELF_VALIDATION)
 # define USE_SELF_VALIDATION
@@ -99,7 +109,8 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
   const int r = 6 < argc ? atoi(argv[6]) : 0;
-  int result = EXIT_SUCCESS, km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi), k;
+  libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
+  int result = EXIT_SUCCESS, k;
 
   libxsmm_set_verbosity(0);
   if (0 == strchr("oOiI", t)) {
@@ -115,6 +126,8 @@ int main(int argc, char* argv[])
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(REAL_TYPE));
 #if !defined(USE_SELF_VALIDATION) /* check against an alternative/external implementation */
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(REAL_TYPE));
+    const char tc = 'C', tt = 'T';
+    const double alpha = 1;
     double duration2 = 0;
 #endif
     double duration = 0;
@@ -136,11 +149,11 @@ int main(int argc, char* argv[])
 
     for (k = (0 == r ? -1 : 0); k < r && EXIT_SUCCESS == result; ++k) {
       if (0 != r) {
-        const int rldi = (rand() % ldi) + 1;
+        const libxsmm_blasint rldi = (rand() % ldi) + 1;
         km = (rand() % m) + 1;
         kldi = LIBXSMM_MAX(rldi, km);
         if (('o' == t || 'O' == t)) {
-          const int rldo = (rand() % ldo) + 1;
+          const libxsmm_blasint rldo = (rand() % ldo) + 1;
           kn = (rand() % n) + 1;
           kldo = LIBXSMM_MAX(rldo, kn);
         }
@@ -161,7 +174,7 @@ int main(int argc, char* argv[])
         duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
 #if !defined(USE_SELF_VALIDATION)
         start = libxsmm_timer_tick();
-        OTRANS2('C', 'T', km, kn, 1/*alpha*/, a, kldi, c, kldo);
+        OTRANS2(&tc, &tt, &km, &kn, &alpha, a, &kldi, c, &kldo);
         duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
 #endif
       }
@@ -174,7 +187,7 @@ int main(int argc, char* argv[])
 #if !defined(USE_SELF_VALIDATION)
         memcpy(c, a, kldi * kn * sizeof(REAL_TYPE));
         start = libxsmm_timer_tick();
-        ITRANS2('C', 'T', km, kn, 1/*alpha*/, c, kldi, kldo);
+        ITRANS2(&tc, &tt, &km, &kn, &alpha, c, &kldi, &kldo);
         duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
 #endif
       }
