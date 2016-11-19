@@ -62,7 +62,8 @@
 
 #define LIBXSMM_OTRANS(TYPE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
   if (LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE) == (N) \
-   && LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT) == 0) \
+   && LIBXSMM_MOD2((LDO) * sizeof(TYPE), LIBXSMM_ALIGNMENT) == 0 \
+   && LIBXSMM_MOD2((uintptr_t)(OUT), LIBXSMM_ALIGNMENT) == 0) \
   { \
     const TYPE *const libxsmm_otrans_a_ = (const TYPE*)(IN); \
     TYPE *const libxsmm_otrans_b_ = (TYPE*)(OUT); \
