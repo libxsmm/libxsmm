@@ -44,7 +44,9 @@ if [ "" != "${TOOL}" ]; then
   DIR=${TRAVIS_BUILD_DIR}/${RPT}
   rm -rf ${DIR}
 
-  ${TOOL} -collect ${KIND} -r ${DIR}/${COVID} -- $*
+  ${TOOL} -collect ${KIND} -r ${DIR}/${COVID} -return-app-exitcode -- $*
+  RESULT=$?
   ${TOOL} -report problems -r ${DIR}/${COVID} > ${DIR}/${NAME}-${KIND}.txt
+  exit ${RESULT}
 fi
 
