@@ -86,7 +86,8 @@
 # else
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = VALUE; \
-      while (0/*false*/ == __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE))
+      while (0/*false*/ == __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE)) \
+         if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE)) break
     /* use store side-effect of built-in (dummy assignment to mute warning) */
 #   if 0 /* disabled as it appears to hang on some systems; fallback impl. is below */
 #   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) { \
