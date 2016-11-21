@@ -84,9 +84,9 @@ PRECISION ?= 0
 # Support SMM kernels with larger extent(s)
 # 0: optimized JIT descriptor size
 # 1: regular descriptor size
-BIG ?= 0
-ifneq (0,$(BIG))
-  DFLAGS += -DLIBXSMM_GENERATOR_BIGDESC
+BIG ?= 1
+ifeq (0,$(BIG))
+  DFLAGS += -DLIBXSMM_GENERATOR_SMALLDESC
 endif
 
 # Specify an alignment (Bytes)
