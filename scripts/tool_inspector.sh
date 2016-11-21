@@ -39,13 +39,18 @@ if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${HERE}/..
   fi
+  if [ "" != "${COVID}" ]; then
+    RPTFILE=${DIR}/$(basename $1)-${KIND}-${COVID}.txt
+  else
+    RPTFILE=${DIR}/$(basename $1)-${KIND}.txt
+  fi
 
   DIR=${TRAVIS_BUILD_DIR}/${RPT}
-  rm -rf ${DIR}
+  rm -rf ${DIR}/${COVID}
 
   ${TOOL} -collect ${KIND} -r ${DIR}/${COVID} -return-app-exitcode -- $*
   RESULT=$?
-  ${TOOL} -report problems -r ${DIR}/${COVID} > ${DIR}/$(basename $1)-${KIND}.txt
+  ${TOOL} -report problems -r ${DIR}/${COVID} > ${RPTFILE}
   exit ${RESULT}
 fi
 
