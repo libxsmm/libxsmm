@@ -44,9 +44,9 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
 
   # set the case number
   if [ "" != "$1" ]; then
-    COVID=$1
+    export TESTID=$1
   else
-    COVID=1
+    export TESTID=1
   fi
 
   # should be source'd after the above variables are set
@@ -55,14 +55,14 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
 
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
-    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${COVID}}$//p\" | \
+    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
   do
     # print header if all test cases are selected
     if [ "" = "$1" ]; then
       echo "================================================================================"
-      echo "Test Case #${COVID}"
+      echo "Test Case #${TESTID}"
     fi
 
     # run the actual test case
@@ -71,7 +71,7 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
 
     # increment the case number if all cases are selected or leave the loop
     if [ "0" = "${RESULT}" ] && [ "" = "$1" ]; then
-      COVID=$((COVID+1))
+      TESTID=$((TESTID+1))
     else # dummy/exit case
       exit ${RESULT}
     fi
