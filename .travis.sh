@@ -67,12 +67,13 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
 
     # run the actual test case
     eval ${TEST}
+    RESULT=$?
 
     # increment the case number if all cases are selected or leave the loop
-    if [ "" = "$1" ]; then
+    if [ "0" = "${RESULT}" ] && [ "" = "$1" ]; then
       COVID=$((COVID+1))
     else # dummy/exit case
-      COVID=1000
+      exit ${RESULT}
     fi
   done
 fi
