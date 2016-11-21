@@ -34,7 +34,7 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
-#include <libxsmm_macros.h>
+#include <libxsmm_cpuid.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,6 +75,10 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "knl" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
+  } else if ( strcmp( i_arch, "skx" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
+  } else {
+    fprintf( stderr, " LIBXSMM Error: generator_convolution_weight_update_avx512: unsupported architecture!\n" );
   }
   l_conv_kernel_config.vector_reg_count = 32;
   l_conv_kernel_config.vector_length_in = 16;

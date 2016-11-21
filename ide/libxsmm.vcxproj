@@ -30,20 +30,24 @@
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
     <ClInclude Include="..\include\libxsmm_config.h" />
+    <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
+    <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
+    <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
+    <ClInclude Include="..\src\generator_convolution_backward_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_backward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_common.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
-    <ClInclude Include="..\src\generator_convolution_forward_int16_avx512.h" />
+    <ClInclude Include="..\src\generator_convolution_weight_update_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h" />
@@ -64,28 +68,31 @@
     <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h" />
-    <ClInclude Include="..\src\libxsmm_cpuid_x86.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_weight_update.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
     <ClInclude Include="..\src\libxsmm_dump.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
-    <ClInclude Include="..\src\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_trans.h" />
+    <ClInclude Include="..\src\perf_jitdump.h" />
     <ClInclude Include="..\src\template\libxsmm.h" />
     <ClInclude Include="..\src\template\libxsmm_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
+    <ClCompile Include="..\src\generator_convolution_backward_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_backward_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
-    <ClCompile Include="..\src\generator_convolution_forward_int16_avx512.c" />
+    <ClCompile Include="..\src\generator_convolution_weight_update_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
@@ -109,15 +116,11 @@
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />
-    <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_cpuid_x86.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_weight_update.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dump.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
@@ -145,13 +148,15 @@
     <ClCompile Include="..\src\libxsmm_trans.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\.codecov" />
-    <None Include="..\.env" />
+    <None Include="..\.codecov.env" />
+    <None Include="..\.codefile" />
     <None Include="..\.gitattributes" />
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
     <None Include="..\.scan.sh" />
     <None Include="..\.state.sh" />
+    <None Include="..\.travis.env" />
+    <None Include="..\.travis.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
     <None Include="..\LICENSE" />

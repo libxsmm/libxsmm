@@ -34,6 +34,17 @@
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle libxsmm_dnn_conv_handle;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer libxsmm_dnn_buffer;
@@ -66,6 +77,10 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT     100019
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE    100020
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_KCRS        100021
+#define LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL     100022
+#define LIBXSMM_DNN_ERR_CREATE_LAYOUT              100023
+#define LIBXSMM_DNN_ERR_INVALID_LAYOUT             100024
+#define LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH           100025
 
 /** Kinds of supported convolution operations. */
 typedef enum libxsmm_dnn_conv_kind {
@@ -76,6 +91,32 @@ typedef enum libxsmm_dnn_conv_kind {
   /** Updated weights. */
   LIBXSMM_DNN_CONV_KIND_UPD
 } libxsmm_dnn_conv_kind;
+
+/** type/meaning of dimension in a LIBXSMM DNN tensor */
+typedef enum libxsmm_dnn_conv_dimtype {
+  /** Mini-batch */
+  LIBXSMM_DNN_CONV_DIMTYPE_N,
+  /** Image Height */
+  LIBXSMM_DNN_CONV_DIMTYPE_H,
+  /** Image Width */
+  LIBXSMM_DNN_CONV_DIMTYPE_W,
+  /** channles or input channels */
+  LIBXSMM_DNN_CONV_DIMTYPE_C,
+  /** output channels */
+  LIBXSMM_DNN_CONV_DIMTYPE_K,
+  /** kernel height */
+  LIBXSMM_DNN_CONV_DIMTYPE_R,
+  /** kernel width */
+  LIBXSMM_DNN_CONV_DIMTYPE_S
+} libxsmm_dnn_conv_dimtype;
+
+/** layout descriptor to allow external data allocation 
+    outside of LIBXSMM */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_datalayout {
+  libxsmm_dnn_conv_dimtype* dim_type;
+  unsigned int* dim_size;
+  unsigned int num_dims;
+} libxsmm_dnn_conv_datalayout;
 
 typedef enum libxsmm_dnn_conv_fuse_op {
   /* we fuse nothing into convolution */
@@ -88,11 +129,6 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_RELU = 2
 #endif
 } libxsmm_dnn_conv_fuse_op;
-
-typedef enum libxsmm_dnn_conv_option {
-  /* we get default settings */
-  LIBXSMM_DNN_CONV_OPTION_NONE = 0
-} libxsmm_dnn_conv_option;
 
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
@@ -117,18 +153,19 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
   int pad_h_out;                               /* height of zero-padding in output buffer */
   int pad_w_out;                               /* width of zero-padding in output buffer */
-  int splits;                                  /* number of splits */
   int threads;                                 /* number of threads to use when running convolution */
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
   libxsmm_dnn_conv_fuse_op fuse_ops;           /* used ops into convolutions */
   libxsmm_dnn_conv_option options;             /* additional options */
-  libxsmm_dnn_datatype datatype;               /* datatypes use for all buffers */
+  libxsmm_dnn_datatype datatype_in;            /* datatypes use for all input-related data such as activations, filter */
+  libxsmm_dnn_datatype datatype_out;           /* datatypes use for all input-related data such as activations, bias */
 } libxsmm_dnn_conv_desc;
 
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
+LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
@@ -158,12 +195,21 @@ LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer_check(const libxsm
 LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_link_filter_check(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 
-/** Bind layers, filters and bias to convolutions operation */
+/** get layout description of buffers and fiters from handle */
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_conv_datalayout* layout);
+
+/** Bind buffers, filters and bias to convolutions operation */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* input);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* output);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_filter* filter);
 
-/** Release layers, filters and bias from convolutions operation */
+/** Release buffers, filters and bias from convolutions operation */
 #if 0
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_input_buffer(libxsmm_dnn_conv_handle* handle);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_output_buffer(libxsmm_dnn_conv_handle* handle);
@@ -176,7 +222,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsmm_dnn_filte
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* bias);
 
 /**
- * Copy-in from a plain format such as input := [img][splits][ofm][ifm].
+ * Copy-in from a plain format such as input := [N][C][H][W] or [N][H][W][C]
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */
@@ -186,7 +232,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm_dnn_filter
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_buffer(const libxsmm_dnn_buffer* layer);
 
 /**
- * Copy-out into a plain format such as output := [img][splits][ofm][ifm].
+ * Copy-out into a plain format such as output := [N][C][H][W] or [N][H][W][C]
  * The index specifies the actual channel number, and an eventual
  * padding is defined by the handle (pitch/stride).
  */
@@ -210,8 +256,14 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(const float* input1, 
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, const short* input2, int* output,
                                                            const short* ipf1, const short* ipf2, const int* opf);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char* input1, const char* input2, short* output,
+                                                             const unsigned char* ipf1, const char* ipf2, const short* opf);
+
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(const unsigned char* input1, const char* input2, int* output,
+                                                             const unsigned char* ipf1, const char* ipf2, const int* opf);
+
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; } libxsmm_xconvfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_busconvfunction budconv; } libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);

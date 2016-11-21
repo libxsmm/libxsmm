@@ -83,6 +83,13 @@
 #define LIBXSMM_X86_INSTR_VPBROADCASTW   10026
 #define LIBXSMM_X86_INSTR_VPBROADCASTD   10027
 #define LIBXSMM_X86_INSTR_VPBROADCASTQ   10028
+#define LIBXSMM_X86_INSTR_VMOVDQA32      10029
+#define LIBXSMM_X86_INSTR_VMOVDQA64      10030
+#define LIBXSMM_X86_INSTR_VMOVDQU8       10031
+#define LIBXSMM_X86_INSTR_VMOVDQU16      10032
+#define LIBXSMM_X86_INSTR_VMOVDQU32      10033
+#define LIBXSMM_X86_INSTR_VMOVDQU64      10034
+
 /* SSE */
 #define LIBXSMM_X86_INSTR_MOVAPD         10009
 #define LIBXSMM_X86_INSTR_MOVUPD         10010
@@ -144,15 +151,6 @@
 #define LIBXSMM_X86_INSTR_VFMSUB231SS    20027
 #define LIBXSMM_X86_INSTR_VFNMADD231SS   20028
 #define LIBXSMM_X86_INSTR_VFNMSUB231SS   20029
-/* AVX512, IMCI Integer XOR as there is no FP */
-#define LIBXSMM_X86_INSTR_VPXORD         20044
-/* additional integer stuff */
-#define LIBXSMM_X86_INSTR_VPADDQ         20045
-#define LIBXSMM_X86_INSTR_VPADDD         20046
-#define LIBXSMM_X86_INSTR_VPADDW         20047
-#define LIBXSMM_X86_INSTR_VPADDB         20048
-#define LIBXSMM_X86_INSTR_VPMADDWD       20049
-#define LIBXSMM_X86_INSTR_VPMADDUBSW     20050
 /* SSE */
 #define LIBXSMM_X86_INSTR_XORPD          20030
 #define LIBXSMM_X86_INSTR_MULPD          20031
@@ -168,6 +166,17 @@
 #define LIBXSMM_X86_INSTR_MULSS          20041
 #define LIBXSMM_X86_INSTR_ADDSS          20042
 #define LIBXSMM_X86_INSTR_SUBSS          20043
+/* AVX512, IMCI Integer XOR as there is no FP */
+#define LIBXSMM_X86_INSTR_VPXORD         20044
+/* additional integer stuff */
+#define LIBXSMM_X86_INSTR_VPADDQ         20045
+#define LIBXSMM_X86_INSTR_VPADDD         20046
+#define LIBXSMM_X86_INSTR_VPADDW         20047
+#define LIBXSMM_X86_INSTR_VPADDB         20048
+#define LIBXSMM_X86_INSTR_VPMADDWD       20049
+#define LIBXSMM_X86_INSTR_VPMADDUBSW     20050
+#define LIBXSMM_X86_INSTR_VPADDSW        20051
+#define LIBXSMM_X86_INSTR_VPADDSB        20052
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000
@@ -280,6 +289,7 @@ typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int vector_length_wt;
   unsigned int datatype_size_wt;
   unsigned int vmove_instruction;
+  unsigned int vbcst_instruction;
   unsigned int vfma_instruction;
   unsigned int vxor_instruction;
   unsigned int vadd_instruction;

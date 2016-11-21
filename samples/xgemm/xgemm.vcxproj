@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="xgemm.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>xgemm</ProjectName>

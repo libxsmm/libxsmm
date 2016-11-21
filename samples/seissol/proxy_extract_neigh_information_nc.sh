@@ -2,7 +2,7 @@
 
 if [ $# -ne 1 ]
 then
-  echo "Usage: `basename $0` mesh.nc"
+  echo "Usage: $(basename $0) mesh.nc"
   exit
 fi
 

@@ -1,3 +1,34 @@
+#############################################################################
+# Copyright (c) 2015-2016, Intel Corporation                                #
+# All rights reserved.                                                      #
+#                                                                           #
+# Redistribution and use in source and binary forms, with or without        #
+# modification, are permitted provided that the following conditions        #
+# are met:                                                                  #
+# 1. Redistributions of source code must retain the above copyright         #
+#    notice, this list of conditions and the following disclaimer.          #
+# 2. Redistributions in binary form must reproduce the above copyright      #
+#    notice, this list of conditions and the following disclaimer in the    #
+#    documentation and/or other materials provided with the distribution.   #
+# 3. Neither the name of the copyright holder nor the names of its          #
+#    contributors may be used to endorse or promote products derived        #
+#    from this software without specific prior written permission.          #
+#                                                                           #
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       #
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         #
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     #
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      #
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    #
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  #
+# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    #
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    #
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      #
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
+#############################################################################
+# Hans Pabst (Intel Corp.)
+#############################################################################
+
 ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL = bash -xv
 endif
@@ -128,7 +159,7 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  DFLAGS += $(DNOBLAS)
+  BLAS_DFLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
 endif
@@ -515,7 +546,7 @@ ifneq (0,$(INTEL))
         ifeq (1,$(SSE)) # default
           ifneq (Darwin,$(UNAME))
             CTARGET = -xSSE3
-          else # no systems with less than SSE4.2 
+          else # no systems with less than SSE4.2
             CTARGET = -xSSE4.2
           endif
         else ifeq (3,$(SSE))
@@ -849,6 +880,7 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
+    FLDFLAGS += -lpthread
     ifneq (Windows_NT,$(UNAME))
       CLDFLAGS += -pthread
     endif
@@ -862,10 +894,10 @@ endif
 
 # Information which can be displayed by the actual Makefile
 ifneq (,$(strip $(FC)))
-  GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
+  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
   FINFO = Fortran: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
-  GINFO = $(SUITE): $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(CC_NAME) $(CC_VERSION_STRING))
+  GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(CXX_NAME) $(CXX_VERSION_STRING))
   FINFO = Fortran: <none>
 endif
 CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
@@ -951,7 +983,7 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_DFLAGS += -D__MKL=1
+  BLAS_DFLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -977,7 +1009,7 @@ ifeq (1,$(MKL)) # sequential
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_DFLAGS += -D__MKL=$(MKL)
+  BLAS_DFLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
@@ -1025,7 +1057,11 @@ else ifneq (0,$(MKL)) # multi-threaded
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
-      BLAS_THREADS = o
+      ifneq (0,$(OMP))
+        BLAS_THREADS = o
+      else
+        BLAS_THREADS = p
+      endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
@@ -1034,8 +1070,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS))
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
-      BLAS_DFLAGS += -D__OPENBLAS -D__CBLAS
+      BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
     else
+      BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))
         BLAS_LDFLAGS += -lblas$(BLAS_BITS)
       else
@@ -1052,9 +1089,10 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
   else # BLAS library is specified via BLASLIB
+    BLAS_DFLAGS += -D__BLAS=$(BLAS)
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
-        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
+        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
       else
         BLAS_LDFLAGS += $(call abslib,$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
@@ -1065,13 +1103,13 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS = $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS = $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS = $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS = $(strip $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS = $(strip $(CLDFLAGS))
-NOBLAS_DFLAGS = $(strip $(DFLAGS))
-NOBLAS_IFLAGS = $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
+NOBLAS_DFLAGS := $(strip $(DFLAGS))
+NOBLAS_IFLAGS := $(strip $(IFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))

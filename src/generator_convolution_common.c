@@ -32,7 +32,8 @@
 #include "generator_x86_instructions.h"
 #include "generator_convolution_common.h"
 #include "generator_common.h"
-#include <libxsmm_macros.h>
+
+#include <libxsmm_cpuid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,26 @@ void libxsmm_generator_convolution_footer_oi_loop( libxsmm_generated_code*      
                                                    const unsigned int                            i_gp_reg_oi_loop,
                                                    const unsigned int                            i_oi ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_cmp_instruction, i_gp_reg_oi_loop, i_oi );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_header_oj_loop( libxsmm_generated_code*                   io_generated_code,
+                                                   libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                   const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
+                                                   const unsigned int                        i_gp_reg_oj_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_oj_loop, 0);
+  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oj_loop, 1);
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_footer_oj_loop( libxsmm_generated_code*                       io_generated_code,
+                                                   libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                   const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
+                                                   const unsigned int                            i_gp_reg_oj_loop,
+                                                   const unsigned int                            i_oj ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_cmp_instruction, i_gp_reg_oj_loop, i_oj );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
@@ -220,7 +241,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
 
   if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
-    l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
+    l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
 
     /* adding to C, so let's load C and init additional accumulators */
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
@@ -324,7 +345,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
   if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
-    l_accs = (i_conv_desc->ofw_rb < 10) ? 3 : 2;
+    l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
 
     /* adding up accumulators, adding different order to avoid stalls to some extent.... */
     for ( l_i = l_accs; l_i > 1; l_i-- ) {

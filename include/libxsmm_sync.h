@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SYNC_H
 #define LIBXSMM_SYNC_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
 
 #if defined(LIBXSMM_NO_SYNC)
 # undef _REENTRANT
@@ -47,7 +47,7 @@
 #   else
 #     if (defined(_WIN32) && !defined(__GNUC__)) || defined(__PGI)
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-#     elif defined(__GNUC__)
+#     elif defined(__GNUC__) || defined(_CRAYC)
 #       define LIBXSMM_TLS __thread
 #     elif defined(__cplusplus)
 #       define LIBXSMM_TLS thread_local
@@ -86,7 +86,8 @@
 # else
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = VALUE; \
-      while (0/*false*/ == __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE))
+      while (0/*false*/ == __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE)) \
+         if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE)) break
     /* use store side-effect of built-in (dummy assignment to mute warning) */
 #   if 0 /* disabled as it appears to hang on some systems; fallback impl. is below */
 #   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) { \
@@ -112,6 +113,9 @@
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
 #endif
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #if defined(_REENTRANT)
 # if defined(_WIN32) /*TODO*/
 #   define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
@@ -122,7 +126,8 @@
 #   define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
 #   define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
 #   define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
-# else /* PThreads: include <pthread.h> */
+# else
+#   include <pthread.h>
 #   define LIBXSMM_LOCK_ACQUIRED 0
 #   define LIBXSMM_LOCK_TYPE pthread_mutex_t
 #   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
@@ -142,11 +147,8 @@
 # define LIBXSMM_LOCK_TRYLOCK(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_LOCK_RELEASE(LOCK) LIBXSMM_UNUSED(LOCK)
 #endif
-
-#if defined(__MIC__)
-# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
-#else
-# define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 
@@ -161,6 +163,11 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid);
 LIBXSMM_API void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid);
 /** Release the resources associated with this barrier. */
 LIBXSMM_API void libxsmm_barrier_release(const libxsmm_barrier* barrier);
+
+/** Utility function to receive the process ID of the calling process. */
+LIBXSMM_API unsigned int libxsmm_get_pid(void);
+/** Utility function to receive the thread ID of the calling thread. */
+LIBXSMM_API unsigned int libxsmm_get_tid(void);
 
 #endif /*LIBXSMM_SYNC_H*/
 

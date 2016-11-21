@@ -33,23 +33,6 @@
 
 #include "libxsmm_macros.h"
 
-/**
- * Enumerates the available target architectures and instruction
- * set extensions as returned by libxsmm_get_target_archid().
- */
-#define LIBXSMM_TARGET_ARCH_UNKNOWN 0
-#define LIBXSMM_TARGET_ARCH_GENERIC 1
-#define LIBXSMM_X86_GENERIC      1000
-#define LIBXSMM_X86_IMCI         1001
-#define LIBXSMM_X86_SSE3         1002
-#define LIBXSMM_X86_SSE4_1       1003
-#define LIBXSMM_X86_SSE4_2       1004
-#define LIBXSMM_X86_AVX          1005
-#define LIBXSMM_X86_AVX2         1006
-#define LIBXSMM_X86_AVX512       1007
-#define LIBXSMM_X86_AVX512_MIC   1008
-#define LIBXSMM_X86_AVX512_CORE  1009
-
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
@@ -155,7 +138,8 @@ typedef enum libxsmm_dnn_conv_format{
   /* now some combinded types */
   LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_PTR,
   LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR = LIBXSMM_DNN_CONV_FORMAT_RSCK | LIBXSMM_DNN_CONV_FORMAT_PTR,
-  LIBXSMM_DNN_CONV_FORMAT_NCHW_RSCK = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_RSCK
+  LIBXSMM_DNN_CONV_FORMAT_NHWC_RSCK = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_RSCK,
+  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM | LIBXSMM_DNN_CONV_FORMAT_PTR
 } libxsmm_dnn_conv_format;
 
 /** Denotes the element/pixel type of an image/channel. */
@@ -165,6 +149,13 @@ typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_I16,
   LIBXSMM_DNN_DATATYPE_I8
 } libxsmm_dnn_datatype;
+
+typedef enum libxsmm_dnn_conv_option {
+  /* we get default settings */
+  LIBXSMM_DNN_CONV_OPTION_NONE = 0,
+  /* activations are stored unsigned */
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1
+} libxsmm_dnn_conv_option;
 
 /** Structure storing the convolution argument description. */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
@@ -186,7 +177,9 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int stride_w;                        /* this we use for offsets in the input */
   unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_conv_option option;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
@@ -216,7 +209,9 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_conv_option option;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
 
@@ -246,7 +241,9 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
 
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_conv_format format;
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_conv_option option;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 

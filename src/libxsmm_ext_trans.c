@@ -46,15 +46,15 @@
 #if defined(LIBXSMM_EXT_TASKS)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
-  libxsmm_blasint ld, libxsmm_blasint ldo)
+  libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL_VARS, internal_ext_otrans, out, in, typesize, m0, m1, n0, n1, ld, ldo);
+  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL_VARS, internal_ext_otrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
 }
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
 
 
 LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   int result = EXIT_SUCCESS;
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -62,18 +62,19 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
   LIBXSMM_INIT
 
-  if (ld >= m && ldo >= n) {
+  assert(0 < typesize);
+  if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
     if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS)
       if (0 != libxsmm_mt) { /* enable OpenMP support */
         if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL_ONLY
-          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* implicit synchronization (barrier) */
         }
         else { /* odd: prepare for external parallelization */
           LIBXSMM_EXT_SINGLE
-          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ld, ldo);
+          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
           if (1 == libxsmm_mt) { /* allow to omit synchronization */
             LIBXSMM_EXT_TSK_SYNC
           }
@@ -82,11 +83,11 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       else
 #endif
       {
-        libxsmm_otrans(out, in, typesize, m, n, ld, ldo);
+        libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
       }
     }
-    else if (ld == ldo) {
-      libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ld);
+    else if (ldi == ldo) {
+      result = libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
     }
     else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
@@ -100,10 +101,13 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      if (ld < m && ldo < n) {
+      if (0 == out || 0 == in) {
+        fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
+      }
+      else if (ldi < m && ldo < n) {
         fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
       }
-      else if (ld < m) {
+      else if (ldi < m) {
         fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
       }
       else {
@@ -120,16 +124,16 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 
 
 LIBXSMM_API_DEFINITION int libxsmm_sotrans_omp(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  return libxsmm_otrans_omp(out, in, sizeof(float), m, n, ld, ldo);
+  return libxsmm_otrans_omp(out, in, sizeof(float), m, n, ldi, ldo);
 }
 
 
 LIBXSMM_API_DEFINITION int libxsmm_dotrans_omp(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ldo)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  return libxsmm_otrans_omp(out, in, sizeof(double), m, n, ld, ldo);
+  return libxsmm_otrans_omp(out, in, sizeof(double), m, n, ldi, ldo);
 }
 
 
@@ -138,11 +142,11 @@ LIBXSMM_API_DEFINITION int libxsmm_dotrans_omp(double* out, const double* in,
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void*, const void*, const unsigned int*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* out, const void* in, const unsigned int* typesize,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld, const libxsmm_blasint* ldo)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != typesize && 0 != m);
-  ldx = *(ld ? ld : m);
+  ldx = *(ldi ? ldi : m);
   libxsmm_otrans_omp(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
 }
 
@@ -150,11 +154,11 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* out, const
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sotrans_omp)(float*, const float*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_sotrans_omp)(float* out, const float* in,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld, const libxsmm_blasint* ldo)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != m);
-  ldx = *(ld ? ld : m);
+  ldx = *(ldi ? ldi : m);
   libxsmm_sotrans_omp(out, in, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
 }
 
@@ -162,11 +166,11 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_sotrans_omp)(float* out, con
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dotrans_omp)(double*, const double*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dotrans_omp)(double* out, const double* in,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld, const libxsmm_blasint* ldo)
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != m);
-  ldx = *(ld ? ld : m);
+  ldx = *(ldi ? ldi : m);
   libxsmm_dotrans_omp(out, in, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
 }
 

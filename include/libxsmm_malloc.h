@@ -31,7 +31,15 @@
 #ifndef LIBXSMM_MALLOC_H
 #define LIBXSMM_MALLOC_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stddef.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
 /** Allocate aligned memory (malloc/free interface). */

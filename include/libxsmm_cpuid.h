@@ -28,19 +28,34 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CPUID_X86_H
-#define LIBXSMM_CPUID_X86_H
+#ifndef LIBXSMM_CPUID_H
+#define LIBXSMM_CPUID_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
+
+/**
+ * Enumerates the available target architectures and instruction
+ * set extensions as returned by libxsmm_get_target_archid().
+ */
+#define LIBXSMM_TARGET_ARCH_UNKNOWN 0
+#define LIBXSMM_TARGET_ARCH_GENERIC 1
+#define LIBXSMM_X86_GENERIC      1000
+#define LIBXSMM_X86_IMCI         1001
+#define LIBXSMM_X86_SSE3         1002
+#define LIBXSMM_X86_SSE4_1       1003
+#define LIBXSMM_X86_SSE4_2       1004
+#define LIBXSMM_X86_AVX          1005
+#define LIBXSMM_X86_AVX2         1006
+#define LIBXSMM_X86_AVX512       1007
+#define LIBXSMM_X86_AVX512_MIC   1008
+#define LIBXSMM_X86_AVX512_CORE  1009
 
 
 /** Returns the target architecture and instruction set extension (code path). */
 LIBXSMM_API int libxsmm_cpuid_x86(void);
 
+/** Returns the target architecture and instruction set extension (code path). */
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_cpuid(void) { return libxsmm_cpuid_x86(); }
 
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_CPUID_X86_NOINLINE)
-# include "libxsmm_cpuid_x86.c"
-#endif
-
-#endif /*LIBXSMM_CPUID_X86_H*/
+#endif /*LIBXSMM_CPUID_H*/
 

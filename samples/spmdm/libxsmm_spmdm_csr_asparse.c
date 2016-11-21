@@ -37,9 +37,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <omp.h>
-
-
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: this does not reproduce 48-bit RNG quality */
 # define drand48() ((double)rand() / RAND_MAX)
@@ -93,25 +93,34 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel
+# if defined(_OPENMP)
+#   pragma omp parallel
+# endif
     {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for ( kb = 0; kb < k_blocks; kb++ ) {
         for ( mb = 0; mb < m_blocks; mb++ ) {
           libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads);
         }
       }
-      #if 1
       int num_m_blocks = 1;
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
         for ( nb = 0; nb < n_blocks; nb++ ) {
           libxsmm_spmdm_compute_fp32_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
         }
       }
-      #endif
     }
   }
 
@@ -134,25 +143,34 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
   if( transA == 'Y') {
   }
   else {
-    #pragma omp parallel
+# if defined(_OPENMP)
+#   pragma omp parallel
+# endif
     {
-      int tid = omp_get_thread_num();
-      int nthreads = omp_get_num_threads();
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+      const int nthreads = omp_get_num_threads();
+      const int tid = omp_get_thread_num();
+#   else
+      const int nthreads = 1;
+      const int tid = 0;
+#   endif
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for ( kb = 0; kb < k_blocks; kb++ ) {
         for ( mb = 0; mb < m_blocks; mb++ ) {
           libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads);
         }
       }
-      #if 1
       int num_m_blocks = 1;
-      #pragma omp for collapse(2)
+#   if defined(_OPENMP)
+#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+#   endif
       for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
         for ( nb = 0; nb < n_blocks; nb++ ) {
           libxsmm_spmdm_compute_bfloat16_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
         }
       }
-      #endif
     }
   }
 }
@@ -164,11 +182,14 @@ int main(int argc, char **argv)
   int M, N, K;
   real alpha, beta;
   int reps;
-  double start, end, flops; 
+
+  /* Step 1: Read in args */
+  unsigned long long start, end;
+  double flops;
   char trans;
   int i, j, k;
 
-  /* Step 1: Read in args */
+  /* Step 1: Initalize handle */
   M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)1.0;   reps = 0; trans = 'N';
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
@@ -240,59 +261,59 @@ int main(int argc, char **argv)
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and trans */
   /* TODO: fix alpha, beta and trans inputs */
-  #ifdef USE_BFLOAT 
+# ifdef USE_BFLOAT 
   libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
-  #else
+# else
   libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
-  #endif
+# endif
 
   /* Checks */
-  /* Has A been correctly converted? */
-  //libxsmm_test_a ( &handle, A_gold, trans, A_sparse);
 
   /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
-  #pragma omp parallel for collapse(2)
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
   for(i = 0; i < M; i++) {
     for(j = 0; j < N; j++) {
       float sum = 0.0;
       for(k = 0; k < K; k++) {
-        #ifdef USE_BFLOAT
+#       ifdef USE_BFLOAT
         uint16_t Atmp = A_gold[i*K + k];
         int Atmp_int  = Atmp; Atmp_int <<= 16;
         float Aval = *(float *)&Atmp_int;
         uint16_t Btmp = B_gold[k*N + j];
         int Btmp_int  = Btmp; Btmp_int <<= 16;
         float Bval = *(float *)&Btmp_int;
-        #else
+#       else
         float Aval = A_gold[i*K + k];
         float Bval = B_gold[k*N + j];
-        #endif 
+#       endif
         sum += Aval * Bval;
       }
-      #ifdef USE_BFLOAT
+#     ifdef USE_BFLOAT
       int v = *(int *)(&sum);
       uint16_t Cval = (v >> 16);
-      #else
+#     else
       float Cval = sum;
-      #endif
+#     endif
       C_gold[i*N + j] += Cval;
     }
   }
   //LIBXSMM_FSYMBOL(sgemm)(&trans, &trans, &N, &M, &K, &alpha, B_gold, &N, A_gold, &K, &beta, C_gold, &N);
-  
+
   /* Compute the max difference between gold and computed results. */
   libxsmm_spmdm_check_c( &handle, C, C_gold );
- 
-  /* Timing loop starts */ 
-  start = omp_get_wtime();  
+
+  /* Timing loop starts */
+  start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
-    #ifdef USE_BFLOAT 
+#   ifdef USE_BFLOAT
     libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
-    #else
+#   else
     libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
-    #endif
+#   endif
   }
-  end = omp_get_wtime();  
-  printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", (end - start), (end - start)*1.0/reps, flops/1000./1000./1000./1000./(end-start)*reps);
+  end = libxsmm_timer_tick();
+  printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
 }
 

@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Hans Pabst (Intel Corp.), Rajkishore Barik (Intel Corp. )
 ******************************************************************************/
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
@@ -102,7 +102,6 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor
 /** Structure which describes an activation layer. */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int N;                            /* number of images in mini-batch */
-  int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int H;                            /* height of image */
@@ -115,7 +114,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
 
 /** Structure which describes a bias. */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
-  int splits;                       /* number of splits */
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int lpb;                          /* low precision blocking factor */
@@ -125,7 +123,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
 
 /** Structure which describes a filter */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
-  int splits;                       /* number of splits */
   int ifmb;                         /* number of feature map blocks */
   int bifm;                         /* sized of blocked feature maps, in a block */
   int ofmb;                         /* number of feature map blocks */
@@ -139,7 +136,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
-  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
   libxsmm_dnn_conv_format buffer_format;
@@ -159,8 +157,14 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int blocksifm;
   int blocksofm;
   int fwd_ofw_rb;
+  int fwd_ofw_rb_2;
   int fwd_ofh_rb;
+  int bwd_ofw_rb;
+  int bwd_ofh_rb;
+  int upd_ofw_rb;
+  int upd_ofh_rb;
   int fm_lp_block;              /* additional blocking for low precision datatypes of feature maps */
+  int upd_use_thread_fil;
 
   /* internal data representation */
   libxsmm_dnn_buffer* input;
@@ -168,7 +172,12 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   libxsmm_dnn_buffer* input_relu;
   libxsmm_dnn_filter* filter;
   libxsmm_dnn_bias* bias;
-  void* scratch;
+  void* scratch1;
+  void* scratch2;
+/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
+  void* scratch3;
+/*#endif*/
+  void* scratch4;
 
   /* JIT-generated convolution code */
   /*
@@ -178,8 +187,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   */
   int avx512avx2fallback;
   libxsmm_code_pointer code_fwd[4];
-  libxsmm_code_pointer code_bwd[8];
-  libxsmm_code_pointer code_upd[4];
+  libxsmm_code_pointer code_bwd[4];
+  libxsmm_code_pointer code_upd[6];
 };
 
 typedef enum libxsmm_build_kind {
@@ -241,15 +250,17 @@ LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned re
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
 
-LIBXSMM_API int libxsmm_prefetch2uid(int prefetch);
-LIBXSMM_API int libxsmm_uid2prefetch(int uid);
+LIBXSMM_API int libxsmm_gemm_prefetch2uid(int prefetch);
+LIBXSMM_API int libxsmm_gemm_uid2prefetch(int uid);
+
+LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_prefetch;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */

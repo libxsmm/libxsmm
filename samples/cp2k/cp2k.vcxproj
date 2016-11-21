@@ -30,7 +30,12 @@
     <ClCompile Include="cp2k.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cp2k-perf-jit.sh" />
+    <None Include="cp2k-perf.plt" />
+    <None Include="cp2k-plot.sh" />
+    <None Include="cp2k.sh" />
     <None Include="Makefile" />
+    <None Include="README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>cp2k</ProjectName>

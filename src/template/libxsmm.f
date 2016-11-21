@@ -36,9 +36,8 @@
      &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
-        PRIVATE ::  construct_smmfunction,                              &
-     &              construct_dmmfunction,                              &
-     &              srealptr, drealptr
+        PRIVATE ::  construct_smmfunction, construct_dmmfunction,       &
+     &              construct_fn3, construct_fn6, srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
@@ -134,13 +133,13 @@
         ! Type of a function specialized for a given parameter set.
         ABSTRACT INTERFACE
           ! Specialized function with fused alpha and beta arguments.
-          PURE SUBROUTINE LIBXSMM_MMFUNCTION0(a, b, c) BIND(C)
+          PURE SUBROUTINE LIBXSMM_MMFUNCTION3(a, b, c) BIND(C)
             IMPORT :: C_PTR
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
 
           ! Specialized function with alpha, beta, and prefetch arguments.
-          PURE SUBROUTINE LIBXSMM_MMFUNCTION1(a, b, c,                  &
+          PURE SUBROUTINE LIBXSMM_MMFUNCTION6(a, b, c,                  &
      &    pa, pb, pc) BIND(C)
             IMPORT :: C_PTR
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
@@ -152,16 +151,20 @@
         ! two wrapped backend procedure pointers (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
-            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS, POINTER :: fn1
+            PROCEDURE(LIBXSMM_MMFUNCTION3), NOPASS,                     &
+     &                                      POINTER :: fn3 => NULL()
+            PROCEDURE(LIBXSMM_MMFUNCTION6), NOPASS,                     &
+     &                                      POINTER :: fn6 => NULL()
         END TYPE
 
         ! Generic function type which is representing either one of the
         ! two wrapped backend procedure pointers (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION0), NOPASS, POINTER :: fn0
-            PROCEDURE(LIBXSMM_MMFUNCTION1), NOPASS, POINTER :: fn1
+            PROCEDURE(LIBXSMM_MMFUNCTION3), NOPASS,                     &
+     &                                      POINTER :: fn3 => NULL()
+            PROCEDURE(LIBXSMM_MMFUNCTION6), NOPASS,                     &
+     &                                      POINTER :: fn6 => NULL()
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
@@ -297,17 +300,29 @@
 
           ! Set the level of verbosity (0: off, positive value: verbosity level,
           ! negative value: maximum verbosity, which also dumps JIT-code).
-          SUBROUTINE libxsmm_set_verbosity(mode) BIND(C)
+          SUBROUTINE libxsmm_set_verbosity(level) BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: mode
+            INTEGER(C_INT), INTENT(IN), VALUE :: level
+          END SUBROUTINE
+
+          ! Get the default prefetch strategy.
+          PURE FUNCTION libxsmm_get_gemm_auto_prefetch() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_gemm_auto_prefetch
+          END FUNCTION
+
+          ! Set the default prefetch strategy.
+          SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: strategy
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).
           PURE SUBROUTINE libxsmm_otrans(output,                        &
-     &    input, typesize, m, n, ld, ldo)                               &
+     &    input, typesize, m, n, ldi, ldo)                              &
      &    BIND(C, NAME="libxsmmf_otrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN), VALUE :: typesize
@@ -315,24 +330,24 @@
 
           ! Transpose a matrix (out-of-place form, single-precision).
           PURE SUBROUTINE libxsmm_sotrans(output,                       &
-     &    input, m, n, ld, ldo)                                         &
+     &    input, m, n, ldi, ldo)                                        &
      &    BIND(C, NAME="libxsmmf_sotrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_FLOAT), INTENT(OUT) :: output(ldo,*)
-            REAL(C_FLOAT), INTENT(IN) :: input(ld,*)
+            REAL(C_FLOAT), INTENT(IN) :: input(ldi,*)
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form, double-precision).
           PURE SUBROUTINE libxsmm_dotrans(output,                       &
-     &    input, m, n, ld, ldo)                                         &
+     &    input, m, n, ldi, ldo)                                        &
      &    BIND(C, NAME="libxsmmf_dotrans")
             IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ld, ldo
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: ldi, ldo
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
-            REAL(C_DOUBLE), INTENT(IN) :: input(ld,*)
+            REAL(C_DOUBLE), INTENT(IN) :: input(ldi,*)
           END SUBROUTINE
 
           ! Impure function which returns the current clock tick of a
@@ -414,6 +429,22 @@
           drealptr => a(LBOUND(a,1),LBOUND(a,2))
         END FUNCTION
 
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn3
+        FUNCTION construct_fn3(cfn) RESULT(fn)
+          PROCEDURE(LIBXSMM_MMFUNCTION3), POINTER :: fn, tmp
+          TYPE(C_FUNPTR), INTENT(IN) :: cfn
+          CALL C_F_PROCPOINTER(cfn, tmp)
+          fn => tmp
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn6
+        FUNCTION construct_fn6(cfn) RESULT(fn)
+          PROCEDURE(LIBXSMM_MMFUNCTION6), POINTER :: fn, tmp
+          TYPE(C_FUNPTR), INTENT(IN) :: cfn
+          CALL C_F_PROCPOINTER(cfn, tmp)
+          fn => tmp
+        END FUNCTION
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
         TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -421,10 +452,6 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
-          PROCEDURE(LIBXSMM_MMFUNCTION0), POINTER :: fn0
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
-          PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
@@ -439,21 +466,19 @@
               TYPE(C_FUNPTR) :: sdispatch
             END FUNCTION
           END INTERFACE
-          NULLIFY(construct_smmfunction%fn0)
-          NULLIFY(construct_smmfunction%fn1)
-          fn0 => construct_smmfunction%fn0
-          fn1 => construct_smmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn0)
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
+     &        construct_fn3(sdispatch(m, n, k, lda, ldb, ldc,           &
+     &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            CALL C_F_PROCPOINTER(sdispatch(m, n, k, lda, ldb, ldc,      &
-     &        alpha, beta, flags, prefetch), fn1)
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
+     &        NULL(), construct_fn6(sdispatch(m, n, k, lda, ldb, ldc,   &
+     &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
 
@@ -464,10 +489,6 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn0
-          PROCEDURE(LIBXSMM_MMFUNCTION0), POINTER :: fn0
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: fn1
-          PROCEDURE(LIBXSMM_MMFUNCTION1), POINTER :: fn1
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
@@ -482,21 +503,19 @@
               TYPE(C_FUNPTR) :: ddispatch
             END FUNCTION
           END INTERFACE
-          NULLIFY(construct_dmmfunction%fn0)
-          NULLIFY(construct_dmmfunction%fn1)
-          fn0 => construct_dmmfunction%fn0
-          fn1 => construct_dmmfunction%fn1
           IF (.NOT.PRESENT(prefetch)) THEN
             oprefetch = LIBXSMM_PREFETCH_NONE
           ELSE
             oprefetch = prefetch
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &         alpha, beta, flags, prefetch), fn0)
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
+     &        construct_fn3(ddispatch(m, n, k, lda, ldb, ldc,           &
+     &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            CALL C_F_PROCPOINTER(ddispatch(m, n, k, lda, ldb, ldc,      &
-     &         alpha, beta, flags, prefetch), fn1)
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
+     &        NULL(), construct_fn6(ddispatch(m, n, k, lda, ldb, ldc,   &
+     &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
 
@@ -528,42 +547,42 @@
         LOGICAL PURE FUNCTION libxsmm_smmavailable(fn)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           libxsmm_smmavailable =                                        &
-     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
+     &      ASSOCIATED(fn%fn3).OR.ASSOCIATED(fn%fn6)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL PURE FUNCTION libxsmm_dmmavailable(fn)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           libxsmm_dmmavailable =                                        &
-     &      ASSOCIATED(fn%fn0).OR.ASSOCIATED(fn%fn1)
+     &      ASSOCIATED(fn%fn3).OR.ASSOCIATED(fn%fn6)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abx
         PURE SUBROUTINE libxsmm_smmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL fn%fn0(a, b, c)
+          CALL fn%fn3(a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abx
         PURE SUBROUTINE libxsmm_dmmcall_abx(fn, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL fn%fn0(a, b, c)
+          CALL fn%fn3(a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prx
         PURE SUBROUTINE libxsmm_smmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL fn%fn1(a, b, c, pa, pb, pc)
+          CALL fn%fn6(a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prx
         PURE SUBROUTINE libxsmm_dmmcall_prx(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL fn%fn1(a, b, c, pa, pb, pc)
+          CALL fn%fn6(a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
