@@ -159,7 +159,7 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  DFLAGS += $(DNOBLAS)
+  BLAS_DFLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
 endif
@@ -1103,13 +1103,13 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS = $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS = $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS = $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS = $(strip $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS = $(strip $(CLDFLAGS))
-NOBLAS_DFLAGS = $(strip $(DFLAGS))
-NOBLAS_IFLAGS = $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
+NOBLAS_DFLAGS := $(strip $(DFLAGS))
+NOBLAS_IFLAGS := $(strip $(IFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
