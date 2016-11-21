@@ -54,10 +54,15 @@ if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
   DIR=${TRAVIS_BUILD_DIR}/${RPT}
   rm -rf ${DIR}/${ID}
 
-  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -return-app-exitcode -- $*
+  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -- $*
   RESULT=$?
-  ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
-  exit ${RESULT}
+
+  if [ "0" != "$((2<RESULT))" ]; then
+    ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
+    exit ${RESULT}
+  else
+    exit 0
+  fi
 else
   $*
 fi
