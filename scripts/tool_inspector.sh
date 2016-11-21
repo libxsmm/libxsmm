@@ -33,7 +33,7 @@
 RPT=inspector
 KIND=mi1
 
-TOOL=$(which inspxe-cl)
+TOOL=$(which inspxe-cl 2> /dev/null)
 if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
   HERE=$(cd $(dirname $0); pwd -P)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -58,5 +58,7 @@ if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
   RESULT=$?
   ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
   exit ${RESULT}
+else
+  $*
 fi
 
