@@ -30,13 +30,12 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
-NAME=$(basename $1)
 RPT=inspector
 KIND=mi1
 
 TOOL=$(which inspxe-cl)
-if [ "" != "${TOOL}" ]; then
+if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
+  HERE=$(cd $(dirname $0); pwd -P)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${HERE}/..
   fi
@@ -46,7 +45,7 @@ if [ "" != "${TOOL}" ]; then
 
   ${TOOL} -collect ${KIND} -r ${DIR}/${COVID} -return-app-exitcode -- $*
   RESULT=$?
-  ${TOOL} -report problems -r ${DIR}/${COVID} > ${DIR}/${NAME}-${KIND}.txt
+  ${TOOL} -report problems -r ${DIR}/${COVID} > ${DIR}/$(basename $1)-${KIND}.txt
   exit ${RESULT}
 fi
 
