@@ -138,7 +138,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_sse(con
   /* Cygwin/Clang: below code section causes an illegal instruction (Cygwin's GDB not able to determine further [ni/si]) */ \
   !(defined(__CYGWIN__) && defined(__clang__))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(4 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
     const __m128i a128 = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)reference);
@@ -170,7 +169,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx(con
   ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)) || \
   !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
     int r0, r1;
@@ -223,7 +221,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx2(co
   ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
   !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(8 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
     const int yes = 0x80000000, no = 0x0;
@@ -265,7 +262,6 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diff_imci(const libxsmm_gemm_de
   assert(0 != reference && 0 != desc);
 #if defined(__MIC__) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(0 ==  LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
-  assert(16 >= LIBXSMM_DIV2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
   {
     const __mmask16 mask = (0xFFFF >> (16 - (LIBXSMM_GEMM_DESCRIPTOR_SIZE >> 2/*LOG2(sizeof(int))*/)));
     const __m512i a512 = _mm512_mask_loadunpackhi_epi32(
