@@ -206,8 +206,8 @@ endif
 
 ifeq (0,$(STATIC))
   GENERATOR = @$(ENV) \
-    LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
-    PATH="$(OUTDIR):$(PATH)" \
+    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
   $(BINDIR)/libxsmm_gemm_generator
 else
   GENERATOR = $(BINDIR)/libxsmm_gemm_generator
