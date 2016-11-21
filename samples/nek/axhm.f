@@ -41,8 +41,8 @@ PROGRAM stpm
   INTEGER, PARAMETER :: T = KIND(0D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, g1, g2, g3, b, d
-  REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
+  REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a, c, g1, g2, g3, b, d
+  REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, g1, g2, g3, d
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1, tm2, tm3
@@ -312,14 +312,10 @@ PROGRAM stpm
   END IF
 
   ! Deallocate global arrays
-  DEALLOCATE(a)
-  DEALLOCATE(b)
-  DEALLOCATE(g1, g2, g3)
+  IF (0.NE.check) DEALLOCATE(d)
   DEALLOCATE(dx, dy, dz)
-  DEALLOCATE(c)
-  IF (0.NE.check) THEN
-    DEALLOCATE(d)
-  END IF
+  DEALLOCATE(g1, g2, g3)
+  DEALLOCATE(a, b, c)
 
   ! finalize LIBXSMM
   CALL libxsmm_finalize()

@@ -9,7 +9,7 @@ if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
-  export PATH=${PATH}:${HERE}/../lib
+  export PATH=${PATH}:${HERE}/../../lib
 else
   if [ "" != "$(which ldd)" ]; then
     LDD=ldd
