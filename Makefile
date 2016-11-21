@@ -447,7 +447,7 @@ $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
-$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh
+$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR)/libxsmm.h
 	@$(SCRDIR)/libxsmm_source.sh > $@
 
 .PHONY: fheader
