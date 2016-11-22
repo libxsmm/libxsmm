@@ -37,7 +37,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <assert.h> /* intentionally here */
-#include <stdint.h>
 #include "libxsmm_generator.h"
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
