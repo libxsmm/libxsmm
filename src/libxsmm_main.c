@@ -1302,6 +1302,9 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   }
 }
 
+#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
+LIBXSMM_PRAGMA_OPTIMIZE_OFF
+#endif
 
 LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
@@ -1322,6 +1325,9 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   INTERNAL_DISPATCH(double, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
+#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
+LIBXSMM_PRAGMA_OPTIMIZE_ON
+#endif
 
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
