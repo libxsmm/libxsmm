@@ -642,7 +642,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       LIBXSMM_ATOMIC_STORE_ZERO(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST);
     }
   }
-  while (0 != internal_reglock_check); /* wait until locks are initialized */
+  while (0 != internal_reglock_check) if (0 == internal_reglock_check) break; /* wait until locks are initialized */
   for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 # endif
 #else
