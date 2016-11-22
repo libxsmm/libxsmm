@@ -635,14 +635,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 # if !defined(LIBXSMM_NO_SYNC)
   static int internal_reglock_check = 1; /* setup the locks in a thread-safe fashion */
   assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_COUNT * sizeof(*internal_reglock)));
-  if (1 == LIBXSMM_ATOMIC_LOAD(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST)) {
-    LIBXSMM_ATOMIC_ADD_FETCH(&internal_reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST);
-    if (2 == internal_reglock_check) {
-      for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i);
-      LIBXSMM_ATOMIC_STORE_ZERO(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST);
-    }
+  if (2 == LIBXSMM_ATOMIC_ADD_FETCH(&internal_reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i);
+    LIBXSMM_ATOMIC_STORE_ZERO(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST);
   }
-  while (0 != internal_reglock_check) if (0 == internal_reglock_check) break; /* wait until locks are initialized */
+  while (0 != internal_reglock_check) { /* wait until locks are initialized */
+    if (0 == LIBXSMM_ATOMIC_LOAD(&internal_reglock_check, LIBXSMM_ATOMIC_SEQ_CST)) break;
+  }
   for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 # endif
 #else
