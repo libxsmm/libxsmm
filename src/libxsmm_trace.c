@@ -317,7 +317,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 
                 if (
 #   if !defined(LIBXSMM_NO_SYNC)
-                if (0 == pthread_setspecific(internal_trace_key, buffer) &&
+                  0 == pthread_setspecific(internal_trace_key, buffer) &&
 #   endif
                      (sizeof(int) * 1) == read(fd, &check, sizeof(int))
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
