@@ -345,7 +345,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
   }
 
   /* advance pointers of B only when we are not fully unrolling K and taking care of intermediate advances */
-  if ( i_k_blocking < i_xgemm_desc->k ) {
+  if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
     /* advance pointers of B */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
@@ -1105,7 +1105,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
   }
 
   /* advance pointers of B only when we are not fully unrolling K*/
-  if ( i_k_blocking < i_xgemm_desc->k ) {
+  if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                  i_micro_kernel_config->alu_add_instruction,
                                  i_gp_reg_mapping->gp_reg_b,
@@ -1140,7 +1140,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                                i_xgemm_desc,
                                                                i_xgemm_desc->k );
     l_k_unrolled = 1;
-  } else if ( i_xgemm_desc->k <= l_k_threshold ) {
+  } else if ( (unsigned int)i_xgemm_desc->k <= l_k_threshold ) {
     libxsmm_generator_gemm_avx512_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
@@ -1148,7 +1148,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                 i_n_blocking,
                                                 i_xgemm_desc->k);
     l_k_unrolled = 1;
-  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k > l_k_threshold) ) {
+  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (l_k_threshold < (unsigned int)i_xgemm_desc->k) ) {
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                           i_micro_kernel_config->vector_length, l_k_blocking);
 

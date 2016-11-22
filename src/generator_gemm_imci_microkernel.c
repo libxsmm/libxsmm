@@ -146,7 +146,7 @@ void libxsmm_generator_gemm_imci_microkernel( libxsmm_generated_code*           
                                  i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
 
     /* advance pointers of B only when we are not fully unrolling K*/
-    if ( i_k_blocking < i_xgemm_desc->k ) {
+    if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
       /* advance pointers of B */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
@@ -179,7 +179,7 @@ unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*  
                                                 i_n_blocking,
                                                 i_xgemm_desc->k,
                                                 -1 );
-  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k >= l_k_threshold) ) {
+  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (l_k_threshold <= (unsigned int)i_xgemm_desc->k) ) {
     if (i_xgemm_desc->k != l_k_blocking) {
       libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                             i_micro_kernel_config->vector_length, l_k_blocking);
@@ -215,7 +215,7 @@ unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*  
       libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                              i_xgemm_desc, i_micro_kernel_config->vector_length, l_max_blocked_k, 0 );
     }
-    for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
+    for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k++) {
       libxsmm_generator_gemm_imci_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
