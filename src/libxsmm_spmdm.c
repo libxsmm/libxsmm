@@ -52,10 +52,13 @@
 #define _MM_SET1_FP32 _mm512_set1_ps
 #define _MM_SET1_INT32 _mm512_set1_epi32
 #define _MM_SET1_INT16 _mm512_set1_epi16
+#define _MM_SET_INT32 _mm512_set_epi32
 #define _MM_LOAD_FP32 _mm512_load_ps
 #define _MM_LOAD_INT32 _mm512_load_epi32
 #define _MM_STORE_INT32 _mm512_store_epi32
-#define _MM_LOADU_INT32 _mm512_loadu_si512
+#define _MM_LOADU_INT32(x) _mm512_loadu_si512( (void const *)(x))
+#define _MM_GATHER_INT32(Addr, idx, scale) _mm512_i32gather_epi32((idx), (Addr), (scale))
+#define _MM_GATHER_FP32(Addr, idx, scale) _mm512_i32gather_ps((idx), (Addr), (scale))
 #define _MM_CMPNEQ_FP32(v1,v2) _mm512_cmp_ps_mask(v1,v2,12)
 #define _MM_STORE_FP32 _mm512_store_ps
 #define _MM_ADD_FP32 _mm512_add_ps
@@ -145,10 +148,13 @@ static void _mm256i_epi16_print(__m256i a, char * s)
 #define _MM_SET1_FP32 _mm256_set1_ps
 #define _MM_SET1_INT32 _mm256_set1_epi32
 #define _MM_SET1_INT16 _mm256_set1_epi16
+#define _MM_SET_INT32 _mm256_set_epi32
 #define _MM_LOAD_FP32 _mm256_load_ps
 #define _MM_LOAD_INT32 _mm256_load_si256
 #define _MM_STORE_INT32 _mm256_store_si256
-#define _MM_LOADU_INT32 _mm256_loadu_si256
+#define _MM_LOADU_INT32(x) _mm256_loadu_si256( (__m256i const *)(x))
+#define _MM_GATHER_INT32(Addr, idx, scale) _mm256_i32gather_epi32((Addr), (idx), (scale))
+#define _MM_GATHER_FP32(Addr, idx, scale) _mm256_i32gather_ps(((float const *)(Addr)), (idx), (scale))
 #define _MM_CMPNEQ_FP32(v1,v2) _mm256_cmp_ps(v1,v2,12)
 #define _MM_STORE_FP32 _mm256_store_ps
 #define _MM_ADD_FP32 _mm256_add_ps
@@ -235,7 +241,7 @@ void libxsmm_spmdm_init_shufmask()
   }
 }
 
-void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr, char transA)
+void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
     int kb, mb;
     int m_blocks = handle->mb;
@@ -245,11 +251,7 @@ void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_C
     for ( kb = 0; kb < k_blocks; kb++ ) {
       for ( mb = 0; mb < m_blocks; mb++ ) {
         int i = kb*m_blocks + mb;
-        if(transA == 'Y') {
-          libxsmm_output_csr_a[i].rowidx = (uint16_t *)libxsmm_aligned_malloc((handle->bk + 1)*sizeof(uint16_t), 2097152); 
-        } else {
-          libxsmm_output_csr_a[i].rowidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm + 1)*sizeof(uint16_t), 2097152); 
-        }
+        libxsmm_output_csr_a[i].rowidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm + 1)*sizeof(uint16_t), 2097152); 
         libxsmm_output_csr_a[i].colidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(uint16_t), 2097152); 
         libxsmm_output_csr_a[i].values = (float *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(float), 2097152); 
       }
@@ -259,7 +261,7 @@ void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_C
 
 }
 
-void libxsmm_spmdm_init(int M, int N, int K, char trans, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
+void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
   handle->m  = M;
   handle->n  = N;
@@ -277,7 +279,7 @@ void libxsmm_spmdm_init(int M, int N, int K, char trans, libxsmm_spmdm_handle * 
   handle->kb = (handle->k + handle->bk - 1) / handle->bk;
 
   /* This is temporary space needed; allocate for each different size of A */
-  libxsmm_spmdm_allocate_csr_a( handle, libxsmm_output_csr, trans);
+  libxsmm_spmdm_allocate_csr_a( handle, libxsmm_output_csr);
   
   /* Initialize shuffle masks for the computation */ 
   libxsmm_spmdm_init_shufmask();
@@ -287,8 +289,8 @@ void libxsmm_spmdm_init(int M, int N, int K, char trans, libxsmm_spmdm_handle * 
 
 /* This converts a dense representation of the sparse matrix to 2D array of sparse slices. */
 void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
+				char transA,
 				const float * A, 
-				const int transA,
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads
@@ -297,8 +299,22 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
    int i,k;
    __m256i * shufmasks = shufmasks_32;
    __m256i * shufmasks2 = shufmasks_16;
-   int block_offset_base = kb * handle->bk;
-   int block_offset = block_offset_base + mb * handle->k * handle->bm;
+   int block_offset_base, block_offset;
+   int index[16];
+   SIMDTYPE_INT32 vindex;
+   if(transA == 'Y')
+   {
+     int kk;
+     block_offset_base = mb * handle->bm;
+     block_offset = block_offset_base + kb * handle->m * handle->bk;
+     for(kk = 0; kk < SIMD_WIDTH_FP32; kk++) index[kk] = kk*handle->m;
+     vindex = _MM_LOADU_INT32(index);
+   }
+   else
+   {
+     block_offset_base = kb * handle->bk;
+     block_offset = block_offset_base + mb * handle->k * handle->bm;
+   }
    libxsmm_CSR_sparseslice slice = libxsmm_output_csr_a[kb*handle->mb + mb];
    int nrows = ((mb + 1)*handle->bm > handle->m)?(handle->m - (mb)*handle->bm):handle->bm;
    int ncols = ((kb + 1)*handle->bk > handle->k)?(handle->k - (kb)*handle->bk):handle->bk;
@@ -313,40 +329,72 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
    uint16_t cnt = 0;
    for(i = 0; i < nrows; i++) {
      rowidx_ptr[i] = cnt;
-     for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
-       SIMDTYPE_FP32 v1 = _MM_LOAD_FP32(input_ptr + i*handle->k + k);
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
-       SIMDTYPE_FP32 v2 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + SIMD_WIDTH_FP32);
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
-       SIMDTYPE_FP32 v3 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32);
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + 2*SIMD_WIDTH_FP32), _MM_HINT_T0);
-       SIMDTYPE_FP32 v4 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + 3*SIMD_WIDTH_FP32);
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + 3*SIMD_WIDTH_FP32), _MM_HINT_T0);
-       SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
-       SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzero);
-       SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzero);
-       SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzero);
-       COMPRESS_FP32(v1, k, m1, cnt);
-       COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
-       COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
-       COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+     if(transA == 'Y')
+     {
+       for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
+         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + k*handle->m + i, vindex, 4);
+         SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + (k+SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
+         SIMDTYPE_FP32 v3 = _MM_GATHER_FP32(input_ptr + (k+2*SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
+         SIMDTYPE_FP32 v4 = _MM_GATHER_FP32(input_ptr + (k+3*SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
+         SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzero);
+         SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzero);
+         SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzero);
+         COMPRESS_FP32(v1, k, m1, cnt);
+         COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
+         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
+         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+       }
+       for(k = ncols_aligned; k < ncols_aligned_2; k+= SIMD_WIDTH_FP32) {
+         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + k*handle->m + i, vindex, 4);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
+         COMPRESS_FP32(v1, k, m1, cnt);
+       }
+
+       for(k = ncols_aligned_2; k < ncols; k++) {
+         float v1 = input_ptr[i + k*handle->m];
+         int m1 = (v1 != 0.0);
+         if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+       }
      }
-     for(k = ncols_aligned; k < ncols_aligned_2; k+= SIMD_WIDTH_FP32) {
-       SIMDTYPE_FP32 v1 = _MM_LOAD_FP32(input_ptr + i*handle->k + k);
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
-       SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
-       COMPRESS_FP32(v1, k, m1, cnt);
-     }
-     for(k = ncols_aligned_2; k < ncols; k++) {
-       float v1 = input_ptr[i*handle->k + k];
-       int m1 = (v1 != 0.0);
-       if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+     else
+     {
+       for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
+         SIMDTYPE_FP32 v1 = _MM_LOAD_FP32(input_ptr + i*handle->k + k);
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
+         SIMDTYPE_FP32 v2 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + SIMD_WIDTH_FP32);
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
+         SIMDTYPE_FP32 v3 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32);
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + 2*SIMD_WIDTH_FP32), _MM_HINT_T0);
+         SIMDTYPE_FP32 v4 = _MM_LOAD_FP32(input_ptr + i*handle->k + k + 3*SIMD_WIDTH_FP32);
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + 3*SIMD_WIDTH_FP32), _MM_HINT_T0);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
+         SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzero);
+         SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzero);
+         SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzero);
+         COMPRESS_FP32(v1, k, m1, cnt);
+         COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
+         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
+         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+       }
+       for(k = ncols_aligned; k < ncols_aligned_2; k+= SIMD_WIDTH_FP32) {
+         SIMDTYPE_FP32 v1 = _MM_LOAD_FP32(input_ptr + i*handle->k + k);
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
+         COMPRESS_FP32(v1, k, m1, cnt);
+       }
+       for(k = ncols_aligned_2; k < ncols; k++) {
+         float v1 = input_ptr[i*handle->k + k];
+         int m1 = (v1 != 0.0);
+         if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+       }
      }
    }
    rowidx_ptr[nrows] = cnt;
    #if 0
    printf("cnt: %d\n", cnt);
    for(i = 0; i <= nrows; i++) { 
+     int j;
      for(j = slice.rowidx[i]; j < slice.rowidx[i+1]; j++) {
        printf("(%d, %d): %f ", i, colidx_ptr[j], values_ptr[j]);
      }
@@ -355,8 +403,8 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
 }
 
 void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
+				char transA,
 				const uint16_t * A, 
-				const int transA,
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads)
@@ -364,8 +412,17 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
    int i,k;
    __m256i * shufmasks = shufmasks_32;
    __m256i * shufmasks2 = shufmasks_16;
-   int block_offset_base = kb * handle->bk;
-   int block_offset = block_offset_base + mb * handle->k * handle->bm;
+   int block_offset_base, block_offset;
+   if(transA == 'Y')
+   {
+     block_offset_base = mb * handle->bm;
+     block_offset = block_offset_base + kb * handle->m * handle->bk;
+   }
+   else
+   {
+     block_offset_base = kb * handle->bk;
+     block_offset = block_offset_base + mb * handle->k * handle->bm;
+   }
    libxsmm_CSR_sparseslice slice = libxsmm_output_csr_a[kb*handle->mb + mb];
    int nrows = ((mb + 1)*handle->bm > handle->m)?(handle->m - (mb)*handle->bm):handle->bm;
    int ncols = ((kb + 1)*handle->bk > handle->k)?(handle->k - (kb)*handle->bk):handle->bk;
@@ -380,29 +437,60 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
    uint16_t cnt = 0;
    for(i = 0; i < nrows; i++) {
      rowidx_ptr[i] = cnt;
-     for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
-       SIMDTYPE_INT32 v1tmp = _MM_LOAD_INT32((const SIMDTYPE_INT32* )(input_ptr + i*handle->k + k));
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
-       SIMDTYPE_INT32 v2tmp = _MM_LOAD_INT32((const SIMDTYPE_INT32*)(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32));
-       _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
-       SIMDTYPE_FP32 v1, v2, v3, v4; 
-       EXPAND_BFLOAT16(v1tmp, v1, v2);
-       EXPAND_BFLOAT16(v2tmp, v3, v4);
-       SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzerof);
-       SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzerof);
-       SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzerof);
-       SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzerof);
-       COMPRESS_FP32(v1, k, m1, cnt);
-       COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
-       COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
-       COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+     if(transA == 'Y')
+     {
+       for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
+         int vals[32];
+	 for(int kk = 0; kk < 4*SIMD_WIDTH_FP32; kk+=2) { vals[kk/2] = (int)input_ptr[(k+kk)*handle->m + i]; vals[kk/2] |= ((int)(input_ptr[(k+kk+1)*handle->m + i]) << 16); }
+	 SIMDTYPE_INT32 v1tmp = _MM_LOADU_INT32(vals);
+	 SIMDTYPE_INT32 v2tmp = _MM_LOADU_INT32(vals + SIMD_WIDTH_FP32);
+         SIMDTYPE_FP32 v1, v2, v3, v4; 
+         EXPAND_BFLOAT16(v1tmp, v1, v2);
+         EXPAND_BFLOAT16(v2tmp, v3, v4);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzerof);
+         SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzerof);
+         SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzerof);
+         SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzerof);
+         COMPRESS_FP32(v1, k, m1, cnt);
+         COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
+         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
+         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+       }
+       
+       for(k = ncols_aligned; k < ncols; k++) {
+         uint16_t v1tmp = input_ptr[k*handle->m + i];
+         int v1tmp_int  = v1tmp; v1tmp_int <<= 16;
+         float v1 = *(float *)&v1tmp_int;
+         int m1 = (v1 != 0.0);
+         if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+       }
      }
-     for(k = ncols_aligned; k < ncols; k++) {
-       uint16_t v1tmp = input_ptr[i*handle->k + k];
-       int v1tmp_int  = v1tmp; v1tmp_int <<= 16;
-       float v1 = *(float *)&v1tmp_int;
-       int m1 = (v1 != 0.0);
-       if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+     else
+     {
+       for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
+         SIMDTYPE_INT32 v1tmp = _MM_LOAD_INT32((const SIMDTYPE_INT32* )(input_ptr + i*handle->k + k));
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
+         SIMDTYPE_INT32 v2tmp = _MM_LOAD_INT32((const SIMDTYPE_INT32*)(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32));
+         _mm_prefetch((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
+         SIMDTYPE_FP32 v1, v2, v3, v4; 
+         EXPAND_BFLOAT16(v1tmp, v1, v2);
+         EXPAND_BFLOAT16(v2tmp, v3, v4);
+         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzerof);
+         SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzerof);
+         SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzerof);
+         SIMDMASKTYPE_FP32 m4 = _MM_CMPNEQ_FP32(v4, vzerof);
+         COMPRESS_FP32(v1, k, m1, cnt);
+         COMPRESS_FP32(v2, k + SIMD_WIDTH_FP32, m2, cnt);
+         COMPRESS_FP32(v3, k + 2*SIMD_WIDTH_FP32, m3, cnt);
+         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
+       }
+       for(k = ncols_aligned; k < ncols; k++) {
+         uint16_t v1tmp = input_ptr[i*handle->k + k];
+         int v1tmp_int  = v1tmp; v1tmp_int <<= 16;
+         float v1 = *(float *)&v1tmp_int;
+         int m1 = (v1 != 0.0);
+         if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+       }
      }
    }
    rowidx_ptr[nrows] = cnt;
@@ -418,6 +506,8 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
 
 
 void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
+			    char transA,
+			    char transB,
                             const float *alpha, 
                             libxsmm_CSR_sparseslice* A_sparse, 
                             const float *B, 
@@ -773,6 +863,8 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
 }
 
 void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
+			    char transA,
+			    char transB,
                             const uint16_t *alpha, 
                             libxsmm_CSR_sparseslice* A_sparse, 
                             const uint16_t *B, 

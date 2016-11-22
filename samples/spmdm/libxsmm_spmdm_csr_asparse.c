@@ -56,7 +56,7 @@ typedef float real;
 void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
                                real* test,
                                real* gold) {
-  int mb, nb, bm, bn;
+  //int mb, nb, bm, bn;
   double max_error = 0.0;
   double src_norm = 0.0;
   double dst_norm = 0.0;
@@ -79,6 +79,7 @@ void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
 
 void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
                             const char transA,
+                            const char transB,
                             const float* alpha,
                             const float* A,
                             const float* B,
@@ -90,36 +91,32 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
   int n_blocks = handle->nb;
   int k_blocks = handle->kb;
   int mb, nb, kb;
-  if( transA == 'Y') {
-  }
-  else {
 # if defined(_OPENMP)
-#   pragma omp parallel
+# pragma omp parallel
 # endif
-    {
-#   if defined(_OPENMP)
-      const int nthreads = omp_get_num_threads();
-      const int tid = omp_get_thread_num();
-#   else
-      const int nthreads = 1;
-      const int tid = 0;
-#   endif
-#   if defined(_OPENMP)
-#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
-#   endif
-      for ( kb = 0; kb < k_blocks; kb++ ) {
-        for ( mb = 0; mb < m_blocks; mb++ ) {
-          libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads);
-        }
+  {
+# if defined(_OPENMP)
+    const int nthreads = omp_get_num_threads();
+    const int tid = omp_get_thread_num();
+# else
+    const int nthreads = 1;
+    const int tid = 0;
+# endif
+# if defined(_OPENMP)
+#   pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
+    for ( kb = 0; kb < k_blocks; kb++ ) {
+      for ( mb = 0; mb < m_blocks; mb++ ) {
+        libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( handle, transA, A, A_sparse, mb, kb, tid, nthreads);
       }
-      int num_m_blocks = 1;
-#   if defined(_OPENMP)
-#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
-#   endif
-      for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
-        for ( nb = 0; nb < n_blocks; nb++ ) {
-          libxsmm_spmdm_compute_fp32_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
-        }
+    }
+    int num_m_blocks = 1;
+# if defined(_OPENMP)
+#   pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
+    for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
+      for ( nb = 0; nb < n_blocks; nb++ ) {
+        libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
       }
     }
   }
@@ -128,6 +125,7 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 
 void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
                             const char transA,
+                            const char transB,
                             const uint16_t* alpha,
                             const uint16_t* A,
                             const uint16_t* B,
@@ -140,36 +138,32 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
   int n_blocks = handle->nb;
   int k_blocks = handle->kb;
   int mb, nb, kb;
-  if( transA == 'Y') {
-  }
-  else {
 # if defined(_OPENMP)
-#   pragma omp parallel
+# pragma omp parallel
 # endif
-    {
-#   if defined(_OPENMP)
-      const int nthreads = omp_get_num_threads();
-      const int tid = omp_get_thread_num();
-#   else
-      const int nthreads = 1;
-      const int tid = 0;
-#   endif
-#   if defined(_OPENMP)
-#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
-#   endif
-      for ( kb = 0; kb < k_blocks; kb++ ) {
-        for ( mb = 0; mb < m_blocks; mb++ ) {
-          libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( handle, A, transA, A_sparse, mb, kb, tid, nthreads);
-        }
+  {
+# if defined(_OPENMP)
+    const int nthreads = omp_get_num_threads();
+    const int tid = omp_get_thread_num();
+# else
+    const int nthreads = 1;
+    const int tid = 0;
+# endif
+# if defined(_OPENMP)
+#   pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
+    for ( kb = 0; kb < k_blocks; kb++ ) {
+      for ( mb = 0; mb < m_blocks; mb++ ) {
+        libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( handle, transA, A, A_sparse, mb, kb, tid, nthreads);
       }
-      int num_m_blocks = 1;
-#   if defined(_OPENMP)
-#     pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
-#   endif
-      for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
-        for ( nb = 0; nb < n_blocks; nb++ ) {
-          libxsmm_spmdm_compute_bfloat16_thread( handle, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
-        }
+    }
+    int num_m_blocks = 1;
+# if defined(_OPENMP)
+#   pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
+# endif
+    for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
+      for ( nb = 0; nb < n_blocks; nb++ ) {
+        libxsmm_spmdm_compute_bfloat16_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
       }
     }
   }
@@ -186,14 +180,14 @@ int main(int argc, char **argv)
   /* Step 1: Read in args */
   unsigned long long start, end;
   double flops;
-  char trans;
+  char transA, transB;
   int i, j, k;
 
   /* Step 1: Initalize handle */
-  M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)1.0;   reps = 0; trans = 'N';
+  M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)1.0;   reps = 0; transA = 'N'; transB = 'N';
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./block_gemm [M] [N] [K] [bm] [bn] [bk] [reps]\n\n");
+    printf("\nUsage: ./block_gemm [M] [N] [K] [transA] [transB] [reps]\n\n");
     return 0;
   }
 
@@ -201,6 +195,8 @@ int main(int argc, char **argv)
   M  = 2048;
   N = 2048;
   K = 2048;
+  transA = 'N';
+  transB = 'N';
   reps = 100;
 
   /* reading new values from cli */
@@ -208,7 +204,9 @@ int main(int argc, char **argv)
   if (argc > i) M      = atoi(argv[i++]);
   if (argc > i) N      = atoi(argv[i++]);
   if (argc > i) K      = atoi(argv[i++]);
-  if (argc > i) reps          = atoi(argv[i++]);
+  if (argc > i) { transA = argv[i][0]; i++; }
+  if (argc > i) { transB = argv[i][0]; i++; }
+  if (argc > i) reps   = atoi(argv[i++]);
 
   /* Step 2: allocate data */
   A_gold = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
@@ -255,16 +253,16 @@ int main(int argc, char **argv)
   /* Step 4: Initialize libxsmm for these sizes - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle;
   libxsmm_CSR_sparseslice* A_sparse;
-  libxsmm_spmdm_init(M, N, K, trans, &handle, &A_sparse);
+  libxsmm_spmdm_init(M, N, K, &handle, &A_sparse);
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, handle.mb, handle.nb, handle.kb, reps );
 
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
-  /* Currently ignores alpha, beta and trans */
-  /* TODO: fix alpha, beta and trans inputs */
+  /* Currently ignores alpha, beta and transA, transB */
+  /* TODO: fix alpha, beta and transA, transB inputs */
 # ifdef USE_BFLOAT 
-  libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+  libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
 # else
-  libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+  libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
 # endif
 
   /* Checks */
@@ -308,12 +306,56 @@ int main(int argc, char **argv)
   start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
 #   ifdef USE_BFLOAT
-    libxsmm_spmdm_exec_bfloat16( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+    libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
 #   else
-    libxsmm_spmdm_exec_fp32( &handle, trans, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+    libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
 #   endif
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
+  
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Step 5: Initialize libxsmm for transpose A - allocates handle and temporary space for the sparse data structure for A */
+  libxsmm_spmdm_handle handle2;
+  libxsmm_CSR_sparseslice* A_sparse2;
+  transA = 'Y';
+  libxsmm_spmdm_init(M, N, K, &handle2, &A_sparse2);
+  printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transA = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
+  real * A_gold2 = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
+
+  for(i = 0; i < M; i++) {
+    for(j = 0; j < K; j++) {
+      A_gold2[j*M + i] = A_gold[i*K + j];
+    }
+  }
+  for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
+    C[l]      = (real)0.0;
+  }
+  /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
+  /* Currently ignores alpha, beta and transA, transB */
+  /* TODO: fix alpha, beta and transA, transB inputs */
+# ifdef USE_BFLOAT 
+  libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+# else
+  libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+# endif
+
+  /* Checks */
+  libxsmm_spmdm_check_c( &handle2, C, C_gold);
+
+  /* Timing loop starts */
+  start = libxsmm_timer_tick();
+  for( i = 0; i < reps; i++) {
+#   ifdef USE_BFLOAT
+    libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+#   else
+    libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+#   endif
+  }
+  end = libxsmm_timer_tick();
+  printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
+ 
+
+ return 0;
 }
 
