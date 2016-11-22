@@ -131,9 +131,7 @@ DBG ?= 0
 OMP ?= 0
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
-ifeq (0,$(OMP))
-  THREADS ?= 0
-endif
+THREADS ?= 1
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
