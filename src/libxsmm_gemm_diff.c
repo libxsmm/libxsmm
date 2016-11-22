@@ -226,12 +226,12 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx2(co
     const int yes = 0x80000000, no = 0x0;
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
-    const __m256i a256 = _mm256_maskload_epi32((const void*)reference, m256);
+    const __m256i a256 = _mm256_maskload_epi32((const int*)reference, m256);
 #   else
     /*const __m256i a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
     const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);
 #   endif
-    const __m256i b256 = _mm256_maskload_epi32((const void*)desc, m256);
+    const __m256i b256 = _mm256_maskload_epi32((const int*)desc, m256);
     /* avoid warning about eval. in unspecified order: r0, r1 */
     const int r0 = _mm256_testnzc_si256(a256, b256);
     const int r1 = _mm256_testnzc_si256(b256, a256);
@@ -405,7 +405,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(c
     const int yes = 0x80000000, no = 0x0;
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
-    const __m256i a256 = _mm256_maskload_epi32((const void*)reference, m256);
+    const __m256i a256 = _mm256_maskload_epi32((const int*)reference, m256);
 #   else
     /*const __m256i a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
     const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);
@@ -415,7 +415,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(c
 #   if defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
       const __m256i b256 = _mm256_loadu_si256((const __m256i*)(desc + j * nbytes));
 #   else
-      const __m256i b256 = _mm256_maskload_epi32((const void*)(desc + j * nbytes), m256);
+      const __m256i b256 = _mm256_maskload_epi32((const int*)(desc + j * nbytes), m256);
 #   endif
       if (0 == _mm256_testnzc_si256(a256, b256) && 0 == _mm256_testnzc_si256(b256, a256)) {
         return j;
@@ -462,7 +462,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512
     const int yes = 0x80000000, no = 0x0;
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A)
-    const __m256i a256 = _mm256_maskload_epi32((const void*)reference, m256);
+    const __m256i a256 = _mm256_maskload_epi32((const int*)reference, m256);
 #   else
     /* SKX: consider _mm256_maskz_expandloadu_epi32 */
     const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);

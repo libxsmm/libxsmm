@@ -33,8 +33,16 @@
 RPT=inspector
 KIND=mi1
 
+BASENAME=$(which basename 2> /dev/null)
 TOOL=$(which inspxe-cl 2> /dev/null)
-if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
+GREP=$(which grep 2> /dev/null)
+SED=$(which sed 2> /dev/null)
+RM=$(which rm 2> /dev/null)
+
+if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \
+                  && [ "" != "${GREP}" ]     && [ "" != "${SED}" ] \
+                  && [ "" != "${RM}" ];
+then
   HERE=$(cd $(dirname $0); pwd -P)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${HERE}/..
@@ -46,22 +54,29 @@ if [ "" != "${TOOL}" ] && [ "" != "$1" ]; then
     ID=${COVID}
   fi
   if [ "" != "${ID}" ]; then
-    RPTNAME=$(basename $1)-${KIND}-${ID}
+    RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
   else
-    RPTNAME=$(basename $1)-${KIND}
+    RPTNAME=$(${BASENAME} $1)-${KIND}
   fi
 
   DIR=${TRAVIS_BUILD_DIR}/${RPT}
-  rm -rf ${DIR}/${ID}
+  ${RM} -rf ${DIR}/${ID}
 
-  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -return-app-exitcode -- $*
+  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
   RESULT=$?
 
-  if [ "0" = "${RESULT}" ] && [ "" = "${TOOL_REPORT_ONLY}" ]; then
+  if [ "0" = "${RESULT}" ]; then
     ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
-    RESULT=$?
-    if [ "0" != "$((4>RESULT))" ]; then
-      RESULT=0
+    RESULT2=$?
+
+    if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
+      if [ "" = "${TOOL_FILTER}" ] || \
+         [ "" != "$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt   | \
+                    ${SED} -e 's/..* Function \(..*\):..*/\1/' | \
+                    ${GREP} ${TOOL_FILTER})" ];
+      then
+        RESULT=${RESULT2}
+      fi
     fi
   fi
   exit ${RESULT}
