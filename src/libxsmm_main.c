@@ -1052,13 +1052,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_precision_string(libxsmm_dnn_datatype datatype)
 {
+  const char* result = "unk"; /* unknown */
   switch (datatype) {
-    case LIBXSMM_DNN_DATATYPE_F32: return "f32";
-    case LIBXSMM_DNN_DATATYPE_I32: return "i32";
-    case LIBXSMM_DNN_DATATYPE_I16: return "i16";
-    case LIBXSMM_DNN_DATATYPE_I8:  return "i8";
-    default: return "unk"; /* unknown */
+    case LIBXSMM_DNN_DATATYPE_F32: result = "f32";
+    case LIBXSMM_DNN_DATATYPE_I32: result = "i32";
+    case LIBXSMM_DNN_DATATYPE_I16: result = "i16";
+    case LIBXSMM_DNN_DATATYPE_I8:  result = "i8";
   }
+  return result;
 }
 
 
