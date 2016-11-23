@@ -443,7 +443,8 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
      {
        for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
          int vals[32];
-	 for(int kk = 0; kk < 4*SIMD_WIDTH_FP32; kk+=2) { vals[kk/2] = (int)input_ptr[(k+kk)*handle->m + i]; vals[kk/2] |= ((int)(input_ptr[(k+kk+1)*handle->m + i]) << 16); }
+         int kk;
+	 for(kk = 0; kk < 4*SIMD_WIDTH_FP32; kk+=2) { vals[kk/2] = (int)input_ptr[(k+kk)*handle->m + i]; vals[kk/2] |= ((int)(input_ptr[(k+kk+1)*handle->m + i]) << 16); }
 	 SIMDTYPE_INT32 v1tmp = _MM_LOADU_INT32(vals);
 	 SIMDTYPE_INT32 v2tmp = _MM_LOADU_INT32(vals + SIMD_WIDTH_FP32);
          SIMDTYPE_FP32 v1, v2, v3, v4; 
@@ -597,24 +598,48 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
     num_k = (k_overall_end - k_overall_start);
      
     // Copy in B matrix
-    ptr_dense = B + k_overall_start*handle->n + n_overall_start;
-    if(!last_block_n) {
-      for (k = 0; k < num_k; k++) {
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 5*SIMD_WIDTH_FP32));
-      }
-    } else {
-      for (k = 0; k < num_k; k++) {
-        for (n = 0; n < num_full_regs; n+=2) {
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + n*SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + (n+1)*SIMD_WIDTH_FP32));
+    if(transB == 'Y')
+    {
+      ptr_dense = B + n_overall_start*handle->k + k_overall_start;
+      int index[16];
+      int kk;
+      for(kk = 0; kk < SIMD_WIDTH_FP32; kk++) index[kk] = kk*handle->k;
+      SIMDTYPE_INT32 vindex = _MM_LOADU_INT32(index);
+      if(!last_block_n) {
+        for (k = 0; k < num_k; k++) {
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 0*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 1*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 2*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 3*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 4*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 5*SIMD_WIDTH_FP32*handle->k, vindex, 4)); 
         }
-        for (n = last_n_start; n < num_n; n++) {
-          scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle->n + n];
+      }
+      else {
+        for (k = 0; k < num_k; k++) {
+          for (n = 0; n < num_n; n++) {
+            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = ptr_dense[n*handle->k + k];
+          }
+        }
+      }
+    }
+    else 
+    { 
+      ptr_dense = B + k_overall_start*handle->n + n_overall_start;
+      if(!last_block_n) {
+        for (k = 0; k < num_k; k++) {
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 0*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 1*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 2*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 3*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 4*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(ptr_dense + k*handle->n + 5*SIMD_WIDTH_FP32));
+        }
+      } else {
+        for (k = 0; k < num_k; k++) {
+          for (n = 0; n < num_n; n++) {
+            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle->n + n];
+          }
         }
       }
     }
@@ -960,32 +985,47 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
     num_k = (k_overall_end - k_overall_start);
      
     // Copy in B matrix
-    ptr_dense = B + k_overall_start*handle->n + n_overall_start;
-    if(!last_block_n) {
-      for (k = 0; k < num_k; k++) {
-	SIMDTYPE_INT32 vload_0 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*0*SIMD_WIDTH_FP32));
-        SIMDTYPE_FP32 v1_0, v2_0;
-	EXPAND_BFLOAT16(vload_0, v1_0, v2_0);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*0*SIMD_WIDTH_FP32, v1_0);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*0+1)*SIMD_WIDTH_FP32, v2_0);
-	SIMDTYPE_INT32 vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
-        SIMDTYPE_FP32 v1_1, v2_1;
-	EXPAND_BFLOAT16(vload_1, v1_1, v2_1);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32, v1_1);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32, v2_1);
-	SIMDTYPE_INT32 vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
-        SIMDTYPE_FP32 v1_2, v2_2;
-	EXPAND_BFLOAT16(vload_2, v1_2, v2_2);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32, v1_2);
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32, v2_2);
-      }
-    } else {
+    if(transB == 'Y')
+    {
+      ptr_dense = B + n_overall_start*handle->k + k_overall_start;
       for (k = 0; k < num_k; k++) {
         for (n = 0; n < num_n; n++) {
-          uint16_t restmp = ptr_dense[k*handle->n + n];
+          uint16_t restmp = ptr_dense[n*handle->k + k];
           int res = restmp; res <<= 16;
           float v1 = *(float *)&res;
           scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+        }
+      }
+    }
+    else
+    {
+      ptr_dense = B + k_overall_start*handle->n + n_overall_start;
+      if(!last_block_n) {
+        for (k = 0; k < num_k; k++) {
+	  SIMDTYPE_INT32 vload_0 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*0*SIMD_WIDTH_FP32));
+          SIMDTYPE_FP32 v1_0, v2_0;
+	  EXPAND_BFLOAT16(vload_0, v1_0, v2_0);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*0*SIMD_WIDTH_FP32, v1_0);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*0+1)*SIMD_WIDTH_FP32, v2_0);
+	  SIMDTYPE_INT32 vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
+          SIMDTYPE_FP32 v1_1, v2_1;
+	  EXPAND_BFLOAT16(vload_1, v1_1, v2_1);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32, v1_1);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32, v2_1);
+	  SIMDTYPE_INT32 vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
+          SIMDTYPE_FP32 v1_2, v2_2;
+	  EXPAND_BFLOAT16(vload_2, v1_2, v2_2);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32, v1_2);
+          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32, v2_2);
+        }
+      } else {
+        for (k = 0; k < num_k; k++) {
+          for (n = 0; n < num_n; n++) {
+            uint16_t restmp = ptr_dense[k*handle->n + n];
+            int res = restmp; res <<= 16;
+            float v1 = *(float *)&res;
+            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+          }
         }
       }
     }
