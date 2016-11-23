@@ -38,6 +38,9 @@
 #include <math.h>
 #include <string.h>
 
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_32[256];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_16[256];
+
 #ifndef LIBXSMM_STATIC_TARGET_ARCH
 #error "LIBXSMM_STATIC_TARGET_ARCH undefined"
 #endif
@@ -235,7 +238,7 @@ static void _mm256i_epi16_print(__m256i a, char * s)
 #define _MM_LOAD_INT32(x) (*(x))
 #define _MM_STORE_INT32(x,y) ((*(x)) = (y))
 #define _MM_LOADU_INT32(x) (*(x))
-#define _MM_GATHER_FP32(Addr, idx, scale) (*(Addr))
+#define _MM_GATHER_FP32(Addr, idx, scale) (*(Addr + (idx)))
 #define _MM_CMPNEQ_FP32(v1,v2) ((v1) != (v2))
 #define _MM_STORE_FP32(x,y) ((*(x)) = (y))
 #define _MM_ADD_FP32(x,y) ((x) + (y))
@@ -271,7 +274,7 @@ static void _mm256i_epi16_print(__m256i a, char * s)
 
 #endif
 
-void libxsmm_spmdm_init_shufmask()
+static void libxsmm_spmdm_init_shufmask()
 {
 #if SIMD_WIDTH_FP32 == 1
   return;
@@ -298,7 +301,7 @@ void libxsmm_spmdm_init_shufmask()
 #endif
 }
 
-void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
+static void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
     int kb, mb;
     int m_blocks = handle->mb;
@@ -318,7 +321,7 @@ void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_C
 
 }
 
-void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
   handle->m  = M;
   handle->n  = N;
@@ -347,7 +350,7 @@ void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libx
 
 
 /* This converts a dense representation of the sparse matrix to 2D array of sparse slices. */
-void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
 				const float * A, 
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
@@ -356,8 +359,10 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
 				)
 {
    int i,k;
+#if SIMD_WIDTH_FP32 > 1
    __m256i * shufmasks = shufmasks_32;
    __m256i * shufmasks2 = shufmasks_16;
+#endif
    int block_offset_base, block_offset;
    int index[16];
    SIMDTYPE_INT32 vindex;
@@ -462,7 +467,7 @@ void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_ha
    #endif
 }
 
-void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
 				const uint16_t * A, 
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
@@ -470,8 +475,10 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
 				int tid, int nthreads)
 {
    int i,k;
+#if SIMD_WIDTH_FP32 > 1
    __m256i * shufmasks = shufmasks_32;
    __m256i * shufmasks2 = shufmasks_16;
+#endif
    int block_offset_base, block_offset;
    if(transA == 'Y')
    {
@@ -493,7 +500,7 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
    uint16_t * rowidx_ptr = slice.rowidx;
    uint16_t * colidx_ptr = slice.colidx;
    float * values_ptr = (float *)(slice.values);
-   SIMDTYPE_INT32 vzero = _MM_SET1_INT32(0);
+   //SIMDTYPE_INT32 vzero = _MM_SET1_INT32(0);
    SIMDTYPE_FP32 vzerof = _MM_SET1_FP32(0.0);
    uint16_t cnt = 0;
    for(i = 0; i < nrows; i++) {
@@ -567,7 +574,7 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmd
 }
 
 
-void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
                             const float *alpha, 
@@ -948,7 +955,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
   }
 }
 
-void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
                             const uint16_t *alpha, 
@@ -994,7 +1001,9 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
   if (n_overall_end   > handle->n) n_overall_end   = handle->n;
   num_n = (n_overall_end - n_overall_start);
   last_block_n = (num_n != n_block_size);
+#if SIMD_WIDTH_FP32 > 1
   SIMDTYPE_INT32 vzero = _MM_SETZERO_INT32(); 
+#endif
   #if 0
   printf("Block: m_overall_start: %d, m_overall_end: %d, num_m: %d, num_m_aligned: %d\n", m_overall_start, m_overall_end, num_m, num_m_aligned); 
   printf("Block: n_overall_start: %d, n_overall_end: %d, num_n: %d, last_block_n: %d\n", n_overall_start, n_overall_end, num_n, last_block_n); 

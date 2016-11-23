@@ -67,21 +67,21 @@ typedef struct libxsmm_CSR_sparseslice {
 } libxsmm_CSR_sparseslice;
 
 
-void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr);
+LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr);
 
-void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
 				const float * A, 
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads);
-void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
 				const uint16_t * A, 
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads);
-void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
                             const float *alpha, 
@@ -92,7 +92,7 @@ void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
                             int mb, int num_m_blocks, int nb, 
                             int tid, int nthreads); 
 
-void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
+LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
                             const uint16_t *alpha, 
@@ -103,7 +103,5 @@ void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
                             int mb, int num_m_blocks, int nb, 
                             int tid, int nthreads); 
 
-__m256i shufmasks_32[256];
-__m256i shufmasks_16[256];
 
 #endif /*LIBXSMM_SPMDM_H*/
