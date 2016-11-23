@@ -156,7 +156,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   }
 
   /* do dense soa times sparse multiplication */
-  for ( l_k = 0; l_k < i_xgemm_desc->k; l_k++ ) {
+  for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
     l_row_elements = i_row_idx[l_k+1] - i_row_idx[l_k];
     if (l_row_elements > 0) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -170,7 +170,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
     }
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       /* check k such that we just use columns which actually need to be multiplied */
-      if ( i_column_idx[i_row_idx[l_k] + l_z] < i_xgemm_desc->n ) {
+      if ( i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n ) {
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                l_micro_kernel_config.instruction_set,
                                                l_micro_kernel_config.vmul_instruction,
