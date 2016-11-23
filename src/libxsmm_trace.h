@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_TRACE_H
 #define LIBXSMM_TRACE_H
 
-#include <libxsmm.h>
+#include <libxsmm_macros.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif

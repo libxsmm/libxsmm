@@ -29,10 +29,12 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trace.h"
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <assert.h>
 #include <stdlib.h>
 # if (!defined(_BSD_SOURCE) || 0 == _BSD_SOURCE) && (!defined(_SVID_SOURCE) || 0 == _SVID_SOURCE) && \
      (!defined(_XOPEN_SOURCE) || !defined(_XOPEN_SOURCE_EXTENDED) || 500 > _XOPEN_SOURCE) && \
@@ -98,7 +100,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE volatile LONG internal_trace_initialized /
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
+#if !defined(LIBXSMM_NO_SYNC)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
+#endif
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
 {
   int fd;
@@ -145,7 +149,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mi
 # if defined(_WIN32) || defined(__CYGWIN__)
     SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
     result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
-# else
+# elif !defined(LIBXSMM_NO_SYNC)
     result = pthread_key_create(&internal_trace_key, internal_delete);
 # endif
     if (EXIT_SUCCESS == result) {
@@ -181,7 +185,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
     LIBXSMM_ATOMIC_STORE(&internal_trace_initialized, -1/*disable*/, LIBXSMM_ATOMIC_SEQ_CST);
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
-# else
+# elif !defined(LIBXSMM_NO_SYNC)
     result = pthread_key_delete(internal_trace_key);
 # endif
   }
@@ -273,8 +277,14 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             if (threadid) *threadid = abs_tid - 1;
           }
 # else
-          char *const raw_value = (char*)pthread_getspecific(internal_trace_key), *value = 0;
+#   if defined(LIBXSMM_NO_SYNC)
+          static char raw_c;
+          char *const raw_value = &raw_c;
+#   else
+          char *const raw_value = (char*)pthread_getspecific(internal_trace_key);
+#   endif
           int* ivalue = 0, fd = -1;
+          char* value = 0;
 
           if (raw_value) {
             ivalue = (int*)raw_value;
@@ -305,8 +315,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 ivalue = (int*)buffer;
                 ivalue[0] = fd; /* valid file descriptor for internal_delete */
 
-                if (0 == pthread_setspecific(internal_trace_key, buffer)
-                  && (sizeof(int) * 1) == read(fd, &check, sizeof(int))
+                if (
+#   if !defined(LIBXSMM_NO_SYNC)
+                  0 == pthread_setspecific(internal_trace_key, buffer) &&
+#   endif
+                     (sizeof(int) * 1) == read(fd, &check, sizeof(int))
                   && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {

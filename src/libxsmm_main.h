@@ -164,6 +164,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   int upd_ofw_rb;
   int upd_ofh_rb;
   int fm_lp_block;              /* additional blocking for low precision datatypes of feature maps */
+  int upd_use_thread_fil;
 
   /* internal data representation */
   libxsmm_dnn_buffer* input;
@@ -176,6 +177,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
   void* scratch3;
 /*#endif*/
+  void* scratch4;
 
   /* JIT-generated convolution code */
   /*
@@ -258,7 +260,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_prefetch;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
 /** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */

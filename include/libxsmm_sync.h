@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SYNC_H
 #define LIBXSMM_SYNC_H
 
-#include <libxsmm.h>
+#include "libxsmm_macros.h"
 
 #if defined(LIBXSMM_NO_SYNC)
 # undef _REENTRANT
@@ -85,8 +85,8 @@
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_sub_fetch(DST_PTR, VALUE, KIND)
 # else
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
-#   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) *(DST_PTR) = VALUE; \
-      while (0/*false*/ == __sync_bool_compare_and_swap(DST_PTR, VALUE, VALUE))
+#   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) while (*(DST_PTR) != (VALUE)) \
+      if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, *(DST_PTR), VALUE)) break
     /* use store side-effect of built-in (dummy assignment to mute warning) */
 #   if 0 /* disabled as it appears to hang on some systems; fallback impl. is below */
 #   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) { \

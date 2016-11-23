@@ -49,8 +49,10 @@
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_malloc.h"
+#include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
 #include "libxsmm_sync.h"
+#include "libxsmm_dnn.h"
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 #if (0 != LIBXSMM_ILP64)
@@ -86,12 +88,12 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
  * Set the level of verbosity (0: off, positive value: verbosity level,
  * negative value: maximum verbosity, which also dumps JIT-code)
  */
-LIBXSMM_API void libxsmm_set_verbosity(int mode);
+LIBXSMM_API void libxsmm_set_verbosity(int level);
 
 /** Get the default prefetch strategy. */
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_default_gemm_prefetch(void);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */
-LIBXSMM_API void libxsmm_set_default_gemm_prefetch(libxsmm_gemm_prefetch_type strategy);
+LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);

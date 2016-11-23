@@ -131,9 +131,7 @@ DBG ?= 0
 OMP ?= 0
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
-ifeq (0,$(OMP))
-  THREADS ?= 0
-endif
+THREADS ?= 1
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
@@ -146,7 +144,7 @@ ILP64 ?= 0
 BLAS ?= 0
 
 # Prefer to link statically against BLAS library
-BLAS_STATIC ?= 1
+BLAS_STATIC ?= $(STATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
 else
@@ -159,7 +157,7 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  DFLAGS += $(DNOBLAS)
+  BLAS_DFLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
 endif
@@ -880,6 +878,7 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
+    FLDFLAGS += -lpthread
     ifneq (Windows_NT,$(UNAME))
       CLDFLAGS += -pthread
     endif
@@ -982,7 +981,7 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_DFLAGS += -D__MKL=1
+  BLAS_DFLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -1008,7 +1007,7 @@ ifeq (1,$(MKL)) # sequential
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_DFLAGS += -D__MKL=$(MKL)
+  BLAS_DFLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
@@ -1056,7 +1055,11 @@ else ifneq (0,$(MKL)) # multi-threaded
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
-      BLAS_THREADS = o
+      ifneq (0,$(OMP))
+        BLAS_THREADS = o
+      else
+        BLAS_THREADS = p
+      endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
@@ -1065,8 +1068,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS))
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
-      BLAS_DFLAGS += -D__OPENBLAS -D__CBLAS
+      BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
     else
+      BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))
         BLAS_LDFLAGS += -lblas$(BLAS_BITS)
       else
@@ -1083,6 +1087,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
   else # BLAS library is specified via BLASLIB
+    BLAS_DFLAGS += -D__BLAS=$(BLAS)
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
         BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
@@ -1096,13 +1101,13 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS = $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS = $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS = $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS = $(strip $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS = $(strip $(CLDFLAGS))
-NOBLAS_DFLAGS = $(strip $(DFLAGS))
-NOBLAS_IFLAGS = $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
+NOBLAS_DFLAGS := $(strip $(DFLAGS))
+NOBLAS_IFLAGS := $(strip $(IFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))

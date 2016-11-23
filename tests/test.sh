@@ -47,12 +47,12 @@ for TEST in ${TESTS}; do
           MIC_KMP_AFFINITY=scatter,granularity=fine \
           MIC_ENV_PREFIX=MIC \
           OFFLOAD_INIT=on_start \
-        ${HERE}/${NAME} $*
+        ${TOOL_COMMAND} ${HERE}/${NAME} $*
       else
         ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
           DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
           OMP_PROC_BIND=TRUE \
-        ${HERE}/${NAME} $*
+        ${TOOL_COMMAND} ${HERE}/${NAME} $*
       fi
     else
       shift

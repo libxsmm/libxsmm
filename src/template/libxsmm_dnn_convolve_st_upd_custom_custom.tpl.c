@@ -31,10 +31,10 @@
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
-int i, ofm1ifm1img, ifm2;
+int i, j, ofm1ifm1img;
 #endif
 #if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM)
-int ii, ij, imgifm1;
+int ii, ij, imgifm1, ifm2, ofm2;
 #endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
@@ -89,13 +89,22 @@ element_input_type *l_input;
 element_filter_type *l_wt;
 element_output_type* l_output;
 
-
 unsigned int stride_w = handle->desc.v;
 unsigned int stride_h = handle->desc.u;
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-  /* TODO Check with Hans about this data structure creation in VLA format */
-  element_filter_type per_thread_weight [handle->blocksofm][handle->blocksifm][kh][kw][handle->ifmblock][handle->ofmblock];
+element_filter_type* remote_weight_ptr = 0;
+element_filter_type* weight_ptr = (element_filter_type*)handle->filter->data;
+element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) 
+                                                + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+/* number of tasks that could be run in parallel */
+const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+/* compute chunck size */
+const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
+/* compute thr_begin and thr_end */
+const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
+const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 #endif
 
 kh = handle->desc.R;
@@ -106,8 +115,10 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 if(handle->ifmblock == 1) {
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-  __assume_aligned((element_filter_type *)per_thread_weight,64);
-  for(i=0; i<handle->blocksofm*handle->blocksifm*kh*kw*handle->ifmblock*handle->ofmblock; i++) ((element_filter_type *)per_thread_weight)[i] = 0.0f;
+  /*__assume_aligned((element_filter_type *)per_thread_weight,64);*/
+  for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
+    per_thread_weight_ptr[i] = (element_filter_type)0;
+  }
 #endif
 
 #ifndef LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -116,6 +127,8 @@ if(handle->ifmblock == 1) {
     ifm1 = ofm1ifm1 % handle->blocksifm;
     for(img = 0; img < handle->desc.N; img++) {
 #else
+      /* lazy barrier init */
+      libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
       for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
         img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
         ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
@@ -267,35 +280,23 @@ if(handle->ifmblock == 1) {
     }
 #endif
 
-    /*perform reduction */
+    /* perform reduction */
     /* TODO COMPLETE THIS USING ATOMIC INCREMENTS PLEASE */
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-#if 0
-    /*#pragma omp for collapse (3)*/
-#pragma omp critical
-     {
-      for(int ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-        for(int ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-          for(int ifm2 = 0; ifm2 < ifm_block; ++ifm2) {
-            for(int kj=0; kj < kh; ++kj) {
-              for(int ki=0; ki < kw; ++ki++) {
-#pragma simd
-                for(int ofm2 = 0; ofm2 < VLEN; ofm2++) {
-                  weight[ofm1][ifm1][kj][ki][ifm2][ofm2] +=  per_thread_weight[ofm1][ifm1][kj][ki][ifm2][ofm2];
-                }
-              }
-            }
-          }
-        }
+    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+    for ( i = 0; i < handle->desc.threads; i++ ) {
+      remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        weight_ptr[j] += remote_weight_ptr[j];
       }
-     }
-#endif
+    }
 #endif /* LIBXSMM_WU_PER_THREAD_ALLOCATION */
 
   } else { /* handle->ifm_block != 1 */
 
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-    libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, tid);
+    /* lazy barrier init */
+    libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
     /* First transpose IFW and IFM */
     for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
       img = imgifm1/handle->blocksifm;
@@ -309,7 +310,7 @@ if(handle->ifmblock == 1) {
         }
       }
     }
-    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, tid);
+    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1/handle->blocksifm;

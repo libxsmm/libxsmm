@@ -121,11 +121,11 @@ void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_ge
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++) {\n", (unsigned int)i_xgemm_desc->n);
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-  for ( l_m = 0; l_m < i_xgemm_desc->m; l_m++ ) {
+  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       /* check k such that we just use columns which actually need to be multiplied */
-      if ( i_column_idx[i_row_idx[l_m] + l_z] < i_xgemm_desc->k ) {
+      if ( i_column_idx[i_row_idx[l_m] + l_z] < (unsigned int)i_xgemm_desc->k ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    C[%u+l_n] += A[%u] * B[%u+l_n];\n", l_m * i_xgemm_desc->ldc, i_row_idx[l_m] + l_z, i_column_idx[i_row_idx[l_m] + l_z]*i_xgemm_desc->ldb );
         libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
         l_flop_count += 2;

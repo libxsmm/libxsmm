@@ -9,7 +9,7 @@ if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
-  export PATH=${PATH}:${HERE}/../lib
+  export PATH=${PATH}:${HERE}/../../lib
 else
   if [ "" != "$(which ldd)" ]; then
     LDD=ldd
@@ -38,12 +38,12 @@ if [ "-mic" != "$1" ]; then
       MIC_KMP_PLACE_THREADS=$((MICCORES-1))c${MICTPERC}t \
       MIC_ENV_PREFIX=MIC \
       OFFLOAD_INIT=on_start \
-    ${HERE}/${NAME} $*
+    ${TOOL_COMMAND} ${HERE}/${NAME} $*
   else
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       OMP_PROC_BIND=TRUE \
-    ${HERE}/${NAME} $*
+    ${TOOL_COMMAND} ${HERE}/${NAME} $*
   fi
 else
   shift

@@ -42,6 +42,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(USE_VALIDATION)
+# define USE_VALIDATION
+#endif
+
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
@@ -87,19 +91,21 @@ int main(int argc, char* argv[])
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+#if defined(USE_VALIDATION)
     REAL_TYPE *const d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+    init( 0, d, m, n, ldc, 1.0);
+#endif
+    init( 0, c, m, n, ldc, 1.0);
+    init(42, a, m, k, lda, 1.0);
+    init(24, b, k, n, ldb, 1.0);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    init(42, a, m, k, lda, 1.0);
-    init(24, b, k, n, ldb, 1.0);
-    init( 0, c, m, n, ldc, 1.0);
-    init( 0, d, m, n, ldc, 1.0);
-
     /* warmup BLAS library (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+#if defined(USE_VALIDATION)
     LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-
+#endif
     libxsmm_gemm_print(stdout, LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
@@ -115,7 +121,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-
+#if defined(USE_VALIDATION)
     { /* LAPACK/BLAS xGEMM */
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
@@ -127,7 +133,6 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-
     { /* Validate with LAPACK/BLAS */
       libxsmm_blasint i, j; double diff = 0;
       for (i = 0; i < n; ++i) {
@@ -140,11 +145,11 @@ int main(int argc, char* argv[])
       fprintf(stdout, "\tdiff=%f\n", diff);
       if (1.0 < diff) result = EXIT_FAILURE;
     }
-
+    libxsmm_free(d);
+#endif
+    libxsmm_free(c);
     libxsmm_free(a);
     libxsmm_free(b);
-    libxsmm_free(c);
-    libxsmm_free(d);
   }
   fprintf(stdout, "Finished\n");
 

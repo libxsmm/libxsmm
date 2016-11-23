@@ -17,7 +17,9 @@ IF "%VS_COMNTOOLS%" == "" (
     GOTO SELECT_VS_VERSION
   )
 )
-SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
+IF EXIST '%VS_COMNTOOLS%..\IDE\devenv.exe' (
+  SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
+)
 
 SET ICL_VERSION=%2
 IF "%ICL_VERSION%" == "" SET ICL_VERSION=20
@@ -34,15 +36,17 @@ IF "%ICPP_COMPILER%" == "" (
     GOTO SELECT_ICL_VERSION
   )
 )
-IF EXIST "%ICPP_COMPILER%bin\compilervars.bat" (
+IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
   IF "%PROCESSOR_ARCHITECTURE%" == "x86" (
     CALL "%ICPP_COMPILER%bin\compilervars.bat" ia32 vs%VS_VERSION%
   ) ELSE (
     CALL "%ICPP_COMPILER%bin\compilervars.bat" intel64 vs%VS_VERSION%
   )
 ) ELSE (
-  SET/A ICL_VERSION-=1
-  GOTO SELECT_ICL_VERSION
+  IF %ICL_VERSION% GTR 12 (
+    SET/A ICL_VERSION-=1
+    GOTO SELECT_ICL_VERSION
+  )
 )
 
 SET MPI_ROOT=%I_MPI_ROOT:-RT=%

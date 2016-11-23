@@ -30,51 +30,57 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
-SED=$(which sed)
-TR=$(which tr)
+RPT=inspector
+KIND=mi1
 
-if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
+BASENAME=$(which basename 2> /dev/null)
+TOOL=$(which inspxe-cl 2> /dev/null)
+GREP=$(which grep 2> /dev/null)
+SED=$(which sed 2> /dev/null)
+RM=$(which rm 2> /dev/null)
+
+if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \
+                  && [ "" != "${GREP}" ]     && [ "" != "${SED}" ] \
+                  && [ "" != "${RM}" ];
+then
+  HERE=$(cd $(dirname $0); pwd -P)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export TRAVIS_BUILD_DIR=${HERE}
+    export TRAVIS_BUILD_DIR=${HERE}/..
   fi
-  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
-    export TRAVIS_OS_NAME=$(uname)
+  if [ "" != "${TESTID}" ]; then
+    ID=${TESTID}
   fi
-
-  # set the case number
-  if [ "" != "$1" ]; then
-    export TESTID=$1
+  if [ "" = "${ID}" ]; then
+    ID=${COVID}
+  fi
+  if [ "" != "${ID}" ]; then
+    RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
   else
-    export TESTID=1
+    RPTNAME=$(${BASENAME} $1)-${KIND}
   fi
 
-  # should be source'd after the above variables are set
-  source ${HERE}/.travis.env
-  source ${HERE}/.buildkite.env
+  DIR=${TRAVIS_BUILD_DIR}/${RPT}
+  ${RM} -rf ${DIR}/${ID}
 
-  while TEST=$(eval " \
-    ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
-    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
-    ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
-    ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
-  do
-    # print header if all test cases are selected
-    if [ "" = "$1" ]; then
-      echo "================================================================================"
-      echo "Test Case #${TESTID}"
+  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
+  RESULT=$?
+
+  if [ "0" = "${RESULT}" ]; then
+    ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
+    RESULT2=$?
+
+    if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
+      if [ "" = "${TOOL_FILTER}" ] || \
+         [ "" != "$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt   | \
+                    ${SED} -e 's/..* Function \(..*\):..*/\1/' | \
+                    ${GREP} ${TOOL_FILTER})" ];
+      then
+        RESULT=${RESULT2}
+      fi
     fi
-
-    # run the actual test case
-    eval ${TEST}
-    RESULT=$?
-
-    # increment the case number if all cases are selected or leave the loop
-    if [ "0" = "${RESULT}" ] && [ "" = "$1" ]; then
-      TESTID=$((TESTID+1))
-    else # dummy/exit case
-      exit ${RESULT}
-    fi
-  done
+  fi
+  exit ${RESULT}
+else
+  $*
 fi
 

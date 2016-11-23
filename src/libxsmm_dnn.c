@@ -190,6 +190,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     handle->upd_ofw_rb = 1;
     handle->upd_ofh_rb = 1;
     handle->fm_lp_block = 1;
+    handle->upd_use_thread_fil = 0;
 
     /* Set algorithm to use */
     if (conv_desc.algo == LIBXSMM_DNN_CONV_ALGO_AUTO) {
@@ -247,13 +248,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     }
 
     /*Deallocate scratch in handle*/
-    /*freeing the scratch*/
     if(handle->scratch1 != 0) libxsmm_xfree(handle->scratch1);
-    /*freeing the scratch barrier: Throwing memory error right now*/
-    /*if(handle->scratch2 != 0) libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);*/
-/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
+    if(handle->scratch2 != 0) libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);
     if(handle->scratch3 != 0) libxsmm_xfree(handle->scratch3);
-/*#endif*/
+    if(handle->scratch4 != 0) libxsmm_xfree(handle->scratch4);
+
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_conv_handle*)handle);
   }
@@ -1262,6 +1261,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
             switch (handle->filter_format) {
               case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
                 status = libxsmm_dnn_convolve_st_bwd_custom_custom(handle, start_thread, tid);
+              } break;
+              default: {
+                status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
+              }
+            }
+          } break;
+          case LIBXSMM_DNN_CONV_FORMAT_NHWC: {
+            switch (handle->filter_format) {
+              case LIBXSMM_DNN_CONV_FORMAT_RSCK: {
+                status = libxsmm_dnn_convolve_st_bwd_nhwc_rsck(handle, start_thread, tid);
               } break;
               default: {
                 status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;

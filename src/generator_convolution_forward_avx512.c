@@ -34,7 +34,7 @@
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
-#include <libxsmm_macros.h>
+#include <libxsmm_cpuid.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -41,9 +41,9 @@ PROGRAM grad
   INTEGER, PARAMETER :: T = KIND(0D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, cx, cy, cz
-  REAL(T), allocatable, dimension(:,:,:,:), target :: rx, ry, rz
-  REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
+  REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a, cx, cy, cz
+  REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: rx, ry, rz
+  REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, cx, cy, cz
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz
@@ -97,8 +97,8 @@ PROGRAM grad
   s = ISHFT(size1, 20) / size0; repetitions = size / s; duration = 0; max_diff = 0
 
   ALLOCATE(cx(m,n,k,s), cy(m,n,k,s), cz(m,n,k,s))
-  ALLOCATE(a(m,n,k,s))
   ALLOCATE(dx(m,m), dy(n,n), dz(k,k))
+  ALLOCATE(a(m,n,k,s))
 
   ! Initialize
   !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(a, cx, cy, cz, m, n, k, s)
@@ -296,12 +296,10 @@ PROGRAM grad
   END IF
 
   ! Deallocate global arrays
-  DEALLOCATE(a)
-  deallocate(dx, dy, dz)
+  IF (0.NE.check) DEALLOCATE(rx, ry, rz)
+  DEALLOCATE(dx, dy, dz)
   DEALLOCATE(cx, cy, cz)
-  IF (0.NE.check) THEN
-    DEALLOCATE(rx, ry, rz)
-  END IF
+  DEALLOCATE(a)
 
   ! finalize LIBXSMM
   CALL libxsmm_finalize()

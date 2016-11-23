@@ -149,7 +149,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
     if (l_row_elements > 0) {
       /* load C accumulator */
-      for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
+      for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
         if ( i_xgemm_desc->beta == 0 ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    l_micro_kernel_config.instruction_set,
@@ -179,7 +179,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
                                           l_micro_kernel_config.vector_name,
                                           i_xgemm_desc->n, 0, 0 );
         /* multiply with B */
-        for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
+        for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
           l_b_offset = ((i_column_idx[i_row_idx[l_m] + l_z]*l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldb)
                                                      +(l_n*l_soa_width*l_micro_kernel_config.datatype_size))-l_b_total_offset;
           if (l_b_offset >= 8192) {
@@ -203,7 +203,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
         }
       }
       /* store C accumulator */
-      for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++ ) {
+      for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,
                                           l_micro_kernel_config.c_vmove_instruction,
