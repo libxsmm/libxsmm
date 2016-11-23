@@ -60,7 +60,7 @@ then
   fi
 
   DIR=${TRAVIS_BUILD_DIR}/${RPT}
-  ${RM} -rf ${DIR}/${ID}
+  #${RM} -rf ${DIR}/${ID}
 
   ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
   RESULT=$?
