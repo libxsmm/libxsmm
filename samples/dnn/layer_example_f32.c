@@ -337,8 +337,8 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
 
 int main(int argc, char* argv[])
 {
-  float *naive_input, *naive_output, *naive_filter, *naive_filter_wu, *naive_libxsmm_output, *naive_libxsmm_input, *naive_libxsmm_filter;
-  float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc;
+  float *naive_input, *naive_output, *naive_filter, *naive_filter_wu, *naive_libxsmm_output, *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save;
+  float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
@@ -441,6 +441,7 @@ int main(int argc, char* argv[])
 
   /* allocate data */
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_input_save      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   naive_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_libxsmm_input   = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
@@ -450,10 +451,12 @@ int main(int argc, char* argv[])
   input_nhwc            = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   output_nhwc           = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_output_nhwc     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_input_nhwc      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
 
   /* initialize data */
   init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
+  copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output,         nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
@@ -463,6 +466,7 @@ int main(int argc, char* argv[])
   naive_copy_NCHW_to_NHWC(naive_input, input_nhwc, nImg, ifhp, ifwp, nIfm);
   zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_output_nhwc,    nImg*nOfm*ofhp*ofwp);
+  zero_buf(naive_input_nhwc,     nImg*nIfm*ifhp*ifwp);
   naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
 
   printf("\n");
@@ -772,8 +776,37 @@ int main(int argc, char* argv[])
   printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
   printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
 
+  /* @TODO calling fallback code */
+  if (stride == 1 && nIfm > 3) {
+    printf("##########################################\n");
+    printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid ) );
+    }
+    /* copy input data into NCHW storage in user code */
+    naive_copy_NHWC_to_NCHW(input_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
+
+    /* compare */
+    compare_buf(naive_input, naive_input_nhwc, nImg*nIfm*ifhp*ifwp, &norms_bwd);
+    printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
+    printf("              1-norm of JIT-code: %f\n", norms_bwd.one_norm_test);
+    printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
+    printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
+    printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+  }
+
   printf("##########################################\n");
-  printf("#  Performance - FWD (NHWC/RSCK-Storage)  #\n");
+  printf("#  Performance - FWD (NHWC/RSCK-Storage) #\n");
   printf("##########################################\n");
   /* run LIBXSMM convolution for performance */
   l_start = libxsmm_timer_tick();
@@ -801,6 +834,36 @@ int main(int argc, char* argv[])
   printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+
+  printf("##########################################\n");
+  printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
+  printf("##########################################\n");
+  /* run LIBXSMM convolution for performance */
+  l_start = libxsmm_timer_tick();
+  for (i = 0; i < iters; ++i) {
+#if defined(_OPENMP)
+#   pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+  printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
+  printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
+  printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
+
+  printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+     norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
@@ -842,6 +905,8 @@ int main(int argc, char* argv[])
 
   /* zero output buffer again */
   zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
+  /* init input agian */
+  naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
 
   /* setup LIBXSMM buffers and filter */
   libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
