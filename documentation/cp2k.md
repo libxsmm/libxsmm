@@ -5,45 +5,25 @@ Some additional reference can found under:
 [https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ](https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ).
 
 ## Getting the Source Code
-The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub.
+The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](https://github.com/hfp/libxsmm).
+
+## Build Instructions
+In order to build CP2K/intel from source, one may rely on Intel Compiler 16 or 17 series. For a validated recipe targeting "Haswell" (HSW):
 
 ```
 git clone https://github.com/hfp/libxsmm.git
 git clone --branch intel https://github.com/cp2k/cp2k.git cp2k.git
 ln -s cp2k.git/cp2k cp2k
-```
-
-## Build Instructions
-In order to build CP2K/intel from source, make sure to rely on one of the recommended compiler versions:
-* Intel Compiler 15.0.3.187 (Build 20150407)
-* Intel Compiler 16 or 17 series
-
-For Intel MPI, usually any version is fine.
-
-```
-source /opt/intel/composer_xe_2015.3.187/bin/compilervars.sh intel64
-source /opt/intel/impi/5.1.0.069/intel64/bin/mpivars.sh
-```
-
-For product suites, the compiler and the MPI library can be sourced in one step.
-
-```
-source /opt/intel/compilers_and_libraries_2016.0.109/linux/bin/compilervars.sh intel64
-```
-
-To build the CP2K application, building LIBXSMM separately is not required (it will be build in an out-of-tree fashion as long as the LIBXSMMROOT path is supplied). Since [CP2K 3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) is also supporting the LIBXSMM however the library needs to be built separately.
-
-```
 cd cp2k/makefiles
-make ARCH=Linux-x86-64-intel VERSION=psmp LIBXSMMROOT=/path/to/libxsmm -j
+source /opt/intel/compilers_and_libraries_2017.1.132/linux/bin/compilervars.sh intel64
+source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
+make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
 ```
+
+In order to target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". To build the CP2K application, building LIBXSMM separately is not required (it will be build in an out-of-tree fashion as long as the LIBXSMMROOT path is detected or supplied). Since [CP2K 3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) is also supporting the LIBXSMM however the LIBXSMM library needs to be built separately. For Intel MPI, usually any version is fine. For product suites, the compiler and the MPI library are sourced in one step. To workaround known issues, one may combine components from different suites. To further improve performance and versatility, one may supply LIBINTROOT, LIBXCROOT, and ELPAROOT (see later sections about these libraries).
 
 To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (similar to `ARCH=Linux-x86-64-intel` and `VERSION=psmp`).
 
-* **LIBXSMM_PREFETCH**: set `LIBXSMM_PREFETCH=1` to enable automatic software prefetches.
-* **LIBXSMM_MNK, LIBXSMM_M, LIBXSMM_N, LIBXSMM_K**: see [LIBXSMM documentation](https://github.com/hfp/libxsmm/#build-instructions).
-* **JIT**: set `JIT=0` to disable JIT code generation (enabled by default), and to statically specialize LIBXSMM.
-* **MPI**: set `MPI=3` to experiment with more recent MPI features e.g., with remote memory access.
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful with performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
@@ -89,43 +69,41 @@ The CP2K/intel branch carries a number of "reconfigurations" and environment var
 
 * **CP2K_RECONFIGURE**: environment variable for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K 3.0](https://www.cp2k.org/version_history) (and later).
 * **CP2K_STACKSIZE**: environment variable which denotes the number of matrix multiplications which is collected into a single stack. Usually the internal default performs best across a variety of workloads, however depending on the workload a different value can be better. This variable is relatively impactful since the work distribution and balance is affected.
-* **CP2K_PREFETCH**: environment variable for enabling (default), or disabling (CP2K_PREFETCH=0), and selecting the prefetch strategy (see list at the end of the [Generator Driver](https://github.com/hfp/libxsmm/#generator-driver) section). This is only in effect if CP2K_RECONFIGURE is available and enabled.
-* **CP2K_DENSE**: environment variable for enabling (default), or disabling (CP2K_DENSE=0) the "densification" of matrix blocks (when the matrix stacks are build). Please note that "enabling" densification depends on other conditions such that densification might remain off. Normally, larger blocks can be picked more likely by a regular BLAS implementation (which is usually tuned towards larger matrices), however the densification itself might raise some cost.
-* **CP2K_RMA**: environment variable for enabling (1), or disabling (0) the RMA-style (Remote Memory Access) MPI parallelization in DBCSR. The CP2K/intel branch uses MPI=3 implicitly when building the executable. The MPI standard version 3 is in fact necessary in order to perform Remote Memory Access (RMA) as implemented in CP2K. The effect of the environment variable is similar to the keyword from the input reference.
-* **CP2K_FILTERING**: environment variable for enabling (1), or disabling (0) the filtering out matrix blocks from parallel communication when the Cannon matrix multiplication algorithm is performed. The effect of the environment variable is similar to the keyword from the input reference.
-* **MM_DRIVER**: http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html#MM_DRIVER gives a reference of the input keywords. For the CP2K/intel branch the MM_DRIVER is set to XSMM by default (if LIBXSMMROOT was present).
+* **CP2K_HUGEPAGES**: environment variable for disabling (0) huge page based memory allocation, which is enabled by default (if TBBROOT was present at build-time of the application).
 
 ## LIBINT and LIBXC Dependencies
 
-To configure, build, and install LIBINT (Version 1.1.5 and 1.1.6 has been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). Finally, in order to make use of LIBINT, the key `LIBINTROOT=$(HOME)/libint` needs to be supplied when building the CP2K application (make).
+To configure, build, and install LIBINT (Version 1.1.5 and 1.1.6 has been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). Finally, in order to make use of LIBINT, the key `LIBINTROOT=/path/to/libint` needs to be supplied when building the CP2K application (make).
 
 ```
 env \
   AR=xiar CC=icc CXX=icpc \
-  ./configure --prefix=$HOME/libint \
-    --with-cc-optflags="-O2 -xHost" \
-    --with-cxx-optflags="-O2 -xHost" \
-    --with-libint-max-am=5 \
-    --with-libderiv-max-am1=4
+./configure \
+  --with-cxx-optflags="-O2 -xCORE-AVX2" \
+  --with-cc-optflags=" -O2 -xCORE-AVX2" \
+  --with-libderiv-max-am1=4 \
+  --with-libint-max-am=5 \
+  --prefix=$HOME/libint/hsw
 make
 make install
 make realclean
 ```
 
-To configure, build, and install LIBXC (Version 2.2.2 has been tested), one may proceed as shown below. To actually make use of LIBINT, the key `LIBXCROOT=$(HOME)/libxc` needs to be supplied when building the CP2K application (make).
+To configure, build, and install LIBXC (Version 3.0.0 has been tested), one may proceed as shown below. To actually make use of LIBXC, the key `LIBXCROOT=/path/to/libxc` needs to be supplied when building the CP2K application (make).
 
 ```
 env \
-  AR=xiar F77=ifort F90=ifort \
-  FC=ifort FCFLAGS="-O2 -xHost" \
-  CC=icc CFLAGS="-O2 -xHost" \
-  ./configure --prefix=$HOME/libxc
+  AR=xiar F77=ifort F90=ifort FC=ifort CC=icc \
+  FCFLAGS="-O2 -xCORE-AVX2" \
+  CFLAGS=" -O2 -xCORE-AVX2" \
+./configure \
+  --prefix=$HOME/libxc/hsw
 make
 make install
 make clean
 ```
 
-In case library needs to be cross-compiled, one may add `--host=x86_64-unknown-linux-gnu` to the command line arguments of the configure script.
+If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-linux-gnu` to the command line arguments of the configure script.
 
 ## Tuning
 
@@ -146,8 +124,8 @@ make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
 
 ### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
 
-1. Download the latest ELPA from http://elpa.rzg.mpg.de/elpa-tar-archive (2015.05.001)
-2. Make use of the ELPAROOT key-value pair (`ELPA=2` is used by default to rely on ELPA2).
+1. Download the latest ELPA from http://elpa.rzg.mpg.de/elpa-tar-archive (2016.05.004)
+2. Make use of the ELPAROOT key-value pair.
 
 ### Memory Allocation Wrapper
 

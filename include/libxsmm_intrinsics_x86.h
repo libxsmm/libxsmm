@@ -64,12 +64,16 @@
 # endif
 # if defined(__INTEL_COMPILER)
     /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
-#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   if 1300 <= (__INTEL_COMPILER)
+#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   else
+#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#   endif
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_CRAYC) && defined(__GNUC__)
-    /* TODO: version check e.g, (LIBXSMM_VERSION2(11, 4) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR)) */
-#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+    /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
+#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_MSC_VER)

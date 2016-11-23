@@ -57,12 +57,6 @@ LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 
 /* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
 libxsmm_convfunction jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
-#if defined(LIBXSMM_CONV_NO_PREFETCH)
-libxsmm_convfunction jitted_conv_bp_peeled_no_pf = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
-#else
-libxsmm_sconvfunction jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
-libxsmm_sconvfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)handle->code_bwd[3].xconv.sconv;
-#endif
 
 element_input_type *l_input;
 element_filter_type *l_wt;

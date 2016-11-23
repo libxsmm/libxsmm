@@ -106,7 +106,9 @@
 /** Helper macro for comparing types. */
 #define LIBXSMM_EQUAL(T1, T2, R) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2)(R)
 #define LIBXSMM_EQUAL_doubledouble(R) R
+#define LIBXSMM_EQUAL_doublefloat(R)
 #define LIBXSMM_EQUAL_floatfloat(R) R
+#define LIBXSMM_EQUAL_floatdouble(R)
 
 /** Check ILP64 configuration for sanity. */
 #if (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)
