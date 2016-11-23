@@ -144,7 +144,7 @@ ILP64 ?= 0
 BLAS ?= 0
 
 # Prefer to link statically against BLAS library
-BLAS_STATIC ?= 1
+BLAS_STATIC ?= $(STATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
 else
