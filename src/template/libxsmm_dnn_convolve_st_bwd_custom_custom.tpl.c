@@ -60,8 +60,8 @@ libxsmm_convfunction jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_b
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
 libxsmm_convfunction jitted_conv_bp_peeled_no_pf = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
 #else
-libxsmm_sconvfunction jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
-libxsmm_sconvfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)handle->code_bwd[3].xconv.sconv;
+libxsmm_convfunction jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
+libxsmm_convfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)handle->code_bwd[3].xconv.sconv;
 #endif
 
 element_input_type *l_input;

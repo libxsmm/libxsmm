@@ -1267,6 +1267,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
               }
             }
           } break;
+          case LIBXSMM_DNN_CONV_FORMAT_NHWC: {
+            switch (handle->filter_format) {
+              case LIBXSMM_DNN_CONV_FORMAT_RSCK: {
+                status = libxsmm_dnn_convolve_st_bwd_nhwc_rsck(handle, start_thread, tid);
+              } break;
+              default: {
+                status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
+              }
+            }
+          } break;
           default: {
             status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
           }
