@@ -151,10 +151,16 @@ def version_branch():
     versionfile = open(versionfilename, "r")
     version = "1.0"
     try:
-        version = versionfile.read().replace("\n", "")
-        versionlist = version.split("-")
-        if (1 < len(versionlist)):
-            result = ("-".join(map(str, versionlist[1:])), versionlist[0])
+        versionlist = versionfile.read().replace("\n", "").split("-")
+        n = len(versionlist)
+        if (1 < n):
+            version = versionlist[n-1]
+            if (1 == len(version.split("."))):
+                version = "-".join(map(str, versionlist[n-2:]))
+                branch = "-".join(map(str, versionlist[0:n-2]))
+            else:
+                branch = "-".join(map(str, versionlist[0:n-1]))
+            result = (version, branch)
         else:
             result = (version, "")
     finally:
@@ -164,15 +170,24 @@ def version_branch():
 
 def version_numbers(version):
     versionlist = version.split("-")
-    if (1 < len(versionlist)): patch = int(versionlist[1])
-    else: patch = 0
-    if (0 < len(versionlist)): versionlist = versionlist[0].split(".")
-    else: versionlist = list()
-    if (0 < len(versionlist)): major = int(versionlist[0])
+    n = len(versionlist)
+    if (1 < n):
+        patchlist = versionlist[n-1]
+        if (1 == len(patchlist.split("."))):
+            versionlist = versionlist[n-2].split(".")
+            patch = int(patchlist)
+        else:
+            versionlist = patchlist.split(".")
+            patch = 0
+    else:
+        versionlist = version.split(".")
+        patch = 0
+    n = len(versionlist)
+    if (0 < n): major = int(versionlist[0])
     else: major = 1
-    if (1 < len(versionlist)): minor = int(versionlist[1])
+    if (1 < n): minor = int(versionlist[1])
     else: minor = 0
-    if (2 < len(versionlist)): update = int(versionlist[2])
+    if (2 < n): update = int(versionlist[2])
     else: update = 0
     return major, minor, update, patch
 
