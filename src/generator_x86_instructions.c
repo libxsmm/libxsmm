@@ -30,7 +30,8 @@
 ******************************************************************************/
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-#include <libxsmm_macros.h>
+
+#include <libxsmm_cpuid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1777,18 +1778,15 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
        fprintf(stderr,"libxsmm_instruction_prefetch: Most instructions need at most 20 bytes\n");
        exit(-1);
     }
-    if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) &&
-         ((int)i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) &&
-         /*(i_gp_reg_base < 0) &&*/ (i_gp_reg_base > 15) &&
-         ((int)i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
+    if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) ||
+         ((int)i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) ||
+         (i_gp_reg_base > 15) ||
+         ((int)i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) )
     {
        fprintf(stderr,"libxsmm_instruction_prefetch: i_gp_reg_base error in libxsmm_instruction_prefetch\n");
        exit(-1);
     }
-    if ( ((int)i_gp_reg_idx  < LIBXSMM_X86_GP_REG_RAX) &&
-         ((int)i_gp_reg_idx  > LIBXSMM_X86_GP_REG_R15) &&
-         /*(i_gp_reg_idx  < 0) &&*/ (i_gp_reg_idx  > 15) &&
-         ((int)i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) )
+    if ( (int)i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
     {
        fprintf(stderr,"libxsmm_instruction_prefetch: i_gp_reg_idx error in libxsmm_instruction_prefetch\n");
        exit(-1);

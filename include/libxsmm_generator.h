@@ -49,35 +49,41 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC) (FLAGS)
 #endif
 
-#if defined(LIBXSMM_GENERATOR_BIGDESC)
-/* TODO: support libxsmm_blasint in the backend, or make sure to fallback earlier */
-# define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE unsigned int
-# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
-                                          * M,N,K:       3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+#if defined(LIBXSMM_GENERATOR_SMALLDESC)
+/* TODO: make sure to fallback earlier if index space is exhaused */
+# define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE unsigned short
+# define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0xFFFF)
+# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 16 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
+                                          * M,N,K:       3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
                                           * flags:       1 * sizeof(unsigned char)
                                           * alpha,beta:  2 * sizeof(signed char)
                                           * prefetch:    1 * sizeof(unsigned char)
                                           */
 #else
-/* TODO: make sure to fallback earlier if index space is exhaused */
-# define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE unsigned short
-# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 16 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
-                                          * M,N,K:       3 * sizeof(LIBXSMM_GENERATOR_BIGDESC)
+/* TODO: support libxsmm_blasint in the backend, or make sure to fallback earlier */
+# if (0 != LIBXSMM_ILP64)
+#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE long long
+#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0x7FFFFFFFFFFFFFFF)
+# else
+#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE int
+#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0x7FFFFFFF)
+# endif
+# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
+                                          * M,N,K:       3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
                                           * flags:       1 * sizeof(unsigned char)
                                           * alpha,beta:  2 * sizeof(signed char)
                                           * prefetch:    1 * sizeof(unsigned char)
                                           */
 #endif
 
-#define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)-1)
 /** Allow to check whether a given M, N, K, LDA, LDB, or LDC fits. */
-#if defined(LIBXSMM_GENERATOR_BIGDESC)
-# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
-#else
+#if defined(LIBXSMM_GENERATOR_SMALLDESC)
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
     LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (M) && \
     LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (N) && \
     LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (K))
+#else
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
 #endif
 
 #if defined(LIBXSMM_FRONTEND_H) /* assert available */

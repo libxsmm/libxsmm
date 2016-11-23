@@ -34,6 +34,8 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <assert.h>
+#include <stdint.h>
 #include <math.h>
 #if defined(__linux__)
 # include <syscall.h>
@@ -68,8 +70,10 @@
 #endif
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
-#else
+#elif !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
+#else
+# define LIBXSMM_SYNC_PAUSE(DELAY)
 #endif
 
 
@@ -134,9 +138,15 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   const int cid = tid / barrier->nthreads_per_core; /* this thread's core ID */
   internal_sync_core_tag* core = 0;
   int i;
+  internal_sync_thread_tag* thread;
+
+  /* we only initialize the barrier once */
+  if (barrier->init_done == 2) {
+    return;
+  }
 
   /* allocate per-thread structure */
-  internal_sync_thread_tag *const thread = (internal_sync_thread_tag*)LIBXSMM_SYNC_MALLOC(
+  thread = (internal_sync_thread_tag*)LIBXSMM_SYNC_MALLOC(
     sizeof(internal_sync_thread_tag), LIBXSMM_SYNC_CACHELINE_SIZE);
   barrier->threads[tid] = thread;
   thread->core_tid = tid - (barrier->nthreads_per_core * cid); /* mod */
@@ -194,10 +204,10 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   /* barrier to let initialization complete */
   if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&barrier->threads_waiting.counter, 1, LIBXSMM_ATOMIC_RELAXED)) {
     LIBXSMM_SYNC_ATOMIC_SET(barrier->threads_waiting.counter, barrier->nthreads);
-    barrier->init_done = 0;
+    barrier->init_done = 2;
   }
   else {
-    while (0 != barrier->init_done);
+    while (2 != barrier->init_done);
   }
 #else
   LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
@@ -282,19 +292,21 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barri
 {
 #if defined(_REENTRANT)
   int i;
-  for (i = 0; i < barrier->ncores; ++i) {
-    int j;
-    LIBXSMM_SYNC_FREE(barrier->cores[i]->thread_senses);
-    for (j = 0; j < 2; ++j) {
-      LIBXSMM_SYNC_FREE(barrier->cores[i]->partner_flags[j]);
-      LIBXSMM_SYNC_FREE(barrier->cores[i]->my_flags[j]);
+  if ( barrier->init_done == 2 ) {
+    for (i = 0; i < barrier->ncores; ++i) {
+      int j;
+      LIBXSMM_SYNC_FREE(barrier->cores[i]->thread_senses);
+      for (j = 0; j < 2; ++j) {
+        LIBXSMM_SYNC_FREE(barrier->cores[i]->partner_flags[j]);
+        LIBXSMM_SYNC_FREE(barrier->cores[i]->my_flags[j]);
+      }
+      LIBXSMM_SYNC_FREE(barrier->cores[i]);
     }
-    LIBXSMM_SYNC_FREE(barrier->cores[i]);
+    for (i = 0; i < barrier->nthreads; ++i) {
+      LIBXSMM_SYNC_FREE(barrier->threads[i]);
+    }
   }
   LIBXSMM_SYNC_FREE(barrier->cores);
-  for (i = 0; i < barrier->nthreads; ++i) {
-    LIBXSMM_SYNC_FREE(barrier->threads[i]);
-  }
   LIBXSMM_SYNC_FREE(barrier->threads);
 #endif
   LIBXSMM_SYNC_FREE(barrier);

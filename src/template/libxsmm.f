@@ -300,19 +300,19 @@
 
           ! Set the level of verbosity (0: off, positive value: verbosity level,
           ! negative value: maximum verbosity, which also dumps JIT-code).
-          SUBROUTINE libxsmm_set_verbosity(mode) BIND(C)
+          SUBROUTINE libxsmm_set_verbosity(level) BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: mode
+            INTEGER(C_INT), INTENT(IN), VALUE :: level
           END SUBROUTINE
 
           ! Get the default prefetch strategy.
-          PURE FUNCTION libxsmm_get_default_gemm_prefetch() BIND(C)
+          PURE FUNCTION libxsmm_get_gemm_auto_prefetch() BIND(C)
             IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_default_gemm_prefetch
+            INTEGER(C_INT) :: libxsmm_get_gemm_auto_prefetch
           END FUNCTION
 
           ! Set the default prefetch strategy.
-          SUBROUTINE libxsmm_set_default_gemm_prefetch(strategy) BIND(C)
+          SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: strategy
           END SUBROUTINE

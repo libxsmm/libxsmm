@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_sync.h>
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -617,6 +617,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->desc.N * handle->blocksifm * handle->ifmblock * handle->desc.H * handle->desc.W * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
         LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
 /*#endif*/
+      if (handle->ifmblock == 1) {
+        handle->upd_use_thread_fil = 1;
+        libxsmm_xmalloc(&handle->scratch4,
+        handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock 
+          * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
+        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+      } else {
+        handle->scratch4 = 0;
+        handle->upd_use_thread_fil = 0;
+      }
     }
   }
   else {

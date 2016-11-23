@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_trans.h"
 #include "libxsmm_main.h"
+#include <libxsmm_cpuid.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -149,7 +150,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
     else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
       if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM: in-place transpose is not implemented yet!\n");
+        fprintf(stderr, "LIBXSMM: in-place transpose is not fully implemented!\n");
       }
 #endif
       assert(0/*TODO: proper implementation is pending*/);
@@ -157,7 +158,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
     }
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: performance warning - in-place transpose is not yet implemented!\n");
+      fprintf(stderr, "LIBXSMM: performance warning - in-place transpose is not fully implemented!\n");
     }
 #endif
   }

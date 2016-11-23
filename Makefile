@@ -84,9 +84,9 @@ PRECISION ?= 0
 # Support SMM kernels with larger extent(s)
 # 0: optimized JIT descriptor size
 # 1: regular descriptor size
-BIG ?= 0
-ifneq (0,$(BIG))
-  DFLAGS += -DLIBXSMM_GENERATOR_BIGDESC
+BIG ?= 1
+ifeq (0,$(BIG))
+  DFLAGS += -DLIBXSMM_GENERATOR_SMALLDESC
 endif
 
 # Specify an alignment (Bytes)
@@ -206,8 +206,8 @@ endif
 
 ifeq (0,$(STATIC))
   GENERATOR = @$(ENV) \
-    LD_LIBRARY_PATH="$(OUTDIR):$(LD_LIBRARY_PATH)" \
-    PATH="$(OUTDIR):$(PATH)" \
+    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
   $(BINDIR)/libxsmm_gemm_generator
 else
   GENERATOR = $(BINDIR)/libxsmm_gemm_generator
@@ -218,10 +218,9 @@ NINDICES = $(words $(INDICES))
 
 HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
-          $(SRCDIR)/libxsmm_gemm_diff.c \
-          $(SRCDIR)/libxsmm_cpuid_x86.c \
-          $(SRCDIR)/libxsmm_hash.c \
+          $(SRCDIR)/libxsmm_gemm_diff.c $(SRCDIR)/libxsmm_hash.c \
           $(ROOTDIR)/include/libxsmm_dnn.h \
+          $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
           $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
@@ -233,25 +232,28 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) \
-                   libxsmm_malloc.c libxsmm_sync.c libxsmm_timer.c \
-                   libxsmm_trace.c libxsmm_perf.c)
+                   libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_sync.c \
+                   libxsmm_timer.c libxsmm_trace.c libxsmm_perf.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
-OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
-OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
-OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
+OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
+OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
+OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o $(BLDDIR)/intel64/libxsmm_dump.o \
                $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_trans.o \
-               $(BLDDIR)/intel64/libxsmm_dnn.o $(BLDDIR)/intel64/libxsmm_dnn_handle.o $(BLDDIR)/intel64/libxsmm_dnn_convolution_forward.o \
+               $(BLDDIR)/intel64/libxsmm_dnn.o $(BLDDIR)/intel64/libxsmm_dnn_handle.o \
+               $(BLDDIR)/intel64/libxsmm_dnn_convolution_forward.o \
                $(BLDDIR)/intel64/libxsmm_dnn_convolution_backward.o \
                $(BLDDIR)/intel64/libxsmm_dnn_convolution_weight_update.o
 OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_dump.o \
                $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
-               $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_handle.o $(BLDDIR)/mic/libxsmm_dnn_convolution_forward.o \
+               $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_handle.o \
+               $(BLDDIR)/mic/libxsmm_dnn_convolution_forward.o \
                $(BLDDIR)/mic/libxsmm_dnn_convolution_backward.o \
                $(BLDDIR)/mic/libxsmm_dnn_convolution_weight_update.o \
-               $(BLDDIR)/mic/libxsmm_malloc.o $(BLDDIR)/mic/libxsmm_sync.o \
-               $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_timer.o
+               $(BLDDIR)/mic/libxsmm_cpuid_x86.o $(BLDDIR)/mic/libxsmm_malloc.o \
+               $(BLDDIR)/mic/libxsmm_sync.o $(BLDDIR)/mic/libxsmm_timer.o \
+               $(BLDDIR)/mic/libxsmm_trace.o $(BLDDIR)/mic/libxsmm_perf.o
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
@@ -379,6 +381,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
 	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
@@ -444,7 +447,7 @@ $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
-$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh
+$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR)/libxsmm.h
 	@$(SCRDIR)/libxsmm_source.sh > $@
 
 .PHONY: fheader
@@ -1157,7 +1160,7 @@ tests: build-tests
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
 .PHONY: test-cpp
-test-cpp: $(INCDIR)/libxsmm.h
+test-cpp: $(INCDIR)/libxsmm_source.h
 	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \

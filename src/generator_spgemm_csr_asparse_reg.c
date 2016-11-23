@@ -209,7 +209,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_o_blocking );
 #endif
 
-  for ( l_m = 0; l_m < i_xgemm_desc->m; l_m++ ) {
+  for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
     if (l_row_elements > 0) {
       for ( l_n = 0; l_n < l_n_i_blocking; l_n++ ) {

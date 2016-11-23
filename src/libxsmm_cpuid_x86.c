@@ -28,22 +28,27 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CPUID_X86_C
-#define LIBXSMM_CPUID_X86_C
-
-#include "libxsmm_cpuid_x86.h"
 #include <libxsmm_intrinsics_x86.h>
 
-/** Execute the CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <assert.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
+/** Execute CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
-# if (4294967295U < (__SIZE_MAX__))
-#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) \
-      __asm__ __volatile__ ("cpuid" : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0))
+# if (4294967295U < (__SIZE_MAX__)) || defined(_CRAYC)
+#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __asm__ __volatile__ ( \
+      ".byte 0x0f, 0xa2" /*cpuid*/ : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0) \
+    )
 # else
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
 #   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
 # endif
-#else
+#elif !defined(_CRAYC)
 # define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
     int libxsmm_cpuid_x86_[4]; \
     __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
@@ -52,6 +57,8 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
     ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
     EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
   }
+#else
+# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) LIBXSMM_X86_AVX
 #endif
 
 /** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
@@ -59,12 +66,14 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
     ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
   )
-#else
+#elif !defined(_CRAYC)
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
     unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
     EAX = (int)libxsmm_xgetbv_; \
     EDX = (int)(libxsmm_xgetbv_ >> 32); \
   }
+#else
+# define LIBXSMM_XGETBV(XCR, EAX, EDX)
 #endif
 
 
@@ -124,4 +133,3 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 
-#endif /* LIBXSMM_CPUID_X86_C */
