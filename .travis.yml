@@ -100,3 +100,8 @@ script:
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) &&
     make -e WRAP=1 STATIC=0 test-wrap &&
     eval ${RUNXCOV} && make -e clean
+
+  - if [ -e log.txt ] && [ "0" != "$(grep 'warning:' log.txt | grep -v Makefile | wc -l)" ]; then
+      sed -e 's/..*\/\(..*\/..*:[0-9][0-9]*.*: warning: ..*\)/\1/;tx;d;:x' log.txt | grep -v Makefile | sort -u;
+      exit 1;
+    fi
