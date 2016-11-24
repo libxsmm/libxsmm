@@ -235,6 +235,12 @@
 #define LIBXSMM_ERR_CSR_READ_ELEMS       90033
 #define LIBXSMM_ERR_CSR_LEN              90034
 #define LIBXSMM_ERR_CSR_ALLOC_DATA       90035
+#define LIBXSMM_ERR_UNSUP_CONV_FORMAT    90036
+#define LIBXSMM_ERR_INVALID_KW_UNROLL    90037
+#define LIBXSMM_ERR_INVALID_KH_UNROLL    90038
+#define LIBXSMM_ERR_INVALID_OFW_UNROLL   90039
+#define LIBXSMM_ERR_INVALID_OFH_UNROLL   90040
+#define LIBXSMM_ERR_INVALID_CONV_ACC     90041
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

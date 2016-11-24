@@ -922,6 +922,24 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_CSR_LEN:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSR file!\n" );
       break;
+    case LIBXSMM_ERR_UNSUP_CONV_FORMAT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid activation or filter format was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_KW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kw unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_KH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kh unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_OFW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofw unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_OFH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofh unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_CONV_ACC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid size of accumulator was detected during convolution kernel generation!\n" );
+      break;
     /* default, we didn't don't know what happend */
     default:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );
