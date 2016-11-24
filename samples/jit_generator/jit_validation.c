@@ -49,7 +49,6 @@ void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
-  printf("    ARCH: snb, hsw, knl, skx\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
   printf("    PRECISION: SP, DP\n");
   printf("    #repetitions\n");
@@ -163,15 +162,13 @@ void run_gold_float( const float*                   i_a,
   printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
-void run_jit_double( const double*               i_a,
-                     const double*               i_b,
-                     double*                     o_c,
-                     const int                   i_M,
-                     const int                   i_N,
-                     const int                   i_K,
-                     const libxsmm_gemm_prefetch_type i_prefetch,
-                     const char*                 i_arch ) {
-
+void run_jit_double( const double*                    i_a,
+                     const double*                    i_b,
+                     double*                          o_c,
+                     const int                        i_M,
+                     const int                        i_N,
+                     const int                        i_K,
+                     const libxsmm_gemm_prefetch_type i_prefetch ) {
   /* define function pointer */
   libxsmm_dmmfunction l_test_jit;
   double l_jittime = 0.0, l_runtime = 0.0;
@@ -213,15 +210,13 @@ void run_jit_double( const double*               i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 
-void run_jit_float( const float*               i_a,
-                    const float*               i_b,
-                    float*                     o_c,
-                    const int                   i_M,
-                    const int                   i_N,
-                    const int                   i_K,
-                    const libxsmm_gemm_prefetch_type i_prefetch,
-                    const char*                 i_arch ) {
-
+void run_jit_float( const float*                     i_a,
+                    const float*                     i_b,
+                    float*                           o_c,
+                    const int                        i_M,
+                    const int                        i_N,
+                    const int                        i_K,
+                    const libxsmm_gemm_prefetch_type i_prefetch ) {
   /* define function pointer */
   libxsmm_smmfunction l_test_jit;
   double l_jittime = 0.0, l_runtime = 0.0;
@@ -329,7 +324,7 @@ int main(int argc, char* argv []) {
   float* l_c_gold_f;
 
   /* check argument count for a valid range */
-  if ( argc != 15 ) {
+  if ( argc != 14 ) {
     print_help();
     return -1;
   }
@@ -349,48 +344,38 @@ int main(int argc, char* argv []) {
   l_aligned_c = atoi(argv[10]);
 
   /* arch specific stuff */
-  l_arch = argv[11];
-  l_precision = argv[13];
-  g_jit_code_reps = atoi(argv[14]);
+  l_precision = argv[12];
+  g_jit_code_reps = atoi(argv[13]);
 
   /* set value of prefetch flag */
-  if (strcmp("nopf", argv[12]) == 0) {
+  if (strcmp("nopf", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_NONE;
   }
-  else if (strcmp("pfsigonly", argv[12]) == 0) {
+  else if (strcmp("pfsigonly", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_SIGONLY;
   }
-  else if (strcmp("BL2viaC", argv[12]) == 0) {
+  else if (strcmp("BL2viaC", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
   }
-  else if (strcmp("curAL2", argv[12]) == 0) {
+  else if (strcmp("curAL2", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
   }
-  else if (strcmp("curAL2_BL2viaC", argv[12]) == 0) {
+  else if (strcmp("curAL2_BL2viaC", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
   }
-  else if (strcmp("AL2", argv[12]) == 0) {
+  else if (strcmp("AL2", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2;
   }
-  else if (strcmp("AL2_BL2viaC", argv[12]) == 0) {
+  else if (strcmp("AL2_BL2viaC", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
   }
-  else if (strcmp("AL2jpst", argv[12]) == 0) {
+  else if (strcmp("AL2jpst", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
   }
-  else if (strcmp("AL2jpst_BL2viaC", argv[12]) == 0) {
+  else if (strcmp("AL2jpst_BL2viaC", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
   else {
-    print_help();
-    return -1;
-  }
-
-  /* check value of arch flag */
-  if ( (strcmp(l_arch, "snb") != 0)    &&
-       (strcmp(l_arch, "hsw") != 0)    &&
-       (strcmp(l_arch, "knl") != 0)    &&
-       (strcmp(l_arch, "skx") != 0)       ) {
     print_help();
     return -1;
   }
@@ -457,9 +442,9 @@ int main(int argc, char* argv []) {
 
   /* run jit */
   if ( l_single_precision == 0 ) {
-    run_jit_double( l_a_d, l_b_d, l_c_d, l_m, l_n, l_k, l_prefetch, l_arch );
+    run_jit_double( l_a_d, l_b_d, l_c_d, l_m, l_n, l_k, l_prefetch );
   } else {
-    run_jit_float( l_a_f, l_b_f, l_c_f, l_m, l_n, l_k, l_prefetch, l_arch );
+    run_jit_float( l_a_f, l_b_f, l_c_f, l_m, l_n, l_k, l_prefetch );
   }
 
   /* test result */
