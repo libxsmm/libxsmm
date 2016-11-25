@@ -940,6 +940,9 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_INVALID_CONV_ACC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid size of accumulator was detected during convolution kernel generation!\n" );
       break;
+    case LIBXSMM_ERR_UNSUP_ARCH:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported arch for the selected module was specified!\n" );
+      break;
     /* default, we didn't don't know what happend */
     default:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );

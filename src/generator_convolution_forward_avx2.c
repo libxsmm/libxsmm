@@ -77,6 +77,9 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
+  } else {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;  
   }
   l_conv_kernel_config.vector_reg_count = 16;
   l_conv_kernel_config.vector_length_in = 8;
