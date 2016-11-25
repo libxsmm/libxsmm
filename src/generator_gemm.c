@@ -176,7 +176,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
       libxsmm_strerror(l_generated_code.last_error));
-    exit(-1);
+    return;
   }
 
   /* append code to source file */
@@ -187,7 +187,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_inlineasm could not write to into destination source file\n");
-      exit(-1);
+      return;
     }
   }
 
@@ -210,7 +210,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: we cannot create ASM when noarch is specified!\n");
-    exit(-1);
+    return;
   }
 
   /* add signature to code string */
@@ -223,7 +223,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
       libxsmm_strerror(l_generated_code.last_error));
-    exit(-1);
+    return;
   }
 
   /* append code to source file */
@@ -234,7 +234,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: could not write to into destination source file!\n");
-      exit(-1);
+      return;
     }
   }
 

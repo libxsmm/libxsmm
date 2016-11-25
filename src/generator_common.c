@@ -856,6 +856,9 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_M_BLOCK:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
       break;
+    case LIBXSMM_ERR_K_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid K blocking in microkernel!\n" );
+      break;
     case LIBXSMM_ERR_NO_IMCI:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: IMCI architecture requested but called for a different one!\n" );
       break;
@@ -951,6 +954,15 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_CONV_CONT_STRIDE:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, stride_h/w need to be 1!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_DATATYPE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype was requested!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_DT_FORMAT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype and format combination was requested!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_GEMM_CONFIG:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid GEMM config in setup detected!\n" );
       break;
     /* default, we didn't don't know what happend */
     default:

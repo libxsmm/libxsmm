@@ -220,13 +220,12 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
      things might happen.... HUAAH */
 #endif /*NDEBUG*/
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_reg_per_block > i_conv_kernel_config->vector_reg_count-4 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_load_output: accumulator needs to be %u registers or smaller\n",
-             i_conv_kernel_config->vector_reg_count-4);
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    return;
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_out != 0) {
-    fprintf( stderr, "libxsmm_generator_convolution_load_output: ofm_block needs to be divisble by vectorlength!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    return;
   }
 
   /* calculate leading dimension depending on format */
@@ -235,8 +234,8 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
-    fprintf( stderr, "libxsmm_generator_convolution_load_output: unsupported output format!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    return;
   }
 
   if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
@@ -324,13 +323,12 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
      things might happen.... HUAAH */
 #endif /*NDEBUG*/
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_reg_per_block > i_conv_kernel_config->vector_reg_count-4 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_store_output: accumulator needs to be %u registers or smaller\n",
-             i_conv_kernel_config->vector_reg_count-4);
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    return;
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_out != 0) {
-    fprintf( stderr, "libxsmm_generator_convolution_store_output: ofm_block needs to be divisble by vectorlength!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    return;
   }
 
   /* calculate leading dimension depending on format */
@@ -339,8 +337,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
-    fprintf( stderr, "libxsmm_generator_convolution_load_output: unsupported output format!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    return;
   }
 
   if ( (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {

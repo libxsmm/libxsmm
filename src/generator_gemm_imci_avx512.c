@@ -109,8 +109,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load = libxsmm_generator_gemm_load_C_imci;
     l_generator_store = libxsmm_generator_gemm_store_C_imci;
   } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_imci_avx512_kernel_mloop, cannot select microkernel\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   /* we proceed as much as we can in vector length steps, remainder is handled uisng masking */
