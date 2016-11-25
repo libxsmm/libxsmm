@@ -84,7 +84,8 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
   if ( strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
-    fprintf( stderr, " LIBXSMM Error: generator_convolution_backward_avx2: unsupported architecture!\n" );
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
   l_conv_kernel_config.vector_length_in = 8;
@@ -124,14 +125,26 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: unsupported format requested!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    return;
+  }
+
+  /* check if we have full vectors */
+  if ( i_conv_desc->ifm_block % l_conv_kernel_config.vector_length_in != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
+    return;
+  }
+
+  /* check if we have  stride of 1 */
+  if ( i_conv_desc->stride_h != 1 || i_conv_desc->stride_w != 1 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
+    return;
   }
 
   /* initilize KW and OFW unrolling */
   if (i_conv_desc->unroll_kw != 0) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: kw unroll needs to be 0!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    return;
   }
 
   /* calculate ofw blocking */
@@ -322,13 +335,12 @@ void libxsmm_generator_convolution_backward_avx2_ofmloop( libxsmm_generated_code
 
   /* Some checks */
   if ( i_conv_desc->ofh_rb != 1 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_backward_avx2_ofmloop: ofh_rb blocking needs to be 1\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
+    return;
   }
   if ( i_ofw_rb*l_ifm_blocking > i_conv_kernel_config->vector_reg_count-4 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_backward_avx2_ofmloop: accumulator needs to be %u registers or smaller\n",
-             i_conv_kernel_config->vector_reg_count-4);
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    return;
   }
 
   libxsmm_generator_convolution_header_ofm_loop( io_generated_code, i_loop_label_tracker,

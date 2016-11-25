@@ -856,6 +856,9 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_M_BLOCK:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
       break;
+    case LIBXSMM_ERR_K_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid K blocking in microkernel!\n" );
+      break;
     case LIBXSMM_ERR_NO_IMCI:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: IMCI architecture requested but called for a different one!\n" );
       break;
@@ -921,6 +924,45 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_CSR_LEN:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSR file!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_CONV_FORMAT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid activation or filter format was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_KW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kw unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_KH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kh unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_OFW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofw unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_OFH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofh unrull was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_CONV_ACC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid size of accumulator was detected during convolution kernel generation!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_ARCH:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported arch for the selected module was specified!\n" );
+      break;
+    case LIBXSMM_ERR_CONV_OFM_VEC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: forward conv/weight updated vectorization failed, OFM blocking is not divisible by VLEN!\n" );
+      break;
+    case LIBXSMM_ERR_CONV_IFM_VEC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, IFM blocking is not divisible by VLEN!\n" );
+      break;
+    case LIBXSMM_ERR_CONV_CONT_STRIDE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, stride_h/w need to be 1!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_DATATYPE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype was requested!\n" );
+      break;
+    case LIBXSMM_ERR_UNSUP_DT_FORMAT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype and format combination was requested!\n" );
+      break;
+    case LIBXSMM_ERR_INVALID_GEMM_CONFIG:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid GEMM config in setup detected!\n" );
       break;
     /* default, we didn't don't know what happend */
     default:

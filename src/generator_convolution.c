@@ -174,7 +174,7 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
-    exit(-1);
+    return;
   }
 
   /* generate the actual kernel code for current description depending on the architecture */
@@ -187,7 +187,7 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
       libxsmm_strerror(l_generated_code.last_error));
-    exit(-1);
+    return;
   }
 
   /* append code to source file */
@@ -198,7 +198,7 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_conv_inlineasm could not write to into destination source file\n");
-      exit(-1);
+      return;
     }
   }
 
@@ -232,7 +232,7 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
-    exit(-1);
+    return;
   }
 
   /* generate the actual kernel code for current description depending on the architecture */
@@ -253,7 +253,7 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_conv_directasm: could not write to into destination source file!\n");
-      exit(-1);
+      return;
     }
   }
 

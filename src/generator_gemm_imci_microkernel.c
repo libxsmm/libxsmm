@@ -55,7 +55,8 @@ void libxsmm_generator_gemm_imci_microkernel( libxsmm_generated_code*           
     return;
   }
   if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
-    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_avx512_microkernel: i_k_blocking is ignored as offset is >=0\n");
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
   }
 #endif
 

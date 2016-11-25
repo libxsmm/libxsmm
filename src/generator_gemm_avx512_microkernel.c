@@ -388,12 +388,12 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 24 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large: i_n_blocking needs to be 24 or smaller!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
   if ( i_k_blocking < 8 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large: i_k_blocking needs to be at least 8!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
   }
 #endif
 
@@ -571,8 +571,8 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
 
 #if !defined(NDEBUG)
   if ( i_k_blocking < 8 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine: i_k_blocking needs to be at least 8!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
   }
 #endif
 
@@ -1129,7 +1129,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
   LIBXSMM_UNUSED(i_arch);
 
   if ( (l_k_blocking >= l_k_threshold) ) {
-    fprintf(stderr, "LIBXSMM AVX512 micro kenrel: l_k_blocking must be smaller than l_k_threshold\n");
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return 0;
   }
 
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
