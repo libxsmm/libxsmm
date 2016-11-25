@@ -883,35 +883,37 @@ int main(int argc, char* argv[])
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
-  printf("##########################################\n");
-  printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
-  printf("##########################################\n");
-  /* run LIBXSMM convolution for performance */
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < iters; ++i) {
+  if (stride == 1 && nIfm > 3) {
+    printf("##########################################\n");
+    printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+    for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
-    {
+      {
 #if defined(_OPENMP)
-      const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-      const int tid = 0;
+        const int tid = 0;
 #endif
-      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid );
+        libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid );
+      }
     }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
+    printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+       ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+       norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
   }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
-
-  printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
-  printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
-  printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
-
-  printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-     norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
 
   printf("##########################################\n");
   printf("#  Performance - UPD (NHWC/RSCK-Storage) #\n");
