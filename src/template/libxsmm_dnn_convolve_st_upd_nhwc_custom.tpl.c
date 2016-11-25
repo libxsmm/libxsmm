@@ -63,7 +63,7 @@ libxsmm_convfunction jitted_conv_wu_nooutput_pf = (libxsmm_convfunction)handle->
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
 element_input_type *l_input;
 element_filter_type *l_wt;
@@ -74,7 +74,7 @@ element_filter_type* remote_weight_ptr = 0;
 element_filter_type* weight_ptr = (element_filter_type*)handle->filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) 
                                                 + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* number of tasks that could be run in parallel */
 const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
 /* compute chunck size */
@@ -95,7 +95,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       for(kj=0; kj < handle->desc.R; ++kj) {
         for(ki=0; ki < handle->desc.S; ++ki) {
           l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-          l_wt = &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+          l_wt = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
           jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
         }
