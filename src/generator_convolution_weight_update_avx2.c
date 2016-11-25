@@ -165,6 +165,12 @@ Example for ofm_block = 32, ifm_block%2 == 0
     return;
   }
 
+  /* check if we have full vectors */
+  if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    return;
+  }
+
   /* caclulate the ifm unrolling */
   for (l_m = 3; l_m > 0; l_m--) {
     if ( i_conv_desc->ifm_block%l_m == 0 ) {

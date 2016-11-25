@@ -242,6 +242,9 @@
 #define LIBXSMM_ERR_INVALID_OFH_UNROLL   90040
 #define LIBXSMM_ERR_INVALID_CONV_ACC     90041
 #define LIBXSMM_ERR_UNSUP_ARCH           90042
+#define LIBXSMM_ERR_CONV_IFM_VEC         90043
+#define LIBXSMM_ERR_CONV_OFM_VEC         90044
+#define LIBXSMM_ERR_CONV_CONT_STRIDE     90045
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

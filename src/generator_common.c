@@ -943,6 +943,15 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_UNSUP_ARCH:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported arch for the selected module was specified!\n" );
       break;
+    case LIBXSMM_ERR_CONV_OFM_VEC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: forward conv/weight updated vectorization failed, OFM blocking is not divisible by VLEN!\n" );
+      break;
+    case LIBXSMM_ERR_CONV_IFM_VEC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, IFM blocking is not divisible by VLEN!\n" );
+      break;
+    case LIBXSMM_ERR_CONV_CONT_STRIDE:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, stride_h/w need to be 1!\n" );
+      break;
     /* default, we didn't don't know what happend */
     default:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );

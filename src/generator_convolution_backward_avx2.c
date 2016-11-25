@@ -129,6 +129,18 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     return;
   }
 
+  /* check if we have full vectors */
+  if ( i_conv_desc->ifm_block % l_conv_kernel_config.vector_length_in != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
+    return;
+  }
+
+  /* check if we have  stride of 1 */
+  if ( i_conv_desc->stride_h != 1 || i_conv_desc->stride_w != 1 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
+    return;
+  }
+
   /* initilize KW and OFW unrolling */
   if (i_conv_desc->unroll_kw != 0) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
