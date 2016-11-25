@@ -1030,6 +1030,61 @@ int main(int argc, char* argv[])
   printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
   printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
 
+  /* @TODO calling fallback code */
+  if (stride == 1 && nIfm > 3) {
+    printf("##########################################\n");
+    printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid ) );
+    }
+    /* copy input data into NCHW storage in user code */
+    naive_copy_NHWC_to_NCHW(input_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
+
+    /* compare */
+    compare_buf(naive_input, naive_input_nhwc, nImg*nIfm*ifhp*ifwp, &norms_bwd);
+    printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
+    printf("              1-norm of JIT-code: %f\n", norms_bwd.one_norm_test);
+    printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
+    printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
+    printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+  }
+
+  printf("##########################################\n");
+  printf("# Correctness - UPD(NHWC/custom-Storage) #\n");
+  printf("##########################################\n");
+  /* run LIBXSMM convolutions */
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid ) );
+  }
+  /* copy out data */
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_filter( libxsmm_filter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_CONV_FORMAT_KCRS ) );
+
+  /* compare */
+  compare_buf(naive_filter_wu, naive_libxsmm_filter, nOfm*nIfm*kh*kw, &norms_upd);
+  printf("             1-norm of reference: %f\n", norms_upd.one_norm_ref);
+  printf("              1-norm of JIT-code: %f\n", norms_upd.one_norm_test);
+  printf("       L2-error-norm of JIT-code: %f\n", norms_upd.l2_rel_err);
+  printf("    inf-norm of comp. rel. error: %f\n", norms_upd.max_rel_err);
+  printf("    inf-norm of comp. abs. error: %f\n", norms_upd.max_abs_err);
+
   printf("##########################################\n");
   printf("# Performance - FWD(NHWC/custom-Storage) #\n");
   printf("##########################################\n");
@@ -1059,6 +1114,68 @@ int main(int argc, char* argv[])
   printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+
+  if (stride == 1 && nIfm > 3) {
+    printf("##########################################\n");
+    printf("# Performance - BWD(NHWC/custom-Storage) #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+    for (i = 0; i < iters; ++i) {
+#if defined(_OPENMP)
+#   pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_BWD, 0, tid );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GFLOP (NHWC,custom)  = %.5g\n", flops*1e-9/(double)iters);
+    printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
+    printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
+
+    printf("PERFDUMP-NHWC-custom,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+       ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+       norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+  }
+
+  printf("##########################################\n");
+  printf("# Performance - UPD(NHWC/custom-Storage) #\n");
+  printf("##########################################\n");
+  /* run LIBXSMM convolution for performance */
+  l_start = libxsmm_timer_tick();
+  for (i = 0; i < iters; ++i) {
+#if defined(_OPENMP)
+#   pragma omp parallel
+#endif
+    {
+#if defined(_OPENMP)
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid );
+    }
+  }
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
+  flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+  printf("GFLOP (NHWC,custom)  = %.5g\n", flops*1e-9/(double)iters);
+  printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
+  printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
+
+  printf("PERFDUMP-NHWC-custom,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+     ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+     norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
