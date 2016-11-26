@@ -88,6 +88,35 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+  for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
+    per_thread_weight_ptr[i] = (element_filter_type)0;
+  }
+  /* lazy barrier init */
+  libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
+    img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
+    ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
+    ofm1 = ofm1ifm1 / handle->blocksifm;
+    ifm1 = ofm1ifm1 % handle->blocksifm;
+    for(kj=0; kj < handle->desc.R; ++kj) {
+      for(ki=0; ki < handle->desc.S; ++ki) {
+        l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+        l_wt = &LIBXSMM_VLA_ACCESS(6, per_thread_weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+        l_output = &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+        jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
+      }
+    }
+  }
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+  /* reduce weights */
+  for ( i = 0; i < handle->desc.threads; i++ ) {
+    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+      weight_ptr[j] += remote_weight_ptr[j];
+    }
+  }
+#else
   for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
@@ -102,6 +131,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
     }
   }
+#endif
 /* should never happen, this is just an additional check */
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

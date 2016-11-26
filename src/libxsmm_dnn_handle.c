@@ -620,12 +620,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->ifmblock == 1) {
         handle->upd_use_thread_fil = 1;
         libxsmm_xmalloc(&handle->scratch4,
-        handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock 
+          handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock 
           * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
-        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+          LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
       } else {
         handle->scratch4 = 0;
         handle->upd_use_thread_fil = 0;
+      }
+      if ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) && (handle->upd_use_thread_fil == 0)) {
+        if ( (handle->desc.threads*2) > (handle->blocksifm*handle->blocksofm) ) {
+          handle->upd_use_thread_fil = 1;
+          libxsmm_xmalloc(&handle->scratch4,
+            handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock 
+            * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
+            LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
+        }
       }
     }
   }

@@ -104,7 +104,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
       if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
@@ -115,15 +114,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
 #undef LIBXSMM_WU_PER_THREAD_ALLOCATION
       }
       else {
-#endif
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
-#if 0
       }
-#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -157,7 +153,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
       if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
@@ -168,15 +163,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
 #undef LIBXSMM_WU_PER_THREAD_ALLOCATION
       }
       else {
-#endif
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
-#if 0
       }
-#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
