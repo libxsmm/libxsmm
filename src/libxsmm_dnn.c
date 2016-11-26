@@ -227,15 +227,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
       libxsmm_xfree(handle->code_fwd[2].pmm);
       libxsmm_xfree(handle->code_fwd[3].pmm);
       libxsmm_xfree(handle->code_bwd[0].pmm);
-      libxsmm_xfree(handle->code_bwd[1].pmm);
-      libxsmm_xfree(handle->code_bwd[2].pmm);
-      libxsmm_xfree(handle->code_bwd[3].pmm);
+      if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
+        libxsmm_xfree(handle->code_bwd[1].pmm);
+        libxsmm_xfree(handle->code_bwd[2].pmm);
+        libxsmm_xfree(handle->code_bwd[3].pmm);
+      }
       libxsmm_xfree(handle->code_upd[0].pmm);
-      libxsmm_xfree(handle->code_upd[1].pmm);
-      libxsmm_xfree(handle->code_upd[2].pmm);
-      libxsmm_xfree(handle->code_upd[3].pmm);
-      libxsmm_xfree(handle->code_upd[4].pmm);
-      libxsmm_xfree(handle->code_upd[5].pmm);
+      if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
+        libxsmm_xfree(handle->code_upd[1].pmm);
+        libxsmm_xfree(handle->code_upd[2].pmm);
+        libxsmm_xfree(handle->code_upd[3].pmm);
+        libxsmm_xfree(handle->code_upd[4].pmm);
+        libxsmm_xfree(handle->code_upd[5].pmm);
+      }
     } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
       if (handle->fwd_ofw_rb_2 != 0) {

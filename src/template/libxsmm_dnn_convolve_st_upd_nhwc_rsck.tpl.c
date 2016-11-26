@@ -85,9 +85,9 @@ const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((lti
 #endif
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
+     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE  || /* ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-} else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if (*/ libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
