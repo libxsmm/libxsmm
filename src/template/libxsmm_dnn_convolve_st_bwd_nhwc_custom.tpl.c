@@ -52,8 +52,8 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, del_out, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, del_input, (element_input_type*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
 /* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
 libxsmm_convfunction jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
@@ -74,8 +74,8 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
       /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
       for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          LIBXSMM_VLA_ACCESS(6, tr_wt, kj, ki, ofm1, ofm2, ifm1, ifm2, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(6, wt,  kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+          LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kj, ki, ofm2, ifm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
+            LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
         }
       }
     }
@@ -96,7 +96,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           oj = ij - handle->desc.R + kj + 1;
           if(oj >= 0 && oj < handle->ofh) {
             l_input =  &LIBXSMM_VLA_ACCESS(5, del_input, img, ij, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, handle->desc.R-kj-1, 0, ofm1, 0, ifm1, 0, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock);
+            l_wt = &LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, handle->desc.R-kj-1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
             l_output = &LIBXSMM_VLA_ACCESS(5, del_out, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
             jitted_conv_bp_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
           }

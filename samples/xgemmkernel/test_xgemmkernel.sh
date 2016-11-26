@@ -25,7 +25,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-MAKE=${MAKE:-make}
 
 REPS=100000
 M="4 10 20 35 56 84"
@@ -34,41 +33,11 @@ M="4 12 20 36 56 84"
 #M="8 16 24 40 56 88"
 #M="56"
 
-cd ./../../
-
-${MAKE} realclean
-${MAKE}
-#${MAKE} CC=gcc CXX=g++ FC=gfortran
-
-#exit if compiler fails
-rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-
-cd ./samples/jit_generator/
-
-# select architecture for validation
-ARCH=hsw
+# select precision
 PREC=DP
-if [ $# -eq 2 ]
+if [ $# -eq 1 ]
 then
-  ARCH=$1
-  PREC=$2
-fi
-
-# set SDE to run AVX512 code
-SDE_KNL="sde64 -knl -mix -- "
-
-rm -rf xgemm*
-if [ "${ARCH}" == 'snb' ]; then
-  icc -std=c99 -O2 -mavx -ansi-alias -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
-#  gcc -std=c99 -O2 -mavx -fstrict-aliasing -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread  -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
-elif [ "${ARCH}" == 'hsw' ]; then
-  icc -std=c99 -O2 -ansi-alias -xCORE-AVX2 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
-#  gcc -std=c99 -O2 -fstrict-aliasing -mavx2 -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
-elif [ "${ARCH}" == 'knl' ]; then
-  icc -std=c99 -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -mkl=sequential -o xgemm_icc
-#  gcc -std=c99 -O2 -fstrict-aliasing -mavx512f -mfma -DNDEBUG jit_validation.c -I./../../include -L./../../lib -lxsmm -lrt -lpthread -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_sequential.a -Wl,--end-group -lm -ldl -o xgemm_gcc
-else
-  echo "unsupported architecture!"
+  PREC=$1
 fi
 
 N="9"
@@ -85,8 +54,7 @@ do
       lda=$m
       ldb=$k
       ldc=$m
-      ./xgemm_icc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
-#      ./xgemm_gcc $m $n $k $lda $ldb $ldc 1 1 1 1 ${ARCH} nopf ${PREC} ${REPS}
+      ./xgemmkernel $m $n $k $lda $ldb $ldc 1 1 1 1 nopf ${PREC} ${REPS}
     done
   done
 done

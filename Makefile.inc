@@ -821,7 +821,7 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
-      CTARGET = -mavx2
+      CTARGET = -march=core-avx2
     endif
   else ifeq (1,$(AVX))
     CTARGET = -mavx
