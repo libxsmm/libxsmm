@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar, 
+/* Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar,
    Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
@@ -201,7 +201,7 @@ LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int 
     for ( s = 0; s < S; s++ ) {
       for ( c = 0; c < C; c++ ) {
         for ( k = 0; k < K; k++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, k, c, r, s, C, R, S) = 
+          LIBXSMM_VLA_ACCESS(4, output, k, c, r, s, C, R, S) =
             LIBXSMM_VLA_ACCESS(4,  input, r, s, c, k, S, C, K);
         }
       }
@@ -356,7 +356,7 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
 
 int main(int argc, char* argv[])
 {
-  float *naive_input, *naive_output, *naive_filter, *naive_filter_wu, *naive_libxsmm_output; 
+  float *naive_input, *naive_output, *naive_filter, *naive_filter_wu, *naive_libxsmm_output;
   float *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save, *naive_filter_save, *naive_filter_kcrs;
   float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
@@ -376,7 +376,7 @@ int main(int argc, char* argv[])
   int kw = 3;             /* filter width, "S" */
   int pad = 1;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
-  char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */  
+  char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
 #else

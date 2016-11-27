@@ -110,7 +110,7 @@ typedef enum libxsmm_dnn_conv_dimtype {
   LIBXSMM_DNN_CONV_DIMTYPE_S
 } libxsmm_dnn_conv_dimtype;
 
-/** layout descriptor to allow external data allocation 
+/** layout descriptor to allow external data allocation
     outside of LIBXSMM */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_datalayout {
   libxsmm_dnn_conv_dimtype* dim_type;

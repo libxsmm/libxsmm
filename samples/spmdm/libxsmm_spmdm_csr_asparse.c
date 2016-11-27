@@ -219,26 +219,26 @@ int main(int argc, char **argv)
   size_t l;
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
     double random = drand48();
-    #ifdef USE_BFLOAT 
+    #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
     uint16_t val = (random_int>>16);
     #else
     float  val = (float)random;
-    #endif 
+    #endif
     if(random > 0.85) A_gold[l] = val;
     else              A_gold[l] = (real)0.0;
   }
 
   for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
     double random = drand48();
-    #ifdef USE_BFLOAT 
+    #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
     uint16_t val = (random_int>>16);
     #else
     float  val = (float)random;
-    #endif 
+    #endif
     B_gold[l] = val;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
   /* TODO: fix alpha, beta and transA, transB inputs */
-# ifdef USE_BFLOAT 
+# ifdef USE_BFLOAT
   libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
 # else
   libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
@@ -313,7 +313,7 @@ int main(int argc, char **argv)
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
-  
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* Step 5: Initialize libxsmm for transpose A - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle2;
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
   /* TODO: fix alpha, beta and transA, transB inputs */
-# ifdef USE_BFLOAT 
+# ifdef USE_BFLOAT
   libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
 # else
   libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
- 
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* Step 6: Test transpose B  */
   transA = 'N'; transB = 'Y';
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
   /* TODO: fix alpha, beta and transA, transB inputs */
-# ifdef USE_BFLOAT 
+# ifdef USE_BFLOAT
   libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
 # else
   libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
@@ -392,7 +392,7 @@ int main(int argc, char **argv)
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
- 
+
  return 0;
 }
 

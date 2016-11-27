@@ -63,7 +63,7 @@ typedef struct libxsmm_CSR_sparseslice {
   /* Since bm and bk are assumed to be <=256, a 16-bit integer is enough to store the local rowidx, colidx */
   uint16_t * rowidx;
   uint16_t * colidx;
-  float*     values; 
+  float*     values;
 } libxsmm_CSR_sparseslice;
 
 
@@ -71,37 +71,37 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * 
 
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
-				const float * A, 
+				const float * A,
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads);
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
 				char transA,
-				const uint16_t * A, 
+				const uint16_t * A,
 				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
                                 int mb, int kb,
 				int tid, int nthreads);
 LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
-                            const float *alpha, 
-                            libxsmm_CSR_sparseslice* A_sparse, 
-                            const float *B, 
-                            const float *beta, 
+                            const float *alpha,
+                            libxsmm_CSR_sparseslice* A_sparse,
+                            const float *B,
+                            const float *beta,
                             float* C,
-                            int mb, int num_m_blocks, int nb, 
-                            int tid, int nthreads); 
+                            int mb, int num_m_blocks, int nb,
+                            int tid, int nthreads);
 
 LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
 			    char transA,
 			    char transB,
-                            const uint16_t *alpha, 
-                            libxsmm_CSR_sparseslice* A_sparse, 
-                            const uint16_t *B, 
-                            const uint16_t *beta, 
+                            const uint16_t *alpha,
+                            libxsmm_CSR_sparseslice* A_sparse,
+                            const uint16_t *B,
+                            const uint16_t *beta,
                             uint16_t* C,
-                            int mb, int num_m_blocks, int nb, 
-                            int tid, int nthreads); 
+                            int mb, int num_m_blocks, int nb,
+                            int tid, int nthreads);
 
 
 #endif /*LIBXSMM_SPMDM_H*/

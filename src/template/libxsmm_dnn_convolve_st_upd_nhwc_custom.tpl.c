@@ -72,7 +72,7 @@ element_output_type* l_output;
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
 element_filter_type* remote_weight_ptr = 0;
 element_filter_type* weight_ptr = (element_filter_type*)handle->filter->data;
-element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) 
+element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4)
                                                 + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* number of tasks that could be run in parallel */
