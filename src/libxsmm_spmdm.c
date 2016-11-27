@@ -38,6 +38,17 @@
 #include <math.h>
 #include <string.h>
 
+#if !defined(LIBXSMM_SPMDM_MALLOC_INTRINSIC)
+# define LIBXSMM_SPMDM_MALLOC_INTRINSIC
+#endif
+#if defined(LIBXSMM_SPMDM_MALLOC_INTRINSIC)
+# define LIBXSMM_SPMDM_MALLOC(SIZE, ALIGNMENT) _mm_malloc(SIZE, ALIGNMENT)
+# define LIBXSMM_SPMDM_FREE(BUFFER) _mm_free((void*)(BUFFER))
+#else
+# define LIBXSMM_SPMDM_MALLOC(SIZE, ALIGNMENT) libxsmm_aligned_malloc(SIZE, -(ALIGNMENT))
+# define LIBXSMM_SPMDM_FREE(BUFFER) libxsmm_free(BUFFER)
+#endif
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_32[256];
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_16[256];
 
@@ -68,7 +79,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_16[256];
 #define _MM_ADD_FP32 _mm512_add_ps
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
-static void _mm512_print(__m512 a, char * s)
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm512_print(__m512 a, char * s)
 {
   float *v=(float *)(&a);
   int i;
@@ -78,7 +90,7 @@ static void _mm512_print(__m512 a, char * s)
   printf("\n");
 }
 
-static void _mm512i_print(__m512i a, char * s)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm512i_print(__m512i a, char * s)
 {
   int *v=(int *)(&a);
   int i;
@@ -88,7 +100,7 @@ static void _mm512i_print(__m512i a, char * s)
   printf("\n");
 }
 
-static void _mm512i_epi16_print(__m512i a, char * s)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm512i_epi16_print(__m512i a, char * s)
 {
   uint16_t *v=(uint16_t*)(&a);
   int i;
@@ -98,7 +110,7 @@ static void _mm512i_epi16_print(__m512i a, char * s)
   printf("\n");
 }
 
-static void _mm256i_epi16_print(__m256i a, char * s)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s)
 {
   uint16_t *v=(uint16_t*)(&a);
   int i;
@@ -166,7 +178,8 @@ static void _mm256i_epi16_print(__m256i a, char * s)
 #define _MM_ADD_FP32 _mm256_add_ps
 #define _MM_FMADD_FP32 _mm256_fmadd_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
-static void _mm256_print(__m256 a, char * s)
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256_print(__m256 a, char * s)
 {
   float *v=(float *)(&a);
   int i;
@@ -176,7 +189,7 @@ static void _mm256_print(__m256 a, char * s)
   printf("\n");
 }
 
-static void _mm256i_print(__m256i a, char * s)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_print(__m256i a, char * s)
 {
   int *v=(int *)(&a);
   int i;
@@ -186,7 +199,7 @@ static void _mm256i_print(__m256i a, char * s)
   printf("\n");
 }
 
-static void _mm256i_epi16_print(__m256i a, char * s)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s)
 {
   uint16_t *v=(uint16_t*)(&a);
   int i;
@@ -274,11 +287,9 @@ static void _mm256i_epi16_print(__m256i a, char * s)
 
 #endif
 
-static void libxsmm_spmdm_init_shufmask()
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_shufmask()
 {
-#if SIMD_WIDTH_FP32 == 1
-  return;
-#else
+#if SIMD_WIDTH_FP32 != 1
   unsigned int i,j, c, last_bit;
   LIBXSMM_ALIGNED(int temp_shufmasks[8], 64);
   LIBXSMM_ALIGNED(uint16_t temp_shufmasks2[16], 64);
@@ -301,7 +312,8 @@ static void libxsmm_spmdm_init_shufmask()
 #endif
 }
 
-static void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
     int kb, mb;
     int m_blocks = handle->mb;
@@ -320,6 +332,7 @@ static void libxsmm_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, li
     *libxsmm_output_csr = libxsmm_output_csr_a;
 
 }
+
 
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
@@ -341,11 +354,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmd
   handle->kb = (handle->k + handle->bk - 1) / handle->bk;
 
   /* This is temporary space needed; allocate for each different size of A */
-  libxsmm_spmdm_allocate_csr_a( handle, libxsmm_output_csr);
+  internal_spmdm_allocate_csr_a( handle, libxsmm_output_csr);
 
   /* Initialize shuffle masks for the computation */
-  libxsmm_spmdm_init_shufmask();
-  return;
+  internal_spmdm_init_shufmask();
 }
 
 
@@ -469,6 +481,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
    }
    #endif
 }
+
 
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread(
   const libxsmm_spmdm_handle* handle,
@@ -617,10 +630,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  LIBXSMM_ALIGNED(float scratch_C[num_m_blocks*m_block_size*n_block_size], 64);
-  LIBXSMM_ALIGNED(float scratch_B[k_block_size*n_block_size], 64);
+  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size, 64);
+  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size, 64);
   SIMDTYPE_FP32 sum[2*num_regs];
-  float* __restrict__ ptr_result;
+  float* LIBXSMM_RESTRICT ptr_result;
 
   if (m_overall_end   > handle->m) m_overall_end   = handle->m;
   num_m = (m_overall_end - m_overall_start);
@@ -893,7 +906,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
         sum[4] = _MM_LOAD_FP32(result_m_index + 4*SIMD_WIDTH_FP32);
         sum[5] = _MM_LOAD_FP32(result_m_index + 5*SIMD_WIDTH_FP32);
         for (; j < num_j; j++) {
-          const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+          const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
           sum[0] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 0*SIMD_WIDTH_FP32), sum[0]);
           sum[1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 1*SIMD_WIDTH_FP32), sum[1]);
@@ -962,7 +975,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
       }
     }
   }
+
+  LIBXSMM_SPMDM_FREE(scratch_C);
+  LIBXSMM_SPMDM_FREE(scratch_B);
 }
+
 
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
@@ -999,8 +1016,9 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  LIBXSMM_ALIGNED(float scratch_C[num_m_blocks*m_block_size*n_block_size], 64);
-  LIBXSMM_ALIGNED(float scratch_B[k_block_size*n_block_size], 64);
+  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size, 64);
+  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size, 64);
+
   SIMDTYPE_FP32 sum[2*num_regs];
   uint16_t* LIBXSMM_RESTRICT ptr_result;
 
@@ -1256,7 +1274,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         sum[4] = _MM_LOAD_FP32(result_m_index + 4*SIMD_WIDTH_FP32);
         sum[5] = _MM_LOAD_FP32(result_m_index + 5*SIMD_WIDTH_FP32);
         for (; j < num_j; j++) {
-          const float* const __restrict__ sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+          const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
           SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
           sum[0] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 0*SIMD_WIDTH_FP32), sum[0]);
           sum[1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 1*SIMD_WIDTH_FP32), sum[1]);
@@ -1319,5 +1337,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       }
     }
   }
+
+  LIBXSMM_SPMDM_FREE(scratch_C);
+  LIBXSMM_SPMDM_FREE(scratch_B);
 }
 
