@@ -350,13 +350,13 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmd
 
 
 /* This converts a dense representation of the sparse matrix to 2D array of sparse slices. */
-LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
-				char transA,
-				const float * A,
-				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
-                                int mb, int kb,
-				int tid, int nthreads
-				)
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  const float * A,
+  libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
+  int mb, int kb,
+  int tid, int nthreads)
 {
    int i,k;
 #if SIMD_WIDTH_FP32 == 8
@@ -470,12 +470,13 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
    #endif
 }
 
-LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
-				char transA,
-				const uint16_t * A,
-				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
-                                int mb, int kb,
-				int tid, int nthreads)
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  const uint16_t * A,
+  libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
+  int mb, int kb,
+  int tid, int nthreads)
 {
    int i,k;
 #if SIMD_WIDTH_FP32 == 8
@@ -517,9 +518,9 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
        for(k = 0; k < ncols_aligned; k+= 4*SIMD_WIDTH_FP32) {
          int vals[32];
          int kk;
-	 for(kk = 0; kk < 4*SIMD_WIDTH_FP32; kk+=2) { vals[kk/2] = (int)input_ptr[(k+kk)*handle->m + i]; vals[kk/2] |= ((int)(input_ptr[(k+kk+1)*handle->m + i]) << 16); }
-	 SIMDTYPE_INT32 v1tmp = _MM_LOADU_INT32(vals);
-	 SIMDTYPE_INT32 v2tmp = _MM_LOADU_INT32(vals + SIMD_WIDTH_FP32);
+         for(kk = 0; kk < 4*SIMD_WIDTH_FP32; kk+=2) { vals[kk/2] = (int)input_ptr[(k+kk)*handle->m + i]; vals[kk/2] |= ((int)(input_ptr[(k+kk+1)*handle->m + i]) << 16); }
+         SIMDTYPE_INT32 v1tmp = _MM_LOADU_INT32(vals);
+         SIMDTYPE_INT32 v2tmp = _MM_LOADU_INT32(vals + SIMD_WIDTH_FP32);
          SIMDTYPE_FP32 v1, v2, v3, v4;
          EXPAND_BFLOAT16(v1tmp, v1, v2);
          EXPAND_BFLOAT16(v2tmp, v3, v4);
@@ -581,16 +582,17 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
-			    char transA,
-			    char transB,
-                            const float *alpha,
-                            libxsmm_CSR_sparseslice* A_sparse,
-                            const float *B,
-                            const float *beta,
-                            float* C,
-                            int mb, int num_m_blocks, int nb,
-                            int tid, int nthreads)
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  char transB,
+  const float *alpha,
+  libxsmm_CSR_sparseslice* A_sparse,
+  const float *B,
+  const float *beta,
+  float* C,
+  int mb, int num_m_blocks, int nb,
+  int tid, int nthreads)
 {
   const int m_blocks = handle->mb;
   /* const int n_blocks = handle->nb; */
@@ -656,7 +658,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spm
         scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
       }
     }
-  }	
+  }
 
   for (kb = 0; kb < k_blocks; kb++) {
     const float * LIBXSMM_RESTRICT ptr_dense;
@@ -740,7 +742,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spm
       end_j_2 =  slice.rowidx[m_local + 2];
       num_j   = (end_j - start_j);
       num_j_2   = (end_j_2 - end_j);
-      sp_c_ptr_base = slice.colidx + start_j;	
+      sp_c_ptr_base = slice.colidx + start_j;
       sp_c_ptr_base_2 = slice.colidx + end_j;
       sp_v_ptr_base = (float *)(slice.values) + start_j;
       sp_v_ptr_base_2 = (float *)(slice.values) + end_j;
@@ -878,7 +880,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spm
       start_j =  slice.rowidx[m_local];
       end_j   =  slice.rowidx[m_local + 1];
       num_j   = (end_j - start_j);
-      sp_c_ptr_base = slice.colidx + start_j;	
+      sp_c_ptr_base = slice.colidx + start_j;
       sp_v_ptr_base = slice.values + start_j;
       result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
 
@@ -962,16 +964,17 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spm
   }
 }
 
-LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
-			    char transA,
-			    char transB,
-                            const uint16_t *alpha,
-                            libxsmm_CSR_sparseslice* A_sparse,
-                            const uint16_t *B,
-                            const uint16_t *beta,
-                            uint16_t* C,
-                            int mb, int num_m_blocks, int nb,
-                            int tid, int nthreads)
+LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  char transB,
+  const uint16_t *alpha,
+  libxsmm_CSR_sparseslice* A_sparse,
+  const uint16_t *B,
+  const uint16_t *beta,
+  uint16_t* C,
+  int mb, int num_m_blocks, int nb,
+  int tid, int nthreads)
 {
   const int m_blocks = handle->mb;
   /*const int n_blocks = handle->nb;*/
@@ -1045,7 +1048,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm
         scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = v1;
       }
     }
-  }	
+  }
 
   for (kb = 0; kb < k_blocks; kb++) {
     const uint16_t* LIBXSMM_RESTRICT ptr_dense;
@@ -1077,19 +1080,19 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm
       ptr_dense = B + k_overall_start*handle->n + n_overall_start;
       if(!last_block_n) {
         for (k = 0; k < num_k; k++) {
-	  SIMDTYPE_INT32 vload_0 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*0*SIMD_WIDTH_FP32));
+          SIMDTYPE_INT32 vload_0 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*0*SIMD_WIDTH_FP32));
           SIMDTYPE_FP32 v1_0, v2_0;
-	  EXPAND_BFLOAT16(vload_0, v1_0, v2_0);
+          EXPAND_BFLOAT16(vload_0, v1_0, v2_0);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*0*SIMD_WIDTH_FP32, v1_0);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*0+1)*SIMD_WIDTH_FP32, v2_0);
-	  SIMDTYPE_INT32 vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
+          SIMDTYPE_INT32 vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
           SIMDTYPE_FP32 v1_1, v2_1;
-	  EXPAND_BFLOAT16(vload_1, v1_1, v2_1);
+          EXPAND_BFLOAT16(vload_1, v1_1, v2_1);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32, v1_1);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32, v2_1);
-	  SIMDTYPE_INT32 vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
+          SIMDTYPE_INT32 vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
           SIMDTYPE_FP32 v1_2, v2_2;
-	  EXPAND_BFLOAT16(vload_2, v1_2, v2_2);
+          EXPAND_BFLOAT16(vload_2, v1_2, v2_2);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32, v1_2);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32, v2_2);
         }
@@ -1128,7 +1131,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm
       end_j_2 =  slice.rowidx[m_local + 2];
       num_j   = (end_j - start_j);
       num_j_2   = (end_j_2 - end_j);
-      sp_c_ptr_base = slice.colidx + start_j;	
+      sp_c_ptr_base = slice.colidx + start_j;
       sp_c_ptr_base_2 = slice.colidx + end_j;
       sp_v_ptr_base = (float *)(slice.values) + start_j;
       sp_v_ptr_base_2 = (float *)(slice.values) + end_j;
@@ -1240,7 +1243,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm
       start_j =  slice.rowidx[m_local];
       end_j   =  slice.rowidx[m_local + 1];
       num_j   = (end_j - start_j);
-      sp_c_ptr_base = slice.colidx + start_j;	
+      sp_c_ptr_base = slice.colidx + start_j;
       sp_v_ptr_base = slice.values + start_j;
       result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
 
@@ -1317,5 +1320,4 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm
     }
   }
 }
-
 
