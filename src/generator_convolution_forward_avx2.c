@@ -275,7 +275,7 @@ void libxsmm_generator_convolution_forward_avx2_ifmloop( libxsmm_generated_code*
   /* unrolling ifm loop */
   unsigned int l_ifm_trip_count = 0;
   /* total iterations */
-  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ifm_block;	
+  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ifm_block;
   l_k = l_n = l_m = 0;
 #if 0
   /* register blocking counter in n */

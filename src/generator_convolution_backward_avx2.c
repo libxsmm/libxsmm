@@ -326,7 +326,7 @@ void libxsmm_generator_convolution_backward_avx2_ofmloop( libxsmm_generated_code
   /* unrolling ofm loop */
   unsigned int l_ofm_trip_count = 0;
   /* total iterations */
-  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ofm_block;	
+  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ofm_block;
   l_k = l_n = l_m = 0;
 
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_in != 0 ) {
