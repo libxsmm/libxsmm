@@ -181,7 +181,7 @@ unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*  
                                                 i_xgemm_desc->k,
                                                 -1 );
   } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (l_k_threshold <= (unsigned int)i_xgemm_desc->k) ) {
-    if (i_xgemm_desc->k != l_k_blocking) {
+    if (l_k_blocking != (unsigned int)i_xgemm_desc->k) {
       libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                             i_micro_kernel_config->vector_length, l_k_blocking);
     }
@@ -194,7 +194,7 @@ unsigned int libxsmm_generator_gemm_imci_kernel_kloop( libxsmm_generated_code*  
                                                 l_k_blocking,
                                                 -1 );
 
-    if (i_xgemm_desc->k != l_k_blocking) {
+    if (l_k_blocking != (unsigned int)i_xgemm_desc->k) {
       libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                            i_xgemm_desc, i_micro_kernel_config->vector_length, i_xgemm_desc->k, 1 );
     }
