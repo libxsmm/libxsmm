@@ -260,7 +260,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define _MM_STORE_INT32(x,y) ((*(x)) = (y))
 #define _MM_LOADU_INT32(x) (*(x))
 #define _MM_GATHER_FP32(Addr, idx, scale) (*(Addr + (idx)))
-#define _MM_CMPNEQ_FP32(v1,v2) ((v1) != (v2))
+#define _MM_CMPNEQ_FP32(v1,v2) (LIBXSMM_FEQ(v1, v2) ? 0 : 1)
 #define _MM_STORE_FP32(x,y) ((*(x)) = (y))
 #define _MM_ADD_FP32(x,y) ((x) + (y))
 #define _MM_FMADD_FP32(x,y,z) (((x)*(y))+(z))
@@ -442,8 +442,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
          }
 
          for(k = ncols_aligned_2; k < ncols; k++) {
-           float v1 = input_ptr[i + k*handle->m];
-           int m1 = (v1 != 0.0);
+           const float v1 = input_ptr[i + k*handle->m];
+           const int m1 = LIBXSMM_FEQ(0, v1) ? 0 : 1;
            if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
          }
        }
@@ -478,8 +478,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
            COMPRESS_FP32(v1, k, m1, cnt);
          }
          for(k = ncols_aligned_2; k < ncols; k++) {
-           float v1 = input_ptr[i*handle->k + k];
-           int m1 = (v1 != 0.0);
+           const float v1 = input_ptr[i*handle->k + k];
+           const int m1 = LIBXSMM_FEQ(0, v1) ? 0 : 1;
            if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
          }
        }
@@ -572,7 +572,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
            v1tmp_int.i = v1tmp;
            v1tmp_int.i <<= 16;
            {
-             const int m1 = (v1tmp_int.f != 0.0 ? 1 : 0);
+             const int m1 = LIBXSMM_FEQ(0, v1tmp_int.f) ? 0 : 1;
              if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1tmp_int.f; cnt++; }
            }
          }
@@ -604,7 +604,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
            v1tmp_int.i = v1tmp;
            v1tmp_int.i <<= 16;
            {
-             int m1 = (v1tmp_int.f != 0.0 ? 1 : 0);
+             int m1 = LIBXSMM_FEQ(0, v1tmp_int.f) ? 0 : 1;
              if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1tmp_int.f; cnt++; }
            }
          }
