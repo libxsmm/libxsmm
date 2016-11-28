@@ -390,6 +390,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
    int block_offset_base, block_offset;
    int index[16];
    SIMDTYPE_INT32 vindex;
+
+   LIBXSMM_UNUSED(nthreads);
+   LIBXSMM_UNUSED(tid);
+
    if(transA == 'Y')
    {
      int kk;
@@ -514,6 +518,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
    __m256i * shufmasks2 = shufmasks_16;
 #endif
    int block_offset_base, block_offset;
+
+   LIBXSMM_UNUSED(nthreads);
+   LIBXSMM_UNUSED(tid);
+
    if(transA == 'Y')
    {
      block_offset_base = mb * handle->bm;
@@ -660,6 +668,12 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
   float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size, 64);
   SIMDTYPE_FP32 sum[2*num_regs];
   float* LIBXSMM_RESTRICT ptr_result;
+
+  LIBXSMM_UNUSED(nthreads);
+  LIBXSMM_UNUSED(transA);
+  LIBXSMM_UNUSED(alpha);
+  LIBXSMM_UNUSED(beta);
+  LIBXSMM_UNUSED(tid);
 
   /* really is twice this */
   assert(n_block_size == num_regs*SIMD_WIDTH_FP32);
@@ -1051,6 +1065,12 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 
   SIMDTYPE_FP32 sum[2*num_regs];
   uint16_t* LIBXSMM_RESTRICT ptr_result;
+
+  LIBXSMM_UNUSED(nthreads);
+  LIBXSMM_UNUSED(transA);
+  LIBXSMM_UNUSED(alpha);
+  LIBXSMM_UNUSED(beta);
+  LIBXSMM_UNUSED(tid);
 
   /* really is twice this */
   assert(n_block_size == num_regs*SIMD_WIDTH_FP32);
