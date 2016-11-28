@@ -130,35 +130,39 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 
 
 #define COMPRESS_FP32(v, k, m, cnt) \
-  { \
+{ \
   _mm512_mask_compressstoreu_ps(values_ptr + (cnt), m, v); \
-  __m256i vk1 = _mm256_set1_epi16((short)(k)); \
-  __m256i vk2 = _mm256_set1_epi16((short)((k) + 8)); \
-  __m256i v_idx = _mm256_add_epi32(vk1, _mm256_load_si256(&shufmasks2[(m)&0xFF])); \
-  __m256i v_idx_2 = _mm256_add_epi32(vk2, _mm256_load_si256(&shufmasks2[((m)>>8)&0xFF])); \
-  _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
-  cnt += _mm_popcnt_u32((m)&0xFF); \
-  _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx_2); \
-  cnt += _mm_popcnt_u32(((m)>>8)&0xFF); \
-  }
+  { \
+    __m256i vk1 = _mm256_set1_epi16((short)(k)); \
+    __m256i vk2 = _mm256_set1_epi16((short)((k) + 8)); \
+    __m256i v_idx = _mm256_add_epi32(vk1, _mm256_load_si256(&shufmasks2[(m)&0xFF])); \
+    __m256i v_idx_2 = _mm256_add_epi32(vk2, _mm256_load_si256(&shufmasks2[((m)>>8)&0xFF])); \
+    _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
+    cnt = (unsigned short)((cnt) + _mm_popcnt_u32((m)&0xFF)); \
+    _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx_2); \
+    cnt = (unsigned short)((cnt) + _mm_popcnt_u32(((m)>>8)&0xFF)); \
+  } \
+}
 
 #define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
   { \
-  __m512i vlo = _mm512_unpacklo_epi16(vzero, v); \
-  __m512i vhi = _mm512_unpackhi_epi16(vzero, v); \
-  __m512i permmask1 = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0); \
-  __m512i permmask2 = _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4); \
+  const __m512i vlo = _mm512_unpacklo_epi16(vzero, v); \
+  const __m512i vhi = _mm512_unpackhi_epi16(vzero, v); \
+  const __m512i permmask1 = _mm512_set_epi64(11, 10, 3, 2, 9, 8, 1, 0); \
+  const __m512i permmask2 = _mm512_set_epi64(15, 14, 7, 6, 13, 12, 5, 4); \
   vlo_final = _mm512_castsi512_ps(_mm512_permutex2var_epi64(vlo, permmask1, vhi)); \
   vhi_final = _mm512_castsi512_ps(_mm512_permutex2var_epi64(vlo, permmask2, vhi)); \
   }
 
 #define COMPRESS_BFLOAT16(vlo, vhi, v) \
   { \
-  __m512i permmask1 = _mm512_set_epi64(13, 12, 9, 8, 5, 4, 1, 0); \
-  __m512i permmask2 = _mm512_set_epi64(15, 14, 11, 10, 7, 6, 3, 2); \
-  __m512i vtmp1 =  _mm512_permutex2var_epi64(_mm512_castps_si512(vlo), permmask1, _mm512_castps_si512(vhi)); \
-  __m512i vtmp2 =  _mm512_permutex2var_epi64(_mm512_castps_si512(vlo), permmask2, _mm512_castps_si512(vhi)); \
-  v = _mm512_packus_epi32(_mm512_srli_epi32(vtmp1,16), _mm512_srli_epi32(vtmp2,16)); \
+  const __m512i permmask1 = _mm512_set_epi64(13, 12, 9, 8, 5, 4, 1, 0); \
+  const __m512i permmask2 = _mm512_set_epi64(15, 14, 11, 10, 7, 6, 3, 2); \
+  const __m512i va = _mm512_castps_si512(vlo), vb = _mm512_castps_si512(vhi); \
+  const __m512i vtmp1 =  _mm512_permutex2var_epi64(va, permmask1, vb); \
+  const __m512i vtmp2 =  _mm512_permutex2var_epi64(va, permmask2, vb); \
+  const __m512i a = _mm512_srli_epi32(vtmp1, 16), b = _mm512_srli_epi32(vtmp2, 16); \
+  v = _mm512_packus_epi32(a, b); \
   }
 
 
@@ -226,7 +230,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
   __m256i v_idx = _mm256_add_epi32(vk, _mm256_load_si256(&shufmasks2[mask])); \
   _mm256_storeu_ps(values_ptr + (cnt), v_packed); \
   _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
-  cnt = (short)((cnt) + _mm_popcnt_u32(mask)); \
+  cnt = (unsigned short)((cnt) + _mm_popcnt_u32(mask)); \
   }
 
 #define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
@@ -239,8 +243,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 
 #define COMPRESS_BFLOAT16(vlo, vhi, v) \
   { \
-  __m256i vtmp1 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x20)); \
-  __m256i vtmp2 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x31)); \
+  const __m256i vtmp1 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x20)); \
+  const __m256i vtmp2 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x31)); \
   const __m256i a = _mm256_srli_epi32(vtmp1, 16), b = _mm256_srli_epi32(vtmp2,16); \
   v = _mm256_packus_epi32(a, b); \
   }
