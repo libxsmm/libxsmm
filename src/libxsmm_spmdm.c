@@ -132,13 +132,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define COMPRESS_FP32(v, k, m, cnt) \
   { \
   _mm512_mask_compressstoreu_ps(values_ptr +  cnt, m, v); \
-  __m256i vk1 = _mm256_set1_epi16((short)k); \
-  __m256i vk2 = _mm256_set1_epi16((short)(k + 8)); \
+  __m256i vk1 = _mm256_set1_epi16((short)(k)); \
+  __m256i vk2 = _mm256_set1_epi16((short)((k) + 8)); \
   __m256i v_idx = _mm256_add_epi32(vk1, _mm256_load_si256(&shufmasks2[m&0xFF])); \
   __m256i v_idx_2 = _mm256_add_epi32(vk2, _mm256_load_si256(&shufmasks2[(m>>8)&0xFF])); \
-  _mm256_storeu_si256((__m256i *)(colidx_ptr +  cnt), v_idx); \
+  _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
   cnt += _mm_popcnt_u32(m&0xFF); \
-  _mm256_storeu_si256((__m256i *)(colidx_ptr +  cnt), v_idx_2); \
+  _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx_2); \
   cnt += _mm_popcnt_u32((m>>8)&0xFF); \
   }
 
@@ -224,8 +224,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
   __m256i perm_ctrl = _mm256_load_si256(&shufmasks[mask]); \
   __m256 v_packed = _mm256_permutevar8x32_ps(v, perm_ctrl); \
   __m256i v_idx = _mm256_add_epi32(vk, _mm256_load_si256(&shufmasks2[mask])); \
-  _mm256_storeu_ps(values_ptr +  cnt, v_packed); \
-  _mm256_storeu_si256((__m256i *)(colidx_ptr +  cnt), v_idx); \
+  _mm256_storeu_ps(values_ptr + (cnt), v_packed); \
+  _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
   cnt += _mm_popcnt_u32(mask); \
   }
 
@@ -271,7 +271,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
   if(m) \
   { \
     values_ptr[cnt] = v; \
-    colidx_ptr[cnt] = (uint16_t)k; \
+    colidx_ptr[cnt] = (uint16_t)(k); \
     cnt++; \
   } \
   }
@@ -279,9 +279,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
   { \
     union { int i; float f; } vlo_tmp, vhi_tmp; \
-    vlo_tmp.i = v & 0xFFFF; vlo_tmp.i <<= 16; \
+    vlo_tmp.i = (v) & 0xFFFF; vlo_tmp.i <<= 16; \
     vlo_final = vlo_tmp.f; \
-    vhi_tmp.i = v & 0x0000FFFF; \
+    vhi_tmp.i = (v) & 0x0000FFFF; \
     vhi_final = vhi_tmp.f; \
   }
 
