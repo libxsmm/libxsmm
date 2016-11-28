@@ -57,9 +57,6 @@
 # define LIBXSMM_SPMDM_FREE(BUFFER) libxsmm_free(BUFFER)
 #endif
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_32[256];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_16[256];
-
 #ifndef LIBXSMM_STATIC_TARGET_ARCH
 #error "LIBXSMM_STATIC_TARGET_ARCH undefined"
 #endif
@@ -87,6 +84,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i shufmasks_16[256];
 #define _MM_ADD_FP32 _mm512_add_ps
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm512_print(__m512 a, char * s)
 {
@@ -165,8 +165,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
   v = _mm512_packus_epi32(a, b); \
   }
 
-
-
 #elif LIBXSMM_STATIC_TARGET_ARCH==LIBXSMM_X86_AVX2
 #define SIMD_WIDTH_FP32 (8)
 #define SIMDTYPE_FP32 __m256
@@ -190,6 +188,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define _MM_ADD_FP32 _mm256_add_ps
 #define _MM_FMADD_FP32 _mm256_fmadd_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256_print(__m256 a, char * s)
 {
@@ -321,8 +322,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_shufmask()
       j &= (~(1<<last_bit));
       cnt++;
     }
-    shufmasks_32[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks);
-    shufmasks_16[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks2);
+    internal_spmdm_shufmasks_32[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks);
+    internal_spmdm_shufmasks_16[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks2);
   }
 #endif
 }
@@ -386,11 +387,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
 {
    int i,k;
 #if SIMD_WIDTH_FP32 == 8
-   __m256i * shufmasks = shufmasks_32;
+   __m256i * shufmasks = internal_spmdm_shufmasks_32;
 #endif
 
 #if SIMD_WIDTH_FP32 > 1
-   __m256i * shufmasks2 = shufmasks_16;
+   __m256i * shufmasks2 = internal_spmdm_shufmasks_16;
 #endif
    int block_offset_base, block_offset;
    int index[16];
@@ -517,10 +518,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
 {
    int i,k;
 #if SIMD_WIDTH_FP32 == 8
-   __m256i * shufmasks = shufmasks_32;
+   __m256i * shufmasks = internal_spmdm_shufmasks_32;
 #endif
 #if SIMD_WIDTH_FP32 > 1
-   __m256i * shufmasks2 = shufmasks_16;
+   __m256i * shufmasks2 = internal_spmdm_shufmasks_16;
 #endif
    int block_offset_base, block_offset;
 
