@@ -244,7 +244,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                         i_gp_reg_mapping->gp_reg_a_prefetch,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
-      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -253,7 +253,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
     }
 
     /* in last k-iteration: advance pointers */
-    if ( (l_k == (i_k_blocking - 1)) && (i_k_blocking != i_xgemm_desc->k) ) {
+    if ( (l_k == (i_k_blocking - 1)) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
@@ -904,7 +904,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
-      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -928,7 +928,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
     }
 
     /* in last k-iteration: advance pointers */
-    if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+    if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
