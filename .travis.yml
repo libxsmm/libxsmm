@@ -104,4 +104,6 @@ script:
   - if [ -e log.txt ] && [ "0" != "$(grep 'warning:' log.txt | grep -v Makefile | wc -l)" ]; then
       sed -e 's/..*\/\(..*\/..*:[0-9][0-9]*.*:\swarning:\s..*\)/\1/;tx;d;:x' log.txt | grep -v Makefile | sort -u;
       exit 1;
+    else
+      git ls-files -o;
     fi
