@@ -278,20 +278,20 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 
 #define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
   { \
-    int vlo_tmp, vhi_tmp; \
-    vlo_tmp = v & 0xFFFF; vlo_tmp <<= 16; \
-    vlo_final = *(float *)&vlo_tmp; \
-    vhi_tmp = v & 0x0000FFFF; \
-    vhi_final = *(float *)&vhi_tmp; \
+    union { int i; float f; } vlo_tmp, vhi_tmp; \
+    vlo_tmp.i = v & 0xFFFF; vlo_tmp.i <<= 16; \
+    vlo_final = vlo_tmp.f; \
+    vhi_tmp.i = v & 0x0000FFFF; \
+    vhi_final = vhi_tmp.f; \
   }
 
 #define COMPRESS_BFLOAT16(vlo, vhi, v) \
   { \
-    int vlo_tmp, vhi_tmp; \
-    vlo_tmp = *(int *)(&vlo); \
-    v = (vlo_tmp >> 16); \
-    vhi_tmp = *(int *)(&vhi); \
-    v = v | (vhi_tmp & 0xFFFF0000); \
+    union { int i; float f; } vlo_tmp, vhi_tmp; \
+    vlo_tmp.f = vlo; \
+    v = (vlo_tmp.i >> 16); \
+    vhi_tmp.f = vhi; \
+    v = v | (vhi_tmp.i & 0xFFFF0000); \
   }
 
 #endif
@@ -568,11 +568,12 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
 
          for(k = ncols_aligned; k < ncols; k++) {
            uint16_t v1tmp = input_ptr[k*handle->m + i];
-           int v1tmp_int  = v1tmp; v1tmp_int <<= 16;
+           union {int i; float f; } v1tmp_int;
+           v1tmp_int.i = v1tmp;
+           v1tmp_int.i <<= 16;
            {
-             float v1 = *(float *)&v1tmp_int;
-             int m1 = (v1 != 0.0);
-             if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+             const int m1 = (v1tmp_int.f != 0.0 ? 1 : 0);
+             if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1tmp_int.f; cnt++; }
            }
          }
        }
@@ -599,11 +600,12 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thr
          }
          for(k = ncols_aligned; k < ncols; k++) {
            uint16_t v1tmp = input_ptr[i*handle->k + k];
-           int v1tmp_int  = v1tmp; v1tmp_int <<= 16;
+           union {int i; float f; } v1tmp_int;
+           v1tmp_int.i = v1tmp;
+           v1tmp_int.i <<= 16;
            {
-             float v1 = *(float *)&v1tmp_int;
-             int m1 = (v1 != 0.0);
-             if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1; cnt++; }
+             int m1 = (v1tmp_int.f != 0.0 ? 1 : 0);
+             if(m1) { colidx_ptr[cnt] = (uint16_t)k; values_ptr[cnt] = v1tmp_int.f; cnt++; }
            }
          }
        }
@@ -1093,10 +1095,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
     for (m = 0; m < num_m; m++) {
       for (n = 0; n < num_n; n++) {
         uint16_t restmp = ptr_result[m*handle->n + n];
-        int res = restmp; res <<= 16;
+        union { int i; float f; } res;
+        res.i = restmp;
+        res.i <<= 16;
         {
-          float v1 = *(float *)&res;
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = res.f;
         }
       }
     }
@@ -1121,10 +1124,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       for (k = 0; k < num_k; k++) {
         for (n = 0; n < num_n; n++) {
           uint16_t restmp = ptr_dense[n*handle->k + k];
-          int res = restmp; res <<= 16;
+          union { int i; float f; } res;
+          res.i = restmp;
+          res.i <<= 16;
           {
-            float v1 = *(float *)&res;
-            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = res.f;
           }
         }
       }
@@ -1155,10 +1159,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         for (k = 0; k < num_k; k++) {
           for (n = 0; n < num_n; n++) {
             uint16_t restmp = ptr_dense[k*handle->n + n];
-            int res = restmp; res <<= 16;
+            union { int i; float f; } res;
+            res.i = restmp;
+            res.i <<= 16;
             {
-              float v1 = *(float *)&res;
-              scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+              scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = res.f;
             }
           }
         }
