@@ -31,12 +31,20 @@
 
 /* NOTE: This code currently ignores alpha, beta and trans inputs to the matrix multiply */
 #include <libxsmm_spmdm.h>
-#include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_malloc.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 #if !defined(LIBXSMM_SPMDM_MALLOC_INTRINSIC)
 # define LIBXSMM_SPMDM_MALLOC_INTRINSIC
@@ -286,8 +294,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
     v = v | (vhi_tmp & 0xFFFF0000); \
   }
 
-
 #endif
+
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_shufmask()
 {
@@ -317,22 +325,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_shufmask()
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a( const libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr)
 {
-    int kb, mb;
-    int m_blocks = handle->mb;
-    int k_blocks = handle->kb;
+  int kb, mb;
+  int m_blocks = handle->mb;
+  int k_blocks = handle->kb;
 
-    libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice *)libxsmm_aligned_malloc( handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice), 2097152);
-    for ( kb = 0; kb < k_blocks; kb++ ) {
-      for ( mb = 0; mb < m_blocks; mb++ ) {
-        int i = kb*m_blocks + mb;
-        libxsmm_output_csr_a[i].rowidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm + 1)*sizeof(uint16_t), 2097152);
-        libxsmm_output_csr_a[i].colidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(uint16_t), 2097152);
-        libxsmm_output_csr_a[i].values = (float *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(float), 2097152);
-      }
+  libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice *)libxsmm_aligned_malloc( handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice), 2097152);
+  for ( kb = 0; kb < k_blocks; kb++ ) {
+    for ( mb = 0; mb < m_blocks; mb++ ) {
+      int i = kb*m_blocks + mb;
+      libxsmm_output_csr_a[i].rowidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm + 1)*sizeof(uint16_t), 2097152);
+      libxsmm_output_csr_a[i].colidx = (uint16_t *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(uint16_t), 2097152);
+      libxsmm_output_csr_a[i].values = (float *)libxsmm_aligned_malloc((handle->bm)*(handle->bk)*sizeof(float), 2097152);
     }
+  }
 
-    *libxsmm_output_csr = libxsmm_output_csr_a;
-
+  *libxsmm_output_csr = libxsmm_output_csr_a;
 }
 
 
@@ -1087,8 +1094,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       for (n = 0; n < num_n; n++) {
         uint16_t restmp = ptr_result[m*handle->n + n];
         int res = restmp; res <<= 16;
-        float v1 = *(float *)&res;
-        scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+        {
+          float v1 = *(float *)&res;
+          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+        }
       }
     }
   }
@@ -1113,8 +1122,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         for (n = 0; n < num_n; n++) {
           uint16_t restmp = ptr_dense[n*handle->k + k];
           int res = restmp; res <<= 16;
-          float v1 = *(float *)&res;
-          scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+          {
+            float v1 = *(float *)&res;
+            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+          }
         }
       }
     }
@@ -1124,17 +1135,18 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       if(!last_block_n) {
         for (k = 0; k < num_k; k++) {
           SIMDTYPE_INT32 vload_0 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*0*SIMD_WIDTH_FP32));
+          SIMDTYPE_INT32 vload_1, vload_2;
           SIMDTYPE_FP32 v1_0, v2_0;
+          SIMDTYPE_FP32 v1_1, v2_1;
+          SIMDTYPE_FP32 v1_2, v2_2;
           EXPAND_BFLOAT16(vload_0, v1_0, v2_0);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*0*SIMD_WIDTH_FP32, v1_0);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*0+1)*SIMD_WIDTH_FP32, v2_0);
-          SIMDTYPE_INT32 vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
-          SIMDTYPE_FP32 v1_1, v2_1;
+          vload_1 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*1*SIMD_WIDTH_FP32));
           EXPAND_BFLOAT16(vload_1, v1_1, v2_1);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32, v1_1);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32, v2_1);
-          SIMDTYPE_INT32 vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
-          SIMDTYPE_FP32 v1_2, v2_2;
+          vload_2 =  _MM_LOAD_INT32((const SIMDTYPE_INT32 *)(ptr_dense + k*handle->n + 2*2*SIMD_WIDTH_FP32));
           EXPAND_BFLOAT16(vload_2, v1_2, v2_2);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32, v1_2);
           _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32, v2_2);
@@ -1144,8 +1156,10 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
           for (n = 0; n < num_n; n++) {
             uint16_t restmp = ptr_dense[k*handle->n + n];
             int res = restmp; res <<= 16;
-            float v1 = *(float *)&res;
-            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+            {
+              float v1 = *(float *)&res;
+              scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = v1;
+            }
           }
         }
       }
@@ -1166,6 +1180,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       const uint16_t*  LIBXSMM_RESTRICT sp_c_ptr_base_2;
       const float* LIBXSMM_RESTRICT sp_v_ptr_base;
       const float* LIBXSMM_RESTRICT sp_v_ptr_base_2;
+      float* const LIBXSMM_RESTRICT result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
+      float* const LIBXSMM_RESTRICT result_m_index_2 = scratch_C_base + (m+1)*num_regs*SIMD_WIDTH_FP32;
 
       if( m_local >= m_block_size) { block_A++; slice = A_sparse[block_A]; m_local = 0; }
 
@@ -1178,8 +1194,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       sp_c_ptr_base_2 = slice.colidx + end_j;
       sp_v_ptr_base = (float *)(slice.values) + start_j;
       sp_v_ptr_base_2 = (float *)(slice.values) + end_j;
-      float* const LIBXSMM_RESTRICT result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
-      float* const LIBXSMM_RESTRICT result_m_index_2 = scratch_C_base + (m+1)*num_regs*SIMD_WIDTH_FP32;
 
       if(!last_block_n)
       {
@@ -1340,17 +1354,16 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
     for (m = 0; m < num_m; m++) {
       SIMDTYPE_FP32 vload1_0 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*0*SIMD_WIDTH_FP32);
       SIMDTYPE_FP32 vload2_0 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*0+1)*SIMD_WIDTH_FP32);
-      SIMDTYPE_INT32 v_0;
+      SIMDTYPE_FP32 vload1_1, vload2_1, vload1_2, vload2_2;
+      SIMDTYPE_INT32 v_0, v_1, v_2;
       COMPRESS_BFLOAT16(vload1_0, vload2_0, v_0);
       _MM_STORE_INT32((SIMDTYPE_INT32 *)(ptr_result + m*handle->n + 2*0*SIMD_WIDTH_FP32), v_0);
-      SIMDTYPE_FP32 vload1_1 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32);
-      SIMDTYPE_FP32 vload2_1 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32);
-      SIMDTYPE_INT32 v_1;
+      vload1_1 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*1*SIMD_WIDTH_FP32);
+      vload2_1 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*1+1)*SIMD_WIDTH_FP32);
       COMPRESS_BFLOAT16(vload1_1, vload2_1, v_1);
       _MM_STORE_INT32((SIMDTYPE_INT32 *)(ptr_result + m*handle->n + 2*1*SIMD_WIDTH_FP32), v_1);
-      SIMDTYPE_FP32 vload1_2 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32);
-      SIMDTYPE_FP32 vload2_2 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32);
-      SIMDTYPE_INT32 v_2;
+      vload1_2 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*2*SIMD_WIDTH_FP32);
+      vload2_2 =  _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (2*2+1)*SIMD_WIDTH_FP32);
       COMPRESS_BFLOAT16(vload1_2, vload2_2, v_2);
       _MM_STORE_INT32((SIMDTYPE_INT32 *)(ptr_result + m*handle->n + 2*2*SIMD_WIDTH_FP32), v_2);
     }

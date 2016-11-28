@@ -31,8 +31,7 @@
 #ifndef LIBXSMM_SPMDM_H
 #define LIBXSMM_SPMDM_H
 
-#include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_macros.h>
 
 
 typedef enum libxsmm_spmdm_datatype {
