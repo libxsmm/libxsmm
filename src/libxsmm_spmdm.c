@@ -1070,6 +1070,9 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 
   SIMDTYPE_FP32 sum[2*num_regs];
   uint16_t* LIBXSMM_RESTRICT ptr_result;
+#if SIMD_WIDTH_FP32 > 1
+  SIMDTYPE_INT32 vzero = _MM_SETZERO_INT32();
+#endif
 
   LIBXSMM_UNUSED(nthreads);
   LIBXSMM_UNUSED(transA);
@@ -1087,9 +1090,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
   if (n_overall_end   > handle->n) n_overall_end   = handle->n;
   num_n = (n_overall_end - n_overall_start);
   last_block_n = (num_n != n_block_size);
-#if SIMD_WIDTH_FP32 > 1
-  SIMDTYPE_INT32 vzero = _MM_SETZERO_INT32();
-#endif
 #if 0
   printf("Block: m_overall_start: %d, m_overall_end: %d, num_m: %d, num_m_aligned: %d\n", m_overall_start, m_overall_end, num_m, num_m_aligned);
   printf("Block: n_overall_start: %d, n_overall_end: %d, num_n: %d, last_block_n: %d\n", n_overall_start, n_overall_end, num_n, last_block_n);
