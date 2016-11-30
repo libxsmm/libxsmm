@@ -670,8 +670,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size, 64);
-  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size, 64);
+  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size*sizeof(float), 64);
+  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size*sizeof(float), 64);
   SIMDTYPE_FP32 sum[2*num_regs];
   float* LIBXSMM_RESTRICT ptr_result;
 
@@ -1066,8 +1066,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size, 64);
-  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size, 64);
+  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(num_m_blocks*m_block_size*n_block_size*sizeof(float), 64);
+  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size*sizeof(float), 64);
 
   SIMDTYPE_FP32 sum[2*num_regs];
   uint16_t* LIBXSMM_RESTRICT ptr_result;
