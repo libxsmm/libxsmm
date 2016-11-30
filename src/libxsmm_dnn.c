@@ -217,8 +217,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) { /* it is not an error attempting to destroy a NULL-handle */
-    /* deallocate data components; not an error to deallocate a NULL-pointer 
-       deallocate code known to be not registered; no index attached 
+    /* deallocate data components; not an error to deallocate a NULL-pointer
+       deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! */
     if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
@@ -227,15 +227,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
       libxsmm_xfree(handle->code_fwd[2].pmm);
       libxsmm_xfree(handle->code_fwd[3].pmm);
       libxsmm_xfree(handle->code_bwd[0].pmm);
-      libxsmm_xfree(handle->code_bwd[1].pmm);
-      libxsmm_xfree(handle->code_bwd[2].pmm);
-      libxsmm_xfree(handle->code_bwd[3].pmm);
+      if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
+        libxsmm_xfree(handle->code_bwd[1].pmm);
+        libxsmm_xfree(handle->code_bwd[2].pmm);
+        libxsmm_xfree(handle->code_bwd[3].pmm);
+      }
       libxsmm_xfree(handle->code_upd[0].pmm);
-      libxsmm_xfree(handle->code_upd[1].pmm);
-      libxsmm_xfree(handle->code_upd[2].pmm);
-      libxsmm_xfree(handle->code_upd[3].pmm);
-      libxsmm_xfree(handle->code_upd[4].pmm);
-      libxsmm_xfree(handle->code_upd[5].pmm);
+      if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
+        libxsmm_xfree(handle->code_upd[1].pmm);
+        libxsmm_xfree(handle->code_upd[2].pmm);
+        libxsmm_xfree(handle->code_upd[3].pmm);
+        libxsmm_xfree(handle->code_upd[4].pmm);
+        libxsmm_xfree(handle->code_upd[5].pmm);
+      }
     } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
       libxsmm_xfree(handle->code_fwd[0].pmm);
       if (handle->fwd_ofw_rb_2 != 0) {
@@ -363,7 +367,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer
 
   *status = LIBXSMM_DNN_SUCCESS;
   layout = 0;
-   
+
   if (handle != 0) {
     layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
     memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
@@ -375,12 +379,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer
           layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
 
           layout->num_dims = 5;
-          layout->dim_size[0] = handle->ifmblock; 
+          layout->dim_size[0] = handle->ifmblock;
           layout->dim_size[1] = handle->ifwp;
           layout->dim_size[2] = handle->ifhp;
           layout->dim_size[3] = handle->blocksifm;
           layout->dim_size[4] = handle->desc.N;
-          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
           layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
           layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_C;
@@ -390,14 +394,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer
           layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
 
           layout->num_dims = 6;
-          layout->dim_size[0] = handle->fm_lp_block; 
-          layout->dim_size[1] = handle->ifmblock; 
+          layout->dim_size[0] = handle->fm_lp_block;
+          layout->dim_size[1] = handle->ifmblock;
           layout->dim_size[2] = handle->ifwp;
           layout->dim_size[3] = handle->ifhp;
           layout->dim_size[4] = handle->blocksifm;
           layout->dim_size[5] = handle->desc.N;
-          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
-          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_W;
           layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_H;
           layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_C;
@@ -411,11 +415,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer
         layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
 
         layout->num_dims = 4;
-        layout->dim_size[0] = handle->ifmblock * handle->blocksifm; 
+        layout->dim_size[0] = handle->ifmblock * handle->blocksifm;
         layout->dim_size[1] = handle->ifwp;
         layout->dim_size[2] = handle->ifhp;
         layout->dim_size[3] = handle->desc.N;
-        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
         layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
         layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
         layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_N;
@@ -536,7 +540,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffe
 
   *status = LIBXSMM_DNN_SUCCESS;
   layout = 0;
-   
+
   if (handle != 0) {
     layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
     memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
@@ -548,12 +552,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffe
           layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
 
           layout->num_dims = 5;
-          layout->dim_size[0] = handle->ofmblock; 
+          layout->dim_size[0] = handle->ofmblock;
           layout->dim_size[1] = handle->ifwp;
           layout->dim_size[2] = handle->ifhp;
           layout->dim_size[3] = handle->blocksofm;
           layout->dim_size[4] = handle->desc.N;
-          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
           layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
           layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_C;
@@ -567,11 +571,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffe
         layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
 
         layout->num_dims = 4;
-        layout->dim_size[0] = handle->ofmblock * handle->blocksofm; 
+        layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
         layout->dim_size[1] = handle->ifwp;
         layout->dim_size[2] = handle->ifhp;
         layout->dim_size[3] = handle->desc.N;
-        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
         layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_W;
         layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_H;
         layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_N;
@@ -714,7 +718,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datal
 
   *status = LIBXSMM_DNN_SUCCESS;
   layout = 0;
-   
+
   if (handle != 0) {
     layout = (libxsmm_dnn_conv_datalayout*) malloc(sizeof(libxsmm_dnn_conv_datalayout));
     memset( layout, 0, sizeof(libxsmm_dnn_conv_datalayout) );
@@ -726,35 +730,35 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datal
           layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
 
           layout->num_dims = 6;
-          layout->dim_size[0] = handle->ofmblock; 
-          layout->dim_size[1] = handle->ifmblock; 
+          layout->dim_size[0] = handle->ofmblock;
+          layout->dim_size[1] = handle->ifmblock;
           layout->dim_size[2] = handle->desc.S;
           layout->dim_size[3] = handle->desc.R;
           layout->dim_size[4] = handle->blocksofm;
           layout->dim_size[5] = handle->blocksofm;
           layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_K;
-          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_S;
           layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_R;
           layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[5] = LIBXSMM_DNN_CONV_DIMTYPE_K;
         } else if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) ||
-                    ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)  && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16)) || 
+                    ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)  && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16)) ||
                     ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)  && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32))    ) {
           layout->dim_type = (libxsmm_dnn_conv_dimtype*) malloc(7*sizeof(libxsmm_dnn_conv_dimtype));
           layout->dim_size = (unsigned int*) malloc(7*sizeof(unsigned int));
 
           layout->num_dims = 7;
-          layout->dim_size[0] = handle->fm_lp_block; 
-          layout->dim_size[1] = handle->ofmblock; 
-          layout->dim_size[2] = handle->ifmblock; 
+          layout->dim_size[0] = handle->fm_lp_block;
+          layout->dim_size[1] = handle->ofmblock;
+          layout->dim_size[2] = handle->ifmblock;
           layout->dim_size[3] = handle->desc.S;
           layout->dim_size[4] = handle->desc.R;
           layout->dim_size[5] = handle->blocksofm;
           layout->dim_size[6] = handle->blocksofm;
           layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_K;
-          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_C; 
+          layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_C;
           layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_S;
           layout->dim_type[4] = LIBXSMM_DNN_CONV_DIMTYPE_R;
           layout->dim_type[5] = LIBXSMM_DNN_CONV_DIMTYPE_C;
@@ -768,11 +772,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datal
         layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
 
         layout->num_dims = 4;
-        layout->dim_size[0] = handle->ofmblock * handle->blocksofm; 
+        layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
         layout->dim_size[1] = handle->ofmblock * handle->blocksofm;
         layout->dim_size[2] = handle->desc.S;
         layout->dim_size[3] = handle->desc.K;
-        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_K; 
+        layout->dim_type[0] = LIBXSMM_DNN_CONV_DIMTYPE_K;
         layout->dim_type[1] = LIBXSMM_DNN_CONV_DIMTYPE_C;
         layout->dim_type[2] = LIBXSMM_DNN_CONV_DIMTYPE_S;
         layout->dim_type[3] = LIBXSMM_DNN_CONV_DIMTYPE_R;
@@ -874,7 +878,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_conv_da
 
   if (0 != layout) {
     free(layout->dim_type);
-    free(layout->dim_size); 
+    free(layout->dim_size);
     free(layout);
   }
   else {

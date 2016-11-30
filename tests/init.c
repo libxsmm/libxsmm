@@ -48,14 +48,28 @@ LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void init(void)
 int main(void)
 {
 #if defined(LIBXSMM_CTOR)
-  return 0 != initialized ? EXIT_SUCCESS : EXIT_FAILURE;
+  if (0 == initialized) {
+# if defined(_DEBUG)
+    fprintf(stderr, "Error: c'tor attribute failed!\n");
+# endif
+    return EXIT_FAILURE;
+  }
 #else
 # if defined(_DEBUG)
   if (0 != initialized) {
     fprintf(stderr, "Warning: c'tor attribute works, but macro support does not expose it!\n");
   }
 # endif
-  return EXIT_SUCCESS;
 #endif
+
+  /* regular/first init/finalize sequence */
+  libxsmm_init();
+  libxsmm_finalize();
+
+  /* test restart capability */
+  libxsmm_init();
+  libxsmm_finalize();
+
+  return EXIT_SUCCESS;
 }
 

@@ -91,7 +91,7 @@ The main concept in LIBXSMM's frontend is that everything is circled around `lib
 /** simplified LIBXSMM types which are needed to create a handle */
 
 /** Structure which describes the input and output of data (DNN). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
+typedef struct libxsmm_dnn_conv_desc {
   int N;                                       /* number of images in mini-batch */
   int C;                                       /* number of input feature maps */
   int H;                                       /* height of input image */

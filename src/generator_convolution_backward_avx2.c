@@ -81,7 +81,9 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
 
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
-  if ( strcmp( i_arch, "hsw" ) == 0 ) {
+  if ( strcmp( i_arch, "knl" ) == 0 ||
+       strcmp( i_arch, "skx" ) == 0 ||
+       strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
@@ -324,7 +326,7 @@ void libxsmm_generator_convolution_backward_avx2_ofmloop( libxsmm_generated_code
   /* unrolling ofm loop */
   unsigned int l_ofm_trip_count = 0;
   /* total iterations */
-  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ofm_block;	
+  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ofm_block;
   l_k = l_n = l_m = 0;
 
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_in != 0 ) {
