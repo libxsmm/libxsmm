@@ -239,7 +239,7 @@ LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, int alignment, int f
   const void* extra, size_t extra_size);
 LIBXSMM_API int libxsmm_xfree(const volatile void* memory);
 
-/** Attribute memory allocation such as to revoke protection flags. */
+/** Attribute memory allocation and protect with only the necessary flags. */
 LIBXSMM_API int libxsmm_malloc_attrib(const volatile void* memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
