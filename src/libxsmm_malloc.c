@@ -490,8 +490,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, in
 #else
       const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
       int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
-      if (0 != (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
-      if (0 != (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
+      /* quietly keep the read permission, and only remove write and exec permissions */
+      if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
+      if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
 # if defined(NDEBUG) /* treat mprotect errors as soft errors */
       mprotect(buffer, alloc_size/*entire memory region*/, xflags);
 # else /* library code is expected to be mute */
