@@ -174,7 +174,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx(con
     int r0, r1;
     __m256i a256, b256;
 #   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
-    const union { int32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
+    const union { uint32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
       in order to avoid warning about "initializer element is not computable at load time" */
       { 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x0 }
     };
@@ -339,7 +339,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx(co
     __m256i a256;
     unsigned int i;
 #   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
-    const union { int32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
+    const union { uint32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
       in order to avoid warning about "initializer element is not computable at load time" */
       { 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x0 }
     };
