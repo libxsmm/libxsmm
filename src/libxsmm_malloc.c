@@ -448,73 +448,82 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(const volatile void* memory, int flags, const char* name)
+LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const char* name)
 {
   int alloc_flags = 0;
   void* buffer = 0;
   size_t size = 0;
-#if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
-  internal_malloc_extra_type* internal = 0;
-  int result = internal_malloc_info(memory, &size, &alloc_flags, &buffer, &internal);
-#else
-  int result = internal_malloc_info(memory, &size, &alloc_flags, &buffer, 0/*internal*/);
-#endif
+  int result = EXIT_FAILURE;
+  if (0 != memory) {
+    const void *const memory_in = *memory;
 #if !defined(NDEBUG)
-  static int error_once = 0;
+    static int error_once = 0;
 #endif
-  if (0 != buffer && EXIT_SUCCESS == result) {
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
-      FILE *const code_file = fopen(name, "wb");
-      if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
-        fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory, name);
-        fwrite((const void*)memory, 1, size, code_file);
-        fclose(code_file);
-      }
-# if defined(LIBXSMM_VTUNE)
-      assert(0 != internal);
-      if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-        LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-        const unsigned int code_id = iJIT_GetNewMethodID();
-        internal_get_vtune_jitdesc(memory, code_id, size, name, &vtune_jit_desc);
-        iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
-        internal->code_id = code_id;
-      }
-      else {
-        internal->code_id = 0;
-      }
-# endif
-    }
-    { /* protect memory region according to the requested flags */
-#if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
-      LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
+#if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
+    internal_malloc_extra_type* internal = 0;
+    result = internal_malloc_info(memory_in, &size, &alloc_flags, &buffer, &internal);
 #else
-      const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
-      int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
-      /* quietly keep the read permission, and only remove write and exec permissions */
-      if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
-      if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
-# if defined(NDEBUG) /* treat mprotect errors as soft errors */
-      mprotect(buffer, alloc_size/*entire memory region*/, xflags);
-# else /* library code is expected to be mute */
-      if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        const char *const error_message = strerror(errno);
-        fprintf(stderr, "LIBXSMM: %s (mprotect warning #%i for range %p+%llu with flags=%i)!\n",
-          error_message, errno, buffer, (unsigned long long)alloc_size, xflags);
+    result = internal_malloc_info(memory_in, &size, &alloc_flags, &buffer, 0/*internal*/);
+#endif
+    if (0 != buffer && EXIT_SUCCESS == result) {
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
+        FILE *const code_file = fopen(name, "wb");
+        if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
+          fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory_in, name);
+          fwrite(memory_in, 1, size, code_file);
+          fclose(code_file);
+        }
+#if defined(LIBXSMM_VTUNE)
+        assert(0 != internal);
+        if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+          LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
+          const unsigned int code_id = iJIT_GetNewMethodID();
+          internal_get_vtune_jitdesc(memory_in, code_id, size, name, &vtune_jit_desc);
+          iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
+          internal->code_id = code_id;
+        }
+        else {
+          internal->code_id = 0;
+        }
+#endif
       }
+      { /* protect memory region according to the requested flags */
+#if defined(_WIN32) /*TODO: implementation for Microsoft Windows*/
+        LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
+#else
+        const size_t alloc_size = size + (((const char*)memory_in) - ((const char*)buffer));
+        int xflags = PROT_READ | PROT_WRITE | PROT_EXEC;
+        /* quietly keep the read permission, and only remove write and exec permissions */
+        if (0 == (LIBXSMM_MALLOC_FLAG_W & flags)) xflags &= ~PROT_WRITE;
+        if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) xflags &= ~PROT_EXEC;
+# if defined(NDEBUG) /* treat mprotect errors as soft errors */
+        mprotect(buffer, alloc_size/*entire memory region*/, xflags);
+# else /* library code is expected to be mute */
+        if (0/*ok*/ != mprotect(buffer, alloc_size/*entire memory region*/, xflags)
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          const char *const error_message = strerror(errno);
+          fprintf(stderr, "LIBXSMM: %s (mprotect warning #%i for range %p+%llu with flags=%i)!\n",
+            error_message, errno, buffer, (unsigned long long)alloc_size, xflags);
+        }
 # endif
 #endif
-    }
+      }
 #if defined(LIBXSMM_PERF)
-    /* If jitting is enabled and a valid name is given, emit information for perf.
-     * In jitdump case this needs to be done after mprotect as it gets overwritten
-     * otherwise. */
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
-      libxsmm_perf_write_code(memory, size, name);
-    }
+      /* If jitting is enabled and a valid name is given, emit information for perf.
+       * In jitdump case this needs to be done after mprotect as it gets overwritten
+       * otherwise. */
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & alloc_flags) && name && *name) {
+        libxsmm_perf_write_code(memory_in, size, name);
+      }
 #endif
+    }
   }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+  else if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    fprintf(stderr, "LIBXSMM: libxsmm_malloc_attrib failed becaue NULL cannot be attributed!\n");
+  }
+#endif
   assert(EXIT_SUCCESS == result);
   return result;
 }
