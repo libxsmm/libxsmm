@@ -450,15 +450,14 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 
 LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const char* name)
 {
-  int alloc_flags = 0;
+  int result = EXIT_FAILURE, alloc_flags = 0;
   void* buffer = 0;
   size_t size = 0;
-  int result = EXIT_FAILURE;
+#if !defined(NDEBUG)
+  static int error_once = 0;
+#endif
   if (0 != memory) {
     const void *const memory_in = *memory;
-#if !defined(NDEBUG)
-    static int error_once = 0;
-#endif
 #if (!defined(NDEBUG) && defined(_DEBUG)) || defined(LIBXSMM_VTUNE)
     internal_malloc_extra_type* internal = 0;
     result = internal_malloc_info(memory_in, &size, &alloc_flags, &buffer, &internal);
