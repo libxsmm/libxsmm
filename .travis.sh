@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2016, Intel Corporation                                     #
 # All rights reserved.                                                      #
