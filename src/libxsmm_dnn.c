@@ -818,7 +818,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const lib
   libxsmm_dnn_bias* bias = 0;
 
   if (0 != handle) {
-    libxsmm_dnn_bias* bias = (libxsmm_dnn_bias*)malloc(sizeof(libxsmm_dnn_bias));
+    bias = (libxsmm_dnn_bias*)malloc(sizeof(libxsmm_dnn_bias));
 
     if (0 != bias) { /* set properties of the buffer according to convolution handle */
       bias->fmb = handle->blocksifm;
