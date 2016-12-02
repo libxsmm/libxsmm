@@ -248,9 +248,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void* internal_xmap(const char* dir, size_t 
     if (-1 != i && 0 == unlink(filename) && 0 == ftruncate(i, size)) {
       void *const xmap = mmap(0, size, PROT_READ | PROT_EXEC, flags | MAP_SHARED, i, 0);
       if (MAP_FAILED != xmap) {
+        assert(0 != xmap);
         result = mmap(0, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED, i, 0);
         if (MAP_FAILED != result) {
-          assert(0 != xmap);
+          assert(0 != result);
           internal_mhint(xmap, size);
           *rx = xmap;
         }
@@ -474,24 +475,29 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 #else /* defined(_WIN32) */
       {
         const size_t alloc_size = info->size + (((const char*)memory) - ((const char*)info->pointer));
-        if (0 != munmap(info->pointer, alloc_size)) {
+        void *const buffer = info->pointer, *const reloc = internal->reloc;
+        const int flags = info->flags;
+        if (0 != munmap(buffer, alloc_size)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
           static int error_once = 0;
           if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const error_message = strerror(errno);
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
-              error_message, errno, info->pointer, (unsigned long long)alloc_size);
+              error_message, errno, buffer, (unsigned long long)alloc_size);
           }
 # endif
           result = EXIT_FAILURE;
         }
-        if (0 != munmap(internal->reloc, alloc_size)) {
+        if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && EXIT_SUCCESS == result
+       /*&& 0 != reloc && MAP_FAILED != reloc*/
+         && 0 != munmap(reloc, alloc_size))
+        {
 # if !defined(NDEBUG) /* library code is expected to be mute */
           static int error_once = 0;
           if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
             const char *const error_message = strerror(errno);
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
-              error_message, errno, internal->reloc, (unsigned long long)alloc_size);
+              error_message, errno, reloc, (unsigned long long)alloc_size);
           }
 # endif
           result = EXIT_FAILURE;
