@@ -455,33 +455,47 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
   int result = EXIT_SUCCESS;
   if (memory) {
     const internal_malloc_info_type *const info = internal_malloc_info(memory);
-    /*const internal_malloc_extra_type* internal = &info->internal;*/
-    void* buffer = info->pointer;
-    assert((0 != info->pointer || 0 == info->size) /*&& 0 != internal*/);
+    assert((0 != info->pointer || 0 == info->size));
     if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & info->flags)) {
-      free(buffer);
+      free(info->pointer);
     }
     else {
-#if defined(LIBXSMM_VTUNE)
+#if defined(LIBXSMM_VTUNE) || !defined(_WIN32)
+      const internal_malloc_extra_type *const internal = &info->internal;
       assert(0 != internal);
+# if defined(LIBXSMM_VTUNE)
       if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
         iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &internal->code_id);
       }
+# endif
 #endif
 #if defined(_WIN32)
-      result = FALSE != VirtualFree(buffer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
-#else
-      const size_t alloc_size = info->size + (((const char*)memory) - ((const char*)buffer));
-      if (0 != munmap(buffer, alloc_size)) {
+      result = FALSE != VirtualFree(info->pointer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
+#else /* defined(_WIN32) */
+      {
+        const size_t alloc_size = info->size + (((const char*)memory) - ((const char*)info->pointer));
+        if (0 != munmap(info->pointer, alloc_size)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
-        static int error_once = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-          const char *const error_message = strerror(errno);
-          fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
-            error_message, errno, buffer, (unsigned long long)alloc_size);
-        }
+          static int error_once = 0;
+          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+            const char *const error_message = strerror(errno);
+            fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
+              error_message, errno, info->pointer, (unsigned long long)alloc_size);
+          }
 # endif
-        result = EXIT_FAILURE;
+          result = EXIT_FAILURE;
+        }
+        if (0 != munmap(internal->reloc, alloc_size)) {
+# if !defined(NDEBUG) /* library code is expected to be mute */
+          static int error_once = 0;
+          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+            const char *const error_message = strerror(errno);
+            fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
+              error_message, errno, internal->reloc, (unsigned long long)alloc_size);
+          }
+# endif
+          result = EXIT_FAILURE;
+        }
       }
 #endif
     }
@@ -499,7 +513,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 #endif
   if (0 != memory) {
     internal_malloc_info_type *const info = internal_malloc_info(*memory);
-    internal_malloc_extra_type* internal = &info->internal;
+    internal_malloc_extra_type *const internal = &info->internal;
     const void *const memory_in = *memory;
     assert((0 != info->pointer || 0 == info->size) && 0 != internal);
     if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && name && *name) {
