@@ -216,8 +216,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
   if (/*ok*/0 !=
 #endif
   /* proceed after failed madvise (even in case of an error; take what we got from mmap) */
-  madvise(buffer, size, MADV_RANDOM
-#if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
+  madvise(buffer, size, MADV_NORMAL/*MADV_RANDOM*/
+#if 0/*TODO: failure*/ && defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
 #endif
 #if defined(MADV_DONTDUMP)
@@ -389,6 +389,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           }
         }
         if (alloc_failed != buffer) {
+          assert(0 != buffer);
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select the corresponding deallocation */
         }
         else if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
