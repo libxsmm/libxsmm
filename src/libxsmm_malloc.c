@@ -210,12 +210,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const volatile void* memory, size
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t size)
 {
-#if !defined(NDEBUG)
-  static int error_once = 0;
   assert((MAP_FAILED != buffer && 0 != buffer) || 0 == size);
-  if (/*ok*/0 !=
-#endif
   /* proceed after failed madvise (even in case of an error; take what we got) */
+  /* issue no warning as a failure seems to be related to the kernel version */
   madvise(buffer, size, MADV_NORMAL/*MADV_RANDOM*/
 #if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
@@ -223,18 +220,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
 #if defined(MADV_DONTDUMP)
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MADV_DONTDUMP)
 #endif
-  )
-/* disable warning (error message) as the failure seems to be related to the kernel version */
-#if !defined(NDEBUG)/* library code is expected to be mute */ && 0
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    const char *const error_message = strerror(errno);
-    fprintf(stderr, "LIBXSMM: %s (madvise error #%i for range %p+%llu)!\n",
-      error_message, errno, buffer, (unsigned long long)size);
-  }
-#else
-  ;
-#endif
+  );
 }
 
 
@@ -457,14 +443,14 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 {
   int result = EXIT_SUCCESS;
   if (memory) {
-    const internal_malloc_info_type *const info = internal_malloc_info(memory);
+    /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
     assert((0 != info->pointer || 0 == info->size));
     if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & info->flags)) {
       free(info->pointer);
     }
     else {
 #if defined(LIBXSMM_VTUNE) || !defined(_WIN32)
-      const internal_malloc_extra_type *const internal = &info->internal;
+      /*const*/ internal_malloc_extra_type *const internal = &info->internal;
       assert(0 != internal);
 # if defined(LIBXSMM_VTUNE)
       if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
