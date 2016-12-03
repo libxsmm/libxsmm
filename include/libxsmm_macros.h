@@ -168,7 +168,7 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
 #else
