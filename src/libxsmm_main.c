@@ -1249,15 +1249,15 @@ LIBXSMM_API_DEFINITION void libxsmm_build(const libxsmm_build_request* request, 
   if (0 == generated_code.last_error) {
     /* attempt to create executable buffer, and check for success */
     if (0 < generated_code.code_size && /* check for previous match (build kind) */
-      0 == libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
-      /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-      LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex)))
+      EXIT_SUCCESS == libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
+        /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+        LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex)))
     {
-      assert(0 == ((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) & code->imm));
+      assert(0 != code->pmm && 0 == ((LIBXSMM_HASH_COLLISION | LIBXSMM_CODE_STATIC) & code->imm));
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
-      /* revoke unnecessary memory protection flags; continue on error */
-      libxsmm_malloc_attrib(code->pmm, LIBXSMM_MALLOC_FLAG_RW, jit_name);
+      /* attribute/protect buffer and revoke unnecessary flags; continue on error */
+      libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
     }
   }
 # if !defined(NDEBUG) /* library code is expected to be mute */

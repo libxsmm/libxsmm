@@ -395,6 +395,10 @@ int main(int argc, char* argv[])
   libxsmm_dnn_filter* libxsmm_filter;
   libxsmm_dnn_err_t status;
 
+  memset(&norms_fwd, 0, sizeof(norms_fwd));
+  memset(&norms_bwd, 0, sizeof(norms_bwd));
+  memset(&norms_upd, 0, sizeof(norms_upd));
+
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type\n", argv[0]);
     return 0;

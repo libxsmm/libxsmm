@@ -276,35 +276,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_input_buffer(const
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_input_buffer_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
-  int result = EXIT_SUCCESS;
-  *status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_buffer* buffer = 0;
 
-  if (handle != 0 && buffer != 0) {
-    /* set properties of the buffer according to convolution handle */
-    buffer->N = handle->desc.N;
-    buffer->fmb = handle->blocksifm;
-    buffer->bfm = handle->ifmblock;
-    buffer->H = handle->ifhp;
-    buffer->W = handle->ifwp;
-    buffer->format = handle->buffer_format;
-    buffer->datatype = handle->datatype_in;
-    buffer->lpb = handle->fm_lp_block;
-    /* allocate raw data */
-    result = libxsmm_xmalloc(&buffer->data,
+  if (0 != handle) {
+    buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
+
+    if (0 != buffer) { /* set properties of the buffer according to convolution handle */
+      buffer->N = handle->desc.N;
+      buffer->fmb = handle->blocksifm;
+      buffer->bfm = handle->ifmblock;
+      buffer->H = handle->ifhp;
+      buffer->W = handle->ifwp;
+      buffer->format = handle->buffer_format;
+      buffer->datatype = handle->datatype_in;
+      buffer->lpb = handle->fm_lp_block;
+      buffer->data = libxsmm_aligned_malloc( /* allocate raw data */
         buffer->N * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * libxsmm_dnn_typesize(buffer->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    buffer = 0;
+        LIBXSMM_ALIGNMENT);
+      if (0 == buffer->data) {
+        free(buffer);
+        buffer = 0;
+      }
+    }
   }
 
-  if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    free((libxsmm_dnn_buffer*)buffer);
-    buffer = 0;
-  }
+  assert(0 != status);
+  *status = 0 != buffer ? LIBXSMM_DNN_SUCCESS : LIBXSMM_DNN_ERR_CREATE_BUFFER;
 
   return buffer;
 }
@@ -448,36 +445,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer(cons
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_create_output_buffer_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
-  int result = EXIT_SUCCESS;
-  *status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_buffer* buffer = 0;
 
-  if (handle != 0 && buffer != 0) {
-    /* set properties of the buffer according to convolution handle */
-    buffer->N = handle->desc.N;
-    buffer->fmb = handle->blocksofm;
-    buffer->bfm = handle->ofmblock;
-    buffer->H = handle->ofhp;
-    buffer->W = handle->ofwp;
-    buffer->format = handle->buffer_format;
-    buffer->lpb = 1;
-    buffer->datatype = handle->datatype_out;
+  if (0 != handle) {
+    buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
 
-    /* allocate raw data, we always have a 4 byte wide type!! */
-    result = libxsmm_xmalloc(&buffer->data,
+    if (0 != buffer) { /* set properties of the buffer according to convolution handle */
+      buffer->N = handle->desc.N;
+      buffer->fmb = handle->blocksofm;
+      buffer->bfm = handle->ofmblock;
+      buffer->H = handle->ofhp;
+      buffer->W = handle->ofwp;
+      buffer->format = handle->buffer_format;
+      buffer->lpb = 1;
+      buffer->datatype = handle->datatype_out;
+      buffer->data = libxsmm_aligned_malloc( /* allocate raw data, we always have a 4 byte wide type */
         buffer->N * buffer->fmb * buffer->bfm * buffer->H * buffer->W * buffer->lpb * libxsmm_dnn_typesize(buffer->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    buffer = 0;
+        LIBXSMM_ALIGNMENT);
+      if (0 == buffer->data) {
+        free(buffer);
+        buffer = 0;
+      }
+    }
   }
 
-  if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    free((libxsmm_dnn_buffer*)buffer);
-    buffer = 0;
-  }
+  assert(0 != status);
+  *status = 0 != buffer ? LIBXSMM_DNN_SUCCESS : LIBXSMM_DNN_ERR_CREATE_BUFFER;
 
   return buffer;
 }
@@ -624,36 +617,33 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter(const libxs
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_create_filter_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_dnn_filter* filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
-  int result = EXIT_SUCCESS;
-  *status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_filter* filter = 0;
 
-  if (handle != 0 && filter != 0) {
-    /* set properties of the buffer according to convolution handle */
-    filter->ifmb = handle->blocksifm;
-    filter->bifm = handle->ifmblock;
-    filter->ofmb = handle->blocksofm;
-    filter->bofm = handle->ofmblock;
-    filter->R = handle->desc.R;
-    filter->S = handle->desc.S;
-    filter->format = handle->filter_format;
-    filter->datatype = handle->datatype_in;
-    filter->lpb = handle->fm_lp_block;
-    /* allocate raw data */
-    result = libxsmm_xmalloc(&filter->data,
+  if (0 != handle) {
+    filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
+
+    if (0 != filter) { /* set properties of the buffer according to convolution handle */
+      filter->ifmb = handle->blocksifm;
+      filter->bifm = handle->ifmblock;
+      filter->ofmb = handle->blocksofm;
+      filter->bofm = handle->ofmblock;
+      filter->R = handle->desc.R;
+      filter->S = handle->desc.S;
+      filter->format = handle->filter_format;
+      filter->datatype = handle->datatype_in;
+      filter->lpb = handle->fm_lp_block;
+      filter->data = libxsmm_aligned_malloc( /* allocate raw data */
         filter->ifmb * filter->bifm * filter->ofmb * filter->bofm * filter->R * filter->S * filter->lpb * libxsmm_dnn_typesize(filter->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
-    filter = 0;
+        LIBXSMM_ALIGNMENT);
+      if (0 == filter->data) {
+        free(filter);
+        filter = 0;
+      }
+    }
   }
 
-  if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
-    free((libxsmm_dnn_filter*)filter);
-    filter = 0;
-  }
+  assert(0 != status);
+  *status = 0 != filter ? LIBXSMM_DNN_SUCCESS : LIBXSMM_DNN_ERR_CREATE_FILTER;
 
   return filter;
 }
@@ -825,31 +815,28 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias(const libxsmm_d
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_bias* libxsmm_dnn_create_bias_check(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status)
 {
-  libxsmm_dnn_bias* bias = (libxsmm_dnn_bias*)malloc(sizeof(libxsmm_dnn_bias));
-  int result = EXIT_SUCCESS;
-  *status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_bias* bias = 0;
 
-  if (handle != 0 && bias != 0) {
-    /* set properties of the buffer according to convolution handle */
-    bias->fmb = handle->blocksifm;
-    bias->bfm = handle->ifmblock;
-    bias->datatype = handle->datatype_out;
-    bias->lpb = handle->fm_lp_block;
-    /* allocate raw data, we always have a 4 byte wide type!! */
-    result = libxsmm_xmalloc(&bias->data,
+  if (0 != handle) {
+    bias = (libxsmm_dnn_bias*)malloc(sizeof(libxsmm_dnn_bias));
+
+    if (0 != bias) { /* set properties of the buffer according to convolution handle */
+      bias->fmb = handle->blocksifm;
+      bias->bfm = handle->ifmblock;
+      bias->datatype = handle->datatype_out;
+      bias->lpb = handle->fm_lp_block;
+      bias->data = libxsmm_aligned_malloc( /* allocate raw data, we always have a 4 byte wide type */
         bias->fmb * bias->bfm * bias->lpb * libxsmm_dnn_typesize(bias->datatype),
-        LIBXSMM_ALIGNMENT, LIBXSMM_MALLOC_FLAG_RW, 0/*extra*/, 0/*extra_size*/);
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_CREATE_BIAS;
-    bias = 0;
+        LIBXSMM_ALIGNMENT);
+      if (0 == bias->data) {
+        free(bias);
+        bias = 0;
+      }
+    }
   }
 
-  if (result != EXIT_SUCCESS) {
-    *status = LIBXSMM_DNN_ERR_CREATE_BIAS;
-    free((libxsmm_dnn_bias*)bias);
-    bias = 0;
-  }
+  assert(0 != status);
+  *status = 0 != bias ? LIBXSMM_DNN_SUCCESS : LIBXSMM_DNN_ERR_CREATE_BIAS;
 
   return bias;
 }
