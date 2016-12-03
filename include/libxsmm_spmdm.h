@@ -54,6 +54,7 @@ typedef struct libxsmm_spmdm_handle {
   int nb;
   int kb;
   libxsmm_spmdm_datatype datatype;
+  char * base_ptr_for_dealloc;
 } libxsmm_spmdm_handle;
 
 /**
@@ -72,6 +73,9 @@ LIBXSMM_API void libxsmm_spmdm_init(
   int M, int N, int K,
   libxsmm_spmdm_handle* handle,
   libxsmm_CSR_sparseslice** libxsmm_output_csr);
+
+LIBXSMM_API void libxsmm_spmdm_destroy(
+  libxsmm_spmdm_handle * handle);
 
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread(
   const libxsmm_spmdm_handle* handle,
@@ -109,7 +113,7 @@ LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread(
   libxsmm_CSR_sparseslice* A_sparse,
   const uint16_t *B,
   const uint16_t *beta,
-  uint16_t* C,
+  float* C,
   int mb, int num_m_blocks, int nb,
   int tid, int nthreads);
 

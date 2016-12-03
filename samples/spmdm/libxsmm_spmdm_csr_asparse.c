@@ -46,7 +46,7 @@
 # define srand48 srand
 #endif
 
-//#define USE_BFLOAT
+#define USE_BFLOAT
 #ifdef USE_BFLOAT
 typedef uint16_t real;
 #else
@@ -54,8 +54,8 @@ typedef float real;
 #endif
 
 void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
-                               real* test,
-                               real* gold) {
+                               float* test,
+                               float* gold) {
   //int mb, nb, bm, bn;
   double max_error = 0.0;
   double src_norm = 0.0;
@@ -130,7 +130,7 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
                             const uint16_t* A,
                             const uint16_t* B,
                             const uint16_t* beta,
-                            uint16_t* C,
+                            float* C,
                             libxsmm_CSR_sparseslice* A_sparse
 				) {
 
@@ -171,7 +171,8 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
 
 int main(int argc, char **argv)
 {
-  real *A_gold, *B_gold, *C_gold, *C;
+  real *A_gold, *B_gold;
+  float *C_gold, *C;
 
   int M, N, K;
   real alpha, beta;
@@ -211,8 +212,8 @@ int main(int argc, char **argv)
   /* Step 2: allocate data */
   A_gold = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
   B_gold = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 2097152 );
-  C_gold = (real*)libxsmm_aligned_malloc( M*N*sizeof(real), 2097152 );
-  C      = (real*)libxsmm_aligned_malloc( M*N*sizeof(real), 2097152 );
+  C_gold = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 2097152 );
+  C      = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 2097152 );
 
   /* Step 3: init data */
   srand48(1);
@@ -242,10 +243,10 @@ int main(int argc, char **argv)
     B_gold[l] = val;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C_gold[l] = (real)0.0;
+    C_gold[l] = (float)0.0;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (real)0.0;
+    C[l]      = (float)0.0;
   }
   flops = (double)M * (double)N * (double)K * 2.0;
 
@@ -253,8 +254,12 @@ int main(int argc, char **argv)
   /* Step 4: Initialize libxsmm for these sizes - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle;
   libxsmm_CSR_sparseslice* A_sparse;
-  libxsmm_spmdm_init(M, N, K, &handle, &A_sparse);
+  
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i\n", M, N, K, handle.bm, handle.bn, handle.bk, handle.mb, handle.nb, handle.kb, reps );
+  start = libxsmm_timer_tick();
+  libxsmm_spmdm_init(M, N, K, &handle, &A_sparse);
+  end = libxsmm_timer_tick();
+  printf("Time for handle init = %lf\n", libxsmm_timer_duration(start, end));
 
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
@@ -288,12 +293,7 @@ int main(int argc, char **argv)
 #       endif
         sum += Aval * Bval;
       }
-#     ifdef USE_BFLOAT
-      int v = *(int *)(&sum);
-      uint16_t Cval = (v >> 16);
-#     else
       float Cval = sum;
-#     endif
       C_gold[i*N + j] += Cval;
     }
   }
@@ -313,6 +313,7 @@ int main(int argc, char **argv)
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
+  libxsmm_spmdm_destroy(&handle);
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /* Step 5: Initialize libxsmm for transpose A - allocates handle and temporary space for the sparse data structure for A */
@@ -329,7 +330,7 @@ int main(int argc, char **argv)
     }
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (real)0.0;
+    C[l]      = (float)0.0;
   }
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
@@ -367,7 +368,7 @@ int main(int argc, char **argv)
     }
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (real)0.0;
+    C[l]      = (float)0.0;
   }
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha, beta and transA, transB */
@@ -392,6 +393,7 @@ int main(int argc, char **argv)
   }
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
+  libxsmm_spmdm_destroy(&handle2);
 
  return 0;
 }
