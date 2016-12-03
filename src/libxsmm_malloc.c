@@ -215,7 +215,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
   assert((MAP_FAILED != buffer && 0 != buffer) || 0 == size);
   if (/*ok*/0 !=
 #endif
-  /* proceed after failed madvise (even in case of an error; take what we got from mmap) */
+  /* proceed after failed madvise (even in case of an error; take what we got) */
   madvise(buffer, size, MADV_NORMAL/*MADV_RANDOM*/
 #if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
@@ -224,7 +224,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MADV_DONTDUMP)
 #endif
   )
-#if !defined(NDEBUG)/* library code is expected to be mute */
+/* disable warning (error message) as the failure seems to be related to the kernel version */
+#if !defined(NDEBUG)/* library code is expected to be mute */ && 0
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     const char *const error_message = strerror(errno);
@@ -252,9 +253,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void* internal_xmap(const char* dir, size_t 
         result = mmap(0, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED, i, 0);
         if (MAP_FAILED != result) {
           assert(0 != result);
-#if 0 /* TODO: investigate*/
           internal_mhint(xmap, size);
-#endif
           *rx = xmap;
         }
         else {
@@ -398,11 +397,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           buffer = malloc(alloc_size);
           reloc = buffer;
         }
-# if 0 /* TODO: investigate*/
         if (MAP_FAILED != buffer && 0 != buffer) {
           internal_mhint(buffer, alloc_size);
         }
-# endif
 #endif
       }
       if (alloc_failed != buffer && /*fallback*/0 != buffer) {
