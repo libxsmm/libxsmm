@@ -510,84 +510,79 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     internal_malloc_extra_type *const internal = &info->internal;
     void *const buffer = info->pointer;
     const size_t size = info->size;
-#if defined(LIBXSMM_VTUNE)
-    int info_writable = 1;
-#endif
     assert((0 != buffer || 0 == size) && 0 != internal);
-#if defined(_WIN32) /*TODO: implement memory protection under Microsoft Windows*/
-    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
-#else /* mprotect memory region according to the requested flags */
-    /* quietly keep the read permission, but eventually remove write permissions */
+    /* quietly keep the read permission, but eventually revoke write permissions */
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const int alignment = ((const char*)(*memory)) - ((const char*)buffer);
       const size_t alloc_size = size + alignment;
       /* treat mprotect errors as soft error if the requested buffer is not executable */
       int soft_error = 0;
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
+#if defined(_WIN32)
+        /* TODO: implement memory protection under Microsoft Windows */
+#else 
         soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ);
+#endif
       }
-      else if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+      else {
+        void *const code_ptr =
+#if !defined(_WIN32)
+          0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags) ? ((void*)(((char*)internal->reloc) + alignment)) :
+#endif
+          buffer;
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
-        *memory = ((char*)internal->reloc) + alignment;
-        info->pointer = internal->reloc;
-        internal->reloc = 0;
-        if (0 != buffer && MAP_FAILED != buffer) {
+        if (name && *name) { /* profiler support requested */
+          FILE *const code_file = fopen(name, "wb");
+          if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
+            fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
+            fwrite(code_ptr, 1, size, code_file);
+            fclose(code_file);
+          }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
             LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
             const unsigned int code_id = iJIT_GetNewMethodID();
-            internal_get_vtune_jitdesc(*memory, code_id, size, name, &vtune_jit_desc);
+            internal_get_vtune_jitdesc(code_ptr, code_id, size, name, &vtune_jit_desc);
             iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
             internal->code_id = code_id;
           }
           else {
             internal->code_id = 0;
           }
-          info_writable = 0;
 #endif
-          soft_error = munmap(buffer, alloc_size);
+#if defined(LIBXSMM_PERF)
+          /* If jitting is enabled and a valid name is given, emit information for perf.
+           * In jitdump case this needs to be done after mprotect as it gets overwritten
+           * otherwise. */
+          libxsmm_perf_dump_code(code_ptr, size, name);
+#endif
         }
+        if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+#if defined(_WIN32)
+          /* TODO: implement memory protection under Microsoft Windows */
+#else 
+          *memory = code_ptr; /* relocate */
+          info->pointer = internal->reloc;
+          internal->reloc = 0;
+          if (0 != buffer && MAP_FAILED != buffer) {
+            soft_error = munmap(buffer, alloc_size);
+          }
+#endif
+        }
+#if !defined(_WIN32)
+        else { /* malloc-based fallback */
+          /* mprotect memory region according to the requested flags */
+          soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
+          if (0/*ok*/ != soft_error) result = EXIT_FAILURE; /* error cannot be ignored */
+        }
+#endif
       }
-      else { /* malloc-based fallback */
-        assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
-        soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
-        if (0/*ok*/ != soft_error) result = EXIT_FAILURE; /* error cannot be ignored */
-      }
-# if !defined(NDEBUG) /* library code is expected to be mute */
+#if !defined(NDEBUG) /* library code is expected to be mute */
       if (0/*ok*/ != soft_error && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
         const char *const error_message = strerror(errno);
         fprintf(stderr, "LIBXSMM: %s (error #%i for range %p+%llu with flags=%i)!\n",
           error_message, errno, buffer, (unsigned long long)alloc_size, flags);
       }
-# endif
-    }
-#endif /* !defined(_WIN32) */
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && name && *name) {
-      FILE *const code_file = fopen(name, "wb");
-      if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
-        fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", *memory, name);
-        fwrite(*memory, 1, size, code_file);
-        fclose(code_file);
-      }
-#if defined(LIBXSMM_VTUNE)
-      if (0 != info_writable) {
-        if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-          LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
-          const unsigned int code_id = iJIT_GetNewMethodID();
-          internal_get_vtune_jitdesc(*memory, code_id, size, name, &vtune_jit_desc);
-          iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
-          internal->code_id = code_id;
-        }
-        else {
-          internal->code_id = 0;
-        }
-      }
-#endif
-#if defined(LIBXSMM_PERF)
-      /* If jitting is enabled and a valid name is given, emit information for perf.
-       * In jitdump case this needs to be done after mprotect as it gets overwritten
-       * otherwise. */
-      libxsmm_perf_write_code(*memory, size, name);
 #endif
     }
   }
