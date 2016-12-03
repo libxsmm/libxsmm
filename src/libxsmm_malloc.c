@@ -506,8 +506,8 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   static int error_once = 0;
 #endif
   if (0 != memory) {
-    internal_malloc_info_type *const info = internal_malloc_info(*memory);
-    internal_malloc_extra_type *const internal = &info->internal;
+    internal_malloc_info_type* info = internal_malloc_info(*memory);
+    internal_malloc_extra_type* internal = &info->internal;
     void *const buffer = info->pointer;
     const size_t size = info->size;
     assert((0 != buffer || 0 == size) && 0 != internal);
@@ -531,6 +531,10 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         if (0 != buffer && MAP_FAILED != buffer) {
           soft_error = munmap(buffer, alloc_size);
         }
+#if defined(LIBXSMM_VTUNE) /* update memory info and internal info */
+        info = internal_malloc_info(*memory);
+        internal = &info->internal;
+#endif
       }
       else { /* malloc-based fallback */
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
