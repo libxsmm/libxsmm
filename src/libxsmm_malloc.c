@@ -217,7 +217,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
 #endif
   /* proceed after failed madvise (even in case of an error; take what we got from mmap) */
   madvise(buffer, size, MADV_NORMAL/*MADV_RANDOM*/
-#if 0/*TODO: failure*/ && defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
+#if defined(MADV_NOHUGEPAGE) /* if not available, we then take what we got (THP) */
     | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MADV_NOHUGEPAGE : 0)
 #endif
 #if defined(MADV_DONTDUMP)
@@ -252,7 +252,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void* internal_xmap(const char* dir, size_t 
         result = mmap(0, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED, i, 0);
         if (MAP_FAILED != result) {
           assert(0 != result);
+#if 0 /* TODO: investigate*/
           internal_mhint(xmap, size);
+#endif
           *rx = xmap;
         }
         else {
@@ -396,9 +398,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           buffer = malloc(alloc_size);
           reloc = buffer;
         }
+# if 0 /* TODO: investigate*/
         if (MAP_FAILED != buffer && 0 != buffer) {
           internal_mhint(buffer, alloc_size);
         }
+# endif
 #endif
       }
       if (alloc_failed != buffer && /*fallback*/0 != buffer) {
@@ -490,7 +494,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
           result = EXIT_FAILURE;
         }
         if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && EXIT_SUCCESS == result
-       /*&& 0 != reloc && MAP_FAILED != reloc*/
+         && 0 != reloc && MAP_FAILED != reloc
          && 0 != munmap(reloc, alloc_size))
         {
 # if !defined(NDEBUG) /* library code is expected to be mute */
@@ -521,20 +525,56 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   if (0 != memory) {
     internal_malloc_info_type *const info = internal_malloc_info(*memory);
     internal_malloc_extra_type *const internal = &info->internal;
-    const void *const memory_in = *memory;
-    assert((0 != info->pointer || 0 == info->size) && 0 != internal);
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && name && *name) {
+    void *const buffer = info->pointer;
+    const size_t size = info->size;
+    assert((0 != buffer || 0 == size) && 0 != internal);
+#if defined(_WIN32) /*TODO: implement memory protection under Microsoft Windows*/
+    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
+#else /* mprotect memory region according to the requested flags */
+    /* quietly keep the read permission, but eventually remove write permissions */
+    if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
+      const int alignment = ((const char*)(*memory)) - ((const char*)buffer);
+      const size_t alloc_size = size + alignment;
+      /* treat mprotect errors as soft error if the requested buffer is not executable */
+      int soft_error = 0;
+      if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
+        soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ);
+      }
+      else if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+        assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
+        *memory = ((char*)internal->reloc) + alignment;
+        info->pointer = internal->reloc;
+        internal->reloc = 0;
+        if (0 != buffer && MAP_FAILED != buffer) {
+          soft_error = munmap(buffer, alloc_size);
+        }
+      }
+      else { /* malloc-based fallback */
+        assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
+        soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
+        if (0/*ok*/ != soft_error) result = EXIT_FAILURE; /* error cannot be ignored */
+      }
+# if !defined(NDEBUG) /* library code is expected to be mute */
+      if (0/*ok*/ != soft_error && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        const char *const error_message = strerror(errno);
+        fprintf(stderr, "LIBXSMM: %s (error #%i for range %p+%llu with flags=%i)!\n",
+          error_message, errno, buffer, (unsigned long long)alloc_size, flags);
+      }
+# endif
+    }
+#endif /* !defined(_WIN32) */
+    if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && name && *name) {
       FILE *const code_file = fopen(name, "wb");
       if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
-        fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", memory_in, name);
-        fwrite(memory_in, 1, info->size, code_file);
+        fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", *memory, name);
+        fwrite(*memory, 1, size, code_file);
         fclose(code_file);
       }
 #if defined(LIBXSMM_VTUNE)
       if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
         LIBXSMM_VTUNE_JIT_DESC_TYPE vtune_jit_desc;
         const unsigned int code_id = iJIT_GetNewMethodID();
-        internal_get_vtune_jitdesc(memory_in, code_id, info->size, name, &vtune_jit_desc);
+        internal_get_vtune_jitdesc(*memory, code_id, size, name, &vtune_jit_desc);
         iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
         internal->code_id = code_id;
       }
@@ -542,46 +582,13 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         internal->code_id = 0;
       }
 #endif
-    }
-#if defined(_WIN32) /*TODO: implement memory protection under Microsoft Windows*/
-    LIBXSMM_UNUSED(memory); LIBXSMM_UNUSED(flags); LIBXSMM_UNUSED(name);
-#else /* mprotect memory region according to the requested flags */
-    /* quietly keep the read permission, but eventually remove write permissions */
-    if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
-      const int alignment = ((const char*)memory_in) - ((const char*)info->pointer);
-      const size_t alloc_size = info->size + alignment;
-      /* treat mprotect errors as soft error if the requested buffer is not executable */
-      int mprotect_result = 0;
-      if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
-        mprotect_result = mprotect(info->pointer, alloc_size/*entire memory region*/, PROT_READ);
-      }
-      else if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
-        char *const tmp = (char*)internal->reloc;
-        internal->reloc = info->pointer;
-        *memory = tmp + alignment;
-        info->pointer = tmp;
-      }
-      else { /* malloc-based fallback */
-        mprotect_result = mprotect(info->pointer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
-        if (0/*ok*/ != mprotect_result) result = EXIT_FAILURE; /* error cannot be ignored */
-      }
-# if !defined(NDEBUG) /* library code is expected to be mute */
-      if (0/*ok*/ != mprotect_result && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        const char *const error_message = strerror(errno);
-        fprintf(stderr, "LIBXSMM: %s (mprotect error #%i for range %p+%llu with flags=%i)!\n",
-          error_message, errno, info->pointer, (unsigned long long)alloc_size, flags);
-      }
-# endif
-    }
-#endif
 #if defined(LIBXSMM_PERF)
-    /* If jitting is enabled and a valid name is given, emit information for perf.
-     * In jitdump case this needs to be done after mprotect as it gets overwritten
-     * otherwise. */
-    if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && name && *name) {
-      libxsmm_perf_write_code(memory_in, info->size, name);
-    }
+      /* If jitting is enabled and a valid name is given, emit information for perf.
+       * In jitdump case this needs to be done after mprotect as it gets overwritten
+       * otherwise. */
+      libxsmm_perf_write_code(*memory, size, name);
 #endif
+    }
   }
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
