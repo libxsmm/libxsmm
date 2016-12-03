@@ -90,11 +90,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     const char* env[3];
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
     /* environment-defined tile sizes apply for DP and SP */
-    libxsmm_gemm_tile[0/*DP*/][0/*M*/] = libxsmm_gemm_tile[1/*SP*/][0/*M*/] =
+    libxsmm_gemm_tile[0/*DP*/][0/*M*/] = libxsmm_gemm_tile[1/*SP*/][0/*M*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
       LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[0] ? atoi(env[0]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][1/*N*/] = libxsmm_gemm_tile[1/*SP*/][1/*N*/] =
+    libxsmm_gemm_tile[0/*DP*/][1/*N*/] = libxsmm_gemm_tile[1/*SP*/][1/*N*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
       LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[1] ? atoi(env[1]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][2/*K*/] = libxsmm_gemm_tile[1/*SP*/][2/*K*/] =
+    libxsmm_gemm_tile[0/*DP*/][2/*K*/] = libxsmm_gemm_tile[1/*SP*/][2/*K*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
       LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[2] ? atoi(env[2]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
     /* load predefined configuration if tile size is not setup by the environment */
     if (0 == libxsmm_gemm_tile[0/*DP*/][0/*M*/]) libxsmm_gemm_tile[0][0] = tile_configs[config][0][0];
