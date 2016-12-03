@@ -55,6 +55,8 @@ typedef struct libxsmm_spmdm_handle {
   int kb;
   libxsmm_spmdm_datatype datatype;
   char * base_ptr_for_dealloc;
+  char * spmdm_scratch_B;
+  char * spmdm_scratch_C;
 } libxsmm_spmdm_handle;
 
 /**

@@ -46,7 +46,7 @@
 # define srand48 srand
 #endif
 
-//#define USE_BFLOAT
+#define USE_BFLOAT
 #ifdef USE_BFLOAT
 typedef uint16_t real;
 #else

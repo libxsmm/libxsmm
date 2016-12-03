@@ -334,11 +334,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a( libxsmm_
   int kb, mb;
   int m_blocks = handle->mb;
   int k_blocks = handle->kb;
-  
+  int max_threads = 128; 
   #if 1
   size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
-  char * memory_block = (char *)LIBXSMM_SPMDM_MALLOC( sz_all_blocks, 2097152 );
+  size_t sz_additional_memory_for_scratch = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float))*max_threads;
+  size_t sz_total_memory = sz_all_blocks + sz_additional_memory_for_scratch;
+
+  char * memory_block = (char *)LIBXSMM_SPMDM_MALLOC( sz_total_memory, 2097152 );
   char * memory_head  = memory_block;
   
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
@@ -356,8 +359,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a( libxsmm_
     }
   }
   assert(memory_head == (memory_block + sz_all_blocks));    
-  handle->base_ptr_for_dealloc = memory_block;
   *libxsmm_output_csr = libxsmm_output_csr_a;
+  handle->spmdm_scratch_B = memory_head;
+  memory_head += (handle->bk)*(handle->bn)*sizeof(float)*max_threads;
+  handle->spmdm_scratch_C = memory_head;
+  memory_head += (handle->bm)*(handle->bn)*sizeof(float)*max_threads;
+  assert(memory_head == (memory_block + sz_total_memory));
+
+  handle->base_ptr_for_dealloc = memory_block;
   #else
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice *)libxsmm_aligned_malloc( handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice), 2097152);
   for ( kb = 0; kb < k_blocks; kb++ ) {
@@ -403,6 +412,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_deallocate_csr_a(libxsmm
 {
   LIBXSMM_SPMDM_FREE(handle->base_ptr_for_dealloc);
   handle->base_ptr_for_dealloc = NULL;
+  handle->spmdm_scratch_B = NULL;
+  handle->spmdm_scratch_C = NULL;
 }
 
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_destroy(libxsmm_spmdm_handle * handle)
@@ -723,8 +734,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(m_block_size*n_block_size*sizeof(float), 64);
-  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size*sizeof(float), 64);
+  float *const scratch_C = (float *)(handle->spmdm_scratch_C + tid*m_block_size*n_block_size*sizeof(float));
+  float *const scratch_B = (float *)(handle->spmdm_scratch_B + tid*k_block_size*n_block_size*sizeof(float));
   SIMDTYPE_FP32 sum[2*num_regs];
   float* LIBXSMM_RESTRICT ptr_result;
 
@@ -1090,8 +1101,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
     }
   }
 
-  LIBXSMM_SPMDM_FREE(scratch_C);
-  LIBXSMM_SPMDM_FREE(scratch_B);
 }
 
 
@@ -1131,8 +1140,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 
   int k_overall_start, k_overall_end, num_k;
 
-  float *const scratch_C = (float*)LIBXSMM_SPMDM_MALLOC(m_block_size*n_block_size*sizeof(float), 64);
-  float *const scratch_B = (float*)LIBXSMM_SPMDM_MALLOC(k_block_size*n_block_size*sizeof(float), 64);
+  float *const scratch_C = (float *)(handle->spmdm_scratch_C + tid*m_block_size*n_block_size*sizeof(float));
+  float *const scratch_B = (float *)(handle->spmdm_scratch_B + tid*k_block_size*n_block_size*sizeof(float));
 
   SIMDTYPE_FP32 sum[2*num_regs];
   float* LIBXSMM_RESTRICT ptr_result;
@@ -1504,7 +1513,5 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
     }
   }
 
-  LIBXSMM_SPMDM_FREE(scratch_C);
-  LIBXSMM_SPMDM_FREE(scratch_B);
 }
 
