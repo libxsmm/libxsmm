@@ -235,7 +235,7 @@ error:
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_write_code(const volatile void* memory, size_t size,
+LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const volatile void* memory, size_t size,
                              const char* name)
 {
   assert(fp != NULL);
