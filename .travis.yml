@@ -87,19 +87,19 @@ script:
     2>&1 | tee -a log.txt && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
-    make -e PEDANTIC=2 WRAP=1 test-wrap &&
+    make -e PEDANTIC=1 VLA=0 WRAP=1 test-wrap &&
     2>&1 | tee -a log.txt && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
-    make -e PEDANTIC=2 WRAP=1 STATIC=1 test-wrap &&
+    make -e PEDANTIC=1 VLA=0 WRAP=1 STATIC=1 test-wrap &&
     2>&1 | tee -a log.txt && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
-    make -e PEDANTIC=2 WRAP=1 STATIC=0 test-wrap &&
+    make -e PEDANTIC=1 VLA=0 WRAP=1 STATIC=0 test-wrap &&
     2>&1 | tee -a log.txt && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
-    make -e PEDANTIC=2 VLA=0 test-cpp
+    make -e PEDANTIC=2 test-cpp
     2>&1 | tee -a log.txt
 
   - if [ -e log.txt ] && [ "0" != "$(grep 'warning:' log.txt | grep -v Makefile | wc -l)" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
