@@ -46,7 +46,7 @@
 # define srand48 srand
 #endif
 
-#define USE_BFLOAT
+/* #define USE_BFLOAT */
 #ifdef USE_BFLOAT
 typedef uint16_t real;
 #else
@@ -56,7 +56,6 @@ typedef float real;
 void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
                                float* test,
                                float* gold) {
-  //int mb, nb, bm, bn;
   double max_error = 0.0;
   double src_norm = 0.0;
   double dst_norm = 0.0;
@@ -66,7 +65,6 @@ void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
     const double dstval = (double)test[l];
     const double srcval = (double)gold[l];
     const double local_error = fabs(dstval - srcval);
-    //if(local_error > 0.01) printf("l: %lld, gold: %lf actual: %lf local_error: %lf\n", l, srcval, dstval, local_error);
     if (local_error > max_error) {
       max_error = local_error;
     }
@@ -112,23 +110,8 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 #   pragma omp for 
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
-      unsigned long long int start = libxsmm_timer_tick();
-      
       libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, i, tid, nthreads);
-
-      unsigned long long int end = libxsmm_timer_tick();
-      //printf("Time for block %d = %lf\n", i, libxsmm_timer_duration(start, end));
     }
-#if 0
-# if defined(_OPENMP)
-#   pragma omp for LIBXSMM_OPENMP_COLLAPSE(2)
-# endif
-    for (mb= 0; mb < m_blocks; mb += num_m_blocks) {
-      for ( nb = 0; nb < n_blocks; nb++ ) {
-        libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, mb, num_m_blocks, nb, tid, nthreads);
-      }
-    }
-#endif
   }
 }
 
@@ -254,13 +237,19 @@ int main(int argc, char **argv)
   }
   flops = (double)M * (double)N * (double)K * 2.0;
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /*----------------------------------------------------------------------------------------------------------------------*/
   /* Step 4: Initialize libxsmm for these sizes - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle;
   libxsmm_CSR_sparseslice* A_sparse;
-  
+  int max_threads;
+# if defined(_OPENMP)
+  max_threads = omp_get_max_threads();
+# else
+  max_threads = 1;
+# endif
+ 
   start = libxsmm_timer_tick();
-  libxsmm_spmdm_init(M, N, K, &handle, &A_sparse);
+  libxsmm_spmdm_init(M, N, K, max_threads, &handle, &A_sparse);
   end = libxsmm_timer_tick();
   printf("Time for handle init = %lf\n", libxsmm_timer_duration(start, end));
 
@@ -301,7 +290,7 @@ int main(int argc, char **argv)
       C_gold[i*N + j] += Cval;
     }
   }
-  //LIBXSMM_FSYMBOL(sgemm)(&trans, &trans, &N, &M, &K, &alpha, B_gold, &N, A_gold, &K, &beta, C_gold, &N);
+  /* LIBXSMM_FSYMBOL(sgemm)(&trans, &trans, &N, &M, &K, &alpha, B_gold, &N, A_gold, &K, &beta, C_gold, &N); */
 
   /* Compute the max difference between gold and computed results. */
   libxsmm_spmdm_check_c( &handle, C, C_gold );
@@ -319,12 +308,12 @@ int main(int argc, char **argv)
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
   libxsmm_spmdm_destroy(&handle);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /*----------------------------------------------------------------------------------------------------------------------*/
   /* Step 5: Initialize libxsmm for transpose A - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle2;
   libxsmm_CSR_sparseslice* A_sparse2;
   transA = 'Y'; transB = 'N';
-  libxsmm_spmdm_init(M, N, K, &handle2, &A_sparse2);
+  libxsmm_spmdm_init(M, N, K, max_threads, &handle2, &A_sparse2);
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transA = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
   real * A_gold2 = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
 
@@ -360,7 +349,7 @@ int main(int argc, char **argv)
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /*----------------------------------------------------------------------------------------------------------------------*/
   /* Step 6: Test transpose B  */
   transA = 'N'; transB = 'Y';
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transB = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
