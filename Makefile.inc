@@ -638,14 +638,14 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FPEDANTIC += -pedantic -Wunused-variable -Wc-binding-type \
+    FPEDANTIC += -pedantic -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
                  -Wimplicit-interface -Wimplicit-procedure \
-                 -Wintrinsics-std -Wreal-q-constant \
-                 -Wrealloc-lhs -Wrealloc-lhs-all
+                 -Wintrinsics-std -Wreal-q-constant
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
-      FWARNEXTRA = -Wuse-without-only
+      FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
+                   -Wrealloc-lhs -Wrealloc-lhs-all
     endif
     FPEDANTIC += $(FWARNEXTRA)
   endif
