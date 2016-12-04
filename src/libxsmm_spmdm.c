@@ -377,7 +377,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->n  = N;
   handle->k  = K;
 
-  handle->bm = 512;
+  handle->bm = 256;
 #if LIBXSMM_STATIC_TARGET_ARCH==LIBXSMM_X86_AVX512_CORE
   handle->bn = 96;
 #elif LIBXSMM_STATIC_TARGET_ARCH==LIBXSMM_X86_AVX2
