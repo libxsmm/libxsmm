@@ -656,7 +656,13 @@ else # GCC assumed
     FCFLAGS += -ffree-form
     FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
-    CSTD = -std=c89
+    ifneq (Darwin,$(UNAME))
+      CSTD = -std=c89
+    else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+      CSTD = -std=c89
+    else # Clang may run into ICEs under OSX
+      CSTD = -std=c99
+    endif
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
