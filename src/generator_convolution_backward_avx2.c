@@ -44,7 +44,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
                                                          const libxsmm_convolution_backward_descriptor* i_conv_desc,
                                                          const char*                                    i_arch ) {
   /* code gen datastructures */
-  libxsmm_convolution_kernel_config l_conv_kernel_config;
+  libxsmm_convolution_kernel_config l_conv_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_convolution_backward_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
 
