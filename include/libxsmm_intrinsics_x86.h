@@ -244,17 +244,18 @@
 # define LIBXSMM_INTRINSICS
 #endif
 
-#if defined(_WIN32)
-# include <malloc.h>
-#else
-# include <mm_malloc.h>
-#endif
-
+#if !defined(LIBXSMM_INTRINSICS_NONE)
+# if defined(_WIN32)
+#   include <malloc.h>
+# else
+#   include <mm_malloc.h>
+# endif
 /** Intrinsic-specifc fixups */
-#if defined(__clang__)
-# define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_loadu_si128
-#else
-# define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_lddqu_si128
+# if defined(__clang__)
+#   define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_loadu_si128
+# else
+#   define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_lddqu_si128
+# endif
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
