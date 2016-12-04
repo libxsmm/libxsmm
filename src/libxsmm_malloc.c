@@ -515,11 +515,12 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const int alignment = (int)(((const char*)(*memory)) - ((const char*)buffer));
       const size_t alloc_size = size + alignment;
-      /* treat mprotect errors as soft error if the requested buffer is not executable */
+      /* treat memory protection errors as soft error if the requested buffer is not executable */
       int soft_error = 0;
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
 #if defined(_WIN32)
         /* TODO: implement memory protection under Microsoft Windows */
+        LIBXSMM_UNUSED(internal); LIBXSMM_UNUSED(alloc_size); LIBXSMM_UNUSED(soft_error);
 #else
         soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ);
 #endif
@@ -533,7 +534,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
           FILE *const code_file = fopen(name, "wb");
-          if (0 != code_file) { /* dump byte-code into a file and print func-pointer/filename pair */
+          if (0 != code_file) { /* dump byte-code into a file and print function pointer and filename */
             fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
             fwrite(code_ptr, 1, size, code_file);
             fclose(code_file);
@@ -570,7 +571,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 #endif
         }
 #if !defined(_WIN32)
-        else { /* malloc-based fallback */
+        else { /* malloc-based fall-back */
           /* mprotect memory region according to the requested flags */
           soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
           if (0/*ok*/ != soft_error) result = EXIT_FAILURE; /* error cannot be ignored */
@@ -589,7 +590,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   else {
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: libxsmm_malloc_attrib failed becaue NULL cannot be attributed!\n");
+      fprintf(stderr, "LIBXSMM: libxsmm_malloc_attrib failed because NULL cannot be attributed!\n");
     }
 #endif
     result = EXIT_FAILURE;
