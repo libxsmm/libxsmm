@@ -321,8 +321,8 @@ endif
 # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
 ifeq (1,$(PREFETCH_UID))
   # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
-  # select "pfsigonly" for statically generated code.
-  PREFETCH_SCHEME = pfsigonly
+  # select "nopf" for statically generated code.
+  PREFETCH_SCHEME = nopf
   PREFETCH_TYPE = -1
 else ifeq (2,$(PREFETCH_UID))
   PREFETCH_SCHEME = pfsigonly
