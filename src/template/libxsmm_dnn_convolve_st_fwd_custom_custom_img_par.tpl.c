@@ -102,7 +102,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
             &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj, oi + handle->fwd_ofw_rb,
               0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
-               NULL,
+            NULL,
             &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi + handle->fwd_ofw_rb, 0,
               handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
         }
@@ -116,7 +116,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj + handle->fwd_ofw_rb, oi,
                 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
-                 NULL,
+              NULL,
               &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofw_rb, oi, 0,
                 handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
