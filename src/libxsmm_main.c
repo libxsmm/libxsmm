@@ -121,11 +121,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 
 /** Helper macro determining the default prefetch strategy which is used for statically generated kernels. */
 #if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */
-# if defined(__MIC__) || (LIBXSMM_X86_AVX512_MIC == LIBXSMM_STATIC_TARGET_ARCH)
-#   define INTERNAL_PREFETCH LIBXSMM_PREFETCH_AL2BL2_VIA_C
-# elif (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */
-#   define INTERNAL_PREFETCH LIBXSMM_PREFETCH_SIGONLY
-# endif
+# define INTERNAL_PREFETCH LIBXSMM_PREFETCH_SIGONLY
 #else
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
 #endif
@@ -351,7 +347,7 @@ return flux_entry.xmm
     LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_)) \
   { \
     const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) \
-      ? LIBXSMM_PREFETCH_NONE/*NULL-pointer is give; do not adopt LIBXSMM_PREFETCH (prefetches must be specified explicitly)*/ \
+      ? LIBXSMM_PREFETCH_NONE/*NULL-pointer is given; do not adopt LIBXSMM_PREFETCH (prefetches must be specified explicitly)*/ \
       : *(PREFETCH)); /*adopt the explicitly specified prefetch strategy*/ \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
@@ -654,7 +650,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        libxsmm_gemm_auto_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
+        libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {

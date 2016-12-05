@@ -327,11 +327,6 @@ ifeq (1,$(PREFETCH_UID))
   # select "pfsigonly" for statically generated code.
   PREFETCH_SCHEME = pfsigonly
   PREFETCH_TYPE = -1
-  ifneq (0,$(MIC))
-    ifneq (0,$(MPSS))
-      PREFETCH_SCHEME_MIC = AL2_BL2viaC_CL2
-    endif
-  endif
 else ifeq (2,$(PREFETCH_UID))
   PREFETCH_SCHEME = pfsigonly
   PREFETCH_TYPE = 1
