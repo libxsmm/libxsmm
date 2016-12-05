@@ -43,11 +43,9 @@ if __name__ == "__main__":
         # optional argument(s)
         if (2 < argc): precision = int(sys.argv[2])
         else: precision = 0
-        if (3 < argc): ilp64 = int(sys.argv[3])
-        else: ilp64 = 0
-        if (4 < argc): prefetch = int(sys.argv[4])
+        if (3 < argc): prefetch = int(sys.argv[3])
         else: prefetch = 0
-        if (5 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[5:], 0))
+        if (4 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
         else: mnklist = list()
 
         template = Template(open(filename, "r").read())
@@ -80,7 +78,6 @@ if __name__ == "__main__":
             if (mnklist and 0 != precision): substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:
-            substitute["BLASINT_KIND"] = ["C_INT", "C_LONG_LONG"][0!=ilp64]
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:

@@ -85,9 +85,6 @@ PRECISION ?= 0
 # 0: optimized JIT descriptor size
 # 1: regular descriptor size
 BIG ?= 1
-ifeq (0,$(BIG))
-  DFLAGS += -DLIBXSMM_GENERATOR_SMALLDESC
-endif
 
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
@@ -389,7 +386,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
@@ -441,7 +438,7 @@ $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
                      $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
-		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) > $@
+		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
@@ -455,9 +452,9 @@ $(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
                      $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
-		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) | \
+		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \

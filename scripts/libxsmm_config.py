@@ -43,25 +43,27 @@ if __name__ == "__main__":
         # optional argument(s)
         if (2 < argc): ilp64 = int(sys.argv[2])
         else: ilp64 = 0
-        if (3 < argc): offload = int(sys.argv[3])
+        if (3 < argc): big = int(sys.argv[3])
+        else: big = 0
+        if (4 < argc): offload = int(sys.argv[4])
         else: offload = 0
-        if (4 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
+        if (5 < argc): alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[5]))
         else: alignment = 64
-        if (5 < argc): prefetch = int(sys.argv[5])
+        if (6 < argc): prefetch = int(sys.argv[6])
         else: prefetch = 0
-        if (6 < argc): threshold = int(sys.argv[6])
+        if (7 < argc): threshold = int(sys.argv[7])
         else: threshold = 0
-        if (7 < argc): sync = int(sys.argv[7])
+        if (8 < argc): sync = int(sys.argv[8])
         else: sync = 0
-        if (8 < argc): jit = int(sys.argv[8])
+        if (9 < argc): jit = int(sys.argv[9])
         else: jit = 0
-        if (9 < argc): flags = int(sys.argv[9])
+        if (10 < argc): flags = int(sys.argv[10])
         else: flags = 0
-        if (10 < argc): alpha = int(sys.argv[10])
+        if (11 < argc): alpha = int(sys.argv[11])
         else: alpha = 1
-        if (11 < argc): beta = int(sys.argv[11])
+        if (12 < argc): beta = int(sys.argv[12])
         else: beta = 1
-        if (12 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[12:], 0))
+        if (13 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], 0))
         else: mnklist = list()
 
         template = Template(open(filename, "r").read())
@@ -93,7 +95,8 @@ if __name__ == "__main__":
             "ALPHA":      alpha, \
             "BETA":       beta, \
             "SYNC":       [0, 1][0!=sync], \
-            "JIT":        [0, 1][0!=jit] \
+            "JIT":        [0, 1][0!=jit], \
+            "BIG":        big \
         }
 
         if (fnmatch.fnmatch(filename, "*.h*")):
