@@ -127,8 +127,9 @@ WRAP ?= 0
 
 # JIT backend is enabled by default
 JIT ?= 1
+
+# target library for a broad range of systems
 ifneq (0,$(JIT))
-  AVX ?= 0
   SSE ?= 1
 endif
 
@@ -189,11 +190,19 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
-ifeq (1,$(AVX))
+# target library for a broad range of systems
+ifneq (0,$(JIT))
+ifeq (file,$(origin AVX))
+  AVX_STATIC = 0
+endif
+endif
+AVX_STATIC ?= $(AVX)
+
+ifeq (1,$(AVX_STATIC))
   GENTARGET = snb
-else ifeq (2,$(AVX))
+else ifeq (2,$(AVX_STATIC))
   GENTARGET = hsw
-else ifeq (3,$(AVX))
+else ifeq (3,$(AVX_STATIC))
   GENTARGET = knl
 else ifneq (0,$(SSE))
   GENTARGET = wsm
