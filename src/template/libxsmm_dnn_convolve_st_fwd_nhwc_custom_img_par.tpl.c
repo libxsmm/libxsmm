@@ -86,7 +86,8 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
         if (oi < handle->ofw-handle->fwd_ofw_rb) {
           jitted_conv_fp_one(l_input, l_wt, l_output,
             &LIBXSMM_VLA_ACCESS(6, input, img, ij, (oi + handle->fwd_ofw_rb) * handle->desc.v, ifm1, 0, 0,
-              handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block), NULL,
+              handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
+            NULL,
             &LIBXSMM_VLA_ACCESS(5, output, img, oj, oi + handle->fwd_ofw_rb, ofm1, 0,
               handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
         }
@@ -94,7 +95,8 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           if (oj < end_ofh-handle->fwd_ofh_rb) {
             jitted_conv_fp_one(l_input, l_wt, l_output,
               &LIBXSMM_VLA_ACCESS(6, input, img, (oj + handle->fwd_ofw_rb) * handle->desc.u, ii, ifm1, 0, 0,
-               handle->ifhp, handle->ifwp,  handle->blocksifm, handle->ifmblock, handle->fm_lp_block), NULL,
+               handle->ifhp, handle->ifwp,  handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
+              NULL,
               &LIBXSMM_VLA_ACCESS(5, output, img, oj + handle->fwd_ofw_rb, oi, ofm1, 0,
                 handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
           }
