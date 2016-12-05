@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
 
   struct timeval l_start, l_end;
   double l_total;
-  
+
   /* read cmd */
   if ((argc > 1 && !strncmp(argv[1], "-h", 3)) || (argc != 8)) {
     printf("Usage: %s stif1 stif2 stif3 star nModes nElems nReps\n", argv[0]);
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
   }
 
   printf("done!\n\n");
-  
+
   /* benchmark single core all kernels */
   printf("benchmarking kernels... \n");
   gettimeofday(&l_start, NULL);
@@ -328,9 +328,9 @@ int main(int argc, char* argv[])
     #pragma omp parallel private(i, j)
     {
       __attribute__((aligned(64))) double tp[20*8*9];
-      
+
       #pragma omp for private(j)
-      for ( j = 0; j < num_elems; j++ ) { 
+      for ( j = 0; j < num_elems; j++ ) {
         st_kernel( mat_st_values, qt+(j*elem_size), tp );
         a_kernel( tp, mat_a_values, q+(j*elem_size) );
 

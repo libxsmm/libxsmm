@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include <libxsmm_sync.h>
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_malloc.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -58,7 +59,7 @@
 #if !defined(LIBXSMM_SYNC_ATOMIC_SET)
 # define LIBXSMM_SYNC_ATOMIC_SET(DST, VALUE) ((DST) = (VALUE))
 #endif
-#if !defined(LIBXSMM_SYNC_MALLOC_INTRINSIC)
+#if !defined(LIBXSMM_SYNC_MALLOC_INTRINSIC) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_SYNC_MALLOC_INTRINSIC
 #endif
 #if defined(LIBXSMM_SYNC_MALLOC_INTRINSIC)

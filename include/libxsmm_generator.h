@@ -49,7 +49,7 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC) (FLAGS)
 #endif
 
-#if defined(LIBXSMM_GENERATOR_SMALLDESC)
+#if defined(LIBXSMM_BIG) && (0 == LIBXSMM_BIG)
 /* TODO: make sure to fallback earlier if index space is exhaused */
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE unsigned short
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0xFFFF)
@@ -77,7 +77,7 @@
 #endif
 
 /** Allow to check whether a given M, N, K, LDA, LDB, or LDC fits. */
-#if defined(LIBXSMM_GENERATOR_SMALLDESC)
+#if defined(LIBXSMM_BIG) && (0 == LIBXSMM_BIG)
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
     LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (M) && \
     LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX >= (N) && \

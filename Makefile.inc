@@ -411,6 +411,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
+ifneq (1,$(SSE))
 ifneq (0,$(AVX))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
@@ -426,10 +427,10 @@ ifneq (0,$(AVX))
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     AVX ?= 1
     SSE ?= 0
-  else #ifeq (,$(AVX))
-    AVX = 0
   endif
 endif
+endif
+AVX ?= 0
 ifneq (0,$(SSE))
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE ?= 4
@@ -542,13 +543,13 @@ ifneq (0,$(INTEL))
         CTARGET = -xAVX
       else ifneq (0,$(SSE))
         ifeq (1,$(SSE)) # default
+          CTARGET = -xSSE4.2
+        else ifeq (3,$(SSE))
           ifneq (Darwin,$(UNAME))
             CTARGET = -xSSE3
           else # no systems with less than SSE4.2
             CTARGET = -xSSE4.2
           endif
-        else ifeq (3,$(SSE))
-          CTARGET = -xSSE3
         else ifeq (4,$(SSE))
           CTARGET = -xSSE4.2
         else
@@ -638,14 +639,14 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FPEDANTIC += -pedantic -Wunused-variable -Wc-binding-type \
+    FPEDANTIC += -pedantic -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
                  -Wimplicit-interface -Wimplicit-procedure \
-                 -Wintrinsics-std -Wreal-q-constant \
-                 -Wrealloc-lhs -Wrealloc-lhs-all
+                 -Wintrinsics-std -Wreal-q-constant
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
-      FWARNEXTRA = -Wuse-without-only
+      FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
+                   -Wrealloc-lhs -Wrealloc-lhs-all
     endif
     FPEDANTIC += $(FWARNEXTRA)
   endif
@@ -656,7 +657,13 @@ else # GCC assumed
     FCFLAGS += -ffree-form
     FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
-    CSTD = -std=c89
+    ifneq (Darwin,$(UNAME))
+      CSTD = -std=c89
+    else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+      CSTD = -std=c89
+    else # Clang may run into ICEs under OSX
+      CSTD = -std=c99
+    endif
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
@@ -827,14 +834,16 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     CTARGET = -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
+      CTARGET = -msse4.2
+    else ifeq (2,$(SSE))
+      # implicitly present (64-bit ABI)
+    else ifeq (3,$(SSE))
       ifneq (Darwin,$(UNAME))
         CTARGET = -msse3
       else
         # prevents Clang backend error with CRC32/other instructions
         CTARGET = -msse4.2
       endif
-    else ifeq (2,$(SSE))
-      # implicitly present (64-bit ABI)
     else ifeq (4,$(SSE))
       CTARGET = -msse4.2
     else # perhaps better to use TARGET flag directly

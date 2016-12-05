@@ -66,7 +66,7 @@ int main(void)
   }
 #endif
   {
-#if defined(LIBXSMM_GENERATOR_SMALLDESC)
+#if defined(LIBXSMM_BIG) && (0 == LIBXSMM_BIG)
     union { libxsmm_gemm_descriptor desc; char padding[16]; } descs[8];
 #else
     union { libxsmm_gemm_descriptor desc; char padding[32]; } descs[8];
@@ -278,7 +278,7 @@ int main(void)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
     if (EXIT_SUCCESS == result) {
-#if defined(LIBXSMM_GENERATOR_SMALLDESC)
+#if defined(LIBXSMM_BIG) && (0 == LIBXSMM_BIG)
       union { libxsmm_gemm_descriptor desc; char padding[16]; } local[8];
 #else
       union { libxsmm_gemm_descriptor desc; char padding[32]; } local[8];

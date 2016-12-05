@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2016, Intel Corporation                                     #
 # All rights reserved.                                                      #
@@ -52,6 +52,13 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
   # should be source'd after the above variables are set
   source ${HERE}/.travis.env
   source ${HERE}/.buildkite.env
+
+  # clear build log
+  if [ -e ${HERE}/log.txt ]; then
+    if [ "" = "$1" ] || [ "0" = "$1" ]; then
+      cat /dev/null > ${HERE}/log.txt
+    fi
+  fi
 
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \

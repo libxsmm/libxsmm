@@ -249,7 +249,7 @@ LIBXSMM_INLINE void naive_conv_int8(naive_conv_t* param, const unsigned char* in
 
 int main(int argc, char* argv[])
 {
-  unsigned char *naive_input; 
+  unsigned char *naive_input;
   char *naive_filter;
   unsigned char *input_nhwc;
   char *filter_rsck;

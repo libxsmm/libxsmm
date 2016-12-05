@@ -36,7 +36,7 @@
 
 LIBXSMM_API void libxsmm_perf_init(void);
 LIBXSMM_API void libxsmm_perf_finalize(void);
-LIBXSMM_API void libxsmm_perf_write_code(
+LIBXSMM_API void libxsmm_perf_dump_code(
   const volatile void* memory, size_t size,
   const char* name);
 

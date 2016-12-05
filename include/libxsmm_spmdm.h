@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2016, Intel Corporation                                **
+** Copyright (c) 2016, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,8 +31,7 @@
 #ifndef LIBXSMM_SPMDM_H
 #define LIBXSMM_SPMDM_H
 
-#include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_macros.h>
 
 
 typedef enum libxsmm_spmdm_datatype {
@@ -55,53 +54,76 @@ typedef struct libxsmm_spmdm_handle {
   int nb;
   int kb;
   libxsmm_spmdm_datatype datatype;
+  char * base_ptr_scratch_A;
+  char * base_ptr_scratch_B_scratch_C;
+  int memory_for_scratch_per_thread;
 } libxsmm_spmdm_handle;
 
-/* This stores a single sparse splice (or block) of sparse matrix A using a CSR representation (rowidx, colidx, and values */
-/* Each splice corresponds to a bm X bk region of A, and stores local indices */
+/**
+ * This stores a single sparse splice (or block) of sparse matrix A using a CSR representation (rowidx, colidx, and values
+ * Each splice corresponds to a bm X bk region of A, and stores local indices
+ */
 typedef struct libxsmm_CSR_sparseslice {
   /* Since bm and bk are assumed to be <=256, a 16-bit integer is enough to store the local rowidx, colidx */
   uint16_t * rowidx;
   uint16_t * colidx;
-  float*     values; 
+  float*     values;
 } libxsmm_CSR_sparseslice;
 
 
-LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, libxsmm_spmdm_handle * handle, libxsmm_CSR_sparseslice ** libxsmm_output_csr);
+LIBXSMM_API void libxsmm_spmdm_init(
+  int M, int N, int K,
+  int max_threads,
+  libxsmm_spmdm_handle* handle,
+  libxsmm_CSR_sparseslice** libxsmm_output_csr);
 
-LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_notrans_thread( const libxsmm_spmdm_handle* handle,
-				char transA,
-				const float * A, 
-				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
-                                int mb, int kb,
-				int tid, int nthreads);
-LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_notrans_thread( const libxsmm_spmdm_handle* handle,
-				char transA,
-				const uint16_t * A, 
-				libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
-                                int mb, int kb,
-				int tid, int nthreads);
-LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread( const libxsmm_spmdm_handle* handle,
-			    char transA,
-			    char transB,
-                            const float *alpha, 
-                            libxsmm_CSR_sparseslice* A_sparse, 
-                            const float *B, 
-                            const float *beta, 
-                            float* C,
-                            int mb, int num_m_blocks, int nb, 
-                            int tid, int nthreads); 
+LIBXSMM_API void libxsmm_spmdm_destroy(
+  libxsmm_spmdm_handle * handle);
 
-LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread( const libxsmm_spmdm_handle* handle,
-			    char transA,
-			    char transB,
-                            const uint16_t *alpha, 
-                            libxsmm_CSR_sparseslice* A_sparse, 
-                            const uint16_t *B, 
-                            const uint16_t *beta, 
-                            uint16_t* C,
-                            int mb, int num_m_blocks, int nb, 
-                            int tid, int nthreads); 
+LIBXSMM_API int libxsmm_spmdm_get_num_createSparseSlice_blocks(
+  const libxsmm_spmdm_handle* handle);
 
+LIBXSMM_API int libxsmm_spmdm_get_num_compute_blocks(
+  const libxsmm_spmdm_handle* handle);
+
+LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  const float * A,
+  libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
+  int block_id,
+  int tid, int nthreads);
+
+LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  const uint16_t * A,
+  libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
+  int block_id,
+  int tid, int nthreads);
+
+LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  char transB,
+  const float *alpha,
+  libxsmm_CSR_sparseslice* A_sparse,
+  const float *B,
+  const float *beta,
+  float* C,
+  int block_id,
+  int tid, int nthreads);
+
+LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread(
+  const libxsmm_spmdm_handle* handle,
+  char transA,
+  char transB,
+  const uint16_t *alpha,
+  libxsmm_CSR_sparseslice* A_sparse,
+  const uint16_t *B,
+  const uint16_t *beta,
+  float* C,
+  int block_id,
+  int tid, int nthreads);
 
 #endif /*LIBXSMM_SPMDM_H*/

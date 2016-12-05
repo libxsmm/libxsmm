@@ -66,6 +66,7 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ILP64 = $ILP64
         INTEGER(C_INT), PARAMETER :: LIBXSMM_SYNC = $SYNC
         INTEGER(C_INT), PARAMETER :: LIBXSMM_JIT = $JIT
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_BIG = $BIG
 
         ! Parameters supplied for backward compatibility (deprecated).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1

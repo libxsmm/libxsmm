@@ -85,9 +85,6 @@ PRECISION ?= 0
 # 0: optimized JIT descriptor size
 # 1: regular descriptor size
 BIG ?= 1
-ifeq (0,$(BIG))
-  DFLAGS += -DLIBXSMM_GENERATOR_SMALLDESC
-endif
 
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
@@ -130,8 +127,9 @@ WRAP ?= 0
 
 # JIT backend is enabled by default
 JIT ?= 1
+
+# target library for a broad range of systems
 ifneq (0,$(JIT))
-  AVX ?= 0
   SSE ?= 1
 endif
 
@@ -192,11 +190,19 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
-ifeq (1,$(AVX))
+# target library for a broad range of systems
+ifneq (0,$(JIT))
+ifeq (file,$(origin AVX))
+  AVX_STATIC = 0
+endif
+endif
+AVX_STATIC ?= $(AVX)
+
+ifeq (1,$(AVX_STATIC))
   GENTARGET = snb
-else ifeq (2,$(AVX))
+else ifeq (2,$(AVX_STATIC))
   GENTARGET = hsw
-else ifeq (3,$(AVX))
+else ifeq (3,$(AVX_STATIC))
   GENTARGET = knl
 else ifneq (0,$(SSE))
   GENTARGET = wsm
@@ -226,6 +232,7 @@ HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
           $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
@@ -323,14 +330,9 @@ endif
 # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
 ifeq (1,$(PREFETCH_UID))
   # Prefetch "auto" is a pseudo-strategy introduced by the frontend;
-  # select "pfsigonly" for statically generated code.
-  PREFETCH_SCHEME = pfsigonly
+  # select "nopf" for statically generated code.
+  PREFETCH_SCHEME = nopf
   PREFETCH_TYPE = -1
-  ifneq (0,$(MIC))
-    ifneq (0,$(MPSS))
-      PREFETCH_SCHEME_MIC = AL2_BL2viaC_CL2
-    endif
-  endif
 else ifeq (2,$(PREFETCH_UID))
   PREFETCH_SCHEME = pfsigonly
   PREFETCH_TYPE = 1
@@ -388,11 +390,12 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
@@ -444,7 +447,7 @@ $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
                      $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
-		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) > $@
+		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
@@ -458,9 +461,9 @@ $(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
                      $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
-		$(PRECISION) $(MAKE_ILP64) $(PREFETCH_TYPE) $(INDICES) | \
+		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
@@ -1165,7 +1168,7 @@ test-cpp: $(INCDIR)/libxsmm_source.h
 	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
-		ECXXFLAGS="-DUSE_HEADER_ONLY $(ECXXFLAGS)" compile
+		ECXXFLAGS="-DUSE_HEADER_ONLY $(ECXXFLAGS)" clean compile
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt

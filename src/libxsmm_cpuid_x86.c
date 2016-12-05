@@ -40,7 +40,8 @@
 
 /** Execute CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
-# if (4294967295U < (__SIZE_MAX__)) || defined(_CRAYC)
+# if (0 != (__x86_64__)) || (4 < (__SIZEOF_PTRDIFF_T__)) \
+  || (4294967295U < (__SIZE_MAX__)) || defined(_CRAYC)
 #   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __asm__ __volatile__ ( \
       ".byte 0x0f, 0xa2" /*cpuid*/ : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0) \
     )

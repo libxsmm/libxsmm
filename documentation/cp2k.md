@@ -1,7 +1,7 @@
 # CP2K Open Source Molecular Dynamics
 This document is intended to be a recipe for building and running the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel) which uses the Intel Development Tools and the Intel runtime environment. Differences compared to CP2K/trunk may be incorporated into the mainline version of CP2K at any time (and subsequently released). For example, starting with [CP2K 3.0](https://www.cp2k.org/version_history) an LIBXSMM integration is available which is (optionally) substituting CP2K's "libsmm" library.
 
-Some additional reference can found under:
+Some additional reference can found under
 [https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ](https://groups.google.com/d/msg/cp2k/xgkJc59NKGw/U5v5FtzTBwAJ).
 
 ## Getting the Source Code
@@ -20,7 +20,7 @@ source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh in
 make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
 ```
 
-In order to target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". To build the CP2K application, building LIBXSMM separately is not required (it will be build in an out-of-tree fashion as long as the LIBXSMMROOT path is detected or supplied). Since [CP2K 3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) is also supporting the LIBXSMM however the LIBXSMM library needs to be built separately. For Intel MPI, usually any version is fine. For product suites, the compiler and the MPI library are sourced in one step. To workaround known issues, one may combine components from different suites. To further improve performance and versatility, one may supply LIBINTROOT, LIBXCROOT, and ELPAROOT (see later sections about these libraries).
+In order to target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". To build the CP2K application, building LIBXSMM separately is not required (it will be build in an out-of-tree fashion as long as the LIBXSMMROOT path is detected or supplied). Since [CP2K 3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) is also supporting LIBXSMM. However, the LIBXSMM library needs to be built separately. For Intel MPI, usually any version is fine. For product suites, the compiler and the MPI library are sourced in one step. To workaround known issues, one may combine components from different suites. To further improve performance and versatility, one may supply LIBINTROOT, LIBXCROOT, and ELPAROOT (see later sections about these libraries).
 
 To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (similar to `ARCH=Linux-x86-64-intel` and `VERSION=psmp`).
 
@@ -124,8 +124,7 @@ make ARCH=Linux-x86-64-intel VERSION=psmp ACC=1 OFFLOAD=0 -j
 
 ### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
 
-1. Download the latest ELPA from http://elpa.rzg.mpg.de/elpa-tar-archive (2016.05.004)
-2. Make use of the ELPAROOT key-value pair.
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools.
 
 ### Memory Allocation Wrapper
 

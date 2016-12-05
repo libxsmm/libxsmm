@@ -35,6 +35,8 @@ int i, j, ofm1ifm1img;
 #endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
+
+#if !defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 /* number of tasks that could be run in parallel */
 const int work = handle->blocksifm*handle->blocksofm;
 /* compute chunck size */
@@ -42,8 +44,7 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-
-#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+#else
 /* number of tasks that could be run in parallel */
 const int img_parallel_work = handle->blocksifm*handle->blocksofm*handle->desc.N;
 /* compute chunck size */
@@ -63,7 +64,9 @@ libxsmm_convfunction jitted_conv_wu_nooutput_pf = (libxsmm_convfunction)handle->
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+#if !defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+#endif
 
 element_input_type *l_input;
 element_filter_type *l_wt;
@@ -72,7 +75,7 @@ element_output_type* l_output;
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
 element_filter_type* remote_weight_ptr = 0;
 element_filter_type* weight_ptr = (element_filter_type*)handle->filter->data;
-element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) 
+element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4)
                                                 + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
 /* number of tasks that could be run in parallel */
