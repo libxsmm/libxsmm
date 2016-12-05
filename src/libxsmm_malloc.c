@@ -370,7 +370,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
             buffer = internal_xmap(getenv("HOME"), alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) fallback = 3;
           }
-          if (3 == fallback) { /* never try again */
+          if (3 == fallback) { /* 4th try */
+            buffer = internal_xmap(getenv("JITDUMPDIR"), alloc_size, xflags, &reloc);
+            if (alloc_failed == buffer) fallback = 4;
+          }
+          if (4 == fallback) { /* never try again */
             buffer = alloc_failed;
             reloc = 0;
           }
