@@ -411,6 +411,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
+ifneq (1,$(SSE))
 ifneq (0,$(AVX))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
@@ -426,10 +427,10 @@ ifneq (0,$(AVX))
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     AVX ?= 1
     SSE ?= 0
-  else #ifeq (,$(AVX))
-    AVX = 0
   endif
 endif
+endif
+AVX ?= 0
 ifneq (0,$(SSE))
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE ?= 4
