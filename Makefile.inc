@@ -542,13 +542,13 @@ ifneq (0,$(INTEL))
         CTARGET = -xAVX
       else ifneq (0,$(SSE))
         ifeq (1,$(SSE)) # default
+          CTARGET = -xSSE4.2
+        else ifeq (3,$(SSE))
           ifneq (Darwin,$(UNAME))
             CTARGET = -xSSE3
           else # no systems with less than SSE4.2
             CTARGET = -xSSE4.2
           endif
-        else ifeq (3,$(SSE))
-          CTARGET = -xSSE3
         else ifeq (4,$(SSE))
           CTARGET = -xSSE4.2
         else
@@ -833,14 +833,16 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     CTARGET = -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
+      CTARGET = -msse4.2
+    else ifeq (2,$(SSE))
+      # implicitly present (64-bit ABI)
+    else ifeq (3,$(SSE))
       ifneq (Darwin,$(UNAME))
         CTARGET = -msse3
       else
         # prevents Clang backend error with CRC32/other instructions
         CTARGET = -msse4.2
       endif
-    else ifeq (2,$(SSE))
-      # implicitly present (64-bit ABI)
     else ifeq (4,$(SSE))
       CTARGET = -msse4.2
     else # perhaps better to use TARGET flag directly
