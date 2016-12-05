@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.) Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
@@ -540,7 +540,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
         descriptor.ifm_unroll = 1;
 
-        for(i = LIBXSMM_MIN(upper_limit_ofw_rb, handle->ofw); i >= 1; i--) {
+        for(i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(28,handle->ofw)); i >= 1; i--) {
           if(handle->ofw % i == 0) break;
         }
         descriptor.ofw_rb =  i;
