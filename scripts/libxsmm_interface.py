@@ -68,11 +68,11 @@ if __name__ == "__main__":
                 if (2 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_API void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c" + \
-                          [");", ",\n  const float* pa, const float* pb, const float* pc);"][0!=prefetch]
+                          [");", ",\n  const float* pa, const float* pb, const float* pc);"][0<prefetch]
                 if (1 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_API void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c" + \
-                          [");", ",\n  const double* pa, const double* pb, const double* pc);"][0!=prefetch]
+                          [");", ",\n  const double* pa, const double* pb, const double* pc);"][0<prefetch]
                 if (0 == precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if (mnklist and 0 != precision): substitute["MNK_INTERFACE_LIST"] += "\n"
@@ -94,20 +94,20 @@ if __name__ == "__main__":
                     if (2 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + \
-                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0<prefetch] + \
                             "            IMPORT :: C_FLOAT\n" \
                             "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" + \
-                            ["", "            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
+                            ["", "            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0<prefetch] + \
                             "          END SUBROUTINE"
                     if (1 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + \
-                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0<prefetch] + \
                             "            IMPORT :: C_DOUBLE\n" \
                             "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" + \
-                            ["", "            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
+                            ["", "            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0<prefetch] + \
                             "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             print(template.safe_substitute(substitute))
