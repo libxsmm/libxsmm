@@ -77,6 +77,9 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
+  } else {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
   l_conv_kernel_config.vector_length_in = 8;
@@ -117,20 +120,24 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: unsupported format requested!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    return;
   }
 
   /* initilize KW and KH unrolling */
   if (i_conv_desc->unroll_kw != 0) {
-    l_kw_trips = i_conv_desc->kw;
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: kw unroll needs to be 0!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    return;
   }
   if (i_conv_desc->unroll_kh != 0) {
-    l_kh_trips = i_conv_desc->kh;
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: kh unroll needs to be 0!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KH_UNROLL );
+    return;
+  }
+
+  /* check if we have full vectors */
+  if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    return;
   }
 
   /* define loop_label_tracker */
@@ -268,7 +275,7 @@ void libxsmm_generator_convolution_forward_avx2_ifmloop( libxsmm_generated_code*
   /* unrolling ifm loop */
   unsigned int l_ifm_trip_count = 0;
   /* total iterations */
-  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ifm_block;	
+  unsigned int l_total_trips = i_kw_unroll*i_conv_desc->ifm_block;
   l_k = l_n = l_m = 0;
 #if 0
   /* register blocking counter in n */
@@ -284,13 +291,12 @@ void libxsmm_generator_convolution_forward_avx2_ifmloop( libxsmm_generated_code*
 
   /* Some checks */
   if ( i_conv_desc->ofh_rb != 1 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_ifmloop: ofh_rb blocking needs to be 1\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
+    return;
   }
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_ofm_blocking > i_conv_kernel_config->vector_reg_count-4 ) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_ifmloop: accumulator needs to be %u registers or smaller\n",
-             i_conv_kernel_config->vector_reg_count-4);
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    return;
   }
 
   libxsmm_generator_convolution_header_ifm_loop( io_generated_code, i_loop_label_tracker,

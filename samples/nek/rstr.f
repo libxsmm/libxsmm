@@ -41,8 +41,8 @@ PROGRAM stpm
   INTEGER, PARAMETER :: T = KIND(0D0)
   REAL(T), PARAMETER :: alpha = 1, beta = 0
 
-  REAL(T), allocatable, dimension(:,:,:,:), target :: a, c, d
-  REAL(T), allocatable, target :: dx(:,:), dy(:,:), dz(:,:)
+  REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a, c, d
+  REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
   REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:), tm2(:,:,:), tm3(:,:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, d
   !$OMP THREADPRIVATE(tm1, tm2, tm3)
@@ -310,9 +310,9 @@ PROGRAM stpm
   END IF
 
   ! Deallocate global arrays
-  DEALLOCATE(a)
+  IF (check.NE.0) DEALLOCATE(d)
   DEALLOCATE(dx, dy, dz)
-  DEALLOCATE(c)
+  DEALLOCATE(a, c)
 
   ! finalize LIBXSMM
   CALL libxsmm_finalize()
@@ -321,7 +321,7 @@ PROGRAM stpm
 
 CONTAINS
   FUNCTION validate(ref, test) RESULT(diff)
-    REAL(T), dimension(:,:,:,:), intent(in) :: ref, test
+    REAL(T), DIMENSION(:,:,:,:), intent(in) :: ref, test
     REAL(T) :: diff
     diff = MAXVAL((ref - test) * (ref - test))
     WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff

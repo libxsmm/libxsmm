@@ -100,6 +100,10 @@ int main(int argc, char *argv[])
 
   // JIT Kernel
   kernel = libxsmm_dmmdispatch(nblock, m, k, &ldb, &lda, &ldc, NULL, NULL, NULL, &l_prefetch_op );
+  if (kernel == 0) {
+    printf("JIT failed, exiting\n");
+    exit(-1);
+  }
 
   // init MKL
   dgemm(&transb, &transa, &n, &m, &k, &alpha, b, &ldb, a, &lda, &beta, c1, &ldc);

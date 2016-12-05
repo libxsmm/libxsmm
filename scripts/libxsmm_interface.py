@@ -43,11 +43,9 @@ if __name__ == "__main__":
         # optional argument(s)
         if (2 < argc): precision = int(sys.argv[2])
         else: precision = 0
-        if (3 < argc): ilp64 = int(sys.argv[3])
-        else: ilp64 = 0
-        if (4 < argc): prefetch = int(sys.argv[4])
+        if (3 < argc): prefetch = int(sys.argv[3])
         else: prefetch = 0
-        if (5 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[5:], 0))
+        if (4 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
         else: mnklist = list()
 
         template = Template(open(filename, "r").read())
@@ -70,17 +68,16 @@ if __name__ == "__main__":
                 if (2 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_API void libxsmm_smm_" + mnkstr + "(const float* a, const float* b, float* c" + \
-                          [");", ",\n  const float* pa, const float* pb, const float* pc);"][0!=prefetch]
+                          [");", ",\n  const float* pa, const float* pb, const float* pc);"][0<prefetch]
                 if (1 != precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n" \
                         "LIBXSMM_API void libxsmm_dmm_" + mnkstr + "(const double* a, const double* b, double* c" + \
-                          [");", ",\n  const double* pa, const double* pb, const double* pc);"][0!=prefetch]
+                          [");", ",\n  const double* pa, const double* pb, const double* pc);"][0<prefetch]
                 if (0 == precision):
                     substitute["MNK_INTERFACE_LIST"] += "\n"
             if (mnklist and 0 != precision): substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:
-            substitute["BLASINT_KIND"] = ["C_INT", "C_LONG_LONG"][0!=ilp64]
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
@@ -97,20 +94,20 @@ if __name__ == "__main__":
                     if (2 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_smm_" + mnkstr + "(a, b, c" + \
-                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0<prefetch] + \
                             "            IMPORT :: C_FLOAT\n" \
                             "            REAL(C_FLOAT), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_FLOAT), INTENT(INOUT) :: c(*)\n" + \
-                            ["", "            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
+                            ["", "            REAL(C_FLOAT), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0<prefetch] + \
                             "          END SUBROUTINE"
                     if (1 != precision):
                         substitute["MNK_INTERFACE_LIST"] += "\n" \
                             "          PURE SUBROUTINE libxsmm_dmm_" + mnkstr + "(a, b, c" + \
-                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0!=prefetch] + \
+                            [") BIND(C)\n", "," + "&".rjust(26 - len(mnkstr)) + "\n     &    pa, pb, pc) BIND(C)\n"][0<prefetch] + \
                             "            IMPORT :: C_DOUBLE\n" \
                             "            REAL(C_DOUBLE), INTENT(IN) :: a(*), b(*)\n" \
                             "            REAL(C_DOUBLE), INTENT(INOUT) :: c(*)\n" + \
-                            ["", "            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0!=prefetch] + \
+                            ["", "            REAL(C_DOUBLE), INTENT(IN) :: pa(*), pb(*), pc(*)\n"][0<prefetch] + \
                             "          END SUBROUTINE"
                 substitute["MNK_INTERFACE_LIST"] += "\n        END INTERFACE"
             print(template.safe_substitute(substitute))

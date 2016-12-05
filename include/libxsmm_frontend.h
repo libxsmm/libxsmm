@@ -37,7 +37,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <assert.h> /* intentionally here */
-#include <stdint.h>
 #include "libxsmm_generator.h"
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -107,7 +106,9 @@
 /** Helper macro for comparing types. */
 #define LIBXSMM_EQUAL(T1, T2, R) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2)(R)
 #define LIBXSMM_EQUAL_doubledouble(R) R
+#define LIBXSMM_EQUAL_doublefloat(R)
 #define LIBXSMM_EQUAL_floatfloat(R) R
+#define LIBXSMM_EQUAL_floatdouble(R)
 
 /** Check ILP64 configuration for sanity. */
 #if (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)

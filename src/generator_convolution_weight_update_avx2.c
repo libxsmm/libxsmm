@@ -83,7 +83,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
     _mm256_store_ps( &weight[ofm1][ifm1][kj][ki][ifm2+1][24], acc13 );
   }
 *****/
-  libxsmm_convolution_kernel_config l_conv_kernel_config;
+  libxsmm_convolution_kernel_config l_conv_kernel_config = { 0 };
   libxsmm_convolution_weight_update_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
 
@@ -117,10 +117,13 @@ Example for ofm_block = 32, ifm_block%2 == 0
 
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
-  if ( strcmp( i_arch, "hsw" ) == 0 ) {
+  if ( strcmp( i_arch, "knl" ) == 0 ||
+       strcmp( i_arch, "skx" ) == 0 ||
+       strcmp( i_arch, "hsw" ) == 0  ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
-    fprintf( stderr, " LIBXSMM Error: generator_convolution_backward_avx2: unsupported architecture!\n" );
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
   l_conv_kernel_config.vector_length_in = 8;
@@ -160,8 +163,14 @@ Example for ofm_block = 32, ifm_block%2 == 0
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    fprintf( stderr, "libxsmm_generator_convolution_forward_avx2_kernel: unsupported format requested!\n" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    return;
+  }
+
+  /* check if we have full vectors */
+  if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    return;
   }
 
   /* caclulate the ifm unrolling */
@@ -175,6 +184,12 @@ Example for ofm_block = 32, ifm_block%2 == 0
   /* calculate blocking */
   l_ofm_blocking = i_conv_desc->ofm_block / l_conv_kernel_config.vector_length_out;
   l_vec_reg_acc_start = 16 - (l_ofm_blocking * l_ifm_blocking);
+
+  /* check accumulator size */
+  if ( l_ofm_blocking*l_ifm_blocking > l_conv_kernel_config.vector_reg_count-4 ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    return;
+  }
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );

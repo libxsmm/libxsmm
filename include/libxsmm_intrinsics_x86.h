@@ -64,12 +64,16 @@
 # endif
 # if defined(__INTEL_COMPILER)
     /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
-#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   if 1300 <= (__INTEL_COMPILER)
+#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   else
+#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#   endif
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_CRAYC) && defined(__GNUC__)
-    /* TODO: version check e.g, (LIBXSMM_VERSION2(11, 4) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR)) */
-#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+    /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
+#   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #   define LIBXSMM_INTRINSICS/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_MSC_VER)
@@ -240,17 +244,18 @@
 # define LIBXSMM_INTRINSICS
 #endif
 
-#if defined(_WIN32)
-# include <malloc.h>
-#else
-# include <mm_malloc.h>
-#endif
-
+#if !defined(LIBXSMM_INTRINSICS_NONE)
+# if defined(_WIN32)
+#   include <malloc.h>
+# else
+#   include <mm_malloc.h>
+# endif
 /** Intrinsic-specifc fixups */
-#if defined(__clang__)
-# define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_loadu_si128
-#else
-# define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_lddqu_si128
+# if defined(__clang__)
+#   define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_loadu_si128
+# else
+#   define LIBXSMM_INTRINSICS_LDDQU_SI128 _mm_lddqu_si128
+# endif
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

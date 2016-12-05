@@ -28,6 +28,11 @@ IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 BLAS = 0
 OMP = 1
 SYM = 1
+BFLOAT = 0
+
+ifeq (1,$(BFLOAT))
+CFLAGS += -DUSE_BFLOAT
+endif
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc

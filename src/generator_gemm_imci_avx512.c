@@ -109,8 +109,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load = libxsmm_generator_gemm_load_C_imci;
     l_generator_store = libxsmm_generator_gemm_store_C_imci;
   } else {
-    fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_imci_avx512_kernel_mloop, cannot select microkernel\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
   }
 
   /* we proceed as much as we can in vector length steps, remainder is handled uisng masking */
@@ -157,7 +157,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
   }
 
   /* Remainder Handling using Masking, we are using M loop counter register as GP register for the mask */
-  if ( l_m_done != i_xgemm_desc->m ) {
+  if ( l_m_done != (unsigned int)i_xgemm_desc->m ) {
     /* request masking support, @TODO performance penality here, as a new object is created */
     libxsmm_micro_kernel_config l_micro_kernel_config_mask;
     libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config_mask, i_xgemm_desc, i_arch, 1 );

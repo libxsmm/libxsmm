@@ -43,54 +43,63 @@
 # define LIBXSMM_TRANS_TYPEOPT
 #endif
 
-#define LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
-  const char *const libxsmm_otrans_generic_a_ = (const char*)(IN); \
-  char *const libxsmm_otrans_generic_b_ = (char*)(OUT); \
-  libxsmm_blasint libxsmm_otrans_generic_i_, libxsmm_otrans_generic_j_; \
-  unsigned int libxsmm_otrans_generic_k_; \
-  for (libxsmm_otrans_generic_i_ = M0; libxsmm_otrans_generic_i_ < (M1); ++libxsmm_otrans_generic_i_) { \
-    LIBXSMM_PRAGMA_NONTEMPORAL \
-    for (libxsmm_otrans_generic_j_ = N0; libxsmm_otrans_generic_j_ < (N1); ++libxsmm_otrans_generic_j_) { \
-      const char *const libxsmm_otrans_generic_aji_ = libxsmm_otrans_generic_a_ + (TYPESIZE) * (libxsmm_otrans_generic_j_ * (LDI) + libxsmm_otrans_generic_i_); \
-      char *const libxsmm_otrans_generic_bij_ = libxsmm_otrans_generic_b_ + (TYPESIZE) * (libxsmm_otrans_generic_i_ * (LDO) + libxsmm_otrans_generic_j_); \
-      for (libxsmm_otrans_generic_k_ = 0; libxsmm_otrans_generic_k_ < (TYPESIZE); ++libxsmm_otrans_generic_k_) { \
-        libxsmm_otrans_generic_bij_[libxsmm_otrans_generic_k_] = libxsmm_otrans_generic_aji_[libxsmm_otrans_generic_k_]; \
-      } \
+#define LIBXSMM_OTRANS_KERNEL(TYPE, TYPESIZE, INDEX_I, INDEX_J, OUT, IN, LDI, LDO) \
+  (OUT)[(INDEX_I)*(LDO)+(INDEX_J)] = (IN)[(INDEX_J)*(LDI)+(INDEX_I)]
+
+#define LIBXSMM_OTRANS_KERNEL_GENERIC(TYPE, TYPESIZE, INDEX_I, INDEX_J, OUT, IN, LDI, LDO) { \
+  const TYPE *const libxsmm_otrans_kernel_generic_a_ = (IN) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I)); \
+  TYPE *const libxsmm_otrans_kernel_generic_b_ = (OUT) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)); \
+  unsigned int libxsmm_otrans_kernel_generic_k_; \
+  for (libxsmm_otrans_kernel_generic_k_ = 0; libxsmm_otrans_kernel_generic_k_ < (TYPESIZE); ++libxsmm_otrans_kernel_generic_k_) { \
+    libxsmm_otrans_kernel_generic_b_[libxsmm_otrans_kernel_generic_k_] = libxsmm_otrans_kernel_generic_a_[libxsmm_otrans_kernel_generic_k_]; \
+  } \
+}
+
+#define LIBXSMM_OTRANS_LOOP_UNALIGNED(...)
+#define LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, KERNEL, HINT_ALIGNED, OUT, IN, M0, M1, N0, N1, NCHUNK, LDI, LDO) { \
+  const TYPE *const libxsmm_otrans_loop_a_ = (const TYPE*)(IN); \
+  TYPE *const libxsmm_otrans_loop_b_ = (TYPE*)(OUT); \
+  libxsmm_blasint libxsmm_otrans_loop_i_, libxsmm_otrans_loop_j_; \
+  for (libxsmm_otrans_loop_i_ = M0; libxsmm_otrans_loop_i_ < (M1); ++libxsmm_otrans_loop_i_) { \
+    LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_otrans_loop_b_) \
+    for (libxsmm_otrans_loop_j_ = N0; libxsmm_otrans_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_otrans_loop_j_) { \
+      /* kernel uses consecutive stores and strided loads */ \
+      KERNEL(TYPE, TYPESIZE, libxsmm_otrans_loop_i_, libxsmm_otrans_loop_j_, \
+        libxsmm_otrans_loop_b_, libxsmm_otrans_loop_a_, LDI, LDO); \
     } \
   } \
 }
 
 #define LIBXSMM_OTRANS(TYPE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
-  if (LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE) == (N) \
-   && LIBXSMM_MOD2((uintptr_t)(IN), LIBXSMM_ALIGNMENT) == 0) \
-  { \
-    const TYPE *const libxsmm_otrans_a_ = (const TYPE*)(IN); \
-    TYPE *const libxsmm_otrans_b_ = (TYPE*)(OUT); \
-    libxsmm_blasint libxsmm_otrans_generic_i_, libxsmm_otrans_generic_j_; \
-    if (LIBXSMM_TRANS_MAX_CHUNKSIZE == (N)) { \
-      for (libxsmm_otrans_generic_i_ = M0; libxsmm_otrans_generic_i_ < (M1); ++libxsmm_otrans_generic_i_) { \
-        LIBXSMM_PRAGMA_NONTEMPORAL \
-        LIBXSMM_PRAGMA_VALIGNED_VARS(libxsmm_otrans_b_) \
-        for (libxsmm_otrans_generic_j_ = N0; libxsmm_otrans_generic_j_ < (N0) + (LIBXSMM_TRANS_MAX_CHUNKSIZE); ++libxsmm_otrans_generic_j_) { \
-          /* use consecutive stores and strided loads */ \
-          libxsmm_otrans_b_[libxsmm_otrans_generic_i_*(LDO)+libxsmm_otrans_generic_j_] = libxsmm_otrans_a_[libxsmm_otrans_generic_j_*(LDI)+libxsmm_otrans_generic_i_]; \
-        } \
+  if (LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE) == (N)) { \
+    if (0 == LIBXSMM_MOD2((LDO) * sizeof(TYPE), LIBXSMM_ALIGNMENT) \
+     && 0 == LIBXSMM_MOD2((uintptr_t)(OUT), LIBXSMM_ALIGNMENT)) \
+    { \
+      if (LIBXSMM_TRANS_MAX_CHUNKSIZE == (N)) { \
+        LIBXSMM_OTRANS_LOOP(TYPE, sizeof(TYPE), LIBXSMM_OTRANS_KERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
+          OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_MAX_CHUNKSIZE, LDI, LDO); \
+      } \
+      else { \
+        assert(LIBXSMM_TRANS_MIN_CHUNKSIZE == (N)); \
+        LIBXSMM_OTRANS_LOOP(TYPE, sizeof(TYPE), LIBXSMM_OTRANS_KERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
+          OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_MIN_CHUNKSIZE, LDI, LDO); \
       } \
     } \
-    else { \
-      assert(LIBXSMM_TRANS_MIN_CHUNKSIZE == (N)); \
-      for (libxsmm_otrans_generic_i_ = M0; libxsmm_otrans_generic_i_ < (M1); ++libxsmm_otrans_generic_i_) { \
-        LIBXSMM_PRAGMA_NONTEMPORAL \
-        LIBXSMM_PRAGMA_VALIGNED_VARS(libxsmm_otrans_b_) \
-        for (libxsmm_otrans_generic_j_ = N0; libxsmm_otrans_generic_j_ < (N0) + (LIBXSMM_TRANS_MIN_CHUNKSIZE); ++libxsmm_otrans_generic_j_) { \
-          /* use consecutive stores and strided loads */ \
-          libxsmm_otrans_b_[libxsmm_otrans_generic_i_*(LDO)+libxsmm_otrans_generic_j_] = libxsmm_otrans_a_[libxsmm_otrans_generic_j_*(LDI)+libxsmm_otrans_generic_i_]; \
-        } \
+    else { /* unaligned store */ \
+      if (LIBXSMM_TRANS_MAX_CHUNKSIZE == (N)) { \
+        LIBXSMM_OTRANS_LOOP(TYPE, sizeof(TYPE), LIBXSMM_OTRANS_KERNEL, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
+          OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_MAX_CHUNKSIZE, LDI, LDO); \
+      } \
+      else { \
+        assert(LIBXSMM_TRANS_MIN_CHUNKSIZE == (N)); \
+        LIBXSMM_OTRANS_LOOP(TYPE, sizeof(TYPE), LIBXSMM_OTRANS_KERNEL, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
+          OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_MIN_CHUNKSIZE, LDI, LDO); \
       } \
     } \
   } \
   else { /* remainder tile */ \
-    LIBXSMM_OTRANS_GENERIC(sizeof(TYPE), OUT, IN, M0, M1, N0, N1, N, LDI, LDO); \
+    LIBXSMM_OTRANS_LOOP(char, sizeof(TYPE), LIBXSMM_OTRANS_KERNEL_GENERIC, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
+      OUT, IN, M0, M1, N0, N1, N, LDI, LDO); \
   } \
 }
 
@@ -121,7 +130,7 @@
 
 /**
  * Based on the cache-oblivious transpose by Frigo et.al. with some additional
- * optimization such as using a loop with bounds which are known at compile-time
+ * optimization such as using a loop with bounds, which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
 #define LIBXSMM_OTRANS_MAIN(KERNEL_START, FN, OUT, IN, TYPESIZE, M0, M1, N0, N1, LDI, LDO) { \
@@ -130,8 +139,9 @@
     KERNEL_START(libxsmm_otrans_main_n_) \
     { \
       LIBXSMM_OTRANS_TYPEOPT_BEGIN(OUT, IN, TYPESIZE, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO) \
-      /* fall-back code path which is generic with respect to the typesize */ \
-      LIBXSMM_OTRANS_GENERIC(TYPESIZE, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+      /* fall-back code path, which is generic with respect to the typesize */ \
+      LIBXSMM_OTRANS_LOOP(char, TYPESIZE, LIBXSMM_OTRANS_KERNEL_GENERIC, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
+        OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
       LIBXSMM_OTRANS_TYPEOPT_END \
     } \
   } \

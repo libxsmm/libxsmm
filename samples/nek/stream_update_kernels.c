@@ -57,10 +57,11 @@ void stream_init( int    i_length,
   *o_trip_stream = ((*o_trip_stream) > i_length) ? (*o_trip_prolog) : (*o_trip_stream);
 }
 
-LIBXSMM_API
-void stream_vector_copy( const double* i_a,
-                         double*       io_c,
-                         const int     i_length) {
+/* avoid warning about external function definition with no prior declaration */
+LIBXSMM_API void stream_vector_copy(const double* i_a, double* io_c, const int i_length);
+LIBXSMM_API_DEFINITION void stream_vector_copy(  const double* i_a,
+                                      double*       io_c,
+                                      const int     i_length) {
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;

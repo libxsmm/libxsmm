@@ -244,7 +244,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                         i_gp_reg_mapping->gp_reg_a_prefetch,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
-      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -253,7 +253,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
     }
 
     /* in last k-iteration: advance pointers */
-    if ( (l_k == (i_k_blocking - 1)) && (i_k_blocking != i_xgemm_desc->k) ) {
+    if ( (l_k == (i_k_blocking - 1)) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
@@ -345,7 +345,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
   }
 
   /* advance pointers of B only when we are not fully unrolling K and taking care of intermediate advances */
-  if ( i_k_blocking < i_xgemm_desc->k ) {
+  if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
     /* advance pointers of B */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
@@ -388,12 +388,12 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 24 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large: i_n_blocking needs to be 24 or smaller!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
   if ( i_k_blocking < 8 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large: i_k_blocking needs to be at least 8!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
   }
 #endif
 
@@ -571,8 +571,8 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
 
 #if !defined(NDEBUG)
   if ( i_k_blocking < 8 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine: i_k_blocking needs to be at least 8!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return;
   }
 #endif
 
@@ -904,7 +904,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_gp_reg_mapping->gp_reg_a_prefetch,
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     (i_xgemm_desc->lda * l_k * i_micro_kernel_config->datatype_size) );
-      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+      if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -928,7 +928,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
     }
 
     /* in last k-iteration: advance pointers */
-    if ( l_k == (i_k_blocking - 1) && (i_k_blocking != i_xgemm_desc->k) ) {
+    if ( l_k == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
@@ -1105,7 +1105,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
   }
 
   /* advance pointers of B only when we are not fully unrolling K*/
-  if ( i_k_blocking < i_xgemm_desc->k ) {
+  if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                  i_micro_kernel_config->alu_add_instruction,
                                  i_gp_reg_mapping->gp_reg_b,
@@ -1129,7 +1129,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
   LIBXSMM_UNUSED(i_arch);
 
   if ( (l_k_blocking >= l_k_threshold) ) {
-    fprintf(stderr, "LIBXSMM AVX512 micro kenrel: l_k_blocking must be smaller than l_k_threshold\n");
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    return 0;
   }
 
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
@@ -1140,7 +1141,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                                i_xgemm_desc,
                                                                i_xgemm_desc->k );
     l_k_unrolled = 1;
-  } else if ( i_xgemm_desc->k <= l_k_threshold ) {
+  } else if ( (unsigned int)i_xgemm_desc->k <= l_k_threshold ) {
     libxsmm_generator_gemm_avx512_microkernel( io_generated_code,
                                                 i_gp_reg_mapping,
                                                 i_micro_kernel_config,
@@ -1148,7 +1149,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                 i_n_blocking,
                                                 i_xgemm_desc->k);
     l_k_unrolled = 1;
-  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (i_xgemm_desc->k > l_k_threshold) ) {
+  } else if ( (i_xgemm_desc->k % l_k_blocking == 0) && (l_k_threshold < (unsigned int)i_xgemm_desc->k) ) {
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                           i_micro_kernel_config->vector_length, l_k_blocking);
 

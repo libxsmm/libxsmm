@@ -131,9 +131,7 @@ DBG ?= 0
 OMP ?= 0
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
-ifeq (0,$(OMP))
-  THREADS ?= 0
-endif
+THREADS ?= 1
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
@@ -146,7 +144,7 @@ ILP64 ?= 0
 BLAS ?= 0
 
 # Prefer to link statically against BLAS library
-BLAS_STATIC ?= 1
+BLAS_STATIC ?= $(STATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
 else
@@ -159,7 +157,7 @@ NOBLAS ?= 0
 DNOBLAS = -D__BLAS=0
 ifneq (,$(filter environment% override command%,$(origin BLAS)))
 ifeq (0,$(BLAS))
-  DFLAGS += $(DNOBLAS)
+  BLAS_DFLAGS += $(DNOBLAS)
   NOBLAS = 1
 endif
 endif
@@ -413,6 +411,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
+ifneq (1,$(SSE))
 ifneq (0,$(AVX))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
@@ -428,10 +427,10 @@ ifneq (0,$(AVX))
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     AVX ?= 1
     SSE ?= 0
-  else #ifeq (,$(AVX))
-    AVX = 0
   endif
 endif
+endif
+AVX ?= 0
 ifneq (0,$(SSE))
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE ?= 4
@@ -544,13 +543,13 @@ ifneq (0,$(INTEL))
         CTARGET = -xAVX
       else ifneq (0,$(SSE))
         ifeq (1,$(SSE)) # default
+          CTARGET = -xSSE4.2
+        else ifeq (3,$(SSE))
           ifneq (Darwin,$(UNAME))
             CTARGET = -xSSE3
           else # no systems with less than SSE4.2
             CTARGET = -xSSE4.2
           endif
-        else ifeq (3,$(SSE))
-          CTARGET = -xSSE3
         else ifeq (4,$(SSE))
           CTARGET = -xSSE4.2
         else
@@ -640,14 +639,14 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
-    FPEDANTIC += -pedantic -Wunused-variable -Wc-binding-type \
+    FPEDANTIC += -pedantic -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
                  -Wimplicit-interface -Wimplicit-procedure \
-                 -Wintrinsics-std -Wreal-q-constant \
-                 -Wrealloc-lhs -Wrealloc-lhs-all
+                 -Wintrinsics-std -Wreal-q-constant
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
-      FWARNEXTRA = -Wuse-without-only
+      FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
+                   -Wrealloc-lhs -Wrealloc-lhs-all
     endif
     FPEDANTIC += $(FWARNEXTRA)
   endif
@@ -658,7 +657,13 @@ else # GCC assumed
     FCFLAGS += -ffree-form
     FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
-    CSTD = -std=c89
+    ifneq (Darwin,$(UNAME))
+      CSTD = -std=c89
+    else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+      CSTD = -std=c89
+    else # Clang may run into ICEs under OSX
+      CSTD = -std=c99
+    endif
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
@@ -823,20 +828,22 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
-      CTARGET = -mavx2
+      CTARGET = -march=core-avx2
     endif
   else ifeq (1,$(AVX))
     CTARGET = -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
+      CTARGET = -msse4.2
+    else ifeq (2,$(SSE))
+      # implicitly present (64-bit ABI)
+    else ifeq (3,$(SSE))
       ifneq (Darwin,$(UNAME))
         CTARGET = -msse3
       else
         # prevents Clang backend error with CRC32/other instructions
         CTARGET = -msse4.2
       endif
-    else ifeq (2,$(SSE))
-      # implicitly present (64-bit ABI)
     else ifeq (4,$(SSE))
       CTARGET = -msse4.2
     else # perhaps better to use TARGET flag directly
@@ -983,7 +990,7 @@ ifneq (Darwin,$(UNAME))
 endif
 
 ifeq (1,$(MKL)) # sequential
-  BLAS_DFLAGS += -D__MKL=1
+  BLAS_DFLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
@@ -1009,7 +1016,7 @@ ifeq (1,$(MKL)) # sequential
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
 else ifneq (0,$(MKL)) # multi-threaded
-  BLAS_DFLAGS += -D__MKL=$(MKL)
+  BLAS_DFLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
@@ -1057,7 +1064,11 @@ else ifneq (0,$(MKL)) # multi-threaded
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))
     ifneq (1,$(BLAS))
-      BLAS_THREADS = o
+      ifneq (0,$(OMP))
+        BLAS_THREADS = o
+      else
+        BLAS_THREADS = p
+      endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
@@ -1066,8 +1077,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS))
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
-      BLAS_DFLAGS += -D__OPENBLAS -D__CBLAS
+      BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
     else
+      BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))
         BLAS_LDFLAGS += -lblas$(BLAS_BITS)
       else
@@ -1084,6 +1096,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
   else # BLAS library is specified via BLASLIB
+    BLAS_DFLAGS += -D__BLAS=$(BLAS)
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
         BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
@@ -1097,13 +1110,13 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS = $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS = $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS = $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS = $(strip $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS = $(strip $(CLDFLAGS))
-NOBLAS_DFLAGS = $(strip $(DFLAGS))
-NOBLAS_IFLAGS = $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
+NOBLAS_DFLAGS := $(strip $(DFLAGS))
+NOBLAS_IFLAGS := $(strip $(IFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))

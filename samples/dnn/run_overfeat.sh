@@ -2,7 +2,7 @@
 
 if [ $# -ne 4 ]
 then
-  echo "Usage: `basename $0` mb iters numa; using default values: 256 1000 1 f32"
+  echo "Usage: $(basename $0) mb iters numa; using default values: 256 1000 1 f32"
   MB=256
   ITERS=1000
   NUMA=1
@@ -14,10 +14,11 @@ else
   BIN=$4
 fi
 
+NUMACTL="${TOOL_COMMAND}"
 CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
 if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   if [ "0" != "$((NUMA < $(numactl -H | grep "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
-    NUMACTL="numactl --membind=${NUMA}"
+    NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
   fi
 fi
 

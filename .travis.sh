@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2016, Intel Corporation                                     #
 # All rights reserved.                                                      #
@@ -41,36 +41,46 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
     export TRAVIS_OS_NAME=$(uname)
   fi
-  # should run after the above variables are set
-  source ${HERE}/.travis.env
 
-  # set the initial case number
+  # set the case number
   if [ "" != "$1" ]; then
-    CASE=$1
+    export TESTID=$1
   else
-    CASE=1
+    export TESTID=1
+  fi
+
+  # should be source'd after the above variables are set
+  source ${HERE}/.travis.env
+  source ${HERE}/.buildkite.env
+
+  # clear build log
+  if [ -e ${HERE}/log.txt ]; then
+    if [ "" = "$1" ] || [ "0" = "$1" ]; then
+      cat /dev/null > ${HERE}/log.txt
+    fi
   fi
 
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
-    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${CASE}}$//p\" | \
+    ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
   do
     # print header if all test cases are selected
     if [ "" = "$1" ]; then
       echo "================================================================================"
-      echo "Test Case #${CASE}"
+      echo "Test Case #${TESTID}"
     fi
 
     # run the actual test case
     eval ${TEST}
+    RESULT=$?
 
     # increment the case number if all cases are selected or leave the loop
-    if [ "" = "$1" ]; then
-      CASE=$((CASE+1))
+    if [ "0" = "${RESULT}" ] && [ "" = "$1" ]; then
+      TESTID=$((TESTID+1))
     else # dummy/exit case
-      CASE=1000
+      exit ${RESULT}
     fi
   done
 fi

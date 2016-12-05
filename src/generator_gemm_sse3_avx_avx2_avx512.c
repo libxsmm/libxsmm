@@ -102,7 +102,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   /* apply n_blocking */
-  while (l_n_done != i_xgemm_desc->n) {
+  while (l_n_done != (unsigned int)i_xgemm_desc->n) {
     l_n_done_old = l_n_done;
     l_n_done = l_n_done + (((i_xgemm_desc->n - l_n_done_old) / l_n_blocking) * l_n_blocking);
 
@@ -116,7 +116,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
       l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
-      while (l_m_done != i_xgemm_desc->m) {
+      while (l_m_done != (unsigned int)i_xgemm_desc->m) {
         if (l_m_done == 0) {
           /* This is a SeisSol Order 6, HSW, DP performance fix */
           if ( (strcmp( i_arch, "hsw" ) == 0) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0) ) {
@@ -141,7 +141,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
           /* apply multiple k_blocking strategies */
           /* 1. we are larger the k_threshold and a multiple of a predefined blocking parameter */
-          if ((i_xgemm_desc->k % l_k_blocking) == 0 && i_xgemm_desc->k > l_k_threshold) {
+          if ((i_xgemm_desc->k % l_k_blocking) == 0 && (l_k_threshold < (unsigned int)i_xgemm_desc->k)) {
             unsigned int l_k;
             libxsmm_generator_gemm_header_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking, l_k_blocking);
 
@@ -154,9 +154,9 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                                                   i_xgemm_desc, l_m_blocking, i_xgemm_desc->k, 1 );
           } else {
             /* 2. we want to fully unroll below the threshold */
-            if (i_xgemm_desc->k <= l_k_threshold) {
+            if ((unsigned int)i_xgemm_desc->k <= l_k_threshold) {
               unsigned int l_k;
-              for ( l_k = 0; l_k < i_xgemm_desc->k; l_k++) {
+              for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++) {
                 l_generator_microkernel(io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
                                         i_xgemm_desc, l_m_blocking, l_n_blocking, l_k);
               }
@@ -179,7 +179,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                 libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
                                              l_gp_reg_mapping.gp_reg_b, l_max_blocked_k * l_micro_kernel_config.datatype_size );
               }
-              for ( l_k = l_max_blocked_k; l_k < i_xgemm_desc->k; l_k++) {
+              for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k++) {
                 l_generator_microkernel(io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,
                                         i_xgemm_desc, l_m_blocking, l_n_blocking, l_k);
               }

@@ -48,11 +48,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
   /* apply the alignement override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
-  /* AVX512 code path selection, classic is an AVX2 pumped up version, non-classic is KNL optimized */
-  unsigned int l_avx512_classic = 0;
-  if ( getenv("LIBXSMM_AVX512_CLASSIC_GEMM") != NULL ) {
-    l_avx512_classic = atoi(getenv("LIBXSMM_AVX512_CLASSIC_GEMM"));
-  }
 
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
@@ -122,13 +117,17 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "knc") == 0) ||
-       (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0 && l_avx512_classic == 0)    ) {
+              (strcmp(i_arch, "knl") == 0)    ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "skx") == 0) ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    if ( (l_vector_length == 16  && (l_xgemm_desc_mod.m == 32 || l_xgemm_desc_mod.m == 48 || l_xgemm_desc_mod.m == 64)) ||
+         (l_vector_length == 8   && (l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 24 || l_xgemm_desc_mod.m == 32))    ) {
+      libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    } else {
+      libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    }
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
@@ -177,7 +176,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
       libxsmm_strerror(l_generated_code.last_error));
-    exit(-1);
+    return;
   }
 
   /* append code to source file */
@@ -188,7 +187,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_inlineasm could not write to into destination source file\n");
-      exit(-1);
+      return;
     }
   }
 
@@ -211,7 +210,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {
     fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: we cannot create ASM when noarch is specified!\n");
-    exit(-1);
+    return;
   }
 
   /* add signature to code string */
@@ -224,7 +223,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   if ( l_generated_code.last_error != 0 ) {
     fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
       libxsmm_strerror(l_generated_code.last_error));
-    exit(-1);
+    return;
   }
 
   /* append code to source file */
@@ -235,7 +234,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
       fclose( l_file_handle );
     } else {
       fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: could not write to into destination source file!\n");
-      exit(-1);
+      return;
     }
   }
 
