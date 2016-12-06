@@ -135,6 +135,9 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   }
 #endif
+  if ( ltid == (handle->desc.threads-1) ) {
+    handle->filter_transposed = 0;
+  }
 /* should never happen, this is just an additional check */
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

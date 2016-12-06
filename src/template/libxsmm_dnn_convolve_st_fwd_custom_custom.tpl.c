@@ -92,11 +92,12 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
             jitted_conv_fp_one(l_input, l_wt, l_output,
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
               &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, 0, 0,
-                                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
+                                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #else
               &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj + handle->fwd_ofh_rb, oi, 0, 0,
-                                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block), NULL,
+                                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
+              NULL,
               &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, oi, 0,
                                      handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
