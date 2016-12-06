@@ -63,25 +63,27 @@ element_filter_type *l_wt;
 element_output_type* l_output;
 
 /* lazy barrier init */
-libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+if (handle->filter_transposed == 0) {
+  libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
 
-for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-  ofm1 = ifm1ofm1/handle->blocksifm;
-  ifm1 = ifm1ofm1%handle->blocksifm;
-  for(kj=0; kj < handle->desc.R; ++kj) {
-    for(ki=0; ki < handle->desc.S; ++ki) {
-      /* TODO: enable this later */
-      /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
-      for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          LIBXSMM_VLA_ACCESS(6, tr_wt, kj, ki, ofm1, ofm2, ifm1, ifm2, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(6, wt,  kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1/handle->blocksifm;
+    ifm1 = ifm1ofm1%handle->blocksifm;
+    for(kj=0; kj < handle->desc.R; ++kj) {
+      for(ki=0; ki < handle->desc.S; ++ki) {
+        /* TODO: enable this later */
+        /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
+        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            LIBXSMM_VLA_ACCESS(6, tr_wt, kj, ki, ofm1, ofm2, ifm1, ifm2, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock) =
+              LIBXSMM_VLA_ACCESS(6, wt,  kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+          }
         }
       }
-    }
+    }  
   }
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 }
-libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE || /*  ) {

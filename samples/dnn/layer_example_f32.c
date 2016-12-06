@@ -822,6 +822,7 @@ int main(int argc, char* argv[])
     printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
     printf("##########################################\n");
     /* run LIBXSMM convolutions */
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_transpose_filter( libxsmm_handle ) );
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -912,6 +913,7 @@ int main(int argc, char* argv[])
     /* run LIBXSMM convolution for performance */
     l_start = libxsmm_timer_tick();
     for (i = 0; i < iters; ++i) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_transpose_filter( libxsmm_handle ) );
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
@@ -1058,7 +1060,7 @@ int main(int argc, char* argv[])
 
   if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
     printf("##########################################\n");
-    printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
+    printf("# Correctness - BWD(NHWC/custom-Storage) #\n");
     printf("##########################################\n");
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
