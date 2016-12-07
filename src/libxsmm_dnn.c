@@ -1333,6 +1333,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle
 #endif
 }
 
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_conv_handle* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int ofm1, ifm1, kj, ki, ifm2, ofm2;
@@ -1374,6 +1375,38 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
     return status;
   }
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    switch (kind) {
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        if (handle->code_fwd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        if (handle->code_bwd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        if (handle->code_upd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
 }
 
 
