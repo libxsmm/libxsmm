@@ -534,7 +534,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 #if !defined(_WIN32)
           0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags) ? ((void*)(((char*)internal->reloc) + alignment)) :
 #endif
-          buffer;
+          *memory;
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
           FILE *const code_file = fopen(name, "wb");
@@ -569,9 +569,8 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           *memory = code_ptr; /* relocate */
           info->pointer = internal->reloc;
           internal->reloc = 0;
-          if (0 != buffer && MAP_FAILED != buffer) {
-            soft_error = munmap(buffer, alloc_size);
-          }
+          assert(0 != buffer && MAP_FAILED != buffer);
+          soft_error = munmap(buffer, alloc_size);
 #endif
         }
 #if !defined(_WIN32)

@@ -191,6 +191,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     handle->upd_ofh_rb = 1;
     handle->fm_lp_block = 1;
     handle->upd_use_thread_fil = 0;
+    handle->filter_transposed = 0;
 
     /* Set algorithm to use */
     if (conv_desc.algo == LIBXSMM_DNN_CONV_ALGO_AUTO) {
@@ -1330,6 +1331,82 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle
 #else
   internal_convolve_st(handle, kind, 0/*start_thread*/, 0/*tid*/);
 #endif
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_conv_handle* handle) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  int ofm1, ifm1, kj, ki, ifm2, ofm2;
+
+  /* check if we have input, output and filter */
+  if (handle->input == 0 || handle->output == 0 || handle->filter == 0) {
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
+
+  /* check that filter is in RSCK storage */
+  if ( (handle->filter_format & LIBXSMM_DNN_CONV_FORMAT_RSCK) == 0 ) {
+    status = LIBXSMM_DNN_ERR_MISMATCH_FILTER;
+    return status;
+  }
+
+  /* check that we are in FP32 */
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+    LIBXSMM_VLA_DECL(6, float, wt, (float*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+    LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)handle->scratch1, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock);
+
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        for(kj=0; kj < handle->desc.R; ++kj) {
+          for(ki=0; ki < handle->desc.S; ++ki) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+                LIBXSMM_VLA_ACCESS(6, tr_wt, kj, ki, ofm1, ofm2, ifm1, ifm2, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock) =
+                  LIBXSMM_VLA_ACCESS(6, wt,  kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+              }
+            }
+          }
+        }  
+      }
+    }
+    handle->filter_transposed = 1;
+    return status;
+  } else {
+    status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+    return status;
+  }
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    switch (kind) {
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        if (handle->code_fwd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        if (handle->code_bwd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        if (handle->code_upd[0].xconv.sconv == 0) {
+          status = LIBXSMM_DNN_WARN_FALLBACK;
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
 }
 
 
