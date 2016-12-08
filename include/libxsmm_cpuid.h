@@ -55,7 +55,7 @@
 LIBXSMM_API int libxsmm_cpuid_x86(void);
 
 /** Returns the target architecture and instruction set extension (code path). */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_cpuid(void) { return libxsmm_cpuid_x86(); }
+LIBXSMM_API int libxsmm_cpuid(void);
 
 #endif /*LIBXSMM_CPUID_H*/
 
