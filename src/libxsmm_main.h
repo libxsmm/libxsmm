@@ -48,7 +48,9 @@
 #endif
 
 /** Helper macro to account for libxsmm_init being already executed via GCC constructor attribute */
-#if !defined(LIBXSMM_CTOR) && defined(__GNUC__) && !(defined(__INTEL_COMPILER) && !defined(LIBXSMM_BUILD))
+#if !defined(LIBXSMM_CTOR) && defined(__GNUC__) && \
+    !(defined(__INTEL_COMPILER) && !defined(LIBXSMM_BUILD)) && \
+    !defined(__clang__)
 # if defined(LIBXSMM_BUILD_EXT) && defined(__STATIC)
 #   define LIBXSMM_INIT libxsmm_ext_init/*dummy*/ = libxsmm_init;
     /**

@@ -71,6 +71,17 @@
 /*# define LIBXSMM_OPENMP*/
 #endif
 
+#if !defined(LIBXSMM_MAIN_MALLOC_INTRINSIC) && !defined(LIBXSMM_INTRINSICS_NONE)
+# define LIBXSMM_MAIN_MALLOC_INTRINSIC
+#endif
+#if defined(LIBXSMM_MAIN_MALLOC_INTRINSIC)
+# define LIBXSMM_MAIN_MALLOC(SIZE) _mm_malloc(SIZE, LIBXSMM_ALIGNMENT)
+# define LIBXSMM_MAIN_FREE(BUFFER) _mm_free((void*)(BUFFER))
+#else /* do not use libxsmm_malloc/free here! */
+# define LIBXSMM_MAIN_MALLOC(SIZE) malloc(SIZE)
+# define LIBXSMM_MAIN_FREE(BUFFER) free(BUFFER)
+#endif
+
 /* alternative hash algorithm (instead of CRC32) */
 #if !defined(LIBXSMM_HASH_BASIC)
 # if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -730,8 +741,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         libxsmm_perf_init();
 #endif
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
-        result = (libxsmm_code_pointer*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
-        internal_registry_keys = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
+        result = (libxsmm_code_pointer*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
+        internal_registry_keys = (internal_regkey_type*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
         if (0 != result && 0 != internal_registry_keys) {
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
@@ -760,8 +771,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: failed to allocate code registry!\n");
 #endif
-          libxsmm_free(internal_registry_keys);
-          libxsmm_free(result);
+          LIBXSMM_MAIN_FREE(internal_registry_keys);
+          LIBXSMM_MAIN_FREE(result);
         }
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
@@ -883,8 +894,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
           LIBXSMM_FUNLOCK(stdout);
           LIBXSMM_FUNLOCK(stderr);
         }
-        libxsmm_free(registry_keys);
-        libxsmm_free(registry);
+        LIBXSMM_MAIN_FREE(registry_keys);
+        LIBXSMM_MAIN_FREE(registry);
       }
     }
 #if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NO_SYNC) /* release locks */
