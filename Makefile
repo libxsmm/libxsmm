@@ -222,24 +222,13 @@ endif
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
-HEADERS = $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
+HEADERS = $(shell ls -1 $(ROOTDIR)/include/*.h 2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
-          $(SRCDIR)/libxsmm_gemm_diff.c $(SRCDIR)/libxsmm_hash.c \
-          $(ROOTDIR)/include/libxsmm_dnn.h \
-          $(ROOTDIR)/include/libxsmm_cpuid.h \
-          $(ROOTDIR)/include/libxsmm_frontend.h \
-          $(ROOTDIR)/include/libxsmm_generator.h \
-          $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
-          $(ROOTDIR)/include/libxsmm_macros.h \
-          $(ROOTDIR)/include/libxsmm_malloc.h \
-          $(ROOTDIR)/include/libxsmm_spmdm.h \
-          $(ROOTDIR)/include/libxsmm_sync.h \
-          $(ROOTDIR)/include/libxsmm_timer.h \
-          $(ROOTDIR)/include/libxsmm_typedefs.h
+          $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ")
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) \
-                   libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_sync.c \
+                   libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_hash.c libxsmm_sync.c \
                    libxsmm_timer.c libxsmm_trace.c libxsmm_perf.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
@@ -247,14 +236,15 @@ OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_HST = $(BLDDIR)/intel64/libxsmm_main.o $(BLDDIR)/intel64/libxsmm_dump.o \
-               $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_trans.o \
-               $(BLDDIR)/intel64/libxsmm_spmdm.o \
+               $(BLDDIR)/intel64/libxsmm_gemm.o $(BLDDIR)/intel64/libxsmm_gemm_diff.o \
+               $(BLDDIR)/intel64/libxsmm_trans.o $(BLDDIR)/intel64/libxsmm_spmdm.o \
                $(BLDDIR)/intel64/libxsmm_dnn.o $(BLDDIR)/intel64/libxsmm_dnn_handle.o \
                $(BLDDIR)/intel64/libxsmm_dnn_convolution_forward.o \
                $(BLDDIR)/intel64/libxsmm_dnn_convolution_backward.o \
                $(BLDDIR)/intel64/libxsmm_dnn_convolution_weight_update.o
 OBJFILES_MIC = $(BLDDIR)/mic/libxsmm_main.o $(BLDDIR)/mic/libxsmm_dump.o \
-               $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_trans.o \
+               $(BLDDIR)/mic/libxsmm_gemm.o $(BLDDIR)/mic/libxsmm_gemm_diff.o \
+               $(BLDDIR)/mic/libxsmm_trans.o \
                $(BLDDIR)/mic/libxsmm_dnn.o $(BLDDIR)/mic/libxsmm_dnn_handle.o \
                $(BLDDIR)/mic/libxsmm_dnn_convolution_forward.o \
                $(BLDDIR)/mic/libxsmm_dnn_convolution_backward.o \
