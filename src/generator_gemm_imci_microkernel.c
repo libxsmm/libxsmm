@@ -31,7 +31,7 @@
 
 #include "generator_gemm_imci_microkernel.h"
 #include "generator_x86_instructions.h"
-#include <libxsmm_cpuid.h>
+#include <libxsmm_intrinsics_x86.h>
 
 #include <stdio.h>
 #include <stdlib.h>
