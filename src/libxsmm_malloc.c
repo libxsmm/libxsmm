@@ -33,9 +33,9 @@
 #if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
-#include "libxsmm_malloc.h"
-#include "libxsmm_main.h"
+#include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
