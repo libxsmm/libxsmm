@@ -222,9 +222,19 @@ endif
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
-HEADERS = $(shell ls -1 $(ROOTDIR)/include/*.h 2> /dev/null | tr "\n" " ") \
-          $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
-          $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ")
+HEADERS = $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
+          $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
+          $(ROOTDIR)/include/libxsmm_cpuid.h \
+          $(ROOTDIR)/include/libxsmm_dnn.h \
+          $(ROOTDIR)/include/libxsmm_frontend.h \
+          $(ROOTDIR)/include/libxsmm_generator.h \
+          $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
+          $(ROOTDIR)/include/libxsmm_macros.h \
+          $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_spmdm.h \
+          $(ROOTDIR)/include/libxsmm_sync.h \
+          $(ROOTDIR)/include/libxsmm_timer.h \
+          $(ROOTDIR)/include/libxsmm_typedefs.h
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) \
