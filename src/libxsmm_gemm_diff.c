@@ -448,7 +448,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX512) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  !defined(__clang__) /* Clang misses at least some of the intrinsics used below */
+  !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) && !defined(__clang__) /* Clang misses at least some of the intrinsics used below */
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
