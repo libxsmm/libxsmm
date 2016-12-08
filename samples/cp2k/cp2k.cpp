@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
       T *const expect = c;
 #endif
       // eventually JIT-compile the requested kernel
-      const libxsmm_mmfunction<T> xmm(m, n, k);
+      const libxsmm_mmfunction<T> xmm(LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH);
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, zero);
