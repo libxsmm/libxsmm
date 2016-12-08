@@ -57,10 +57,11 @@
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 #if (0 != LIBXSMM_ILP64)
-typedef long long libxsmm_blasint;
+# #define LIBXSMM_BLASINT long long
 #else
-typedef int libxsmm_blasint;
+# #define LIBXSMM_BLASINT int
 #endif
+typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);
