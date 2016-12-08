@@ -90,20 +90,13 @@
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_malloc_extra_type {
-  /* also avoids warning about empty structure */
-  void* reloc;
+typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
+  void *pointer, *reloc;
+  size_t size;
+  int flags;
 #if defined(LIBXSMM_VTUNE)
   unsigned int code_id;
 #endif
-} internal_malloc_extra_type;
-
-
-typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
-  void* pointer;
-  size_t size;
-  int flags;
-  internal_malloc_extra_type internal;
 } internal_malloc_info_type;
 
 
@@ -413,7 +406,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           result = EXIT_FAILURE;
         }
 #endif
-        info->internal.reloc = reloc;
+        info->reloc = reloc;
         info->pointer = buffer;
         info->size = size;
         info->flags = flags;
@@ -453,21 +446,17 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
       free(info->pointer);
     }
     else {
-#if defined(LIBXSMM_VTUNE) || !defined(_WIN32)
-      /*const*/ internal_malloc_extra_type *const internal = &info->internal;
-      assert(0 != internal);
-# if defined(LIBXSMM_VTUNE)
-      if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && 0 != internal->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
-        iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &internal->code_id);
+#if defined(LIBXSMM_VTUNE)
+      if (0 != (LIBXSMM_MALLOC_FLAG_X & info->flags) && 0 != info->code_id && iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
+        iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_UNLOAD, &info->code_id);
       }
-# endif
 #endif
 #if defined(_WIN32)
       result = FALSE != VirtualFree(info->pointer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else /* defined(_WIN32) */
       {
         const size_t alloc_size = info->size + (((const char*)memory) - ((const char*)info->pointer));
-        void *const buffer = info->pointer, *const reloc = internal->reloc;
+        void *const buffer = info->pointer, *const reloc = info->reloc;
         const int flags = info->flags;
         if (0 != munmap(buffer, alloc_size)) {
 # if !defined(NDEBUG) /* library code is expected to be mute */
@@ -511,10 +500,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 #endif
   if (0 != memory) {
     internal_malloc_info_type *const info = internal_malloc_info(*memory);
-    internal_malloc_extra_type *const internal = &info->internal;
     void *const buffer = info->pointer;
     const size_t size = info->size;
-    assert((0 != buffer || 0 == size) && 0 != internal);
+    assert(0 != buffer || 0 == size);
     /* quietly keep the read permission, but eventually revoke write permissions */
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const int alignment = (int)(((const char*)(*memory)) - ((const char*)buffer));
@@ -524,7 +512,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
 #if defined(_WIN32)
         /* TODO: implement memory protection under Microsoft Windows */
-        LIBXSMM_UNUSED(internal); LIBXSMM_UNUSED(alloc_size); LIBXSMM_UNUSED(soft_error);
+        LIBXSMM_UNUSED(alloc_size); LIBXSMM_UNUSED(soft_error);
 #else
         soft_error = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ);
 #endif
@@ -532,7 +520,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
       else {
         void *const code_ptr =
 #if !defined(_WIN32)
-          0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags) ? ((void*)(((char*)internal->reloc) + alignment)) :
+          0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags) ? ((void*)(((char*)info->reloc) + alignment)) :
 #endif
           *memory;
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
@@ -549,10 +537,10 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
             const unsigned int code_id = iJIT_GetNewMethodID();
             internal_get_vtune_jitdesc(code_ptr, code_id, size, name, &vtune_jit_desc);
             iJIT_NotifyEvent(LIBXSMM_VTUNE_JIT_LOAD, &vtune_jit_desc);
-            internal->code_id = code_id;
+            info->code_id = code_id;
           }
           else {
-            internal->code_id = 0;
+            info->code_id = 0;
           }
 #endif
 #if defined(LIBXSMM_PERF)
@@ -567,8 +555,8 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           /* TODO: implement memory protection under Microsoft Windows */
 #else
           *memory = code_ptr; /* relocate */
-          info->pointer = internal->reloc;
-          internal->reloc = 0;
+          info->pointer = info->reloc;
+          info->reloc = 0;
           assert(0 != buffer && MAP_FAILED != buffer);
           soft_error = munmap(buffer, alloc_size);
 #endif
