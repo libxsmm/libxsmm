@@ -1410,6 +1410,36 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    switch (kind) {
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        *num_tasks = handle->desc.N * handle->blocksofm;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        *num_tasks = handle->desc.N * handle->blocksifm;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        if (handle->upd_use_thread_fil > 0) {
+          *num_tasks = handle->desc.N * handle->blocksifm * handle->blocksofm;
+        } else {
+          *num_tasks = handle->blocksifm * handle->blocksofm;
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle,
   libxsmm_dnn_conv_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
 {
