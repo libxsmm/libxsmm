@@ -665,7 +665,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
-            libxsmm_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
+            internal_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = internal_gemm_auto_prefetch;
           }
         }
       }
