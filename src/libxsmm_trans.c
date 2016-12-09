@@ -78,10 +78,9 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
 #if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
 #endif
-  LIBXSMM_INIT
-
   assert(0 < typesize);
   if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
+    LIBXSMM_INIT
     if (out != in) {
       internal_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
     }
@@ -129,9 +128,8 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 #if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
 #endif
-  LIBXSMM_INIT
-
   if (0 != inout) {
+    LIBXSMM_INIT
     if (m == n) { /* some fallback; still warned as "not implemented" */
       libxsmm_blasint i, j;
       for (i = 0; i < n; ++i) {

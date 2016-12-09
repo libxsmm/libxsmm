@@ -32,31 +32,52 @@
 #include <assert.h>
 #include <stdio.h>
 
+#if !defined(BLASINT_TYPE)
+# define BLASINT_TYPE int
+#endif
 
-/** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-void sgemm_(const char*, const char*, const int*, const int*, const int*,
-  const float*, const float*, const int*, const float*, const int*,
-  const float*, float*, const int*);
 /** Function prototype for DGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-void dgemm_(const char*, const char*, const int*, const int*, const int*,
-  const double*, const double*, const int*, const double*, const int*,
-  const double*, double*, const int*);
+void dgemm_(const char*, const char*, const BLASINT_TYPE*, const BLASINT_TYPE*, const BLASINT_TYPE*,
+  const double*, const double*, const BLASINT_TYPE*, const double*, const BLASINT_TYPE*,
+  const double*, double*, const BLASINT_TYPE*);
+
+
+void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale);
+void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
+{
+  const double seed1 = scale * (seed + 1);
+  BLASINT_TYPE i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < ncols; ++i) {
+    BLASINT_TYPE j = 0;
+    for (; j < nrows; ++j) {
+      const BLASINT_TYPE k = i * ld + j;
+      dst[k] = (double)(seed1 / (k + 1));
+    }
+    for (; j < ld; ++j) {
+      const BLASINT_TYPE k = i * ld + j;
+      dst[k] = (double)seed;
+    }
+  }
+}
 
 
 int main(int argc, char* argv[])
 {
   int size = 2 == argc ? atoi(argv[1]) : 500;
-  const int m = 2 < argc ? atoi(argv[1]) : 23;
-  const int n = 2 < argc ? atoi(argv[2]) : m;
-  const int k = 3 < argc ? atoi(argv[3]) : m;
-  const int lda = 4 < argc ? atoi(argv[4]) : m;
-  const int ldb = 5 < argc ? atoi(argv[5]) : k;
-  const int ldc = 6 < argc ? atoi(argv[6]) : m;
+  const BLASINT_TYPE m = 2 < argc ? atoi(argv[1]) : 23;
+  const BLASINT_TYPE n = 2 < argc ? atoi(argv[2]) : m;
+  const BLASINT_TYPE k = 3 < argc ? atoi(argv[3]) : m;
+  const BLASINT_TYPE lda = 4 < argc ? atoi(argv[4]) : m;
+  const BLASINT_TYPE ldb = 5 < argc ? atoi(argv[5]) : k;
+  const BLASINT_TYPE ldc = 6 < argc ? atoi(argv[6]) : m;
   const double alpha = 7 < argc ? atof(argv[7]) : 1.0;
   const double beta = 8 < argc ? atof(argv[8]) : 1.0;
   const char transa = 'N', transb = 'N';
   double *a = 0, *b = 0, *c = 0;
-  int i, j;
+  int i;
 
   if (7 < argc) size = atoi(argv[7]);
   a = (double*)malloc(lda * k * sizeof(double));
@@ -69,35 +90,11 @@ int main(int argc, char* argv[])
     transa, transb, m, n, k, alpha, (const void*)a, lda,
                                     (const void*)b, ldb,
                               beta, (const void*)c, ldc);
-  assert(0 != a && 0 != b && 0 != c);
 
-#if defined(_OPENMP)
-# pragma omp parallel private(i, j)
-#endif
-  {
-#if defined(_OPENMP)
-#   pragma omp for
-#endif
-    for (j = 0; j < k; ++j) {
-      for (i = 0; i < m; ++i) {
-        const int index = j * lda + i;
-        a[index] = 1.0 / (index + 1);
-      }
-    }
-#if defined(_OPENMP)
-#   pragma omp for
-#endif
-    for (j = 0; j < n; ++j) {
-      for (i = 0; i < k; ++i) {
-        const int index = j * ldb + i;
-        b[index] = 2.0 / (index + 1);
-      }
-      for (i = 0; i < m; ++i) {
-        const int index = j * ldc + i;
-        c[index] = 1000.0;
-      }
-    }
-  }
+  assert(0 != a && 0 != b && 0 != c);
+  init(42, a, m, k, lda, 1.0);
+  init(24, b, k, n, ldb, 1.0);
+  init( 0, c, m, n, ldc, 1.0);
 
   for (i = 0; i < size; ++i) {
     dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
