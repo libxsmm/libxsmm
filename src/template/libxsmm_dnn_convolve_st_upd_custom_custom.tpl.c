@@ -431,12 +431,13 @@ if(handle->ifmblock == 1) {
     }
 
 #else /*do not use transpose */
+    num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
+    num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
+    //printf("thr_begin=%d thr_end=%d img=%d kh=%d kw=%dofw=%d ofh=%d upd_ofw_rb=%d upd_ofh_rb=%d num_ofw_strips=%d num_ofh_strips=%d\n", thr_begin, thr_end, handle->desc.N, kh, kw, handle->ofw, handle->ofh, handle->upd_ofw_rb, handle->upd_ofh_rb, num_ofw_strips, num_ofh_strips); 
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
       ifm1 = ofm1ifm1 % handle->blocksifm;
       for(img = 0; img < handle->desc.N; ++img) {
-        num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
-        num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
         for (oi__=0; oi__<num_ofw_strips; ++oi__) {
           for (oj__=0; oj__<num_ofh_strips; ++oj__) {
             oi_=oi__*handle->upd_ofw_rb;
