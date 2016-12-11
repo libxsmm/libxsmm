@@ -33,7 +33,7 @@
 #include "generator_convolution_common.h"
 #include "generator_common.h"
 
-#include <libxsmm_cpuid.h>
+#include <libxsmm_intrinsics_x86.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

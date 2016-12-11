@@ -71,6 +71,17 @@
 /*# define LIBXSMM_OPENMP*/
 #endif
 
+#if !defined(LIBXSMM_MAIN_MALLOC_INTRINSIC) && !defined(LIBXSMM_INTRINSICS_NONE)
+# define LIBXSMM_MAIN_MALLOC_INTRINSIC
+#endif
+#if defined(LIBXSMM_MAIN_MALLOC_INTRINSIC)
+# define LIBXSMM_MAIN_MALLOC(SIZE) _mm_malloc(SIZE, LIBXSMM_ALIGNMENT)
+# define LIBXSMM_MAIN_FREE(BUFFER) _mm_free((void*)(BUFFER))
+#else /* do not use libxsmm_malloc/free here! */
+# define LIBXSMM_MAIN_MALLOC(SIZE) malloc(SIZE)
+# define LIBXSMM_MAIN_FREE(BUFFER) free(BUFFER)
+#endif
+
 /* alternative hash algorithm (instead of CRC32) */
 #if !defined(LIBXSMM_HASH_BASIC)
 # if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -346,13 +357,11 @@ return flux_entry.xmm
   if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) && \
     LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_)) \
   { \
-    const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) \
-      ? LIBXSMM_PREFETCH_NONE/*NULL-pointer is given; do not adopt LIBXSMM_PREFETCH (prefetches must be specified explicitly)*/ \
-      : *(PREFETCH)); /*adopt the explicitly specified prefetch strategy*/ \
+    const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
       (signed char)(internal_dispatch_main_alpha_), (signed char)(internal_dispatch_main_beta_), \
-      (0 > internal_dispatch_main_prefetch_ ? libxsmm_gemm_auto_prefetch/*auto-dispatched*/ : internal_dispatch_main_prefetch_)); \
+      (0 > internal_dispatch_main_prefetch_ ? internal_gemm_auto_prefetch : internal_dispatch_main_prefetch_)); \
     { \
       INTERNAL_FIND_CODE(DESC, code).LIBXSMM_TPREFIX(TYPE, mm); \
     } \
@@ -388,6 +397,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml /*= 13
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol)
@@ -650,11 +660,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        libxsmm_gemm_auto_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_AL2BL2_VIA_C);
+        internal_gemm_auto_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_BL2_VIA_C);
+        libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
-            libxsmm_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
+            internal_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = internal_gemm_auto_prefetch;
           }
         }
       }
@@ -730,8 +742,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         libxsmm_perf_init();
 #endif
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
-        result = (libxsmm_code_pointer*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
-        internal_registry_keys = (internal_regkey_type*)libxsmm_malloc(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
+        result = (libxsmm_code_pointer*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
+        internal_registry_keys = (internal_regkey_type*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
         if (0 != result && 0 != internal_registry_keys) {
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
@@ -760,8 +772,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM: failed to allocate code registry!\n");
 #endif
-          libxsmm_free(internal_registry_keys);
-          libxsmm_free(result);
+          LIBXSMM_MAIN_FREE(internal_registry_keys);
+          LIBXSMM_MAIN_FREE(result);
         }
       }
 #if !defined(NDEBUG) && defined(__TRACE) /* library code is expected to be mute */
@@ -883,8 +895,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
           LIBXSMM_FUNLOCK(stdout);
           LIBXSMM_FUNLOCK(stderr);
         }
-        libxsmm_free(registry_keys);
-        libxsmm_free(registry);
+        LIBXSMM_MAIN_FREE(registry_keys);
+        LIBXSMM_MAIN_FREE(registry);
       }
     }
 #if !defined(LIBXSMM_OPENMP) && !defined(LIBXSMM_NO_SYNC) /* release locks */
@@ -1043,6 +1055,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch
 
 LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy)
 {
+  LIBXSMM_ATOMIC_STORE(&internal_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
   LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
 }
 

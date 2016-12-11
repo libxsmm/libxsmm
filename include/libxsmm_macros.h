@@ -369,13 +369,6 @@
 # define LIBXSMM_MAY_ALIAS
 #endif
 
-#if defined(NDEBUG)
-# define LIBXSMM_NDEBUG NDEBUG
-# define LIBXSMM_DEBUG(...)
-#else
-# define LIBXSMM_DEBUG(...) __VA_ARGS__
-#endif
-
 #if defined(_WIN32)
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
 # define LIBXSMM_FLOCK(FILE) _lock_file(FILE)

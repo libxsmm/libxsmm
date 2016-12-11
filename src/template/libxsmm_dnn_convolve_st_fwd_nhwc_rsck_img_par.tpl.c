@@ -111,7 +111,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           }
         }
 #else
-        jitted_conv_fp_three(l_input, l_wt, l_output, NULL, NULL, NULL);
+        jitted_conv_fp_zero(l_input, l_wt, l_output, NULL, NULL, NULL);
 #endif
       }
     }

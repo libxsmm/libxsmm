@@ -134,3 +134,9 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 
+
+LIBXSMM_API_DEFINITION int libxsmm_cpuid(void)
+{
+  return libxsmm_cpuid_x86();
+}
+
