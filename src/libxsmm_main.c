@@ -1055,6 +1055,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch
 
 LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy)
 {
+  LIBXSMM_ATOMIC_STORE(&internal_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
   LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
 }
 
