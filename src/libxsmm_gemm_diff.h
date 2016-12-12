@@ -106,5 +106,9 @@ LIBXSMM_API unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor
 LIBXSMM_API unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
+# include "libxsmm_gemm_diff.c"
+#endif
+
 #endif /*LIBXSMM_GEMM_DIFF_H*/
 

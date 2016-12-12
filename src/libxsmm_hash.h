@@ -69,4 +69,9 @@ LIBXSMM_API unsigned int libxsmm_hash_npot(
   /** Upper bound of the result. */
   unsigned int npot);
 
+
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
+# include "libxsmm_hash.c"
+#endif
+
 #endif /*LIBXSMM_HASH_H*/

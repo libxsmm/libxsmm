@@ -28,6 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_HASH_C
+#define LIBXSMM_HASH_C
+
 #include "libxsmm_hash.h"
 #include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
@@ -387,3 +390,4 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_hash_npot(const void* data, unsigned
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, data, size, size, npot);
 }
 
+#endif /* LIBXSMM_HASH_C */

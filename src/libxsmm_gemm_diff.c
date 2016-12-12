@@ -28,6 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_GEMM_DIFF_C
+#define LIBXSMM_GEMM_DIFF_C
+
 #include "libxsmm_gemm_diff.h"
 #include <libxsmm_intrinsics_x86.h>
 
@@ -537,3 +540,4 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_d
 #endif
 }
 
+#endif /*LIBXSMM_GEMM_DIFF_C*/
