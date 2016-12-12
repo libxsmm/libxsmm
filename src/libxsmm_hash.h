@@ -37,34 +37,42 @@
 /*# define LIBXSMM_HASH_SW*/
 #endif
 
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
+# define LIBXSMM_HASH_API LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_HASH_API
+#else
+# define LIBXSMM_HASH_API LIBXSMM_API
+# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_API_DEFINITION
+#endif
+
 
 /** Function type representing the CRC32 functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, unsigned int, unsigned int);
 
 /** Initialize hash function module; not thread-safe. */
-LIBXSMM_API void libxsmm_hash_init(int target_arch);
-LIBXSMM_API void libxsmm_hash_finalize(void);
+LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
+LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
-LIBXSMM_API unsigned int libxsmm_crc32(
+LIBXSMM_HASH_API unsigned int libxsmm_crc32(
   const void* data, unsigned int size, unsigned int seed);
 
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_API unsigned int libxsmm_crc32_sw(
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_sw(
   const void* data, unsigned int size, unsigned int seed);
 
 /** Similar to libxsmm_crc32_sw (uses CRC32 instructions available since SSE4.2). */
-LIBXSMM_API unsigned int libxsmm_crc32_sse42(
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_sse42(
   const void* data, unsigned int size, unsigned int seed);
 
 /** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_API unsigned int libxsmm_hash(
+LIBXSMM_HASH_API unsigned int libxsmm_hash(
   const void* data, unsigned int size,
   /** Upper bound of the result. */
   unsigned int n);
 
 /** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_API unsigned int libxsmm_hash_npot(
+LIBXSMM_HASH_API unsigned int libxsmm_hash_npot(
   const void* data, unsigned int size,
   /** Upper bound of the result. */
   unsigned int npot);

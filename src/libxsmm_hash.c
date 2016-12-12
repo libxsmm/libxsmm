@@ -178,7 +178,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_hash_init(int target_arch)
+LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
 {
   /* table-based implementation taken from http://dpdk.org/. */
   static const LIBXSMM_RETARGETABLE internal_crc32_entry_type crc32_table[] = {
@@ -340,12 +340,12 @@ LIBXSMM_API_DEFINITION void libxsmm_hash_init(int target_arch)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_hash_finalize(void)
+LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_finalize(void)
 {
 }
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
 #if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
   return libxsmm_crc32_sse42(data, size, seed);
@@ -355,13 +355,13 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int
 }
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
 {
   LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
@@ -379,13 +379,13 @@ LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const
 }
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
+LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
 {
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, data, size, size, n);
 }
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_hash_npot(const void* data, unsigned int size, unsigned int npot)
+LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_hash_npot(const void* data, unsigned int size, unsigned int npot)
 {
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, data, size, size, npot);
 }

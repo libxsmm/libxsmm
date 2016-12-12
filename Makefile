@@ -224,6 +224,7 @@ NINDICES = $(words $(INDICES))
 
 HEADERS = $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
           $(shell ls -1 $(SRCDIR)/*.h 2> /dev/null | tr "\n" " ") \
+          $(SRCDIR)/libxsmm_hash.c $(SRCDIR)/libxsmm_gemm_diff.c \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
@@ -236,14 +237,13 @@ HEADERS = $(shell ls -1 $(SRCDIR)/template/*.c 2> /dev/null | tr "\n" " ") \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_hash.c libxsmm_malloc.c \
-          libxsmm_sync.c libxsmm_dump.o libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.o libxsmm_gemm_diff.o \
-          libxsmm_trans.o libxsmm_spmdm.o \
-          libxsmm_dnn.o libxsmm_dnn_handle.o \
-          libxsmm_dnn_convolution_forward.o \
-          libxsmm_dnn_convolution_backward.o \
-          libxsmm_dnn_convolution_weight_update.o)
+          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c \
+          libxsmm_sync.c libxsmm_dump.c libxsmm_timer.c libxsmm_perf.c \
+          libxsmm_gemm.c libxsmm_trans.c libxsmm_spmdm.c \
+          libxsmm_dnn.c libxsmm_dnn_handle.c \
+          libxsmm_dnn_convolution_forward.c \
+          libxsmm_dnn_convolution_backward.c \
+          libxsmm_dnn_convolution_weight_update.c)
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_trace.c)

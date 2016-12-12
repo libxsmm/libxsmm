@@ -53,6 +53,14 @@
 # define LIBXSMM_GEMM_DIFF_SW 1
 #endif
 
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
+# define LIBXSMM_GEMM_DIFF_API LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+# define LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_GEMM_DIFF_API
+#else
+# define LIBXSMM_GEMM_DIFF_API LIBXSMM_API
+# define LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_API_DEFINITION
+#endif
+
 
 /** Function type representing the gemm_diff functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(
@@ -63,47 +71,47 @@ typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(
 
 
 /** Initialize GEMM/DIFF module; not thread-safe. */
-LIBXSMM_API void libxsmm_gemm_diff_init(int target_arch);
-LIBXSMM_API void libxsmm_gemm_diff_finalize(void);
+LIBXSMM_GEMM_DIFF_API void libxsmm_gemm_diff_init(int target_arch);
+LIBXSMM_GEMM_DIFF_API void libxsmm_gemm_diff_finalize(void);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
-LIBXSMM_API unsigned int libxsmm_gemm_diff(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 
 /** Generic implementation which is only relying on high-level constructs. */
-LIBXSMM_API unsigned int libxsmm_gemm_diff_sw(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_sw(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 /** Collection of implementations which are using specific instruction set extensions. */
-LIBXSMM_API unsigned int libxsmm_gemm_diff_sse(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_sse(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-LIBXSMM_API unsigned int libxsmm_gemm_diff_avx(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_avx(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-LIBXSMM_API unsigned int libxsmm_gemm_diff_avx2(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_avx2(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
-LIBXSMM_API unsigned int libxsmm_gemm_diff_imci(
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_imci(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc);
 
 /**
  * Compare a number of descriptors (array) against a reference descriptor.
  * Returns the index of the first match (or ndesc in case of no match).
  */
-LIBXSMM_API unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
   /** Array of descriptors with ndesc elements. */
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs,
   /** Number of bytes until the next descriptor is reached (stride). */
   int nbytes);
 
 /** Generic implementation of libxsmm_gemm_diffn which is only relying on high-level constructs. */
-LIBXSMM_API unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 /** Collection of implementations which are using specific instruction set extensions. */
-LIBXSMM_API unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
-LIBXSMM_API unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
-LIBXSMM_API unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
-LIBXSMM_API unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
+LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
   const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
