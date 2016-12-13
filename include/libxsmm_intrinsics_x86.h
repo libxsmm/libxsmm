@@ -265,7 +265,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__INTEL_COMPILER) || (defined(_CRAYC) && defined(__GNUC__))) && !defined(LIBXSMM_INTRINSICS_NONE)
+#if (defined(__INTEL_COMPILER) || defined(_CRAYC)) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_INTRINSICS_BITSCANFWD(N) _bit_scan_forward(N)
 #elif defined(__GNUC__) && !defined(_CRAYC) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_INTRINSICS_BITSCANFWD(N) (__builtin_ffs(N) - 1)
