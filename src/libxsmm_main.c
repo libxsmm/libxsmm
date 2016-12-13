@@ -184,6 +184,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   /* search small cache starting with the last hit on record */ \
   i = libxsmm_gemm_diffn(DESCRIPTOR, &(CACHE_KEYS)->desc, CACHE_HIT, LIBXSMM_CACHESIZE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE); \
   if ((LIBXSMM_CACHESIZE) > i && (CACHE_ID) == internal_teardown) { /* cache hit, and valid */ \
+    assert(0 == memcmp(DESCRIPTOR, &((CACHE)[i]), LIBXSMM_GEMM_DESCRIPTOR_SIZE)); \
     (RESULT).xmm = (CACHE)[i]; \
     CACHE_HIT = i; \
   } \
