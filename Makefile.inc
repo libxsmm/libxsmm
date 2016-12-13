@@ -411,11 +411,11 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
-ifneq (1,$(SSE))
-ifneq (0,$(AVX))
+SSE ?= 0
+ifeq (0,$(SSE))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
-    SSE ?= 0
+    SSE = 0
     ifneq (0,$(words $(filter avx512er,$(CPUFLAGS)))) # KNL
       MIC ?= 1
     else # SKX
@@ -423,25 +423,23 @@ ifneq (0,$(AVX))
     endif
   else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
     AVX ?= 2
-    SSE ?= 0
+    SSE = 0
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
     AVX ?= 1
-    SSE ?= 0
+    SSE = 0
   endif
-endif
-endif
-AVX ?= 0
-ifneq (0,$(SSE))
+else ifeq (1,$(SSE))
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
-    SSE ?= 4
+    SSE = 4
   else ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
-    SSE ?= 3
+    SSE = 3
   else #ifeq (,$(SSE))
-    SSE ?= 0
+    SSE = 0
   endif
 else ifneq (0,$(KNC))
   MPSS = 1
 endif
+AVX ?= 0
 
 ifneq (0,$(INTEL))
   SUITE = Intel Compiler
