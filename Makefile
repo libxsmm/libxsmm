@@ -282,6 +282,12 @@ all: libxsmm samples
 .PHONY: headers
 headers: cheader cheader_only fheader
 
+.PHONY: header-only
+header-only: cheader_only
+
+.PHONY: header_only
+header_only: header-only
+
 .PHONY: interface
 interface: headers module
 
