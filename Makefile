@@ -45,7 +45,7 @@ VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS; can be zero
-THRESHOLD ?= $(shell echo $$((80 * 80 * 80)))
+THRESHOLD ?= $(shell echo $$((128 * 128 * 128)))
 
 # Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
@@ -281,6 +281,12 @@ all: libxsmm samples
 
 .PHONY: headers
 headers: cheader cheader_only fheader
+
+.PHONY: header-only
+header-only: cheader_only
+
+.PHONY: header_only
+header_only: header-only
 
 .PHONY: interface
 interface: headers module
