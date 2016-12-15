@@ -139,7 +139,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
 #ifdef UNROLL_REGISTER_BLOCK
   /* initilize OFW and OFH unrolling */
-  printf("INSIDE JITTER:: ofw=%d ofh=%d ofw_rb=%d ofh_rb=%d\n", i_conv_desc->ofw, i_conv_desc->ofh, i_conv_desc->ofw_rb, i_conv_desc->ofh_rb);
+  //printf("INSIDE JITTER:: ofw=%d ofh=%d ofw_rb=%d ofh_rb=%d\n", i_conv_desc->ofw, i_conv_desc->ofh, i_conv_desc->ofw_rb, i_conv_desc->ofh_rb);
 
   if (i_conv_desc->kw == 1 && i_conv_desc->kh == 1) {
   if (i_conv_desc->ofh_unroll != 0) {
