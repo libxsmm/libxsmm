@@ -1,5 +1,9 @@
 #!/bin/sh
 
+SORT=$(which sort)
+SED=$(which sed)
+CUT=$(which cut)
+
 VARIANT=Specialized
 
 if [ "" != "$1" ]; then
@@ -13,13 +17,13 @@ FILE=${HERE}/cp2k-perf.txt
 GREP=$(which grep)
 PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
   ${GREP} -e "performance" | \
-  cut -d" " -f2 | \
-  sort -n)
+  ${CUT} -d" " -f2 | \
+  ${SORT} -n)
 
 ECHO=$(which echo)
 NUM=$(${ECHO} "${PERF}" | wc -l)
-MIN=$(${ECHO} ${PERF} | cut -d" " -f1)
-MAX=$(${ECHO} ${PERF} | cut -d" " -f${NUM})
+MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
+MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
 
 ${ECHO} "num=${NUM}"
 ${ECHO} "min=${MIN}"
@@ -31,11 +35,11 @@ if [ "" != "${BC}" ]; then
   NUM2=$((NUM / 2))
 
   if [ "0" = "$((NUM % 2))" ]; then
-    A=$(${ECHO} ${PERF} | cut -d" " -f${NUM2})
-    B=$(${ECHO} ${PERF} | cut -d" " -f$((NUM2 + 1)))
+    A=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM2})
+    B=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
     MED=$(${ECHO} "$(${ECHO} -n "scale=3;(${A} + ${B})/2")" | ${BC})
   else
-    MED=$(${ECHO} ${PERF} | cut -d" " -f$((NUM2 + 1)))
+    MED=$(${ECHO} ${PERF} | ${CUT} -d" " -f$((NUM2 + 1)))
   fi
 
   ${ECHO} "avg=${AVG}"
@@ -56,12 +60,11 @@ fi
 GNUPLOT_MAJOR=0
 GNUPLOT_MINOR=0
 if [ -f "${GNUPLOT}" ]; then
-  GNUPLOT_MAJOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
-  GNUPLOT_MINOR=$("${GNUPLOT}" --version | sed "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
+  GNUPLOT_MAJOR=$("${GNUPLOT}" --version | ${SED} "s/.\+ \([0-9]\).\([0-9]\) .*/\1/")
+  GNUPLOT_MINOR=$("${GNUPLOT}" --version | ${SED} "s/.\+ \([0-9]\).\([0-9]\) .*/\2/")
 fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
-SED=$(which sed)
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   if [ "" = "$1" ]; then
     FILENAME=cp2k-$(${ECHO} ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf

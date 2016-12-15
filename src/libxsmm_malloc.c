@@ -33,8 +33,7 @@
 #if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
-#include <libxsmm_malloc.h>
-#include <libxsmm_sync.h>
+#include <libxsmm.h>
 #include "libxsmm_main.h"
 
 #if !defined(NDEBUG)

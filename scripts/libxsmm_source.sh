@@ -52,8 +52,6 @@ cat << EOM
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
 
-#include "libxsmm_dnn.h"
-
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block
  * includes *internal* files, and thereby exposes LIBXSMM's implementation.
