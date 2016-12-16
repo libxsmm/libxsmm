@@ -820,6 +820,8 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30500 <= $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
+      # fix for Clang
+      CTARGET += -mfma
       ifneq (,$(MIC)) # specified
         ifneq (0,$(MIC)) # MIC
           ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2> /dev/null > /dev/null; echo $$?))
