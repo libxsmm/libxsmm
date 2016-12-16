@@ -139,7 +139,6 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
 #ifdef UNROLL_REGISTER_BLOCK
   /* initilize OFW and OFH unrolling */
-
   if (i_conv_desc->kw == 1 && i_conv_desc->kh == 1) {
   if (i_conv_desc->ofh_unroll != 0) {
     l_ofh_trips = i_conv_desc->ofh / i_conv_desc->ofh_rb;
