@@ -329,7 +329,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.ofw_padded = handle->ofwp;
       descriptor.ofh_rb = handle->fwd_ofh_rb;
       descriptor.ofw_rb = handle->fwd_ofw_rb;
-      //printf("DEBUG:::ofh=%d fwd_ofh_rb=%d ofw=%d fwd_ofw_rb=%d\n", handle->ofh, handle->fwd_ofh_rb, handle->ofw, handle->fwd_ofw_rb);
       descriptor.fm_lp_block = handle->fm_lp_block;
       descriptor.datatype_in = handle->datatype_in;
       descriptor.datatype_out = handle->datatype_out;
@@ -429,7 +428,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.unroll_kw = 0;
         }
         descriptor.prefetch_output_ahead = 0;
-#if 0
+#ifndef NDEBUG
         printf("DEBUG JIT of conv (NON-PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
@@ -507,7 +506,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.unroll_kh = 1; /* always unroll kh */
         }
         descriptor.prefetch_output_ahead = 0;
-#if 0
+#ifndef NDEBUG
         printf("DEBUG JIT of conv (PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
@@ -620,7 +619,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->upd_ofh_rb = descriptor.ofh_rb;
         handle->upd_ofw_rb = descriptor.ofw_rb;
         descriptor.transpose_ofw_ifm = 0;
-#if 0
+#ifndef NDEBUG
         printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",

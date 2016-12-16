@@ -149,8 +149,6 @@ libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
 
-//printf("OPT BP code:: thr_begin=%u thr_end=%u, ofm1=%u, ofh=%u, ofw=%u, R=%u, S=%u, ofm2=%u, ifm2=%u\n", thr_begin, thr_end, handle->blocksofm , handle->ofh, handle->ofw, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
-//printf("OPT BP code:: window1: [%d, %d]  window2: [%d, %d] window3: [%d, %d]\n", 0, kh-2, kh-1, ifh-kh, ifh-kh+1, ifh-1);
 
 /* special casing for ifh < 2*kh scenario where the loop peeling does not work */
 if(ifh <= 2*kh) {
