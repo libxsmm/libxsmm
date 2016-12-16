@@ -433,7 +433,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
             libxsmm_get_target_arch(),
-            "backward",//l_conv_desc_bp.type,       /* type */
+            "backward",     /* type */
             descriptor.kw,         /* kernel width */
             descriptor.unroll_kw,  /* kernel width, unrolled */
             descriptor.kh,         /* kernel width */
@@ -511,7 +511,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
             libxsmm_get_target_arch(),
-            "backward",//l_conv_desc_bp.type,       /* type */
+            "backward",       /* type */
             descriptor.kw,         /* kernel width */
             descriptor.unroll_kw,  /* kernel width, unrolled */
             descriptor.kh,         /* kernel width */
@@ -624,7 +624,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
          "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
          "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",
             libxsmm_get_target_arch(),
-            "weight-update", //l_conv_desc_wu.type,       /* type */
+            "weight-update",        /* type */
             descriptor.ofm_block,  /* should be VLEN */
             descriptor.ifm_block,  /* should be VLEN */
             descriptor.ofh_padded, /* this we need for 2D register block */
