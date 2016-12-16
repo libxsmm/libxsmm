@@ -270,6 +270,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define _MM_GATHER_FP32(Addr, idx, scale) (*(Addr + (idx)))
 #define _MM_CMPNEQ_FP32(v1,v2) (LIBXSMM_FEQ(v1, v2) ? 0 : 1)
 #define _MM_STORE_FP32(x,y) ((*(x)) = (y))
+#define _MM_STOREU_FP32(x,y) ((*(x)) = (y))
 #define _MM_ADD_FP32(x,y) ((x) + (y))
 #define _MM_FMADD_FP32(x,y,z) (((x)*(y))+(z))
 #define _MM_PREFETCH(x, y)
