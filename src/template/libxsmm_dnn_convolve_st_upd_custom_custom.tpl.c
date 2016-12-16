@@ -112,6 +112,21 @@ kw = handle->desc.S;
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
+
+#define LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                  wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
+                                  del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                  pf_del_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                  pf_wt, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ofm2, pw_ifm2, \
+                                  pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
+                    jitted_conv_wu_nooutput_pf(  \
+                        &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(6, wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, del_out, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, pf_del_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(6, pf_wt, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ofm2), (pw_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
+                       )
 if(handle->ifmblock == 1) {
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -431,12 +446,12 @@ if(handle->ifmblock == 1) {
     }
 
 #else /*do not use transpose */
+    num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
+    num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
       ifm1 = ofm1ifm1 % handle->blocksifm;
       for(img = 0; img < handle->desc.N; ++img) {
-        num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
-        num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
         for (oi__=0; oi__<num_ofw_strips; ++oi__) {
           for (oj__=0; oj__<num_ofh_strips; ++oj__) {
             oi_=oi__*handle->upd_ofw_rb;

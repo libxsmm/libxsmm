@@ -427,6 +427,33 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.ofw_unroll = 0;
           descriptor.unroll_kw = 0;
         }
+        descriptor.prefetch_output_ahead = 0;
+#ifndef NDEBUG
+        printf("DEBUG JIT of conv (NON-PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
+         "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
+         "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
+            libxsmm_get_target_arch(),
+            "backward",     /* type */
+            descriptor.kw,         /* kernel width */
+            descriptor.unroll_kw,  /* kernel width, unrolled */
+            descriptor.kh,         /* kernel width */
+            descriptor.unroll_kh,  /* kernel width, unrolled */
+            descriptor.ofm_block,  /* should be VLEN */
+            descriptor.ifm_block,  /* should be VLEN */
+            descriptor.ofh_padded, /* this we need for 2D register block */
+            descriptor.ofw_padded, /* this we use for 1D and 2D register block */
+            descriptor.ofh_rb,     /* UR, register block of ofh */
+            descriptor.ofw_rb,     /* UR, register block of ofw */
+            descriptor.ifh_padded,
+            descriptor.ifw_padded,
+            descriptor.stride_h,   /* this we use for offsets in the input */
+            descriptor.stride_w,   /* this we use for offsets in the input */
+            descriptor.ofw, /* upper bound of oi loop */
+            descriptor.ofw_unroll, /*unroll for ofw loop */
+            descriptor.peeled, /*peeled */
+            descriptor.prefetch_output_ahead /* prefetch output ahead */);
+#endif
+
         /* NONE */
         descriptor.prefetch_output_ahead = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
@@ -478,6 +505,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.unroll_kw = 0;
           descriptor.unroll_kh = 1; /* always unroll kh */
         }
+        descriptor.prefetch_output_ahead = 0;
+#ifndef NDEBUG
+        printf("DEBUG JIT of conv (PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
+         "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
+         "  stride_h: %u\n  stride_w: %u\n  ofw: %u\n  ofw_unroll: %u\n  peeled: %u\n  prefetch_output: %u\n",
+            libxsmm_get_target_arch(),
+            "backward",       /* type */
+            descriptor.kw,         /* kernel width */
+            descriptor.unroll_kw,  /* kernel width, unrolled */
+            descriptor.kh,         /* kernel width */
+            descriptor.unroll_kh,  /* kernel width, unrolled */
+            descriptor.ofm_block,  /* should be VLEN */
+            descriptor.ifm_block,  /* should be VLEN */
+            descriptor.ofh_padded, /* this we need for 2D register block */
+            descriptor.ofw_padded, /* this we use for 1D and 2D register block */
+            descriptor.ofh_rb,     /* UR, register block of ofh */
+            descriptor.ofw_rb,     /* UR, register block of ofw */
+            descriptor.ifh_padded,
+            descriptor.ifw_padded,
+            descriptor.stride_h,   /* this we use for offsets in the input */
+            descriptor.stride_w,   /* this we use for offsets in the input */
+            descriptor.ofw, /* upper bound of oi loop */
+            descriptor.ofw_unroll, /*unroll for ofw loop */
+            descriptor.peeled, /*peeled?*/
+            descriptor.prefetch_output_ahead /* prefetch output ahead */ );
+#endif
 
         /* NONE */
         descriptor.prefetch_output_ahead = 0;
@@ -566,6 +619,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->upd_ofh_rb = descriptor.ofh_rb;
         handle->upd_ofw_rb = descriptor.ofw_rb;
         descriptor.transpose_ofw_ifm = 0;
+#ifndef NDEBUG
+        printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
+         "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
+         "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",
+            libxsmm_get_target_arch(),
+            "weight-update",        /* type */
+            descriptor.ofm_block,  /* should be VLEN */
+            descriptor.ifm_block,  /* should be VLEN */
+            descriptor.ofh_padded, /* this we need for 2D register block */
+            descriptor.ofw_padded, /* this we use for 1D and 2D register block */
+            descriptor.ofh_rb,     /* UR, register block of ofh */
+            descriptor.ofw_rb,     /* UR, register block of ofw */
+            descriptor.ifh_padded,
+            descriptor.ifw_padded,
+            descriptor.stride_h,   /* this we use for offsets in the input */
+            descriptor.stride_w,   /* this we use for offsets in the input */
+            descriptor.ifm_unroll, /*should unroll ifm loop -- yes or no */
+            descriptor.ofh,        /*ofh */
+            descriptor.ofh_unroll,        /*ofh_unroll */
+            descriptor.ofw,        /*ofw */
+            descriptor.ofw_unroll,        /*ofw_unroll */
+            descriptor.kw, /*kw unroll */
+            descriptor.unroll_kw, /* unroll factor of kw */
+            descriptor.kh, /*kh unroll */
+            descriptor.transpose_ofw_ifm /*transpose */);
+#endif
         /* NONE */
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
