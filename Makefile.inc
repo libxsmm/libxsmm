@@ -405,7 +405,7 @@ endif
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
-ifeq (0,$(shell $(CC) -dM -E - < /dev/null | grep -q "__clang__"; echo "$$?"))
+ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2> /dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG = 1
 endif
 endif
