@@ -402,6 +402,14 @@ ifeq (1,$(GCC))
   endif
 endif
 
+# Too many ICEs with Clang hence we want to know if we are on Clang
+ifeq (0,$(GCC)) # not GCC
+ifeq (0,$(shell $(CC) -dM -E - < /dev/null | grep -q "__clang__"; echo "$$?"))
+  CLANG = 1
+endif
+endif
+CLANG ?= 0
+
 # Select code path (if not selected otherwise)
 CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     grep -m1 flags /proc/cpuinfo | cut -d: -f2-; \
@@ -809,8 +817,11 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
+    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30500 <= $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
+      # fix for Clang
+      CTARGET += -mfma
       ifneq (,$(MIC)) # specified
         ifneq (0,$(MIC)) # MIC
           ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2> /dev/null > /dev/null; echo $$?))
@@ -823,6 +834,7 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
           endif
         endif
       endif
+    endif
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
