@@ -666,3 +666,11 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const volatile void* memory)
   libxsmm_xfree(memory);
 }
 
+
+LIBXSMM_API_DEFINITION size_t libxsmm_malloc_size(const volatile void* memory)
+{
+  size_t size = 0;
+  libxsmm_malloc_info(memory, &size, 0/*flags*/, 0/*extra*/);
+  return size;
+}
+
