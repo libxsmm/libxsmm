@@ -39,7 +39,7 @@
 #endif
 
 #if !defined(USE_PARALLEL_JIT)
-# define USE_PARALLEL_JIT
+/*# define USE_PARALLEL_JIT*/
 #endif
 
 
