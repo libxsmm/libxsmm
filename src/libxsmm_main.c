@@ -184,7 +184,6 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   /* search small cache starting with the last hit on record */ \
   i = libxsmm_gemm_diffn(DESCRIPTOR, &(CACHE_KEYS)->desc, CACHE_HIT, LIBXSMM_CACHESIZE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE); \
   if ((LIBXSMM_CACHESIZE) > i && (CACHE_ID) == internal_teardown) { /* cache hit, and valid */ \
-    assert(0 == memcmp(DESCRIPTOR, &(CACHE_KEYS)[i].desc, LIBXSMM_GEMM_DESCRIPTOR_SIZE)); \
     (RESULT).xmm = (CACHE)[i]; \
     CACHE_HIT = i; \
   } \
@@ -342,6 +341,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     } \
     while (0 != diff); \
     assert(0 == diff || 0 == flux_entry.pmm); \
+    assert(0 == flux_entry.pmm || 0 == memcmp(DESCRIPTOR, &internal_registry_keys[i].descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE)); \
     INTERNAL_FIND_CODE_CACHE_FINALIZE(cache_id, cache_keys, cache, cache_hit, flux_entry, DESCRIPTOR); \
   } \
 } \
