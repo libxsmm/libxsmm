@@ -662,7 +662,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       { /* select prefetch strategy for JIT */
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        internal_gemm_auto_prefetch = (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? INTERNAL_PREFETCH : LIBXSMM_PREFETCH_BL2_VIA_C);
+        internal_gemm_auto_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
