@@ -157,7 +157,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
       const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
       if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
-        assert(0 == diff); continue; \
+        diff = 0; continue; \
       }
 # else
 #   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
