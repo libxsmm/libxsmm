@@ -179,10 +179,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_i
 #if defined(NDEBUG)
   return result;
 #else /* calculate checksum over info */
-  const unsigned int hash = libxsmm_crc32(result,
-    /* info size minus actual hash value */
-    sizeof(internal_malloc_info_type) - sizeof(unsigned int),
-    LIBXSMM_MALLOC_SEED);
+  const unsigned int hash = libxsmm_crc32(result, /* info size minus actual hash value */
+    sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
   return (0 != result && hash == result->hash) ? result : 0;
 #endif
 }
@@ -441,10 +439,8 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
         info->size = size;
         info->flags = flags;
 #if !defined(NDEBUG) /* calculate checksum over info */
-        info->hash = libxsmm_crc32(info,
-          /* info size minus actual hash value */
-          sizeof(internal_malloc_info_type) - sizeof(unsigned int),
-          LIBXSMM_MALLOC_SEED);
+        info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
+          sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
 #endif
         *memory = aligned;
       }
@@ -548,7 +544,11 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   if (0 != info) {
     void *const buffer = info->pointer;
     const size_t size = info->size;
+#if defined(_WIN32)
     assert(0 != buffer || 0 == size);
+#else
+    assert((0 != buffer && MAP_FAILED != buffer) || 0 == size);
+#endif
     /* quietly keep the read permission, but eventually revoke write permissions */
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const int alignment = (int)(((const char*)(*memory)) - ((const char*)buffer));
@@ -605,18 +605,19 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           info->pointer = info->reloc;
           info->reloc = 0;
 # if !defined(NDEBUG) /* update checksum */
-          info->hash = libxsmm_crc32(info,
-            /* info size minus actual hash value */
-            sizeof(internal_malloc_info_type) - sizeof(unsigned int),
-            LIBXSMM_MALLOC_SEED);
+          info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
+            sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
 # endif
-          assert(0 != buffer && MAP_FAILED != buffer);
           /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
 #endif
         }
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
+# if !defined(NDEBUG) && defined(LIBXSMM_VTUNE) /* update checksum */
+          info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
+            sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
+# endif
           /* treat memory protection errors as soft error; ignore return value */
           mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
         }
