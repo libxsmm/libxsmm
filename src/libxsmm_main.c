@@ -559,6 +559,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_statistic_ntry(int precision)
+{
+  return internal_statistic[precision][0/*SML*/].ntry + internal_statistic[precision][1/*MED*/].ntry 
+       + internal_statistic[precision][2/*BIG*/].ntry + internal_statistic[precision][3/*XXX*/].ntry;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
   unsigned int index, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
@@ -660,19 +667,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
     if (0 == result) {
       int init_code = EXIT_FAILURE;
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
-      { /* select prefetch strategy for JIT */
-        const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        internal_gemm_auto_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
-        libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
-        if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
-          const int uid = atoi(env);
-          if (0 <= uid) {
-            internal_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
-            libxsmm_gemm_auto_prefetch = internal_gemm_auto_prefetch;
-            internal_gemm_auto_prefetch_locked = 1;
-          }
-        }
-      }
       libxsmm_mt = 2;
       {
         /* behaviour of parallelized routines which are located in libxsmmext library
@@ -737,7 +731,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       if (EXIT_SUCCESS == init_code)
 #endif
       {
-        libxsmm_gemm_init(libxsmm_target_archid, libxsmm_gemm_auto_prefetch);
         libxsmm_gemm_diff_init(libxsmm_target_archid);
         libxsmm_trans_init(libxsmm_target_archid);
         libxsmm_hash_init(libxsmm_target_archid);
@@ -748,6 +741,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         result = (libxsmm_code_pointer*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
         internal_registry_keys = (internal_regkey_type*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
         if (0 != result && 0 != internal_registry_keys) {
+          const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
           for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
            * which is beyond the static code path used to compile the library
@@ -765,6 +759,19 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 #           include <libxsmm_dispatch.h>
           }
 #endif
+          internal_gemm_auto_prefetch = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
+            ? LIBXSMM_PREFETCH_BL2_VIA_C /* avoid since static code is hard-coded for INTERNAL_PREFETCH */
+            : INTERNAL_PREFETCH;
+          libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
+          if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
+            const int uid = atoi(env);
+            if (0 <= uid) {
+              internal_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
+              libxsmm_gemm_auto_prefetch = internal_gemm_auto_prefetch;
+              internal_gemm_auto_prefetch_locked = 1;
+            }
+          }
+          libxsmm_gemm_init(libxsmm_target_archid, libxsmm_gemm_auto_prefetch);
           atexit(libxsmm_finalize);
           {
             void *const pv_registry = &internal_registry;
