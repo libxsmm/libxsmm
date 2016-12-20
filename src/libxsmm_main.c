@@ -138,7 +138,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #if !defined(LIBXSMM_TRYLOCK)
-# define LIBXSMM_TRYLOCK
+/*# define LIBXSMM_TRYLOCK*/
 #endif
 
 #if defined(LIBXSMM_OPENMP)
