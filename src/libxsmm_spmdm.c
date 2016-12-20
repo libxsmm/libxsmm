@@ -344,7 +344,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a( libxsmm_
   size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
 
-  char * memory_block = (char *)LIBXSMM_SPMDM_MALLOC( sz_all_blocks, 64);
+  char * memory_block = (char *)LIBXSMM_SPMDM_MALLOC( sz_all_blocks, 2097152);
   char * memory_head  = memory_block;
 
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
