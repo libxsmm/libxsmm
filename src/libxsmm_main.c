@@ -685,6 +685,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           libxsmm_tasks = atoi(env);
         }
       }
+      /* clear internal counters/statistic */
+      for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
+        internal_statistic[0/*DP*/][i] = 0;
+        internal_statistic[1/*SP*/][i] = 0;
+      }
       libxsmm_nt = 2;
 #if !defined(__MIC__) && (LIBXSMM_X86_AVX512_MIC != LIBXSMM_STATIC_TARGET_ARCH)
       if (LIBXSMM_X86_AVX512_MIC == libxsmm_target_archid)
