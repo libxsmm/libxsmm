@@ -211,7 +211,7 @@ void libxsmm_set_verbosity(int level);
 ```
 
 ### Timer Facility
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface. This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" functions (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily counting real CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).  
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ('libxsmm_timer.h' and 'libxsmm.f'). This is used for instance by the code samples, which measure the duration of executing various code regions. Both "tick" functions (`libxsmm_timer_[x]tick`) are based on monotonic timer sources, which use a platform-specific resolution. The xtick-counter attempts to directly rely on the time stamp counter instruction (RDTSC), but it is not necessarily counting real CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).  
 **NOTE**: `libxsmm_timer_xtick` is not directly suitable for `libxsmm_timer_duration` (seconds).
 
 ```C
@@ -221,13 +221,14 @@ double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1
 ```
 
 ### Memory Allocation
-Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically chosen alignment). The automatic alignment is also exposed by a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
+Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions ('libxsmm_malloc.h') that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically chosen alignment). The automatic alignment is also exposed by a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: Only `libxsmm_free` is supported in order to deallocate the memory.
 
 ```C
 void* libxsmm_aligned_malloc(size_t size, int alignment);
 void* libxsmm_malloc(size_t size);
 void libxsmm_free(const volatile void* memory);
+size_t libxsmm_malloc_size(const volatile void* memory);
 ```
 
 ## Build Instructions

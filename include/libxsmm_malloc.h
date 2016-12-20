@@ -47,7 +47,7 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
   /**
    * =0: automatic alignment is requested based on size
    * 0<: delivers (at least) the given alignment (LCM)
-   * 0>: takes alignment literally (skips align.-calc.)
+   * 0>: takes absolute alignment (skips align.-calc.)
    */
   int alignment);
 
