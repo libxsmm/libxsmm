@@ -57,5 +57,8 @@ LIBXSMM_API void* libxsmm_malloc(size_t size);
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const volatile void* memory);
 
+/** Get the size of the allocated memory; zero in case of an error. */
+LIBXSMM_API size_t libxsmm_malloc_size(const volatile void* memory);
+
 #endif /*LIBXSMM_MALLOC_H*/
 
