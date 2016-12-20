@@ -580,11 +580,13 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           *memory;
         assert(0 != (LIBXSMM_MALLOC_FLAG_X & flags));
         if (name && *name) { /* profiler support requested */
-          FILE *const code_file = fopen(name, "wb");
-          if (0 != code_file) { /* dump byte-code into a file and print function pointer and filename */
-            fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
-            fwrite(code_ptr, 1, size, code_file);
-            fclose(code_file);
+          if (0 > libxsmm_verbosity) { /* avoid dump when only the profiler is enabled */
+            FILE *const code_file = fopen(name, "wb");
+            if (0 != code_file) { /* dump byte-code into a file and print function pointer and filename */
+              fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
+              fwrite(code_ptr, 1, size, code_file);
+              fclose(code_file);
+            }
           }
 #if defined(LIBXSMM_VTUNE)
           if (iJIT_SAMPLING_ON == iJIT_IsProfilingActive()) {
