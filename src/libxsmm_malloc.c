@@ -36,13 +36,6 @@
 #include <libxsmm.h>
 #include "libxsmm_main.h"
 
-#if !defined(NDEBUG)
-# include "libxsmm_hash.h"
-# if !defined(LIBXSMM_MALLOC_SEED)
-#   define LIBXSMM_MALLOC_SEED 1051981
-# endif
-#endif
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -92,7 +85,12 @@
 # include "libxsmm_perf.h"
 #endif
 
-#if !defined(NDEBUG) && !defined(LIBXSMM_MALLOC_NOCRC)
+#if defined(NDEBUG) || defined(LIBXSMM_MALLOC_NOCRC)
+# include "libxsmm_hash.h"
+# if !defined(LIBXSMM_MALLOC_SEED)
+#   define LIBXSMM_MALLOC_SEED 1051981
+# endif
+#else
 # define LIBXSMM_MALLOC_NOCRC
 #endif
 
@@ -116,7 +114,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #if defined(LIBXSMM_VTUNE)
   unsigned int code_id;
 #endif
-#if !defined(NDEBUG) /* hash *must* be the last entry */
+#if !defined(LIBXSMM_MALLOC_NOCRC) /* hash *must* be the last entry */
   unsigned int hash;
 #endif
 } internal_malloc_info_type;
@@ -197,7 +195,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_i
 LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const volatile void* memory, size_t* size, int* flags, void** extra)
 {
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
   if (0 != size || 0 != extra)
 #endif
@@ -450,7 +448,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
         info->pointer = buffer;
         info->size = size;
         info->flags = flags;
-#if !defined(NDEBUG) /* calculate checksum over info */
+#if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
         info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
           sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
 #endif
@@ -484,7 +482,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
   int result = EXIT_SUCCESS;
-# if !defined(NDEBUG)
+# if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
 #endif
   if (0 != info) {
@@ -550,7 +548,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 {
   internal_malloc_info_type *const info = 0 != memory ? internal_malloc_info(*memory) : 0;
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
 #endif
   if (0 != info) {
@@ -616,7 +614,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           *memory = code_ptr; /* relocate */
           info->pointer = info->reloc;
           info->reloc = 0;
-# if !defined(NDEBUG) /* update checksum */
+# if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
             sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
 # endif
@@ -626,7 +624,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         }
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
-# if !defined(NDEBUG) && defined(LIBXSMM_VTUNE) /* update checksum */
+# if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
             sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
 # endif
