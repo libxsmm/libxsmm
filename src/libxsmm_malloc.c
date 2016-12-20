@@ -80,12 +80,20 @@
 #   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
 # endif
 # define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
+# define LIBXSMM_MALLOC_FALLBACK 4
+# define LIBXSMM_MALLOC_NOCRC
+#else
+# define LIBXSMM_MALLOC_FALLBACK 0
 #endif /*defined(LIBXSMM_VTUNE)*/
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
+#endif
+
+#if !defined(NDEBUG) && !defined(LIBXSMM_MALLOC_NOCRC)
+# define LIBXSMM_MALLOC_NOCRC
 #endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
@@ -176,7 +184,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_i
 {
   internal_malloc_info_type* result = (internal_malloc_info_type*)
     (0 != memory ? (((const char*)memory) - sizeof(internal_malloc_info_type)) : 0);
-#if defined(NDEBUG)
+#if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
   const unsigned int hash = libxsmm_crc32(result, /* info size minus actual hash value */
@@ -202,7 +210,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const volatile void* memory, size
     }
     else {
       if (0 != memory) {
-#if !defined(NDEBUG)
+#if !defined(LIBXSMM_MALLOC_NOCRC)
         if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
           fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
         }
@@ -221,8 +229,10 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const volatile void* memory, size
     }
     result = EXIT_FAILURE;
   }
-#endif
+# if defined(LIBXSMM_MALLOC_NOCRC)
   assert(EXIT_SUCCESS == result);
+# endif
+#endif
   return result;
 }
 
@@ -374,7 +384,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
         }
         else {
-          static LIBXSMM_TLS int fallback = 0;
+          static LIBXSMM_TLS int fallback = LIBXSMM_MALLOC_FALLBACK;
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) fallback = 1;
@@ -391,12 +401,14 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
             buffer = internal_xmap(getenv("JITDUMPDIR"), alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) fallback = 4;
           }
-#if 0
-          if (4 == fallback) { /* final */
+          if (4 == fallback) { /* 5th try */
             buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
               MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
+            if (alloc_failed == buffer) fallback = 5;
           }
-#endif
+          if (5 == fallback && alloc_failed != buffer) { /* final */
+            buffer = alloc_failed; /* trigger fall-back */
+          }
         }
         if (alloc_failed != buffer) {
           assert(0 != buffer);
@@ -522,7 +534,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
     }
   }
   else if (0 != memory) {
-#if !defined(NDEBUG)
+#if !defined(LIBXSMM_MALLOC_NOCRC)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
     }
@@ -635,7 +647,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   }
   else {
     assert(0 != memory && 0 != *memory);
-#if !defined(NDEBUG)
+#if !defined(LIBXSMM_MALLOC_NOCRC)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", *memory);
     }
