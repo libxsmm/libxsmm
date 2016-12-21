@@ -186,9 +186,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_i
 #if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
-  const unsigned int hash = libxsmm_crc32(result, /* info size minus actual hash value */
-    sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
-  return (0 != result && hash == result->hash) ? result : 0;
+  return (0 != result && result->hash == libxsmm_crc32(result, /* info size minus actual hash value */
+    sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED)) ? result : 0;
 #endif
 }
 
