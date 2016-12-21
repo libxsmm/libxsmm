@@ -357,12 +357,14 @@ LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigne
 
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
 {
+  assert(0 != data || 0 == size);
   LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 }
 
 
 LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
 {
+  assert(0 != data || 0 == size);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
   ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
@@ -381,12 +383,14 @@ LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
 
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int n)
 {
+  assert(0 != data || 0 == size);
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, LIBXSMM_HASH_NGEN, data, size, size, n);
 }
 
 
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_hash_npot(const void* data, unsigned int size, unsigned int npot)
 {
+  assert(0 != data || 0 == size);
   LIBXSMM_HASH_UNALIGNED(LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, LIBXSMM_HASH_NPOT, data, size, size, npot);
 }
 
