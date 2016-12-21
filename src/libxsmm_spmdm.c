@@ -766,7 +766,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
   /* Copy in C matrix to buffer*/
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
   if (!last_block_n) {
-    if (LIBXSMM_FEQ(0, *beta)) {
+    if (LIBXSMM_FEQ(0.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -776,7 +776,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
       }
     }
-    else if (LIBXSMM_FEQ(1, *beta)) {
+    else if (LIBXSMM_FEQ(1.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
@@ -798,7 +798,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
       }
     }
   } else {
-    if (LIBXSMM_FEQ(0, *beta)) {
+    if (LIBXSMM_FEQ(0.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -809,7 +809,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
         }
       }
     }
-    else if (LIBXSMM_FEQ(1, *beta)) {
+    else if (LIBXSMM_FEQ(1.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
@@ -1240,7 +1240,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
   /* Copy in C matrix to buffer */
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
   if (!last_block_n) {
-    if (LIBXSMM_FEQ(0, *beta)) {
+    if (LIBXSMM_FEQ(0.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1250,7 +1250,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
       }
     }
-    else if (LIBXSMM_FEQ(1, *beta)) {
+    else if (LIBXSMM_FEQ(1.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
@@ -1272,7 +1272,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
       }
     }
   } else {
-    if (LIBXSMM_FEQ(0, *beta)) {
+    if (LIBXSMM_FEQ(0.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1283,7 +1283,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         }
       }
     }
-    else if (LIBXSMM_FEQ(1, *beta)) {
+    else if (LIBXSMM_FEQ(1.f, *beta)) {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
