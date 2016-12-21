@@ -225,40 +225,40 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
 
     if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
-      if (handle->code_fwd[0].pmm != 0) { libxsmm_xfree(handle->code_fwd[0].pmm); }
-      if (handle->code_fwd[1].pmm != 0) { libxsmm_xfree(handle->code_fwd[1].pmm); }
-      if (handle->code_fwd[2].pmm != 0) { libxsmm_xfree(handle->code_fwd[2].pmm); }
-      if (handle->code_fwd[3].pmm != 0) { libxsmm_xfree(handle->code_fwd[3].pmm); }
-      if (handle->code_bwd[0].pmm != 0) { libxsmm_xfree(handle->code_bwd[0].pmm); }
+      libxsmm_free(handle->code_fwd[0].pmm);
+      libxsmm_free(handle->code_fwd[1].pmm);
+      libxsmm_free(handle->code_fwd[2].pmm);
+      libxsmm_free(handle->code_fwd[3].pmm);
+      libxsmm_free(handle->code_bwd[0].pmm);
       if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
-        if (handle->code_bwd[1].pmm != 0) { libxsmm_xfree(handle->code_bwd[1].pmm); }
-        if (handle->code_bwd[2].pmm != 0) { libxsmm_xfree(handle->code_bwd[2].pmm); }
-        if (handle->code_bwd[3].pmm != 0) { libxsmm_xfree(handle->code_bwd[3].pmm); }
+        libxsmm_free(handle->code_bwd[1].pmm);
+        libxsmm_free(handle->code_bwd[2].pmm);
+        libxsmm_free(handle->code_bwd[3].pmm);
       }
-      if (handle->code_upd[0].pmm != 0) { libxsmm_xfree(handle->code_upd[0].pmm); }
+      libxsmm_free(handle->code_upd[0].pmm);
       if ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) {
-        if (handle->code_upd[1].pmm != 0) { libxsmm_xfree(handle->code_upd[1].pmm); }
-        if (handle->code_upd[2].pmm != 0) { libxsmm_xfree(handle->code_upd[2].pmm); }
-        if (handle->code_upd[3].pmm != 0) { libxsmm_xfree(handle->code_upd[3].pmm); }
-        if (handle->code_upd[4].pmm != 0) { libxsmm_xfree(handle->code_upd[4].pmm); }
-        if (handle->code_upd[5].pmm != 0) { libxsmm_xfree(handle->code_upd[5].pmm); }
+        libxsmm_free(handle->code_upd[1].pmm);
+        libxsmm_free(handle->code_upd[2].pmm);
+        libxsmm_free(handle->code_upd[3].pmm);
+        libxsmm_free(handle->code_upd[4].pmm);
+        libxsmm_free(handle->code_upd[5].pmm);
       }
     } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
-      if (handle->code_fwd[0].pmm != 0) { libxsmm_xfree(handle->code_fwd[0].pmm); }
+      libxsmm_free(handle->code_fwd[0].pmm);
       if (handle->fwd_ofw_rb_2 != 0) {
-        if (handle->code_fwd[1].pmm != 0) { libxsmm_xfree(handle->code_fwd[1].pmm); }
+        libxsmm_free(handle->code_fwd[1].pmm);
       }
-      if (handle->code_bwd[0].pmm != 0) { libxsmm_xfree(handle->code_bwd[0].pmm); }
-      if (handle->code_upd[0].pmm != 0) { libxsmm_xfree(handle->code_upd[0].pmm); }
+      libxsmm_free(handle->code_bwd[0].pmm);
+      libxsmm_free(handle->code_upd[0].pmm);
     } else {
       /* no kernel was JITed */
     }
 
     /*Deallocate scratch in handle*/
-    if(handle->scratch1 != 0) libxsmm_xfree(handle->scratch1);
-    if(handle->scratch2 != 0) libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);
-    if(handle->scratch3 != 0) libxsmm_xfree(handle->scratch3);
-    if(handle->scratch4 != 0) libxsmm_xfree(handle->scratch4);
+    libxsmm_free(handle->scratch1);
+    libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2);
+    libxsmm_free(handle->scratch3);
+    libxsmm_free(handle->scratch4);
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_conv_handle*)handle);
@@ -598,7 +598,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsm
   if (0 != buffer) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer, just deallocate if it's LIBXSMM private data */
     if ( (buffer->format & LIBXSMM_DNN_CONV_FORMAT_PTR) == 0 ) {
-      libxsmm_xfree(buffer->data);
+      libxsmm_free(buffer->data);
     }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_buffer*)buffer);
@@ -796,7 +796,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsm
   if (0 != filter) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
     if ( (filter->format & LIBXSMM_DNN_CONV_FORMAT_PTR) == 0 ) {
-      libxsmm_xfree(filter->data);
+      libxsmm_free(filter->data);
     }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_filter*)filter);
@@ -851,7 +851,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_
 
   if (0 != bias) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_xfree(bias->data);
+    libxsmm_free(bias->data);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_bias*)bias);
   }
