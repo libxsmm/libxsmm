@@ -528,6 +528,7 @@ int main(int argc, char* argv[])
   conv_desc.filter_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
+  /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
@@ -630,6 +631,9 @@ int main(int argc, char* argv[])
 #endif
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid ) );
     }
+    if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
+    }
     /* copy out data */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_filter( libxsmm_filter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_CONV_FORMAT_KCRS ) );
 
@@ -724,6 +728,9 @@ int main(int argc, char* argv[])
 #endif
         libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid );
       }
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
+      }
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
@@ -770,6 +777,7 @@ int main(int argc, char* argv[])
   conv_desc.filter_format = LIBXSMM_DNN_CONV_FORMAT_RSCK;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
+  /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
@@ -861,6 +869,9 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid ) );
+    }
+    if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
     }
     /* copy input data into KCRS storage in user code */
     naive_copy_RSCK_to_KCRS(filter_rsck, naive_filter_kcrs, kh, kw, nIfm, nOfm);
@@ -957,6 +968,9 @@ int main(int argc, char* argv[])
 #endif
         libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid );
       }
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
+      }
     }
     l_end = libxsmm_timer_tick();
     l_total = libxsmm_timer_duration(l_start, l_end);
@@ -1003,6 +1017,7 @@ int main(int argc, char* argv[])
   conv_desc.filter_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
+  /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
@@ -1102,6 +1117,9 @@ int main(int argc, char* argv[])
 #endif
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid ) );
     }
+    if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
+    }
     /* copy out data */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_filter( libxsmm_filter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_CONV_FORMAT_KCRS ) );
 
@@ -1195,6 +1213,9 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_UPD, 0, tid );
+      }
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle ) );
       }
     }
     l_end = libxsmm_timer_tick();

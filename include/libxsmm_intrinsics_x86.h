@@ -41,13 +41,19 @@
 # define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
 # define LIBXSMM_INTRINSICS
 #else
-# if  defined(__AVX512F__)  && defined(__AVX512CD__) \
-   && defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__)
+# if    defined(__AVX512F__)  && defined(__AVX512CD__) \
+   &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) \
+   && !(defined(__APPLE__) && defined(__MACH__)) \
+   && (!defined(__clang__) || LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-# elif defined(__AVX512F__) && defined(__AVX512CD__) \
-   && defined(__AVX512PF__) && defined(__AVX512ER__)
+# elif  defined(__AVX512F__) && defined(__AVX512CD__) \
+   &&   defined(__AVX512PF__) && defined(__AVX512ER__) \
+   && !(defined(__APPLE__) && defined(__MACH__)) \
+   && (!defined(__clang__) || LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
-# elif defined(__AVX512F__) && defined(__AVX512CD__)
+# elif  defined(__AVX512F__) && defined(__AVX512CD__) \
+   && !(defined(__APPLE__) && defined(__MACH__)) \
+   && (!defined(__clang__) || LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
 # elif defined(__AVX2__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2

@@ -28,48 +28,39 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_source.h>
+#include <libxsmm.h>
 #include <stdlib.h>
-#if defined(_DEBUG)
-# include <stdio.h>
-#endif
-
-
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int initialized /*= 0*/;
-
-
-LIBXSMM_API void init(void); /* declaration */
-LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void init(void)
-{
-  initialized = 1;
-}
 
 
 int main(void)
 {
-#if defined(LIBXSMM_CTOR)
-  if (0 == initialized) {
-# if defined(_DEBUG)
-    fprintf(stderr, "Error: c'tor attribute failed!\n");
-# endif
-    return EXIT_FAILURE;
+  const size_t size = 2507;
+  const int alignment = 64;
+  int nerrors = 0;
+  void* p;
+
+  p = libxsmm_malloc(size);
+  if (0 != libxsmm_malloc_size(NULL)) {
+    ++nerrors;
   }
-#else
-# if defined(_DEBUG)
-  if (0 != initialized) {
-    fprintf(stderr, "Warning: c'tor attribute works, but macro support does not expose it!\n");
+  if (0 != p && size != libxsmm_malloc_size(p)) {
+    ++nerrors;
   }
-# endif
-#endif
+  libxsmm_free(0);
+  libxsmm_free(p);
 
-  /* regular/first init/finalize sequence */
-  libxsmm_init();
-  libxsmm_finalize();
+  p = libxsmm_aligned_malloc(size, alignment);
+  if (0 != (((uintptr_t)p) % alignment)) {
+    ++nerrors;
+  }
+  libxsmm_free(p);
 
-  /* test restart capability */
-  libxsmm_init();
-  libxsmm_finalize();
+  p = libxsmm_aligned_malloc(size, -alignment);
+  if (0 != (((uintptr_t)p) % alignment)) {
+    ++nerrors;
+  }
+  libxsmm_free(p);
 
-  return EXIT_SUCCESS;
+  return 0 == nerrors ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

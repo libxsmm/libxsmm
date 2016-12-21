@@ -52,6 +52,8 @@ cat << EOM
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
 
+#include "libxsmm_macros.h"
+
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block
  * includes *internal* files, and thereby exposes LIBXSMM's implementation.
@@ -60,6 +62,9 @@ cat << EOM
  * code for every (internal) change of LIBXSMM. Please make sure to only rely on the
  * public interface as the internal implementation may change without notice.
  */
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 EOM
 
 HERE=$(cd $(dirname $0); pwd -P)
@@ -71,6 +76,9 @@ for FILE in $(grep -L "main\s*(.*)" ${HERE}/../src/*.c); do
 done
 
 cat << EOM
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 #endif /*LIBXSMM_SOURCE_H*/
 EOM

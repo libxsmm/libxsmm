@@ -1251,8 +1251,9 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
-		$(TMPFILE).tex
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/README.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1279,8 +1280,9 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
-		$(TMPFILE).tex
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE).tex
 	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \

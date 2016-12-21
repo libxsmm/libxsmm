@@ -121,6 +121,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_i8i32", "..\s
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "malloc", "..\tests\malloc.vcxproj", "{C535D386-FC53-42CF-B9FE-34630FB15929}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -383,6 +388,18 @@ Global
 		{E5AF3D43-4860-4F28-8674-D641A954C7C9}.symbols|Win32.Build.0 = symbols|Win32
 		{E5AF3D43-4860-4F28-8674-D641A954C7C9}.symbols|x64.ActiveCfg = symbols|x64
 		{E5AF3D43-4860-4F28-8674-D641A954C7C9}.symbols|x64.Build.0 = symbols|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.debug|Win32.ActiveCfg = debug|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.debug|Win32.Build.0 = debug|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.debug|x64.ActiveCfg = debug|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.debug|x64.Build.0 = debug|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.release|Win32.ActiveCfg = release|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.release|Win32.Build.0 = release|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.release|x64.ActiveCfg = release|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.release|x64.Build.0 = release|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.symbols|Win32.ActiveCfg = symbols|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.symbols|Win32.Build.0 = symbols|Win32
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.symbols|x64.ActiveCfg = symbols|x64
+		{C535D386-FC53-42CF-B9FE-34630FB15929}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -409,5 +426,6 @@ Global
 		{B630C58A-2F0D-4D77-97EF-CC4956EED41F} = {E2249458-2416-4A36-99D3-FB73A59427C1}
 		{34BD90D3-A16C-421C-B2E4-C472D06166CD} = {E2249458-2416-4A36-99D3-FB73A59427C1}
 		{E5AF3D43-4860-4F28-8674-D641A954C7C9} = {E2249458-2416-4A36-99D3-FB73A59427C1}
+		{C535D386-FC53-42CF-B9FE-34630FB15929} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 EndGlobal

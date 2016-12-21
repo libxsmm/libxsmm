@@ -364,6 +364,14 @@
 #endif
 
 #if defined(__GNUC__)
+# define LIBXSMM_CTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(constructor)
+# define LIBXSMM_DTOR_ATTRIBUTE LIBXSMM_ATTRIBUTE(destructor)
+#else
+# define LIBXSMM_CTOR_ATTRIBUTE
+# define LIBXSMM_DTOR_ATTRIBUTE
+#endif
+
+#if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
 #else
 # define LIBXSMM_MAY_ALIAS

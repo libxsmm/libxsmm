@@ -48,8 +48,9 @@ mv ${TMPFILE} ${TMPFILE}.tex
 pandoc -D latex \
 | sed \
   -e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-  -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' > \
-  ${TMPFILE}.tex
+  -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+  -e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+  > ${TMPFILE}.tex
 
 # cleanup markup and pipe into pandoc using the template
 # LIBXSMM documentation
