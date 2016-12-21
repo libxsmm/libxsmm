@@ -218,7 +218,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (0 != handle) { /* it is not an error attempting to destroy a NULL-handle */
+  if (0 != handle) {
     /* deallocate data components; not an error to deallocate a NULL-pointer
        deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! */
