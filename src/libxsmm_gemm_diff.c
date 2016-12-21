@@ -84,6 +84,8 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION void libxsmm_gemm_diff_init(int target_arch)
     internal_gemm_diff_fn = libxsmm_gemm_diff_sse;
   }
 #endif
+  assert(0 != internal_gemm_diff_fn);
+  assert(0 != internal_gemm_diffn_fn);
 }
 
 
@@ -106,6 +108,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff(const libxsmm_ge
 #elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_sse(reference, desc);
 #else /* pointer based function call */
+  assert(0 != internal_gemm_diff_fn);
   return internal_gemm_diff_fn(reference, desc);
 #endif
 }
@@ -291,6 +294,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_g
 #elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
 #else /* pointer based function call */
+  assert(0 != internal_gemm_diffn_fn);
   return internal_gemm_diffn_fn(reference, descs, hint, ndescs, nbytes);
 #endif
 }

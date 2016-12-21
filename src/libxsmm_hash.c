@@ -350,6 +350,7 @@ LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigne
 #if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
   return libxsmm_crc32_sse42(data, size, seed);
 #else /* pointer based function call */
+  assert(0 != internal_hash_function);
   return internal_hash_function(data, size, seed);
 #endif
 }
