@@ -149,16 +149,12 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     /* if locked, exit entire dispatch loop and let the client-side fall back */
 #   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
       const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
-        diff = 0; continue; /* exit entire dispatch loop */ \
-      }
+      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) break
 # else
     /* if locked, (re-)try to receive the (meanwhile) generated code version */
 #   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
       const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
-        goto START; \
-      }
+      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) continue
 # endif
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock + (LOCKINDEX)); }
 #else
@@ -185,27 +181,24 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   } \
   else
 # if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
-#   define INTERNAL_FIND_CODE_CACHE_FINALIZE(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
-    if ((CACHE_ID) != internal_teardown) { \
-      memset(CACHE_KEYS, -1, sizeof(CACHE_KEYS)); \
-      CACHE_ID = internal_teardown; \
-    } \
-    i = ((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1)) % (LIBXSMM_CACHESIZE); \
+#   define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
+      RESULT_INDEX = ((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1)) % (LIBXSMM_CACHESIZE)
+# else
+#   define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
+      assert(/*is pot*/(LIBXSMM_CACHESIZE) == (1 << LIBXSMM_LOG2(LIBXSMM_CACHESIZE))); \
+      RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1), LIBXSMM_CACHESIZE)
+# endif
+# define INTERNAL_FIND_CODE_CACHE_FINALIZE(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
+  if ((CACHE_ID) != internal_teardown) { \
+    memset(CACHE_KEYS, -1, sizeof(CACHE_KEYS)); \
+    CACHE_ID = internal_teardown; \
+  } \
+  if (0 != (RESULT).pmm) { /* hit */ assert(0 == diff); \
+    INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, i); \
     ((CACHE_KEYS)[i]).desc = *(DESCRIPTOR); \
     (CACHE)[i] = (RESULT).xmm; \
-    CACHE_HIT = i
-# else
-#   define INTERNAL_FIND_CODE_CACHE_FINALIZE(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR) \
-    assert(/*is pot*/(LIBXSMM_CACHESIZE) == (1 << LIBXSMM_LOG2(LIBXSMM_CACHESIZE))); \
-    if ((CACHE_ID) != internal_teardown) { \
-      memset(CACHE_KEYS, -1, sizeof(CACHE_KEYS)); \
-      CACHE_ID = internal_teardown; \
-    } \
-    i = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CACHESIZE) - 1), LIBXSMM_CACHESIZE); \
-    (CACHE_KEYS)[i].desc = *(DESCRIPTOR); \
-    (CACHE)[i] = (RESULT).xmm; \
-    CACHE_HIT = i
-# endif
+    CACHE_HIT = i; \
+  }
 #else
 # define INTERNAL_FIND_CODE_CACHE_DECL(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT)
 # define INTERNAL_FIND_CODE_CACHE_BEGIN(CACHE_ID, CACHE_KEYS, CACHE, CACHE_HIT, RESULT, DESCRIPTOR)
@@ -273,7 +266,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   libxsmm_code_pointer flux_entry = { 0 }; \
 { \
   INTERNAL_FIND_CODE_CACHE_DECL(cache_id, cache_keys, cache, cache_hit) \
-  unsigned int hash, diff = 0, diff0 = 0, i0; \
+  unsigned int hash, diff = 1, diff0 = 0, i0; \
   /* use return value of internal_init to refresh local representation */ \
   if (0 == (CODE)) CODE = internal_init(); \
   INTERNAL_FIND_CODE_CACHE_BEGIN(cache_id, cache_keys, cache, cache_hit, flux_entry, DESCRIPTOR) { \
@@ -281,8 +274,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     LIBXSMM_PRAGMA_FORCEINLINE /* must precede a statement */ \
     LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, *(DESCRIPTOR)); \
     (CODE) += i; /* actual entry */ \
-    START: \
-    do { \
+    while (0 != diff) { \
       flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&(CODE)->pmm, LIBXSMM_ATOMIC_SEQ_CST); /* read registered code */ \
       if (0 != flux_entry.pmm) { /* code version exists */ \
         if (0 == diff0) { \
@@ -337,8 +329,6 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
         diff = 0; \
       } \
     } \
-    while (0 != diff); \
-    assert(0 == diff || 0 == flux_entry.pmm); \
     assert(0 == flux_entry.pmm || 0 == memcmp(DESCRIPTOR, &internal_registry_keys[i].descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE)); \
     INTERNAL_FIND_CODE_CACHE_FINALIZE(cache_id, cache_keys, cache, cache_hit, flux_entry, DESCRIPTOR); \
   } \
