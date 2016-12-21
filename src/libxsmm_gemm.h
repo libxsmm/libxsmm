@@ -93,6 +93,9 @@
         (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
         (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
+#if !defined(LIBXSMM_GEMM_TILED_INNER_FALLBACK)
+# define LIBXSMM_GEMM_TILED_INNER_FALLBACK
+#endif
 #if defined(LIBXSMM_GEMM_TILED_INNER_FALLBACK)
 # define LIBXSMM_GEMM_TILED_FALLBACK_CHECK(CONDITION) if (CONDITION)
 # define LIBXSMM_GEMM_TILED_FALLBACK(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) else { \
@@ -115,6 +118,7 @@
   libxsmm_gemm_descriptor libxsmm_tiled_xgemm_kernel_desc_; \
   libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_ = { 0 }; \
   libxsmm_blasint libxsmm_tiled_xgemm_kernel_k_ = 0; \
+  assert(0 != (A) && 0 != (B) && 0 != (C)); \
   if (((TILE_M) == libxsmm_tiled_xgemm_kernel_tm_) && ((TILE_N) == libxsmm_tiled_xgemm_kernel_tn_) && ((TILE_K) == libxsmm_tiled_xgemm_kernel_tk_)) { \
     if (libxsmm_tiled_xgemm_kernel_k_ < (MAX_K)) { /* peel */ \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, TILE_M, TILE_N, TILE_K, \
