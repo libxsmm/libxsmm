@@ -143,7 +143,9 @@ if(handle->ifmblock == 1) {
     for(img = 0; img < handle->desc.N; img++) {
 #else
       /* lazy barrier init */
-      libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+      if (handle->upd_use_external_reduce == 0) {
+        libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+      }
       for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
         img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
         ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
@@ -298,11 +300,13 @@ if(handle->ifmblock == 1) {
     /* perform reduction */
     /* TODO COMPLETE THIS USING ATOMIC INCREMENTS PLEASE */
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
-    for ( i = 0; i < handle->desc.threads; i++ ) {
-      remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
-      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-        weight_ptr[j] += remote_weight_ptr[j];
+    if (handle->upd_use_external_reduce == 0) {
+      libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+      for ( i = 0; i < handle->desc.threads; i++ ) {
+        remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+        for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+          weight_ptr[j] += remote_weight_ptr[j];
+        }
       }
     }
 #endif /* LIBXSMM_WU_PER_THREAD_ALLOCATION */
@@ -572,7 +576,9 @@ if(handle->ifmblock == 1) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
   }
   /* lazy barrier init */
-  libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  if (handle->upd_use_external_reduce == 0) {
+    libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  }
   for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
     img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
     ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
@@ -587,12 +593,14 @@ if(handle->ifmblock == 1) {
       }
     }
   }
-  libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
-  /* reduce weights */
-  for ( i = 0; i < handle->desc.threads; i++ ) {
-    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
-    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-      weight_ptr[j] += remote_weight_ptr[j];
+  if (handle->upd_use_external_reduce == 0) {
+    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+    /* reduce weights */
+    for ( i = 0; i < handle->desc.threads; i++ ) {
+      remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        weight_ptr[j] += remote_weight_ptr[j];
+      }
     }
   }
 #else

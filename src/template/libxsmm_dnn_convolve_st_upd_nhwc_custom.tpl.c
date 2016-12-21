@@ -96,7 +96,9 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     per_thread_weight_ptr[i] = (element_filter_type)0;
   }
   /* lazy barrier init */
-  libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  if (handle->upd_use_external_reduce == 0) {
+    libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  }
   for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
     img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
     ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
@@ -111,12 +113,14 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
     }
   }
-  libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
-  /* reduce weights */
-  for ( i = 0; i < handle->desc.threads; i++ ) {
-    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
-    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-      weight_ptr[j] += remote_weight_ptr[j];
+  if (handle->upd_use_external_reduce == 0) {
+    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+    /* reduce weights */
+    for ( i = 0; i < handle->desc.threads; i++ ) {
+      remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        weight_ptr[j] += remote_weight_ptr[j];
+      }
     }
   }
 #else
