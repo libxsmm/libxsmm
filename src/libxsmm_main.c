@@ -137,25 +137,20 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
 #endif
 
-#if !defined(LIBXSMM_TRYLOCK)
-/*# define LIBXSMM_TRYLOCK*/
-#endif
-
 #if defined(LIBXSMM_OPENMP)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #elif !defined(LIBXSMM_NO_SYNC)
-# if defined(LIBXSMM_TRYLOCK)
-    /* if locked, exit entire dispatch loop and let the client-side fall back */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
-      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) break
-# else
-    /* if locked, (re-)try to receive the (meanwhile) generated code version */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
-      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) continue
-# endif
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
+  const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
+  if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
+    if (0 == internal_trylock) { /* (re-)try and get (meanwhile) generated code */ \
+      continue; \
+    } \
+    else { /* exit dispatch and let client fall back */ \
+      break; \
+    } \
+  }
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock + (LOCKINDEX)); }
 #else
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX)
@@ -388,6 +383,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LI
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trylock;
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol)
@@ -656,8 +652,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       int init_code = EXIT_FAILURE;
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       libxsmm_mt = 2;
-      {
-        /* behaviour of parallelized routines which are located in libxsmmext library
+      { /* behaviour of parallelized routines which are located in libxsmmext library
          * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
          * 1: (OpenMP-)parallelized but without internal parallel region,
          * 2: (OpenMP-)parallelized with internal parallel region"
@@ -667,10 +662,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           libxsmm_mt = atoi(env);
         }
       }
-      {
-        const char *const env = getenv("LIBXSMM_TASKS");
+      { const char *const env = getenv("LIBXSMM_TASKS");
         if (0 != env && 0 != *env) {
           libxsmm_tasks = atoi(env);
+        }
+      }
+      { const char *const env = getenv("LIBXSMM_TRYLOCK");
+        if (0 != env && 0 != *env) {
+          internal_trylock = atoi(env);
         }
       }
       /* clear internal counters/statistic */
