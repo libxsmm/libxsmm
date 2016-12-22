@@ -912,7 +912,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
 
 LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return libxsmm_target_archid;
 #else /* no JIT support */
@@ -959,7 +959,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 
 LIBXSMM_API_DEFINITION const char* libxsmm_get_target_arch(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   return internal_get_target_arch(libxsmm_target_archid);
 }
 
@@ -1038,28 +1038,28 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 
 LIBXSMM_API_DEFINITION int libxsmm_get_verbosity(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   return libxsmm_verbosity;
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   LIBXSMM_ATOMIC_STORE(&libxsmm_verbosity, level, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
 LIBXSMM_API_DEFINITION int libxsmm_get_dispatch_trylock(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   return libxsmm_dispatch_trylock;
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_set_dispatch_trylock(int trylock)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 == internal_dispatch_trylock_locked) { /* LIBXSMM_TRYLOCK environment takes precedence */
     LIBXSMM_ATOMIC_STORE(&libxsmm_dispatch_trylock, trylock, LIBXSMM_ATOMIC_RELAXED);
   }
@@ -1315,7 +1315,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   /* there is no need to check LIBXSMM_GEMM_NO_BYPASS_DIMS (M, N, K, LDx) since we already got a descriptor */
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
-    LIBXSMM_INIT();
+    LIBXSMM_INIT
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
       backend_descriptor.prefetch = (unsigned char)libxsmm_gemm_auto_prefetch;
@@ -1341,7 +1341,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   INTERNAL_DISPATCH(float, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1351,7 +1351,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   INTERNAL_DISPATCH(double, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1365,7 +1365,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
   libxsmm_code_pointer code = { 0 };
   libxsmm_csr_soa_descriptor ssoa;
   libxsmm_build_request request;
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   ssoa.gemm = descriptor;
   ssoa.row_ptr = row_ptr;
   ssoa.column_idx = column_idx;
@@ -1380,7 +1380,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
 LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 {
   void* extra = 0;
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (EXIT_SUCCESS == libxsmm_malloc_info((const volatile void*)jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int regindex = *((const unsigned int*)extra);
     if (LIBXSMM_REGSIZE <= regindex) {

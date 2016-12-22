@@ -61,8 +61,9 @@
 #endif
 
 /* Helper macro to eventually (if defined) call libxsmm_init */
-#define LIBXSMM_INIT libxsmm_init
-
+#if !defined(LIBXSMM_CTOR)
+# define LIBXSMM_INIT libxsmm_init();
+#endif
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   /*const*/void* pmm;

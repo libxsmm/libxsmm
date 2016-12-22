@@ -184,6 +184,11 @@ ifneq (1,$(CACHE))
   DFLAGS += -DLIBXSMM_CACHESIZE=$(CACHE)
 endif
 
+# disable lazy initialization and rely on ctor attribute
+ifeq (0,$(INIT))
+  DFLAGS += -DLIBXSMM_CTOR
+endif
+
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = BLAS_WARNING PREFIX
 
