@@ -144,7 +144,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
   const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
   if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
-    if (0 == internal_trylock) { /* (re-)try and get (meanwhile) generated code */ \
+    if (0 == libxsmm_dispatch_trylock) { /* (re-)try and get (meanwhile) generated code */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -381,9 +381,9 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml /*= 13
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_dispatch_trylock_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trylock;
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol)
@@ -669,7 +669,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       }
       { const char *const env = getenv("LIBXSMM_TRYLOCK");
         if (0 != env && 0 != *env) {
-          internal_trylock = atoi(env);
+          libxsmm_dispatch_trylock = atoi(env);
+          internal_dispatch_trylock_locked = 1;
         }
       }
       /* clear internal counters/statistic */
@@ -1046,6 +1047,22 @@ LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 {
   LIBXSMM_INIT();
   LIBXSMM_ATOMIC_STORE(&libxsmm_verbosity, level, LIBXSMM_ATOMIC_RELAXED);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_get_dispatch_trylock(void)
+{
+  LIBXSMM_INIT();
+  return libxsmm_dispatch_trylock;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_dispatch_trylock(int trylock)
+{
+  LIBXSMM_INIT();
+  if (0 == internal_dispatch_trylock_locked) { /* LIBXSMM_TRYLOCK environment takes precedence */
+    LIBXSMM_ATOMIC_STORE(&libxsmm_dispatch_trylock, trylock, LIBXSMM_ATOMIC_RELAXED);
+  }
 }
 
 

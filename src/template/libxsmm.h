@@ -92,6 +92,11 @@ LIBXSMM_API int libxsmm_get_verbosity(void);
  */
 LIBXSMM_API void libxsmm_set_verbosity(int level);
 
+/** Query the try-lock property of the code registry. */
+LIBXSMM_API int libxsmm_get_dispatch_trylock(void);
+/** Set the try-lock property of the code registry. */
+LIBXSMM_API void libxsmm_set_dispatch_trylock(int trylock);
+
 /** Get the default prefetch strategy. */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */

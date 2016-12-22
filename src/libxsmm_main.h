@@ -246,6 +246,8 @@ LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
+/** Try-lock property of the code registry (0: off, 1: enabled). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_dispatch_trylock;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
