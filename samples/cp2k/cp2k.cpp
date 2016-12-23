@@ -224,8 +224,8 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
       // some more setup similar to CP2K/intel branch
-      libxsmm_set_gemm_auto_prefetch(LIBXSMM_PREFETCH_BL2_VIA_C);
-      libxsmm_set_dispatch_trylock(1);
+      libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C);
+      //libxsmm_set_dispatch_trylock(1);
 
       fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
