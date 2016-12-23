@@ -753,7 +753,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           }
 #endif
           internal_gemm_auto_prefetch = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
-            ? LIBXSMM_PREFETCH_BL2_VIA_C /* avoid since static code is hard-coded for INTERNAL_PREFETCH */
+            ? LIBXSMM_PREFETCH_AL2BL2_VIA_C /* avoid since static code is hard-coded for INTERNAL_PREFETCH */
             : INTERNAL_PREFETCH;
           libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
           if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
