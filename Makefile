@@ -606,7 +606,9 @@ endef
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifneq (0,$(STATIC))
 ifneq (0,$(WRAP))
+ifneq (,$(strip $(WRAP)))
   EXTCFLAGS += -DLIBXSMM_GEMM_WRAP=$(WRAP)
+endif
 endif
 endif
 
