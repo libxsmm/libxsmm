@@ -263,7 +263,7 @@ SINGLE_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
     && 0 != libxsmm_tiled_xgemm_no_bypass_)) \
   { \
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(libxsmm_tiled_xgemm_smalldesc_, LIBXSMM_ALIGNMENT, FLAGS, MM, NN, KK, \
-      LDA, LDB, LDC, ALPHA, BETA, LIBXSMM_PREFETCH_NONE); \
+      LDA, LDB, LDC, ALPHA, BETA, libxsmm_tiled_gemm_prefetch); \
     libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_smalldesc_); \
     if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
       LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), A, B, C); \
