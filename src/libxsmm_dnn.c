@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016, Intel Corporation                                     **
+** Copyright (c) 2016-2017, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -1487,7 +1487,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_forward(
   const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cfwd = descriptor;
@@ -1510,7 +1510,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_backward(
   const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cbwd = descriptor;
@@ -1533,7 +1533,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
   const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cupd = descriptor;
@@ -1555,7 +1555,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_forward(
   const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cfwd = descriptor;
@@ -1578,7 +1578,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_backward(
   const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cbwd = descriptor;
@@ -1601,7 +1601,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_update_weights(
   const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (0 != descriptor) {
     libxsmm_build_request request;
     request.descriptor.cupd = descriptor;

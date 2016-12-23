@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2016, Intel Corporation                                **
+** Copyright (c) 2015-2017, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -221,7 +221,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-    LIBXSMM_INIT();
+    LIBXSMM_INIT
     tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
     tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
     tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
@@ -259,7 +259,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-    LIBXSMM_INIT();
+    LIBXSMM_INIT
     tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
     tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
     tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];

@@ -1,5 +1,5 @@
 !*****************************************************************************!
-!* Copyright (c) 2014-2016, Intel Corporation                                *!
+!* Copyright (c) 2014-2017, Intel Corporation                                *!
 !* All rights reserved.                                                      *!
 !*                                                                           *!
 !* Redistribution and use in source and binary forms, with or without        *!
@@ -252,6 +252,10 @@
         END INTERFACE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_dispatch_trylock
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_dispatch_trylock
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
@@ -262,6 +266,9 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sotrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dotrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -316,6 +323,18 @@
           SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: strategy
+          END SUBROUTINE
+
+          ! Query the try-lock property of the code registry.
+          PURE FUNCTION libxsmm_get_dispatch_trylock() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_dispatch_trylock
+          END FUNCTION
+
+          ! Set the try-lock property of the code registry.
+          SUBROUTINE libxsmm_set_dispatch_trylock(trylock) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: trylock
           END SUBROUTINE
 
           ! Transpose a matrix (out-of-place form).

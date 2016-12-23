@@ -1,5 +1,5 @@
 /******************************************************************************
- ** Copyright (c) 2016, Intel Corporation                                     **
+ ** Copyright (c) 2016-2017, Intel Corporation                                **
  ** All rights reserved.                                                      **
  **                                                                           **
  ** Redistribution and use in source and binary forms, with or without        **
@@ -351,7 +351,6 @@ if(handle->ifmblock == 1) {
 #ifdef LIBXSMM_CONV_NO_PREFETCH
                 jitted_conv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
 #else
-                /*jitted_sconv_wu_transpose_nooutput_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][ij_+kj][0][ii_+ki+1]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                 jitted_conv_wu_transpose_nooutput_pf(l_input, l_wt, l_output,
                                                      &LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij_+kj, 0, ii_+ki+1, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                                      &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki+1, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -365,9 +364,8 @@ if(handle->ifmblock == 1) {
               l_wt = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
               l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_, oi_, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #ifdef LIBXSMM_CONV_NO_PREFETCH
-              jitted_sconv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
+              jitted_conv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
 #else
-              /*jitted_sconv_wu_transpose_nooutput_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][ij_+kj+1][0][ii_+0]), &(weight[ofm1][ifm1][kj+1][0][0][0]), NULL);*/
               jitted_conv_wu_transpose_nooutput_pf(l_input, l_wt, l_output,
                                                    &LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij_+kj+1, 0, ii_+0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                                    &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj+1, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -381,9 +379,8 @@ if(handle->ifmblock == 1) {
               l_wt = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
               l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_, oi_, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #ifdef LIBXSMM_CONV_NO_PREFETCH
-              jitted_sconv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
+              jitted_conv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
 #else
-              /*jitted_sconv_wu_transpose_nooutput_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][ij_+kj][0][ii_+ki+1]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
               jitted_conv_wu_transpose_nooutput_pf(l_input, l_wt, l_output,
                                                    &LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij_+kj, 0, ii_+ki+1, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                                    &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki+1, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -396,12 +393,11 @@ if(handle->ifmblock == 1) {
             l_wt = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
             l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj_, oi_, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #ifdef LIBXSMM_CONV_NO_PREFETCH
-            jitted_sconv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
+            jitted_conv_wu_transpose_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
 #else
             if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
               if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                 /* 1 - prefetch for kj=0, ki=0; */
-                /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][ofm1+1][0][0][0]));*/
                 jitted_conv_wu_transpose_pf(l_input, l_wt, l_output,
                                             &LIBXSMM_VLA_ACCESS(5, tr_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                             &LIBXSMM_VLA_ACCESS(6, weight, ofm1+1, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -410,7 +406,6 @@ if(handle->ifmblock == 1) {
               } else {
                 if (img+1 == handle->desc.N) {
                   /* 1 - prefetch for kj=0, ki=0; */
-                  /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[0][ifm1+1][0][0][0]), &(weight[ofm1][ifm1+1][0][0][0][0]), &(output[0][ofm1][0][0][0]));*/
                   jitted_conv_wu_transpose_pf(l_input, l_wt, l_output,
                                               &LIBXSMM_VLA_ACCESS(5, tr_input, 0, ifm1+1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                               &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1+1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -428,7 +423,6 @@ if(handle->ifmblock == 1) {
               }
             } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
               /* 1 - prefetch for kj=0, ki=0; */
-              /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][0][0][((oi__+1)*handle->upd_ofw_rb)*stride_w]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][ofm1][0][(oi__+1)*handle->upd_ofw_rb][0]));*/
               jitted_conv_wu_transpose_pf(l_input, l_wt, l_output,
                                           &LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, 0, 0, ((oi__+1)*handle->upd_ofw_rb)*stride_w, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                           &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
@@ -436,7 +430,6 @@ if(handle->ifmblock == 1) {
                                          );
             } else { /* end of oj */
               /* 1 - prefetch for kj=0, ki=0; */
-              /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][((oj__+1)*handle->upd_ofh_rb)*stride_h][0][ii_]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][ofm1][(oj__+1)*handle->upd_ofh_rb][oi_][0]));*/
               jitted_conv_wu_transpose_pf(l_input, l_wt, l_output,
                                           &LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ((oj__+1)*handle->upd_ofh_rb)*stride_h, 0, ii_, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp),
                                           &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),

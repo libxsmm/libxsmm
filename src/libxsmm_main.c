@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2016, Intel Corporation                                **
+** Copyright (c) 2014-2017, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -137,25 +137,20 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
 #endif
 
-#if !defined(LIBXSMM_TRYLOCK)
-/*# define LIBXSMM_TRYLOCK*/
-#endif
-
 #if defined(LIBXSMM_OPENMP)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #elif !defined(LIBXSMM_NO_SYNC)
-# if defined(LIBXSMM_TRYLOCK)
-    /* if locked, exit entire dispatch loop and let the client-side fall back */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
-      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) break
-# else
-    /* if locked, (re-)try to receive the (meanwhile) generated code version */
-#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
-      const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
-      if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) continue
-# endif
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
+  const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
+  if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
+    if (0 == libxsmm_dispatch_trylock) { /* (re-)try and get (meanwhile) generated code */ \
+      continue; \
+    } \
+    else { /* exit dispatch and let client fall back */ \
+      break; \
+    } \
+  }
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock + (LOCKINDEX)); }
 #else
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX)
@@ -386,6 +381,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml /*= 13
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med /*= 23*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk /*= LIBXSMM_MAX_M*/;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown /*= 0*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_dispatch_trylock_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
 
@@ -656,8 +652,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
       int init_code = EXIT_FAILURE;
       libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
       libxsmm_mt = 2;
-      {
-        /* behaviour of parallelized routines which are located in libxsmmext library
+      { /* behaviour of parallelized routines which are located in libxsmmext library
          * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
          * 1: (OpenMP-)parallelized but without internal parallel region,
          * 2: (OpenMP-)parallelized with internal parallel region"
@@ -667,10 +662,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
           libxsmm_mt = atoi(env);
         }
       }
-      {
-        const char *const env = getenv("LIBXSMM_TASKS");
+      { const char *const env = getenv("LIBXSMM_TASKS");
         if (0 != env && 0 != *env) {
           libxsmm_tasks = atoi(env);
+        }
+      }
+      { const char *const env = getenv("LIBXSMM_TRYLOCK");
+        if (0 != env && 0 != *env) {
+          libxsmm_dispatch_trylock = atoi(env);
+          internal_dispatch_trylock_locked = 1;
         }
       }
       /* clear internal counters/statistic */
@@ -912,7 +912,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
 
 LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return libxsmm_target_archid;
 #else /* no JIT support */
@@ -959,7 +959,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 
 LIBXSMM_API_DEFINITION const char* libxsmm_get_target_arch(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   return internal_get_target_arch(libxsmm_target_archid);
 }
 
@@ -1038,15 +1038,31 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
 
 LIBXSMM_API_DEFINITION int libxsmm_get_verbosity(void)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   return libxsmm_verbosity;
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_set_verbosity(int level)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   LIBXSMM_ATOMIC_STORE(&libxsmm_verbosity, level, LIBXSMM_ATOMIC_RELAXED);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_get_dispatch_trylock(void)
+{
+  LIBXSMM_INIT
+  return libxsmm_dispatch_trylock;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_dispatch_trylock(int trylock)
+{
+  LIBXSMM_INIT
+  if (0 == internal_dispatch_trylock_locked) { /* LIBXSMM_TRYLOCK environment takes precedence */
+    LIBXSMM_ATOMIC_STORE(&libxsmm_dispatch_trylock, trylock, LIBXSMM_ATOMIC_RELAXED);
+  }
 }
 
 
@@ -1299,7 +1315,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   /* there is no need to check LIBXSMM_GEMM_NO_BYPASS_DIMS (M, N, K, LDx) since we already got a descriptor */
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
-    LIBXSMM_INIT();
+    LIBXSMM_INIT
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
       backend_descriptor.prefetch = (unsigned char)libxsmm_gemm_auto_prefetch;
@@ -1325,7 +1341,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int
   const float* alpha, const float* beta,
   const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   INTERNAL_DISPATCH(float, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1335,7 +1351,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   INTERNAL_DISPATCH(double, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
@@ -1349,7 +1365,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
   libxsmm_code_pointer code = { 0 };
   libxsmm_csr_soa_descriptor ssoa;
   libxsmm_build_request request;
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   ssoa.gemm = descriptor;
   ssoa.row_ptr = row_ptr;
   ssoa.column_idx = column_idx;
@@ -1364,7 +1380,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
 LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 {
   void* extra = 0;
-  LIBXSMM_INIT();
+  LIBXSMM_INIT
   if (EXIT_SUCCESS == libxsmm_malloc_info((const volatile void*)jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int regindex = *((const unsigned int*)extra);
     if (LIBXSMM_REGSIZE <= regindex) {
