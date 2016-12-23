@@ -101,10 +101,10 @@ typedef struct libxsmm_dnn_conv_desc {
   int S;                                       /* width of filter kernel */
   int u;                                       /* vertical stride */
   int v;                                       /* horizontal stride */
-  int pad_h_in;                                /* height of zero-padding in input buffer, ignored */
-  int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
-  int pad_h_out;                               /* height of zero-padding in output buffer */
-  int pad_w_out;                               /* width of zero-padding in output buffer */
+  int pad_h_in;                                /* height of physical zero-padding in input buffer, ignored */
+  int pad_w_in;                                /* width of physical zero-padding in input buffer, ignored */
+  int pad_h_out;                               /* height of physical zero-padding in output buffer */
+  int pad_w_out;                               /* width of pyhsical zero-padding in output buffer */
   libxsmm_dnn_conv_algo algo;                  /* convolution algorithm used */
   libxsmm_dnn_conv_format buffer_format;       /* format which is for buffer buffers */
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
