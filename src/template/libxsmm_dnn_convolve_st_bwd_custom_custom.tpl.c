@@ -71,7 +71,8 @@ libxsmm_convfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)h
 kh = handle->desc.R;
 kw = handle->desc.S;
 
-ifh=handle->desc.H;
+/* TODO change this name to ifhp */
+ifh=handle->ifhp;
 ofh=handle->ofh;
 
 /* lazy barrier init */

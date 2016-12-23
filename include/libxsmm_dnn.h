@@ -149,8 +149,10 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int S;                                       /* width of filter kernel */
   int u;                                       /* vertical stride */
   int v;                                       /* horizontal stride */
-  int pad_h_in;                                /* height of zero-padding in input buffer, ignored */
-  int pad_w_in;                                /* width of zero-padding in input buffer, ignored */
+  int pad_h;                                   /* height of logical rim padding to input for adjusting output height */
+  int pad_w;                                   /* width of logical rim padding to input for adjusting output width */
+  int pad_h_in;                                /* height of zero-padding in input buffer, must equal to pad_h for direct conv */
+  int pad_w_in;                                /* width of zero-padding in input buffer, must equal to pad_w for direct conv */
   int pad_h_out;                               /* height of zero-padding in output buffer */
   int pad_w_out;                               /* width of zero-padding in output buffer */
   int threads;                                 /* number of threads to use when running convolution */

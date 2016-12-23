@@ -20,41 +20,44 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
+# ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type
+
 #DeepBench specifies input pad (as in cuDNN, MKL specs) - manually added to input dimension here
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  700 161 4  1   32  5  20  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  700 161 8  1   32  5  20  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  700 161 16 1   32  5  20  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  700 161 32 1   32  5  20  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  341 79  4  32  32  5  10  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  341 79  8  32  32  5  10  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  341 79  16 32  32  5  10  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  341 79  32 32  32  5  10  0  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  482 50  16 1   16  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  242 26  16 16  32  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  122 14  16 32  64  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  62  8   16 64  128 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  110 110 8  3   64  3  3   1  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  8  64  64  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  29  29  8  128 128 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  8  128 256 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  9   9   8  256 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  226 226 8  3   64  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  114 114 8  64  128 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  58  58  8  128 256 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  30  30  8  256 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  8  512 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  9   9   8  512 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  226 226 16 3   64  3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  114 114 16 64  128 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  58  58  16 128 256 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  30  30  16 256 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  16 512 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  9   9   16 512 512 3  3   1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  230 230 16 3   64  7  7   3  2
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  32  32  16 192 32  5  5   2  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  16 192 64  1  1   0  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  18  18  16 512 48  5  5   2  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  16 512 192 1  1   0  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  7   7   16 832 256 1  1   0  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  11  11  16 832 128 5  5   2  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  700  161    4     1    32  20   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  700  161    8     1    32  20   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  700  161   16     1    32  20   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  700  161   32     1    32  20   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  341   79    4    32    32  10   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  341   79    8    32    32  10   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  341   79   16    32    32  10   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  341   79   32    32    32  10   5  0  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  480   48   16     1    16   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  240   24   16    16    32   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  120   12   16    32    64   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   60    6   16    64   128   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  108  108    8     3    64   3   3  1  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   54   54    8    64    64   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   27   27    8   128   128   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   14   14    8   128   256   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    7    7    8   256   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  224  224    8     3    64   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  112  112    8    64   128   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   56   56    8   128   256   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   28   28    8   256   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   14   14    8   512   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    7    7    8   512   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  224  224   16     3    64   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  112  112   16    64   128   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   56   56   16   128   256   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   28   28   16   256   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   14   14   16   512   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    7    7   16   512   512   3   3  1  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  224  224   16     3    64   7   7  3  2
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   28   28   16   192    32   5   5  2  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   28   28   16   192    64   1   1  0  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   14   14   16   512    48   5   5  2  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   14   14   16   512   192   1   1  0  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    7    7   16   832   256   1   1  0  1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    7    7   16   832   128   5   5  2  1
+

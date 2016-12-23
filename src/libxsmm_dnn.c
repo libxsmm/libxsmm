@@ -171,10 +171,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_c
     handle->fuse_ops = conv_desc.fuse_ops;
     handle->options = conv_desc.options;
     /* derive additional values */
-    handle->ifhp = conv_desc.H;
-    handle->ifwp = conv_desc.W;
-    handle->ofh = (conv_desc.H - conv_desc.R) / conv_desc.u + 1;
-    handle->ofw = (conv_desc.W - conv_desc.S) / conv_desc.v + 1;
+    handle->ifhp = conv_desc.H + 2*conv_desc.pad_h_in;
+    handle->ifwp = conv_desc.W + 2*conv_desc.pad_w_in;
+    handle->ofh = (conv_desc.H + 2*conv_desc.pad_h - conv_desc.R) / conv_desc.u + 1;
+    handle->ofw = (conv_desc.W + 2*conv_desc.pad_w - conv_desc.S) / conv_desc.v + 1;
     handle->ofhp = handle->ofh + 2*conv_desc.pad_h_out;
     handle->ofwp = handle->ofw + 2*conv_desc.pad_w_out;
     handle->avx512avx2fallback = 0;
