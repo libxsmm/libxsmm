@@ -71,7 +71,7 @@ libxsmm_convfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)h
 kh = handle->desc.R;
 kw = handle->desc.S;
 
-/* TODO change this name to ifhp */
+/* TODO/FIXME change this name to correct ifh/padded ifw */
 ifh=handle->ifhp;
 ofh=handle->ofh;
 
