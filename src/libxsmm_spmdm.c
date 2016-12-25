@@ -86,6 +86,113 @@
 #define _MM_FMADD_FP32 _mm512_fmadd_ps
 #define _MM_MUL_FP32 _mm512_mul_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
+#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) \
+  { \
+    __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;\
+    __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;\
+    r0 = _mm512_loadu_ps(ptr_A);\
+    r1 = _mm512_loadu_ps(ptr_A + ldA);\
+    r2 = _mm512_loadu_ps(ptr_A + 2*ldA);\
+    r3 = _mm512_loadu_ps(ptr_A + 3*ldA);\
+    r4 = _mm512_loadu_ps(ptr_A + 4*ldA);\
+    r5 = _mm512_loadu_ps(ptr_A + 5*ldA);\
+    r6 = _mm512_loadu_ps(ptr_A + 6*ldA);\
+    r7 = _mm512_loadu_ps(ptr_A + 7*ldA);\
+    r8 = _mm512_loadu_ps(ptr_A + 8*ldA);\
+    r9 = _mm512_loadu_ps(ptr_A + 9*ldA);\
+    ra = _mm512_loadu_ps(ptr_A + 10*ldA);\
+    rb = _mm512_loadu_ps(ptr_A + 11*ldA);\
+    rc = _mm512_loadu_ps(ptr_A + 12*ldA);\
+    rd = _mm512_loadu_ps(ptr_A + 13*ldA);\
+    re = _mm512_loadu_ps(ptr_A + 14*ldA);\
+    rf = _mm512_loadu_ps(ptr_A + 15*ldA);\
+    \
+    t0 = _mm512_unpacklo_ps(r0,r1);\
+    t1 = _mm512_unpackhi_ps(r0,r1);\
+    t2 = _mm512_unpacklo_ps(r2,r3);\
+    t3 = _mm512_unpackhi_ps(r2,r3);\
+    t4 = _mm512_unpacklo_ps(r4,r5);\
+    t5 = _mm512_unpackhi_ps(r4,r5);\
+    t6 = _mm512_unpacklo_ps(r6,r7);\
+    t7 = _mm512_unpackhi_ps(r6,r7);\
+    t8 = _mm512_unpacklo_ps(r8,r9);\
+    t9 = _mm512_unpackhi_ps(r8,r9);\
+    ta = _mm512_unpacklo_ps(ra,rb);\
+    tb = _mm512_unpackhi_ps(ra,rb);\
+    tc = _mm512_unpacklo_ps(rc,rd);\
+    td = _mm512_unpackhi_ps(rc,rd);\
+    te = _mm512_unpacklo_ps(re,rf);\
+    tf = _mm512_unpackhi_ps(re,rf);\
+    \
+    r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
+    r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
+    r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
+    r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
+    r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
+    r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
+    r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
+    r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
+    r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
+    r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
+    ra = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
+    rb = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
+    rc = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
+    rd = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
+    re = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
+    rf = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
+    \
+    t0 = _mm512_shuffle_f32x4(r0, r4, 0x88);\
+    t1 = _mm512_shuffle_f32x4(r1, r5, 0x88);\
+    t2 = _mm512_shuffle_f32x4(r2, r6, 0x88);\
+    t3 = _mm512_shuffle_f32x4(r3, r7, 0x88);\
+    t4 = _mm512_shuffle_f32x4(r0, r4, 0xdd);\
+    t5 = _mm512_shuffle_f32x4(r1, r5, 0xdd);\
+    t6 = _mm512_shuffle_f32x4(r2, r6, 0xdd);\
+    t7 = _mm512_shuffle_f32x4(r3, r7, 0xdd);\
+    t8 = _mm512_shuffle_f32x4(r8, rc, 0x88);\
+    t9 = _mm512_shuffle_f32x4(r9, rd, 0x88);\
+    ta = _mm512_shuffle_f32x4(ra, re, 0x88);\
+    tb = _mm512_shuffle_f32x4(rb, rf, 0x88);\
+    tc = _mm512_shuffle_f32x4(r8, rc, 0xdd);\
+    td = _mm512_shuffle_f32x4(r9, rd, 0xdd);\
+    te = _mm512_shuffle_f32x4(ra, re, 0xdd);\
+    tf = _mm512_shuffle_f32x4(rb, rf, 0xdd);\
+    \
+    r0 = _mm512_shuffle_f32x4(t0, t8, 0x88);\
+    r1 = _mm512_shuffle_f32x4(t1, t9, 0x88);\
+    r2 = _mm512_shuffle_f32x4(t2, ta, 0x88);\
+    r3 = _mm512_shuffle_f32x4(t3, tb, 0x88);\
+    r4 = _mm512_shuffle_f32x4(t4, tc, 0x88);\
+    r5 = _mm512_shuffle_f32x4(t5, td, 0x88);\
+    r6 = _mm512_shuffle_f32x4(t6, te, 0x88);\
+    r7 = _mm512_shuffle_f32x4(t7, tf, 0x88);\
+    r8 = _mm512_shuffle_f32x4(t0, t8, 0xdd);\
+    r9 = _mm512_shuffle_f32x4(t1, t9, 0xdd);\
+    ra = _mm512_shuffle_f32x4(t2, ta, 0xdd);\
+    rb = _mm512_shuffle_f32x4(t3, tb, 0xdd);\
+    rc = _mm512_shuffle_f32x4(t4, tc, 0xdd);\
+    rd = _mm512_shuffle_f32x4(t5, td, 0xdd);\
+    re = _mm512_shuffle_f32x4(t6, te, 0xdd);\
+    rf = _mm512_shuffle_f32x4(t7, tf, 0xdd);\
+    \
+    _mm512_storeu_ps(ptr_B + 0*ldB, r0);\
+    _mm512_storeu_ps(ptr_B + 1*ldB, r1);\
+    _mm512_storeu_ps(ptr_B + 2*ldB, r2);\
+    _mm512_storeu_ps(ptr_B + 3*ldB, r3);\
+    _mm512_storeu_ps(ptr_B + 4*ldB, r4);\
+    _mm512_storeu_ps(ptr_B + 5*ldB, r5);\
+    _mm512_storeu_ps(ptr_B + 6*ldB, r6);\
+    _mm512_storeu_ps(ptr_B + 7*ldB, r7);\
+    _mm512_storeu_ps(ptr_B + 8*ldB, r8);\
+    _mm512_storeu_ps(ptr_B + 9*ldB, r9);\
+    _mm512_storeu_ps(ptr_B + 10*ldB, ra);\
+    _mm512_storeu_ps(ptr_B + 11*ldB, rb);\
+    _mm512_storeu_ps(ptr_B + 12*ldB, rc);\
+    _mm512_storeu_ps(ptr_B + 13*ldB, rd);\
+    _mm512_storeu_ps(ptr_B + 14*ldB, re);\
+    _mm512_storeu_ps(ptr_B + 15*ldB, rf);\
+  }
+
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
@@ -192,6 +299,54 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define _MM_FMADD_FP32 _mm256_fmadd_ps
 #define _MM_MUL_FP32 _mm256_mul_ps
 #define _MM_PREFETCH(x, y) _mm_prefetch(x, y)
+#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) \
+  { \
+  __m256 ymm9  = _mm256_loadu_ps(ptr_A); \
+  __m256 ymm10 = _mm256_loadu_ps(ptr_A + ldA); \
+  __m256 ymm11 = _mm256_loadu_ps(ptr_A + 2*ldA); \
+  __m256 ymm12 = _mm256_loadu_ps(ptr_A + 3*ldA); \
+  __m256 ymm13 = _mm256_loadu_ps(ptr_A + 4*ldA); \
+  __m256 ymm14 = _mm256_loadu_ps(ptr_A + 5*ldA); \
+  __m256 ymm15 = _mm256_loadu_ps(ptr_A + 6*ldA); \
+  __m256 ymm2  = _mm256_loadu_ps(ptr_A + 7*ldA); \
+  __m256 ymm6  = _mm256_unpacklo_ps(ymm9, ymm10);\
+  __m256 ymm1  = _mm256_unpacklo_ps(ymm11, ymm12);\
+  __m256 ymm8  = _mm256_unpackhi_ps(ymm9, ymm10);\
+  __m256 ymm0  = _mm256_unpacklo_ps(ymm13, ymm14);\
+         ymm9  = _mm256_unpacklo_ps(ymm15, ymm2);\
+  __m256 ymm3  = _mm256_shuffle_ps(ymm6, ymm1, 0x4E);\
+         ymm10 = _mm256_blend_ps(ymm6, ymm3, 0xCC);\
+         ymm6  = _mm256_shuffle_ps(ymm0, ymm9, 0x4E);\
+  __m256 ymm7  = _mm256_unpackhi_ps(ymm11, ymm12);\
+         ymm11 = _mm256_blend_ps(ymm0, ymm6, 0xCC);\
+         ymm12 = _mm256_blend_ps(ymm3, ymm1, 0xCC);\
+         ymm3  = _mm256_permute2f128_ps(ymm10, ymm11, 0x20);\
+         _mm256_storeu_ps(ptr_B, ymm3);\
+  __m256 ymm5  = _mm256_unpackhi_ps(ymm13, ymm14);\
+         ymm13 = _mm256_blend_ps(ymm6, ymm9, 0xCC);\
+  __m256 ymm4  = _mm256_unpackhi_ps(ymm15, ymm2);\
+         ymm2  = _mm256_permute2f128_ps(ymm12, ymm13, 0x20);\
+         _mm256_storeu_ps(ptr_B + ldB, ymm2);\
+         ymm14 = _mm256_shuffle_ps(ymm8, ymm7, 0x4E);\
+         ymm15 = _mm256_blend_ps(ymm14, ymm7, 0xCC);\
+         ymm7  = _mm256_shuffle_ps(ymm5, ymm4, 0x4E);\
+         ymm8  = _mm256_blend_ps(ymm8, ymm14, 0xCC);\
+         ymm5  = _mm256_blend_ps(ymm5, ymm7, 0xCC);\
+         ymm6  = _mm256_permute2f128_ps(ymm8, ymm5, 0x20);\
+         _mm256_storeu_ps(ptr_B + 2*ldB, ymm6);\
+         ymm4  = _mm256_blend_ps(ymm7, ymm4, 0xCC);\
+         ymm7  = _mm256_permute2f128_ps(ymm15, ymm4, 0x20);\
+         _mm256_storeu_ps(ptr_B + 3*ldB, ymm7);\
+         ymm1  = _mm256_permute2f128_ps(ymm10, ymm11, 0x31);\
+         ymm0  = _mm256_permute2f128_ps(ymm12, ymm13, 0x31);\
+         _mm256_storeu_ps(ptr_B + 4*ldB, ymm1);\
+         ymm5  = _mm256_permute2f128_ps(ymm8, ymm5, 0x31);\
+         ymm4  = _mm256_permute2f128_ps(ymm15, ymm4, 0x31);\
+         _mm256_storeu_ps(ptr_B + 5*ldB, ymm0);\
+         _mm256_storeu_ps(ptr_B + 6*ldB, ymm5);\
+         _mm256_storeu_ps(ptr_B + 7*ldB, ymm4);\
+  }
+
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
@@ -277,6 +432,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void _mm256i_epi16_print(__m256i a, char * s
 #define _MM_FMADD_FP32(x,y,z) (((x)*(y))+(z))
 #define _MM_MUL_FP32(x,y) ((x)*(y))
 #define _MM_PREFETCH(x, y)
+#define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) ((*(ptr_B)) = (*(ptr_A)))
 
 #define COMPRESS_FP32(v, k, m, cnt) \
   { \
@@ -849,31 +1005,28 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
     /* Copy in B matrix*/
     if (transB == 'Y')
     {
-      SIMDTYPE_INT32 vindex;
-      int index[16];
-      int kk;
-      for (kk = 0; kk < SIMD_WIDTH_FP32; kk++) index[kk] = kk*handle->k;
-      vindex = _MM_LOADU_INT32(index);
+      int num_k_simd = num_k / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int k2;
+
       ptr_dense = B + n_overall_start*handle->k + k_overall_start;
-      if (!last_block_n) {
-        for (k = 0; k < num_k; k++) {
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 0*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 1*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 2*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 3*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 4*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + 5*SIMD_WIDTH_FP32*handle->k, vindex, 4));
+ 
+      for(k = 0; k < num_k_simd; k+=SIMD_WIDTH_FP32){
+        for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) ptr_B[m2*N + n2] = ptr_A[n2*M + m2];
+          TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_dense + n*handle->k + k, handle->k, scratch_B + k*n_block_size + n, n_block_size);
+        }
+        /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
+        for(k2 = k; k2 < k + SIMD_WIDTH_FP32; k2++) {
+          for(n = num_n_simd; n < num_n; n++){
+            scratch_B[k2*n_block_size + n] = ptr_dense[n*handle->k + k2];
+          }
         }
       }
-      else {
-        for (k = 0; k < num_k; k++) {
-          for (n = 0; n < num_full_regs; n+=2) {
-            _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + n*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-            _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_GATHER_FP32(ptr_dense + k + (n+1)*SIMD_WIDTH_FP32*handle->k, vindex, 4));
-          }
-          for (n = last_n_start; n < num_n; n++) {
-            scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = ptr_dense[n*handle->k + k];
-          }
+      /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
+      for(k = num_k_simd; k < num_k; k++){
+        for(n = 0; n < num_n; n++){
+          scratch_B[k*n_block_size + n] = ptr_dense[n*handle->k + k];
         }
       }
     }
