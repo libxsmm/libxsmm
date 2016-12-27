@@ -91,7 +91,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-      for(ij= 0 ; ij < handle->ifhp; ++ij) {
+      for(ij= 0 ; ij < handle->ifhp/*FIXME*/; ++ij) {
         for(kj=0; kj < handle->desc.R; ++kj) {
           oj = ij - handle->desc.R + kj + 1;
           if(oj >= 0 && oj < handle->ofh) {

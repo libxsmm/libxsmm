@@ -751,6 +751,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
     handle->scratch3 = 0;
 /*#endif*/
+    handle->scratch4 = 0;
   }
 
   return status;
