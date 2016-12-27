@@ -22,11 +22,11 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 226 226  ${MB}    3   64  3  3 0 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 114 114  ${MB}   64  128  3  3 0 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  58  58  ${MB}  128  256  3  3 1 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  58  58  ${MB}  256  256  3  3 0 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  30  30  ${MB}  256  512  3  3 1 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  30  30  ${MB}  512  512  3  3 0 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  512  512  3  3 1 1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  512  512  3  3 0 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 224 224  ${MB}    3   64  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 112 112  ${MB}   64  128  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128  256  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256  256  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  512  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1

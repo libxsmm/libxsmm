@@ -42,7 +42,7 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+LIBXSMM_VLA_DECL(5, element_input_type, del_input, (element_input_type*)handle->input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
 
 for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
@@ -57,7 +57,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
           for (ki = 0; ki < handle->desc.S; ++ki) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                LIBXSMM_VLA_ACCESS(5, input, img, ij+kj, ii+ki, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) += (element_input_type)(
+                LIBXSMM_VLA_ACCESS(5, del_input, img, ij+kj, ii+ki, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) += (element_input_type)(
                   LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock)
                 * LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock));
               }
@@ -67,4 +67,5 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       }
     }
   }
+#include "libxsmm_dnn_zero_rim_st_input_nhwc.tpl.c"
 }

@@ -315,8 +315,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 0;
       }
-      descriptor.ifh_padded = handle->desc.H;
-      descriptor.ifw_padded = handle->desc.W;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;
       descriptor.stride_h = handle->desc.u;
@@ -366,8 +366,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
     /* Backward path */
     { libxsmm_convolution_backward_descriptor descriptor;
-      descriptor.ifh_padded = handle->desc.H;
-      descriptor.ifw_padded = handle->desc.W;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;
       descriptor.unroll_kw = 1;
@@ -559,8 +559,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } /* End of backward */
     /* TODO weight update path */
     { libxsmm_convolution_weight_update_descriptor descriptor;
-      descriptor.ifh_padded = handle->desc.H;
-      descriptor.ifw_padded = handle->desc.W;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       descriptor.ofm_block = handle->ofmblock;
       descriptor.ifm_block = handle->ifmblock;
       descriptor.kh = handle->desc.R;
@@ -695,7 +695,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
       handle->scratch3 = libxsmm_aligned_malloc( /* allocate raw data */
-        handle->desc.N * handle->blocksifm * handle->ifmblock * handle->desc.H * handle->desc.W * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
+        handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
         LIBXSMM_ALIGNMENT);
 /*#endif*/
       if (handle->ifmblock == 1) {
@@ -751,6 +751,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
     handle->scratch3 = 0;
 /*#endif*/
+    handle->scratch4 = 0;
   }
 
   return status;
