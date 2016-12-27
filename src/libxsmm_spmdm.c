@@ -1118,7 +1118,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
  
       for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
         }
         /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
@@ -1170,7 +1169,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
  
       for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
           _MM_STORE_FP32(scratch_C + m*n_block_size + n, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n)));
           _MM_STORE_FP32(scratch_C + m*n_block_size + n + n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + n_block_size)));
@@ -1244,7 +1242,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
  
       for(k = 0; k < num_k_simd; k+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) ptr_B[m2*N + n2] = ptr_A[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_dense + n*handle->k + k, handle->k, scratch_B + k*n_block_size + n, n_block_size);
         }
         /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
@@ -1683,7 +1680,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
  
       for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
         }
         /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
@@ -1735,7 +1731,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
  
       for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
           _MM_STORE_FP32(scratch_C + m*n_block_size + n, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n)));
           _MM_STORE_FP32(scratch_C + m*n_block_size + n + n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + n_block_size)));
@@ -1809,7 +1804,6 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
  
       for(k = 0; k < num_k_simd; k+=SIMD_WIDTH_FP32){
         for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
-          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) ptr_B[m2*N + n2] = ptr_A[n2*M + m2];
           TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_dense + n*handle->k + k, handle->k, scratch_B + k*n_block_size + n, n_block_size);
         }
         /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
