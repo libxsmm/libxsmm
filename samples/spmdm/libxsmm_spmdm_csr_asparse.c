@@ -68,6 +68,7 @@ void libxsmm_spmdm_check_c( const libxsmm_spmdm_handle* handle,
     if (local_error > max_error) {
       max_error = local_error;
     }
+    //if(local_error > 1e-3) printf("(%d,%d) : gold: %f, computed: %f\n", l / handle->n, l % handle->n, srcval, dstval);
     src_norm += srcval;
     dst_norm += dstval;
   }
@@ -81,6 +82,7 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
                             const float* alpha,
                             const float* A,
                             const float* B,
+                            const char transC,
                             const float* beta,
                             float* C,
                             libxsmm_CSR_sparseslice* A_sparse) {
@@ -110,7 +112,7 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 #   pragma omp for 
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
-      libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, i, tid, nthreads);
+      libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
@@ -121,6 +123,7 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
                             const uint16_t* alpha,
                             const uint16_t* A,
                             const uint16_t* B,
+                            const char transC, 
                             const uint16_t* beta,
                             float* C,
                             libxsmm_CSR_sparseslice* A_sparse
@@ -151,7 +154,7 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
 #   pragma omp for 
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
-      libxsmm_spmdm_compute_bfloat16_thread( handle, transA, transB, alpha, A_sparse, B, beta, C, i, tid, nthreads);
+      libxsmm_spmdm_compute_bfloat16_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
@@ -168,11 +171,11 @@ int main(int argc, char **argv)
   /* Step 1: Read in args */
   unsigned long long start, end;
   double flops;
-  char transA, transB;
+  char transA, transB, transC;
   int i, j, k;
 
   /* Step 1: Initalize handle */
-  M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)1.0;   reps = 0; transA = 'N'; transB = 'N';
+  M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)0.0;   reps = 0; transA = 'N'; transB = 'N';
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("\nUsage: ./block_gemm [M] [N] [K] [transA] [transB] [reps]\n\n");
@@ -185,6 +188,7 @@ int main(int argc, char **argv)
   K = 2048;
   transA = 'N';
   transB = 'N';
+  transC = 'N';
   reps = 100;
 
   /* reading new values from cli */
@@ -194,6 +198,7 @@ int main(int argc, char **argv)
   if (argc > i) K      = atoi(argv[i++]);
   if (argc > i) { transA = argv[i][0]; i++; }
   if (argc > i) { transB = argv[i][0]; i++; }
+  if (argc > i) { transC = argv[i][0]; i++; }
   if (argc > i) reps   = atoi(argv[i++]);
 
   /* Step 2: allocate data */
@@ -260,9 +265,9 @@ int main(int argc, char **argv)
   /* Currently ignores alpha */
   /* TODO: fix alpha input */
 # ifdef USE_BFLOAT
-  libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+  libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 # else
-  libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+  libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 # endif
 
   /* Checks */
@@ -301,9 +306,9 @@ int main(int argc, char **argv)
   start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
 #   ifdef USE_BFLOAT
-    libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+    libxsmm_spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 #   else
-    libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, &beta, C, A_sparse);
+    libxsmm_spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 #   endif
   }
   end = libxsmm_timer_tick();
@@ -314,38 +319,46 @@ int main(int argc, char **argv)
   /* Step 5: Initialize libxsmm for transpose A - allocates handle and temporary space for the sparse data structure for A */
   libxsmm_spmdm_handle handle2;
   libxsmm_CSR_sparseslice* A_sparse2;
-  transA = 'Y'; transB = 'N';
+  transA = 'Y'; transB = 'N'; transC = 'Y';
   libxsmm_spmdm_init(M, N, K, max_threads, &handle2, &A_sparse2);
-  printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transA = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
+  printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transA = Y, transC = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
   real * A_gold2 = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 2097152 );
+  float * C2 = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 2097152 );
 
   for(i = 0; i < M; i++) {
     for(j = 0; j < K; j++) {
       A_gold2[j*M + i] = A_gold[i*K + j];
     }
   }
-  for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (float)C0_gold[l];
+  for(i = 0; i < M; i++) {
+    for(j = 0; j < N; j++) {
+      C[j*M + i] = (float)C0_gold[i*N + j];
+    }
   }
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha */
   /* TODO: fix alpha inputs */
 # ifdef USE_BFLOAT
-  libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+  libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 # else
-  libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+  libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 # endif
 
+  for(i = 0; i < M; i++) {
+    for(j = 0; j < N; j++) {
+      C2[i*N + j] = C[j*M + i];
+    }
+  }
   /* Checks */
-  libxsmm_spmdm_check_c( &handle2, C, C_gold);
+  libxsmm_spmdm_check_c( &handle2, C2, C_gold);
 
   /* Timing loop starts */
   start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
 #   ifdef USE_BFLOAT
-    libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+    libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 #   else
-    libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, &beta, C, A_sparse2);
+    libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 #   endif
   }
   end = libxsmm_timer_tick();
@@ -353,7 +366,7 @@ int main(int argc, char **argv)
 
   /*----------------------------------------------------------------------------------------------------------------------*/
   /* Step 6: Test transpose B  */
-  transA = 'N'; transB = 'Y';
+  transA = 'N'; transB = 'Y'; transC = 'N';
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transB = Y\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
   real * B_gold2 = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 2097152 );
 
@@ -369,9 +382,9 @@ int main(int argc, char **argv)
   /* Currently ignores alpha */
   /* TODO: fix alpha inputs */
 # ifdef USE_BFLOAT
-  libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
+  libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, transC, &beta, C, A_sparse2);
 # else
-  libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
+  libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold, B_gold2, transC, &beta, C, A_sparse2);
 # endif
 
   /* Checks */
@@ -381,9 +394,9 @@ int main(int argc, char **argv)
   start = libxsmm_timer_tick();
   for( i = 0; i < reps; i++) {
 #   ifdef USE_BFLOAT
-    libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
+    libxsmm_spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, transC, &beta, C, A_sparse2);
 #   else
-    libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold, B_gold2, &beta, C, A_sparse2);
+    libxsmm_spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold, B_gold2, transC, &beta, C, A_sparse2);
 #   endif
   }
   end = libxsmm_timer_tick();

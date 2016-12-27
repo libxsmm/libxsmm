@@ -1025,6 +1025,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
   const float *alpha,
   libxsmm_CSR_sparseslice* A_sparse,
   const float *B,
+  char transC,
   const float *beta,
   float* C,
   int block_id,
@@ -1085,8 +1086,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
 #endif
   /* Copy in C matrix to buffer*/
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
-  if (!last_block_n) {
-    if (LIBXSMM_FEQ(0.f, *beta)) {
+  if (LIBXSMM_FEQ(0.f, *beta)) {
+    if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1095,30 +1096,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
       }
-    }
-    else if (LIBXSMM_FEQ(1.f, *beta)) {
-      for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
-      }
-    }
-    else {
-      SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-      for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
-      }
-    }
-  } else {
-    if (LIBXSMM_FEQ(0.f, *beta)) {
+    } else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1129,31 +1107,120 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
         }
       }
     }
-    else if (LIBXSMM_FEQ(1.f, *beta)) {
-      for (m = 0; m < num_m; m++) {
-        for (n = 0; n < num_full_regs; n+=2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
+  }
+  else if (LIBXSMM_FEQ(1.f, *beta)) {
+    if(transC == 'Y') {
+      int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int m2;
+
+      ptr_result = C + n_overall_start*handle->m + m_overall_start;
+ 
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
+          TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
         }
-        for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+        /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
+        for(m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
+          for(n = num_n_simd; n < num_n; n++){
+            scratch_C[m2*n_block_size + n] = ptr_result[n*handle->m + m2];
+          }
+        }
+      }
+      /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
+      for(m = num_m_simd; m < num_m; m++){
+        for(n = 0; n < num_n; n++){
+          scratch_C[m*n_block_size + n] = ptr_result[n*handle->m + m];
         }
       }
     }
     else {
-      SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-      for (m = 0; m < num_m; m++) {
-        for (n = 0; n < num_full_regs; n+=2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
+      if (!last_block_n) {
+        for (m = 0; m < num_m; m++) {
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
         }
-        for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+      }
+      else {
+        for (m = 0; m < num_m; m++) {
+          for (n = 0; n < num_full_regs; n+=2) {
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
+          }
+          for (n = last_n_start; n < num_n; n++) {
+            scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+          }
         }
       }
     }
   }
+  else {
+    SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
+    if(transC == 'Y') {
+      int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int m2;
 
+      ptr_result = C + n_overall_start*handle->m + m_overall_start;
+ 
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
+          TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 2*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 2*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 3*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 3*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 4*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 4*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 5*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 5*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 6*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 6*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 7*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 7*n_block_size)));
+        }
+        /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
+        for(m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
+          for(n = num_n_simd; n < num_n; n++){
+            scratch_C[m2*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m2];
+          }
+        }
+      }
+      /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
+      for(m = num_m_simd; m < num_m; m++){
+        for(n = 0; n < num_n; n++){
+          scratch_C[m*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m];
+        }
+      }
+
+    }
+    else {
+      if (!last_block_n) {
+        for (m = 0; m < num_m; m++) {
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
+        }
+      }
+      else {
+        for (m = 0; m < num_m; m++) {
+          for (n = 0; n < num_full_regs; n+=2) {
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
+          }
+          for (n = last_n_start; n < num_n; n++) {
+            scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+          }
+        }
+      }
+    }
+  }
+ 
   for (kb = 0; kb < k_blocks; kb++) {
     const float * LIBXSMM_RESTRICT ptr_dense;
     float * LIBXSMM_RESTRICT scratch_C_base;
@@ -1457,23 +1524,50 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_fp32_thread(
   }
 #endif
   /* Copy out C matrix */
-  if (!last_block_n) {
-    for (m = 0; m < num_m; m++) {
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
-    }
-  } else {
-    for (m = 0; m < num_m; m++) {
-      for (n = 0; n < num_full_regs; n+=2) {
-        _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
-        _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
+  if(transC == 'Y') {
+    int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+    int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+    int n2;
+
+    ptr_result = C + n_overall_start*handle->m + m_overall_start;
+    for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        TRANSPOSE_SIMD_WIDTH_KERNEL(scratch_C + m*n_block_size + n, n_block_size, ptr_result + n*handle->m + m, handle->m);
       }
-      for (n = last_n_start; n < num_n; n++) {
-        ptr_result[m*handle->n + n] = scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n];
+      /* Transpose a SIMD_WIDTH_FP32 * (num_m - num_m_simd) block of output space - input is of size (num_m - num_m_simd) * SIMD_WIDTH_FP32 */
+      for(n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) {
+        for(m = num_m_simd; m < num_m; m++){
+          ptr_result[n2*handle->m + m] = scratch_C[m*n_block_size + n2]; 
+        }
+      }
+    }
+    /* Transpose a (num_n - num_n_simd) * num_m block of output space - input is of size num_m * (num_n - num_n_simd) */
+    for(n = num_n_simd; n < num_n; n++){
+      for(m = 0; m < num_m; m++){
+        ptr_result[n*handle->m + m] = scratch_C[m*n_block_size + n];
+      }
+    }
+  }
+  else {
+    if (!last_block_n) {
+      for (m = 0; m < num_m; m++) {
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
+      }
+    }
+    else {
+      for (m = 0; m < num_m; m++) {
+        for (n = 0; n < num_full_regs; n+=2) {
+          _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
+          _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
+        }
+        for (n = last_n_start; n < num_n; n++) {
+          ptr_result[m*handle->n + n] = scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n];
+        }
       }
     }
   }
@@ -1488,6 +1582,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
   const uint16_t *alpha,
   libxsmm_CSR_sparseslice* A_sparse,
   const uint16_t *B,
+  char transC, 
   const uint16_t *beta,
   float* C,
   int block_id,
@@ -1556,8 +1651,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
 #endif
   /* Copy in C matrix to buffer */
   ptr_result = C + m_overall_start*handle->n + n_overall_start;
-  if (!last_block_n) {
-    if (LIBXSMM_FEQ(0.f, *beta)) {
+  if (LIBXSMM_FEQ(0.f, *beta)) {
+    if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1566,30 +1661,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
         _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
       }
-    }
-    else if (LIBXSMM_FEQ(1.f, *beta)) {
-      for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
-      }
-    }
-    else {
-      SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-      for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
-      }
-    }
-  } else {
-    if (LIBXSMM_FEQ(0.f, *beta)) {
+    } else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n+=2) {
           _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
@@ -1600,31 +1672,120 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
         }
       }
     }
-    else if (LIBXSMM_FEQ(1.f, *beta)) {
-      for (m = 0; m < num_m; m++) {
-        for (n = 0; n < num_full_regs; n+=2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
+  }
+  else if (LIBXSMM_FEQ(1.f, *beta)) {
+    if(transC == 'Y') {
+      int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int m2;
+
+      ptr_result = C + n_overall_start*handle->m + m_overall_start;
+ 
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
+          TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
         }
-        for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+        /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
+        for(m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
+          for(n = num_n_simd; n < num_n; n++){
+            scratch_C[m2*n_block_size + n] = ptr_result[n*handle->m + m2];
+          }
+        }
+      }
+      /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
+      for(m = num_m_simd; m < num_m; m++){
+        for(n = 0; n < num_n; n++){
+          scratch_C[m*n_block_size + n] = ptr_result[n*handle->m + m];
         }
       }
     }
     else {
-      SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-      for (m = 0; m < num_m; m++) {
-        for (n = 0; n < num_full_regs; n+=2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
+      if (!last_block_n) {
+        for (m = 0; m < num_m; m++) {
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
         }
-        for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+      }
+      else {
+        for (m = 0; m < num_m; m++) {
+          for (n = 0; n < num_full_regs; n+=2) {
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
+          }
+          for (n = last_n_start; n < num_n; n++) {
+            scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+          }
         }
       }
     }
   }
+  else {
+    SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
+    if(transC == 'Y') {
+      int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+      int m2;
 
+      ptr_result = C + n_overall_start*handle->m + m_overall_start;
+ 
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+          //for(int m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) for( int n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) scratch_C[m2*N + n2] = ptr_result[n2*M + m2];
+          TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + n*handle->m + m, handle->m, scratch_C + m*n_block_size + n, n_block_size);
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 2*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 2*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 3*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 3*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 4*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 4*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 5*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 5*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 6*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 6*n_block_size)));
+          _MM_STORE_FP32(scratch_C + m*n_block_size + n + 7*n_block_size, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + m*n_block_size + n + 7*n_block_size)));
+        }
+        /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
+        for(m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
+          for(n = num_n_simd; n < num_n; n++){
+            scratch_C[m2*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m2];
+          }
+        }
+      }
+      /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
+      for(m = num_m_simd; m < num_m; m++){
+        for(n = 0; n < num_n; n++){
+          scratch_C[m*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m];
+        }
+      }
+
+    }
+    else {
+      if (!last_block_n) {
+        for (m = 0; m < num_m; m++) {
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
+        }
+      }
+      else {
+        for (m = 0; m < num_m; m++) {
+          for (n = 0; n < num_full_regs; n+=2) {
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
+            _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
+          }
+          for (n = last_n_start; n < num_n; n++) {
+            scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+          }
+        }
+      }
+    }
+  }
+ 
   for (kb = 0; kb < k_blocks; kb++) {
     const uint16_t* LIBXSMM_RESTRICT ptr_dense;
     float * LIBXSMM_RESTRICT scratch_C_base;
@@ -1954,26 +2115,53 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_compute_bfloat16_thread(
   }
 #endif
   /* Copy out C matrix */
-  if (!last_block_n) {
-    for (m = 0; m < num_m; m++) {
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
-    }
-  } else {
-    for (m = 0; m < num_m; m++) {
-      for (n = 0; n < num_full_regs; n+=2) {
-        _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
-        _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
+
+  if(transC == 'Y') {
+    int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+    int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
+    int n2;
+
+    ptr_result = C + n_overall_start*handle->m + m_overall_start;
+    for(n = 0; n < num_n_simd; n+=SIMD_WIDTH_FP32){
+      for(m = 0; m < num_m_simd; m+=SIMD_WIDTH_FP32){
+        TRANSPOSE_SIMD_WIDTH_KERNEL(scratch_C + m*n_block_size + n, n_block_size, ptr_result + n*handle->m + m, handle->m);
       }
-      for (n = last_n_start; n < num_n; n++) {
-        ptr_result[m*handle->n + n] = scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n];
+      /* Transpose a SIMD_WIDTH_FP32 * (num_m - num_m_simd) block of output space - input is of size (num_m - num_m_simd) * SIMD_WIDTH_FP32 */
+      for(n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) {
+        for(m = num_m_simd; m < num_m; m++){
+          ptr_result[n2*handle->m + m] = scratch_C[m*n_block_size + n2]; 
+        }
+      }
+    }
+    /* Transpose a (num_n - num_n_simd) * num_m block of output space - input is of size num_m * (num_n - num_n_simd) */
+    for(n = num_n_simd; n < num_n; n++){
+      for(m = 0; m < num_m; m++){
+        ptr_result[n*handle->m + m] = scratch_C[m*n_block_size + n];
       }
     }
   }
-
+  else {
+    if (!last_block_n) {
+      for (m = 0; m < num_m; m++) {
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
+      }
+    }
+    else {
+      for (m = 0; m < num_m; m++) {
+        for (n = 0; n < num_full_regs; n+=2) {
+          _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
+          _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
+        }
+        for (n = last_n_start; n < num_n; n++) {
+          ptr_result[m*handle->n + n] = scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n];
+        }
+      }
+    }
+  }
 }
 
