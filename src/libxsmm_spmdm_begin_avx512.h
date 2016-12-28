@@ -170,19 +170,19 @@
     __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;\
     __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;\
     __m512i vload_1 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A))), _mm256_loadu_si256((const __m256i*)(ptr_A + ldA)), 1); \
-    EXPAND_BFLOAT16(vload_1, r0, r1); \
+    EXPAND_BFLOAT16(vload_1, r0, r1);{ \
     __m512i vload_2 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 2*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 3*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_2, r2, r3); \
+    EXPAND_BFLOAT16(vload_2, r2, r3);{ \
     __m512i vload_3 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 4*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 5*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_3, r4, r5); \
+    EXPAND_BFLOAT16(vload_3, r4, r5);{ \
     __m512i vload_4 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 6*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 7*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_4, r6, r7); \
+    EXPAND_BFLOAT16(vload_4, r6, r7);{ \
     __m512i vload_5 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 8*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 9*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_5, r8, r9); \
+    EXPAND_BFLOAT16(vload_5, r8, r9);{ \
     __m512i vload_6 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 10*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 11*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_6, ra, rb); \
+    EXPAND_BFLOAT16(vload_6, ra, rb);{ \
     __m512i vload_7 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 12*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 13*ldA)), 1); \
-    EXPAND_BFLOAT16(vload_7, rc, rd); \
+    EXPAND_BFLOAT16(vload_7, rc, rd);{ \
     __m512i vload_8 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 14*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 15*ldA)), 1); \
     EXPAND_BFLOAT16(vload_8, re, rf); \
     \
@@ -269,7 +269,7 @@
     _mm512_storeu_ps(ptr_B + 12*ldB, rc);\
     _mm512_storeu_ps(ptr_B + 13*ldB, rd);\
     _mm512_storeu_ps(ptr_B + 14*ldB, re);\
-    _mm512_storeu_ps(ptr_B + 15*ldB, rf);\
+    _mm512_storeu_ps(ptr_B + 15*ldB, rf);}}}}}}}\
   }
 
 #define COMPRESS_FP32(v, k, m, cnt) \
