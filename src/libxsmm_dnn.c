@@ -131,6 +131,26 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype
 }
 
 
+LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
+{
+  size_t l_cl_width_bytes;
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_GENERIC ) {
+    l_cl_width_bytes = libxsmm_dnn_typesize(datatype);
+  } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_SSE3   ||
+              libxsmm_get_target_archid() == LIBXSMM_X86_SSE4_1 || 
+              libxsmm_get_target_archid() == LIBXSMM_X86_SSE4_2   ) {
+    l_cl_width_bytes = 16;
+  } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ||
+              libxsmm_get_target_archid() == LIBXSMM_X86_AVX ) {
+    l_cl_width_bytes = 32;
+  } else {
+    l_cl_width_bytes = 64;
+  }
+
+  return l_cl_width_bytes/libxsmm_dnn_typesize(datatype);
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
   libxsmm_dnn_conv_desc     conv_desc)
 {
