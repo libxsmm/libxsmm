@@ -38,11 +38,13 @@
 #undef _MM_SET1_FP32
 #undef _MM_SET1_INT32
 #undef _MM_SET1_INT16
+#undef _MM_SET_INT32
 #undef _MM_LOAD_FP32
 #undef _MM_LOADU_FP32
 #undef _MM_LOAD_INT32
 #undef _MM_STORE_INT32
 #undef _MM_LOADU_INT32
+#undef _MM_GATHER_INT32
 #undef _MM_GATHER_FP32
 #undef _MM_CMPNEQ_FP32
 #undef _MM_STORE_FP32
