@@ -168,6 +168,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
 LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
+LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
 LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
