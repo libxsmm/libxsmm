@@ -47,8 +47,12 @@ ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   480    64  1  1  
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512   160  1  1  0  1
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512   112  1  1  0  1
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   112   224  3  3  1  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512    24  1  1  0  1
-${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}    24    64  5  5  2  1
+#${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512    24  1  1  0  1
+#${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}    24    64  5  5  2  1
+echo "running with 32 output channels instead of 24"
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512    32  1  1  0  1
+echo "running with 32 input channels instead of 24"
+${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}    32    64  5  5  2  1
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512    64  1  1  0  1
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   512   128  1  1  0  1
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}    14   14  ${MB}   128   256  3  3  1  1
