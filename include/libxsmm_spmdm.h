@@ -86,6 +86,7 @@ LIBXSMM_API int libxsmm_spmdm_get_num_createSparseSlice_blocks(
 LIBXSMM_API int libxsmm_spmdm_get_num_compute_blocks(
   const libxsmm_spmdm_handle* handle);
 
+/** This converts a dense representation of the sparse matrix to 2D array of sparse slices. */
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_thread(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -102,6 +103,7 @@ LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
   int block_id,
   int tid, int nthreads);
 
+/** NOTE: This code currently ignores alpha input to the matrix multiply */
 LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -115,6 +117,7 @@ LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread(
   int block_id,
   int tid, int nthreads);
 
+/** NOTE: This code currently ignores alpha input to the matrix multiply */
 LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
   char transA,
