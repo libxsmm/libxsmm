@@ -78,7 +78,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(OBJECTS) \
 		$(call abslib,$(LIBNAME).$(LIBEXT)) \
-		$(call abslib, $(LIBNAME)noblas.$(LIBEXT)) \
+		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
