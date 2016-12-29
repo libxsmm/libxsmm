@@ -138,7 +138,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 {
   assert(0 != reference && 0 != desc);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* Cygwin/Clang: below code section causes an illegal instruction (Cygwin's GDB not able to determine further [ni/si]) */ \
+  /* Cygwin/Clang: below code section causes an illegal instruction (Cygwin's GDB is not able to determine further [ni/si]) */ \
   !(defined(__CYGWIN__) && defined(__clang__))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
