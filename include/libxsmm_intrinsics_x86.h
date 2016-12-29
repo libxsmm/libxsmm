@@ -119,7 +119,8 @@
 #       endif
 #     else
 #       if ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
-         || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* Clang/Development */
+         || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* Clang/Development */ \
+         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #         if (LIBXSMM_X86_AVX512_CORE > LIBXSMM_STATIC_TARGET_ARCH)
 #           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl"))
 #           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
@@ -127,7 +128,8 @@
 #           define LIBXSMM_INTRINSICS/*no need for target flags*/
 #         endif
         /* TODO: there appears to be no _mm256_fmadd_p? despite of other AVX2; double-check with a variety of Clang versions */
-#       elif (LIBXSMM_VERSION3(3, 4, 0) < LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+#       elif (LIBXSMM_VERSION3(3, 4, 0) < LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
+         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #         if (LIBXSMM_X86_AVX512_MIC > LIBXSMM_STATIC_TARGET_ARCH)
 #           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er"))
 #           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
@@ -181,7 +183,8 @@
 #     if !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) /* some AVX-512 pseudo intrinsics are missing in GCC e.g., reductions */
 #       define LIBXSMM_INTRINSICS_NO_PSEUDO
 #     endif
-#     if  (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#     if  (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+        && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #       if (LIBXSMM_X86_AVX512_CORE > LIBXSMM_STATIC_TARGET_ARCH)
 #         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl"))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
@@ -221,7 +224,8 @@
 #         include <immintrin.h>
 #       endif
       /* TODO: AVX-512 in GCC appears to be incomplete (missing at _mm512_mask_reduce_or_epi32, and some pseudo intrinsics) */
-#     elif  (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#     elif  (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+        && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #       if (LIBXSMM_X86_AVX512_MIC > LIBXSMM_STATIC_TARGET_ARCH)
 #         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er"))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
