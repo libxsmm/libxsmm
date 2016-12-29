@@ -101,11 +101,11 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff(const libxsmm_ge
   return libxsmm_gemm_diff_sw(reference, desc);
 #elif defined(__MIC__)
   return libxsmm_gemm_diff_imci(reference, desc);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx2(reference, desc);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx(reference, desc);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_sse(reference, desc);
 #else /* pointer based function call */
   assert(0 != internal_gemm_diff_fn);
@@ -169,33 +169,25 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
   assert(0 != reference && 0 != desc);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)) || \
-  !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__)))) && \
+  /* GCC: for instance _mm256_set_epi32 (!NDEBUG) and _mm256_maskload_ps are causing illegal instructions on AVX machines */ \
+  (!defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
-    int r0, r1;
-    __m256i a256, b256;
-#   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
-    const union { uint32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
-      in order to avoid warning about "initializer element is not computable at load time" */
-      { 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x0 }
-    };
-#   else
     const int yes = 0x80000000, no = 0x0;
-    struct { __m256i i; } m256;
-    m256.i = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
-#   endif
+    /* GCC: _mm256_set_epi32 (!NDEBUG) causes an illegal instruction on AVX machines */
+    const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
-    a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256.i));
+    const __m256i a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256));
 #   else
-    /*a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
-    a256 = _mm256_loadu_si256((const __m256i*)reference);
+    /*const __m256i a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
+    const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);
 #   endif
-    b256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)desc, m256.i));
+    const __m256i b256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)desc, m256));
     /* avoid warning about eval. in unspecified order: r0, r1 */
-    r0 = _mm256_testnzc_si256(a256, b256);
-    r1 = _mm256_testnzc_si256(b256, a256);
+    const int r0 = _mm256_testnzc_si256(a256, b256);
+    const int r1 = _mm256_testnzc_si256(b256, a256);
     return r0 | r1;
   }
 # else
@@ -221,8 +213,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
   assert(0 != reference && 0 != desc);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
-  !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -287,11 +278,11 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_g
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
-#elif defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
 #else /* pointer based function call */
   assert(0 != internal_gemm_diffn_fn);
@@ -332,38 +323,31 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)) || \
-  !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__)))) && \
+  /* GCC: for instance _mm256_set_epi32 (!NDEBUG) and _mm256_maskload_ps are causing illegal instructions on AVX machines */ \
+  (!defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
     const unsigned int end = hint + ndescs;
     const char *const desc = (const char*)descs;
-    __m256i a256;
-    unsigned int i;
-#   if defined(__CYGWIN__) && !defined(NDEBUG) /* Cygwin/GCC: _mm256_set_epi32 may cause an illegal instruction */
-    const union { uint32_t array[8]; __m256i i; } m256 = { /* use literal value rather than yes/no
-      in order to avoid warning about "initializer element is not computable at load time" */
-      { 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0x0 }
-    };
-#   else
     const int yes = 0x80000000, no = 0x0;
-    struct { __m256i i; } m256;
-    m256.i = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
-#   endif
+    unsigned int i;
+    /* GCC: _mm256_set_epi32 (!NDEBUG) causes an illegal instruction on AVX machines */
+    const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
-    a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256.i));
+    const __m256i a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256));
 #   else
-    /*a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
-    a256 = _mm256_loadu_si256((const __m256i*)reference);
+    /*const __m256i a256 = _mm256_lddqu_si256((const __m256i*)reference);*/
+    const __m256i a256 = _mm256_loadu_si256((const __m256i*)reference);
 #   endif
     for (i = hint; i < end; ++i) {
       const unsigned int j = LIBXSMM_MOD2(i, ndescs); /* wrap around index */
 #   if defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
       const __m256i b256 = _mm256_loadu_si256((const __m256i*)(desc + j * nbytes));
 #   else
-      const __m256i b256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)(desc + j * nbytes), m256.i));
+      const __m256i b256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)(desc + j * nbytes), m256));
 #   endif
       if (0 == _mm256_testnzc_si256(a256, b256) && 0 == _mm256_testnzc_si256(b256, a256)) {
         return j;
@@ -397,8 +381,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
-  !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
