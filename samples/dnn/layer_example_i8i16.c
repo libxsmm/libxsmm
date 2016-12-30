@@ -140,65 +140,6 @@ LIBXSMM_INLINE void compare_buf_int16(short* ref, short* test, long size, correc
   norms->l2_rel_err = sqrt(norms->l2_rel_err);
 }
 
-#if 0
-LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int N, int H, int W, int C)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, nhwc, H, W, C);
-  LIBXSMM_VLA_DECL(4, const float,  input, nchw, C, H, W);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( h = 0; h < H; h++ ) {
-      for ( w = 0; w < W; w++ ) {
-        for ( c = 0; c < C; c++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, n, h, w, c, H, W, C) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int N, int H, int W, int C)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, nchw, C, H, W);
-  LIBXSMM_VLA_DECL(4, const float,  input, nhwc, H, W, C);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( h = 0; h < H; h++ ) {
-      for ( w = 0; w < W; w++ ) {
-        for ( c = 0; c < C; c++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, n, c, h, w, C, H, W) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, h, w, c, H, W, C);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, rsck, S, C, K);
-  LIBXSMM_VLA_DECL(4, const float,  input, kcrs, C, R, S);
-  int r, s, c, k;
-
-  for ( r = 0; r < R; r++ ) {
-    for ( s = 0; s < S; s++ ) {
-      for ( c = 0; c < C; c++ ) {
-        for ( k = 0; k < K; k++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, r, s, c, k, S, C, K) =
-          LIBXSMM_VLA_ACCESS(4,  input, k, c, r, s, C, R, S);
-        }
-      }
-    }
-  }
-}
-#endif
-
-
 LIBXSMM_INLINE void naive_conv_int8(naive_conv_t* param, const unsigned char* input, short* output, const char* filter)
 {
   int nImg      = param->nImg;
@@ -360,24 +301,12 @@ int main(int argc, char* argv[])
   naive_output          = (short*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(short),   2097152);
   naive_libxsmm_output  = (short*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(short),   2097152);
   naive_filter          = (char*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
-#if 0
-  input_nhwc            = (unsigned char*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(unsigned char), 2097152);
-  output_nhwc           = (short*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(short),   2097152);
-  naive_output_nhwc     = (short*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(short),   2097152);
-  filter_rsck           = (char*)   libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
-#endif
 
   /* initialize data */
   init_buf_uint8(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   zero_buf_int16(naive_output,         nImg*nOfm*ofhp*ofwp);
   zero_buf_int16(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   init_buf_int8 (naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
-#if 0
-  naive_copy_NCHW_to_NHWC(naive_input, input_nhwc, nImg, ifhp, ifwp, nIfm);
-  zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
-  zero_buf(naive_output_nhwc,    nImg*nOfm*ofhp*ofwp);
-  naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
-#endif
 
   printf("\n");
   printf("##########################################\n");
