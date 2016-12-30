@@ -126,10 +126,8 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
     }
   }
 
-#if defined(LIBXSMM_STATIC_TARGET_ARCH)
   /* check if procedure obviously failed to detect the highest available instruction set extension */
   assert(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
-#endif
 
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }

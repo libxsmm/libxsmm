@@ -324,7 +324,7 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
 #if defined(LIBXSMM_HASH_SW)
   LIBXSMM_UNUSED(target_arch);
 #else
-# if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_UNUSED(target_arch);
 # else
   if (LIBXSMM_X86_SSE4_2 <= target_arch)
@@ -347,7 +347,7 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_finalize(void)
 
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
-#if defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
+#if (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
   return libxsmm_crc32_sse42(data, size, seed);
 #else /* pointer based function call */
   assert(0 != internal_hash_function);
@@ -368,7 +368,7 @@ LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(
   assert(0 != data || 0 == size);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
   /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((defined(LIBXSMM_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)) || \
+  ((LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
   !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
