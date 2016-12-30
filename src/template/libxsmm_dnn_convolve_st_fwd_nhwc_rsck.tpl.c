@@ -106,7 +106,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               }
               else {
                 jitted_conv_fp_two(l_input, l_wt, l_output,
-                  &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, ifm1 + 1, 0, 0,
+                  &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, ifm1 + 1, 0, 0,
                   handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
                   &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, ifm1 + 1, 0, ofm1, 0, 0,
                     handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block),

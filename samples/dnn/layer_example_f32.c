@@ -103,7 +103,7 @@ LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
 
 LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
 {
-  LIBXSMM_VLA_DECL(4, float,  input, nchw, C, H, W);
+  LIBXSMM_VLA_DECL(4, float, input, nchw, C, H, W);
   int n, h, w, c;
 
   for ( n = 0; n < N; n++ ) {
