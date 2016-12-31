@@ -231,6 +231,9 @@ int main(int argc, char* argv[])
   char *filter_rsck;
   int *naive_output, *naive_libxsmm_output;
   int *output_nhwc, *naive_output_nhwc;
+  unsigned char *input_libxsmm;
+  char *filter_libxsmm;
+  int *output_libxsmm;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
@@ -353,9 +356,12 @@ int main(int argc, char* argv[])
 
   /* allocate data */
   naive_input           = (unsigned char*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(unsigned char), 2097152);
-  naive_output          = (int*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int),   2097152);
-  naive_libxsmm_output  = (int*)  libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int),   2097152);
-  naive_filter          = (char*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
+  naive_output          = (int*)          libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int),           2097152);
+  naive_libxsmm_output  = (int*)          libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int),           2097152);
+  naive_filter          = (char*)         libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char),          2097152);
+  input_libxsmm         = (unsigned char*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(unsigned char), 2097152);
+  filter_libxsmm        = (char*)         libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char),          2097152);
+  output_libxsmm        = (int*)          libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int),           2097152);
 
   /* initialize data */
   init_buf_uint8(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
@@ -399,14 +405,16 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_create_input_buffer_check( libxsmm_handle, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_create_output_buffer_check( libxsmm_handle, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_create_filter_check( libxsmm_handle, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
+  /* we can also use the layout functions and set the data on our 
+     own external to the library, @TODO, we plan to add an example here */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_CONV_FORMAT_KCRS ) );
@@ -484,6 +492,9 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_output);
   libxsmm_free(naive_libxsmm_output);
   libxsmm_free(naive_filter);
+  libxsmm_free(input_libxsmm);
+  libxsmm_free(output_libxsmm);
+  libxsmm_free(filter_libxsmm);
 
   /* some empty lines at the end */
   printf("\n\n\n");

@@ -906,33 +906,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
   if (0 != buffer) {
     switch (in_format) {
       case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
-        switch (buffer->format) {
-          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-            switch (buffer->datatype) {
-              case LIBXSMM_DNN_DATATYPE_F32: {
-                typedef float element_type;
-#               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I32: {
-                typedef int element_type;
-#               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I16: {
-                typedef short element_type;
-#               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I8: {
-                typedef char element_type;
-#               include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
-              } break;
-              default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-              }
+        if ( (buffer->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+          switch (buffer->datatype) {
+            case LIBXSMM_DNN_DATATYPE_F32: {
+              typedef float element_type;
+#             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I32: {
+              typedef int element_type;
+#             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I16: {
+              typedef short element_type;
+#             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I8: {
+              typedef char element_type;
+#             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
+            } break;
+            default: {
+              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
             }
-          } break;
-          default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
+        } else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
         }
       } break;
       default: {
@@ -994,33 +991,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_buffer(const libxsm
   if (0 != buffer) {
     switch (out_format) {
       case LIBXSMM_DNN_CONV_FORMAT_NCHW: {
-        switch (buffer->format) {
-          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-            switch (buffer->datatype) {
-              case LIBXSMM_DNN_DATATYPE_F32: {
-                typedef float element_type;
-#               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I32: {
-                typedef int element_type;
-#               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I16: {
-                typedef short element_type;
-#               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I8: {
-                typedef char element_type;
-#               include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
-              } break;
-              default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-              }
+        if ( (buffer->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+          switch (buffer->datatype) {
+            case LIBXSMM_DNN_DATATYPE_F32: {
+              typedef float element_type;
+#             include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I32: {
+              typedef int element_type;
+#             include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I16: {
+              typedef short element_type;
+#             include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I8: {
+              typedef char element_type;
+#             include "template/libxsmm_dnn_buffer_copy_out_nchw.tpl.c"
+            } break;
+            default: {
+              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
             }
-          } break;
-          default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
+        } else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
         }
       } break;
       default: {
@@ -1043,29 +1037,26 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_filter(const libxsmm
   if (0 != filter) {
     switch (in_format) {
       case LIBXSMM_DNN_CONV_FORMAT_KCRS: {
-        switch (filter->format) {
-          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-            switch (filter->datatype) {
-              case LIBXSMM_DNN_DATATYPE_F32: {
-                typedef float element_type;
-#               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I16: {
-                typedef short element_type;
-#               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I8: {
-                typedef char element_type;
-#               include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
-              } break;
-              default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-              }
+        if ( (filter->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+          switch (filter->datatype) {
+            case LIBXSMM_DNN_DATATYPE_F32: {
+              typedef float element_type;
+#             include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I16: {
+              typedef short element_type;
+#             include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I8: {
+              typedef char element_type;
+#             include "template/libxsmm_dnn_filter_copy_in_kcrs.tpl.c"
+            } break;
+            default: {
+              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
             }
-          } break;
-          default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
+        } else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
         }
       } break;
       default: {
@@ -1088,33 +1079,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsm
   if (0 != filter) {
     switch (out_format) {
       case LIBXSMM_DNN_CONV_FORMAT_KCRS: {
-        switch (filter->format) {
-          case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
-            switch (filter->datatype) {
-              case LIBXSMM_DNN_DATATYPE_F32: {
-                typedef float element_type;
-#               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I32: {
-                typedef int element_type;
-#               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I16: {
-                typedef short element_type;
-#               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
-              } break;
-              case LIBXSMM_DNN_DATATYPE_I8: {
-                typedef char element_type;
-#               include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
-              } break;
-              default: {
-                status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-              }
+        if ( (filter->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+          switch (filter->datatype) {
+            case LIBXSMM_DNN_DATATYPE_F32: {
+              typedef float element_type;
+#             include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I32: {
+              typedef int element_type;
+#             include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I16: {
+              typedef short element_type;
+#             include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
+            } break;
+            case LIBXSMM_DNN_DATATYPE_I8: {
+              typedef char element_type;
+#             include "template/libxsmm_dnn_filter_copy_out_kcrs.tpl.c"
+            } break;
+            default: {
+              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
             }
-          } break;
-          default: {
-            status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
+        } else {
+          status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
         }
       } break;
       default: {
