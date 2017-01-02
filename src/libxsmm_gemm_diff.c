@@ -161,18 +161,14 @@ unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, con
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
-LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) /* TODO: investigate issue */
-#else
-LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-#endif
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -214,8 +210,9 @@ unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, co
 {
   assert(0 != reference && 0 != desc);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -320,19 +317,15 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
-LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) /* TODO: investigate issue */
-#else
-LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-#endif
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 unsigned int libxsmm_gemm_diffn_avx(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
@@ -389,8 +382,9 @@ unsigned int libxsmm_gemm_diffn_avx2(
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
