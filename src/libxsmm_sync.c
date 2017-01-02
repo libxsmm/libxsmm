@@ -216,7 +216,13 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
+LIBXSMM_API_DEFINITION
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
+LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) /* TODO: investigate issue */
+#else
+LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+#endif
+void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 {
 #if defined(_REENTRANT)
   internal_sync_thread_tag *const thread = barrier->threads[tid];

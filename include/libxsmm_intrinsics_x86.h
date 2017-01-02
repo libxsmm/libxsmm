@@ -33,39 +33,61 @@
 
 #include "libxsmm_cpuid.h"
 
+/** The following set of macros are required to literally match the CPUID (libxsmm_cpuid.h)! */
+#define LIBXSMM_ATTRIBUTE_TARGET_1009 /* LIBXSMM_X86_AVX512_CORE */ \
+  target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl")
+#define LIBXSMM_ATTRIBUTE_TARGET_1008 /* LIBXSMM_X86_AVX512_MIC */ \
+  target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
+#define LIBXSMM_ATTRIBUTE_TARGET_1007 /* LIBXSMM_X86_AVX512 */ \
+  target("avx2,fma,avx512f,avx512cd")
+#define LIBXSMM_ATTRIBUTE_TARGET_1006 /* LIBXSMM_X86_AVX2 */ \
+  target("avx2,fma")
+#define LIBXSMM_ATTRIBUTE_TARGET_1005 /* LIBXSMM_X86_AVX */ \
+  target("avx")
+#define LIBXSMM_ATTRIBUTE_TARGET_1004 /* LIBXSMM_X86_SSE4 */ \
+  target("sse2,sse3,ssse3,sse4.1,sse4.2")
+#define LIBXSMM_ATTRIBUTE_TARGET_1003 /* LIBXSMM_X86_SSE3 */ \
+  target("sse3")
+#define LIBXSMM_ATTRIBUTE_TARGET_1002 /* LIBXSMM_X86_GENERIC */ \
+  target("sse2") /* 64-bit ABI */
+
+/** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see above) */
+#define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE2(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
 #if defined(__MIC__)
 # define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
-# define LIBXSMM_INTRINSICS
+# define LIBXSMM_INTRINSICS(TARGET)
 #else
 # if    defined(__AVX512F__)  && defined(__AVX512CD__) \
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) \
+   &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && !(defined(__APPLE__) && defined(__MACH__)) \
    && (!defined(__clang__) || ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
    || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 # elif  defined(__AVX512F__) && defined(__AVX512CD__) \
    &&   defined(__AVX512PF__) && defined(__AVX512ER__) \
+   &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && !(defined(__APPLE__) && defined(__MACH__)) \
    && (!defined(__clang__) || ((LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
    || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 # elif  defined(__AVX512F__) && defined(__AVX512CD__) \
+   &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && !(defined(__APPLE__) && defined(__MACH__)) \
    && (!defined(__clang__) || ((LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
    || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))))
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
-# elif defined(__AVX2__) && defined(__FMA__)
+# elif defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-# elif defined(__AVX__)
+# elif defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
-# elif defined(__SSE4_2__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4_2
-# elif defined(__SSE4_1__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4_1
+# elif defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
+#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4
 # elif defined(__SSE3__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE3
 # elif defined(__x86_64__)
@@ -80,17 +102,17 @@
 #   else
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #   endif
-#   define LIBXSMM_INTRINSICS/*no need for target flags*/
+#   define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_CRAYC) && defined(__GNUC__)
     /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
-#   define LIBXSMM_INTRINSICS/*no need for target flags*/
+#   define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #   include <immintrin.h>
 # elif defined(_MSC_VER)
     /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #   define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-#   define LIBXSMM_INTRINSICS/*no need for target flags*/
+#   define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #   include <immintrin.h>
 # else
 #   if !defined(__SSE3__)
@@ -112,36 +134,36 @@
 #   if defined(__clang__)
 #     if defined(__APPLE__) && defined(__MACH__)
 #       if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
-#         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma"))
+#         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #       else
-#         define LIBXSMM_INTRINSICS/*no need for target flags*/
+#         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
 #     else
 #       if ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
          || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* Clang/Development */ \
          && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #         if (LIBXSMM_X86_AVX512_CORE > LIBXSMM_STATIC_TARGET_ARCH)
-#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl"))
+#           define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #         else
-#           define LIBXSMM_INTRINSICS/*no need for target flags*/
+#           define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         endif
         /* TODO: there appears to be no _mm256_fmadd_p? despite of other AVX2; double-check with a variety of Clang versions */
 #       elif (LIBXSMM_VERSION3(3, 4, 0) < LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
          && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #         if (LIBXSMM_X86_AVX512_MIC > LIBXSMM_STATIC_TARGET_ARCH)
-#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er"))
+#           define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 #         else
-#           define LIBXSMM_INTRINSICS/*no need for target flags*/
+#           define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         endif
 #       else
 #         if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
-#           define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma"))
+#           define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #           define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX/*2*/
 #         else
-#           define LIBXSMM_INTRINSICS/*no need for target flags*/
+#           define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         endif
 #       endif
 #     endif
@@ -186,7 +208,7 @@
 #     if  (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #       if (LIBXSMM_X86_AVX512_CORE > LIBXSMM_STATIC_TARGET_ARCH)
-#         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl"))
+#         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #         if !defined(__AVX512F__)
 #           define __AVX512F__ 1
@@ -216,18 +238,18 @@
 #           define __FMA__ 1
 #         endif
 #         pragma GCC push_options
-#         pragma GCC target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl")
+#         pragma GCC target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er,avx512dq,avx512bw,avx512vl")
 #         include <immintrin.h>
 #         pragma GCC pop_options
 #       else
-#         define LIBXSMM_INTRINSICS/*no need for target flags*/
+#         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         include <immintrin.h>
 #       endif
       /* TODO: AVX-512 in GCC appears to be incomplete (missing at _mm512_mask_reduce_or_epi32, and some pseudo intrinsics) */
 #     elif  (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #       if (LIBXSMM_X86_AVX512_MIC > LIBXSMM_STATIC_TARGET_ARCH)
-#         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er"))
+#         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 #         if !defined(__AVX512F__)
 #           define __AVX512F__ 1
@@ -248,16 +270,16 @@
 #           define __FMA__ 1
 #         endif
 #         pragma GCC push_options
-#         pragma GCC target("sse3,sse4.1,sse4.2,avx,avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
+#         pragma GCC target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
 #         include <immintrin.h>
 #         pragma GCC pop_options
 #       else
-#         define LIBXSMM_INTRINSICS/*no need for target flags*/
+#         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         include <immintrin.h>
 #       endif
 #     elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #       if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
-#         define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx,avx2,fma"))
+#         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #         if !defined(__AVX2__)
 #           define __AVX2__ 1
@@ -266,18 +288,18 @@
 #           define __FMA__ 1
 #         endif
 #         pragma GCC push_options
-#         pragma GCC target("sse3,sse4.1,sse4.2,avx,avx2,fma")
+#         pragma GCC target("avx2,fma")
 #         include <immintrin.h>
 #         pragma GCC pop_options
 #       else
-#         define LIBXSMM_INTRINSICS/*no need for target flags*/
+#         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #         include <immintrin.h>
 #       endif
 #     elif (LIBXSMM_X86_AVX > LIBXSMM_STATIC_TARGET_ARCH)
-#       define LIBXSMM_INTRINSICS LIBXSMM_ATTRIBUTE(target("sse3,sse4.1,sse4.2,avx"))
+#       define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #       pragma GCC push_options
-#       pragma GCC target("sse3,sse4.1,sse4.2,avx")
+#       pragma GCC target("avx")
 #       include <immintrin.h>
 #       pragma GCC pop_options
 #     endif
@@ -345,7 +367,7 @@
 # if !defined(LIBXSMM_INTRINSICS_NONE)
 #   define LIBXSMM_INTRINSICS_NONE
 # endif
-# define LIBXSMM_INTRINSICS
+# define LIBXSMM_INTRINSICS(TARGET)
 #endif
 
 #if !defined(LIBXSMM_INTRINSICS_NONE)

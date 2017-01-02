@@ -324,16 +324,16 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
 #if defined(LIBXSMM_HASH_SW)
   LIBXSMM_UNUSED(target_arch);
 #else
-# if (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_UNUSED(target_arch);
 # else
-  if (LIBXSMM_X86_SSE4_2 <= target_arch)
+  if (LIBXSMM_X86_SSE4 <= target_arch)
 # endif
   {
-# if !defined(NDEBUG) && (!defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > LIBXSMM_MAX_STATIC_TARGET_ARCH))
+# if !defined(NDEBUG) && (LIBXSMM_X86_SSE4 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
     fprintf(stderr, "LIBXSMM: CRC32 instructions are not accessible due to the compiler used!\n");
 # endif
-    internal_hash_function = libxsmm_crc32_sse42;
+    internal_hash_function = libxsmm_crc32_sse4;
   }
 #endif
   assert(0 != internal_hash_function);
@@ -347,8 +347,8 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_finalize(void)
 
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigned int size, unsigned int seed)
 {
-#if (LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
-  return libxsmm_crc32_sse42(data, size, seed);
+#if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_HASH_SW)
+  return libxsmm_crc32_sse4(data, size, seed);
 #else /* pointer based function call */
   assert(0 != internal_hash_function);
   return internal_hash_function(data, size, seed);
@@ -363,19 +363,24 @@ LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsi
 }
 
 
-LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_crc32_sse42(const void* data, unsigned int size, unsigned int seed)
+LIBXSMM_HASH_API_DEFINITION
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
+LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) /* TODO: investigate issue */
+#else
+LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE4)
+#endif
+unsigned int libxsmm_crc32_sse4(const void* data, unsigned int size, unsigned int seed)
 {
   assert(0 != data || 0 == size);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) && (LIBXSMM_X86_SSE4_2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((LIBXSMM_X86_SSE4_2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
-  !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
-# if !defined(__MIC__)
-  LIBXSMM_MESSAGE("================================================================================");
-  LIBXSMM_MESSAGE("LIBXSMM: Unable to enter the code path which is using CRC32 instructions!");
-  LIBXSMM_MESSAGE("================================================================================");
+# if !defined(NDEBUG)
+  { static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: unable to enter SSE4 code path!\n");
+    }
+  }
 # endif
   return libxsmm_crc32_sw(data, size, seed);
 #endif
