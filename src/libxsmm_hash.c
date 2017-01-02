@@ -363,16 +363,13 @@ LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsi
 }
 
 
-LIBXSMM_HASH_API_DEFINITION
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
-LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2) /* TODO: investigate issue */
-#else
-LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE4)
-#endif
+LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE4)
 unsigned int libxsmm_crc32_sse4(const void* data, unsigned int size, unsigned int seed)
 {
   assert(0 != data || 0 == size);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !(defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__clang__) && !defined(__INTEL_COMPILER)))
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
 # if !defined(NDEBUG)
