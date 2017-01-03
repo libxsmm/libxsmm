@@ -439,7 +439,8 @@ unsigned int libxsmm_gemm_diffn_avx512(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX512) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) \
+  && defined(LIBXSMM_GEMM_DIFF_AVX512) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
