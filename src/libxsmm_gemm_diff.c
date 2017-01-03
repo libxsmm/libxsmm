@@ -167,7 +167,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) && defined(LIBXSMM_GEMM_DIFF_AVX) \
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX) \
   && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
   && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
     !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
@@ -212,7 +212,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
   && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
   && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
     !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
@@ -326,7 +326,7 @@ unsigned int libxsmm_gemm_diffn_avx(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) && defined(LIBXSMM_GEMM_DIFF_AVX) \
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX) \
   && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
   && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
     !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
@@ -386,7 +386,7 @@ unsigned int libxsmm_gemm_diffn_avx2(
   const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
   && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
   && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
     !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \

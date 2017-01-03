@@ -221,9 +221,6 @@
 #     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing in GCC e.g., reductions */
 #       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) /* some AVX2 intrinsics issues in GCC e.g., _mm256_testnzc_si256 */
-#       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX
-#     endif
 #     if (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
 #       if (LIBXSMM_X86_AVX512_CORE > LIBXSMM_STATIC_TARGET_ARCH)
@@ -246,6 +243,9 @@
 #       endif
 #       include <immintrin.h>
 #     else /* GCC/legacy */
+#       if !defined(LIBXSMM_INTRINSICS_LEGACY)
+#         define LIBXSMM_INTRINSICS_LEGACY
+#       endif
 #       if !defined(__SSE3__)
 #         define __SSE3__ 1
 #       endif
