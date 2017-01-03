@@ -132,8 +132,8 @@
 #     define __AVX__ 1
 #   endif
 #   if defined(__clang__)
-#     if !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) /* some AVX-512 pseudo intrinsics are missing in Clang e.g., reductions */
-#       define LIBXSMM_INTRINSICS_NO_PSEUDO
+#     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing in Clang e.g., reductions */
+#       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
 #     endif
 #     if defined(__APPLE__) && defined(__MACH__)
 #       if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
@@ -218,8 +218,11 @@
 #     endif
 #     include <immintrin.h>
 #   elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#     if !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) /* some AVX-512 pseudo intrinsics are missing in GCC e.g., reductions */
-#       define LIBXSMM_INTRINSICS_NO_PSEUDO
+#     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing in GCC e.g., reductions */
+#       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
+#     endif
+#     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX) /* some AVX2 intrinsics issues in GCC e.g., _mm256_testnzc_si256 */
+#       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX
 #     endif
 #     if (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
