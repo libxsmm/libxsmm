@@ -84,7 +84,7 @@
 
 /* alternative hash algorithm (instead of CRC32) */
 #if !defined(LIBXSMM_HASH_BASIC)
-# if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE4_2 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_SSE4 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
 /*#   define LIBXSMM_HASH_BASIC*/
 # endif
 #endif
@@ -435,11 +435,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
     case LIBXSMM_X86_AVX: {
       target_arch = "snb";
     } break;
-    case LIBXSMM_X86_SSE4_2: {
+    case LIBXSMM_X86_SSE4: {
       target_arch = "wsm";
-    } break;
-    case LIBXSMM_X86_SSE4_1: {
-      target_arch = "sse4";
     } break;
     case LIBXSMM_X86_SSE3: {
       target_arch = "sse3";
@@ -917,7 +914,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   return libxsmm_target_archid;
 #else /* no JIT support */
-  return LIBXSMM_MIN(libxsmm_target_archid, LIBXSMM_X86_SSE4_2);
+  return LIBXSMM_MIN(libxsmm_target_archid, LIBXSMM_X86_SSE4);
 #endif
 }
 
@@ -931,8 +928,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
     case LIBXSMM_X86_AVX512:
     case LIBXSMM_X86_AVX2:
     case LIBXSMM_X86_AVX:
-    case LIBXSMM_X86_SSE4_2:
-    case LIBXSMM_X86_SSE4_1:
+    case LIBXSMM_X86_SSE4:
     case LIBXSMM_X86_SSE3:
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_archid = id;
@@ -1004,10 +1000,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
       target_archid = LIBXSMM_X86_AVX;
     }
     else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
-      target_archid = LIBXSMM_X86_SSE4_2;
-    }
-    else if (0 == strcmp("sse4_1", arch) || 0 == strcmp("sse4.1", arch)) {
-      target_archid = LIBXSMM_X86_SSE4_1;
+      target_archid = LIBXSMM_X86_SSE4;
     }
     else if (0 == strcmp("sse3", arch) || 0 == strcmp("sse", arch)) {
       target_archid = LIBXSMM_X86_SSE3;

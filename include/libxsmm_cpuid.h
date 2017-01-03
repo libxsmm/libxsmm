@@ -39,11 +39,10 @@
  */
 #define LIBXSMM_TARGET_ARCH_UNKNOWN 0
 #define LIBXSMM_TARGET_ARCH_GENERIC 1
-#define LIBXSMM_X86_GENERIC      1000
 #define LIBXSMM_X86_IMCI         1001
-#define LIBXSMM_X86_SSE3         1002
-#define LIBXSMM_X86_SSE4_1       1003
-#define LIBXSMM_X86_SSE4_2       1004
+#define LIBXSMM_X86_GENERIC      1002
+#define LIBXSMM_X86_SSE3         1003
+#define LIBXSMM_X86_SSE4         1004
 #define LIBXSMM_X86_AVX          1005
 #define LIBXSMM_X86_AVX2         1006
 #define LIBXSMM_X86_AVX512       1007

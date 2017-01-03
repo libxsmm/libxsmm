@@ -32,10 +32,10 @@
 int i, k;
 int mb, kb;
 #if SIMD_WIDTH_FP32 == 8
-__m256i * shufmasks = internal_spmdm_shufmasks_32;
+const __m256i *const shufmasks = internal_spmdm_shufmasks_32;
 #endif
 #if SIMD_WIDTH_FP32 > 1
-__m256i * shufmasks2 = internal_spmdm_shufmasks_16;
+const __m256i *const shufmasks2 = internal_spmdm_shufmasks_16;
 #endif
 int block_offset_base, block_offset;
 int index[16];

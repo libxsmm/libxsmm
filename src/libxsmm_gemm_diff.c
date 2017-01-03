@@ -46,13 +46,11 @@
 #endif
 
 /* individually enable intrinsic code paths */
-#if defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
-# define LIBXSMM_GEMM_DIFF_AVX512
-# define LIBXSMM_GEMM_DIFF_AVX2
-# define LIBXSMM_GEMM_DIFF_AVX
-# define LIBXSMM_GEMM_DIFF_SSE
-/*# define LIBXSMM_GEMM_DIFF_KNC*/
-#endif
+#define LIBXSMM_GEMM_DIFF_AVX512
+#define LIBXSMM_GEMM_DIFF_AVX2
+#define LIBXSMM_GEMM_DIFF_AVX
+#define LIBXSMM_GEMM_DIFF_SSE
+/*#define LIBXSMM_GEMM_DIFF_KNC*/
 
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_gemm_diff_function internal_gemm_diff_fn /*= libxsmm_gemm_diff_sw*/;
@@ -134,12 +132,13 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff_sw(const libxsmm
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE3)
+unsigned int libxsmm_gemm_diff_sse(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* Cygwin/Clang: below code section causes an illegal instruction (Cygwin's GDB is not able to determine further [ni/si]) */ \
-  !(defined(__CYGWIN__) && defined(__clang__))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_SSE) && (LIBXSMM_X86_SSE3 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__clang__) && !defined(__INTEL_COMPILER))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -164,14 +163,15 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
+unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__)))) && \
-  /* GCC: for instance _mm256_set_epi32 (!NDEBUG) and _mm256_maskload_ps are causing illegal instructions on AVX machines */ \
-  (!defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -208,12 +208,15 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+unsigned int libxsmm_gemm_diff_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* desc)
 {
   assert(0 != reference && 0 != desc);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
+  && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(0 == LIBXSMM_MOD2(LIBXSMM_GEMM_DESCRIPTOR_SIZE, sizeof(unsigned int)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
@@ -318,14 +321,16 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
+unsigned int libxsmm_gemm_diffn_avx(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__)))) && \
-  /* GCC: for instance _mm256_set_epi32 (!NDEBUG) and _mm256_maskload_ps are causing illegal instructions on AVX machines */ \
-  (!defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
@@ -376,12 +381,16 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+unsigned int libxsmm_gemm_diffn_avx2(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  /* prevents backend error in Clang when selecting below intrinsic(s) (despite of the LIBXSMM_INTRINSICS attribute) */ \
-  ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || !(defined(__clang__) || (defined(__APPLE__) && defined(__MACH__))))
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && defined(LIBXSMM_GEMM_DIFF_AVX2) \
+  && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
+  && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
+      (defined(__APPLE__) && defined(__MACH__))))
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
@@ -431,11 +440,13 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_di
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
+LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+unsigned int libxsmm_gemm_diffn_avx512(
+  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
   unsigned int hint, unsigned int ndescs, int nbytes)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_GEMM_DIFF_AVX512) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) && \
-  !defined(LIBXSMM_INTRINSICS_NO_PSEUDO) && !defined(__clang__) /* Clang misses at least some of the intrinsics used below */
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) \
+  && defined(LIBXSMM_GEMM_DIFF_AVX512) && (LIBXSMM_X86_AVX512 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */

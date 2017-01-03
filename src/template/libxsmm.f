@@ -120,16 +120,15 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_GENERIC      = 1000,                              &
-     &    LIBXSMM_X86_IMCI         = 1001,                              &
-     &    LIBXSMM_X86_SSE3         = 1002,                              &
-     &    LIBXSMM_X86_SSE4_1       = 1003,                              &
-     &    LIBXSMM_X86_SSE4_2       = 1004,                              &
-     &    LIBXSMM_X86_AVX          = 1005,                              &
-     &    LIBXSMM_X86_AVX2         = 1006,                              &
-     &    LIBXSMM_X86_AVX512       = 1007,                              &
-     &    LIBXSMM_X86_AVX512_MIC   = 1008,                              &
-     &    LIBXSMM_X86_AVX512_CORE  = 1009
+     &    LIBXSMM_X86_IMCI        = 1001,                               &
+     &    LIBXSMM_X86_GENERIC     = 1002,                               &
+     &    LIBXSMM_X86_SSE3        = 1003,                               &
+     &    LIBXSMM_X86_SSE4        = 1004,                               &
+     &    LIBXSMM_X86_AVX         = 1005,                               &
+     &    LIBXSMM_X86_AVX2        = 1006,                               &
+     &    LIBXSMM_X86_AVX512      = 1007,                               &
+     &    LIBXSMM_X86_AVX512_MIC  = 1008,                               &
+     &    LIBXSMM_X86_AVX512_CORE = 1009
 
         ! Type of a function specialized for a given parameter set.
         ABSTRACT INTERFACE
