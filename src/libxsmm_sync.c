@@ -72,7 +72,7 @@
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
 #elif !defined(LIBXSMM_INTRINSICS_NONE) && \
-     (!defined(__GNUC__)/*TODO: investigate issue*/ || defined(__clang__) || defined(__INTEL_COMPILER))
+     (!defined(__GNUC__)/*TODO: investigate*/ || defined(__clang__) || defined(__INTEL_COMPILER))
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_pause()
 #else
 # define LIBXSMM_SYNC_PAUSE(DELAY)

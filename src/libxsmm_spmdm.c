@@ -88,7 +88,7 @@ void internal_spmdm_init_shufmask_avx()
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
   && ((LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) || \
-    !((defined(__GNUC__)/*TODO: investigate issue*/ && !defined(__INTEL_COMPILER)) || \
+    !((defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)) || \
       (defined(__APPLE__) && defined(__MACH__))))
   unsigned int i, j, c, last_bit;
   LIBXSMM_ALIGNED(int temp_shufmasks[8], 64);
