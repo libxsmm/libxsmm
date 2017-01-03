@@ -267,7 +267,6 @@
 #       else
 #         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
-#       include <immintrin.h>
       /* TODO: AVX-512 in GCC appears to be incomplete (missing at _mm512_mask_reduce_or_epi32, and some pseudo intrinsics) */
 #     elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
@@ -279,7 +278,6 @@
 #       else
 #         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
-#       include <immintrin.h>
 #     elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #       if (LIBXSMM_X86_AVX2 > LIBXSMM_STATIC_TARGET_ARCH)
 #         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
@@ -293,7 +291,6 @@
 #       else
 #         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
-#       include <immintrin.h>
 #     elif (LIBXSMM_X86_AVX > LIBXSMM_STATIC_TARGET_ARCH)
 #       define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
@@ -305,8 +302,8 @@
 #       define LIBXSMM_ATTRIBUTE_TARGET_1007 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #       undef  LIBXSMM_ATTRIBUTE_TARGET_1006 /* LIBXSMM_X86_AVX2 */
 #       define LIBXSMM_ATTRIBUTE_TARGET_1006 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#       include <immintrin.h>
 #     endif
+#     include <immintrin.h>
 #   endif
 # endif
 #endif
