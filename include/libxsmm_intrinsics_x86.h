@@ -216,6 +216,7 @@
 #     if !defined(__FMA__)
 #       define __FMA__ 1
 #     endif
+#     include <immintrin.h>
 #   elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #     if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing in GCC e.g., reductions */
 #       define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
@@ -231,6 +232,7 @@
 #       else
 #         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
+#       include <immintrin.h>
       /* TODO: AVX-512 in GCC appears to be incomplete (missing at _mm512_mask_reduce_or_epi32, and some pseudo intrinsics) */
 #     elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
         && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
@@ -242,6 +244,7 @@
 #       else
 #         define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #       endif
+#       include <immintrin.h>
 #     else /* GCC/legacy */
 #       if !defined(__SSE3__)
 #         define __SSE3__ 1
@@ -275,8 +278,13 @@
 #           define LIBXSMM_ATTRIBUTE_TARGET_1008 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #           undef  LIBXSMM_ATTRIBUTE_TARGET_1007 /* LIBXSMM_X86_AVX512 */
 #           define LIBXSMM_ATTRIBUTE_TARGET_1007 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#           pragma GCC push_options
+#           pragma GCC target("avx2,fma")
+#           include <immintrin.h>
+#           pragma GCC pop_options
 #         else
 #           define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
+#           include <immintrin.h>
 #         endif
 #       elif (LIBXSMM_X86_AVX > LIBXSMM_STATIC_TARGET_ARCH)
 #         define LIBXSMM_INTRINSICS(TARGET) LIBXSMM_ATTRIBUTE(LIBXSMM_ATTRIBUTE_TARGET(TARGET))
@@ -289,10 +297,13 @@
 #         define LIBXSMM_ATTRIBUTE_TARGET_1007 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #         undef  LIBXSMM_ATTRIBUTE_TARGET_1006 /* LIBXSMM_X86_AVX2 */
 #         define LIBXSMM_ATTRIBUTE_TARGET_1006 LIBXSMM_ATTRIBUTE_TARGET(LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         pragma GCC push_options
+#         pragma GCC target("avx")
+#         include <immintrin.h>
+#         pragma GCC pop_options
 #       endif
 #     endif
 #   endif
-#   include <immintrin.h>
 #   if !defined(LIBXSMM_STATIC_TARGET_ARCH) || (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
 #     undef __SSE3__
 #   endif
