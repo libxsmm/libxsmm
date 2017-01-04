@@ -1364,12 +1364,12 @@ endif
 
 .PHONY: clean-all
 clean-all: clean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -i $(SHELL) -c \
+	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(SHELL) -c \
 		"cd {}; $(MAKE) --no-print-directory clean 2> /dev/null || true"
 
 .PHONY: realclean-all
 realclean-all: realclean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -i $(SHELL) -c \
+	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(SHELL) -c \
 		"cd {}; $(MAKE) --no-print-directory realclean 2> /dev/null || true"
 
 # Dummy prefix
