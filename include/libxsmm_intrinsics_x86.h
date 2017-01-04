@@ -118,7 +118,7 @@
 #     endif
 #     include <immintrin.h>
 #   else /* GCC/legacy incl. Clang */
-#     if !defined(__clang__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#     if !defined(LIBXSMM_INTRINSICS_LEGACY)
 #       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
 #     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
