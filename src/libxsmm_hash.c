@@ -368,8 +368,7 @@ unsigned int libxsmm_crc32_sse4(const void* data, unsigned int size, unsigned in
 {
   assert(0 != data || 0 == size);
 #if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH) \
-  && ((LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) || \
-    !(defined(__GNUC__)/*TODO: investigate*/ && !defined(__INTEL_COMPILER)))
+  && (!defined(__clang__)/*avoid backend ICE with Clang*/ || (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH))
   LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
 # if !defined(NDEBUG)
