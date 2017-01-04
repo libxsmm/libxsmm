@@ -188,7 +188,7 @@
 #     endif
 #     if !defined(__clang__)
 #       pragma GCC push_options
-#       if (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       if (LIBXSMM_X86_AVX < LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #         pragma GCC target("avx2,fma")
 #       else
 #         pragma GCC target("avx")
