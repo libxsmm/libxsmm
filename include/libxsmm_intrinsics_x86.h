@@ -142,7 +142,8 @@
 #       else /* Error: invalid register for .seh_savexmm */
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #       endif
-#     elif defined(__clang__) || (defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
+#     elif (defined(__clang__) && defined(__APPLE__) && defined(__MACH__)) \
+        || (defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
