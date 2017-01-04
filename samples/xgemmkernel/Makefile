@@ -79,32 +79,28 @@ $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
-.PHONY: clean-minimal
-clean-minimal:
-	@rm -f $(OBJECTS) $(FTNOBJS)
-	@rm -f fit.log *.dat
-
 .PHONY: clean
-clean: clean-minimal
+clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
 ifneq ($(abspath $(BLDDIR)),$(abspath .))
 	@rm -rf $(BLDDIR)
 endif
 endif
+ifneq (,$(wildcard $(BLDDIR))) # still exists
+	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat *.mhd
+	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
+endif
+	@rm -f .make .state
 
 .PHONY: realclean
 realclean: clean
 ifneq ($(abspath $(OUTDIR)),$(ROOTDIR))
 ifneq ($(abspath $(OUTDIR)),$(abspath .))
 	@rm -rf $(OUTDIR)
-else
-	@rm -f $(XFILES)
 endif
-else
-	@rm -f $(XFILES)
 endif
-	@rm -f *.gcno *.gcda *.gcov
-	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT)
-	@rm -f $(OUTDIR)/*.bin
-	@rm -f .make .state
+ifneq (,$(wildcard $(OUTDIR))) # still exists
+	@rm -f $(OUTDIR)/libxsmm.$(DLIBEXT) $(OUTDIR)/*.stackdump
+	@rm -f $(XFILES) $(MODULES)
+endif
 
