@@ -54,13 +54,6 @@ const int img_parallel_chunksize = (img_parallel_work % handle->desc.threads == 
 /* compute thr_begin and thr_end */
 const int img_parallel_thr_begin = (ltid * img_parallel_chunksize < img_parallel_work) ? (ltid * img_parallel_chunksize) : img_parallel_work;
 const int img_parallel_thr_end = ((ltid + 1) * img_parallel_chunksize < img_parallel_work) ? ((ltid + 1) * img_parallel_chunksize) : img_parallel_work;
-/* number of tasks that could be run in parallel */
-const int img_ofm_work = handle->blocksofm*handle->desc.N;
-/* compute chunck size */
-const int img_ofm_chunksize = (img_ofm_work % handle->desc.threads == 0) ? (img_ofm_work / handle->desc.threads) : (img_ofm_work / handle->desc.threads) + 1;
-/* compute thr_begin and thr_end */
-const int img_ofm_thr_begin = (ltid * img_ofm_chunksize < img_ofm_work) ? (ltid * img_ofm_chunksize) : img_ofm_work;
-const int img_ofm_thr_end = ((ltid + 1) * img_ofm_chunksize < img_ofm_work) ? ((ltid + 1) * img_ofm_chunksize) : img_ofm_work;
 #endif
 
 /*#define LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
@@ -295,17 +288,10 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       for(img = 0; img < handle->desc.N; img++) {
 #else
         for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
-#if 0
-          img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
-          ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
-          ofm1 = ofm1ifm1 / handle->blocksifm;
-          ifm1 = ofm1ifm1 % handle->blocksifm;
-#else
           ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
           imgifm1 = ofm1ifm1img % (handle->blocksifm * handle->desc.N);
           ifm1 = imgifm1 / handle->desc.N;
           img = imgifm1 % handle->desc.N;
-#endif
            {
 #endif
             for (oi__=0; oi__<num_ofw_strips; ++oi__) {
