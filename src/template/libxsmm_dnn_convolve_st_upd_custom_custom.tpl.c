@@ -535,7 +535,6 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
         }
 #else /*do not use transpose */
         if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* special case for not enough parallelism */
-         //printf("ofh=%d ofw=%d ofh_rb=%d ofw_rb=%d num_ofh_strips=%d num_ofw_strips=%d\n", handle->ofh, handle->ofw, handle->upd_ofh_rb, handle->upd_ofw_rb, num_ofh_strips, num_ofw_strips);
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
           /* lazy barrier init */
           if (handle->upd_use_external_reduce == 0) {
