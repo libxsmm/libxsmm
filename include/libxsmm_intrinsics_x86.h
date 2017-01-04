@@ -121,23 +121,28 @@
 #     if !defined(__clang__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
 #       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
-#     if defined(__clang__) \
+#     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
         && ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
-         || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* Clang/Development */ \
-        && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
+         || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* devel */
 #       if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing e.g., reductions */
 #         define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
 #       endif
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     elif defined(__clang__) \
-        && (LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
-        && !defined(__CYGWIN__) /* Error: invalid register for .seh_savexmm */
+#       if !defined(__CYGWIN__)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#       else /* Error: invalid register for .seh_savexmm */
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       endif
+#     elif defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
+        && (LIBXSMM_VERSION3(3, 5, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #       if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512) /* some AVX-512 pseudo intrinsics are missing e.g., reductions */
 #         define LIBXSMM_INTRINSICS_INCOMPLETE_AVX512
 #       endif
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
-#     elif (defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
-      || (defined(__clang__) && defined(__APPLE__) && defined(__MACH__))
+#       if !defined(__CYGWIN__)
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#       else /* Error: invalid register for .seh_savexmm */
+#         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#       endif
+#     elif defined(__clang__) || (defined(__GNUC__) && (LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
