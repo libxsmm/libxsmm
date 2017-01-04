@@ -593,7 +593,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
         descriptor.ifm_unroll = 1;
 
-        for(i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(28,handle->ofw)); i >= 1; i--) {
+        for(i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(56,handle->ofw)); i >= 1; i--) {
           if(handle->ofw % i == 0) break;
         }
         descriptor.ofw_rb =  i;
@@ -698,7 +698,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
         LIBXSMM_ALIGNMENT);
 /*#endif*/
-      if (handle->ifmblock == 1) {
+      if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
         handle->upd_use_thread_fil = 1;
         handle->scratch4 = libxsmm_aligned_malloc(
           handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
@@ -711,21 +711,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       } else {
         handle->scratch4 = 0;
         handle->upd_use_thread_fil = 0;
-      }
-      if ( ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) ||
-             ((handle->filter_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) )
-             && (handle->upd_use_thread_fil == 0)) {
-        if ( (handle->desc.threads*2) > (handle->blocksifm*handle->blocksofm) ) {
-          handle->upd_use_thread_fil = 1;
-          handle->scratch4 = libxsmm_aligned_malloc(
-            handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-            * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
-            LIBXSMM_ALIGNMENT);
-          /* enable external reduce of filter scratch */
-          if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) > 0 ) {
-            handle->upd_use_external_reduce = 1;
-          }
-        }
       }
     }
   }
