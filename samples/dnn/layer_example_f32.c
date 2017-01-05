@@ -140,14 +140,14 @@ LIBXSMM_INLINE void compare_buf(float* ref, float* test, long size, correctness_
     }
     if (rel_err > norms->max_rel_err) {
       norms->max_rel_err = rel_err;
-#if 0 
+#if 0
       printf("MISMATCH@ %3d: A=%12.8g  B=%12.8g (E:%12.4e) (R:%12.4e)\n", i, ref[i], test[i], diff, rel_err);
 #endif
     }
     if (diff > norms->max_abs_err) {
       norms->max_abs_err = diff;
     }
-#if 0 
+#if 0
     if (diff > 1.0) {
       printf("MISMATCH@ %3d: A=%12.8g  B=%12.8g (E:%12.4e)\n", i, ref[i], test[i], diff);
     }
@@ -609,7 +609,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
-  /* we can also use the layout functions and set the data on our 
+  /* we can also use the layout functions and set the data on our
      own external to the library, @TODO, we plan to add an example here */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );

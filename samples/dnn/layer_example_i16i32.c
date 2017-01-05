@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
-  /* we can also use the layout functions and set the data on our 
+  /* we can also use the layout functions and set the data on our
      own external to the library, @TODO, we plan to add an example here */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );

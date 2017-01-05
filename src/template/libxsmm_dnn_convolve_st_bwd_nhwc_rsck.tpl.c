@@ -80,7 +80,7 @@ if (handle->filter_transposed == 0) {
           }
         }
       }
-    }  
+    }
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
 }

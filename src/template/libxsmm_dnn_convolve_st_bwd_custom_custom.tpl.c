@@ -110,7 +110,7 @@ libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
                         &LIBXSMM_VLA_ACCESS(6, pf_tr_wt, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ofm2), (pw_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
                         &LIBXSMM_VLA_ACCESS(5, pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
                        )
-                    
+
 #define LIBXSMM_JITTED_CONV_BP_NO_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                   tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
                                   del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
@@ -259,7 +259,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
                                 del_out, img, ofm1, oj, 0, 0,
                                 del_input, img, ifm1, ij+1, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-3-1, 0, 0, 0,
-                                del_out, img, ofm1, ij+1-kh+3+1, 0, 0 
+                                del_out, img, ofm1, ij+1-kh+3+1, 0, 0
                         );
 
           /* Unroll 5 */
@@ -482,7 +482,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
           LIBXSMM_JITTED_CONV_BP_PF(del_input, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
                                 del_out, img, ofm1, oj, 0, 0,
-                                del_input, img, ifm1, ifh-3, 0, 0, 
+                                del_input, img, ifm1, ifh-3, 0, 0,
                                 tr_wt, ofm1, ifm1,  kh-2-1, 0, 0, 0,
                                 del_out, img, ofm1, ifh-3-kh+2+1, 0, 0
                         );

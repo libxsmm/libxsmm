@@ -41,5 +41,5 @@ if (handle->desc.pad_h_in > 0 || handle->desc.pad_w_in > 0) {
       }
     }
   }
-}        
+}
 

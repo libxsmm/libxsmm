@@ -1219,7 +1219,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
               }
             }
           }
-        }  
+        }
       }
     }
     handle->filter_transposed = 1;

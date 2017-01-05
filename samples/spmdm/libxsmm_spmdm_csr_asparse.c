@@ -103,13 +103,13 @@ void libxsmm_spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
     const int tid = 0;
 # endif
 # if defined(_OPENMP)
-#   pragma omp for 
+#   pragma omp for
 # endif
     for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
       libxsmm_spmdm_createSparseSlice_fp32_thread( handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
-#   pragma omp for 
+#   pragma omp for
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
       libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
@@ -123,7 +123,7 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
                             const uint16_t* alpha,
                             const uint16_t* A,
                             const uint16_t* B,
-                            const char transC, 
+                            const char transC,
                             const uint16_t* beta,
                             float* C,
                             libxsmm_CSR_sparseslice* A_sparse
@@ -145,13 +145,13 @@ void libxsmm_spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
     const int tid = 0;
 # endif
 # if defined(_OPENMP)
-#   pragma omp for 
+#   pragma omp for
 # endif
     for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
       libxsmm_spmdm_createSparseSlice_bfloat16_thread( handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
-#   pragma omp for 
+#   pragma omp for
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
       libxsmm_spmdm_compute_bfloat16_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 # else
   max_threads = 1;
 # endif
- 
+
   start = libxsmm_timer_tick();
   libxsmm_spmdm_init(M, N, K, max_threads, &handle, &A_sparse);
   end = libxsmm_timer_tick();
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 
   /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
 #if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) 
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for(i = 0; i < M; i++) {
     for(j = 0; j < N; j++) {
@@ -402,7 +402,7 @@ int main(int argc, char **argv)
   end = libxsmm_timer_tick();
   printf("Time = %lf Time/rep = %lf, TFlops/s = %lf\n", libxsmm_timer_duration(start, end), libxsmm_timer_duration(start, end)*1.0/reps, flops/1000./1000./1000./1000./libxsmm_timer_duration(start, end)*reps);
   libxsmm_spmdm_destroy(&handle2);
- 
+
   libxsmm_free(A_gold);
   libxsmm_free(B_gold);
   libxsmm_free(C_gold);
