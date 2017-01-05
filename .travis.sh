@@ -31,10 +31,13 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-SED=$(which sed)
-TR=$(which tr)
+MKTEMP=$(which mktemp 2> /dev/null)
+CHMOD=$(which chmod 2> /dev/null)
+SED=$(which sed 2> /dev/null)
+TR=$(which tr 2> /dev/null)
+RM=$(which rm 2> /dev/null)
 
-if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
+if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${RM}" ]; then
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${HERE}
   fi
@@ -53,12 +56,20 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
   source ${HERE}/.travis.env
   source ${HERE}/.buildkite.env
 
-  # clear build log
-  if [ -e ${HERE}/log.txt ]; then
-    if [ "" = "$1" ] || [ "0" = "$1" ]; then
-      cat /dev/null > ${HERE}/log.txt
-    fi
+  # setup PARTITIONS for multi-tests
+  if [ "" = "${PARTITIONS}" ]; then
+    PARTITIONS=none
   fi
+
+  # setup batch execution
+  if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
+    if [ "" = "${SRUN_CPUS_PER_TASK}" ]; then SRUN_CPUS_PER_TASK=2; fi
+    LAUNCH="${SRUN} --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} --partition=\${PARTITION} --preserve-env --pty bash -l"
+  fi
+
+  TMPSCRIPT=$(${MKTEMP} ${HERE}/XXXXXX.sh)
+  ${CHMOD} +x ${TMPSCRIPT}
+  RESULT=0
 
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
@@ -66,22 +77,42 @@ if [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
   do
-    # print header if all test cases are selected
-    if [ "" = "$1" ]; then
-      echo "================================================================================"
-      echo "Test Case #${TESTID}"
-    fi
+    for PARTITION in ${PARTITIONS}; do
+      # print some header if all tests are selected or in case of multi-tests
+      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
+        echo "================================================================================"
+        if [ "none" != "${PARTITION}" ]; then
+          echo "Test Case #${TESTID} (${PARTITION})"
+        else
+          echo "Test Case #${TESTID}"
+        fi
+      fi
 
-    # run the actual test case
-    eval ${TEST}
-    RESULT=$?
+      # prepare temporary script
+      echo "#!/bin/bash" > ${TMPSCRIPT}
+      echo "${TEST}" >> ${TMPSCRIPT}
 
-    # increment the case number if all cases are selected or leave the loop
-    if [ "0" = "${RESULT}" ] && [ "" = "$1" ]; then
+      # run the prepared test case/script
+      eval "$(eval echo ${LAUNCH}) ${TMPSCRIPT}"
+
+      # capture test status
+      RESULT=$?
+
+      # exit the loop in case of an error
+      if [ "0" != "${RESULT}" ]; then break; fi
+    done
+
+    # increment the case number, or exit the script
+    if [ "" = "$1" ] && [ "0" = "${RESULT}" ]; then
       TESTID=$((TESTID+1))
-    else # dummy/exit case
-      exit ${RESULT}
+    else # finish
+      break
     fi
   done
+
+  # remove temporary script file
+  ${RM} ${TMPSCRIPT}
+
+  exit ${RESULT}
 fi
 
