@@ -64,10 +64,12 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
     if [ "" = "${SRUN_CPUS_PER_TASK}" ]; then SRUN_CPUS_PER_TASK=2; fi
-    if [ "" != "${SRUN_UID}" ]; then SRUN_FLAGS+=" --uid=${SRUN_UID}"; fi
-    LAUNCH="${SRUN} ${SRUN_FLAGS} \
+    LAUNCH="${SRUN} \
       --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
       --partition=\${PARTITION} --preserve-env --pty bash -l"
+    if [ "" != "${SRUN_UID}" ]; then
+      LAUNCH="su -u \"\#${SRUN_UID}\" ${LAUNCH}"
+    fi
   fi
 
   TMPSCRIPT=$(${MKTEMP} ${HERE}/XXXXXX.sh)
