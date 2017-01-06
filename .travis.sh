@@ -67,9 +67,9 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     LAUNCH="${SRUN} \
       --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
       --partition=\${PARTITION} --preserve-env --pty bash -l"
-    if [ "" != "${SRUN_UID}" ]; then
-      LAUNCH="sudo -u \"\#${SRUN_UID}\" ${LAUNCH}"
-    fi
+  fi
+  if [ "" != "${LAUNCH_USER}" ]; then
+    LAUNCH="su ${LAUNCH_USER} -c ${LAUNCH}"
   fi
 
   TMPSCRIPT=$(${MKTEMP} ${HERE}/XXXXXX.sh)
