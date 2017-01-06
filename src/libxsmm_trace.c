@@ -31,6 +31,10 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
+#if !defined(LIBXSMM_TRACE_DLINFO)
+/*# define LIBXSMM_TRACE_DLINFO*/
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -63,6 +67,9 @@ int mkstemp(char* filename_template);
 # include <sys/mman.h>
 # include <unistd.h>
 # include <fcntl.h>
+# if defined(LIBXSMM_TRACE_DLINFO)
+#   include <dlfcn.h>
+# endif
 # if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, off_t length)
@@ -451,11 +458,14 @@ static
 void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
-# if 1
+# if !defined(LIBXSMM_TRACE_DLINFO)
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
   libxsmm_trace(stderr, 1/*no need for parent (0) but parent of parent (1)*/,
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
+# else
+# if 1
+  Dl_info info;
 # else
   struct {
       const char *dli_fname;
@@ -465,11 +475,12 @@ void __cyg_profile_func_enter(void* this_fn, void* call_site)
                                  lower than addr */
       void       *dli_saddr;
   } info;
-  if (dladdr(this_fn, &info)) {
-    if (info.dli_sname) {
+# endif
+  if (0 != dladdr(this_fn, (Dl_info*)&info)) {
+    if (0 != info.dli_sname) {
       fprintf(stderr, "%s\n", info.dli_sname);
     }
-    else if (info.dli_saddr) {
+    else if (0 != info.dli_saddr) {
       fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
     }
   }
