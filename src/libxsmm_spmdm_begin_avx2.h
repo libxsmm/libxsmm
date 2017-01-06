@@ -109,13 +109,17 @@
 #define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) \
   { \
   __m256 ymm9, ymm10, ymm11, ymm12, ymm13, ymm14, ymm15, ymm2; \
-  __m256i vload_1 =  _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A))), _mm_loadu_si128((const __m128i*)(ptr_A + ldA)), 1); \
+  __m256i vload_1 =  _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A))); \
+  vload_1 =  _mm256_inserti128_si256(vload_1, _mm_loadu_si128((const __m128i*)(ptr_A + ldA)), 1); \
   EXPAND_BFLOAT16(vload_1, ymm9, ymm10);{ \
-  __m256i vload_2 =  _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 2*ldA))), _mm_loadu_si128((const __m128i*)(ptr_A + 3*ldA)), 1); \
+  __m256i vload_2 =  _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 2*ldA))); \
+  vload_2 =  _mm256_inserti128_si256(vload_2, _mm_loadu_si128((const __m128i*)(ptr_A + 3*ldA)), 1); \
   EXPAND_BFLOAT16(vload_2, ymm11, ymm12);{ \
-  __m256i vload_3 =  _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 4*ldA))), _mm_loadu_si128((const __m128i*)(ptr_A + 5*ldA)), 1); \
+  __m256i vload_3 =  _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 4*ldA))); \
+  vload_3 =  _mm256_inserti128_si256(vload_3, _mm_loadu_si128((const __m128i*)(ptr_A + 5*ldA)), 1); \
   EXPAND_BFLOAT16(vload_3, ymm13, ymm14);{ \
-  __m256i vload_4 =  _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 6*ldA))), _mm_loadu_si128((const __m128i*)(ptr_A + 7*ldA)), 1); \
+  __m256i vload_4 =  _mm256_castsi128_si256(_mm_loadu_si128((const __m128i*)(ptr_A + 6*ldA))); \
+  vload_4 =  _mm256_inserti128_si256(vload_4, _mm_loadu_si128((const __m128i*)(ptr_A + 7*ldA)), 1); \
   EXPAND_BFLOAT16(vload_4, ymm15, ymm2);{ \
   __m256 ymm6  = _mm256_unpacklo_ps(ymm9, ymm10);\
   __m256 ymm1  = _mm256_unpacklo_ps(ymm11, ymm12);\
@@ -157,11 +161,12 @@
 
 #define COMPRESS_FP32(v, k, m, cnt) \
   { \
-  unsigned int mask = _mm256_movemask_ps(m); \
-  SIMDTYPE_INT32 vk = _MM_SET1_INT16((short)(k)); \
-  __m256i perm_ctrl = _mm256_load_si256(&shufmasks[mask]); \
-  __m256 v_packed = _mm256_permutevar8x32_ps(v, perm_ctrl); \
-  __m256i v_idx = _mm256_add_epi32(vk, _mm256_load_si256(&shufmasks2[mask])); \
+  const unsigned int mask = _mm256_movemask_ps(m); \
+  const SIMDTYPE_INT32 vk = _MM_SET1_INT16((short)(k)); \
+  const __m256i perm_ctrl = _mm256_load_si256(&shufmasks[mask]); \
+  const __m256 v_packed = _mm256_permutevar8x32_ps(v, perm_ctrl); \
+  const __m256i v_shuff = _mm256_load_si256(&shufmasks2[mask]); \
+  const __m256i v_idx = _mm256_add_epi32(vk, v_shuff); \
   _mm256_storeu_ps(values_ptr + (cnt), v_packed); \
   _mm256_storeu_si256((__m256i *)(colidx_ptr + (cnt)), v_idx); \
   cnt = (unsigned short)((cnt) + _mm_popcnt_u32(mask)); \
@@ -169,8 +174,8 @@
 
 #define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
   { \
-  __m256i vlo = _mm256_unpacklo_epi16(vzero, v); \
-  __m256i vhi = _mm256_unpackhi_epi16(vzero, v); \
+  const __m256i vlo = _mm256_unpacklo_epi16(vzero, v); \
+  const __m256i vhi = _mm256_unpackhi_epi16(vzero, v); \
   vlo_final = _mm256_castsi256_ps(_mm256_permute2f128_si256(vlo, vhi, 0x20)); \
   vhi_final = _mm256_castsi256_ps(_mm256_permute2f128_si256(vlo, vhi, 0x31)); \
   }
@@ -179,7 +184,7 @@
   { \
   const __m256i vtmp1 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x20)); \
   const __m256i vtmp2 =  _mm256_castps_si256(_mm256_permute2f128_ps(vlo, vhi, 0x31)); \
-  const __m256i a = _mm256_srli_epi32(vtmp1, 16), b = _mm256_srli_epi32(vtmp2,16); \
+  const __m256i a = _mm256_srli_epi32(vtmp1, 16), b = _mm256_srli_epi32(vtmp2, 16); \
   v = _mm256_packus_epi32(a, b); \
   }
 
