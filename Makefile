@@ -276,7 +276,11 @@ ifneq (,$(strip $(FC)))
 endif
 
 .PHONY: libxsmm
+ifeq (0,$(COMPATIBLE))
 libxsmm: lib generator
+else
+libxsmm: lib
+endif
 
 .PHONY: lib
 lib: headers drytest lib_hst lib_mic
