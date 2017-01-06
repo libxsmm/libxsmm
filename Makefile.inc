@@ -81,7 +81,7 @@ COMPATIBLE ?= 0
 TESTSIZE ?= 1
 
 # Static or shared binary
-STATIC ?= 0
+STATIC ?= $(COMPATIBLE)
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
