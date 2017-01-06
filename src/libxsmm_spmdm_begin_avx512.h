@@ -96,22 +96,30 @@
     te = _mm512_unpacklo_ps(re,rf);\
     tf = _mm512_unpackhi_ps(re,rf);\
     \
-    r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
-    r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
-    r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
-    r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
-    r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
-    r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
-    r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
-    r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
-    r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
-    r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
-    ra = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
-    rb = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
-    rc = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
-    rd = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
-    re = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
-    rf = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
+    { const __m512d td1 = _mm512_castps_pd(t0), td2 = _mm512_castps_pd(t2);\
+      r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t1), td2 = _mm512_castps_pd(t3);\
+      r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t4), td2 = _mm512_castps_pd(t6);\
+      r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t5), td2 = _mm512_castps_pd(t7);\
+      r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t8), td2 = _mm512_castps_pd(ta);\
+      r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t9), td2 = _mm512_castps_pd(tb);\
+      ra = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rb = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(tc), td2 = _mm512_castps_pd(te);\
+      rc = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rd = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(td), td2 = _mm512_castps_pd(tf);\
+      re = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rf = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
     \
     t0 = _mm512_shuffle_f32x4(r0, r4, 0x88);\
     t1 = _mm512_shuffle_f32x4(r1, r5, 0x88);\
@@ -169,21 +177,29 @@
   { \
     __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;\
     __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;\
-    __m512i vload_1 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A))), _mm256_loadu_si256((const __m256i*)(ptr_A + ldA)), 1); \
+    __m512i vload_1 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A))); \
+    vload_1 =  _mm512_inserti32x8(vload_1, _mm256_loadu_si256((const __m256i*)(ptr_A + ldA)), 1); \
     EXPAND_BFLOAT16(vload_1, r0, r1);{ \
-    __m512i vload_2 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 2*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 3*ldA)), 1); \
+    __m512i vload_2 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 2*ldA))); \
+    vload_2 =  _mm512_inserti32x8(vload_2, _mm256_loadu_si256((const __m256i*)(ptr_A + 3*ldA)), 1); \
     EXPAND_BFLOAT16(vload_2, r2, r3);{ \
-    __m512i vload_3 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 4*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 5*ldA)), 1); \
+    __m512i vload_3 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 4*ldA))); \
+    vload_3 =  _mm512_inserti32x8(vload_3, _mm256_loadu_si256((const __m256i*)(ptr_A + 5*ldA)), 1); \
     EXPAND_BFLOAT16(vload_3, r4, r5);{ \
-    __m512i vload_4 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 6*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 7*ldA)), 1); \
+    __m512i vload_4 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 6*ldA))); \
+    vload_4 =  _mm512_inserti32x8(vload_4, _mm256_loadu_si256((const __m256i*)(ptr_A + 7*ldA)), 1); \
     EXPAND_BFLOAT16(vload_4, r6, r7);{ \
-    __m512i vload_5 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 8*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 9*ldA)), 1); \
+    __m512i vload_5 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 8*ldA))); \
+    vload_5 =  _mm512_inserti32x8(vload_5, _mm256_loadu_si256((const __m256i*)(ptr_A + 9*ldA)), 1); \
     EXPAND_BFLOAT16(vload_5, r8, r9);{ \
-    __m512i vload_6 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 10*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 11*ldA)), 1); \
+    __m512i vload_6 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 10*ldA))); \
+    vload_6 =  _mm512_inserti32x8(vload_6, _mm256_loadu_si256((const __m256i*)(ptr_A + 11*ldA)), 1); \
     EXPAND_BFLOAT16(vload_6, ra, rb);{ \
-    __m512i vload_7 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 12*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 13*ldA)), 1); \
+    __m512i vload_7 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 12*ldA))); \
+    vload_7 =  _mm512_inserti32x8(vload_7, _mm256_loadu_si256((const __m256i*)(ptr_A + 13*ldA)), 1); \
     EXPAND_BFLOAT16(vload_7, rc, rd);{ \
-    __m512i vload_8 =  _mm512_inserti32x8(_mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 14*ldA))), _mm256_loadu_si256((const __m256i*)(ptr_A + 15*ldA)), 1); \
+    __m512i vload_8 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A + 14*ldA))); \
+    vload_8 =  _mm512_inserti32x8(vload_8, _mm256_loadu_si256((const __m256i*)(ptr_A + 15*ldA)), 1); \
     EXPAND_BFLOAT16(vload_8, re, rf); \
     \
     t0 = _mm512_unpacklo_ps(r0,r1);\
@@ -203,22 +219,30 @@
     te = _mm512_unpacklo_ps(re,rf);\
     tf = _mm512_unpackhi_ps(re,rf);\
     \
-    r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
-    r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t0),_mm512_castps_pd(t2)));\
-    r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
-    r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t1),_mm512_castps_pd(t3)));\
-    r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
-    r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t4),_mm512_castps_pd(t6)));\
-    r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
-    r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t5),_mm512_castps_pd(t7)));\
-    r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
-    r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t8),_mm512_castps_pd(ta)));\
-    ra = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
-    rb = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(t9),_mm512_castps_pd(tb)));\
-    rc = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
-    rd = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(tc),_mm512_castps_pd(te)));\
-    re = _mm512_castpd_ps(_mm512_unpacklo_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
-    rf = _mm512_castpd_ps(_mm512_unpackhi_pd(_mm512_castps_pd(td),_mm512_castps_pd(tf)));\
+    { const __m512d td1 = _mm512_castps_pd(t0), td2 = _mm512_castps_pd(t2);\
+      r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t1), td2 = _mm512_castps_pd(t3);\
+      r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t4), td2 = _mm512_castps_pd(t6);\
+      r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t5), td2 = _mm512_castps_pd(t7);\
+      r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t8), td2 = _mm512_castps_pd(ta);\
+      r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(t9), td2 = _mm512_castps_pd(tb);\
+      ra = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rb = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(tc), td2 = _mm512_castps_pd(te);\
+      rc = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rd = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
+    { const __m512d td1 = _mm512_castps_pd(td), td2 = _mm512_castps_pd(tf);\
+      re = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2));\
+      rf = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2));}\
     \
     t0 = _mm512_shuffle_f32x4(r0, r4, 0x88);\
     t1 = _mm512_shuffle_f32x4(r1, r5, 0x88);\
