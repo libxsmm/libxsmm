@@ -61,20 +61,22 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     PARTITIONS=none
   fi
 
+  TESTSCRIPT=$(${MKTEMP} ${HERE}/XXXXXX.sh)
+  ${CHMOD} +x ${TESTSCRIPT}
+  RESULT=0
+
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
     if [ "" = "${SRUN_CPUS_PER_TASK}" ]; then SRUN_CPUS_PER_TASK=2; fi
     LAUNCH="${SRUN} \
       --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
-      --partition=\${PARTITION} --preserve-env --pty bash -l"
+      --partition=\${PARTITION} --preserve-env --pty bash -l ${TESTSCRIPT}"
+  else
+    LAUNCH=${TESTSCRIPT}
   fi
   if [ "" != "${LAUNCH_USER}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -c ${LAUNCH}"
+    LAUNCH="su ${LAUNCH_USER} -c \'${LAUNCH}\'"
   fi
-
-  TMPSCRIPT=$(${MKTEMP} ${HERE}/XXXXXX.sh)
-  ${CHMOD} +x ${TMPSCRIPT}
-  RESULT=0
 
   while TEST=$(eval " \
     ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
@@ -94,11 +96,11 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       fi
 
       # prepare temporary script
-      echo "#!/bin/bash" > ${TMPSCRIPT}
-      echo "${TEST}" >> ${TMPSCRIPT}
+      echo "#!/bin/bash" > ${TESTSCRIPT}
+      echo "${TEST}" >> ${TESTSCRIPT}
 
       # run the prepared test case/script
-      eval "$(eval echo ${LAUNCH}) ${TMPSCRIPT}"
+      eval $(eval echo ${LAUNCH})
 
       # capture test status
       RESULT=$?
@@ -116,7 +118,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
   done
 
   # remove temporary script file
-  ${RM} ${TMPSCRIPT}
+  ${RM} ${TESTSCRIPT}
 
   exit ${RESULT}
 fi
