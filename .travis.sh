@@ -68,7 +68,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
       --partition=\${PARTITION} --preserve-env --pty bash -l"
     if [ "" != "${SRUN_UID}" ]; then
-      LAUNCH="su -u \"\#${SRUN_UID}\" ${LAUNCH}"
+      LAUNCH="sudo -u \"\#${SRUN_UID}\" ${LAUNCH}"
     fi
   fi
 
