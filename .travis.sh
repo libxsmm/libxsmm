@@ -118,8 +118,10 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     fi
   done
 
-  # remove temporary script file
-  ${RM} ${TESTSCRIPT}
+  # remove temporary script (if it exists)
+  if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
+    ${RM} ${TESTSCRIPT}
+  endif
 
   exit ${RESULT}
 fi
