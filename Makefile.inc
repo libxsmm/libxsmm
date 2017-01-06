@@ -81,7 +81,7 @@ COMPATIBLE ?= 0
 TESTSIZE ?= 1
 
 # Static or shared binary
-STATIC ?= $(COMPATIBLE)
+STATIC ?= 0
 
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
@@ -143,7 +143,7 @@ IPO ?= 0
 ILP64 ?= 0
 BLAS ?= 0
 
-# Prefer to link statically against BLAS library
+# Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(STATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
@@ -230,6 +230,8 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
 
 #FORTRAN ?= $(if $(FC), $(if $(notdir $(shell which $(FC) 2> /dev/null)), 1, 0), 0)
 ifneq (0,$(INTEL))
+  # prefer statically linked MKL
+  BLAS_STATIC = 1
   ifeq (0,$(OFFLOAD))
     CXXFLAGS += -qno-offload
     CFLAGS += -qno-offload
