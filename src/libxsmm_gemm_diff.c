@@ -172,7 +172,6 @@ unsigned int libxsmm_gemm_diff_avx(const libxsmm_gemm_descriptor* reference, con
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   {
     const int yes = 0x80000000, no = 0x0;
-    /* GCC: _mm256_set_epi32 (!NDEBUG) causes an illegal instruction on AVX machines */
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
     const __m256i a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256));
@@ -329,7 +328,6 @@ unsigned int libxsmm_gemm_diffn_avx(
     const char *const desc = (const char*)descs;
     const int yes = 0x80000000, no = 0x0;
     unsigned int i;
-    /* GCC: _mm256_set_epi32 (!NDEBUG) causes an illegal instruction on AVX machines */
     const __m256i m256 = _mm256_set_epi32(no, yes, yes, yes, yes, yes, yes, yes);
 #   if defined(LIBXSMM_GEMM_DIFF_MASK_A) || !defined(LIBXSMM_GEMM_DIFF_ZERO_PADDED)
     const __m256i a256 = _mm256_castps_si256(_mm256_maskload_ps((const float*)reference, m256));
