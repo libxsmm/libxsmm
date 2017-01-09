@@ -55,8 +55,7 @@ int main(void)
   libxsmm_blasint ldc[]   = {  1, 2, 3, LIBXSMM_MAX_M - 1, LIBXSMM_MAX_M, LIBXSMM_MAX_M + 1,    16,    16,    16, 2048 };
   const REAL_TYPE alpha[] = {  1, 1, 1,     LIBXSMM_ALPHA,             1,     LIBXSMM_ALPHA,     1,     1,     1,    1 };
   const REAL_TYPE beta[]  = {  1, 1, 1,      LIBXSMM_BETA,             0,      LIBXSMM_BETA,     0,     0,     0,    0 };
-  const int prefetch[]    = { -1, 0, 0,                -1,             0,                -1,    -1,    -1,    -1,    0 };
-  const int size = sizeof(m) / sizeof(*m), flags = LIBXSMM_FLAGS;
+  const int size = sizeof(m) / sizeof(*m), flags = LIBXSMM_FLAGS, prefetch = LIBXSMM_PREFETCH_NONE;
   LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) f[sizeof(m)/sizeof(*m)];
   int i, nerrors = 0;
 
@@ -64,22 +63,22 @@ int main(void)
   for (i = 0; i < size; ++i) {
     f[i] = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
       m[i], n[i], k[i], lda + i, ldb + i, ldc + i,
-      alpha + i, beta + i, &flags, prefetch + i);
+      alpha + i, beta + i, &flags, &prefetch);
   }
 
   /* check that the same kernels are dispatched as previously generated */
   for (i = 0; i < (NTESTS); ++i) {
 #if defined(USE_DESCRIPTOR)
     libxsmm_xmmfunction fi = { 0 };
-    LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags,
+    LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
       m[i%size], n[i%size], k[i%size], lda[i%size], ldb[i%size], ldc[i%size],
-      alpha[i%size], beta[i%size], prefetch[i%size]);
+      alpha[i%size], beta[i%size], prefetch);
     fi = libxsmm_xmmdispatch(&descriptor);
     if (fi.LIBXSMM_TPREFIX(REAL_TYPE,mm) != f[i%size])
 #else
     const LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) fi = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
       m[i%size], n[i%size], k[i%size], lda + (i % size), ldb + (i % size), ldc + (i % size),
-      alpha + (i % size), beta + (i % size), &flags, prefetch + (i % size));
+      alpha + (i % size), beta + (i % size), &flags, &prefetch);
     if (fi != f[i%size])
 #endif
     { /* always an error even when JIT is disabled at compile-time */
