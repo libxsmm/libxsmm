@@ -115,7 +115,7 @@ if (LIBXSMM_FEQ(0.f, *beta)) {
   }
 }
 else if (LIBXSMM_FEQ(1.f, *beta)) {
-  if ('Y' == transC || 'y' == transC) {
+  if ('T' == transC || 't' == transC) {
     int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
@@ -166,7 +166,7 @@ else if (LIBXSMM_FEQ(1.f, *beta)) {
 }
 else {
   SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-  if ('Y' == transC || 'y' == transC) {
+  if ('T' == transC || 't' == transC) {
     int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
@@ -238,7 +238,7 @@ for (kb = 0; kb < k_blocks; kb++) {
   num_k = (k_overall_end - k_overall_start);
 
   /* Copy in B matrix */
-  if ('Y' == transB || 'y' == transB) {
+  if ('T' == transB || 't' == transB) {
     int num_k_simd = num_k / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int k2;
@@ -552,7 +552,7 @@ for (m = 0; m < 3; m++) {
 }
 #endif
 /* Copy out C matrix */
-if ('Y' == transC || 'y' == transC) {
+if ('T' == transC || 't' == transC) {
   int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
   int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
   int n2;

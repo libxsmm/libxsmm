@@ -45,7 +45,7 @@ LIBXSMM_UNUSED(tid);
 kb = block_id / handle->mb;
 mb = block_id % handle->mb;
 
-if ('Y' == transA || 'y' == transA) {
+if ('T' == transA || 't' == transA) {
   block_offset_base = mb * handle->bm;
   block_offset = block_offset_base + kb * handle->m * handle->bk;
 }
@@ -71,7 +71,7 @@ else {
   if (SIMD_WIDTH_FP32 == 1) { ncols_aligned = 0; }
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
-    if ('Y' == transA || 'y' == transA) {
+    if ('T' == transA || 't' == transA) {
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         int vals[32];
         int kk;
