@@ -70,10 +70,11 @@ int main(void)
   /* check that the same kernels are dispatched as previously generated */
   for (i = 0; i < (NTESTS); ++i) {
 #if defined(USE_DESCRIPTOR)
+    libxsmm_xmmfunction fi = { 0 };
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags,
       m[i%size], n[i%size], k[i%size], lda[i%size], ldb[i%size], ldc[i%size],
       alpha[i%size], beta[i%size], prefetch[i%size]);
-    const libxsmm_xmmfunction fi = libxsmm_xmmdispatch(&descriptor);
+    fi = libxsmm_xmmdispatch(&descriptor);
     if (fi.LIBXSMM_TPREFIX(REAL_TYPE,mm) != f[i%size])
 #else
     const LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) fi = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
