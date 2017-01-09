@@ -73,7 +73,11 @@ int main(void)
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
       m[i%size], n[i%size], k[i%size], lda[i%size], ldb[i%size], ldc[i%size],
       alpha[i%size], beta[i%size], prefetch);
-    fi = libxsmm_xmmdispatch(&descriptor);
+    if (LIBXSMM_GEMM_NO_BYPASS_DIMS(m[i%size], n[i%size], k[i%size]) /* account for BIG=0 descriptor */
+     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda[i%size], ldb[i%size], ldc[i%size]))
+    {
+      fi = libxsmm_xmmdispatch(&descriptor);
+    }
     if (fi.LIBXSMM_TPREFIX(REAL_TYPE,mm) != f[i%size])
 #else
     const LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) fi = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(
