@@ -572,6 +572,9 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
+  /* initialize internal library structures */
+  LIBXSMM_INIT
+
   handle->m  = M;
   handle->n  = N;
   handle->k  = K;
