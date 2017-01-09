@@ -30,8 +30,7 @@
 ******************************************************************************/
 #include <libxsmm_spmdm.h>
 #include <libxsmm_intrinsics_x86.h>
-#include <libxsmm_malloc.h>
-#include <libxsmm_sync.h>
+#include <libxsmm.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
