@@ -42,6 +42,8 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_EXT_TRANS_MT_THRESHOLD (LIBXSMM_MAX_MNK / LIBXSMM_AVG_K)
+
 
 #if defined(LIBXSMM_EXT_TASKS)
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
@@ -65,7 +67,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
     LIBXSMM_INIT
     if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS)
-      if (0 != libxsmm_mt) { /* enable OpenMP support */
+      if (0 != libxsmm_mt /* enable OpenMP support, ... */
+        /* ... but consider a threshold of the problem-size */
+        && ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) >= (m * n))
+      {
         if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL_ONLY
           internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
