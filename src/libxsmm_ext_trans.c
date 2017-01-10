@@ -69,7 +69,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #if defined(LIBXSMM_EXT_TASKS)
       if (0 != libxsmm_mt /* enable OpenMP support, ... */
         /* ... but consider a threshold of the problem-size */
-        && ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) >= (m * n))
+        && ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) >= (m * n)))
       {
         if (0 == LIBXSMM_MOD2(libxsmm_mt, 2)) { /* even: enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL_ONLY
