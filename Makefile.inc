@@ -1104,7 +1104,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
       QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
       ifneq (0,$(QUADMATH))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath $(XLIB_END)
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
       endif
     endif
   else # BLAS library is specified via BLASLIB
