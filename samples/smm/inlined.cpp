@@ -55,7 +55,7 @@
 #endif
 
 #if !defined(MAX_SIZE)
-# define MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_AVG_K)
+# define MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_MAX_K)
 #endif
 
 
