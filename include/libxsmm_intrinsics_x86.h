@@ -118,9 +118,6 @@
 #     endif
 #     include <immintrin.h>
 #   else /* GCC/legacy incl. Clang */
-#     if !defined(LIBXSMM_INTRINSICS_LEGACY)
-#       define LIBXSMM_INTRINSICS_LEGACY
-#     endif
 #     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
         && ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
          || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* devel */
@@ -149,6 +146,9 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     else /* fall-back */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
+#     endif
+#     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
 #     if !defined(__SSE3__)
 #       define __SSE3__ 1
