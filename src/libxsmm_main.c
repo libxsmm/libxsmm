@@ -792,7 +792,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_CTOR_ATTRIBUTE void libxsmm_init(void)
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   const void *const registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED);
   if (0 == registry) {
@@ -807,7 +807,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void libxsmm_finalize(void);
 
-LIBXSMM_API_DEFINITION LIBXSMM_DTOR_ATTRIBUTE void libxsmm_finalize(void)
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
   libxsmm_code_pointer* registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
 
