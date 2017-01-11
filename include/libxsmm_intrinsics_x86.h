@@ -147,7 +147,7 @@
 #     else /* fall-back */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
 #     if !defined(__SSE3__)
