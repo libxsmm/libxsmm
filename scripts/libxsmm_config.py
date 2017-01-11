@@ -66,6 +66,7 @@ if __name__ == "__main__":
         if (13 < argc): mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], 0))
         else: mnklist = list()
 
+        if (0 == threshold): threshold = 128 * 128 * 128
         template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
