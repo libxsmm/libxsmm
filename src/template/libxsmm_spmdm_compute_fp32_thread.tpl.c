@@ -66,11 +66,11 @@ LIBXSMM_UNUSED(tid);
 /* really is twice this */
 assert(n_block_size == num_regs*SIMD_WIDTH_FP32);
 
-if (m_overall_end   > handle->m) m_overall_end   = handle->m;
+if (m_overall_end > handle->m) m_overall_end = handle->m;
 num_m = (m_overall_end - m_overall_start);
 num_m_aligned = (num_m / 2) * 2;
 
-if (n_overall_end   > handle->n) n_overall_end   = handle->n;
+if (n_overall_end > handle->n) n_overall_end = handle->n;
 num_n = (n_overall_end - n_overall_start);
 last_block_n = (num_n != n_block_size);
 num_full_regs = (num_n / SIMD_WIDTH_FP32);
