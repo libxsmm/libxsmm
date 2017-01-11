@@ -57,7 +57,7 @@
 # define REAL_TYPE double
 #endif
 
-#define CP2K_MAX_SIZE (80 * 80)
+#define MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_AVG_K)
 /** >1: number of locks, =1: omp critical, =0: atomic */
 #define CP2K_SYNCHRONIZATION 0
 // ensures sufficient parallel slack
