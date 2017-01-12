@@ -105,9 +105,9 @@ int main(void)
     MAXREDUCE(test, ldb, maxb, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
     MAXREDUCE(test, ldc, maxc, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX, nwarnings);
   }
-#if defined(_DEBUG)
+#if (0 == LIBXSMM_BIG) && defined(_DEBUG)
   if (0 < nwarnings) {
-    fprintf(stderr, "Warning: BIG=%i - recompile with BIG=1!\n");
+    fprintf(stderr, "Warning: BIG=0 - recompile with BIG=1!\n");
   }
 #endif
 
