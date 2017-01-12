@@ -41,7 +41,9 @@
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_noarch.h"
 
+
 /* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_gemm_descriptor* i_xgemm_desc,
                                     const char*                     i_arch ) {
@@ -143,6 +145,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
   libxsmm_generator_gemm_add_flop_counter( io_generated_code, i_xgemm_desc );
 }
 
+
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -195,6 +199,8 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
   free( l_generated_code.generated_code );
 }
 
+
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
