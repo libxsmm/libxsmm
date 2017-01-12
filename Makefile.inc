@@ -637,8 +637,8 @@ else # GCC assumed
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
   ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -Wall -Wno-attributes
-    CFLAGS += -Wall -Wno-attributes
+    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
   endif
   ifneq (Windows_NT,$(UNAME))
     CXXFLAGS += -f$(PIC)
