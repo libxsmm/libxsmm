@@ -430,15 +430,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
         char *const aligned = LIBXSMM_ALIGN(((char*)buffer) + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
         internal_malloc_info_type *const info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
         assert((aligned + size) <= (((char*)buffer) + alloc_size));
-        if (0 < extra_size && 0 != extra) {
-          const char *const src = (const char*)extra;
-          char *const dst = (char*)buffer;
-          size_t i;
-#if defined(_MSC_VER) && (1900 <= _MSC_VER)
-#         pragma warning(suppress: 6386)
-#endif
-          for (i = 0; i < extra_size; ++i) dst[i] = src[i];
-        }
+        if (0 != extra) memcpy(buffer, extra, extra_size);
 #if !defined(NDEBUG)
         else if (0 == extra && 0 != extra_size) {
           result = EXIT_FAILURE;
