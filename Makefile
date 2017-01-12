@@ -276,6 +276,11 @@ ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
+ifneq (,$(strip $(TEST)))
+.PHONY: run-tests
+run-tests: tests
+endif
+
 .PHONY: libxsmm
 ifeq (0,$(COMPATIBLE))
 libxsmm: lib generator

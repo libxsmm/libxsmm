@@ -31,36 +31,31 @@ ${ECHO} "Running tests"
 ${ECHO} "============="
 
 # good-enough pattern to match a main function, and to test this translation unit
-TESTS=$(grep -l "main\s*(.*)" ${HERE}/*.c 2> /dev/null)
+if [ "" = "$*" ]; then
+  TESTS=$(grep -l "main\s*(.*)" ${HERE}/*.c 2> /dev/null)
+else
+  TESTS=$*
+fi
 NTEST=1
-NMAX=$(${ECHO} ${TESTS} | wc -w)
+NMAX=$(${ECHO} "${TESTS}" | wc -w)
 for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(echo ${DISABLED} | grep -q ${NAME}; echo $?)" ]; then
     ERROR=$({
-    if [ "-mic" != "$1" ]; then
-      if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
-        ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
-          DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
-          KMP_AFFINITY=scatter,granularity=fine,1 \
-          MIC_KMP_AFFINITY=scatter,granularity=fine \
-          MIC_ENV_PREFIX=MIC \
-          OFFLOAD_INIT=on_start \
-        ${TOOL_COMMAND} ${HERE}/${NAME} $*
-      else
-        ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
-          DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
-          OMP_PROC_BIND=TRUE \
-        ${TOOL_COMMAND} ${HERE}/${NAME} $*
-      fi
+    if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
+      ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
+        DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
+        KMP_AFFINITY=scatter,granularity=fine,1 \
+        MIC_KMP_AFFINITY=scatter,granularity=fine \
+        MIC_ENV_PREFIX=MIC \
+        OFFLOAD_INIT=on_start \
+      ${TOOL_COMMAND} ${HERE}/${NAME}
     else
-      shift
-      ${ENV} \
-        SINK_LD_LIBRARY_PATH=${SINK_LD_LIBRARY_PATH}:${MIC_LD_LIBRARY_PATH}:${HERE}/../lib/mic \
-      micnativeloadex \
-        ${HERE}/${NAME} -a "$*" \
-        -e "KMP_AFFINITY=scatter,granularity=fine"
+      ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
+        DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
+        OMP_PROC_BIND=TRUE \
+      ${TOOL_COMMAND} ${HERE}/${NAME}
     fi > /dev/null; } 2>&1)
     RESULT=$?
   else

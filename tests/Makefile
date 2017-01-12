@@ -78,7 +78,7 @@ tests: test
 
 .PHONY: test
 test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
-	@$(OUTDIR)/test.sh
+	@$(OUTDIR)/test.sh $(TEST)
 
 TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
 ifneq (Darwin,$(UNAME))

@@ -1153,7 +1153,7 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS \
-    $(EXCLUDE_STATE) CPUFLAGS TESTSIZE abslib soname extname objname,$V), \
+    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE abslib soname extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
 
