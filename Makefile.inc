@@ -510,7 +510,7 @@ ifneq (0,$(INTEL))
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
     else ifeq (0,$(shell echo "$$((0 > $(SYM)))"))
-      DFLAGS += -DNDEBUG
+      DFLAGS += -DNDEBUG -D_DEBUG
     endif
   else # debugging enabled
     ifneq (0,$(shell echo "$$((1 < $(DBG) || 0 > $(DBG)))"))
@@ -712,7 +712,7 @@ else # GCC assumed
     ifneq (0,$(TRACE))
       SYM = $(TRACE)
     else ifeq (0,$(shell echo "$$((0 > $(SYM)))"))
-      DFLAGS += -DNDEBUG
+      DFLAGS += -DNDEBUG -D_DEBUG
     endif
   else
     ifneq (0,$(shell echo "$$((1 < $(DBG) || 0 > $(DBG)))"))
