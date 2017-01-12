@@ -87,7 +87,12 @@ int main(void)
 #endif
     { /* always an error even when JIT is disabled at compile-time */
 #if defined(_DEBUG)
-      if (0 != fi) {
+#if defined(USE_DESCRIPTOR)
+      if (0 != fi.LIBXSMM_TPREFIX(REAL_TYPE,mm))
+#else
+      if (0 != fi)
+#endif
+      {
         fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m[i%size], n[i%size], k[i%size]);
       }
       else { /* did not find previously generated and recorded kernel */
