@@ -530,7 +530,9 @@ ifneq (0,$(INTEL))
     DFLAGS += -D__TRACE=$(TRACE)
     ifneq (0,$(DEPSTATIC))
     ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
       LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
     endif
   endif
@@ -743,7 +745,9 @@ else # GCC assumed
     endif
     ifneq (0,$(DEPSTATIC))
     ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
       LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
     endif
     ifeq (Windows_NT,$(UNAME))
