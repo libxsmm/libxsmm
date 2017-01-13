@@ -72,7 +72,7 @@
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4
 # elif defined(__SSE3__)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE3
-# elif defined(__x86_64__)
+# elif defined(__x86_64__) || defined(_WIN32) || defined(_WIN64)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
 # endif
 # if defined(LIBXSMM_STATIC_TARGET_ARCH) /* prerequisite */
@@ -150,6 +150,11 @@
 #     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
+#     if !defined(LIBXSMM_INTRINSICS_PATCH)
+#       define LIBXSMM_INTRINSICS_PATCH
+#     endif
+#   endif /* GCC/legacy incl. Clang */
+#   if defined(LIBXSMM_INTRINSICS_PATCH)
 #     if !defined(__SSE3__)
 #       define __SSE3__ 1
 #     endif
@@ -192,7 +197,7 @@
 #     if !defined(__AVX512VL__)
 #       define __AVX512VL__ 1
 #     endif
-#     if !defined(__clang__)
+#     if defined(__GNUC__) && !defined(__clang__)
 #       pragma GCC push_options
 #       if (LIBXSMM_X86_AVX < LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #         pragma GCC target("avx2,fma")
@@ -201,7 +206,7 @@
 #       endif
 #     endif
 #     include <immintrin.h>
-#     if !defined(__clang__)
+#     if defined(__GNUC__) && !defined(__clang__)
 #       pragma GCC pop_options
 #     endif
 #     if (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
@@ -236,7 +241,7 @@
 #       undef __AVX512BW__
 #       undef __AVX512VL__
 #     endif
-#   endif /* GCC/legacy incl. Clang */
+#   endif /*defined(LIBXSMM_INTRINSICS_PATCH)*/
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #     error "LIBXSMM_MAX_STATIC_TARGET_ARCH not defined!"
 #   endif
