@@ -94,10 +94,12 @@
 #define LIBXSMM_API_INLINE LIBXSMM_INTERNAL_API_INLINE LIBXSMM_RETARGETABLE
 
 /* Some definitions kept for compatibility with earlier versions */
-#if !defined(LIBXSMM_EXTERN_C) && defined(__cplusplus)
-# define LIBXSMM_EXTERN_C LIBXSMM_EXTERN
-#else
-# define LIBXSMM_EXTERN_C
+#if !defined(LIBXSMM_EXTERN_C)
+# if defined(__cplusplus)
+#   define LIBXSMM_EXTERN_C LIBXSMM_EXTERN
+# else
+#   define LIBXSMM_EXTERN_C
+# endif
 #endif
 
 #if !defined(LIBXSMM_RESTRICT)
