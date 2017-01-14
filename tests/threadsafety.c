@@ -34,9 +34,9 @@
 
 #if !defined(MAX_NKERNELS)
 # if defined(LIBXSMM_REGSIZE)
-#   define MAX_NKERNELS ((LIBXSMM_REGSIZE) + 10)
+#   define MAX_NKERNELS ((LIBXSMM_REGSIZE) * 2)
 # else
-#   define MAX_NKERNELS 1000
+#   define MAX_NKERNELS 100
 # endif
 #endif
 #if !defined(USE_PARALLEL_JIT)
