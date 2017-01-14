@@ -65,12 +65,6 @@
 #endif
 
 
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
-#endif
-
 /* function pointer for the CPUID-dispatched implementation */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
   const float*, libxsmm_CSR_sparseslice*, int, int, int);
@@ -81,15 +75,22 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_fp32_thread)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int);
 
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_32;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_16;
+#endif
+
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 void internal_spmdm_init_shufmask_avx()
 {
 #if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
   && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-  unsigned int i, j, c, last_bit;
+  static __m256i spmdm_shufmasks_32[256], spmdm_shufmasks_16[256];
   LIBXSMM_ALIGNED(int temp_shufmasks[8], 64);
   LIBXSMM_ALIGNED(uint16_t temp_shufmasks2[16], 64);
+  unsigned int i, j, c, last_bit;
   int cnt;
   for (i = 0; i < 256; i++) {
     cnt = 0;
@@ -103,9 +104,11 @@ void internal_spmdm_init_shufmask_avx()
       j &= (~(1<<last_bit));
       cnt++;
     }
-    internal_spmdm_shufmasks_32[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks);
-    internal_spmdm_shufmasks_16[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks2);
+    spmdm_shufmasks_32[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks);
+    spmdm_shufmasks_16[i] = _mm256_loadu_si256((const __m256i*)temp_shufmasks2);
   }
+  internal_spmdm_shufmasks_32 = spmdm_shufmasks_32;
+  internal_spmdm_shufmasks_16 = spmdm_shufmasks_16;
 #endif
 }
 
@@ -627,5 +630,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   assert(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
   assert(0 != internal_spmdm_compute_fp32_thread);
   assert(0 != internal_spmdm_compute_bfloat16_thread);
+  assert(0 != internal_spmdm_shufmasks_32);
+  assert(0 != internal_spmdm_shufmasks_16);
 }
 
