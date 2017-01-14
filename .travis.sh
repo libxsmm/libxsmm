@@ -123,6 +123,13 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     ${RM} ${TESTSCRIPT}
   fi
 
+  echo "--------------------------------------------------------------------------------"
+  if [ "0" = "${RESULT}" ]; then
+    echo "SUCCESS"
+  else
+    echo "FAILURE"
+  fi
+
   exit ${RESULT}
 fi
 
