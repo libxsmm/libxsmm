@@ -54,14 +54,14 @@ script:
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
     (make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 ECFLAGS="-DREAL_TYPE=float ${ECFLAGS}" install-artifacts tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
-      env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt;
+      env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;
     fi
     2>&1) | tee log.txt && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean &&
     (make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 ECFLAGS="-DREAL_TYPE=double ${ECFLAGS}" install-artifacts tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
-      env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/threadsafety 2> threadsafety-trace-${COVID}.txt;
+      env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
     fi
     2>&1) | tee log.txt && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
