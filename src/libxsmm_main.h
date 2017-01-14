@@ -235,7 +235,7 @@ LIBXSMM_API int libxsmm_malloc_attrib(void** memory, int flags,
   const char* name);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
-LIBXSMM_API void libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
+LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
