@@ -630,7 +630,11 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   assert(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
   assert(0 != internal_spmdm_compute_fp32_thread);
   assert(0 != internal_spmdm_compute_bfloat16_thread);
+
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
   assert(0 != internal_spmdm_shufmasks_32);
   assert(0 != internal_spmdm_shufmasks_16);
+#endif
 }
 
