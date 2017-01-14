@@ -107,7 +107,14 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" != "${RESULT}" ]; then break; fi
+      echo "--------------------------------------------------------------------------------"
+      if [ "0" = "${RESULT}" ]; then
+        echo "SUCCESS"
+        echo
+      else
+        echo "FAILURE"
+        break
+      fi
     done
 
     # increment the case number, or exit the script
@@ -121,13 +128,6 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
   # remove temporary script (if it exists)
   if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
     ${RM} ${TESTSCRIPT}
-  fi
-
-  echo "--------------------------------------------------------------------------------"
-  if [ "0" = "${RESULT}" ]; then
-    echo "SUCCESS"
-  else
-    echo "FAILURE"
   fi
 
   exit ${RESULT}
