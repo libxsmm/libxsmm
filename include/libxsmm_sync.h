@@ -77,7 +77,7 @@
 #define LIBXSMM_ATOMIC_RELAXED __ATOMIC_RELAXED
 #define LIBXSMM_ATOMIC_SEQ_CST __ATOMIC_SEQ_CST
 
-#if (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if (defined(_REENTRANT) || defined(LIBXSMM_SYNC_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
@@ -97,7 +97,7 @@
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
 # endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_OPENMP)) && defined(_WIN32) /*TODO*/
+#elif (defined(_REENTRANT) || defined(LIBXSMM_SYNC_OPENMP)) && defined(_WIN32) /*TODO*/
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
@@ -116,15 +116,26 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if defined(_REENTRANT)
-# if defined(_WIN32) /*TODO*/
-#   define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
-#   define LIBXSMM_LOCK_TYPE HANDLE
-#   define LIBXSMM_LOCK_CONSTRUCT 0
-#   define LIBXSMM_LOCK_INIT(LOCK) /*TODO*/
-#   define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(LOCK)
-#   define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(LOCK, INFINITE)
-#   define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(LOCK, 0)
-#   define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(LOCK)
+# if defined(_WIN32)
+#   if 1
+#     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#     define LIBXSMM_LOCK_TYPE HANDLE
+#     define LIBXSMM_LOCK_CONSTRUCT 0
+#     define LIBXSMM_LOCK_INIT(LOCK) *(LOCK) = CreateMutex(NULL, FALSE, NULL)
+#     define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(*(LOCK))
+#     define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(*(LOCK), INFINITE)
+#     define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(*(LOCK), 0)
+#     define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(*(LOCK))
+#   else /*TODO*/
+#     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#     define LIBXSMM_LOCK_TYPE CRITICAL_SECTION
+#     define LIBXSMM_LOCK_CONSTRUCT LIBXSMM_LOCK_TYPE()
+#     define LIBXSMM_LOCK_INIT(LOCK) InitializeCriticalSection(LOCK)
+#     define LIBXSMM_LOCK_DESTROY(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE(LOCK) EnterCriticalSection(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK(LOCK) TryEnterCriticalSection(LOCK)
+#     define LIBXSMM_LOCK_RELEASE(LOCK) LeaveCriticalSection(LOCK)
+#   endif
 # else
 #   include <pthread.h>
 #   define LIBXSMM_LOCK_ACQUIRED 0
