@@ -33,7 +33,11 @@
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
-# define MAX_NKERNELS 1000
+# if defined(LIBXSMM_REGSIZE)
+#   define MAX_NKERNELS ((LIBXSMM_REGSIZE) + 10)
+# else
+#   define MAX_NKERNELS 1000
+# endif
 #endif
 #if !defined(USE_PARALLEL_JIT)
 # define USE_PARALLEL_JIT
