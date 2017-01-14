@@ -65,11 +65,11 @@
 #endif
 
 
-#if !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE static __m256i internal_spmdm_shufmasks_32[256];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE static __m256i internal_spmdm_shufmasks_16[256];
+#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_32[256];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i internal_spmdm_shufmasks_16[256];
 #endif
-
 
 /* function pointer for the CPUID-dispatched implementation */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
