@@ -182,7 +182,7 @@ ifeq (0,$(STATIC))
 endif
 
 ifneq (1,$(CACHE))
-  DFLAGS += -DLIBXSMM_CACHESIZE=$(CACHE)
+  DFLAGS += -DLIBXSMM_CAPACITY_CACHE=$(CACHE)
 endif
 
 # disable lazy initialization and rely on ctor attribute
