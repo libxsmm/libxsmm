@@ -50,7 +50,7 @@
 
 int main(void)
 {
-  libxsmm_smmfunction f[MAX_NKERNELS];
+  union { libxsmm_smmfunction s; void* p; } f[MAX_NKERNELS];
   const int max_shape = LIBXSMM_AVG_M;
   int result = EXIT_SUCCESS;
   int r[3*MAX_NKERNELS], i;
@@ -75,7 +75,7 @@ int main(void)
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i] = libxsmm_smmdispatch(m, n, k,
+    f[i].s = libxsmm_smmdispatch(m, n, k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       NULL/*flags*/, NULL/*prefetch*/);
   }
@@ -88,15 +88,16 @@ int main(void)
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-      const libxsmm_smmfunction fi = libxsmm_smmdispatch(m, n, k,
+      union { libxsmm_smmfunction s; void* p; } fi;
+      fi.s = libxsmm_smmdispatch(m, n, k,
         NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
         NULL/*flags*/, NULL/*prefetch*/);
 
-      if (fi != f[i]) {
-        if (NULL != fi) {
-          if (NULL != f[0]) {
-            const libxsmm_gemm_descriptor *const a = libxsmm_get_gemm_descriptor(fi);
-            const libxsmm_gemm_descriptor *const b = libxsmm_get_gemm_descriptor(f[i]);
+      if (fi.p != f[i].p) {
+        if (NULL != fi.p) {
+          if (NULL != f[i].p) {
+            const libxsmm_gemm_descriptor *const a = libxsmm_get_gemm_descriptor(fi.p);
+            const libxsmm_gemm_descriptor *const b = libxsmm_get_gemm_descriptor(f[i].p);
 
             /* perform deeper check based on the descriptor of each of the kernels */
             if (0 != memcmp(a, b, LIBXSMM_GEMM_DESCRIPTOR_SIZE)) {
@@ -112,6 +113,11 @@ int main(void)
 #endif
               result = EXIT_FAILURE;
             }
+#if defined(_DEBUG) || defined(USE_VERBOSE)
+            else {
+              fprintf(stderr, "(%ix%ix%i-kernel is duplicated)\n", m, n, k);
+            }
+#endif
           }
           else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
