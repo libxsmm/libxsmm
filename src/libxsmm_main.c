@@ -89,7 +89,7 @@
 # endif
 #endif
 
-/* LIBXSMM_REGSIZE is POT */
+/* LIBXSMM_REGCAPACITY is POT */
 /*#define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))*/
 #define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
 
@@ -99,13 +99,13 @@
 
 #if defined(LIBXSMM_HASH_BASIC)
 # define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
-    HASH = libxsmm_hash_npot(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_REGSIZE); \
-    assert((LIBXSMM_REGSIZE) > (HASH)); \
+    HASH = libxsmm_hash_npot(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_REGCAPACITY); \
+    assert((LIBXSMM_REGCAPACITY) > (HASH)); \
     INDX = (HASH)
 #else
 # define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
     HASH = libxsmm_crc32(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
-    INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_REGSIZE)
+    INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_REGCAPACITY)
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -399,12 +399,12 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 
   if (0 != dst_entry->pmm) { /* collision? */
     /* start at a re-hashed index position */
-    const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
+    const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGCAPACITY);
     unsigned int i0, i, next;
 
     /* start linearly searching for an available slot */
-    for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
-      0 != registry[i].pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
+    for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGCAPACITY), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
+      0 != registry[i].pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY));
 
     /* calculate destinations */
     dst_key = internal_registry_keys + i;
@@ -565,11 +565,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_init(void)
         libxsmm_perf_init();
 #endif
         assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
-        result = (libxsmm_code_pointer*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(libxsmm_code_pointer));
-        internal_registry_keys = (internal_regkey_type*)LIBXSMM_MAIN_MALLOC(LIBXSMM_REGSIZE * sizeof(internal_regkey_type));
+        result = (libxsmm_code_pointer*)LIBXSMM_MAIN_MALLOC((LIBXSMM_REGCAPACITY) * sizeof(libxsmm_code_pointer));
+        internal_registry_keys = (internal_regkey_type*)LIBXSMM_MAIN_MALLOC((LIBXSMM_REGCAPACITY) * sizeof(internal_regkey_type));
         if (0 != result && 0 != internal_registry_keys) {
           const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-          for (i = 0; i < LIBXSMM_REGSIZE; ++i) result[i].pmm = 0;
+          for (i = 0; i < (LIBXSMM_REGCAPACITY); ++i) result[i].pmm = 0;
           /* omit registering code if JIT is enabled and if an ISA extension is found
            * which is beyond the static code path used to compile the library
            */
@@ -665,7 +665,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       if (0 != registry) {
         internal_regkey_type *const registry_keys = internal_registry_keys;
         const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
-        unsigned int heapmem = (LIBXSMM_REGSIZE) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
+        unsigned int heapmem = (LIBXSMM_REGCAPACITY) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
 
         /* serves as an id to invalidate the thread-local cache; never decremented */
         ++internal_teardown;
@@ -686,7 +686,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
         internal_registry_keys = 0;
 
-        for (i = 0; i < LIBXSMM_REGSIZE; ++i) {
+        for (i = 0; i < (LIBXSMM_REGCAPACITY); ++i) {
           libxsmm_code_pointer code = registry[i];
           if (0 != code.pmm) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].descriptor;
@@ -1193,12 +1193,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
         diff = libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].descriptor);
         if (0 != diff) { /* search for code version */
           if (0 == mode) { /* start to search at re-hashed position */
-            const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
-            i = i0 = (start != i ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE));
+            const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGCAPACITY);
+            i = i0 = (start != i ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGCAPACITY));
             mode = 1; /* search for existing code version */
           }
           else { /* continue to search */
-            i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
+            i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
             if (i == i0) { /* no code version exists */
               mode = 2; /* enter code generation */
             }
@@ -1227,15 +1227,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             assert(0 != code->pmm/*collision*/);
             if (0 == mode) { /* initial condition; fix-up newly discovered collision */
               /* seed start position to find new slot to store the code version */
-              const unsigned int next = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGSIZE);
-              i = i0 = (next != i ? next : LIBXSMM_HASH_MOD(next + 1, LIBXSMM_REGSIZE));
+              const unsigned int next = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGCAPACITY);
+              i = i0 = (next != i ? next : LIBXSMM_HASH_MOD(next + 1, LIBXSMM_REGCAPACITY));
               mode = 2; /* continue to linearly search for an empty slot */
             }
             else { /* continue to linearly search code */
-              unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
+              unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
               assert(1 < mode); /* continuation mode */
               for (i = next; i != i0 && 0 != internal_registry[i].pmm; i = next) {
-                next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
+                next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
               }
               if (i == i0) { /* out of capacity (no registry slot available) */
                 diff = 0; /* inside of locked region (do not use break!) */
@@ -1274,6 +1274,46 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
   assert(0 == flux_entry.pmm || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE));
   flux_entry.imm &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
   return flux_entry.xmm;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(size_t* capacity, size_t* size, size_t* nstatic, size_t* nbytes)
+{
+  int result = EXIT_SUCCESS;
+  if (0 != capacity || 0 != size || 0 != nstatic || 0 != nbytes) {
+    size_t registry_size = 0, registry_nstatic = 0, registry_nbytes = 0, i;
+    LIBXSMM_INIT
+    if (0 != internal_registry) {
+      registry_nbytes = (LIBXSMM_REGCAPACITY) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
+      for (i = 0; i < (LIBXSMM_REGCAPACITY); ++i) {
+        const libxsmm_code_pointer code = internal_registry[i];
+        if (0 != code.pmm) {
+          ++registry_size;
+          if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
+            void* buffer = 0;
+            size_t size = 0;
+            if (EXIT_SUCCESS == libxsmm_malloc_info(code.pmm, &size, 0/*flags*/, &buffer)) {
+              registry_nbytes += (unsigned int)(size + (((char*)code.pmm) - (char*)buffer));
+            }
+          }
+          else {
+            ++registry_nstatic;
+          }
+        }
+      }
+      if (0 != capacity) *capacity = LIBXSMM_REGCAPACITY;
+      if (0 != size) *size = registry_size;
+      if (0 != nstatic) *nstatic = registry_nstatic;
+      if (0 != nbytes) *nbytes = registry_nbytes;
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  return result;
 }
 
 
@@ -1340,7 +1380,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
   ssoa.values = values;
   request.descriptor.ssoa = &ssoa;
   request.kind = LIBXSMM_BUILD_KIND_SSOA;
-  libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+  libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   return code.xmm;
 }
 
@@ -1351,7 +1391,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
   LIBXSMM_INIT
   if (EXIT_SUCCESS == libxsmm_malloc_info((const volatile void*)jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int regindex = *((const unsigned int*)extra);
-    if (LIBXSMM_REGSIZE <= regindex) {
+    if ((LIBXSMM_REGCAPACITY) <= regindex) {
       libxsmm_xfree((const volatile void*)jit_code);
     }
     /* TODO: implement to unregister GEMM kernels */

@@ -1343,7 +1343,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_forward(
     libxsmm_build_request request;
     request.descriptor.cfwd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CFWD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
@@ -1366,7 +1366,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_backward(
     libxsmm_build_request request;
     request.descriptor.cbwd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CBWD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
@@ -1389,7 +1389,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
     libxsmm_build_request request;
     request.descriptor.cupd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CUPD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
@@ -1411,7 +1411,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_forward(
     libxsmm_build_request request;
     request.descriptor.cfwd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CFWD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
@@ -1434,7 +1434,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_backward(
     libxsmm_build_request request;
     request.descriptor.cbwd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CBWD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
@@ -1457,7 +1457,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_update_weights(
     libxsmm_build_request request;
     request.descriptor.cupd = descriptor;
     request.kind = LIBXSMM_BUILD_KIND_CUPD;
-    libxsmm_build(&request, LIBXSMM_REGSIZE/*not managed*/, &code);
+    libxsmm_build(&request, LIBXSMM_REGCAPACITY/*not managed*/, &code);
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {

@@ -40,8 +40,8 @@
 #include <libxsmm_dnn.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
-#if !defined(LIBXSMM_REGSIZE) /* must be POT */
-# define LIBXSMM_REGSIZE 524288 /* 524287: Mersenne Prime number (2^19-1) */
+#if !defined(LIBXSMM_REGCAPACITY) /* must be POT */
+# define LIBXSMM_REGCAPACITY 524288 /* 524287: Mersenne Prime number (2^19-1) */
 #endif
 #if !defined(LIBXSMM_CPU_DCACHESIZE)
 # define LIBXSMM_CPU_DCACHESIZE 32768
@@ -235,7 +235,7 @@ LIBXSMM_API int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
-/** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGSIZE for unmanaged code). */
+/** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_REGCAPACITY for unmanaged code). */
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
 
 /** Updates counters of the statistic, which is shown at program termination. */
