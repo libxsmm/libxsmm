@@ -1275,22 +1275,24 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
     LIBXSMM_INIT
     if (0 != internal_registry) {
       size_t i;
+      memset(info, 0, sizeof(libxsmm_registry_info)); /* info->nstatic = 0; info->size = 0; */
       info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
       info->capacity = LIBXSMM_CAPACITY_REGISTRY;
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         const libxsmm_code_pointer code = internal_registry[i];
-        if (0 != code.pmm) {
-          ++info->size;
+        if (0 != code.pmm && EXIT_SUCCESS == result) {
           if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
             size_t buffer_size = 0;
             void* buffer = 0;
-            if (EXIT_SUCCESS == libxsmm_malloc_info(code.pmm, &buffer_size, 0/*flags*/, &buffer)) {
+            result = libxsmm_malloc_info(code.pmm, &buffer_size, 0/*flags*/, &buffer);
+            if (EXIT_SUCCESS == result) {
               info->nbytes += (unsigned int)(buffer_size + (((char*)code.pmm) - (char*)buffer));
             }
           }
           else {
             ++info->nstatic;
           }
+          ++info->size;
         }
       }
     }
