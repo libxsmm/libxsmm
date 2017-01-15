@@ -650,7 +650,7 @@ else # GCC assumed
   endif
   ifeq (0,$(COMPATIBLE))
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wno-overlength-strings
+    CPEDANTIC += -pedantic -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
@@ -664,25 +664,25 @@ else # GCC assumed
   endif
   ifeq (1,$(PEDANTIC))
     CSTD = -std=c99
-    CXXFLAGS += $(CPEDANTIC)
+    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += -ffree-form
     FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
     ifneq (Darwin,$(UNAME))
-      CPEDANTIC += -Wno-long-long -Wno-variadic-macros
+      CPEDANTIC += -Wno-long-long
       CSTD = -std=c89
     else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
-      CPEDANTIC += -Wno-long-long -Wno-variadic-macros
+      CPEDANTIC += -Wno-long-long
       CSTD = -std=c89
     else # Clang may run into ICEs under OSX
       CSTD = -std=c99
     endif
-    CXXFLAGS += $(CPEDANTIC)
+    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
   else ifeq (0,$(COMPATIBLE))
-    CPEDANTIC += -Wno-long-long -Wno-variadic-macros
+    CPEDANTIC += -Wno-long-long
     FCFLAGS += -ffree-form
     CSTD = -std=c89
   endif
