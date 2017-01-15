@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
