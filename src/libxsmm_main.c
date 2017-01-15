@@ -404,12 +404,13 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 
     /* start linearly searching for an available slot */
     for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGSIZE), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE);
-      0 != (dst_entry = registry + i)->pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
+      0 != registry[i].pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGSIZE));
 
-    /* corresponding key position */
+    /* calculate destinations */
     dst_key = internal_registry_keys + i;
+    dst_entry = registry + i;
 
-    internal_update_mmstatistic(desc, 0, 1);
+    internal_update_mmstatistic(desc, 0, 1/*collision*/);
   }
 
   if (0 == dst_entry->pmm) { /* registry not (yet) exhausted */
@@ -419,7 +420,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
     dst_entry->imm |= LIBXSMM_CODE_STATIC;
   }
 
-  internal_update_mmstatistic(desc, 1, 0);
+  internal_update_mmstatistic(desc, 1/*try*/, 0);
 }
 
 
