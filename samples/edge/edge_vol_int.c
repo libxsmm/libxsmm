@@ -43,10 +43,6 @@
 # define srand48 srand
 #endif
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
-
 void edge_sparse_csr_reader( const char*             i_csr_file_in,
                              unsigned int**        o_row_idx,
                              unsigned int**        o_column_idx,
@@ -200,7 +196,7 @@ int main(int argc, char* argv[])
   double* t;
   double* tp;
 
-  struct timeval l_start, l_end;
+  unsigned long long l_start, l_end;
   double l_total;
 
   /* read cmd */
@@ -273,39 +269,39 @@ int main(int argc, char* argv[])
 
   /* benchmark single core all kernels */
   printf("benchmarking kernels... \n");
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < num_reps; i++) {
     a_kernel( qt, mat_a_values, q );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for stiff1 (asm)\n", l_total);
   printf("%f GFLOPS for stiff1 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_a_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < num_reps; i++) {
     b_kernel( qt, mat_b_values, q );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for stiff2 (asm)\n", l_total);
   printf("%f GFLOPS for stiff2 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_b_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < num_reps; i++) {
     c_kernel( qt, mat_c_values, q );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for stiff3 (asm)\n", l_total);
   printf("%f GFLOPS for stiff3 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_c_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < num_reps; i++) {
     st_kernel( mat_st_values, qt, q );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for star (asm)\n", l_total);
   printf("%f GFLOPS for star (asm)\n", ((double)((double)num_reps * (double)num_modes * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
   printf("done!\n\n");
@@ -324,7 +320,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < num_reps; i++) {
     #pragma omp parallel private(i, j)
     {
@@ -343,8 +339,8 @@ int main(int argc, char* argv[])
       }
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for vol (asm)\n", l_total);
   printf("%f GFLOPS for vol (asm)\n", ((double)((double)num_elems * (double)num_reps * 3.0 * ((double)num_quants + (double)num_modes) * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
   printf("%f GiB/s for vol (asm)\n", (double)((double)num_elems * (double)elem_size * 8.0 * 3.0 * (double)num_reps) / (l_total * 1024.0*1024.0*1024.0) );
