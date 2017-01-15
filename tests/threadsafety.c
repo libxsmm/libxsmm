@@ -51,10 +51,20 @@
 int main(void)
 {
   union { libxsmm_smmfunction s; void* p; } f[MAX_NKERNELS];
+  const char *const target_arch = libxsmm_get_target_arch();
+  libxsmm_generated_code generated_code;
+  const int prefetch = LIBXSMM_PREFETCH_NONE;
   const int max_shape = LIBXSMM_AVG_M;
+  const int flags = LIBXSMM_FLAGS;
   int result = EXIT_SUCCESS;
   int r[3*MAX_NKERNELS], i;
 
+  memset(&generated_code, 0, sizeof(generated_code));
+  generated_code.generated_code = malloc(131072);
+  generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+  generated_code.code_type = 2;
+
+  /* generate set of random number for parallel region */
   for (i = 0; i < (3 * MAX_NKERNELS); i += 3) {
     r[i+0] = rand();
     r[i+1] = rand();
@@ -77,7 +87,7 @@ int main(void)
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
     f[i].s = libxsmm_smmdispatch(m, n, k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-      NULL/*flags*/, NULL/*prefetch*/);
+      &flags, &prefetch);
   }
 
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
@@ -88,36 +98,41 @@ int main(void)
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-      union { libxsmm_smmfunction s; void* p; } fi;
-      fi.s = libxsmm_smmdispatch(m, n, k,
-        NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-        NULL/*flags*/, NULL/*prefetch*/);
+      union { libxsmm_xmmfunction x; void* p; } fi;
+      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(float),
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
+      fi.x = libxsmm_xmmdispatch(&descriptor);
 
       if (fi.p != f[i].p) {
         if (NULL != fi.p) {
           if (NULL != f[i].p) {
-            const libxsmm_gemm_descriptor *const a = libxsmm_get_gemm_descriptor(fi.p);
-            const libxsmm_gemm_descriptor *const b = libxsmm_get_gemm_descriptor(f[i].p);
+            LIBXSMM_GEMM_DESCRIPTOR_TYPE(reference, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(float),
+              m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
+            libxsmm_generator_gemm_kernel(&generated_code, &reference, target_arch);
 
-            /* perform deeper check based on the descriptor of each of the kernels */
-            if (0 != memcmp(a, b, LIBXSMM_GEMM_DESCRIPTOR_SIZE)) {
+            if (0 == generated_code.last_error && 0 < generated_code.code_size) {
+              /* perform deeper check based on the descriptor of each of the kernels */
+              if  (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
+                || 0 != memcmp(generated_code.generated_code, f[i].p, generated_code.code_size))
+              {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-              fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
+                fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
-#             pragma omp atomic write
+#               pragma omp atomic write
 # else
-#             pragma omp critical
+#               pragma omp critical
 # endif
 #endif
-              result = EXIT_FAILURE;
-            }
+                result = EXIT_FAILURE;
+              }
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-            else {
-              fprintf(stderr, "(%ix%ix%i-kernel is duplicated)\n", m, n, k);
-            }
+              else {
+                fprintf(stderr, "(%ix%ix%i-kernel is duplicated)\n", m, n, k);
+              }
 #endif
+            }
           }
           else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
@@ -149,6 +164,9 @@ int main(void)
       }
     }
   }
+
+  /* release buffer of eventually generated code (deep comparison) */
+  free(generated_code.generated_code);
 
 #if defined(_OPENMP)
 # pragma omp parallel for default(none) private(i)
