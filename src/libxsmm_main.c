@@ -136,22 +136,23 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #if defined(LIBXSMM_SYNC_OPENMP)
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) LIBXSMM_PRAGMA(omp critical(internal_reglock)) { \
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #elif !defined(LIBXSMM_NO_SYNC)
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX) { \
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, INTERNAL_REGLOCK_COUNT); \
   if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
     if (0 == libxsmm_dispatch_trylock) { /* (re-)try and get (meanwhile) generated code */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
+      DIFF = 0; CODE = 0; \
       break; \
     } \
   }
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(internal_reglock + (LOCKINDEX)); }
 #else
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX)
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE)
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX)
 #endif
 
@@ -1209,7 +1210,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
 #if (0 != LIBXSMM_JIT)
         if (LIBXSMM_X86_AVX <= libxsmm_target_archid) { /* check if JIT is supported (CPUID) */
           assert(0 == flux_entry.pmm/*code version does not exist*/ || 0 != mode);
-          INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */
+          INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (0 == code->pmm) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor; request.kind = LIBXSMM_BUILD_KIND_GEMM;
