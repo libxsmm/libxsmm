@@ -1172,9 +1172,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
     flux_entry.xmm = cache[cache_index];
     cache_hit = cache_index;
 #if !defined(NDEBUG)
-    refdesc = (0 != (LIBXSMM_CODE_STATIC & flux_entry.imm)
-      ? internal_get_gemm_descriptor(flux_entry.pmm) /* only works for JIT-generated code! */
-      : 0);
+    if (0 == (LIBXSMM_CODE_STATIC & flux_entry.imm)) { /* JIT only */
+      refdesc = internal_get_gemm_descriptor(flux_entry.pmm);
+    }
 #endif
   }
   else
