@@ -102,9 +102,9 @@ int main(void)
       if (fi.p != f[i].p) {
         if (NULL != fi.p) {
           if (NULL != f[i].p) {
-            size_t registry_nstatic;
+            libxsmm_registry_info info;
             libxsmm_generator_gemm_kernel(&generated_code, &descriptor, target_arch);
-            result = libxsmm_get_registry_info(0, 0, &registry_nstatic, 0);
+            result = libxsmm_get_registry_info(&info);
 
             if (EXIT_SUCCESS == result
               && 0 == generated_code.last_error
@@ -112,7 +112,7 @@ int main(void)
               && 0 < generated_code.code_size)
             {
               /* perform deeper check based on another code generation (used as reference) */
-              if  (0 == registry_nstatic &&
+              if  (0 == info.nstatic &&
                   (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
                 || 0 != memcmp(generated_code.generated_code, f[i].p, generated_code.code_size)))
               {
@@ -129,7 +129,7 @@ int main(void)
                 result = EXIT_FAILURE;
               }
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-              else if (0 != registry_nstatic) {
+              else if (0 != info.nstatic) {
                 fprintf(stderr, "Warning: the %ix%ix%i-kernel may not match!\n", m, n, k);
               }
               else {

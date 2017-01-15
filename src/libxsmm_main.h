@@ -34,7 +34,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <libxsmm_macros.h>
 #include <libxsmm_typedefs.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_dnn.h>

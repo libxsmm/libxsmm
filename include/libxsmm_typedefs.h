@@ -33,6 +33,14 @@
 
 #include "libxsmm_macros.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stddef.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
@@ -255,6 +263,9 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const f
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
+
+/** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nstatic, nbytes; } libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
 
