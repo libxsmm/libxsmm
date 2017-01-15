@@ -650,7 +650,7 @@ else # GCC assumed
   endif
   ifeq (0,$(COMPATIBLE))
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wno-variadic-macros -Wno-long-long -Wno-overlength-strings
+    CPEDANTIC += -pedantic -Wno-overlength-strings
     FPEDANTIC += -pedantic -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra -Wextra \
@@ -670,8 +670,10 @@ else # GCC assumed
     FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
   else ifneq (0,$(PEDANTIC))
     ifneq (Darwin,$(UNAME))
+      CPEDANTIC += -Wno-long-long -Wno-variadic-macros
       CSTD = -std=c89
     else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+      CPEDANTIC += -Wno-long-long -Wno-variadic-macros
       CSTD = -std=c89
     else # Clang may run into ICEs under OSX
       CSTD = -std=c99
@@ -680,8 +682,9 @@ else # GCC assumed
     CFLAGS += $(CSTD) $(CPEDANTIC)
     FCFLAGS += $(FSTD) $(FPEDANTIC)
   else ifeq (0,$(COMPATIBLE))
-    CSTD = -std=c89
+    CPEDANTIC += -Wno-long-long -Wno-variadic-macros
     FCFLAGS += -ffree-form
+    CSTD = -std=c89
   endif
   ifeq (0,$(COMPATIBLE))
     # flag specifying output directory must be last
