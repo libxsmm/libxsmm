@@ -103,9 +103,7 @@ int main(void)
         if (NULL != fi.p) {
           if (NULL != f[i].p) {
             size_t registry_nstatic;
-            LIBXSMM_GEMM_DESCRIPTOR_TYPE(reference, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(float),
-              m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
-            libxsmm_generator_gemm_kernel(&generated_code, &reference, target_arch);
+            libxsmm_generator_gemm_kernel(&generated_code, &descriptor, target_arch);
             result = libxsmm_get_registry_info(0, 0, &registry_nstatic, 0);
 
             if (EXIT_SUCCESS == result
