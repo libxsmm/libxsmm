@@ -94,17 +94,23 @@ int main(void)
       if (fi != f[i]) {
         if (NULL != fi) {
           if (NULL != f[0]) {
+            const libxsmm_gemm_descriptor *const a = libxsmm_get_gemm_descriptor(fi);
+            const libxsmm_gemm_descriptor *const b = libxsmm_get_gemm_descriptor(f[i]);
+
+            /* perform deeper check based on the descriptor of each of the kernels */
+            if (0 != memcmp(a, b, LIBXSMM_GEMM_DESCRIPTOR_SIZE)) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-            fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
+              fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
 #endif
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
-#           pragma omp atomic write
+#             pragma omp atomic write
 # else
-#           pragma omp critical
+#             pragma omp critical
 # endif
 #endif
-            result = EXIT_FAILURE;
+              result = EXIT_FAILURE;
+            }
           }
           else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
