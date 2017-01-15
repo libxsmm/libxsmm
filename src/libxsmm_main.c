@@ -1192,16 +1192,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
       if ((0 != flux_entry.pmm || 1 == mode) && 2 != mode) { /* check existing entry further */
         diff = libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].descriptor);
         if (0 != diff) { /* search for code version */
-          if (0 == mode) { /* start to search at re-hashed position */
-            const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGCAPACITY);
-            i = i0 = (start != i ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_REGCAPACITY));
+          if (0 == mode) { /* begin to search for code version */
             mode = 1; /* search for existing code version */
+            i0 = i; /* keep current position on record */
           }
-          else { /* continue to search */
-            i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
-            if (i == i0) { /* no code version exists */
-              mode = 2; /* enter code generation */
-            }
+          i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
+          if (i == i0) { /* no code version exists */
+            mode = 2; /* enter code generation */
           }
           code = internal_registry + i;
           assert(0 != diff); /* continue */
@@ -1214,7 +1211,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
           assert(0 == flux_entry.pmm/*code version does not exist*/ || 0 != mode);
           INTERNAL_FIND_CODE_LOCK(lock, i); /* lock the registry entry */
           if (0 == code->pmm) { /* double-check registry after acquiring the lock */
-            libxsmm_build_request request; /* build code; also after slot has been searched (collision) */
+            libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor; request.kind = LIBXSMM_BUILD_KIND_GEMM;
             internal_update_mmstatistic(descriptor, 1, 0); /* count attempt (try) */
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.pmm) {
@@ -1225,22 +1222,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
           }
           else { /* acquire registry slot */
             assert(0 != code->pmm/*collision*/);
-            if (0 == mode) { /* initial condition; fix-up newly discovered collision */
-              /* seed start position to find new slot to store the code version */
-              const unsigned int next = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_REGCAPACITY);
-              i = i0 = (next != i ? next : LIBXSMM_HASH_MOD(next + 1, LIBXSMM_REGCAPACITY));
+            if (0 == mode) { /* initial condition */
               mode = 2; /* continue to linearly search for an empty slot */
+              i0 = i; /* keep current position on record */
             }
-            else { /* continue to linearly search code */
-              unsigned int next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
-              assert(1 < mode); /* continuation mode */
-              for (i = next; i != i0 && 0 != internal_registry[i].pmm; i = next) {
-                next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY);
-              }
-              if (i == i0) { /* out of capacity (no registry slot available) */
-                diff = 0; /* inside of locked region (do not use break!) */
-                flux_entry.pmm = 0; /* no result */
-              }
+            for (i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY); i != i0 && 0 != internal_registry[i].pmm;
+                 i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_REGCAPACITY)); /* continue to linearly search code */
+            if (i == i0) { /* out of capacity (no registry slot available) */
+              diff = 0; /* inside of locked region (do not use break!) */
+              flux_entry.pmm = 0; /* no result */
             }
             code = internal_registry + i;
           }
