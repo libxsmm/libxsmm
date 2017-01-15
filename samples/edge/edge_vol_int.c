@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <math.h>
 #if defined(_OPENMP)
