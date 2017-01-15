@@ -110,8 +110,11 @@ int main(void)
               m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
             libxsmm_generator_gemm_kernel(&generated_code, &reference, target_arch);
 
-            if (0 == generated_code.last_error && 0 < generated_code.code_size) {
-              /* perform deeper check based on the descriptor of each of the kernels */
+            if  (0 == generated_code.last_error
+              && 0 != generated_code.generated_code
+              && 0 < generated_code.code_size)
+            {
+              /* perform deeper check based on another code generation (used as reference) */
               if  (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
                 || 0 != memcmp(generated_code.generated_code, f[i].p, generated_code.code_size))
               {
