@@ -51,6 +51,9 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 
+  /* reset size; avoid stitching code */
+  io_generated_code->code_size = 0;
+
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
