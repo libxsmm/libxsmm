@@ -265,7 +265,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const 
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nstatic, nbytes; } libxsmm_registry_info;
+typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
 
