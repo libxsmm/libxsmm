@@ -1315,8 +1315,8 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   }
   else { /* bypass (not supported) */
     internal_update_mmstatistic(descriptor, 1, 0);
-    return result;
   }
+  return result;
 }
 
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
