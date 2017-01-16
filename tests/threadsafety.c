@@ -124,7 +124,7 @@ int main(void)
 #endif
                 result = EXIT_FAILURE;
               }
-#if defined(_DEBUG) || defined(USE_VERBOSE)
+#if defined(_DEBUG) /* warning or an info message is not part of USE_VERBOSE */
               else if (0 != registry_info.nstatic) {
                 fprintf(stderr, "Warning: the %ix%ix%i-kernel may not match!\n", m, n, k);
               }
