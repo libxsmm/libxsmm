@@ -1160,17 +1160,18 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
   const libxsmm_gemm_descriptor* refdesc = 0;
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
-  static LIBXSMM_TLS union { libxsmm_gemm_descriptor desc; char padding[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE]; } cache_keys[LIBXSMM_CAPACITY_CACHE];
-  static LIBXSMM_TLS libxsmm_xmmfunction cache[LIBXSMM_CAPACITY_CACHE];
-  static LIBXSMM_TLS unsigned int cache_id = (unsigned int)(-1);
-  static LIBXSMM_TLS unsigned int cache_hit = LIBXSMM_CAPACITY_CACHE;
+  static LIBXSMM_TLS struct {
+    unsigned int id, hit; /* not ideal here, but avoid GCC's warning about "missing braces around initializer" */
+    union { char padding[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE]; libxsmm_gemm_descriptor desc; } keys[LIBXSMM_CAPACITY_CACHE];
+    libxsmm_xmmfunction code[LIBXSMM_CAPACITY_CACHE];
+  } cache = { (unsigned int)(-1), LIBXSMM_CAPACITY_CACHE };
   unsigned int cache_index;
   assert(0 != descriptor && LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE >= LIBXSMM_GEMM_DESCRIPTOR_SIZE);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_gemm_diffn(descriptor, &cache_keys->desc, cache_hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE);
-  if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache_id == internal_teardown) { /* cache hit, and valid */
-    flux_entry.xmm = cache[cache_index];
-    cache_hit = cache_index;
+  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys->desc, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE);
+  if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == internal_teardown) { /* cache hit, and valid */
+    flux_entry.xmm = cache.code[cache_index];
+    cache.hit = cache_index;
 #if !defined(NDEBUG)
     if (0 == (LIBXSMM_CODE_STATIC & flux_entry.imm)) { /* JIT only */
       refdesc = internal_get_gemm_descriptor(flux_entry.pmm);
@@ -1247,15 +1248,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
     }
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
     if (0 != flux_entry.pmm) { /* keep code version on record (cache) */
-      INTERNAL_FIND_CODE_CACHE_INDEX(cache_hit, cache_index);
-      cache_keys[cache_index].desc = *descriptor;
-      cache[cache_index] = flux_entry.xmm;
-      cache_hit = cache_index;
+      INTERNAL_FIND_CODE_CACHE_INDEX(cache.hit, cache_index);
+      cache.keys[cache_index].desc = *descriptor;
+      cache.code[cache_index] = flux_entry.xmm;
+      cache.hit = cache_index;
       assert(0 == diff);
     }
-    if (cache_id != internal_teardown) {
-      memset(cache_keys, -1, sizeof(cache_keys));
-      cache_id = internal_teardown;
+    if (cache.id != internal_teardown) {
+      memset(cache.keys, -1, sizeof(cache.keys));
+      cache.id = internal_teardown;
     }
 #endif
 #if !defined(NDEBUG)
