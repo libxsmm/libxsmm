@@ -2411,6 +2411,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
                                                           const unsigned char *i_data,
+                                                          const char *i_id,
                                                           const char i_vector_name, 
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
@@ -2529,14 +2530,42 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
   } else {
     unsigned char *cval = (unsigned char *) &i_data[0];
     int j = 0;
-    printf("\t jmp .continued\n");
-    printf(".data1:\n");
-    for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
-      printf("\t.byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cval[0],cval[1],cval[2],cval[3]);
-      cval = cval + 4;
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"jmp .continued_%s\\n\\t\"\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".data_%s:\\n\\t\"\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\\n\\t\"\n",
+                                                                                                        cval[0],cval[1],cval[2],cval[3] );
+        cval = cval + 4;
+        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      }
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_%s:\\n\\t\"\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"vmovups .data_%s(%%%%rip), %%%%%cmm%u\\n\\t\"\n", 
+                                                                                                              i_id, i_vector_name, i_vec_reg_number );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       jmp .continued_%s\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .data_%s:\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
+                                                                                                      cval[0],cval[1],cval[2],cval[3] );
+        cval = cval + 4;
+        libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      }
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .continued_%s:\n", i_id );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       vmovups .data_%s(%%rip), %%%cmm%u\n", i_id, i_vector_name, i_vec_reg_number );
+      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
-    printf(".continued:\n");
-    printf("\tvmovups .data1(%%rip), %%%cmm%d\n",i_vector_name,i_vec_reg_number);
   }
 }
 
