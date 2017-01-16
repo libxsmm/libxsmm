@@ -110,6 +110,10 @@
 
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
+/* flag fused into the memory address of a code version in case of collision */
+#if 0
+#define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
+#endif
 
 #if 16 >= (LIBXSMM_GEMM_DESCRIPTOR_SIZE)
 # define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE 16
@@ -186,7 +190,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   } \
   else { /* bypass (not supported) */ \
     /* libxsmm_gemm_print is not suitable here since A, B, and C are unknown at this point */ \
-    libxsmm_update_mmstatistic(internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, 1, 0); \
+    libxsmm_update_mmstatistic(internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, 1/*try*/, 0); \
     return 0; \
   } \
 }
@@ -398,7 +402,10 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
     /* start at a re-hashed index position */
     const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH_VALUE(hash), LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0, i, next;
-
+#if defined(LIBXSMM_HASH_COLLISION)
+    /* mark current entry as a collision (this might be already the case) */
+    dst_entry->imm |= LIBXSMM_HASH_COLLISION;
+#endif
     /* start linearly searching for an available slot */
     for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_CAPACITY_REGISTRY), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
       0 != registry[i].pmm && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY));
@@ -703,6 +710,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
               void* buffer = 0;
               size_t size = 0;
+#if defined(LIBXSMM_HASH_COLLISION)
+              code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
+#endif
               if (EXIT_SUCCESS == libxsmm_malloc_info(code.pmm, &size, 0/*flags*/, &buffer)) {
                 libxsmm_xfree(code.pmm);
                 ++internal_statistic[precision][bucket].njit;
@@ -1106,7 +1116,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
       LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
     if (EXIT_SUCCESS == result) { /* check for success */
-      assert(0 != code->pmm);
+      assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->imm));
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
       /* attribute/protect buffer and revoke unnecessary flags */
@@ -1184,16 +1194,29 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
     LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, *descriptor);
     while (0 != diff) {
       flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_SEQ_CST); /* read registered code */
-      if ((0 != flux_entry.pmm || 1 == mode) && 2 != mode) { /* check existing entry further */
-        diff = libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].descriptor);
+      if ((0 != flux_entry.pmm || 1 == mode) && 2 > mode) { /* check existing entry further */
+        diff = 0 != flux_entry.pmm ? libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].descriptor) : 1;
         if (0 != diff) { /* search for code version */
-          if (0 == mode) { /* begin to search for code version */
-            mode = 1; /* search for existing code version */
-            i0 = i; /* keep current position on record */
+          if (0 != mode) { /* continue searching code */
+            i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
           }
-          i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+          else { /* eventually start to search for code version */
+            i0 = i; /* keep current position on record */
+#if defined(LIBXSMM_HASH_COLLISION)
+            if (0 != (LIBXSMM_HASH_COLLISION & flux_entry.imm))
+#endif
+            {
+              i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+              mode = 1; /* search for an existing code version */
+              assert(0 != flux_entry.pmm);
+            }
+          }
           if (i == i0) { /* no code version exists */
-            mode = 2; /* enter code generation */
+#if 0
+            mode = 2; /* enter code generation, and collision fix-up */
+#else
+            mode = 3; /* enter code generation */
+#endif
           }
           assert(0 != diff); /* continue */
         }
@@ -1207,9 +1230,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
           if (0 == internal_registry[i].pmm) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor; request.kind = LIBXSMM_BUILD_KIND_GEMM;
-            internal_update_mmstatistic(descriptor, 1, 0); /* count attempt (try) */
+            internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.pmm) {
               internal_registry_keys[i].descriptor = *descriptor;
+#if defined(LIBXSMM_HASH_COLLISION)
+              if (2 == mode) { /* arrived from collision state; now mark as collision */
+                flux_entry.imm |= LIBXSMM_HASH_COLLISION; /* mark current entry as collision */
+              }
+#endif
               LIBXSMM_ATOMIC_STORE(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_SEQ_CST); /* sync */
             }
             diff = 0; /* inside of locked region (do not use break!) */
@@ -1217,7 +1245,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
           else { /* acquire registry slot */
             assert(0 != internal_registry[i].pmm/*collision*/);
             if (0 == mode) { /* initial condition */
-              mode = 2; /* continue to linearly search for an empty slot */
+              mode = 3; /* continue to linearly search for an empty slot */
               i0 = i; /* keep current position on record */
             }
             for (i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY); i != i0 && 0 != internal_registry[i].pmm;
@@ -1255,7 +1283,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
 #endif
   }
   assert(0 == flux_entry.pmm || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE));
+#if defined(LIBXSMM_HASH_COLLISION)
+  flux_entry.imm &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
+#else
   flux_entry.imm &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
+#endif
   return flux_entry.xmm;
 }
 
@@ -1315,7 +1347,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
     result = internal_find_code(descriptor);
   }
   else { /* bypass (not supported) */
-    internal_update_mmstatistic(descriptor, 1, 0);
+    internal_update_mmstatistic(descriptor, 1/*try*/, 0);
   }
   return result;
 }
