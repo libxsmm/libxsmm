@@ -49,9 +49,11 @@ int main(void)
   union { libxsmm_smmfunction s; void* p; } f[MAX_NKERNELS];
   const char *const target_arch = libxsmm_get_target_arch();
   libxsmm_generated_code generated_code;
+  libxsmm_registry_info registry_info;
   const int prefetch = LIBXSMM_PREFETCH_NONE;
   const int max_shape = LIBXSMM_AVG_M;
   const int flags = LIBXSMM_FLAGS;
+  int nkernels = MAX_NKERNELS;
   int result = EXIT_SUCCESS;
   int r[3*MAX_NKERNELS], i;
 
@@ -74,6 +76,11 @@ int main(void)
     libxsmm_init();
   }
 
+  result = libxsmm_get_registry_info(&registry_info);
+  if (EXIT_SUCCESS == result) {
+    nkernels = LIBXSMM_MIN(nkernels, registry_info.capacity);
+  }
+
 #if defined(_OPENMP) && defined(USE_PARALLEL_JIT)
 # pragma omp parallel for private(i)
 #endif
@@ -89,7 +96,7 @@ int main(void)
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # pragma omp parallel for private(i)
 #endif
-  for (i = 0; i < MAX_NKERNELS; ++i) {
+  for (i = 0; i < nkernels; ++i) {
     if (EXIT_SUCCESS == result) {
       const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
@@ -102,12 +109,10 @@ int main(void)
       if (fi.p != f[i].p) {
         if (NULL != fi.p) {
           if (NULL != f[i].p) {
-            libxsmm_registry_info registry_info;
             generated_code.code_size = 0; /* reset size; avoid stitching code */
             libxsmm_generator_gemm_kernel(&generated_code, &descriptor, target_arch);
-            result = libxsmm_get_registry_info(&registry_info);
 
-            if (EXIT_SUCCESS == result && 0 == generated_code.last_error && 0 < generated_code.code_size) {
+            if (0 == generated_code.last_error && 0 < generated_code.code_size) {
               /* perform deeper check based on another code generation (used as reference) */
               if  (0 == registry_info.nstatic &&
                   (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
