@@ -34,7 +34,7 @@
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
-# define MAX_NKERNELS 100
+# define MAX_NKERNELS 1000
 #endif
 #if !defined(USE_PARALLEL_JIT)
 # define USE_PARALLEL_JIT
