@@ -2407,6 +2407,139 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
   }
 }
 
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
+                                                          const unsigned char *i_data,
+                                                          const char i_vector_name, 
+                                                          const unsigned int i_vec_reg_number ) {
+  int number_of_bytes_to_load = 0;
+  int l_regsize_adjustment = 0;
+
+  switch ( i_vector_name ) {
+    case 'x':
+      number_of_bytes_to_load = 16;
+      l_regsize_adjustment = -4;
+      break;
+    case 'y':
+      number_of_bytes_to_load = 32;
+      break;
+    case 'z':
+      number_of_bytes_to_load = 64;
+      break;
+    default:
+      fprintf(stderr,"libxsmm_x86_instruction_full_vec_load_of_constants: strange input for i_vector_name: %c\n",i_vector_name);
+      exit(-1);
+  }
+
+  if ( io_generated_code->code_type > 1 )
+  {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    unsigned char *cval = (unsigned char *) &i_data[0];
+    int i = io_generated_code->code_size;
+    unsigned int l_maxsize = io_generated_code->buffer_size;
+    int j = 0;
+    int l_stop = 0;
+    int l_regsize_adjustment = 0;
+    int l_last_load_location = 0;
+    int jmpval = 0;
+    int vecval = 0;
+
+    /* @TODO fix max. size error */
+    if ( l_maxsize - i < 139 ) {
+      fprintf(stderr,"libxsmm_x86_instruction_full_vec_load_of_constants: Most constant jumps need at most 139 bytes\n");
+      exit(-1);
+    }
+
+#define DISABLE_ALIGNMENT
+#ifdef DISABLE_ALIGNMENT
+    l_stop = i + 2;
+#else
+    // Replace this code with real code to find the right offset "l_stop" so
+    // buf[l_stop] has the right alignment, where l_stop >= i+2
+    for ( j = i+2, l_stop = -1 ; (j < i+number_of_bytes_to_load+2) && 
+                                (l_stop==-1) ; j++ )
+    {
+      if ( ((size_t)&buf[j])%number_of_bytes_to_load == 0 ) { l_stop = j; }
+    }
+    if ( (l_stop == -1) || (l_stop < i+2) ) {
+      fprintf(stderr,"libxsmm_x86_instruction_full_vec_load_of_constants: never found correct alignment\n");
+      exit(-1);
+    }
+    j = l_stop;
+#endif
+
+    jmpval = number_of_bytes_to_load + l_stop - (i + 2);   
+    buf[ i ] = 0xeb;
+    buf[i+1] = (unsigned char)jmpval;
+    /* Let's insert nops until we reach an aligned address */
+    for ( j = i+2 ; j < l_stop ; j++ ) { 
+      buf[ j ] = 0x90; // nop
+    }
+    i = l_stop;
+       
+    for ( j = 0 ; j < number_of_bytes_to_load ; j++ ) {
+      buf[ i ] = cval[j];
+      i++;
+    } 
+    l_last_load_location = i;
+    if ( i_vector_name == 'z' ) {
+      buf[ i ] = 0x62;
+      if ( i_vec_reg_number <= 7 ) {
+        buf[i+1] = 0xf1;
+        vecval = i_vec_reg_number;
+      } else if ( i_vec_reg_number <= 15 ) {
+        buf[i+1] = 0x71;
+        vecval = i_vec_reg_number - 8;
+      } else if ( i_vec_reg_number <= 23 ) {
+        buf[i+1] = 0xe1;
+        vecval = i_vec_reg_number - 16;
+      } else {
+        buf[i+1] = 0x61;
+        vecval = i_vec_reg_number - 24;
+      }
+      buf[i+2] = 0x7c;
+      buf[i+3] = 0x48;
+      i += 4;
+    } else {
+      buf[i] = 0xc5;
+      if ( i_vec_reg_number <= 7 ) {
+        buf[i+1] = (unsigned char)(0xfc + l_regsize_adjustment);
+        vecval = i_vec_reg_number;
+      } else {
+        buf[i+1] = (unsigned char)(0x7c + l_regsize_adjustment);
+        vecval = i_vec_reg_number - 8;
+      }
+      i += 2;
+    }
+
+    buf[ i ] = 0x10;
+    buf[i+1] = (unsigned char)(0x05 + (8*vecval));
+    // 6 bytes is what we have left to encode in the last_load_location
+    jmpval = -1*(number_of_bytes_to_load + 6 + (i-l_last_load_location) );
+    cval = (unsigned char *) &jmpval;
+    buf[i+2] = cval[0];
+    buf[i+3] = cval[1];
+    buf[i+4] = cval[2];
+    buf[i+5] = cval[3];
+    // 6 bytes is what we have left to encode in the last_load_location
+    i += 6;
+       
+    io_generated_code->code_size = i;
+  } else {
+    unsigned char *cval = (unsigned char *) &i_data[0];
+    int j = 0;
+    printf("\t jmp .continued\n");
+    printf(".data1:\n");
+    for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
+      printf("\t.byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cval[0],cval[1],cval[2],cval[3]);
+      cval = cval + 4;
+    }
+    printf(".continued:\n");
+    printf("\tvmovups .data1(%%rip), %%%cmm%d\n",i_vector_name,i_vec_reg_number);
+  }
+}
+
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
