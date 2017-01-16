@@ -106,11 +106,7 @@ int main(void)
             libxsmm_generator_gemm_kernel(&generated_code, &descriptor, target_arch);
             result = libxsmm_get_registry_info(&registry_info);
 
-            if (EXIT_SUCCESS == result
-              && 0 == generated_code.last_error
-              && 0 != generated_code.generated_code
-              && 0 < generated_code.code_size)
-            {
+            if (EXIT_SUCCESS == result && 0 == generated_code.last_error && 0 < generated_code.code_size) {
               /* perform deeper check based on another code generation (used as reference) */
               if  (0 == registry_info.nstatic &&
                   (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
