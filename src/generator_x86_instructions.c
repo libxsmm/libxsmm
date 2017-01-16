@@ -2415,12 +2415,12 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const char i_vector_name, 
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
-  int l_regsize_adjustment = 0;
+  /*int l_regsize_adjustment = 0;*/
 
   switch ( i_vector_name ) {
     case 'x':
       number_of_bytes_to_load = 16;
-      l_regsize_adjustment = -4;
+      /*l_regsize_adjustment = -4;*/
       break;
     case 'y':
       number_of_bytes_to_load = 32;
@@ -2456,8 +2456,9 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 #ifdef DISABLE_ALIGNMENT
     l_stop = i + 2;
 #else
-    // Replace this code with real code to find the right offset "l_stop" so
-    // buf[l_stop] has the right alignment, where l_stop >= i+2
+    /* Replace this code with real code to find the right offset "l_stop" so
+     * buf[l_stop] has the right alignment, where l_stop >= i+2
+     */
     for ( j = i+2, l_stop = -1 ; (j < i+number_of_bytes_to_load+2) && 
                                 (l_stop==-1) ; j++ )
     {
@@ -2475,7 +2476,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     buf[i+1] = (unsigned char)jmpval;
     /* Let's insert nops until we reach an aligned address */
     for ( j = i+2 ; j < l_stop ; j++ ) { 
-      buf[ j ] = 0x90; // nop
+      buf[ j ] = 0x90; /* nop */
     }
     i = l_stop;
        
@@ -2516,14 +2517,14 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 
     buf[ i ] = 0x10;
     buf[i+1] = (unsigned char)(0x05 + (8*vecval));
-    // 6 bytes is what we have left to encode in the last_load_location
+    /* 6 bytes is what we have left to encode in the last_load_location */
     jmpval = -1*(number_of_bytes_to_load + 6 + (i-l_last_load_location) );
     cval = (unsigned char *) &jmpval;
     buf[i+2] = cval[0];
     buf[i+3] = cval[1];
     buf[i+4] = cval[2];
     buf[i+5] = cval[3];
-    // 6 bytes is what we have left to encode in the last_load_location
+    /* 6 bytes is what we have left to encode in the last_load_location */
     i += 6;
        
     io_generated_code->code_size = i;
