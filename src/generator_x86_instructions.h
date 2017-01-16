@@ -305,6 +305,22 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
+ * Generates an insertion of constants into the code stream and loads them into
+ * into a vector register
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_data pointer to an array of bytes that should be be loaded, length needs to match registerlength spezified in i_vector_name (x=16, y=32, z=64)
+ * @param i_id global identifier of constants to load.
+ * @param i_vector_name the vector register name prefix (x,y or z)
+ * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)
+*/
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
+                                                          const unsigned char *i_data,
+                                                          const char *i_id,
+                                                          const char i_vector_name, 
+                                                          const unsigned int i_vec_reg_number );
+/**
  * @TODO: clean-up
  * Opens the inline assembly section / jit stream for convolutions, this is hacked and should be cleaned up
  *
