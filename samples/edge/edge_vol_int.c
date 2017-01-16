@@ -193,8 +193,6 @@ int main(int argc, char* argv[])
 
   double* q;
   double* qt;
-  double* t;
-  double* tp;
 
   unsigned long long l_start, l_end;
   double l_total;
