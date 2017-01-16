@@ -96,6 +96,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
+  double l_code_const[8];
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -188,8 +189,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
-  /* load C into registers */
+  /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
+#if 0
     libxsmm_x86_instruction_vec_move( io_generated_code,
                                       l_micro_kernel_config.instruction_set,
                                       LIBXSMM_X86_INSTR_VBROADCASTSD,
@@ -201,6 +203,23 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                       l_z,
                                       0,
                                       0 );
+#else
+    char l_id[65];
+    LIBXSMM_SNPRINTF(l_id, 64, "%d", l_z);
+    l_code_const[0] = l_unique_values[l_z];
+    l_code_const[1] = l_unique_values[l_z];
+    l_code_const[2] = l_unique_values[l_z];
+    l_code_const[3] = l_unique_values[l_z];
+    l_code_const[4] = l_unique_values[l_z];
+    l_code_const[5] = l_unique_values[l_z];
+    l_code_const[6] = l_unique_values[l_z];
+    l_code_const[7] = l_unique_values[l_z];
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                                                         (unsigned char*)l_code_const,
+                                                         l_id,
+                                                         l_micro_kernel_config.vector_name, 
+                                                         l_z );
+#endif
   }
 
   /* n loop */
