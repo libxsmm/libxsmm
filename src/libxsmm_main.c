@@ -111,7 +111,7 @@
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
-#if 0
+#if 0 /* disabled due to no performance advantage */
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
 #endif
 
@@ -207,7 +207,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #if !defined(LIBXSMM_SYNC_OPENMP) && !defined(LIBXSMM_NO_SYNC)
-# define INTERNAL_REGLOCK_COUNT 16
+# define INTERNAL_REGLOCK_COUNT 256
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_COUNT];
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_reglock_check;
 #endif
