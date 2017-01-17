@@ -997,6 +997,38 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         return result;
       }
     } break;
+    case LIBXSMM_BUILD_KIND_SREG: { /* sparse register kernel */
+      assert(0 != request->descriptor.sreg && 0 != request->descriptor.ssoa->gemm);
+      assert(0 != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
+#if 0
+      if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (request->descriptor.sreg->gemm->flags))/*only double-precision*/) {
+#endif
+        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
+        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm, target_arch,
+          request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
+          (const double*)request->descriptor.sreg->values);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.ssoa->gemm->prefetch);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.sreg", target_arch/*code path name*/,
+            0 == (LIBXSMM_GEMM_FLAG_F32PREC & request->descriptor.sreg->gemm->flags) ? "f64" : "f32",
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
+            (unsigned int)request->descriptor.sreg->gemm->m,   (unsigned int)request->descriptor.sreg->gemm->n,   (unsigned int)request->descriptor.sreg->gemm->k,
+            (unsigned int)request->descriptor.sreg->gemm->lda, (unsigned int)request->descriptor.sreg->gemm->ldb, (unsigned int)request->descriptor.sreg->gemm->ldc,
+            request->descriptor.sreg->gemm->alpha, request->descriptor.sreg->gemm->beta, uid);
+        }
+#if 0
+      }
+      else { /* this case is not an actual error */
+        return result;
+      }
+#endif
+    } break;
     case LIBXSMM_BUILD_KIND_CFWD: { /* forward convolution */
       assert(0 != request->descriptor.cfwd);
       if (0 < request->descriptor.cfwd->kw && 0 < request->descriptor.cfwd->kh &&
@@ -1404,6 +1436,42 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
   ssoa.values = values;
   request.descriptor.ssoa = &ssoa;
   request.kind = LIBXSMM_BUILD_KIND_SSOA;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.xmm;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_csr_reg_descriptor sreg;
+  libxsmm_build_request request;
+  LIBXSMM_INIT
+  sreg.gemm = descriptor;
+  sreg.row_ptr = row_ptr;
+  sreg.column_idx = column_idx;
+  sreg.values = values;
+  request.descriptor.sreg = &sreg;
+  request.kind = LIBXSMM_BUILD_KIND_SREG;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.xmm;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_fcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_csr_reg_descriptor sreg;
+  libxsmm_build_request request;
+  LIBXSMM_INIT
+  sreg.gemm = descriptor;
+  sreg.row_ptr = row_ptr;
+  sreg.column_idx = column_idx;
+  sreg.values = values;
+  request.descriptor.sreg = &sreg;
+  request.kind = LIBXSMM_BUILD_KIND_SREG;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
   return code.xmm;
 }

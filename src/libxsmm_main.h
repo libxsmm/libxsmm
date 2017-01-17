@@ -83,6 +83,13 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor
   const void* values;
 } libxsmm_csr_soa_descriptor;
 
+typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  const unsigned int* row_ptr;
+  const unsigned int* column_idx;
+  const void* values;
+} libxsmm_csr_reg_descriptor;
+
 /** Structure which describes an activation layer. */
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int N;                            /* number of images in mini-batch */
@@ -180,6 +187,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
 typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM,
   LIBXSMM_BUILD_KIND_SSOA,
+  LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
   LIBXSMM_BUILD_KIND_CBWD,
   LIBXSMM_BUILD_KIND_CUPD
@@ -188,6 +196,7 @@ typedef enum libxsmm_build_kind {
 typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const libxsmm_csr_soa_descriptor* ssoa;
+  const libxsmm_csr_reg_descriptor* sreg;
   const libxsmm_convolution_forward_descriptor* cfwd;
   const libxsmm_convolution_backward_descriptor* cbwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
