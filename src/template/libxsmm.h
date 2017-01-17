@@ -105,12 +105,16 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
-/** create a gemm descriptor object */
-LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb, int m, int n, int k, 
-                                                                     int lda, int ldb, int ldc, double alpha, double beta, libxsmm_gemm_prefetch_type pf_type);
+/**
+ * Create a GEMM descriptor object (dynamically allocates memory). Use this function
+ * for binding a language where the libxsmm_gemm_descriptor type is not convenient.
+ */
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_create_gemm_descriptor(libxsmm_gemm_precision/*int*/ precision,
+  char transa, char transb, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
+  libxsmm_gemm_prefetch_type/*int*/ strategy);
 
-/** release a gemm descriptor object */
-LIBXSMM_API void libxsmm_release_gemm_descriptor(libxsmm_gemm_descriptor* desc);
+/** Release a GEMM descriptor object. */
+LIBXSMM_API void libxsmm_release_gemm_descriptor(const libxsmm_gemm_descriptor* descriptor);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
@@ -211,7 +215,7 @@ LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
  * ITK-SNAP or ParaView.
  */
 LIBXSMM_API void libxsmm_gemm_print(void* ostream,
-  libxsmm_gemm_xflags precision, const char* transa, const char* transb,
+  libxsmm_gemm_precision precision, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,

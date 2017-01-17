@@ -54,6 +54,14 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 } libxsmm_gemm_flags;
 
+/** Extended flag set complementing libxsmm_gemm_flags. */
+typedef enum libxsmm_gemm_precision {
+  /** Not an actual flag; just provided for symmetry. */
+  LIBXSMM_GEMM_FLAG_F64PREC = 0,
+  /** Single-precision (sgemm rather than dgemm). */
+  LIBXSMM_GEMM_FLAG_F32PREC = 16
+} libxsmm_gemm_precision;
+
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
   /** Automatically select strategy (frontend). */

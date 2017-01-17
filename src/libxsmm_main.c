@@ -1376,6 +1376,28 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_gemm_descriptor(libxsmm_gemm_precision precision,
+  char transa, char transb, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
+  libxsmm_gemm_prefetch_type strategy)
+{
+  libxsmm_gemm_descriptor *const result = (libxsmm_gemm_descriptor*)malloc(sizeof(libxsmm_gemm_descriptor));
+  /* filter alpha and beta values since the descriptor cannot store general real values */
+  if (0 != result && 0 != LIBXSMM_GEMM_NO_BYPASS(0, alpha, beta)) {
+    LIBXSMM_GEMM_DESCRIPTOR(*result, 1, precision |
+      (('T' == transa || 't' == transa) ? LIBXSMM_GEMM_FLAG_TRANS_A : 0) |
+      (('T' == transb || 't' == transb) ? LIBXSMM_GEMM_FLAG_TRANS_B : 0),
+      m, n, k, lda, ldb, ldc, alpha, beta, strategy);
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_descriptor* descriptor)
+{
+  free((void*)descriptor);
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result = { 0 };
@@ -1477,21 +1499,6 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_fcsr_reg(const libxsmm
   return code.xmm;
 }
 #endif
-
-
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb, int m, int n, int k, 
-                                                                     int lda, int ldb, int ldc, double alpha, double beta, libxsmm_gemm_prefetch_type pf_type) 
-{
-  libxsmm_gemm_descriptor* l_xgemm_desc = (libxsmm_gemm_descriptor*)malloc(sizeof(libxsmm_gemm_descriptor));
-  LIBXSMM_GEMM_DESCRIPTOR(*l_xgemm_desc, 1, 0, m, n, k, lda, ldb, ldc, alpha, beta, pf_type);
-  return l_xgemm_desc;
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(libxsmm_gemm_descriptor* desc) 
-{
-  free(desc);
-}
 
 
 LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)

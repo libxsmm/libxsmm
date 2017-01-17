@@ -113,7 +113,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
-  libxsmm_gemm_xflags precision, const char* transa, const char* transb,
+  libxsmm_gemm_precision precision, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,

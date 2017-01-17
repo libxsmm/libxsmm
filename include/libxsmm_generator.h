@@ -127,14 +127,6 @@ typedef struct libxsmm_gemm_descriptor {
   unsigned char prefetch;
 } libxsmm_gemm_descriptor;
 
-/** Extended flag set complementing libxsmm_gemm_flags. */
-typedef enum libxsmm_gemm_xflags {
-  /** Not an actual flag; just provided for symmetry. */
-  LIBXSMM_GEMM_FLAG_F64PREC = 0,
-  /** Single-precision (sgemm rather than dgemm). */
-  LIBXSMM_GEMM_FLAG_F32PREC = 16
-} libxsmm_gemm_xflags;
-
 /** Structure referring to the generated code with some attached information. */
 typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
