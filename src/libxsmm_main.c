@@ -1196,7 +1196,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
     /* check if the requested xGEMM is already JITted */
     LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, *descriptor);
     while (0 != diff) {
-      flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_SEQ_CST); /* read registered code */
+      flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED); /* read registered code */
       if ((0 != flux_entry.pmm || 1 == mode) && 2 > mode) { /* check existing entry further */
         diff = 0 != flux_entry.pmm ? libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].descriptor) : 1;
         if (0 != diff) { /* search for code version */
@@ -1237,7 +1237,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.pmm) {
               internal_registry_keys[i].descriptor = *descriptor;
-              LIBXSMM_ATOMIC_STORE(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_SEQ_CST); /* sync */
+              LIBXSMM_ATOMIC_STORE(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED); /* sync */
 # if defined(LIBXSMM_HASH_COLLISION)
               if (2 < mode) { /* arrived from collision state; now mark as collision */
                 libxsmm_code_pointer fix_entry;
@@ -1252,8 +1252,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             }
             diff = 0; /* inside of locked region (do not use break!) */
           }
-          else { /* acquire registry slot */
-            assert(0 != internal_registry[i].pmm/*collision*/);
+          INTERNAL_FIND_CODE_UNLOCK(lock);
+          if (0 != diff) { /* acquire registry slot */
             if (0 == mode) { /* initial condition */
               mode = 2; /* continue to linearly search for an empty slot */
               i0 = i; /* keep current position on record */
@@ -1262,10 +1262,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
                  i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY)); /* continue to linearly search code */
             if (i == i0) { /* out of capacity (no registry slot available) */
               diff = 0; /* inside of locked region (do not use break!) */
-              flux_entry.pmm = 0; /* no result */
             }
+            assert(0 == flux_entry.pmm); /* no result */
           }
-          INTERNAL_FIND_CODE_UNLOCK(lock);
         }
         else
 #endif
