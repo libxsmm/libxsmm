@@ -1167,10 +1167,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
   static LIBXSMM_TLS struct {
-    unsigned int id, hit; /* not ideal here, but avoid GCC's warning about "missing braces around initializer" */
     union { char padding[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE]; libxsmm_gemm_descriptor desc; } keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
-  } cache = { (unsigned int)(-1), LIBXSMM_CAPACITY_CACHE };
+    unsigned int hit, id;
+  } cache;
   unsigned int cache_index;
   assert(0 != descriptor && LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE >= LIBXSMM_GEMM_DESCRIPTOR_SIZE);
   /* search small cache starting with the last hit on record */
@@ -1283,7 +1283,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
       assert(0 == diff);
     }
     if (cache.id != internal_teardown) {
-      memset(cache.keys, -1, sizeof(cache.keys));
+      memset(cache.keys, 0, sizeof(cache.keys));
       cache.id = internal_teardown;
     }
 #endif
