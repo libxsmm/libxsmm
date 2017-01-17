@@ -151,7 +151,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   /* inner chunck size */
-  if ( i_xgemm_desc->n != l_micro_kernel_config.vector_length ) {
+  if ( i_xgemm_desc->n != (int)l_micro_kernel_config.vector_length ) {
     fprintf(stderr, "n needs to be divisible by vector length!\n");
     exit(-1);
   }
