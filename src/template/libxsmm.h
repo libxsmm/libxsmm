@@ -109,8 +109,8 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
  * Create a GEMM descriptor object (dynamically allocates memory). Use this function
  * for binding a language where the libxsmm_gemm_descriptor type is not convenient.
  */
-LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(libxsmm_gemm_precision/*int*/ precision,
-  char transa, char transb, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
   libxsmm_gemm_prefetch_type/*int*/ strategy);
 
 /** Release a GEMM descriptor object. */
