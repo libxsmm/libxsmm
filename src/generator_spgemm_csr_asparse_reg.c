@@ -162,7 +162,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
     char l_id[65];
-    LIBXSMM_SNPRINTF(l_id, 64, "%d", l_z);
+    LIBXSMM_SNPRINTF(l_id, 64, "%u", l_z);
     l_code_const[0] = l_unique_values[l_z];
     l_code_const[1] = l_unique_values[l_z];
     l_code_const[2] = l_unique_values[l_z];
