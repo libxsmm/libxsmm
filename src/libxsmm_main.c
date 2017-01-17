@@ -713,8 +713,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_HASH_COLLISION)
               code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-              if (EXIT_SUCCESS == libxsmm_malloc_info(code.const_pmm, &size, 0/*flags*/, &buffer)) {
-                libxsmm_xfree(code.const_pmm);
+              if (EXIT_SUCCESS == libxsmm_malloc_info(code.cv_pmm, &size, 0/*flags*/, &buffer)) {
+                libxsmm_xfree(code.cv_pmm);
                 ++internal_statistic[precision][bucket].njit;
                 heapmem += (unsigned int)(size + (((char*)code.const_pmm) - (char*)buffer));
               }
@@ -1353,7 +1353,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 #if defined(LIBXSMM_HASH_COLLISION)
             code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-            result = libxsmm_malloc_info(code.const_pmm, &buffer_size, 0/*flags*/, &buffer);
+            result = libxsmm_malloc_info(code.cv_pmm, &buffer_size, 0/*flags*/, &buffer);
             if (EXIT_SUCCESS == result) {
               info->nbytes += (unsigned int)(buffer_size + (((char*)code.const_pmm) - (char*)buffer));
             }

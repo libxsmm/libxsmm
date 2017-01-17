@@ -67,7 +67,7 @@
 # define LIBXSMM_SYNC_FREE(BUFFER) _mm_free((void*)(BUFFER))
 #else
 # define LIBXSMM_SYNC_MALLOC(SIZE, ALIGNMENT) libxsmm_aligned_malloc(SIZE, -(ALIGNMENT))
-# define LIBXSMM_SYNC_FREE(BUFFER) libxsmm_free(BUFFER)
+# define LIBXSMM_SYNC_FREE(BUFFER) libxsmm_free((const volatile void*)(BUFFER))
 #endif
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE(DELAY) _mm_delay_32(DELAY)
