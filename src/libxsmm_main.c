@@ -1000,7 +1000,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     case LIBXSMM_BUILD_KIND_SREG: { /* sparse register kernel */
       assert(0 != request->descriptor.sreg && 0 != request->descriptor.ssoa->gemm);
       assert(0 != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
-#if 0
+#if 1
       if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (request->descriptor.sreg->gemm->flags))/*only double-precision*/) {
 #endif
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
@@ -1022,7 +1022,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             (unsigned int)request->descriptor.sreg->gemm->lda, (unsigned int)request->descriptor.sreg->gemm->ldb, (unsigned int)request->descriptor.sreg->gemm->ldc,
             request->descriptor.sreg->gemm->alpha, request->descriptor.sreg->gemm->beta, uid);
         }
-#if 0
+#if 1
       }
       else { /* this case is not an actual error */
         return result;
@@ -1458,7 +1458,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_reg(const libxsmm
   return code.xmm;
 }
 
-
+#if 0
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_fcsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
@@ -1475,7 +1475,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_fcsr_reg(const libxsmm
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
   return code.xmm;
 }
-
+#endif
 
 LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 {
