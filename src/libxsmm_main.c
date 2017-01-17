@@ -1263,7 +1263,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             if (i == i0) { /* out of capacity (no registry slot available) */
               diff = 0; /* inside of locked region (do not use break!) */
             }
-            assert(0 == flux_entry.const_pmm); /* no result */
+            flux_entry.pmm = 0; /* no result */
           }
         }
         else
