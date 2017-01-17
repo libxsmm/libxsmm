@@ -219,7 +219,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;
     }
-  } else { 
+  } else {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
     io_micro_kernel_config->use_masking_a_c = 0;
@@ -344,7 +344,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
 #endif
     libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
-  } else { 
+  } else {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
     io_micro_kernel_config->use_masking_a_c = 0;
@@ -489,7 +489,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
       io_micro_kernel_config->vmul_instruction = LIBXSMM_X86_INSTR_VFMADD231SS;
       io_micro_kernel_config->vadd_instruction = LIBXSMM_X86_INSTR_VADDSS;
     }
-  } else { 
+  } else {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_GENERIC;
     io_micro_kernel_config->vector_reg_count = 0;
     io_micro_kernel_config->use_masking_a_c = 0;

@@ -318,7 +318,7 @@ LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
                                                           const unsigned char *i_data,
                                                           const char *i_id,
-                                                          const char i_vector_name, 
+                                                          const char i_vector_name,
                                                           const unsigned int i_vec_reg_number );
 /**
  * @TODO: clean-up

@@ -1252,7 +1252,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             mode = 3; /* enter code generation, and collision fix-up */
 #else
             mode = 2; /* enter code generation */
-#endif      
+#endif
           }
           assert(0 != diff); /* continue */
         }

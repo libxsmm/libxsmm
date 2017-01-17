@@ -174,7 +174,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
                                                          (unsigned char*)l_code_const,
                                                          l_id,
-                                                         l_micro_kernel_config.vector_name, 
+                                                         l_micro_kernel_config.vector_name,
                                                          l_z );
   }
 

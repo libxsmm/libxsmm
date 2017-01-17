@@ -2412,7 +2412,7 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
                                                           const unsigned char *i_data,
                                                           const char *i_id,
-                                                          const char i_vector_name, 
+                                                          const char i_vector_name,
                                                           const unsigned int i_vec_reg_number ) {
   int number_of_bytes_to_load = 0;
   /*int l_regsize_adjustment = 0;*/
@@ -2459,7 +2459,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     /* Replace this code with real code to find the right offset "l_stop" so
      * buf[l_stop] has the right alignment, where l_stop >= i+2
      */
-    for ( j = i+2, l_stop = -1 ; (j < i+number_of_bytes_to_load+2) && 
+    for ( j = i+2, l_stop = -1 ; (j < i+number_of_bytes_to_load+2) &&
                                 (l_stop==-1) ; j++ )
     {
       if ( ((size_t)&buf[j])%number_of_bytes_to_load == 0 ) { l_stop = j; }
@@ -2471,19 +2471,19 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     j = l_stop;
 #endif
 
-    jmpval = number_of_bytes_to_load + l_stop - (i + 2);   
+    jmpval = number_of_bytes_to_load + l_stop - (i + 2);
     buf[ i ] = 0xeb;
     buf[i+1] = (unsigned char)jmpval;
     /* Let's insert nops until we reach an aligned address */
-    for ( j = i+2 ; j < l_stop ; j++ ) { 
+    for ( j = i+2 ; j < l_stop ; j++ ) {
       buf[ j ] = 0x90; /* nop */
     }
     i = l_stop;
-       
+
     for ( j = 0 ; j < number_of_bytes_to_load ; j++ ) {
       buf[ i ] = cval[j];
       i++;
-    } 
+    }
     l_last_load_location = i;
     if ( i_vector_name == 'z' ) {
       buf[ i ] = 0x62;
@@ -2526,7 +2526,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     buf[i+5] = cval[3];
     /* 6 bytes is what we have left to encode in the last_load_location */
     i += 6;
-       
+
     io_generated_code->code_size = i;
   } else {
     unsigned char *cval = (unsigned char *) &i_data[0];
@@ -2548,7 +2548,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       }
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".continued_%s:\\n\\t\"\n", i_id );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"vmovups .data_%s(%%%%rip), %%%%%cmm%u\\n\\t\"\n", 
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"vmovups .data_%s(%%%%rip), %%%%%cmm%u\\n\\t\"\n",
                                                                                                               i_id, i_vector_name, i_vec_reg_number );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {
