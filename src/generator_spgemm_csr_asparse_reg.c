@@ -53,15 +53,15 @@ void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         i
     /* selecting the correct signature */
     if (0 != (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags)) {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* Bin, float* Cin) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* Bin, float* Cin, const float* Bin_prefetch, const float* Cin_prefetch) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
     } else {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* Bin, double* Cin) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* Bin, double* Cin, const double* Bin_prefetch, const double* Cin_prefetch) {\n", i_routine_name);
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
     }
   }
@@ -80,27 +80,23 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_n;
   unsigned int l_z;
   unsigned int l_row_elements;
-#if 0
-  unsigned int l_flop_count = 0;
-#endif
   unsigned int l_unique;
   unsigned int l_hit;
-  unsigned int l_n_i_blocking = 1;
-#if 0
-  unsigned int l_n_o_blocking = 1;
-#endif
-  unsigned int l_i_chunks = 1;
+  unsigned int l_n_blocking = 1;
   double* l_unique_values = (double*)malloc(sizeof(double)*i_row_idx[i_xgemm_desc->m]);
   unsigned int* l_unique_pos = (unsigned int*)malloc(sizeof(unsigned int)*i_row_idx[i_xgemm_desc->m]);
-
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
   double l_code_const[8];
 
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
+
+  /* check that we build for AVX512 */
+  if ( (strcmp(i_arch, "knl") != 0) &&
+       (strcmp(i_arch, "skx") != 0)    ) {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
 
   /* Let's figure out how many unique values we have */
   l_unique = 1;
@@ -129,21 +125,6 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     exit(-1);
   }
 
-  /* create a tempdata structure which contains the unique NNZ */
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  double A[%u];\n", l_unique);
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  double* B;\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  double* C;\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-
-  for ( l_z = 0; l_z < l_unique; l_z++) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  A[%u] = %.20e;\n", l_z, l_unique_values[l_z]);
-    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  }
-
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
   /* matching calling convention on Linux */
@@ -170,40 +151,16 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   /* inner chunck size */
-  l_i_chunks = l_micro_kernel_config.vector_length*l_n_i_blocking;
-  if ( i_xgemm_desc->n % l_i_chunks != 0 ) {
-    fprintf(stderr, "n needs to be divisible by 96!\n");
+  if ( i_xgemm_desc->n != l_micro_kernel_config.vector_length ) {
+    fprintf(stderr, "n needs to be divisible by vector length!\n");
     exit(-1);
   }
-
-  /* generate the actuel kernel */
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma omp parallel for private(l_n,B,C)\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n+= %u ) {\n", (unsigned int)i_xgemm_desc->n, l_i_chunks);
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    B = ((double*)Bin)+l_n;\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    C = ((double*)Cin)+l_n;\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   /* load A into registers */
   for ( l_z = 0; l_z < l_unique; l_z++) {
-#if 0
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-                                      l_micro_kernel_config.instruction_set,
-                                      LIBXSMM_X86_INSTR_VBROADCASTSD,
-                                      l_gp_reg_mapping.gp_reg_a,
-                                      LIBXSMM_X86_GP_REG_UNDEF,
-                                      0,
-                                      l_micro_kernel_config.datatype_size*l_z,
-                                      l_micro_kernel_config.vector_name,
-                                      l_z,
-                                      0,
-                                      0 );
-#else
     char l_id[65];
     LIBXSMM_SNPRINTF(l_id, 64, "%d", l_z);
     l_code_const[0] = l_unique_values[l_z];
@@ -219,19 +176,18 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                          l_id,
                                                          l_micro_kernel_config.vector_name, 
                                                          l_z );
-#endif
   }
 
   /* n loop */
 #if 0
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_o_blocking );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
 #endif
 
   for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
     l_row_elements = i_row_idx[l_m+1] - i_row_idx[l_m];
     if (l_row_elements > 0) {
-      for ( l_n = 0; l_n < l_n_i_blocking; l_n++ ) {
+      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,
                                           l_micro_kernel_config.c_vmove_instruction,
@@ -252,7 +208,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     }
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       /* check k such that we just use columns which actually need to be multiplied */
-      for ( l_n = 0; l_n < l_n_i_blocking; l_n++ ) {
+      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  l_micro_kernel_config.instruction_set,
                                                  l_micro_kernel_config.vmul_instruction,
@@ -276,7 +232,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
       }
     }
     if (l_row_elements > 0) {
-      for ( l_n = 0; l_n < l_n_i_blocking; l_n++ ) {
+      for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,
                                           l_micro_kernel_config.c_vmove_instruction,
@@ -292,16 +248,12 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* close n loop */
 #if 0
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_o_blocking );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
 #endif
 
   /* close asm */
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
-
-  /* close loop in C */
-  l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  }\n");
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   free(l_unique_values);
   free(l_unique_pos);

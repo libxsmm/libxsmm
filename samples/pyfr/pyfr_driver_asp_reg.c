@@ -40,7 +40,15 @@
 #define REALTYPE double
 
 /* forward decelration of generated code */
-void libxsmm_code(const double* Bin, double* Cin);
+void libxsmm_code(const double* A, const double* B, double* C);
+
+void libxsmm_kernel(const double* A, const double* B, double* C, const int N, const int vlen) {
+  int n;
+
+  for (n = 0; n < N; n+=vlen) {
+    libxsmm_code(A, B+n, C+n);
+  }
+}
 
 static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
@@ -250,7 +258,7 @@ int main(int argc, char* argv[]) {
 
   /* libxsmm generated code */
   printf("computing libxsmm (A sparse) solution...\n");
-  libxsmm_code(l_b, l_c);
+  libxsmm_kernel(NULL, l_b, l_c, l_n, 8);
   printf("...done!\n");
 
   /* BLAS code */
@@ -280,7 +288,7 @@ int main(int argc, char* argv[]) {
   /* Let's measure performance */
   gettimeofday(&l_start, NULL);
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    libxsmm_code(l_b, l_c);
+    libxsmm_kernel(NULL, l_b, l_c, l_n, 8);
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
