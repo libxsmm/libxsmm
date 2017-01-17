@@ -29,6 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -41,12 +42,20 @@
 
 /* forward decelration of generated code */
 void libxsmm_code(const double* A, const double* B, double* C);
+libxsmm_dmmfunction libxsmm_jit;
 
-void libxsmm_kernel(const double* A, const double* B, double* C, const int N, const int vlen) {
-  int n;
+void libxsmm_kernel(const double* A, const double* B, double* C, const unsigned int N, const unsigned int vlen) {
+  unsigned int n;
 
+#ifdef _OPENMP
+  #pragma omp parallel for private(n)
+#endif
   for (n = 0; n < N; n+=vlen) {
+#if 0
     libxsmm_code(A, B+n, C+n);
+#else
+    libxsmm_jit(A, B+n, C+n);
+#endif
   }
 }
 
@@ -192,9 +201,12 @@ int main(int argc, char* argv[]) {
   unsigned int l_z;
   unsigned int l_elems;
   unsigned int l_reps;
+  unsigned int l_vlen;
 
   struct timeval l_start, l_end;
   double l_total;
+
+  libxsmm_gemm_descriptor* l_xgemm_desc = NULL;
 
   /* read sparse A */
   l_csr_file = argv[1];
@@ -212,6 +224,10 @@ int main(int argc, char* argv[]) {
   l_k = l_colcount;
   printf("CSR matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
+
+  l_vlen = 8;
+  l_xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', l_m, l_vlen, l_k, 0, l_n, l_n, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
+  libxsmm_jit = libxsmm_create_dcsr_reg( l_xgemm_desc, l_rowptr, l_colidx, l_a_sp ).dmm;
 
   /* allocate dense matrices */
   l_a_dense = (REALTYPE*)_mm_malloc(l_k * l_m * sizeof(REALTYPE), 64);
@@ -258,7 +274,7 @@ int main(int argc, char* argv[]) {
 
   /* libxsmm generated code */
   printf("computing libxsmm (A sparse) solution...\n");
-  libxsmm_kernel(NULL, l_b, l_c, l_n, 8);
+  libxsmm_kernel(NULL, l_b, l_c, l_n, l_vlen);
   printf("...done!\n");
 
   /* BLAS code */
@@ -288,7 +304,7 @@ int main(int argc, char* argv[]) {
   /* Let's measure performance */
   gettimeofday(&l_start, NULL);
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    libxsmm_kernel(NULL, l_b, l_c, l_n, 8);
+    libxsmm_kernel(NULL, l_b, l_c, l_n, l_vlen);
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
@@ -308,5 +324,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   /* free */
+  libxsmm_release_kernel(libxsmm_jit);
+  libxsmm_release_gemm_descriptor(l_xgemm_desc);
   /* @TODO */
 }
