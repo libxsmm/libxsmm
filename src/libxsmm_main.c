@@ -385,9 +385,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_statistic_ntry(int pre
 }
 
 
-LIBXSMM_API void internal_register_static_code(const libxsmm_gemm_descriptor*,
+LIBXSMM_INTERNAL_API void internal_register_static_code(const libxsmm_gemm_descriptor*,
   unsigned int, unsigned int, libxsmm_xmmfunction, libxsmm_code_pointer*);
-LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_INTERNAL_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
   unsigned int index, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
   internal_regkey_type* dst_key = internal_registry_keys + index;
@@ -802,8 +802,8 @@ LIBXSMM_API_DEFINITION const char* libxsmm_get_target_arch(void)
 
 
 /* function serves as a helper for implementing the Fortran interface */
-LIBXSMM_API const char* get_target_arch(int* length);
-LIBXSMM_API_DEFINITION const char* get_target_arch(int* length)
+LIBXSMM_INTERNAL_API const char* get_target_arch(int* length);
+LIBXSMM_INTERNAL_API_DEFINITION const char* get_target_arch(int* length)
 {
   const char *const arch = libxsmm_get_target_arch();
   /* valid here since function is not in the public interface */
@@ -913,8 +913,8 @@ LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch
 }
 
 
-LIBXSMM_API const char* internal_get_precision_string(libxsmm_dnn_datatype);
-LIBXSMM_API_DEFINITION const char* internal_get_precision_string(libxsmm_dnn_datatype datatype)
+LIBXSMM_INTERNAL_API const char* internal_get_precision_string(libxsmm_dnn_datatype);
+LIBXSMM_INTERNAL_API_DEFINITION const char* internal_get_precision_string(libxsmm_dnn_datatype datatype)
 {
   const char* result = "unk"; /* unknown */
   switch (datatype) {
@@ -1177,8 +1177,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 
 
 /** This function only works for JIT-generated code! */
-LIBXSMM_API const libxsmm_gemm_descriptor* internal_get_gemm_descriptor(const void* gemm_jit);
-LIBXSMM_API_DEFINITION const libxsmm_gemm_descriptor* internal_get_gemm_descriptor(const void* gemm_jit)
+LIBXSMM_INTERNAL_API const libxsmm_gemm_descriptor* internal_get_gemm_descriptor(const void* gemm_jit);
+LIBXSMM_INTERNAL_API_DEFINITION const libxsmm_gemm_descriptor* internal_get_gemm_descriptor(const void* gemm_jit)
 {
   const libxsmm_gemm_descriptor* result = 0;
   void* extra = 0;

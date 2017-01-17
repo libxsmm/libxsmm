@@ -110,7 +110,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
 #if !defined(LIBXSMM_NO_SYNC)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
 #endif
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_delete(void* value)
+LIBXSMM_INTERNAL_API void internal_delete(void* value);
+LIBXSMM_INTERNAL_API_DEFINITION void internal_delete(void* value)
 {
   int fd;
   assert(value);
