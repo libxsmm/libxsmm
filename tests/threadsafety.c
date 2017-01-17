@@ -78,7 +78,7 @@ int main(void)
 
   result = libxsmm_get_registry_info(&registry_info);
   if (EXIT_SUCCESS == result) {
-    nkernels = LIBXSMM_MIN(nkernels, registry_info.capacity);
+    nkernels = (int)LIBXSMM_MIN((size_t)nkernels, registry_info.capacity);
   }
 
 #if defined(_OPENMP) && defined(USE_PARALLEL_JIT)
