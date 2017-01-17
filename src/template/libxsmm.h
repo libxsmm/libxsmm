@@ -105,6 +105,13 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
+/** create a gemm descriptor object */
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb, int m, int n, int k, 
+                                                                     int lda, int ldb, int ldc, double alpha, double beta, libxsmm_gemm_prefetch_type pf_type);
+
+/** release a gemm descriptor object */
+LIBXSMM_API void libxsmm_release_gemm_descriptor(libxsmm_gemm_descriptor* desc);
+
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
