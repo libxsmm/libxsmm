@@ -1376,14 +1376,15 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_gemm_descriptor(libxsmm_gemm_precision precision,
-  char transa, char transb, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
   libxsmm_gemm_prefetch_type strategy)
 {
   libxsmm_gemm_descriptor *const result = (libxsmm_gemm_descriptor*)malloc(sizeof(libxsmm_gemm_descriptor));
+  assert(0 != transa && 0 != transb && 0 != strchr("NnTt", transa) && 0 != strchr("NnTt", transb));
   /* filter alpha and beta values since the descriptor cannot store general real values */
   if (0 != result && 0 != LIBXSMM_GEMM_NO_BYPASS(0, alpha, beta)) {
-    LIBXSMM_GEMM_DESCRIPTOR(*result, 1, precision |
+    LIBXSMM_GEMM_DESCRIPTOR(*result, 1, LIBXSMM_GEMM_FLAG_F64PREC |
       (('T' == transa || 't' == transa) ? LIBXSMM_GEMM_FLAG_TRANS_A : 0) |
       (('T' == transb || 't' == transb) ? LIBXSMM_GEMM_FLAG_TRANS_B : 0),
       m, n, k, lda, ldb, ldc, alpha, beta, strategy);

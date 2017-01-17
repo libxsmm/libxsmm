@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   l_vlen = 8;
-  l_xgemm_desc = libxsmm_create_gemm_descriptor(LIBXSMM_GEMM_FLAG_F64PREC, 'n', 'n', l_m, l_vlen, l_k, 0, l_n, l_n, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
+  l_xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', l_m, l_vlen, l_k, 0, l_n, l_n, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
   libxsmm_jit = libxsmm_create_dcsr_reg( l_xgemm_desc, l_rowptr, l_colidx, l_a_sp ).dmm;
 
   /* allocate dense matrices */
