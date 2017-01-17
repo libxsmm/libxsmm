@@ -66,12 +66,12 @@
 # if !defined(OTRANS2)
 #   define OTRANS2(TC, TT, M, N, ALPHA, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, omatcopy)) \
-      (*(TC), *(TT), *(M), *(N), *(ALPHA), A, *(LDI), B, *(LDO))
+      (*(TC), *(TT), *(M), *(N), (REAL_TYPE)(*(ALPHA)), A, *(LDI), B, *(LDO))
 # endif
 # if !defined(ITRANS2)
 #   define ITRANS2(TC, TT, M, N, ALPHA, A, LDI, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(REAL_TYPE, imatcopy)) \
-      (*(TC), *(TT), *(M), *(N), *(ALPHA), A, *(LDI), *(LDO))
+      (*(TC), *(TT), *(M), *(N), (REAL_TYPE)(*(ALPHA)), A, *(LDI), *(LDO))
 # endif
 #elif defined(__OPENBLAS)
 # if !defined(OTRANS2)
