@@ -39,7 +39,7 @@ const __m256i *const shufmasks2 = internal_spmdm_shufmasks_16;
 #endif
 int block_offset_base, block_offset;
 int index[16];
-SIMDTYPE_INT32 vindex;
+SIMDTYPE_INT32 vindex = _MM_SETZERO_INT32();
 
 LIBXSMM_UNUSED(nthreads);
 LIBXSMM_UNUSED(tid);
