@@ -121,8 +121,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* check that we have enough registers (N=20) for now */
   if ( l_unique > 31 ) {
-    fprintf( stderr, "for reg version we right now can only have max. 31 unique non-zeros right now!" );
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
+    return;
   }
 
   /* define gp register mapping */
@@ -152,8 +152,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* inner chunck size */
   if ( i_xgemm_desc->n != (int)l_micro_kernel_config.vector_length ) {
-    fprintf(stderr, "n needs to be divisible by vector length!\n");
-    exit(-1);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    return;
   }
 
   /* open asm */

@@ -964,6 +964,9 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_INVALID_GEMM_CONFIG:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid GEMM config in setup detected!\n" );
       break;
+    case LIBXSMM_ERR_UNIQUE_VAL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: for sparse-A in reg: too many values in A!\n" );
+      break;
     /* default, we didn't don't know what happend */
     default:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );

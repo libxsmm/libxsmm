@@ -249,6 +249,7 @@
 #define LIBXSMM_ERR_UNSUP_DT_FORMAT      90047
 #define LIBXSMM_ERR_K_BLOCK              90048
 #define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90049
+#define LIBXSMM_ERR_UNIQUE_VAL           90050
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
