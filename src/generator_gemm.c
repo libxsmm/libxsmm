@@ -28,11 +28,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <libxsmm_generator.h>
 #include <libxsmm_macros.h>
 #include "generator_common.h"
@@ -40,6 +35,11 @@
 #include "generator_gemm_sse3_avx_avx2_avx512.h"
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_noarch.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 
 /* @TODO change int based architecture value */
@@ -187,6 +187,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
+      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
@@ -236,6 +237,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   {
     FILE *const l_file_handle = fopen( i_file_out, "w" );
     if ( l_file_handle != NULL ) {
+      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
