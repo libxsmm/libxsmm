@@ -150,7 +150,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
-  /* inner chunck size */
+  /* inner chunk size */
   if ( i_xgemm_desc->n != (int)l_micro_kernel_config.vector_length ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
