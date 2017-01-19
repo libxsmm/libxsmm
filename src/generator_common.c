@@ -100,7 +100,9 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* append new string */
   /* @TODO using memcpy instead? */
-  strcat(l_new_string, i_code_to_append);
+  if (i_code_to_append != NULL) {
+    strcat(l_new_string, i_code_to_append);
+  }
 
   /* free old memory and overwrite pointer */
   if (l_length_1 > 0)
