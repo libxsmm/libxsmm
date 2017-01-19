@@ -548,7 +548,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->bm = (M >= 4096 || M <= 1024) ? 512 : 256;
 #if defined(LIBXSMM_SPMDM_AVX512_CORE)
   if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid) {
-    internal_spmdm_init_check(LIBXSMM_SPMDM_AVX512_CORE);
+    internal_spmdm_init_check(LIBXSMM_X86_AVX512_CORE);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx512_core;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx512_core;
