@@ -219,13 +219,6 @@ void internal_spmdm_createSparseSlice_fp32_thread_avx2(
 # include "template/libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_fp32_thread_sw(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -245,13 +238,6 @@ void internal_spmdm_createSparseSlice_fp32_thread_avx512_core(
 # include "template/libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_fp32_thread_avx2(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -306,13 +292,6 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_avx2(
 # include "template/libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_bfloat16_thread_sw(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -332,13 +311,6 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core(
 # include "template/libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_bfloat16_thread_avx2(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -403,13 +375,6 @@ void internal_spmdm_compute_fp32_thread_avx2(
 # include "template/libxsmm_spmdm_compute_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_fp32_thread_sw(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -434,13 +399,6 @@ void internal_spmdm_compute_fp32_thread_avx512_core(
 # include "template/libxsmm_spmdm_compute_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_fp32_thread_avx2(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -510,13 +468,6 @@ void internal_spmdm_compute_bfloat16_thread_avx2(
 # include "template/libxsmm_spmdm_compute_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_bfloat16_thread_sw(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -541,13 +492,6 @@ void internal_spmdm_compute_bfloat16_thread_avx512_core(
 # include "template/libxsmm_spmdm_compute_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_bfloat16_thread_avx2(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -578,6 +522,19 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
+{
+  if (archid < libxsmm_target_archid
+    && 0 != libxsmm_verbosity) /* library code is expected to be mute */
+  {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+    }
+  }
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
@@ -591,6 +548,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->bm = (M >= 4096 || M <= 1024) ? 512 : 256;
 #if defined(LIBXSMM_SPMDM_AVX512_CORE)
   if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid) {
+    internal_spmdm_init_check(LIBXSMM_SPMDM_AVX512_CORE);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx512_core;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx512_core;
@@ -601,6 +559,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
 #endif
 #if defined(LIBXSMM_SPMDM_AVX2)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
+    internal_spmdm_init_check(LIBXSMM_X86_AVX512_MIC);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx2;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx2;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx2;
@@ -610,6 +569,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   else
 #endif
   {
+    internal_spmdm_init_check(LIBXSMM_X86_AVX);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_sw;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_sw;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_sw;
