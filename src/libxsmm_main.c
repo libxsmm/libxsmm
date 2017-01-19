@@ -945,7 +945,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
       assert(0 != request->descriptor.gemm);
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
-          0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldc)
+          0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
