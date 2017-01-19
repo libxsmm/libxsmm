@@ -29,10 +29,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <libxsmm_generator.h>
 #include "generator_common.h"
 #include "generator_convolution_common.h"
@@ -42,6 +38,11 @@
 #include "generator_convolution_backward_avx512.h"
 #include "generator_convolution_weight_update_avx2.h"
 #include "generator_convolution_weight_update_avx512.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -204,6 +205,7 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
+      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
@@ -259,6 +261,7 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
   {
     FILE *const l_file_handle = fopen( i_file_out, "w" );
     if ( l_file_handle != NULL ) {
+      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
