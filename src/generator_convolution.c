@@ -104,7 +104,7 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* select datatype */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "skx") == 0)    ) {
       if ( ((i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0) ||
