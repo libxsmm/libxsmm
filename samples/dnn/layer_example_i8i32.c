@@ -238,6 +238,7 @@ int main(int argc, char* argv[])
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
   correctness_t norms_fwd;
+  void* scratch;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -424,6 +425,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_buffer( libxsmm_handle, libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
 
+  /* let's allocate and bind scratch */
+  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, &status ), 2097152);
+  CHKERR_LIBXSMM_DNN( status );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, scratch ) );
+
   printf("##########################################\n");
   printf("#  Check Correctness   (custom-Storage)  #\n");
   printf("##########################################\n");
@@ -482,6 +488,8 @@ int main(int argc, char* argv[])
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
   /* clean-up */
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL ) );
+  libxsmm_free(scratch);
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );

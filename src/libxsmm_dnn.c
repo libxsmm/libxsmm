@@ -112,6 +112,8 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Invalid layout was specified!";
     case LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH:
       return "LIBXSMM DNN Error: Unsupported architecture!";
+    case LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED:
+      return "LIBXSMM DNN Error: scratch binding failed sas scratch was not allocated!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
@@ -1059,6 +1061,170 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_con
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER;
+  }
+
+  return status;
+}
+
+
+LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status)
+{
+  size_t l_scratch_size = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
+  
+  if (0 != handle) {
+    switch (kind) {
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        l_scratch_size = 0;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+        l_scratch_size = handle->scratch1_size + 64;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        /* we need a minibatch copy for transpose of input, scratch3 */
+        l_scratch_size = handle->scratch3_size + 64;
+        /* potentially we need thread-local filter copies, scratch4 */
+        if (handle->upd_use_thread_fil == 1) {
+          l_scratch_size += handle->scratch4_size + 64; 
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_ALL: {
+        /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+        l_scratch_size = handle->scratch1_size + 64;
+        /* we need a minibatch copy for transpose of input, scratch3 */
+        l_scratch_size += handle->scratch3_size + 64;
+        /* potentially we need thread-local filter copies, scratch4 */
+        if (handle->upd_use_thread_fil == 1) {
+          l_scratch_size += handle->scratch4_size + 64; 
+        }
+      } break;
+      default: {
+        *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return l_scratch_size;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, const void* scratch)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  size_t address = (size_t)scratch;
+  size_t offset = 0;
+
+  if (scratch == 0) {
+    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+    return status;
+  }
+  
+  if (0 != handle) {
+    switch (kind) {
+#if 0
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        /* nothing todo, we run into error */
+      } break;
+#endif
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+        if (address % 64 == 0) {
+          handle->scratch1 = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->scratch1 = (void*)(address+offset);
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        /* we need a minibatch copy for transpose of input, scratch3 */
+        if (address % 64 == 0) {
+          handle->scratch3 = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->scratch3 = (void*)(address+offset);
+        }
+        /* potentially we need thread-local filter copies, scratch4 */
+        if (handle->upd_use_thread_fil == 1) {
+          address += handle->scratch3_size + 64;
+          if (address % 64 == 0) {
+            handle->scratch4 = (void*)address;
+          } else {
+            offset = (64 - address % 64);
+            handle->scratch4 = (void*)(address+offset);
+          }
+        }
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_ALL: {
+        /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+        if (address % 64 == 0) {
+          handle->scratch1 = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->scratch1 = (void*)(address+offset);
+        }
+        address += handle->scratch1_size + 64;
+        /* we need a minibatch copy for transpose of input, scratch3 */
+        if (address % 64 == 0) {
+          handle->scratch3 = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->scratch3 = (void*)(address+offset);
+        }
+        /* potentially we need thread-local filter copies, scratch4 */
+        if (handle->upd_use_thread_fil == 1) {
+          address += handle->scratch3_size + 64;
+          if (address % 64 == 0) {
+            handle->scratch4 = (void*)address;
+          } else {
+            offset = (64 - address % 64);
+            handle->scratch4 = (void*)(address+offset);
+          }
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  
+  if (0 != handle) {
+    switch (kind) {
+#if 0
+      case LIBXSMM_DNN_CONV_KIND_FWD: {
+        /* nothing todo, we run into error */
+      } break;
+#endif
+      case LIBXSMM_DNN_CONV_KIND_BWD: {
+        handle->scratch1 = 0;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_UPD: {
+        handle->scratch3 = 0;
+        handle->scratch4 = 0;
+      } break;
+      case LIBXSMM_DNN_CONV_KIND_ALL: {
+        handle->scratch1 = 0;
+        handle->scratch3 = 0;
+        handle->scratch4 = 0;
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
 
   return status;

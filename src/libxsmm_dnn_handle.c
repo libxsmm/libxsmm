@@ -689,27 +689,29 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     {
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
-      handle->scratch1 = libxsmm_aligned_malloc( /* populating scratch register for transpose */
-        handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
-        LIBXSMM_ALIGNMENT);
+      /* backward transpose filters */
+      handle->scratch1 = 0;
+      handle->scratch1_size = handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock 
+                                * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
-/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
-      handle->scratch3 = libxsmm_aligned_malloc( /* allocate raw data */
-        handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
-        LIBXSMM_ALIGNMENT);
-/*#endif*/
+      /* weight update transpose of minibatch */
+      handle->scratch3 = 0;
+      handle->scratch3_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp 
+                                * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+
       if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
         handle->upd_use_thread_fil = 1;
-        handle->scratch4 = libxsmm_aligned_malloc(
-          handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-          * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
-          LIBXSMM_ALIGNMENT);
+        handle->scratch4 = 0;
+        handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+          * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+
         /* enable external reduce of filter scratch */
         if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) > 0 ) {
           handle->upd_use_external_reduce = 1;
         }
       } else {
         handle->scratch4 = 0;
+        handle->scratch4_size = 0;
         handle->upd_use_thread_fil = 0;
       }
     }
@@ -735,8 +737,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->barrier = 0;
 
     handle->scratch1 = 0;
+    handle->scratch1_size = 0;
     handle->scratch3 = 0;
+    handle->scratch3_size = 0;
     handle->scratch4 = 0;
+    handle->scratch4_size = 0;
   }
 
   return status;

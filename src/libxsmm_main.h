@@ -175,8 +175,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
 
   /* scratch */
   void* scratch1;
+  size_t scratch1_size;
   void* scratch3;
+  size_t scratch3_size;
   void* scratch4;
+  size_t scratch4_size;
 
   /* JIT-generated convolution code */
   /*
