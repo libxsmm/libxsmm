@@ -57,11 +57,20 @@
 #endif
 
 /* Enable/disable specific code paths */
-#if !defined(LIBXSMM_SPMDM_AVX512_CORE)
-# define LIBXSMM_SPMDM_AVX512_CORE
+#if !defined(LIBXSMM_SPMDM_AVX) \
+  && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# define LIBXSMM_SPMDM_AVX
 #endif
-#if !defined(LIBXSMM_SPMDM_AVX2)
+#if !defined(LIBXSMM_SPMDM_AVX2) && defined(LIBXSMM_SPMDM_AVX) \
+  && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
 # define LIBXSMM_SPMDM_AVX2
+#endif
+#if !defined(LIBXSMM_SPMDM_AVX512_CORE) && defined(LIBXSMM_SPMDM_AVX2) \
+  && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
+  && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# define LIBXSMM_SPMDM_AVX512_CORE
 #endif
 
 
@@ -75,8 +84,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_fp32_thread)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int);
 
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX)
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_32;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_16;
 #endif
@@ -85,8 +93,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_16;
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 void internal_spmdm_init_shufmask_avx()
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX)
   static __m256i spmdm_shufmasks_32[256], spmdm_shufmasks_16[256];
   LIBXSMM_ALIGNED(int temp_shufmasks[8], 64);
   LIBXSMM_ALIGNED(uint16_t temp_shufmasks2[16], 64);
@@ -207,19 +214,11 @@ void internal_spmdm_createSparseSlice_fp32_thread_avx2(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX2)
 # include "libxsmm_spmdm_begin_avx2.h"
 # include "template/libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX2) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_fp32_thread_sw(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -234,19 +233,11 @@ void internal_spmdm_createSparseSlice_fp32_thread_avx512_core(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX512_CORE) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX512_CORE)
 # include "libxsmm_spmdm_begin_avx512.h"
 # include "template/libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX512_CORE) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_fp32_thread_avx2(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -296,19 +287,11 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_avx2(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX2)
 # include "libxsmm_spmdm_begin_avx2.h"
 # include "template/libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX2) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_bfloat16_thread_sw(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -323,19 +306,11 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX512_CORE) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX512_CORE)
 # include "libxsmm_spmdm_begin_avx512.h"
 # include "template/libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX512_CORE) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_createSparseSlice_bfloat16_thread_avx2(handle, transA, A, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -395,19 +370,11 @@ void internal_spmdm_compute_fp32_thread_avx2(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX2)
 # include "libxsmm_spmdm_begin_avx2.h"
 # include "template/libxsmm_spmdm_compute_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX2) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_fp32_thread_sw(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -427,19 +394,11 @@ void internal_spmdm_compute_fp32_thread_avx512_core(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX512_CORE) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX512_CORE)
 # include "libxsmm_spmdm_begin_avx512.h"
 # include "template/libxsmm_spmdm_compute_fp32_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX512_CORE) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_fp32_thread_avx2(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -504,19 +463,11 @@ void internal_spmdm_compute_bfloat16_thread_avx2(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX2) && (LIBXSMM_X86_AVX2 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX2)
 # include "libxsmm_spmdm_begin_avx2.h"
 # include "template/libxsmm_spmdm_compute_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX2) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX2 code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_bfloat16_thread_sw(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -536,19 +487,11 @@ void internal_spmdm_compute_bfloat16_thread_avx512_core(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && defined(LIBXSMM_SPMDM_AVX512_CORE) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_SPMDM_AVX512_CORE)
 # include "libxsmm_spmdm_begin_avx512.h"
 # include "template/libxsmm_spmdm_compute_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
 #else
-# if !defined(NDEBUG) && defined(LIBXSMM_SPMDM_AVX512_CORE) /* library code is expected to be mute */
-  { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter AVX-512/Core code path!\n");
-    }
-  }
-# endif
   internal_spmdm_compute_bfloat16_thread_avx2(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #endif
 }
@@ -579,6 +522,19 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
+{
+  if (archid < libxsmm_target_archid
+    && 0 != libxsmm_verbosity) /* library code is expected to be mute */
+  {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+    }
+  }
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
@@ -590,21 +546,30 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->k  = K;
 
   handle->bm = (M >= 4096 || M <= 1024) ? 512 : 256;
-  if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid) {
+#if defined(LIBXSMM_SPMDM_AVX512_CORE)
+  if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) {
+    internal_spmdm_init_check(LIBXSMM_X86_AVX512_CORE);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx512_core;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx512_core;
     internal_spmdm_compute_bfloat16_thread = internal_spmdm_compute_bfloat16_thread_avx512_core;
     handle->bn = 96;
   }
-  else if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
+  else
+#endif
+#if defined(LIBXSMM_SPMDM_AVX2)
+  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid || LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) {
+    internal_spmdm_init_check(LIBXSMM_X86_AVX512_MIC);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx2;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx2;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx2;
     internal_spmdm_compute_bfloat16_thread = internal_spmdm_compute_bfloat16_thread_avx2;
     handle->bn = 48;
   }
-  else {
+  else
+#endif
+  {
+    internal_spmdm_init_check(LIBXSMM_X86_AVX);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_sw;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_sw;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_sw;
@@ -621,20 +586,18 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   internal_spmdm_allocate_scratch(handle, max_threads);
 
   /* Initialize shuffle masks for the computation */
+#if defined(LIBXSMM_SPMDM_AVX)
   if (LIBXSMM_X86_AVX <= libxsmm_target_archid) {
     internal_spmdm_init_shufmask_avx();
   }
+  assert(0 != internal_spmdm_shufmasks_32);
+  assert(0 != internal_spmdm_shufmasks_16);
+#endif
 
   /* post-conditions */
   assert(0 != internal_spmdm_createSparseSlice_fp32_thread);
   assert(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
   assert(0 != internal_spmdm_compute_fp32_thread);
   assert(0 != internal_spmdm_compute_bfloat16_thread);
-
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
-  && (LIBXSMM_X86_AVX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-  assert(0 != internal_spmdm_shufmasks_32);
-  assert(0 != internal_spmdm_shufmasks_16);
-#endif
 }
 

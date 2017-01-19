@@ -37,6 +37,7 @@
 #include <libxsmm_typedefs.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_dnn.h>
+#include <libxsmm_sync.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -163,15 +164,22 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
   /* internal data representation */
   libxsmm_dnn_buffer* input;
   libxsmm_dnn_buffer* output;
-  libxsmm_dnn_buffer* input_relu;
   libxsmm_dnn_filter* filter;
+  libxsmm_dnn_buffer* grad_input;
+  libxsmm_dnn_buffer* grad_output;
+  libxsmm_dnn_filter* grad_filter;
   libxsmm_dnn_bias* bias;
+
+  /* barrier */
+  libxsmm_barrier* barrier;
+
+  /* scratch */
   void* scratch1;
-  void* scratch2;
-/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
+  size_t scratch1_size;
   void* scratch3;
-/*#endif*/
+  size_t scratch3_size;
   void* scratch4;
+  size_t scratch4_size;
 
   /* JIT-generated convolution code */
   /*

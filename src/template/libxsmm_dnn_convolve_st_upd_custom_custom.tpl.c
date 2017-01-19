@@ -277,7 +277,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
     /* lazy barrier init */
     if (handle->upd_use_external_reduce == 0) {
-      libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+      libxsmm_barrier_init(handle->barrier, ltid);
     }
 #endif
 
@@ -380,7 +380,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
         /* perform reduction */
         if (handle->upd_use_external_reduce == 0) {
-          libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+          libxsmm_barrier_wait(handle->barrier, ltid);
           for ( i = 0; i < handle->desc.threads; i++ ) {
             remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
             for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
@@ -393,7 +393,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
         /* lazy barrier init */
-        libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+        libxsmm_barrier_init(handle->barrier, ltid);
         /* First transpose IFW and IFM */
         for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
           img = imgifm1/handle->blocksifm;
@@ -407,7 +407,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
             }
           }
         }
-        libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+        libxsmm_barrier_wait(handle->barrier, ltid);
 
         for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           ofm1 = ofm1ifm1/handle->blocksifm;
@@ -524,7 +524,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
           /* lazy barrier init */
           if (handle->upd_use_external_reduce == 0) {
-            libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+            libxsmm_barrier_init(handle->barrier, ltid);
           }
 #endif
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -648,7 +648,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
             /* perform reduction */
             /* TODO COMPLETE THIS USING ATOMIC INCREMENTS PLEASE */
             if (handle->upd_use_external_reduce == 0) {
-              libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+              libxsmm_barrier_wait(handle->barrier, ltid);
               for ( i = 0; i < handle->desc.threads; i++ ) {
                 remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
                 for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
@@ -776,7 +776,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
   }
   /* lazy barrier init */
   if (handle->upd_use_external_reduce == 0) {
-    libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+    libxsmm_barrier_init(handle->barrier, ltid);
   }
   for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
     img = ofm1ifm1img / (handle->blocksifm * handle->blocksofm);
@@ -793,7 +793,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   }
   if (handle->upd_use_external_reduce == 0) {
-    libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+    libxsmm_barrier_wait(handle->barrier, ltid);
     /* reduce weights */
     for ( i = 0; i < handle->desc.threads; i++ ) {
       remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);

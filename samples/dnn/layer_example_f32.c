@@ -412,6 +412,7 @@ int main(int argc, char* argv[])
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
   correctness_t norms_fwd, norms_bwd, norms_upd;
+  void* scratch;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -597,15 +598,15 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
@@ -619,6 +620,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_buffer( libxsmm_handle, libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_buffer( libxsmm_handle, libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
+
+  /* let's allocate and bind scratch */
+  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, &status ), 2097152);
+  CHKERR_LIBXSMM_DNN( status );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, scratch ) );
 
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
@@ -813,6 +819,8 @@ int main(int argc, char* argv[])
   }
 
   /* clean-up */
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL ) );
+  libxsmm_free(scratch);
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
@@ -850,21 +858,26 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_rsck, LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_rsck, LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* bind buffers and filter to handle */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_buffer( libxsmm_handle, libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_buffer( libxsmm_handle, libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
+
+  /* let's allocate and bind scratch */
+  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, &status ), 2097152);
+  CHKERR_LIBXSMM_DNN( status );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, scratch ) );
 
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
@@ -1055,6 +1068,8 @@ int main(int argc, char* argv[])
   }
 
   /* clean-up */
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL ) );
+  libxsmm_free(scratch);
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
@@ -1092,7 +1107,7 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* zero output buffer again */
@@ -1101,11 +1116,11 @@ int main(int argc, char* argv[])
   naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
@@ -1115,6 +1130,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_buffer( libxsmm_handle, libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_output_buffer( libxsmm_handle, libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
+
+  /* let's allocate and bind scratch */
+  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, &status ), 2097152);
+  CHKERR_LIBXSMM_DNN( status );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, scratch ) );
 
   if (type == 'A' || type == 'F') {
     printf("##########################################\n");
@@ -1303,6 +1323,8 @@ int main(int argc, char* argv[])
   }
 
   /* clean-up */
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL ) );
+  libxsmm_free(scratch);
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_filter( libxsmm_filter ) );
@@ -1324,9 +1346,9 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_output_nhwc);
   libxsmm_free(naive_input_nhwc);
   libxsmm_free(filter_rsck);
-  libxsmm_free(libxsmm_input);
-  libxsmm_free(libxsmm_filter);
-  libxsmm_free(libxsmm_output);
+  libxsmm_free(input_libxsmm);
+  libxsmm_free(filter_libxsmm);
+  libxsmm_free(output_libxsmm);
 
   /* some empty lines at the end */
   printf("\n\n\n");
