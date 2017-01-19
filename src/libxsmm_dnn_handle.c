@@ -687,11 +687,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
     } /* end of weight-update handle */
     {
+      handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
+
       handle->scratch1 = libxsmm_aligned_malloc( /* populating scratch register for transpose */
         handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in),
         LIBXSMM_ALIGNMENT);
-
-      handle->scratch2 = libxsmm_barrier_create(handle->desc.threads, 1);
 
 /*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
       handle->scratch3 = libxsmm_aligned_malloc( /* allocate raw data */
@@ -731,11 +731,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->code_upd[3].xconv.sconv = 0;
     handle->code_upd[4].xconv.sconv = 0;
     handle->code_upd[5].xconv.sconv = 0;
+
+    handle->barrier = 0;
+
     handle->scratch1 = 0;
-    handle->scratch2 = 0;
-/*#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM*/
     handle->scratch3 = 0;
-/*#endif*/
     handle->scratch4 = 0;
   }
 

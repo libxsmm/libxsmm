@@ -64,7 +64,7 @@ element_output_type* l_output;
 
 /* lazy barrier init */
 if (handle->filter_transposed == 0) {
-  libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+  libxsmm_barrier_init(handle->barrier, ltid);
 
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1/handle->blocksifm;
@@ -82,7 +82,7 @@ if (handle->filter_transposed == 0) {
       }
     }
   }
-  libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||

@@ -76,7 +76,7 @@ ifh=handle->ifhp;
 ofh=handle->ofh;
 
 /* lazy barrier init */
-libxsmm_barrier_init((libxsmm_barrier*)handle->scratch2, ltid);
+libxsmm_barrier_init(handle->barrier, ltid);
 
 for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   ofm1 = ifm1ofm1/handle->blocksifm;
@@ -94,7 +94,7 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     }
   }
 }
-libxsmm_barrier_wait((libxsmm_barrier*)handle->scratch2, ltid);
+libxsmm_barrier_wait(handle->barrier, ltid);
 
 #define LIBXSMM_JITTED_CONV_BP_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                   tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
