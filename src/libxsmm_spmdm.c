@@ -154,7 +154,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_s
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* handle, int max_threads)
 {
-  size_t sz_memory_for_scratch_per_thread = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float))*max_threads, sz_total_memory;
+  size_t sz_memory_for_scratch_per_thread = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float)), sz_total_memory;
   sz_memory_for_scratch_per_thread = (sz_memory_for_scratch_per_thread + 4095)/4096 * 4096;
   sz_total_memory = sz_memory_for_scratch_per_thread * max_threads;
 
@@ -559,7 +559,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
 #endif
 #if defined(LIBXSMM_SPMDM_AVX2)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid || LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) {
-    internal_spmdm_init_check(LIBXSMM_X86_AVX512_MIC);
+    internal_spmdm_init_check(LIBXSMM_X86_AVX2);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx2;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx2;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx2;
