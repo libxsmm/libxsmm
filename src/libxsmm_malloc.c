@@ -71,7 +71,6 @@
 #   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
 # endif
 # define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
-# define LIBXSMM_MALLOC_NOCRC
 #endif /*defined(LIBXSMM_VTUNE)*/
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -84,13 +83,19 @@
 # define LIBXSMM_MALLOC_FALLBACK 0
 #endif
 
-#if defined(NDEBUG) || defined(LIBXSMM_MALLOC_NOCRC)
+#if !defined(LIBXSMM_MALLOC_NOCRC)
+# if defined(NDEBUG)
+#   define LIBXSMM_MALLOC_NOCRC
+# elif defined(LIBXSMM_VTUNE)
+#   define LIBXSMM_MALLOC_NOCRC
+# endif
+#endif
+
+#if !defined(LIBXSMM_MALLOC_NOCRC)
 # include "libxsmm_hash.h"
 # if !defined(LIBXSMM_MALLOC_SEED)
 #   define LIBXSMM_MALLOC_SEED 1051981
 # endif
-#else
-# define LIBXSMM_MALLOC_NOCRC
 #endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
