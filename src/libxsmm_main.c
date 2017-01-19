@@ -1149,6 +1149,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
     if (EXIT_SUCCESS == result) { /* check for success */
       assert(0 != code->const_pmm && 0 == (LIBXSMM_CODE_STATIC & code->imm));
+      assert(0 != generated_code.generated_code/*sanity check*/);
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
       /* attribute/protect buffer and revoke unnecessary flags */
