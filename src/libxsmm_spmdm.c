@@ -287,7 +287,7 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_avx2(
   int block_id,
   int tid, int nthreads)
 {
-#if !defined(LIBXSMM_SPMDM_AVX2)
+#if defined(LIBXSMM_SPMDM_AVX2)
 # include "libxsmm_spmdm_begin_avx2.h"
 # include "template/libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c"
 # include "libxsmm_spmdm_end.h"
