@@ -1024,7 +1024,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_con
 {
   size_t l_scratch_size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
-  
+
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_CONV_KIND_FWD: {
@@ -1039,7 +1039,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_con
         l_scratch_size = handle->scratch3_size + 64;
         /* potentially we need thread-local filter copies, scratch4 */
         if (handle->upd_use_thread_fil == 1) {
-          l_scratch_size += handle->scratch4_size + 64; 
+          l_scratch_size += handle->scratch4_size + 64;
         }
       } break;
       case LIBXSMM_DNN_CONV_KIND_ALL: {
@@ -1049,7 +1049,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_con
         l_scratch_size += handle->scratch3_size + 64;
         /* potentially we need thread-local filter copies, scratch4 */
         if (handle->upd_use_thread_fil == 1) {
-          l_scratch_size += handle->scratch4_size + 64; 
+          l_scratch_size += handle->scratch4_size + 64;
         }
       } break;
       default: {
@@ -1074,7 +1074,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_co
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
     return status;
   }
-  
+
   if (0 != handle) {
     switch (kind) {
 #if 0
@@ -1152,7 +1152,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_co
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  
+
   if (0 != handle) {
     switch (kind) {
 #if 0
