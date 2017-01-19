@@ -72,7 +72,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_write(FILE* file, const void* d
     for (i = 1; i < d; ++i) {
       sub_size *= LIBXSMM_MAX(data_size[i], 0 != size ? size[i] : 0);
     }
-    for (i = 0; i < size[d]; ++i) {
+    for (i = 0; i < LIBXSMM_MAX(data_size[d], 0 != size ? size[d] : 0); ++i) {
       result = LIBXSMM_MAX(internal_write(file, data, data_size, size, typesize, d), result);
       data = (const char*)data + sub_size;
     }
