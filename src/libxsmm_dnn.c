@@ -273,9 +273,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
       /* no kernel was JITed */
     }
 
+    /* Deallocate barrier */
+    if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
+
     /*Deallocate scratch in handle*/
     libxsmm_free(handle->scratch1);
-    if (handle->scratch2 != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->scratch2); }
     libxsmm_free(handle->scratch3);
     libxsmm_free(handle->scratch4);
 
