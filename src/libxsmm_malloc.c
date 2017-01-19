@@ -497,7 +497,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const volatile void* memory)
       }
 #endif
 #if defined(_WIN32)
-      result = FALSE != VirtualFree(buffer, 0, MEM_RELEASE) ? EXIT_SUCCESS : EXIT_FAILURE;
+      result = (0 == buffer || FALSE != VirtualFree(buffer, 0, MEM_RELEASE)) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else /* defined(_WIN32) */
       {
         const size_t alloc_size = info->size + (((const char*)memory) - ((const char*)buffer));
