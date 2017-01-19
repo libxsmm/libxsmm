@@ -598,15 +598,15 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
@@ -858,15 +858,15 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_rsck, LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_rsck, LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* bind buffers and filter to handle */
@@ -1107,7 +1107,7 @@ int main(int argc, char* argv[])
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
 
-  libxsmm_handle = libxsmm_dnn_create_conv_handle_check( conv_desc, &status );
+  libxsmm_handle = libxsmm_dnn_create_conv_handle( conv_desc, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* zero output buffer again */
@@ -1116,11 +1116,11 @@ int main(int argc, char* argv[])
   naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer_check( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer_check( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_nhwc, LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter_check( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
@@ -1346,9 +1346,9 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_output_nhwc);
   libxsmm_free(naive_input_nhwc);
   libxsmm_free(filter_rsck);
-  libxsmm_free(libxsmm_input);
-  libxsmm_free(libxsmm_filter);
-  libxsmm_free(libxsmm_output);
+  libxsmm_free(input_libxsmm);
+  libxsmm_free(filter_libxsmm);
+  libxsmm_free(output_libxsmm);
 
   /* some empty lines at the end */
   printf("\n\n\n");
