@@ -70,7 +70,10 @@ else {
   float    * values_ptr = (float *)(slice.values);
   SIMDTYPE_FP32 vzero = _MM_SET1_FP32(0.0);
   uint16_t cnt = 0;
-  if (SIMD_WIDTH_FP32 == 1) { ncols_aligned = 0; ncols_aligned_2 = 0; }
+#if (1 == SIMD_WIDTH_FP32)
+  ncols_aligned = 0;
+  ncols_aligned_2 = 0;
+#endif
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
     if ('T' == transA || 't' == transA) {
