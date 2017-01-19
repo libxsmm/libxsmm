@@ -44,6 +44,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -388,6 +389,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
+      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {

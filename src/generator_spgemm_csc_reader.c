@@ -67,13 +67,13 @@
  * @section DESCRIPTION
  * <DESCRIPTION>
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "generator_common.h"
 #include "generator_spgemm_csc_reader.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
@@ -109,7 +109,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
       /* if we are the first line after comment header, we allocate our data structures */
       if ( l_header_read == 0 ) {
         if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
-          /* allocate CSC datastructue matching mtx file */
+          /* allocate CSC data structure matching mtx file */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
           *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count + 1));
           *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
@@ -154,11 +154,11 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         /* adjust numbers to zero termination */
         l_row--;
         l_column--;
-        /* add these values to row and value strucuture */
+        /* add these values to row and value structure */
         (*o_row_idx)[l_i] = l_row;
         (*o_values)[l_i] = l_value;
         l_i++;
-        /* handle columns, set id to onw for this column, yeah we need to hanle empty columns */
+        /* handle columns, set id to onw for this column, yeah we need to handle empty columns */
         l_column_idx_id[l_column] = 1;
         (*o_column_idx)[l_column+1] = l_i;
       }
@@ -168,7 +168,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
   /* close mtx file */
   fclose( l_csc_file_handle );
 
-  /* check if we read a file which was consitent */
+  /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_LEN );
     return;
