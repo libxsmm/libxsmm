@@ -379,7 +379,8 @@ The TRY counter represents all attempts to register statically generated kernels
 
 Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under the THRESHOLD criterion, the above table is extended by one line if large kernels have been requested. This indicates a missing threshold-criterion (customized dispatch), or asks for cache-blocking the matrix multiplication. The latter is already implemented by LIBXSMM's "medium-sized" GEMM routines (`libxsmm_?gemm_omp`), which perform a tiled multiplication.
 
-**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](#profiling). Disassembly of the raw binary files can be accomplished by: 
+**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](#profiling). Disassembly of the raw binary files can be accomplished by:
+
 ```
 objdump -D -b binary -m i386 -M x86-64 [JIT-dump-file]
 ```
