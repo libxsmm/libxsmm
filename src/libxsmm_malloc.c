@@ -380,7 +380,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, int align
           buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
         }
         else {
-          static LIBXSMM_TLS int fallback = LIBXSMM_MALLOC_FALLBACK;
+          static LIBXSMM_TLS int fallback = -1;
+          if (0 > fallback) { /* initialize fallback allocation method */
+            const char *const env = getenv("LIBXSMM_SE");
+            fallback = (0 == env || 0 == *env || 0 != atoi(env)) ? LIBXSMM_MALLOC_FALLBACK : 4;
+          }
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) fallback = 1;
