@@ -112,7 +112,6 @@ int main(int argc, char* argv[])
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
   int result = EXIT_SUCCESS, k;
 
-  libxsmm_set_verbosity(0);
   if (0 == strchr("oOiI", t)) {
     fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|1]\n", argv[0]);
     exit(EXIT_FAILURE);
