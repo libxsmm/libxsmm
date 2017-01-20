@@ -312,17 +312,17 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
 {
   int result = EXIT_SUCCESS;
   if (memory) {
-    flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
     if (0 < size) {
       const size_t internal_size = size + extra_size + sizeof(internal_malloc_info_type);
+      const libxsmm_malloc_function malloc_fn = libxsmm_malloc_fn;
+      const libxsmm_free_function free_fn = libxsmm_free_fn;
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0, *reloc = 0;
 #if !defined(NDEBUG)
       static int error_once = 0;
 #endif
+      flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
 #if !defined(LIBXSMM_MALLOC_MMAP)
-      const libxsmm_malloc_function malloc_fn = libxsmm_malloc_fn;
-      const libxsmm_free_function free_fn = libxsmm_free_fn;
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
         alloc_alignment = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
         alloc_size = internal_size + alloc_alignment - 1;
