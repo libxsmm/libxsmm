@@ -45,17 +45,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_SPMDM_MALLOC_INTRINSIC) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_SPMDM_MALLOC_INTRINSIC
-#endif
-#if defined(LIBXSMM_SPMDM_MALLOC_INTRINSIC)
-# define LIBXSMM_SPMDM_MALLOC(SIZE, ALIGNMENT) _mm_malloc(SIZE, ALIGNMENT)
-# define LIBXSMM_SPMDM_FREE(BUFFER) _mm_free((void*)(BUFFER))
-#else
-# define LIBXSMM_SPMDM_MALLOC(SIZE, ALIGNMENT) libxsmm_aligned_malloc(SIZE, -(ALIGNMENT))
-# define LIBXSMM_SPMDM_FREE(BUFFER) libxsmm_free(BUFFER)
-#endif
-
 /* Enable/disable specific code paths */
 #if !defined(LIBXSMM_SPMDM_AVX) \
   && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) \
@@ -129,7 +118,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_s
   size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
 
-  char * memory_block = (char *)LIBXSMM_SPMDM_MALLOC( sz_all_blocks, 2097152);
+  char * memory_block = (char *)libxsmm_aligned_malloc(sz_all_blocks, 2097152);
   char * memory_head  = memory_block;
 
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
@@ -158,16 +147,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_scratch(libxsmm
   sz_memory_for_scratch_per_thread = (sz_memory_for_scratch_per_thread + 4095)/4096 * 4096;
   sz_total_memory = sz_memory_for_scratch_per_thread * max_threads;
 
-  handle->base_ptr_scratch_B_scratch_C = (char *)LIBXSMM_SPMDM_MALLOC(sz_total_memory, 2097152);
+  handle->base_ptr_scratch_B_scratch_C = (char *)libxsmm_aligned_malloc(sz_total_memory, 2097152);
   handle->memory_for_scratch_per_thread = (int)sz_memory_for_scratch_per_thread;
 }
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_deallocate_csr_a(libxsmm_spmdm_handle* handle)
 {
-  LIBXSMM_SPMDM_FREE(handle->base_ptr_scratch_A);
+  libxsmm_free(handle->base_ptr_scratch_A);
   handle->base_ptr_scratch_A= NULL;
-  LIBXSMM_SPMDM_FREE(handle->base_ptr_scratch_B_scratch_C);
+  libxsmm_free(handle->base_ptr_scratch_B_scratch_C);
   handle->base_ptr_scratch_B_scratch_C = NULL;
 }
 

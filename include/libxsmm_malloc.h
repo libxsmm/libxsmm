@@ -42,23 +42,35 @@
 #endif
 
 
+/** Function type accepted for memory allocation (libxsmm_set_allocator). */
+typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_function)(size_t size);
+/** Function type accepted for memory release (libxsmm_set_allocator). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_function)(void* buffer);
+
+/**
+ * Setup the memory allocator, the malloc_fn and free_fn arguments are either
+ * non-NULL functions (custom allocator), or NULL-pointers (reset to default).
+ * It is supported to change the allocator with buffers still being allocated.
+ */
+LIBXSMM_API void libxsmm_set_allocator(/* malloc_fn/free_fn must correspond */
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+
 /** Allocate aligned memory (malloc/free interface). */
 LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
   /**
    * =0: automatic alignment is requested based on size
-   * 0<: delivers (at least) the given alignment (LCM)
-   * 0>: takes absolute alignment (skips align.-calc.)
+   * 0>: uses the requested alignment
    */
-  int alignment);
+  size_t alignment);
 
 /** Allocate memory (malloc/free interface). */
 LIBXSMM_API void* libxsmm_malloc(size_t size);
 
 /** Deallocate memory (malloc/free interface). */
-LIBXSMM_API void libxsmm_free(const volatile void* memory);
+LIBXSMM_API void libxsmm_free(const void* memory);
 
 /** Get the size of the allocated memory; zero in case of an error. */
-LIBXSMM_API size_t libxsmm_malloc_size(const volatile void* memory);
+LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 
 #endif /*LIBXSMM_MALLOC_H*/
 

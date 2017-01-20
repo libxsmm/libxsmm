@@ -34,8 +34,7 @@
 
 int main(void)
 {
-  const size_t size = 2507;
-  const int alignment = 64;
+  const size_t size = 2507, alignment = 64;
   int nerrors = 0;
   void* p;
 
@@ -50,12 +49,6 @@ int main(void)
   libxsmm_free(p);
 
   p = libxsmm_aligned_malloc(size, alignment);
-  if (0 != (((uintptr_t)p) % alignment)) {
-    ++nerrors;
-  }
-  libxsmm_free(p);
-
-  p = libxsmm_aligned_malloc(size, -alignment);
   if (0 != (((uintptr_t)p) % alignment)) {
     ++nerrors;
   }

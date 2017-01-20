@@ -77,7 +77,7 @@
 #define LIBXSMM_ATOMIC_RELAXED __ATOMIC_RELAXED
 #define LIBXSMM_ATOMIC_SEQ_CST __ATOMIC_SEQ_CST
 
-#if (defined(_REENTRANT) || defined(LIBXSMM_SYNC_OPENMP)) && defined(LIBXSMM_GCCATOMICS)
+#if defined(_REENTRANT) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
@@ -88,7 +88,7 @@
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) while (*(DST_PTR) != (VALUE)) \
       if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, *(DST_PTR), VALUE)) break
     /* use store side-effect of built-in (dummy assignment to mute warning) */
-#   if 0 /* disabled as it appears to hang on some systems; fallback impl. is below */
+#   if 0 /* disabled as it appears to hang on some systems; fall-back is below */
 #   define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) { \
       const int libxsmm_store_zero_ = (0 != __sync_and_and_fetch(DST_PTR, 0)) ? 1 : 0; \
       LIBXSMM_UNUSED(libxsmm_store_zero_); \
@@ -97,7 +97,7 @@
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
 # endif
-#elif (defined(_REENTRANT) || defined(LIBXSMM_SYNC_OPENMP)) && defined(_WIN32) /*TODO*/
+#elif defined(_REENTRANT) && defined(_WIN32) /*TODO*/
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
@@ -117,6 +117,7 @@
 #endif
 #if defined(_REENTRANT)
 # if defined(_WIN32)
+#   include <windows.h>
 #   if 1
 #     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
 #     define LIBXSMM_LOCK_TYPE HANDLE

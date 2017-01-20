@@ -31,13 +31,14 @@
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <libxsmm_typedefs.h>
 #include <libxsmm_generator.h>
-#include <libxsmm_dnn.h>
+#include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
+#include <libxsmm_dnn.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
@@ -68,7 +69,6 @@
 #endif
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
-  const volatile void* cv_pmm;
   const void* const_pmm;
   void* pmm;
   uintptr_t imm;
@@ -234,14 +234,18 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
+/** Same as libxsmm_set_allocator, but takes a lock (can be NULL).*/
+LIBXSMM_API void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
-LIBXSMM_API int libxsmm_malloc_info(const volatile void* memory, size_t* size, int* flags, void** extra);
+LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, int alignment, int flags,
+LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
-LIBXSMM_API int libxsmm_xfree(const volatile void* memory);
+LIBXSMM_API int libxsmm_xfree(const void* memory);
 
 /**
  * Attribute memory allocation and protect with only the necessary flags.
@@ -262,6 +266,12 @@ LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
 LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
+
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
+/** Default function to allocate memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_malloc_fn;
+/** Default function to release memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_free_fn;
 
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;

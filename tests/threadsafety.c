@@ -73,8 +73,14 @@ int main(void)
 # pragma omp parallel for default(none) private(i)
 #endif
   for (i = 0; i < MAX_NKERNELS; ++i) {
-    libxsmm_init();
+    if (0 == (i % 2)) {
+      libxsmm_init();
+    }
+    else {
+      libxsmm_finalize();
+    }
   }
+  libxsmm_init();
 
   result = libxsmm_get_registry_info(&registry_info);
   if (EXIT_SUCCESS == result) {
@@ -173,13 +179,7 @@ int main(void)
 
   /* release buffer of eventually generated code (deep comparison) */
   free(generated_code.generated_code);
-
-#if defined(_OPENMP)
-# pragma omp parallel for default(none) private(i)
-#endif
-  for (i = 0; i < MAX_NKERNELS; ++i) {
-    libxsmm_finalize();
-  }
+  libxsmm_finalize();
 
   return result;
 }
