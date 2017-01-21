@@ -96,30 +96,30 @@ typedef enum libxsmm_dnn_compute_kind {
 } libxsmm_dnn_compute_kind;
 
 /** type/meaning of dimension in a LIBXSMM DNN tensor */
-typedef enum libxsmm_dnn_conv_dimtype {
+typedef enum libxsmm_dnn_tensor_dimtype {
   /** Mini-batch */
-  LIBXSMM_DNN_CONV_DIMTYPE_N,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_N,
   /** Image Height */
-  LIBXSMM_DNN_CONV_DIMTYPE_H,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_H,
   /** Image Width */
-  LIBXSMM_DNN_CONV_DIMTYPE_W,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_W,
   /** channles or input channels */
-  LIBXSMM_DNN_CONV_DIMTYPE_C,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_C,
   /** output channels */
-  LIBXSMM_DNN_CONV_DIMTYPE_K,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_K,
   /** kernel height */
-  LIBXSMM_DNN_CONV_DIMTYPE_R,
+  LIBXSMM_DNN_TENSOR_DIMTYPE_R,
   /** kernel width */
-  LIBXSMM_DNN_CONV_DIMTYPE_S
-} libxsmm_dnn_conv_dimtype;
+  LIBXSMM_DNN_TENSOR_DIMTYPE_S
+} libxsmm_dnn_tensor_dimtype;
 
 /** layout descriptor to allow external data allocation
     outside of LIBXSMM */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_datalayout {
-  libxsmm_dnn_conv_dimtype* dim_type;
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor_datalayout {
+  libxsmm_dnn_tensor_dimtype* dim_type;
   unsigned int* dim_size;
   unsigned int num_dims;
-} libxsmm_dnn_conv_datalayout;
+} libxsmm_dnn_tensor_datalayout;
 
 typedef enum libxsmm_dnn_conv_fuse_op {
   /* we fuse nothing into convolution */
@@ -164,7 +164,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_format filter_format;       /* format which is for filter buffers */
   libxsmm_dnn_conv_fuse_op fuse_ops;           /* used ops into convolutions */
   libxsmm_dnn_conv_option options;             /* additional options */
-  libxsmm_dnn_datatype datatype_in;            /* datatypes use for all input-related data such as activations, filter */
+  libxsmm_dnn_datatype datatype_in;            /* datatypes use for all input and outputs */
   libxsmm_dnn_datatype datatype_out;           /* datatypes use for all input-related data such as activations, bias */
 } libxsmm_dnn_conv_desc;
 
@@ -187,10 +187,10 @@ LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn
 LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 
 /** get layout description of buffers and fiters from handle */
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_conv_datalayout* layout);
+LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_tensor_datalayout* layout);
 
 /** scratch pad management */
 LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
