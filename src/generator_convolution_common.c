@@ -229,9 +229,9 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   }
 
   /* calculate leading dimension depending on format */
-  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0 ) {
+  if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
-  } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+  } else if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
@@ -332,9 +332,9 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   }
 
   /* calculate leading dimension depending on format */
-  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0 ) {
+  if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
-  } else if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+  } else if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );

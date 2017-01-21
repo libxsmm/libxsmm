@@ -333,7 +333,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_in = handle->datatype_in;
       descriptor.datatype_out = handle->datatype_out;
       descriptor.option = handle->desc.options;
-      descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
+      descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
       if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
@@ -390,11 +390,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_in = handle->datatype_in;
       descriptor.datatype_out = handle->datatype_out;
       descriptor.option = handle->desc.options;
-      descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
+      descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
       if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) )
+           ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) )
       {
         /* control code size */
         const unsigned int max_code_size = 20000/*16384*/;
@@ -541,7 +541,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2;
         handle->code_bwd[3].pmm = libxsmm_create_xconv_backward(&descriptor);
       } else if ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) ||
-                   ((handle->filter_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) ) {
+                   ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) ) {
         /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 0;
@@ -581,12 +581,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_in = handle->datatype_in;
       descriptor.datatype_out = handle->datatype_out;
       descriptor.option = handle->desc.options;
-      descriptor.format = (libxsmm_dnn_conv_format)(handle->buffer_format | handle->filter_format);
+      descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
 
       /* TODO check JIT errors */
       if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
             libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           ((handle->filter_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) )
+           ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) )
       {
         const unsigned int wu_each_iter_code_size = 10 * (descriptor.ifm_block == 1 ? descriptor.kw : descriptor.ifm_block);
         const unsigned int wu_max_code_size = 20000;
@@ -670,7 +670,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_L2;
         handle->code_upd[5].pmm = libxsmm_create_xconv_update_weights(&descriptor);
       } else if ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) ||
-                   ((handle->filter_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_CONV_FORMAT_LIBXSMM)) ) {
+                   ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) ) {
         /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
         descriptor.unroll_kw = 0;
         descriptor.ifm_unroll = 0;
