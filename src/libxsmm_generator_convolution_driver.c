@@ -157,7 +157,7 @@ int main(int argc, char* argv []) {
       break;
   }
   l_conv_desc.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-  l_conv_desc.format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
+  l_conv_desc.format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 
   /* generate code */
   if ( strcmp(l_type, "inlineasm")  == 0 ) {

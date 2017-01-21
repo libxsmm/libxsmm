@@ -108,7 +108,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
   l_conv_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
   l_conv_kernel_config.vector_name = 'y';
   /* calculate leading dimension depending on format */
-  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_LIBXSMM) > 0 ) {
+  if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ifm_block;
     l_conv_kernel_config.l_ld_ofm_act = i_conv_desc->ofm_block;
     l_conv_kernel_config.l_ld_ifm_fil = i_conv_desc->ifm_block;
@@ -116,12 +116,12 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     l_found_act_format = 1;
     l_found_fil_format = 1;
   }
-  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_NHWC) > 0 ) {
+  if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0 ) {
     l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ifm_block * i_conv_desc->blocks_ifm;
     l_conv_kernel_config.l_ld_ofm_act = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
     l_found_act_format = 1;
   }
-  if ( (i_conv_desc->format & LIBXSMM_DNN_CONV_FORMAT_RSCK) > 0 ) {
+  if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     l_conv_kernel_config.l_ld_ifm_fil = i_conv_desc->ifm_block * i_conv_desc->blocks_ifm;
     l_conv_kernel_config.l_ld_ofm_fil = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
     l_found_fil_format = 1;

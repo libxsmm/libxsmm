@@ -138,25 +138,25 @@ typedef enum libxsmm_convolution_prefetch_type {
 } libxsmm_convolution_prefetch_type;
 
 
-typedef enum libxsmm_dnn_conv_format{
+typedef enum libxsmm_dnn_tensor_format{
   /* use LIBXSMM internal format, we need to copy data into that */
-  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM = 1,
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM = 1,
   /* use NHWC format internally, this allows no-copy operations */
-  LIBXSMM_DNN_CONV_FORMAT_NHWC = 2,
+  LIBXSMM_DNN_TENSOR_FORMAT_NHWC = 2,
   /* use NCHW format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_CONV_FORMAT_NCHW = 4,
+  LIBXSMM_DNN_TENSOR_FORMAT_NCHW = 4,
   /* use RSCK format internally, this allows no-copy operations  */
-  LIBXSMM_DNN_CONV_FORMAT_RSCK = 8,
+  LIBXSMM_DNN_TENSOR_FORMAT_RSCK = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_CONV_FORMAT_KCRS = 16,
+  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16,
   /* use ptr copy when copying in -> no copy takes place, this is just an additional option */
-  LIBXSMM_DNN_CONV_FORMAT_PTR = 32,
+  LIBXSMM_DNN_TENSOR_FORMAT_PTR = 32,
   /* now some combinded types */
-  LIBXSMM_DNN_CONV_FORMAT_NHWC_PTR = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_PTR,
-  LIBXSMM_DNN_CONV_FORMAT_RSCK_PTR = LIBXSMM_DNN_CONV_FORMAT_RSCK | LIBXSMM_DNN_CONV_FORMAT_PTR,
-  LIBXSMM_DNN_CONV_FORMAT_NHWC_RSCK = LIBXSMM_DNN_CONV_FORMAT_NHWC | LIBXSMM_DNN_CONV_FORMAT_RSCK,
-  LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM | LIBXSMM_DNN_CONV_FORMAT_PTR
-} libxsmm_dnn_conv_format;
+  LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
+  LIBXSMM_DNN_TENSOR_FORMAT_RSCK_PTR = LIBXSMM_DNN_TENSOR_FORMAT_RSCK | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
+  LIBXSMM_DNN_TENSOR_FORMAT_NHWC_RSCK = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_RSCK,
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM | LIBXSMM_DNN_TENSOR_FORMAT_PTR
+} libxsmm_dnn_tensor_format;
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
@@ -194,7 +194,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
   unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
-  libxsmm_dnn_conv_format format;
+  libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
@@ -226,7 +226,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
 
   unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
 
-  libxsmm_dnn_conv_format format;
+  libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
@@ -258,7 +258,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
 
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
-  libxsmm_dnn_conv_format format;
+  libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;

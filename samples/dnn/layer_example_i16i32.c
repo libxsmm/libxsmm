@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
   int i;
 
   libxsmm_dnn_conv_desc conv_desc;
-  libxsmm_dnn_conv_handle* libxsmm_handle;
+  libxsmm_dnn_layer* libxsmm_handle;
   libxsmm_dnn_buffer* libxsmm_input;
   libxsmm_dnn_buffer* libxsmm_output;
   libxsmm_dnn_filter* libxsmm_filter;
@@ -376,8 +376,8 @@ int main(int argc, char* argv[])
   conv_desc.pad_w_out = pad_w_out;
   conv_desc.threads = nThreads;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
-  conv_desc.buffer_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
-  conv_desc.filter_format = LIBXSMM_DNN_CONV_FORMAT_LIBXSMM;
+  conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+  conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_I16;
@@ -387,19 +387,19 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_input_buffer( libxsmm_handle, input_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_output_buffer( libxsmm_handle, output_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_CONV_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, filter_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
   /* we can also use the layout functions and set the data on our
      own external to the library, @TODO, we plan to add an example here */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_CONV_FORMAT_KCRS ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
   /* bind buffers and filter to handle */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_input_buffer( libxsmm_handle, libxsmm_input ) );
@@ -407,9 +407,9 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter ) );
 
   /* let's allocate and bind scratch */
-  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, &status ), 2097152);
+  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
   CHKERR_LIBXSMM_DNN( status );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL, scratch ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
 
   printf("##########################################\n");
   printf("#  Check Correctness   (custom-Storage)  #\n");
@@ -426,10 +426,10 @@ int main(int argc, char* argv[])
 #else
     const int tid = 0;
 #endif
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
   }
   /* copy out data */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
   /* compare */
   compare_buf_int32(naive_output, naive_libxsmm_output, nImg*nOfm*ofhp*ofwp, &norms_fwd);
@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0, tid );
+      libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
     }
   }
   l_end = libxsmm_timer_tick();
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
      norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
 
   /* clean-up */
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_CONV_KIND_ALL ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
   libxsmm_free(scratch);
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_buffer( libxsmm_output ) );
