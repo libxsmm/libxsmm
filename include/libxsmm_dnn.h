@@ -46,7 +46,7 @@
 #endif
 
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle libxsmm_dnn_conv_handle;
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer libxsmm_dnn_buffer;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias libxsmm_dnn_bias;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter libxsmm_dnn_filter;
@@ -174,44 +174,44 @@ LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 LIBXSMM_API size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype);
 
 /** Create a handle (non-NULL if successful), and pre-build all JIT-code versions. */
-LIBXSMM_API libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
+LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_handle(
   libxsmm_dnn_conv_desc     conv_desc,
   libxsmm_dnn_err_t*        status );
 
 /** Release the given convolution handle. */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_layer* handle);
 
 /** Create buffers, filters and bias (non-NULL if successful) */
-LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status);
 
 /** get layout description of buffers and fiters from handle */
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_datalayout(libxsmm_dnn_conv_datalayout* layout);
 
 /** scratch pad management */
-LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, const void* scratch);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind);
+LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, const void* scratch);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind);
 
 /** Bind buffers, filters and bias to convolutions operation */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* input);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* output);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_filter* filter);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_input_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* input);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_output_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* output);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_filter(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_filter* filter);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* input);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* output);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_input_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* input);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_output_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* output);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_gradient_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter);
 
 /** Release buffers, filters and bias from convolutions operation */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_input_buffer(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_output_buffer(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_filter(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_input_buffer(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_output_buffer(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_filter(libxsmm_dnn_conv_handle* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_input_buffer(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_output_buffer(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_filter(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_input_buffer(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_output_buffer(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_gradient_filter(libxsmm_dnn_layer* handle);
 
 /** Release the given layer, filters, bias handle. */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsmm_dnn_buffer* buffer);
@@ -238,14 +238,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_filter(const libxsmm_dnn_filte
 /*LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_dnn_bias* bias, void* data);*/
 
 /** Run the convolution identified by the handle; may use threads internally. */
-LIBXSMM_API void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_conv_handle* handle);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks);
+LIBXSMM_API void libxsmm_dnn_convolve(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks);
 
 /** Run the convolution identified by the handle; takes a thread id. */
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind,
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid );
 
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */

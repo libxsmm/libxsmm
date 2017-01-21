@@ -128,7 +128,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   void* data;                       /* pointer to data */
 };
 
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_handle {
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_datatype datatype_in;
   libxsmm_dnn_datatype datatype_out;
   libxsmm_dnn_conv_desc desc;

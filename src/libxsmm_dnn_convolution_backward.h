@@ -34,10 +34,10 @@
 #include "libxsmm_main.h"
 #include <libxsmm_sync.h>
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxsmm_dnn_conv_handle* handle, int start_thread, int tid);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(libxsmm_dnn_conv_handle* handle, int start_thread, int tid);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
 #endif /* LIBXSMM_DNN_CONVOLUTION_BACKWARD_H */

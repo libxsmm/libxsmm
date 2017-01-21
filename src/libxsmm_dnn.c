@@ -152,11 +152,11 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype da
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
+LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_handle(
   libxsmm_dnn_conv_desc     conv_desc,
   libxsmm_dnn_err_t*        status)
 {
-  libxsmm_dnn_conv_handle* handle = 0;
+  libxsmm_dnn_layer* handle = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
   /* currently we don't support NCHW */
@@ -170,7 +170,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
     return 0;
   }
 
-  handle = (libxsmm_dnn_conv_handle*)malloc(sizeof(libxsmm_dnn_conv_handle));
+  handle = (libxsmm_dnn_layer*)malloc(sizeof(libxsmm_dnn_layer));
 
   if (0 != handle) {
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
@@ -227,7 +227,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle(
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_conv_handle* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_layer* handle)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -276,7 +276,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     libxsmm_free(handle->scratch4);
 
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_dnn_conv_handle*)handle);
+    free(/*remove constness*/(libxsmm_dnn_layer*)handle);
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -286,7 +286,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
   *status = LIBXSMM_DNN_SUCCESS;
@@ -325,7 +325,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_conv_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -407,7 +407,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_input_buffer
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
   *status = LIBXSMM_DNN_SUCCESS;
@@ -446,7 +446,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const 
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_conv_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -530,7 +530,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_conv_handle* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_conv_format in_format, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_filter* filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
   *status = LIBXSMM_DNN_SUCCESS;
@@ -571,7 +571,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_conv_handle* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_conv_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_conv_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -946,7 +946,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* buffer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* buffer)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -975,7 +975,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_d
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_buffer* buffer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* buffer)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -1004,7 +1004,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_filter* filter)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -1034,7 +1034,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_con
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t l_scratch_size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
@@ -1078,7 +1078,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_con
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind, const void* scratch)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, const void* scratch)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   size_t address = (size_t)scratch;
@@ -1163,7 +1163,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_co
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_conv_handle* handle, const libxsmm_dnn_conv_kind kind)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -1198,7 +1198,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxsmm_dnn_conv_handle* handle,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxsmm_dnn_layer* handle,
   libxsmm_dnn_conv_kind kind, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -1308,7 +1308,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind)
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind)
 {
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
@@ -1322,7 +1322,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_conv_handle* handle
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_conv_handle* handle) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int ofm1, ifm1, kj, ki, ifm2, ofm2;
 
@@ -1366,7 +1366,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_conv_handle* handle) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i, j, filter_size;
 
@@ -1398,7 +1398,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_d
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -1430,7 +1430,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_conv_handle* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -1460,7 +1460,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_conv_handle* handle,
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_layer* handle,
   libxsmm_dnn_conv_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
 {
   return internal_convolve_st(handle, kind, start_thread, tid);

@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
   int i;
 
   libxsmm_dnn_conv_desc conv_desc;
-  libxsmm_dnn_conv_handle* libxsmm_handle;
+  libxsmm_dnn_layer* libxsmm_handle;
   libxsmm_dnn_buffer* libxsmm_input;
   libxsmm_dnn_buffer* libxsmm_output;
   libxsmm_dnn_filter* libxsmm_filter;
