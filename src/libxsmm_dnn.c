@@ -1198,7 +1198,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxsmm_dnn_layer* handle,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_execute_st(libxsmm_dnn_layer* handle,
   libxsmm_dnn_compute_kind kind, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -1308,16 +1308,23 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_execute_st(libxsmm_dnn_layer* handle,
+  libxsmm_dnn_compute_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
+{
+  return internal_execute_st(handle, kind, start_thread, tid);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_execute(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind)
 {
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
   {
     const int tid = omp_get_thread_num();
-    internal_convolve_st(handle, kind, 0, tid);
+    internal_execute_st(handle, kind, 0, tid);
   }
 #else
-  internal_convolve_st(handle, kind, 0/*start_thread*/, 0/*tid*/);
+  internal_execute_st(handle, kind, 0/*start_thread*/, 0/*tid*/);
 #endif
 }
 
@@ -1457,13 +1464,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_
   }
 
   return status;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_layer* handle,
-  libxsmm_dnn_compute_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
-{
-  return internal_convolve_st(handle, kind, start_thread, tid);
 }
 
 

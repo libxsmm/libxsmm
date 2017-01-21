@@ -426,7 +426,7 @@ int main(int argc, char* argv[])
 #else
     const int tid = 0;
 #endif
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
   }
   /* copy out data */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_CONV_FORMAT_NCHW ) );
@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      libxsmm_dnn_convolve_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+      libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
     }
   }
   l_end = libxsmm_timer_tick();
