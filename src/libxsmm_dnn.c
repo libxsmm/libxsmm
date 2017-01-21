@@ -1034,21 +1034,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_lay
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t l_scratch_size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         l_scratch_size = 0;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
         l_scratch_size = handle->scratch1_size + 64;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         /* we need a minibatch copy for transpose of input, scratch3 */
         l_scratch_size = handle->scratch3_size + 64;
         /* potentially we need thread-local filter copies, scratch4 */
@@ -1056,7 +1056,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
           l_scratch_size += handle->scratch4_size + 64;
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_ALL: {
+      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
         /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
         l_scratch_size = handle->scratch1_size + 64;
         /* we need a minibatch copy for transpose of input, scratch3 */
@@ -1078,7 +1078,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind, const void* scratch)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, const void* scratch)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   size_t address = (size_t)scratch;
@@ -1092,11 +1092,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
   if (0 != handle) {
     switch (kind) {
 #if 0
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         /* nothing todo, we run into error */
       } break;
 #endif
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
         if (address % 64 == 0) {
           handle->scratch1 = (void*)address;
@@ -1105,7 +1105,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           handle->scratch1 = (void*)(address+offset);
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         /* we need a minibatch copy for transpose of input, scratch3 */
         if (address % 64 == 0) {
           handle->scratch3 = (void*)address;
@@ -1124,7 +1124,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           }
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_ALL: {
+      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
         /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
         if (address % 64 == 0) {
           handle->scratch1 = (void*)address;
@@ -1163,25 +1163,25 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_conv_kind kind)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
 #if 0
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         /* nothing todo, we run into error */
       } break;
 #endif
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         handle->scratch1 = 0;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         handle->scratch3 = 0;
         handle->scratch4 = 0;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_ALL: {
+      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
         handle->scratch1 = 0;
         handle->scratch3 = 0;
         handle->scratch4 = 0;
@@ -1199,13 +1199,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxsmm_dnn_layer* handle,
-  libxsmm_dnn_conv_kind kind, int start_thread, int tid)
+  libxsmm_dnn_compute_kind kind, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         switch (handle->buffer_format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (handle->filter_format) {
@@ -1235,7 +1235,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
           }
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         switch (handle->buffer_format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (handle->filter_format) {
@@ -1265,7 +1265,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
           }
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         switch (handle->buffer_format) {
           case LIBXSMM_DNN_CONV_FORMAT_LIBXSMM: {
             switch (handle->filter_format) {
@@ -1308,7 +1308,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_convolve_st(libxs
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind)
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind)
 {
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
@@ -1398,22 +1398,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_d
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         if (handle->code_fwd[0].xconv.sconv == 0) {
           status = LIBXSMM_DNN_WARN_FALLBACK;
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         if (handle->code_bwd[0].xconv.sconv == 0) {
           status = LIBXSMM_DNN_WARN_FALLBACK;
         }
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         if (handle->code_upd[0].xconv.sconv == 0) {
           status = LIBXSMM_DNN_WARN_FALLBACK;
         }
@@ -1430,18 +1430,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_conv_kind kind, unsigned int* num_tasks) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind, unsigned int* num_tasks) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
-      case LIBXSMM_DNN_CONV_KIND_FWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         *num_tasks = handle->desc.N * handle->blocksofm;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_BWD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         *num_tasks = handle->desc.N * handle->blocksifm;
       } break;
-      case LIBXSMM_DNN_CONV_KIND_UPD: {
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         if (handle->upd_use_thread_fil > 0) {
           *num_tasks = handle->desc.N * handle->blocksifm * handle->blocksofm;
         } else {
@@ -1461,7 +1461,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_
 
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st(libxsmm_dnn_layer* handle,
-  libxsmm_dnn_conv_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
+  libxsmm_dnn_compute_kind kind, /*unsigned*/int start_thread, /*unsigned*/int tid)
 {
   return internal_convolve_st(handle, kind, start_thread, tid);
 }
