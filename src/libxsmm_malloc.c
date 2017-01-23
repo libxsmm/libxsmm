@@ -461,25 +461,33 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) fallback = 1;
           }
-          if (1 == fallback) { /* 2nd try */
-            buffer = internal_xmap(".", alloc_size, xflags, &reloc);
-            if (alloc_failed == buffer) fallback = 2;
-          }
-          if (2 == fallback) { /* 3rd try */
-            buffer = internal_xmap(getenv("HOME"), alloc_size, xflags, &reloc);
-            if (alloc_failed == buffer) fallback = 3;
-          }
-          if (3 == fallback) { /* 4th try */
-            buffer = internal_xmap(getenv("JITDUMPDIR"), alloc_size, xflags, &reloc);
-            if (alloc_failed == buffer) fallback = 4;
-          }
-          if (4 == fallback) { /* 5th try */
-            buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
-              MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
-            if (alloc_failed == buffer) fallback = 5;
-          }
-          if (5 == fallback && alloc_failed != buffer) { /* final */
-            buffer = alloc_failed; /* trigger fall-back */
+          if (1 <= fallback) { /* continue with fall-back */
+            if (1 == fallback) { /* 2nd try */
+              buffer = internal_xmap(".", alloc_size, xflags, &reloc);
+              if (alloc_failed == buffer) fallback = 2;
+            }
+            if (2 <= fallback) { /* continue with fall-back */
+              if (2 == fallback) { /* 3rd try */
+                buffer = internal_xmap(getenv("HOME"), alloc_size, xflags, &reloc);
+                if (alloc_failed == buffer) fallback = 3;
+              }
+              if (3 <= fallback) { /* continue with fall-back */
+                if (3 == fallback) { /* 4th try */
+                  buffer = internal_xmap(getenv("JITDUMPDIR"), alloc_size, xflags, &reloc);
+                  if (alloc_failed == buffer) fallback = 4;
+                }
+                if (4 <= fallback) { /* continue with fall-back */
+                  if (4 == fallback) { /* 5th try */
+                    buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                      MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
+                    if (alloc_failed == buffer) fallback = 5;
+                  }
+                  if (5 == fallback && alloc_failed != buffer) { /* final */
+                    buffer = alloc_failed; /* trigger fall-back */
+                  }
+                }
+              }
+            }
           }
         }
         if (alloc_failed != buffer) {
