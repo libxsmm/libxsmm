@@ -162,9 +162,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int filter_transposed;
 
   /* internal data representation */
-  libxsmm_dnn_buffer* input;
-  libxsmm_dnn_buffer* output;
-  libxsmm_dnn_filter* filter;
+  libxsmm_dnn_buffer* reg_input;
+  libxsmm_dnn_buffer* reg_output;
+  libxsmm_dnn_filter* reg_filter;
   libxsmm_dnn_buffer* grad_input;
   libxsmm_dnn_buffer* grad_output;
   libxsmm_dnn_filter* grad_filter;
