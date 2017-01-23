@@ -99,12 +99,17 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff(const libxsmm_ge
   return libxsmm_gemm_diff_sw(reference, desc);
 #elif defined(__MIC__)
   return libxsmm_gemm_diff_imci(reference, desc);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx2(reference, desc);
-#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+# elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx(reference, desc);
-#elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+# elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_sse(reference, desc);
+# else /* pointer based function call */
+  assert(0 != internal_gemm_diff_fn);
+  return internal_gemm_diff_fn(reference, desc);
+# endif
 #else /* pointer based function call */
   assert(0 != internal_gemm_diff_fn);
   return internal_gemm_diff_fn(reference, desc);
@@ -273,12 +278,19 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_g
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
-#elif (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#elif defined(__MIC__)
+  return libxsmm_gemm_diffn_imci(reference, descs, hint, ndescs, nbytes);
+#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+# elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
-#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+# elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx(reference, descs, hint, ndescs, nbytes);
+# else /* pointer based function call */
+  assert(0 != internal_gemm_diffn_fn);
+  return internal_gemm_diffn_fn(reference, descs, hint, ndescs, nbytes);
+# endif
 #else /* pointer based function call */
   assert(0 != internal_gemm_diffn_fn);
   return internal_gemm_diffn_fn(reference, descs, hint, ndescs, nbytes);
