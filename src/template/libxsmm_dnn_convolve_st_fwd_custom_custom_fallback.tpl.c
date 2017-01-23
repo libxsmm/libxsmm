@@ -54,52 +54,54 @@ if (handle->datatype != handle->datatype_itm) {
   out_lp = 0;
 }
 
-LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, output_lp, out_lp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+{ /* open new scope for additional variable declarations (C89) */
+  LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+  LIBXSMM_VLA_DECL(5, element_input_type, output_lp, out_lp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
-/* perform convolution */
-for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-  img = imgofm1 / handle->blocksofm;
-  ofm1 = imgofm1 % handle->blocksofm;
-  /* up-convert */
-  if (handle->datatype != handle->datatype_itm) {
-    for (oj = 0; oj < handle->ofh; ++oj) {
-      for (oi = 0; oi < handle->ofw; ++oi) {
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
-            (LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+  /* perform convolution */
+  for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
+    img = imgofm1 / handle->blocksofm;
+    ofm1 = imgofm1 % handle->blocksofm;
+    /* up-convert */
+    if (handle->datatype != handle->datatype_itm) {
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        for (oi = 0; oi < handle->ofw; ++oi) {
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
+              (LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+          }
         }
       }
     }
-  }
-  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    for (oj = 0; oj < handle->ofh; ++oj) {
-      ij = oj * handle->desc.u;
-      for (oi = 0; oi < handle->ofw; ++oi) {
-        ii = oi * handle->desc.v;
-        for (kj = 0; kj < handle->desc.R; ++kj) {
-          for (ki = 0; ki< handle->desc.S; ++ki) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) += (element_output_type)(
-                  LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
-                * LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
+    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        ij = oj * handle->desc.u;
+        for (oi = 0; oi < handle->ofw; ++oi) {
+          ii = oi * handle->desc.v;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki< handle->desc.S; ++ki) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                  LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) += (element_output_type)(
+                    LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
+                  * LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
+                }
               }
             }
           }
         }
       }
     }
-  }
-  /* down-convert */
-  if (handle->datatype != handle->datatype_itm) {
-    for (oj = 0; oj < handle->ofh; ++oj) {
-      for (oi = 0; oi < handle->ofw; ++oi) {
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_input_type)
-            (LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+    /* down-convert */
+    if (handle->datatype != handle->datatype_itm) {
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        for (oi = 0; oi < handle->ofw; ++oi) {
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_input_type)
+              (LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+          }
         }
       }
     }
