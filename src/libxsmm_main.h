@@ -129,8 +129,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
-  libxsmm_dnn_datatype datatype_in;
-  libxsmm_dnn_datatype datatype_out;
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_itm;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
   libxsmm_dnn_tensor_format buffer_format;
@@ -180,6 +180,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratch3_size;
   void* scratch4;
   size_t scratch4_size;
+  void* scratch6;
+  size_t scratch6_size;
 
   /* JIT-generated convolution code */
   /*

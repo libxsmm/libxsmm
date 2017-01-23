@@ -66,8 +66,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
       /* on AVX512_CORE and int this only works for smaller 13 */
-      if ( (((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ||
-           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) &&
+      if ( (((handle->datatype == LIBXSMM_DNN_DATATYPE_I16) ||
+           (handle->datatype == LIBXSMM_DNN_DATATYPE_I8)) &&
            (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)) &&
            (handle->ofw > 12) ) {
         handle->fwd_ofh_rb = 1;
@@ -77,19 +77,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #endif
       /* we need additional temp registers when running with int on AVX512_CORE */
       if ( ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) ||
+           (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) &&
+           (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32)) ||
            ((libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
-           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16) &&
-           (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) ) {
+           (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) &&
+           (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16) &&
+           ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) ) {
         for (i = 26; i > 1; --i) {
           if (handle->ofw % i == 0) break;
         }
       /* for 32 accumuation we need even one register more */
-      } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
-           (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) &&
-           (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED)  ) {
+      } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) &&
+           (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) &&
+           ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)  ) {
         for (i = 25; i > 1; --i) {
           if (handle->ofw % i == 0) break;
         }
@@ -126,14 +126,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #endif
 
     /* calculate blockings */
-    if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+    if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C;
       handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
       handle->fm_lp_block = 1;
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/2;
-      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/2;
       handle->fm_lp_block = 2;
       if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -143,10 +143,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         noarch = 1;
       }
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16)
-                 && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16)
+                 && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       handle->ifmblock = (handle->desc.C >=32) ? 32 : handle->desc.C/2;
-      handle->ofmblock = (handle->desc.K >=32) ? 32 : handle->desc.K;
+      handle->ofmblock = (handle->desc.K >=32) ? 32 : handle->desc.K/2;
       handle->fm_lp_block = 2;
       if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -156,10 +156,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         noarch = 1;
       }
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)
-                 && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32)
+                 && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/4;
-      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/4;
       handle->fm_lp_block = 4;
       if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -209,7 +209,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #endif
 
     /* calculate blockings */
-    if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+    if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) ) {
       handle->ifmblock = (handle->desc.C >=32) ? 32 : handle->desc.C;
       handle->ofmblock = (handle->desc.K >=32) ? 32 : handle->desc.K;
       handle->fm_lp_block = 1;
@@ -241,23 +241,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
       }
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
       status = LIBXSMM_DNN_WARN_FALLBACK;
       handle->ifmblock = 1;
       handle->ofmblock = 1;
       handle->fm_lp_block = 1;
       noarch = 1;
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16)
-                && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16)
+                && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       status = LIBXSMM_DNN_WARN_FALLBACK;
       handle->ifmblock = 1;
       handle->ofmblock = 1;
       handle->fm_lp_block = 1;
       noarch = 1;
     }
-    else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)
-                && (handle->desc.options == LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) ) {
+    else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32)
+                && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       status = LIBXSMM_DNN_WARN_FALLBACK;
       handle->ifmblock = 1;
       handle->ofmblock = 1;
@@ -279,11 +279,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   /* Let's calculate how many blocks we need */
   handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
-  handle->blocksofm = handle->desc.K / handle->ofmblock;
+  handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
 
   /* Let's check that we can actually block */
-  if (handle->desc.C % (handle->ifmblock * handle->fm_lp_block) != 0 ||
-      handle->desc.K % handle->ofmblock != 0)
+  if ( (handle->desc.C % (handle->ifmblock * handle->fm_lp_block) != 0) ||
+       (handle->desc.K % (handle->ofmblock * handle->fm_lp_block) != 0)    )
   {
     status = LIBXSMM_DNN_WARN_FALLBACK;
     handle->ifmblock = 1;
@@ -307,8 +307,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
       }
-      if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ||
-           (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ) &&
+      if ( ((handle->datatype == LIBXSMM_DNN_DATATYPE_I8) ||
+           (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) ) &&
            (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) &&
            handle->desc.R > 1 && handle->desc.S > 1 && handle->fwd_ofh_rb == 1 ) {
         /* we need 3 instrad of 1 instruction for FMA -> do not perform any unrolling in kh/kw to control code size */
@@ -321,7 +321,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.kw = handle->desc.S;
       descriptor.stride_h = handle->desc.u;
       descriptor.stride_w = handle->desc.v;
-      descriptor.blocks_ofm = handle->blocksofm;
+      descriptor.blocks_ofm = handle->blocksofm*handle->fm_lp_block;
       descriptor.blocks_ifm = handle->blocksifm;
       descriptor.ofm_block = handle->ofmblock;
       descriptor.ifm_block = handle->ifmblock;
@@ -330,8 +330,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.ofh_rb = handle->fwd_ofh_rb;
       descriptor.ofw_rb = handle->fwd_ofw_rb;
       descriptor.fm_lp_block = handle->fm_lp_block;
-      descriptor.datatype_in = handle->datatype_in;
-      descriptor.datatype_out = handle->datatype_out;
+      descriptor.datatype = handle->datatype;
+      descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
@@ -387,8 +387,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.ofw = handle->ofw;
       descriptor.ofw_unroll = 1;
       descriptor.peeled = 0;
-      descriptor.datatype_in = handle->datatype_in;
-      descriptor.datatype_out = handle->datatype_out;
+      descriptor.datatype = handle->datatype;
+      descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
@@ -578,8 +578,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.ofw_rb = handle->upd_ofw_rb;
       descriptor.ofh_unroll = 0;
       descriptor.ofw_unroll = 0;
-      descriptor.datatype_in = handle->datatype_in;
-      descriptor.datatype_out = handle->datatype_out;
+      descriptor.datatype = handle->datatype;
+      descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
 
@@ -692,18 +692,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* backward transpose filters */
       handle->scratch1 = 0;
       handle->scratch1_size = handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-                                * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+                                * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
       /* weight update transpose of minibatch */
       handle->scratch3 = 0;
       handle->scratch3_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp
-                                * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+                                * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
+      /* minibatch parallel execution of weight update kernel */
       if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
         handle->upd_use_thread_fil = 1;
         handle->scratch4 = 0;
         handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-          * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+          * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
         /* enable external reduce of filter scratch */
         if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) > 0 ) {
@@ -713,6 +714,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->scratch4 = 0;
         handle->scratch4_size = 0;
         handle->upd_use_thread_fil = 0;
+      }
+
+      /* low percision intermediate output buffer */
+      if ( handle->datatype != handle->datatype_itm ) {
+        handle->scratch6 = 0;
+        handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * handle->ofhp * handle->ofwp * handle->fm_lp_block
+                                  * libxsmm_dnn_typesize(handle->datatype_itm);
+      } else {
+        handle->scratch6 = 0;
+        handle->scratch6_size = 0;
       }
     }
   }
@@ -742,6 +753,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->scratch3_size = 0;
     handle->scratch4 = 0;
     handle->scratch4_size = 0;
+    /* low percision intermediate output buffer */
+    if ( handle->datatype != handle->datatype_itm ) {
+      handle->scratch6 = 0;
+      handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * handle->ofhp * handle->ofwp * handle->fm_lp_block
+                                * libxsmm_dnn_typesize(handle->datatype_itm);
+    } else {
+      handle->scratch6 = 0;
+      handle->scratch6_size = 0;
+    }
   }
 
   return status;

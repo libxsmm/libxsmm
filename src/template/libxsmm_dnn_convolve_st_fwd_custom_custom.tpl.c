@@ -29,14 +29,14 @@
 /* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int imgofm1, img, ofm1, ifm1, oj, oi;
+int imgofm1, img, ofm1, ifm1, oj, oi, ofm2;
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
 int ij, ii;
 #endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->desc.N*handle->blocksofm;
+const int work = handle->desc.N*(handle->blocksofm*handle->fm_lp_block);
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
@@ -47,8 +47,22 @@ const element_input_type *l_input;
 const element_filter_type *l_wt;
 element_output_type* l_output;
 
-element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+/* regular/high precision */
+element_output_type* out = 0;
+/* low precision */
+element_input_type* out_lp = 0;
+
+/* select pointer based on precision */
+if (handle->datatype != handle->datatype_itm) {
+  out = ((element_output_type*)handle->scratch6) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
+  out_lp = ((element_input_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock * handle->fm_lp_block);
+} else {
+  out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
+  out_lp = 0;
+}
+
+LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_input_type, output_lp, out_lp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
@@ -63,10 +77,20 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
-
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-    img = imgofm1/handle->blocksofm;
-    ofm1 = imgofm1%handle->blocksofm;
+    img = imgofm1/(handle->blocksofm*handle->fm_lp_block);
+    ofm1 = imgofm1%(handle->blocksofm*handle->fm_lp_block);
+    /* up-convert */
+    if (handle->datatype != handle->datatype_itm) {
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        for (oi = 0; oi < handle->ofw; ++oi) {
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
+              (LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block))+ofm2/handle->fm_lp_block, ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block));
+          }
+        }
+      }
+    }
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
       for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
@@ -85,7 +109,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           l_wt     = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
                       handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
           l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0,
-                      handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                      handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
           /* check we are not at the end */
           if (oj < handle->ofh-handle->fwd_ofh_rb) {
@@ -99,7 +123,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #endif
               NULL,
               &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, oi, 0,
-                                     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+                                     handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
           }
           else {
             if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
@@ -109,7 +133,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
                 &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, 0, 0, 0, 0, 0,
                   handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                 &LIBXSMM_VLA_ACCESS(5, output, img + 1, 0, 0, 0, 0,
-                  handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+                  handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             }
             else {
               if ((ifm1+1 == handle->blocksifm)) {
@@ -119,7 +143,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
                   &LIBXSMM_VLA_ACCESS(7, weight, ofm1 + 1, 0, 0, 0, 0, 0, 0,
                     handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                   &LIBXSMM_VLA_ACCESS(5, output, img, ofm1 + 1, 0, 0, 0,
-                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+                    handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               }
               else {
                 jitted_conv_fp_two(l_input, l_wt, l_output,
@@ -128,13 +152,24 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
                   &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
                     handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                   &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+                    handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               }
             }
           }
 #else
           jitted_conv_fp_zero(l_input, l_wt, l_output, NULL, NULL, NULL);
 #endif
+        }
+      }
+    }
+    /* down-convert */
+    if (handle->datatype != handle->datatype_itm) {
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        for (oi = 0; oi < handle->ofw; ++oi) {
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block)+ofm2/handle->fm_lp_block), ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block) 
+              = (element_input_type)(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
+          }
         }
       }
     }

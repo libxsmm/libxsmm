@@ -172,7 +172,11 @@ typedef enum libxsmm_dnn_conv_option {
   /* activations are stored unsigned */
   LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1,
   /* reduce filters externally to op */
-  LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE = 2
+  LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE = 2,
+  /* use 16 bit accumulate instead of 32 bit accumulate for fix point */
+  LIBXSMM_DNN_CONV_OPTION_16BIT_ACC = 4,
+  /* compound types */
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC
 } libxsmm_dnn_conv_option;
 
 /** Structure storing the convolution argument description. */
@@ -196,8 +200,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
-  libxsmm_dnn_datatype datatype_in;
-  libxsmm_dnn_datatype datatype_out;
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_itm;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
@@ -228,8 +232,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
 
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
-  libxsmm_dnn_datatype datatype_in;
-  libxsmm_dnn_datatype datatype_out;
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_itm;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
 
@@ -260,8 +264,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
-  libxsmm_dnn_datatype datatype_in;
-  libxsmm_dnn_datatype datatype_out;
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_itm;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 

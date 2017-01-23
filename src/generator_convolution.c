@@ -53,7 +53,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* select datatype */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "skx") == 0)    ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -63,14 +63,14 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
-  } else if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
     if ( (strcmp(i_arch, "skx") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
-  } else if ( (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I16
+  } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I16
                      && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
     if ( (strcmp(i_arch, "skx") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -78,7 +78,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
-  } else if ( (i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32
+  } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
                      && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
     if ( (strcmp(i_arch, "skx") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -105,7 +105,7 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* select datatype */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "skx") == 0)    ) {
       if ( ((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||
@@ -140,7 +140,7 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* select datatype */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "skx") == 0)    ) {
       if ( ((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||
@@ -179,9 +179,9 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   l_generated_code.last_error = 0;
 
   /* add signature to code string */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
-  } else if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
@@ -238,9 +238,9 @@ void libxsmm_generator_convolution_forward_directasm( const char*               
   }
 
   /* add signature to code string */
-  if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     libxsmm_convfunction_signature_fp32( &l_generated_code, i_routine_name );
-  } else if ( i_conv_desc->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
     libxsmm_convfunction_signature_int16( &l_generated_code, i_routine_name );
   } else {
     fprintf(stderr, "LIBXSMM ERROR : inline assembly for convolutions is only supported for FP32 and int16!\n");
