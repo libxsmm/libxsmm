@@ -219,14 +219,14 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
 } libxsmm_build_request;
 
 typedef enum libxsmm_malloc_flags {
-  LIBXSMM_MALLOC_FLAG_R = 1,
-  LIBXSMM_MALLOC_FLAG_W = 2,
-  LIBXSMM_MALLOC_FLAG_X = 4,
-  LIBXSMM_MALLOC_FLAG_MMAP = 8,
+  LIBXSMM_MALLOC_FLAG_DEFAULT = 0,
+  LIBXSMM_MALLOC_FLAG_SCRATCH = 1,
+  LIBXSMM_MALLOC_FLAG_MMAP = 2,
+  LIBXSMM_MALLOC_FLAG_R = 4,
+  LIBXSMM_MALLOC_FLAG_W = 8,
+  LIBXSMM_MALLOC_FLAG_X = 16,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
-  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X,
-  /** LIBXSMM_MALLOC_FLAG_DEFAULT is an alias for setting no flag bits. */
-  LIBXSMM_MALLOC_FLAG_DEFAULT = LIBXSMM_MALLOC_FLAG_RW
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X
 } libxsmm_malloc_flags;
 
 /** Greatest common divisor. */
@@ -238,7 +238,8 @@ LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_allocator, but takes a lock (can be NULL).*/
 LIBXSMM_API void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
-  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
+  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
 LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
@@ -270,10 +271,14 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
 
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
-/** Default function to allocate memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_malloc_fn;
-/** Default function to release memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_free_fn;
+/** Function used to allocate default memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_default_malloc_fn;
+/** Function used to allocate scratch memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_scratch_malloc_fn;
+/** Function used to release default memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_default_free_fn;
+/** Function used to release scratch memory. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_scratch_free_fn;
 
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;

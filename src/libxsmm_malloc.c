@@ -164,42 +164,82 @@ LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 
 
 LIBXSMM_API_DEFINITION void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
-  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
+  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn)
 {
-  if (0 == malloc_fn && 0 == free_fn) { /* reset to default */
+  static int error_once = 0;
+  if (0 != lock) {
+    LIBXSMM_INIT
+    LIBXSMM_LOCK_ACQUIRE(lock);
+  }
+  if (0 != default_malloc_fn && 0 != default_free_fn) {
+    libxsmm_default_malloc_fn = default_malloc_fn;
+    libxsmm_default_free_fn = default_free_fn;
+  }
+  else {
 #if defined(__TBBMALLOC)
-    malloc_fn = scalable_malloc;
-    free_fn = scalable_free;
+    const libxsmm_malloc_function malloc_fn = scalable_malloc;
+    const libxsmm_free_function free_fn = scalable_free;
 #else
-    malloc_fn = malloc;
-    free_fn = free;
+    const libxsmm_malloc_function malloc_fn = malloc;
+    const libxsmm_free_function free_fn = free;
 #endif
+    if (0 == default_malloc_fn && 0 == default_free_fn) {
+      libxsmm_default_malloc_fn = malloc_fn;
+      libxsmm_default_free_fn = free_fn;
+    }
+    else { /* invalid allocator */
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      { 
+        fprintf(stderr, "LIBXSMM: allocator setup without malloc or free function!\n");
+      }
+      /* keep valid previous non-default allocator */
+      if (0 == libxsmm_default_malloc_fn || 0 == libxsmm_default_free_fn) {
+        libxsmm_default_malloc_fn = malloc_fn;
+        libxsmm_default_free_fn = free_fn;
+      }
+    }
   }
-  if (0 != malloc_fn && 0 != free_fn) {
-    if (0 != lock) {
-      LIBXSMM_INIT
-      LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
-      libxsmm_malloc_fn = malloc_fn;
-      libxsmm_free_fn = free_fn;
-      LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
+  if (0 == scratch_malloc_fn && 0 == scratch_free_fn) { /* adopt default allocator */
+    libxsmm_scratch_malloc_fn = libxsmm_default_malloc_fn;
+    libxsmm_scratch_free_fn = libxsmm_default_free_fn;
+  }
+  else if (0 != scratch_malloc_fn) {
+    if (0 == scratch_free_fn 
+      && /*warning*/(1 < libxsmm_verbosity || 0 > libxsmm_verbosity)
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: scratch allocator setup without free function!\n");
     }
-    else {
-      libxsmm_malloc_fn = malloc_fn;
-      libxsmm_free_fn = free_fn;
+    libxsmm_scratch_malloc_fn = scratch_malloc_fn;
+    libxsmm_scratch_free_fn = scratch_free_fn; /* NULL allowed */
+  }
+  else { /* invalid scratch allocator */
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid scratch allocator (default used)!\n");
+    }
+    /* keep valid previous non-default scratch allocator */
+    if (0 == libxsmm_scratch_malloc_fn) {
+      libxsmm_scratch_malloc_fn = libxsmm_default_malloc_fn;
+      libxsmm_scratch_free_fn = libxsmm_default_free_fn;
     }
   }
-  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: allocator must be setup with malloc and free functions!\n");
-    }
+  if (0 != lock) {
+    LIBXSMM_LOCK_RELEASE(lock);
   }
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_allocator(libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+LIBXSMM_API_DEFINITION void libxsmm_set_allocator(
+  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
+  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn)
 {
-  libxsmm_xset_allocator(&libxsmm_lock_global, malloc_fn, free_fn);
+  libxsmm_xset_allocator(&libxsmm_lock_global,
+    default_malloc_fn, default_free_fn,
+    scratch_malloc_fn, scratch_free_fn);
 }
 
 
@@ -314,13 +354,17 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
   if (memory) {
     if (0 < size) {
       const size_t internal_size = size + extra_size + sizeof(internal_malloc_info_type);
-      const libxsmm_malloc_function malloc_fn = libxsmm_malloc_fn;
-      const libxsmm_free_function free_fn = libxsmm_free_fn;
+      libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
+      libxsmm_free_function free_fn = libxsmm_default_free_fn;
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0, *reloc = 0;
 #if !defined(NDEBUG)
       static int error_once = 0;
 #endif
+      if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
+        malloc_fn = libxsmm_scratch_malloc_fn;
+        free_fn = libxsmm_scratch_free_fn;
+      }
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
 #if !defined(LIBXSMM_MALLOC_MMAP)
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
@@ -712,6 +756,15 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignmen
   void* result = 0;
   LIBXSMM_INIT
   return 0 == libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT,
+    0/*extra*/, 0/*extra_size*/) ? result : 0;
+}
+
+
+LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignment)
+{
+  void* result = 0;
+  LIBXSMM_INIT
+  return 0 == libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_SCRATCH,
     0/*extra*/, 0/*extra_size*/) ? result : 0;
 }
 

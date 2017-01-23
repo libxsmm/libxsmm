@@ -48,18 +48,33 @@ typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_function)(size_t size);
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_function)(void* buffer);
 
 /**
- * Setup the memory allocator, the malloc_fn and free_fn arguments are either
- * non-NULL functions (custom allocator), or NULL-pointers (reset to default).
- * It is supported to change the allocator with buffers still being allocated.
+ * To setup the memory allocator with the first two arguments, either a default_malloc_fn
+ * and corresponding default_free_fn function are given (custom default allocator), or two
+ * NULL-pointers are given (reset default allocator to library's solution).
+ * For the scratch allocator, a scratch_malloc_fn function different from default_malloc_fn
+ * can be supplied; a scratch_free_fn is optional (this is for cases where the lifetime and
+ * deallocation is controlled differently. If NULL-pointers are given for both
+ * scratch_malloc_fn and scratch_free_fn, the default allocator is adopted for
+ * scratch memory allocation and release.
+ * It is supported to change the allocator while buffers are pending.
  */
 LIBXSMM_API void libxsmm_set_allocator(/* malloc_fn/free_fn must correspond */
-  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
+  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn);
 
-/** Allocate aligned memory (malloc/free interface). */
+/** Allocate aligned default memory. */
 LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
   /**
-   * =0: automatic alignment is requested based on size
-   * 0>: uses the requested alignment
+   * =0: align automatically according to the size
+   * 0<: align according to the alignment value
+   */
+  size_t alignment);
+
+/** Allocate aligned scratch memory. */
+LIBXSMM_API void* libxsmm_aligned_scratch(size_t size,
+  /**
+   * =0: align automatically according to the size
+   * 0<: align according to the alignment value
    */
   size_t alignment);
 
