@@ -236,10 +236,12 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
-/** Same as libxsmm_set_allocator, but takes a lock (can be NULL).*/
-LIBXSMM_API void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
-  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
-  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn);
+/** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
+LIBXSMM_API void libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+/** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
+LIBXSMM_API void libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
 LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
@@ -248,6 +250,7 @@ LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags
 LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
+/** Release memory, which was allocated using libxsmm_[*]malloc. */
 LIBXSMM_API int libxsmm_xfree(const void* memory);
 
 /**
@@ -279,7 +282,10 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_scratch_ma
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_default_free_fn;
 /** Function used to release scratch memory. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_scratch_free_fn;
-
+/** If non-NULL, this context used for the context-form of the malloc/free function. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_default_allocator;
+/** If non-NULL, this context used for the context-form of the malloc/free function. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_scratch_allocator;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */

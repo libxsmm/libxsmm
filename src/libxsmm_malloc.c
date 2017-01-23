@@ -116,7 +116,7 @@
 
 typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
   libxsmm_free_function free;
-  void *pointer, *reloc;
+  void *context, *pointer, *reloc;
   size_t size;
   int flags;
 #if defined(LIBXSMM_VTUNE)
@@ -163,30 +163,36 @@ LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
-  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
-  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn)
+LIBXSMM_API_DEFINITION void libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
   static int error_once = 0;
   if (0 != lock) {
     LIBXSMM_INIT
     LIBXSMM_LOCK_ACQUIRE(lock);
   }
-  if (0 != default_malloc_fn && 0 != default_free_fn) {
-    libxsmm_default_malloc_fn = default_malloc_fn;
-    libxsmm_default_free_fn = default_free_fn;
+  if (0 != malloc_fn.function && 0 != free_fn.function) {
+    libxsmm_default_allocator = context;
+    libxsmm_default_malloc_fn = malloc_fn;
+    libxsmm_default_free_fn = free_fn;
   }
   else {
+    void* internal_allocator = 0;
+    libxsmm_malloc_function internal_malloc_fn;
+    libxsmm_free_function internal_free_fn;
 #if defined(__TBBMALLOC)
-    const libxsmm_malloc_function malloc_fn = scalable_malloc;
-    const libxsmm_free_function free_fn = scalable_free;
+    internal_allocator = 0;
+    internal_malloc_fn.function = scalable_malloc;
+    internal_free_fn.function = scalable_free;
 #else
-    const libxsmm_malloc_function malloc_fn = malloc;
-    const libxsmm_free_function free_fn = free;
+    internal_allocator = 0;
+    internal_malloc_fn.function = malloc;
+    internal_free_fn.function = free;
 #endif
-    if (0 == default_malloc_fn && 0 == default_free_fn) {
-      libxsmm_default_malloc_fn = malloc_fn;
-      libxsmm_default_free_fn = free_fn;
+    if (0 == malloc_fn.function && 0 == free_fn.function) {
+      libxsmm_default_allocator = internal_allocator;
+      libxsmm_default_malloc_fn = internal_malloc_fn;
+      libxsmm_default_free_fn = internal_free_fn;
     }
     else { /* invalid allocator */
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -194,26 +200,73 @@ LIBXSMM_API_DEFINITION void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
       { 
         fprintf(stderr, "LIBXSMM: allocator setup without malloc or free function!\n");
       }
-      /* keep valid previous non-default allocator */
-      if (0 == libxsmm_default_malloc_fn || 0 == libxsmm_default_free_fn) {
-        libxsmm_default_malloc_fn = malloc_fn;
-        libxsmm_default_free_fn = free_fn;
+      /* keep any valid (previously instantiated) default allocator */
+      if (0 == libxsmm_default_malloc_fn.function || 0 == libxsmm_default_free_fn.function) {
+        libxsmm_default_allocator = internal_allocator;
+        libxsmm_default_malloc_fn = internal_malloc_fn;
+        libxsmm_default_free_fn = internal_free_fn;
       }
     }
   }
-  if (0 == scratch_malloc_fn && 0 == scratch_free_fn) { /* adopt default allocator */
+  if (0 != lock) {
+    LIBXSMM_LOCK_RELEASE(lock);
+  }
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
+{
+  if (0 != lock) {
+    LIBXSMM_INIT
+    LIBXSMM_LOCK_ACQUIRE(lock);
+  }
+  if (0 != context || 0 != malloc_fn || 0 != free_fn) {
+    if (context) *context = libxsmm_default_allocator;
+    if (0 != malloc_fn) *malloc_fn = libxsmm_default_malloc_fn;
+    if (0 != free_fn) *free_fn = libxsmm_default_free_fn;
+  }
+  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: invalid signature used to get the default memory allocator!\n");
+    }
+  }
+  if (0 != lock) {
+    LIBXSMM_LOCK_RELEASE(lock);
+  }
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+{
+  static int error_once = 0;
+  if (0 != lock) {
+    LIBXSMM_INIT
+    LIBXSMM_LOCK_ACQUIRE(lock);
+  }
+  /* make sure the default allocator is setup before adopting it eventually */
+  if (0 == libxsmm_default_malloc_fn.function || 0 == libxsmm_default_free_fn.function) {
+    const libxsmm_malloc_function null_malloc_fn = { 0 };
+    const libxsmm_free_function null_free_fn = { 0 };
+    libxsmm_xset_default_allocator(lock, 0/*context*/, null_malloc_fn, null_free_fn);
+  }
+  if (0 == malloc_fn.function && 0 == free_fn.function) { /* adopt default allocator */
+    libxsmm_scratch_allocator = libxsmm_default_allocator;
     libxsmm_scratch_malloc_fn = libxsmm_default_malloc_fn;
     libxsmm_scratch_free_fn = libxsmm_default_free_fn;
   }
-  else if (0 != scratch_malloc_fn) {
-    if (0 == scratch_free_fn 
+  else if (0 != malloc_fn.function) {
+    if (0 == free_fn.function
       && /*warning*/(1 < libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM: scratch allocator setup without free function!\n");
     }
-    libxsmm_scratch_malloc_fn = scratch_malloc_fn;
-    libxsmm_scratch_free_fn = scratch_free_fn; /* NULL allowed */
+    libxsmm_scratch_allocator = context;
+    libxsmm_scratch_malloc_fn = malloc_fn;
+    libxsmm_scratch_free_fn = free_fn; /* NULL allowed */
   }
   else { /* invalid scratch allocator */
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -221,8 +274,9 @@ LIBXSMM_API_DEFINITION void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
     {
       fprintf(stderr, "LIBXSMM: invalid scratch allocator (default used)!\n");
     }
-    /* keep valid previous non-default scratch allocator */
-    if (0 == libxsmm_scratch_malloc_fn) {
+    /* keep any valid (previously instantiated) scratch allocator */
+    if (0 == libxsmm_scratch_malloc_fn.function) {
+      libxsmm_scratch_allocator = libxsmm_default_allocator;
       libxsmm_scratch_malloc_fn = libxsmm_default_malloc_fn;
       libxsmm_scratch_free_fn = libxsmm_default_free_fn;
     }
@@ -233,13 +287,55 @@ LIBXSMM_API_DEFINITION void libxsmm_xset_allocator(LIBXSMM_LOCK_TYPE* lock,
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_allocator(
-  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
-  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn)
+LIBXSMM_API_DEFINITION void libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
+  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
 {
-  libxsmm_xset_allocator(&libxsmm_lock_global,
-    default_malloc_fn, default_free_fn,
-    scratch_malloc_fn, scratch_free_fn);
+  if (0 != lock) {
+    LIBXSMM_INIT
+    LIBXSMM_LOCK_ACQUIRE(lock);
+  }
+  if (0 != context || 0 != malloc_fn || 0 != free_fn) {
+    if (context) *context = libxsmm_scratch_allocator;
+    if (0 != malloc_fn) *malloc_fn = libxsmm_scratch_malloc_fn;
+    if (0 != free_fn) *free_fn = libxsmm_scratch_free_fn;
+  }
+  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM: invalid signature used to get the scratch memory allocator!\n");
+    }
+  }
+  if (0 != lock) {
+    LIBXSMM_LOCK_RELEASE(lock);
+  }
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_default_allocator(void* context,
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+{
+  libxsmm_xset_default_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_get_default_allocator(void** context,
+  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
+{
+  libxsmm_xget_default_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_scratch_allocator(void* context,
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+{
+  libxsmm_xset_scratch_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_get_scratch_allocator(void** context,
+  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
+{
+  libxsmm_xget_scratch_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
 }
 
 
@@ -354,14 +450,18 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
   if (memory) {
     if (0 < size) {
       const size_t internal_size = size + extra_size + sizeof(internal_malloc_info_type);
-      libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
-      libxsmm_free_function free_fn = libxsmm_default_free_fn;
+      /* ATOMIC BEGIN: this region should be atomic/locked */
+        void* context = libxsmm_default_allocator;
+        libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
+        libxsmm_free_function free_fn = libxsmm_default_free_fn;
+      /* ATOMIC END: this region should be atomic */
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0, *reloc = 0;
 #if !defined(NDEBUG)
       static int error_once = 0;
 #endif
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
+        context = libxsmm_scratch_allocator;
         malloc_fn = libxsmm_scratch_malloc_fn;
         free_fn = libxsmm_scratch_free_fn;
       }
@@ -370,7 +470,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
         alloc_alignment = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
         alloc_size = internal_size + alloc_alignment - 1;
-        buffer = (0 != malloc_fn ? malloc_fn(alloc_size) : 0);
+        buffer = 0 != malloc_fn.function
+          ? (0 == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(context, alloc_size))
+          : 0;
       }
       else
 #endif
@@ -412,7 +514,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select the corresponding deallocation */
         }
         else if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
-          buffer = (0 != malloc_fn ? malloc_fn(alloc_size) : 0);
+          buffer = (0 != malloc_fn ? (0 == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(context, alloc_size)) : 0);
         }
 #else /* !defined(_WIN32) */
         int xflags = 0
@@ -496,7 +598,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         }
         else {
           if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
-            buffer = (0 != malloc_fn ? malloc_fn(alloc_size) : 0);
+            buffer = 0 != malloc_fn.function
+              ? (0 == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(context, alloc_size))
+              : 0;
             reloc = buffer;
           }
           else {
@@ -519,10 +623,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         }
 #endif
         if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+          info->context = context;
           info->free = free_fn;
         }
-        info->reloc = reloc;
         info->pointer = buffer;
+        info->reloc = reloc;
         info->size = size;
         info->flags = flags;
 #if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
@@ -566,7 +671,14 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
     void *const buffer = info->pointer;
     assert((0 != buffer || 0 == info->size));
     if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & info->flags)) {
-      if (0 != info->free) info->free(buffer);
+      if (0 != info->free.function) {
+        if (0 == info->context) {
+          info->free.function(buffer);
+        }
+        else {
+          info->free.ctx_form(info->context, buffer);
+        }
+      }
     }
     else {
 #if defined(LIBXSMM_VTUNE)

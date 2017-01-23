@@ -477,10 +477,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #endif
   result = internal_registry;
   if (0 == result) {
+    const libxsmm_malloc_function null_malloc_fn = { 0 };
+    const libxsmm_free_function null_free_fn = { 0 };
+    libxsmm_xset_default_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
+    libxsmm_xset_scratch_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
-    libxsmm_xset_allocator(0/*lock*/,
-      0/*default_malloc_fn*/, 0/*default_free_fn*/,
-      0/*scratch_malloc_fn*/, 0/*scratch_free_fn*/);
     libxsmm_mt = 2;
     { /* behavior of parallelized routines which are located in libxsmmext library
        * 0: sequential below-threshold routine (no OpenMP); may fall-back to BLAS,
@@ -560,9 +561,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_init();
 #endif
-      assert(0 == internal_registry_keys && 0 == internal_registry && 0 != libxsmm_default_malloc_fn); /* should never happen */
-      result = (libxsmm_code_pointer*)libxsmm_default_malloc_fn((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
-      internal_registry_keys = (internal_regkey_type*)libxsmm_default_malloc_fn((LIBXSMM_CAPACITY_REGISTRY) * sizeof(internal_regkey_type));
+      assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
+      init_code = libxsmm_xmalloc((void**)&result, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer),
+        0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_DEFAULT, 0/*extra*/, 0/*extra_size*/);
+      if (EXIT_SUCCESS == init_code) {
+        init_code = libxsmm_xmalloc((void**)&internal_registry_keys, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(internal_regkey_type),
+          0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_DEFAULT, 0/*extra*/, 0/*extra_size*/);
+      }
       if (0 != result && 0 != internal_registry_keys) {
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
         for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) result[i].pmm = 0;
@@ -726,8 +731,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         }
       }
       assert(0 != libxsmm_default_free_fn);
-      libxsmm_default_free_fn(registry_keys);
-      libxsmm_default_free_fn(registry);
+      libxsmm_free(registry_keys);
+      libxsmm_free(registry);
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
     for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
