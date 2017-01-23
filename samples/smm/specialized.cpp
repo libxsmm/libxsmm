@@ -211,6 +211,31 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
 
+        { // streaming B and C
+          fprintf(stdout, "Streamed (B,C)...\n");
+          const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#         pragma omp parallel for
+#endif
+          for (int i = 0; i < s; ++i) {
+            const T *const bi = b + i * bsize;
+            T* ci = c + i * csize;
+#if (0 != LIBXSMM_PREFETCH)
+            xmm(a, bi, ci,
+              LIBXSMM_PREFETCH_A(a), LIBXSMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_PREFETCH_C(ci + csize));
+#else
+            xmm(a, bi, ci);
+#endif
+          }
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration) {
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        }
+
         { // cached
           fprintf(stdout, "Cached...\n");
           const unsigned long long start = libxsmm_timer_tick();
