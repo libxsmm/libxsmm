@@ -407,10 +407,9 @@ void libxsmm_spmdm_compute_fp32_thread(
   int block_id,
   int tid, int nthreads)
 {
+  /* if highest implemented code path is statically present, no need for indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH)
   internal_spmdm_compute_fp32_thread_avx512_core(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
-#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  internal_spmdm_compute_fp32_thread_avx2(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
 #else /* pointer based function call */
   assert(0 != internal_spmdm_compute_fp32_thread);
   internal_spmdm_compute_fp32_thread(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, block_id, tid, nthreads);
