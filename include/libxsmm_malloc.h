@@ -42,16 +42,20 @@
 #endif
 
 
-/** Function type accepted for memory allocation (see libxsmm_set_*_allocator). */
+/** Function types accepted for memory allocation (see libxsmm_*_allocator). */
+typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(void* /*context*/, size_t /*size*/);
+typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_fun)(size_t /*size*/);
 typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
-  void* (*ctx_form)(void* context, size_t size);
-  void* (*function)(size_t size);
+  libxsmm_malloc_ctx ctx_form;
+  libxsmm_malloc_fun function;
 } libxsmm_malloc_function;
 
-/** Function type accepted for memory release (see libxsmm_set_*_allocator). */
+/** Function types accepted for releasing memory (see libxsmm_*_allocator). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*context*/, void* /*buffer*/);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_fun)(void* /*buffer*/);
 typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
-  void (*ctx_form)(void* context, void* buffer);
-  void (*function)(void* buffer);
+  libxsmm_free_ctx ctx_form;
+  libxsmm_free_fun function;
 } libxsmm_free_function;
 
 /**
@@ -110,21 +114,30 @@ LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 #if defined(__cplusplus)
 
 /** RAII idiom to temporarily setup an allocator for the lifetime of the scope. */
-template<allocator_kind> class LIBXSMM_RETARGETABLE libxsmm_scoped_allocator {
+template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_scoped_allocator {
 public:
-  /** Following the RAII idiom, the c'tor instantiates the new allocator. */
-  libxsmm_scoped_allocator(void* context,
-    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+  /** C'tor, which instantiates the new allocator (plain form). */
+  libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn)
   :
     m_context(0), m_malloc(0), m_free(0)
   {
-    allocator_kind::get(m_context, m_malloc, m_free);
-    allocator_kind::set(context, malloc_fn, free_fn);
+    kind::get(m_context, m_malloc, m_free);
+    kind::set(0/*context*/, malloc_fn, free_fn);
+  }
+
+  /** C'tor, which instantiates the new allocator (context form). */
+  libxsmm_scoped_allocator(void* context,
+    libxsmm_malloc_ctx malloc_fn, libxsmm_free_ctx free_fn)
+  :
+    m_context(0), m_malloc(0), m_free(0)
+  {
+    kind::get(m_context, m_malloc, m_free);
+    kind::set(context, malloc_fn, free_fn);
   }
 
   /** Following the RAII idiom, the d'tor restores the previous allocator. */
   ~libxsmm_scoped_allocator() {
-    allocator_kind::set(m_context, m_malloc, m_free);
+    kind::set(m_context, m_malloc, m_free);
   }
 
 private: /* no copy/assignment */
@@ -137,7 +150,7 @@ private: /* saved/previous allocator */
   libxsmm_free_function m_free;
 };
 
-/** Wrap default allocator to act as an allocator-kind (libxsmm_scoped_allocator). */
+/** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
   static void set(void* context,
     libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
@@ -151,7 +164,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
   }
 };
 
-/** Wrap scratch allocator to act as an allocator-kind (libxsmm_scoped_allocator). */
+/** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
   static void set(void* context,
     libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
@@ -162,6 +175,48 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
   {
     libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
+  }
+};
+
+/**
+ * An object of this allocator type adopts a memory allocator from TensorFlow
+ * using the given OpKernelContext. All memory allocations of the requested
+ * kind within the current scope (where the libxsmm_tf_allocator object lives)
+ * will be subject to TensorFlow's memory allocation scheme.
+ * The allocation kind is usually "libxsmm_scratch_allocator"; using a second
+ * libxsmm_tf_allocator object of kind "libxsmm_default_allocator" makes the
+ * default memory allocation of LIBXSMM subject to TensorFlow as well.
+ */
+template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_tf_allocator:
+  public libxsmm_scoped_allocator<kind>
+{
+public:
+  template<typename context_type> explicit libxsmm_tf_allocator(context_type& context)
+    : libxsmm_scoped_allocator<kind>(&context,
+      libxsmm_tf_allocator::malloc<context_type>,
+      libxsmm_tf_allocator::free<context_type>)
+  {}
+
+private:
+  template<typename context_type> static void* malloc(void* context, size_t size) {
+    using namespace tensorflow;
+    context_type *const tf_context = static_cast<context_type*>(context);
+    DeviceBase *const device = 0 != tf_context ? tf_context->device() : 0;
+    Allocator *const allocator = 0 != device ? device->GetStepAllocator(
+      AllocatorAttributes(), tf_context->resource_manager()) : 0;
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
+  }
+
+  template<typename context_type> static void free(void* context, void* buffer) {
+    using namespace tensorflow;
+    context_type *const tf_context = static_cast<context_type*>(context);
+    DeviceBase *const device = 0 != tf_context ? tf_context->device() : 0;
+    Allocator *const allocator = 0 != device ? device->GetStepAllocator(
+      AllocatorAttributes(), tf_context->resource_manager()) : 0;
+    if (0 != allocator) {
+      allocator->DeallocateRaw(buffer);
+    }
   }
 };
 
