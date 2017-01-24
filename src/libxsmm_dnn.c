@@ -488,6 +488,51 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_buffer_dat
 }
 
 
+LIBXSMM_API_DEFINITION void* libxsmm_dnn_get_buffer_data_ptr(const libxsmm_dnn_buffer* buffer, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != buffer) {
+    return buffer->data;
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_BUFFER;
+  }
+
+  return 0;
+}
+
+
+LIBXSMM_API_DEFINITION char libxsmm_dnn_get_qbuffer_exp(const libxsmm_dnn_buffer* buffer, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != buffer) {
+    return buffer->exp;
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_BUFFER;
+  }
+
+  return 0;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_set_qbuffer_exp(libxsmm_dnn_buffer* buffer, const char exp)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != buffer) {
+    buffer->exp = exp;
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_BUFFER;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsmm_dnn_buffer* buffer)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -653,6 +698,51 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_dat
   }
 
   return layout;
+}
+
+
+LIBXSMM_API_DEFINITION void* libxsmm_dnn_get_filter_data_ptr(const libxsmm_dnn_filter* filter, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != filter) {
+    return filter->data;
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_FILTER;
+  }
+
+  return 0;
+}
+
+
+LIBXSMM_API_DEFINITION char libxsmm_dnn_get_qfilter_exp(const libxsmm_dnn_filter* filter, libxsmm_dnn_err_t* status)
+{
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != filter) {
+    return filter->exp;
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_FILTER;
+  }
+
+  return 0;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_set_qfilter_exp(libxsmm_dnn_filter* filter, const char exp)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != filter) {
+    filter->exp = exp;
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_FILTER;
+  }
+
+  return status;
 }
 
 
@@ -1005,6 +1095,37 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_buffer(libxsmm_dnn_lay
 }
 
 
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer_type type)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* check for buffer type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT) && (type != LIBXSMM_DNN_GRADIENT_INPUT) &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)    ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
+    return status;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      handle->reg_input = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      handle->grad_input = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      handle->reg_output = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      handle->grad_output = 0;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_BUFFER;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter, const libxsmm_dnn_filter_type type)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -1039,6 +1160,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_lay
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER;
+  }
+
+  return status;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* check for filter type */
+  if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+    return status;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_FILTER ) {
+      handle->reg_filter = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_FILTER ) {
+      handle->grad_filter = 0;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_BUFFER;
   }
 
   return status;
