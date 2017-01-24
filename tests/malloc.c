@@ -34,24 +34,51 @@
 
 int main(void)
 {
-  const size_t size = 2507, alignment = 64;
+  const size_t size = 2507, alignment = (2u << 20);
+  void *context, *p;
   int nerrors = 0;
-  void* p;
 
-  p = libxsmm_malloc(size);
-  if (0 != libxsmm_malloc_size(NULL)) {
+  libxsmm_malloc_function malloc_fn;
+  libxsmm_free_function free_fn;
+  malloc_fn.function = malloc; free_fn.function = free;
+  libxsmm_set_default_allocator(0/*context*/, malloc_fn/*malloc*/, free_fn/*free*/);
+  malloc_fn.function = 0; free_fn.function = 0;
+  libxsmm_set_scratch_allocator(0, malloc_fn/*0*/, free_fn/*0*/);
+
+  /* check adoption of the default allocator */
+  libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
+  if (0 != context || malloc != malloc_fn.function || free != free_fn.function) {
     ++nerrors;
   }
+
+  /* allocate some amount of memory */
+  p = libxsmm_malloc(size);
+
+  /* query and check the size of the buffer */
   if (0 != p && size != libxsmm_malloc_size(p)) {
     ++nerrors;
   }
+
+  /* check that a NULL-pointer yields no size */
+  if (0 != libxsmm_malloc_size(NULL)) {
+    ++nerrors;
+  }
+
+  /* release a NULL pointer */
   libxsmm_free(0);
+
+  /* release a buffer */
   libxsmm_free(p);
 
+  /* allocate memory with specific alignment */
   p = libxsmm_aligned_malloc(size, alignment);
+
+  /* check the alignment of the allocation */
   if (0 != (((uintptr_t)p) % alignment)) {
     ++nerrors;
   }
+
+  /* release aligned memory */
   libxsmm_free(p);
 
   return 0 == nerrors ? EXIT_SUCCESS : EXIT_FAILURE;
