@@ -573,7 +573,7 @@ int main(int argc, char* argv[])
   naive_copy_KCRS_to_RSCK(naive_filter, filter_rsck, kh, kw, nIfm, nOfm);
 
   printf("##########################################\n");
-  printf("#          Computing Reference           #\n");
+  printf("#         Computing Reference ...        #\n");
   printf("##########################################\n");
   if (type == 'A' || type == 'F') {
     naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter);
@@ -585,6 +585,9 @@ int main(int argc, char* argv[])
   if (type == 'A' || type == 'U') {
     naive_conv_wu(&naive_param, naive_input, naive_output_wu, naive_filter_wu);
   }
+  printf("##########################################\n");
+  printf("#      Computing Reference ... done      #\n");
+  printf("##########################################\n");
 
   if (format == 'A' || format == 'L') {
     printf("\n");
