@@ -77,10 +77,10 @@ libxsmm_convfunction jitted_conv_wu_transpose_pf = (libxsmm_convfunction)handle-
 libxsmm_convfunction jitted_conv_wu_transpose_nooutput_pf = (libxsmm_convfunction)handle->code_upd[5].xconv.sconv;
 #endif
 
-element_output_type *const out = ((element_output_type*)handle->output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
 #endif
@@ -94,7 +94,7 @@ unsigned int stride_h = handle->desc.u;
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
 element_filter_type* remote_weight_ptr = 0;
-element_filter_type* weight_ptr = (element_filter_type*)handle->filter->data;
+element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* number of tasks that could be run in parallel */

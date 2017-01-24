@@ -114,6 +114,10 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported architecture!";
     case LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED:
       return "LIBXSMM DNN Error: scratch binding failed sas scratch was not allocated!";
+    case LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE:
+      return "LIBXSMM DNN Error: an unknown buffer type was provided!";
+    case LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE:
+      return "LIBXSMM DNN Error: an unknown filter type was provided!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occured!";
   }
@@ -152,7 +156,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype da
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_handle(
+LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
   libxsmm_dnn_conv_desc     conv_desc,
   libxsmm_dnn_err_t*        status)
 {
@@ -237,7 +241,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_handle(
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const libxsmm_dnn_layer* handle)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_layer* handle)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -280,11 +284,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
 
-    /*Deallocate scratch in handle*/
-    libxsmm_free(handle->scratch1);
-    libxsmm_free(handle->scratch3);
-    libxsmm_free(handle->scratch4);
-
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
   }
@@ -296,34 +295,64 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_handle(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_buffer(const libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer_type type, const void* data, libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
+{
+  return libxsmm_dnn_link_qbuffer(handle, type, data, 0, in_format, status);
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer_type type, const void* data, const char exp, libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && buffer != 0 && data != 0) {
     /* set properties of the buffer according to convolution handle */
-    buffer->N = handle->desc.N;
-    buffer->fmb = handle->blocksifm;
-    buffer->bfm = handle->ifmblock;
-    buffer->H = handle->ifhp;
-    buffer->W = handle->ifwp;
-    buffer->format = in_format;
-    buffer->datatype = handle->datatype;
-    buffer->lpb = handle->fm_lp_block;
-    /* NHWC */
-    if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
-      buffer->data = (void*)data;
-    /* custom LIBXSMM format */
-    } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
-      buffer->data = (void*)data;
+    if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
+      buffer->N = handle->desc.N;
+      buffer->fmb = handle->blocksifm;
+      buffer->bfm = handle->ifmblock;
+      buffer->H = handle->ifhp;
+      buffer->W = handle->ifwp;
+      buffer->format = in_format;
+      buffer->datatype = handle->datatype;
+      buffer->lpb = handle->fm_lp_block;
+      buffer->exp = exp;
+      /* NHWC */
+      if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
+        buffer->data = (void*)data;
+      /* custom LIBXSMM format */
+      } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
+        buffer->data = (void*)data;
+      } else {
+        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+      }
+    } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
+      /* set properties of the buffer according to convolution handle */
+      buffer->N = handle->desc.N;
+      buffer->fmb = handle->blocksofm;
+      buffer->bfm = handle->ofmblock;
+      buffer->H = handle->ofhp;
+      buffer->W = handle->ofwp;
+      buffer->format = in_format;
+      buffer->datatype = handle->datatype;
+      buffer->lpb = handle->fm_lp_block;
+      buffer->exp = exp;
+      /* NHWC */
+      if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
+        buffer->data = (void*)data;
+      /* custom LIBXSMM format */
+      } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
+        buffer->data = (void*)data;
+      } else {
+        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+      }
     } else {
-      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+      *status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
     }
   }
   else {
     *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    buffer = 0;
   }
 
   if (*status != LIBXSMM_DNN_SUCCESS) {
@@ -335,7 +364,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_input_buffer(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_input_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_buffer_datalayout(const libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer_type type, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_tensor_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -357,11 +386,25 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_input_buff
             layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
             layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
             layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            layout->dim_size[0] = handle->ifmblock;
-            layout->dim_size[1] = handle->ifwp;
-            layout->dim_size[2] = handle->ifhp;
-            layout->dim_size[3] = handle->blocksifm;
-            layout->dim_size[4] = handle->desc.N;
+            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
+              layout->dim_size[0] = handle->ifmblock;
+              layout->dim_size[1] = handle->ifwp;
+              layout->dim_size[2] = handle->ifhp;
+              layout->dim_size[3] = handle->blocksifm;
+              layout->dim_size[4] = handle->desc.N;
+            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
+              layout->dim_size[0] = handle->ofmblock;
+              layout->dim_size[1] = handle->ofwp;
+              layout->dim_size[2] = handle->ofhp;
+              layout->dim_size[3] = handle->blocksofm;
+              layout->dim_size[4] = handle->desc.N;
+            } else {
+              free(layout->dim_type);
+              free(layout->dim_size);
+              free(layout);
+              layout = 0; /* make sure a NULL is returned */
+              *status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
+            }
           }
         } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) || (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) ) {
           layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
@@ -374,12 +417,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_input_buff
             layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
             layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
             layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            layout->dim_size[0] = handle->fm_lp_block;
-            layout->dim_size[1] = handle->ifmblock;
-            layout->dim_size[2] = handle->ifwp;
-            layout->dim_size[3] = handle->ifhp;
-            layout->dim_size[4] = handle->blocksifm;
-            layout->dim_size[5] = handle->desc.N;
+            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
+              layout->dim_size[0] = handle->fm_lp_block;
+              layout->dim_size[1] = handle->ifmblock;
+              layout->dim_size[2] = handle->ifwp;
+              layout->dim_size[3] = handle->ifhp;
+              layout->dim_size[4] = handle->blocksifm;
+              layout->dim_size[5] = handle->desc.N;
+            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
+              layout->dim_size[0] = handle->fm_lp_block;
+              layout->dim_size[1] = handle->ofmblock;
+              layout->dim_size[2] = handle->ofwp;
+              layout->dim_size[3] = handle->ofhp;
+              layout->dim_size[4] = handle->blocksofm;
+              layout->dim_size[5] = handle->desc.N;
+            } else {
+              free(layout->dim_type);
+              free(layout->dim_size);
+              free(layout);
+              layout = 0; /* make sure a NULL is returned */
+              *status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
+            }
           }
         } else {
           free(layout);
@@ -395,132 +453,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_input_buff
           layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
           layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
           layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-          layout->dim_size[0] = handle->ifmblock * handle->blocksifm;
-          layout->dim_size[1] = handle->ifwp;
-          layout->dim_size[2] = handle->ifhp;
-          layout->dim_size[3] = handle->desc.N;
-        }
-      } else {
-        free(layout);
-        layout = 0; /* make sure a NULL is returned */
-        *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
-      }
-    } else {
-      *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
-    }
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
-  }
-
-  return layout;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_output_buffer(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
-{
-  libxsmm_dnn_buffer* buffer = (libxsmm_dnn_buffer*)malloc(sizeof(libxsmm_dnn_buffer));
-  *status = LIBXSMM_DNN_SUCCESS;
-
-  if (handle != 0 && buffer != 0 && data != 0) {
-    /* set properties of the buffer according to convolution handle */
-    buffer->N = handle->desc.N;
-    buffer->fmb = handle->blocksofm;
-    buffer->bfm = handle->ofmblock;
-    buffer->H = handle->ofhp;
-    buffer->W = handle->ofwp;
-    buffer->format = in_format;
-    buffer->datatype = handle->datatype;
-    buffer->lpb = handle->fm_lp_block;
-
-    /* NHWC */
-    if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
-      buffer->data = (void*)data;
-    /* custom LIBXSMM format */
-    } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
-      buffer->data = (void*)data;
-    } else {
-      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
-    }
-  }
-  else {
-    *status = LIBXSMM_DNN_ERR_CREATE_BUFFER;
-    buffer = 0;
-  }
-
-  if (*status != LIBXSMM_DNN_SUCCESS) {
-    free((libxsmm_dnn_buffer*)buffer);
-    buffer = 0;
-  }
-
-  return buffer;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_output_buffer_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
-  libxsmm_dnn_tensor_datalayout* layout;
-
-  *status = LIBXSMM_DNN_SUCCESS;
-  layout = 0;
-
-  if (handle != 0) {
-    layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
-
-    if (layout != 0) {
-      memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
-      if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
-        if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) ) {
-          layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
-          layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
-          if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
-            layout->num_dims = 5;
-            layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-            layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-            layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-            layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-            layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            layout->dim_size[0] = handle->ofmblock;
+          if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
+            layout->dim_size[0] = handle->ifmblock * handle->blocksifm;
             layout->dim_size[1] = handle->ifwp;
             layout->dim_size[2] = handle->ifhp;
-            layout->dim_size[3] = handle->blocksofm;
-            layout->dim_size[4] = handle->desc.N;
+            layout->dim_size[3] = handle->desc.N;
+          } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
+            layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
+            layout->dim_size[1] = handle->ofwp;
+            layout->dim_size[2] = handle->ofhp;
+            layout->dim_size[3] = handle->desc.N;
+          } else {
+            free(layout->dim_type);
+            free(layout->dim_size);
+            free(layout);
+            layout = 0; /* make sure a NULL is returned */
+            *status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
           }
-        } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) || (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) ) {
-          layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
-          layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
-          if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
-            layout->num_dims = 6;
-            layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-            layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-            layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-            layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-            layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-            layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            layout->dim_size[0] = handle->fm_lp_block;
-            layout->dim_size[1] = handle->ifmblock;
-            layout->dim_size[2] = handle->ifwp;
-            layout->dim_size[3] = handle->ifhp;
-            layout->dim_size[4] = handle->blocksifm;
-            layout->dim_size[5] = handle->desc.N;
-          }
-        } else {
-          free(layout);
-          layout = 0; /* make sure a NULL is returned */
-          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-        }
-      } else if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) {
-        layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(4*sizeof(libxsmm_dnn_tensor_dimtype));
-        layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
-        if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
-          layout->num_dims = 4;
-          layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-          layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-          layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-          layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-          layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
-          layout->dim_size[1] = handle->ifwp;
-          layout->dim_size[2] = handle->ifhp;
-          layout->dim_size[3] = handle->desc.N;
         }
       } else {
         free(layout);
@@ -559,12 +508,26 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_layer* handle, const void* data, libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type, const void* data,  libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
+{
+  return libxsmm_dnn_link_qfilter(handle, type, data, 0, in_format, status);
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_qfilter(const libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type, const void* data, const char exp,  libxsmm_dnn_tensor_format in_format, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_filter* filter = (libxsmm_dnn_filter*)malloc(sizeof(libxsmm_dnn_filter));
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && filter != 0 && data != 0) {
+    /* check for filter type */
+    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) && (type != LIBXSMM_DNN_FILTER) ) {
+      *status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+      free(filter);
+      filter = 0;
+      return filter;
+    }
+
     /* set properties of the buffer according to convolution handle */
     filter->ifmb = handle->blocksifm;
     filter->bifm = handle->ifmblock;
@@ -575,6 +538,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm
     filter->format = in_format;
     filter->datatype = handle->datatype;
     filter->lpb = handle->fm_lp_block;
+    filter->exp = exp;
     /* RSCK */
     if ( ((handle->filter_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
       filter->data = (void*)data;
@@ -587,7 +551,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm
   }
   else {
     *status = LIBXSMM_DNN_ERR_CREATE_FILTER;
-    filter = 0;
   }
 
   if (*status != LIBXSMM_DNN_SUCCESS) {
@@ -600,13 +563,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_datalayout(const libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_tensor_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
   layout = 0;
 
   if (handle != 0) {
+    /* check for filter type */
+    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) && (type != LIBXSMM_DNN_FILTER) ) {
+      *status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+      return layout;
+    }
+
     layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
 
     if (layout != 0) {
@@ -974,25 +943,58 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* buffer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* buffer, const libxsmm_dnn_buffer_type type)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
+  /* check for buffer type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT) && (type != LIBXSMM_DNN_GRADIENT_INPUT) &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)    ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
+    return status;
+  }
+
   if (handle != 0 && buffer != 0) {
-    /* check if format matches */
-    if ( handle->desc.N == buffer->N
-      && handle->ifwp == buffer->W
-      && handle->ifhp == buffer->H
-      && handle->ifmblock == buffer->bfm
-      && handle->blocksifm == buffer->fmb
-      && handle->datatype == buffer->datatype
-      && handle->fm_lp_block == buffer->lpb
-      && ((handle->buffer_format & buffer->format) > 0) )
-    {
-      handle->input = (libxsmm_dnn_buffer*)buffer;
-    }
-    else {
-      status = LIBXSMM_DNN_ERR_MISMATCH_BUFFER;
+    if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) ) {
+      /* check if format matches */
+      if ( handle->desc.N == buffer->N
+        && handle->ifwp == buffer->W
+        && handle->ifhp == buffer->H
+        && handle->ifmblock == buffer->bfm
+        && handle->blocksifm == buffer->fmb
+        && handle->datatype == buffer->datatype
+        && handle->fm_lp_block == buffer->lpb
+        && ((handle->buffer_format & buffer->format) > 0) )
+      {
+        if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+          handle->reg_input = (libxsmm_dnn_buffer*)buffer;
+        } else {
+          handle->grad_input = (libxsmm_dnn_buffer*)buffer;
+        }
+      } else {
+        status = LIBXSMM_DNN_ERR_MISMATCH_BUFFER;
+      }
+    } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
+      /* check if format matches */
+      if ( handle->desc.N == buffer->N
+        && handle->ofwp == buffer->W
+        && handle->ofhp == buffer->H
+        && handle->ofmblock == buffer->bfm
+        && handle->blocksofm == buffer->fmb
+        && handle->datatype == buffer->datatype
+        && handle->fm_lp_block == buffer->lpb
+        && ((handle->buffer_format & buffer->format) > 0) )
+      {
+        if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+          handle->reg_output = (libxsmm_dnn_buffer*)buffer;
+        } else {
+          handle->grad_output = (libxsmm_dnn_buffer*)buffer;
+        }
+      } else {
+        status = LIBXSMM_DNN_ERR_MISMATCH_BUFFER;
+      }
+    } else {
+      /* cannot happen */
     }
   }
   else {
@@ -1003,38 +1005,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_input_buffer(libxsmm_d
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_output_buffer(libxsmm_dnn_layer* handle, const libxsmm_dnn_buffer* buffer)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter, const libxsmm_dnn_filter_type type)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && buffer != 0) {
-    /* check if format matches */
-    if ( handle->desc.N == buffer->N
-      && handle->ofwp == buffer->W
-      && handle->ofhp == buffer->H
-      && handle->ofmblock == buffer->bfm
-      && handle->blocksofm == buffer->fmb
-      && handle->fm_lp_block == buffer->lpb
-      && ((handle->buffer_format & buffer->format) > 0)
-      && handle->datatype == buffer->datatype )
-    {
-      handle->output = (libxsmm_dnn_buffer*)buffer;
-    }
-    else {
-      status = LIBXSMM_DNN_ERR_MISMATCH_BUFFER;
-    }
+  /* check for filter type */
+  if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+    return status;
   }
-  else {
-    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_BUFFER;
-  }
-
-  return status;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter* filter)
-{
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0 && filter != 0) {
     /* check if format matches */
@@ -1048,7 +1027,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_lay
       && ((handle->filter_format & filter->format) > 0)
       && handle->datatype == filter->datatype)
     {
-      handle->filter = (libxsmm_dnn_filter*)filter;
+      if ( type == LIBXSMM_DNN_REGULAR_FILTER ) {
+        handle->reg_filter = (libxsmm_dnn_filter*)filter;
+      } else {
+        handle->grad_filter = (libxsmm_dnn_filter*)filter;
+      }
     }
     else {
       status = LIBXSMM_DNN_ERR_MISMATCH_FILTER;
@@ -1382,12 +1365,18 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_execute(libxsmm_dnn_layer* handle, libxs
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* handle) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int ofm1, ifm1, kj, ki, ifm2, ofm2;
+ 
+  /* check for filter type */
+  if ( (type != LIBXSMM_DNN_REGULAR_FILTER) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+    return status;
+  }
 
   /* check if we have input, output and filter */
-  if (handle->input == 0 || handle->output == 0 || handle->filter == 0) {
+  if (handle->reg_filter == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -1400,7 +1389,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
 
   /* check that we are in FP32 */
   if ( handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
-    LIBXSMM_VLA_DECL(6, float, wt, (float*)handle->filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+    LIBXSMM_VLA_DECL(6, float, wt, (float*)handle->reg_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
     LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)handle->scratch1, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock);
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
@@ -1426,23 +1415,29 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle) {
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i, j, filter_size;
 
+  /* check for filter type */
+  if ( (type != LIBXSMM_DNN_GRADIENT_FILTER) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
+    return status;
+  }
+
   /* check if we have input, output and filter */
-  if (handle->input == 0 || handle->output == 0 || handle->filter == 0) {
+  if (handle->grad_filter == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
 
-  /* calculate filter size */
-  filter_size = handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S * handle->ofmblock * handle->ifmblock;
-
   /* check that we are in FP32 */
   if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     if (handle->upd_use_external_reduce != 0) {
-      float* filter_ptr = (float*)handle->filter->data;
+      float* filter_ptr = (float*)handle->grad_filter->data;
+      /* calculate filter size */
+      filter_size = handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S * handle->ofmblock * handle->ifmblock;
+
       for ( i = 0; i < handle->desc.threads; i++ ) {
         float* tmp_filter_ptr = ((float*)handle->scratch4) + (i*filter_size);
         for ( j = 0; j < filter_size; j++) {
