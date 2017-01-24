@@ -106,5 +106,66 @@ LIBXSMM_API void libxsmm_free(const void* memory);
 /** Get the size of the allocated memory; zero in case of an error. */
 LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 
+
+#if defined(__cplusplus)
+
+/** RAII idiom to temporarily setup an allocator for the lifetime of the scope. */
+template<allocator_kind> class LIBXSMM_RETARGETABLE libxsmm_scoped_allocator {
+public:
+  /** Following the RAII idiom, the c'tor instantiates the new allocator. */
+  libxsmm_scoped_allocator(void* context,
+    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+  :
+    m_context(0), m_malloc(0), m_free(0)
+  {
+    allocator_kind::get(m_context, m_malloc, m_free);
+    allocator_kind::set(context, malloc_fn, free_fn);
+  }
+
+  /** Following the RAII idiom, the d'tor restores the previous allocator. */
+  ~libxsmm_scoped_allocator() {
+    allocator_kind::set(m_context, m_malloc, m_free);
+  }
+
+private: /* no copy/assignment */
+  explicit libxsmm_scoped_allocator(const libxsmm_scoped_allocator&);
+  libxsmm_scoped_allocator& operator=(const libxsmm_scoped_allocator&);
+
+private: /* saved/previous allocator */
+  void* m_context;
+  libxsmm_malloc_function m_malloc;
+  libxsmm_free_function m_free;
+};
+
+/** Wrap default allocator to act as an allocator-kind (libxsmm_scoped_allocator). */
+struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
+  static void set(void* context,
+    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+  {
+    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
+  }
+  static void get(void*& context,
+    libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
+  {
+    libxsmm_get_default_allocator(&context, &malloc_fn, &free_fn);
+  }
+};
+
+/** Wrap scratch allocator to act as an allocator-kind (libxsmm_scoped_allocator). */
+struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
+  static void set(void* context,
+    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+  {
+    libxsmm_set_scratch_allocator(context, malloc_fn, free_fn);
+  }
+  static void get(void*& context,
+    libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
+  {
+    libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
+  }
+};
+
+#endif /*defined(__cplusplus)*/
+
 #endif /*LIBXSMM_MALLOC_H*/
 
