@@ -1554,7 +1554,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_execute(libxsmm_dnn_layer* handle, libxs
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* handle, const libxsmm_dnn_filter_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int ofm1, ifm1, kj, ki, ifm2, ofm2;
- 
+
   /* check for filter type */
   if ( (type != LIBXSMM_DNN_REGULAR_FILTER) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;

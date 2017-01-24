@@ -42,25 +42,44 @@
 #endif
 
 
-/** Function type accepted for memory allocation (libxsmm_set_allocator). */
-typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_function)(size_t size);
-/** Function type accepted for memory release (libxsmm_set_allocator). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_function)(void* buffer);
+/** Function type accepted for memory allocation (see libxsmm_set_*_allocator). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
+  void* (*ctx_form)(void* context, size_t size);
+  void* (*function)(size_t size);
+} libxsmm_malloc_function;
+
+/** Function type accepted for memory release (see libxsmm_set_*_allocator). */
+typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
+  void (*ctx_form)(void* context, void* buffer);
+  void (*function)(void* buffer);
+} libxsmm_free_function;
 
 /**
- * To setup the memory allocator with the first two arguments, either a default_malloc_fn
- * and corresponding default_free_fn function are given (custom default allocator), or two
- * NULL-pointers are given (reset default allocator to library's solution).
- * For the scratch allocator, a scratch_malloc_fn function different from default_malloc_fn
- * can be supplied; a scratch_free_fn is optional (this is for cases where the lifetime and
- * deallocation is controlled differently. If NULL-pointers are given for both
- * scratch_malloc_fn and scratch_free_fn, the default allocator is adopted for
- * scratch memory allocation and release.
+ * To setup the custom default memory allocator, either a malloc_fn and a free_fn
+ * are given, or two NULL-pointers designate to reset the default allocator to a
+ * library-internal default. If a context is given (non-NULL ), the context-based
+ * form of the memory allocation is used.
  * It is supported to change the allocator while buffers are pending.
  */
-LIBXSMM_API void libxsmm_set_allocator(/* malloc_fn/free_fn must correspond */
-  libxsmm_malloc_function default_malloc_fn, libxsmm_free_function default_free_fn,
-  libxsmm_malloc_function scratch_malloc_fn, libxsmm_free_function scratch_free_fn);
+LIBXSMM_API void libxsmm_set_default_allocator(/* malloc_fn/free_fn must correspond */
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+/** Retrieve the default memory allocator. */
+LIBXSMM_API void libxsmm_get_default_allocator(void** context,
+  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+
+/**
+ * To setup the scratch memory allocator, a malloc_fn function and an optional free_fn
+ * are given. A NULL-free acts as a "no-operation", and the deallocation is expected
+ * to be controlled otherwise. If two NULL-pointers are given, the allocator is reset
+ * to the currently active default memory allocator. If a context is given (non-NULL),
+ * the context-based form of the memory allocation is used.
+ * It is supported to change the allocator while buffers are pending.
+ */
+LIBXSMM_API void libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspond */
+  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+/** Retrieve the scratch memory allocator. */
+LIBXSMM_API void libxsmm_get_scratch_allocator(void** context,
+  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Allocate aligned default memory. */
 LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,

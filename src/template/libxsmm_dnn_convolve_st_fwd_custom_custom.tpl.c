@@ -168,7 +168,7 @@ if (handle->datatype != handle->datatype_itm) {
         for (oj = 0; oj < handle->ofh; ++oj) {
           for (oi = 0; oi < handle->ofw; ++oi) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-              LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block)+ofm2/handle->fm_lp_block), ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block) 
+              LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block)+ofm2/handle->fm_lp_block), ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block)
                 = (element_input_type)(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             }
           }

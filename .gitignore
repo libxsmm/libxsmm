@@ -7,6 +7,7 @@ include/libxsmm.f
 include/libxsmm.h
 build/libxsmm_dispatch.h
 build/mm_*_*_*.c
+build/*/*/*.xml
 lib/libxsmm*
 ide/_vs*-*.bat
 ide/*.amplxeproj
@@ -35,6 +36,7 @@ _*.txt
 *.gcov
 *.iobj
 *.ipdb
+*.URL
 *.log
 *.suo
 *.exe

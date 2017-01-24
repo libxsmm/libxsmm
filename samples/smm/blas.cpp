@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
 #endif
 
       if ((MAX_SIZE) >= csize) {
-        { // streaming
+        { // streaming A and B
           fprintf(stdout, "Streamed (A,B)...\n");
           const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -240,6 +240,50 @@ int main(int argc, char* argv[])
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
               LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+          }
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration) {
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        }
+
+        { // streaming A and C
+          fprintf(stdout, "Streamed (A,C)...\n");
+          const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#         pragma omp parallel for
+#endif
+          for (int i = 0; i < s; ++i) {
+            const T *const ai = a + i * asize;
+            T* ci = c + i * csize;
+            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
+              LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+          }
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration) {
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        }
+
+        { // streaming B and C
+          fprintf(stdout, "Streamed (B,C)...\n");
+          const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#         pragma omp parallel for
+#endif
+          for (int i = 0; i < s; ++i) {
+            const T *const bi = b + i * bsize;
+            T* ci = c + i * csize;
+            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+              LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+              LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
           }
           const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
           if (0 < duration) {

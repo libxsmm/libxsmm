@@ -185,7 +185,7 @@ LIBXSMM_INLINE void naive_conv_int16(naive_conv_t* param, const short* input, sh
     for (ofm = 0; ofm < nOfm; ++ofm) {
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+          LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
            (int)LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
         }
       }
@@ -225,7 +225,7 @@ LIBXSMM_INLINE void naive_conv_int16(naive_conv_t* param, const short* input, sh
     for (ofm = 0; ofm < nOfm; ++ofm) {
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
            (short)LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
         }
       }
