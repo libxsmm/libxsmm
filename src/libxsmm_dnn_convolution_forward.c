@@ -41,6 +41,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
     return status;
   }
 
+  /* for low/mixed precision we need some scratch to be bound */
+  if ( (handle->datatype != handle->datatype_itm) && (handle->scratch6 == 0) ) {
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
+
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {

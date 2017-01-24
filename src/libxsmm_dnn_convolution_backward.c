@@ -36,7 +36,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0) {
+  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0 ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -87,7 +87,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(l
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0) {
+  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -138,7 +138,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0) {
+  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
