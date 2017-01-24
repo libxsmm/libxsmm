@@ -218,8 +218,8 @@ LIBXSMM_API void* libxsmm_dnn_get_buffer_data_ptr(const libxsmm_dnn_buffer* buff
 LIBXSMM_API void* libxsmm_dnn_get_filter_data_ptr(const libxsmm_dnn_filter* filter, libxsmm_dnn_err_t* status);
 LIBXSMM_API char libxsmm_dnn_get_qbuffer_exp(const libxsmm_dnn_buffer* buffer, libxsmm_dnn_err_t* status);
 LIBXSMM_API char libxsmm_dnn_get_qfilter_exp(const libxsmm_dnn_filter* filter, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qbuffer_exp(const libxsmm_dnn_buffer* buffer, const char exp);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qfilter_exp(const libxsmm_dnn_filter* filter, const char exp);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qbuffer_exp(libxsmm_dnn_buffer* buffer, const char exp);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qfilter_exp(libxsmm_dnn_filter* filter, const char exp);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsmm_dnn_buffer* buffer);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_filter(const libxsmm_dnn_filter* filter);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_dnn_bias* bias);
