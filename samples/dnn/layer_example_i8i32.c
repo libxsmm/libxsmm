@@ -201,7 +201,7 @@ LIBXSMM_INLINE void naive_conv_int8(naive_conv_t* param, const unsigned char* in
     for (ofm = 0; ofm < nOfm; ++ofm) {
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+          LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
            (int)LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
         }
       }
@@ -241,7 +241,7 @@ LIBXSMM_INLINE void naive_conv_int8(naive_conv_t* param, const unsigned char* in
     for (ofm = 0; ofm < nOfm; ++ofm) {
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
            (unsigned char)LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
         }
       }

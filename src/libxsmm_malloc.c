@@ -197,7 +197,7 @@ LIBXSMM_API_DEFINITION void libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lo
     else { /* invalid allocator */
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      { 
+      {
         fprintf(stderr, "LIBXSMM: allocator setup without malloc or free function!\n");
       }
       /* keep any valid (previously instantiated) default allocator */
