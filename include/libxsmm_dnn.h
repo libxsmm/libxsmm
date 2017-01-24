@@ -124,7 +124,11 @@ typedef enum libxsmm_dnn_buffer_type {
   /** regular output buffer */
   LIBXSMM_DNN_REGULAR_OUTPUT,
   /** gradient output buffer */
-  LIBXSMM_DNN_GRADIENT_OUTPUT
+  LIBXSMM_DNN_GRADIENT_OUTPUT,
+  /** general input type */
+  LIBXSMM_DNN_INPUT,
+  /** general output type */
+  LIBXSMM_DNN_OUTPUT
 } libxsmm_dnn_buffer_type;
 
 /** types of different filters */
@@ -132,7 +136,9 @@ typedef enum libxsmm_dnn_filter_type {
   /* regular filter */
   LIBXSMM_DNN_REGULAR_FILTER,
   /* gradient filter */
-  LIBXSMM_DNN_GRADIENT_FILTER
+  LIBXSMM_DNN_GRADIENT_FILTER,
+  /** general filter type */
+  LIBXSMM_DNN_FILTER
 } libxsmm_dnn_filter_type;
 
 /** layout descriptor to allow external data allocation

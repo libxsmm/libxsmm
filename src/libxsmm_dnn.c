@@ -302,7 +302,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_buffer(const libxsmm
 
   if (handle != 0 && buffer != 0 && data != 0) {
     /* set properties of the buffer according to convolution handle */
-    if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) ) {
+    if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
       buffer->N = handle->desc.N;
       buffer->fmb = handle->blocksifm;
       buffer->bfm = handle->ifmblock;
@@ -320,7 +320,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_buffer(const libxsmm
       } else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
       }
-    } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
+    } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
       /* set properties of the buffer according to convolution handle */
       buffer->N = handle->desc.N;
       buffer->fmb = handle->blocksofm;
@@ -379,13 +379,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_buffer_dat
             layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
             layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
             layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) ) {
+            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
               layout->dim_size[0] = handle->ifmblock;
               layout->dim_size[1] = handle->ifwp;
               layout->dim_size[2] = handle->ifhp;
               layout->dim_size[3] = handle->blocksifm;
               layout->dim_size[4] = handle->desc.N;
-            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
+            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
               layout->dim_size[0] = handle->ofmblock;
               layout->dim_size[1] = handle->ofwp;
               layout->dim_size[2] = handle->ofhp;
@@ -410,14 +410,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_buffer_dat
             layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
             layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
             layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) )   {
+            if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ifmblock;
               layout->dim_size[2] = handle->ifwp;
               layout->dim_size[3] = handle->ifhp;
               layout->dim_size[4] = handle->blocksifm;
               layout->dim_size[5] = handle->desc.N;
-            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
+            } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ofmblock;
               layout->dim_size[2] = handle->ofwp;
@@ -446,12 +446,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_buffer_dat
           layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
           layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
           layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-          if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) )   {
+          if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
             layout->dim_size[0] = handle->ifmblock * handle->blocksifm;
             layout->dim_size[1] = handle->ifwp;
             layout->dim_size[2] = handle->ifhp;
             layout->dim_size[3] = handle->desc.N;
-          } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
+          } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
             layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
             layout->dim_size[1] = handle->ofwp;
             layout->dim_size[2] = handle->ofhp;
@@ -508,7 +508,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_filter(const libxsmm
 
   if (handle != 0 && filter != 0 && data != 0) {
     /* check for filter type */
-    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) ) {
+    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) && (type != LIBXSMM_DNN_FILTER) ) {
       *status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
       free(filter);
       filter = 0;
@@ -557,7 +557,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_dat
 
   if (handle != 0) {
     /* check for filter type */
-    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) ) {
+    if ( (type != LIBXSMM_DNN_REGULAR_FILTER) && (type != LIBXSMM_DNN_GRADIENT_FILTER) && (type != LIBXSMM_DNN_FILTER) ) {
       *status = LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE;
       return layout;
     }

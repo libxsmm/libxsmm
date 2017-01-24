@@ -581,7 +581,6 @@ int main(int argc, char* argv[])
   conv_desc.S = kw;
   conv_desc.u = stride_h;
   conv_desc.v = stride_w;
-  /* @TODO we need to change the interface to provide CAFFE compatible padding! */
   conv_desc.pad_h = pad_h;
   conv_desc.pad_w = pad_w;
   conv_desc.pad_h_in = pad_h_in;
@@ -601,11 +600,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, input_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, output_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, filter_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
@@ -843,7 +842,6 @@ int main(int argc, char* argv[])
   conv_desc.S = kw;
   conv_desc.u = stride_h;
   conv_desc.v = stride_w;
-  /* @TODO we need to change the interface to provide CAFFE compatible padding! */
   conv_desc.pad_h = pad_h;
   conv_desc.pad_w = pad_w;
   conv_desc.pad_h_in = pad_h_in;
@@ -863,11 +861,11 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( status );
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, filter_rsck, LIBXSMM_DNN_TENSOR_FORMAT_RSCK_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter_rsck, LIBXSMM_DNN_TENSOR_FORMAT_RSCK_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* bind buffers and filter to handle */
@@ -1094,7 +1092,6 @@ int main(int argc, char* argv[])
   conv_desc.S = kw;
   conv_desc.u = stride_h;
   conv_desc.v = stride_w;
-  /* @TODO we need to change the interface to provide CAFFE compatible padding! */
   conv_desc.pad_h = pad_h;
   conv_desc.pad_w = pad_w;
   conv_desc.pad_h_in = pad_h_in;
@@ -1119,11 +1116,11 @@ int main(int argc, char* argv[])
   naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
 
   /* setup LIBXSMM buffers and filter */
-  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+  libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+  libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
-  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, filter_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+  libxsmm_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
   CHKERR_LIBXSMM_DNN( status );
 
   /* copy in data to LIBXSMM format */
