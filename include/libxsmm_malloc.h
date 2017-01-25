@@ -58,6 +58,19 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
   libxsmm_free_fun function;
 } libxsmm_free_function;
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_make_malloc_fun(libxsmm_malloc_fun malloc_fn) {
+  libxsmm_malloc_function result; result.function = malloc_fn; return result;
+}
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_make_free_fun(libxsmm_free_fun free_fn) {
+  libxsmm_free_function result; result.function = free_fn; return result;
+}
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_make_malloc_ctx(libxsmm_malloc_ctx malloc_fn) {
+  libxsmm_malloc_function result; result.ctx_form = malloc_fn; return result;
+}
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_make_free_ctx(libxsmm_free_ctx free_fn) {
+  libxsmm_free_function result; result.ctx_form = free_fn; return result;
+}
+
 /**
  * To setup the custom default memory allocator, either a malloc_fn and a free_fn
  * are given, or two NULL-pointers designate to reset the default allocator to a
@@ -119,14 +132,14 @@ public:
   /** C'tor, which instantiates the new allocator (plain form). */
   libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn) {
     kind::get(m_context, m_malloc, m_free);
-    kind::set(0/*context*/, malloc_fn, free_fn);
+    kind::set(0/*context*/, libxsmm_make_malloc_fun(malloc_fn), libxsmm_make_free_fun(free_fn));
   }
 
   /** C'tor, which instantiates the new allocator (context form). */
   libxsmm_scoped_allocator(void* context,
     libxsmm_malloc_ctx malloc_fn, libxsmm_free_ctx free_fn) {
     kind::get(m_context, m_malloc, m_free);
-    kind::set(context, malloc_fn, free_fn);
+    kind::set(context, libxsmm_make_malloc_ctx(malloc_fn), libxsmm_make_free_ctx(free_fn));
   }
 
   /** Following the RAII idiom, the d'tor restores the previous allocator. */
@@ -190,7 +203,7 @@ template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_tf_allocator:
 public:
   /** The TensorFlow allocator is adopted from the global CPU memory allocator. */
   explicit libxsmm_tf_allocator()
-    : libxsmm_scoped_allocator<kind>(0/*context*/,
+    : libxsmm_scoped_allocator<kind>(
       libxsmm_tf_allocator::malloc,
       libxsmm_tf_allocator::free)
   {}
