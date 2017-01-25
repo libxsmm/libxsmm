@@ -178,8 +178,6 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            const T *const ai = a + i * asize;
-            T* ci = c + i * csize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
               LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
@@ -199,8 +197,6 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            const T *const bi = b + i * bsize;
-            T* ci = c + i * csize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
               LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
