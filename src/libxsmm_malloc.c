@@ -644,6 +644,10 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           info->context = context;
           info->free = free_fn;
         }
+        else {
+          info->free.function = 0;
+          info->context = 0;
+        }
         info->pointer = buffer;
         info->reloc = reloc;
         info->size = size;
