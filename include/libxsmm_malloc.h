@@ -232,9 +232,9 @@ private:
   }
 
   template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
-    typedef typename context_type::WrappedAllocator::first_type allocator_type;
+    typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    allocator_type *const allocator = (0 != tf_context && 0 != tf_context->device())
+    const allocator_ptr allocator = (0 != tf_context && 0 != tf_context->device())
       ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
         ? tf_context->output_alloc_attr(0)
         : tf_context->input_alloc_attr(0),
@@ -245,9 +245,9 @@ private:
   }
 
   template<typename context_type> static void free_ctx(void* context, void* buffer) {
-    typedef typename context_type::WrappedAllocator::first_type allocator_type;
+    typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    allocator_type *const allocator = (0 != tf_context && 0 != tf_context->device())
+    const allocator_ptr allocator = (0 != tf_context && 0 != tf_context->device())
       ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
         ? tf_context->output_alloc_attr(0)
         : tf_context->input_alloc_attr(0),
