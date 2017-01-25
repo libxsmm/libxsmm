@@ -65,10 +65,10 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
  * form of the memory allocation is used.
  * It is supported to change the allocator while buffers are pending.
  */
-LIBXSMM_API void libxsmm_set_default_allocator(/* malloc_fn/free_fn must correspond */
+LIBXSMM_API int libxsmm_set_default_allocator(/* malloc_fn/free_fn must correspond */
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Retrieve the default memory allocator. */
-LIBXSMM_API void libxsmm_get_default_allocator(void** context,
+LIBXSMM_API int libxsmm_get_default_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
@@ -79,10 +79,10 @@ LIBXSMM_API void libxsmm_get_default_allocator(void** context,
  * the context-based form of the memory allocation is used.
  * It is supported to change the allocator while buffers are pending.
  */
-LIBXSMM_API void libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspond */
+LIBXSMM_API int libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspond */
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Retrieve the scratch memory allocator. */
-LIBXSMM_API void libxsmm_get_scratch_allocator(void** context,
+LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Allocate aligned default memory. */
@@ -117,20 +117,14 @@ LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_scoped_allocator {
 public:
   /** C'tor, which instantiates the new allocator (plain form). */
-  libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn)
-  :
-    m_context(0), m_malloc(0), m_free(0)
-  {
+  libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn) {
     kind::get(m_context, m_malloc, m_free);
     kind::set(0/*context*/, malloc_fn, free_fn);
   }
 
   /** C'tor, which instantiates the new allocator (context form). */
   libxsmm_scoped_allocator(void* context,
-    libxsmm_malloc_ctx malloc_fn, libxsmm_free_ctx free_fn)
-  :
-    m_context(0), m_malloc(0), m_free(0)
-  {
+    libxsmm_malloc_ctx malloc_fn, libxsmm_free_ctx free_fn) {
     kind::get(m_context, m_malloc, m_free);
     kind::set(context, malloc_fn, free_fn);
   }

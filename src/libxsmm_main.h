@@ -240,10 +240,10 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API void libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lock,
+LIBXSMM_API int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API void libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
+LIBXSMM_API int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
