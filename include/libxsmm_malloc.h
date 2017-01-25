@@ -178,45 +178,75 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
   }
 };
 
+/** Forward-declared types/functions used to implement libxsmm_tf_allocator. */
+namespace tensorflow { class Allocator; Allocator* cpu_allocator(); }
+
 /**
- * An object of this allocator type adopts a memory allocator from TensorFlow
- * using the given OpKernelContext. All memory allocations of the requested
- * kind within the current scope (where the libxsmm_tf_allocator object lives)
- * will be subject to TensorFlow's memory allocation scheme.
- * The allocation kind is usually "libxsmm_scratch_allocator"; using a second
- * libxsmm_tf_allocator object of kind "libxsmm_default_allocator" makes the
- * default memory allocation of LIBXSMM subject to TensorFlow as well.
+ * An object of this type adopts a memory allocator from TensorFlow.
+ * All memory allocations of the requested kind within the current
+ * scope (where the libxsmm_tf_allocator object lives) are subject
+ * to TensorFlow's memory allocation scheme. The allocation kind
+ * is usually "libxsmm_scratch_allocator"; using a second object
+ * of kind "libxsmm_default_allocator" makes the default memory
+ * allocation of LIBXSMM subject to TensorFlow as well.
  */
 template<typename kind> class LIBXSMM_RETARGETABLE libxsmm_tf_allocator:
   public libxsmm_scoped_allocator<kind>
 {
 public:
-  template<typename context_type> explicit libxsmm_tf_allocator(context_type& context)
+  /** The TensorFlow allocator is adopted from the global CPU memory allocator. */
+  explicit libxsmm_tf_allocator()
+    : libxsmm_scoped_allocator<kind>(0/*context*/,
+      libxsmm_tf_allocator::malloc,
+      libxsmm_tf_allocator::free)
+  {}
+
+  /** The TensorFlow allocator is adopted from the given OpKernelContext. */
+  template<typename context_type>
+  explicit libxsmm_tf_allocator(context_type& context)
     : libxsmm_scoped_allocator<kind>(&context,
-      libxsmm_tf_allocator::malloc<context_type>,
-      libxsmm_tf_allocator::free<context_type>)
+      libxsmm_tf_allocator::malloc_ctx<context_type>,
+      libxsmm_tf_allocator::free_ctx<context_type>)
   {}
 
 private:
-  template<typename context_type> static void* malloc(void* context, size_t size) {
-    using namespace tensorflow;
+  /** Breaks the dependency with TensorFlow such that it is header-only. */
+  template<typename type> static type& header_only(type& object) { return object; }
+
+  static void* malloc(size_t size) {
+    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    return 0 != allocator ? header_only(*allocator).AllocateRaw(1/*alignment*/, size) : 0;
+  }
+
+  static void free(void* buffer) {
+    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
+    if (0 != allocator) { header_only(*allocator).DeallocateRaw(buffer); }
+  }
+
+  template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
+    typedef typename context_type::WrappedAllocator::first_type allocator_type;
     context_type *const tf_context = static_cast<context_type*>(context);
-    DeviceBase *const device = 0 != tf_context ? tf_context->device() : 0;
-    Allocator *const allocator = 0 != device ? device->GetStepAllocator(
-      AllocatorAttributes(), tf_context->resource_manager()) : 0;
+    allocator_type *const allocator = (0 != tf_context && 0 != tf_context->device())
+      ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
+        ? tf_context->output_alloc_attr(0)
+        : tf_context->input_alloc_attr(0),
+        tf_context->resource_manager())
+      : 0;
     /* no waste with (useless) alignment; raw result is re-aligned anyways */
     return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
   }
 
-  template<typename context_type> static void free(void* context, void* buffer) {
-    using namespace tensorflow;
+  template<typename context_type> static void free_ctx(void* context, void* buffer) {
+    typedef typename context_type::WrappedAllocator::first_type allocator_type;
     context_type *const tf_context = static_cast<context_type*>(context);
-    DeviceBase *const device = 0 != tf_context ? tf_context->device() : 0;
-    Allocator *const allocator = 0 != device ? device->GetStepAllocator(
-      AllocatorAttributes(), tf_context->resource_manager()) : 0;
-    if (0 != allocator) {
-      allocator->DeallocateRaw(buffer);
-    }
+    allocator_type *const allocator = (0 != tf_context && 0 != tf_context->device())
+      ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
+        ? tf_context->output_alloc_attr(0)
+        : tf_context->input_alloc_attr(0),
+        tf_context->resource_manager())
+      : 0;
+    if (0 != allocator) { allocator->DeallocateRaw(buffer); }
   }
 };
 
