@@ -39,47 +39,51 @@ GREP=$(which grep 2> /dev/null)
 SED=$(which sed 2> /dev/null)
 RM=$(which rm 2> /dev/null)
 
-if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \
-                  && [ "" != "${GREP}" ]     && [ "" != "${SED}" ] \
-                  && [ "" != "${RM}" ];
-then
-  HERE=$(cd $(dirname $0); pwd -P)
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export TRAVIS_BUILD_DIR=${HERE}/..
-  fi
-  if [ "" != "${TESTID}" ]; then
-    ID=${TESTID}
-  fi
-  if [ "" = "${ID}" ]; then
-    ID=${COVID}
-  fi
-  if [ "" != "${ID}" ]; then
-    RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
-  else
-    RPTNAME=$(${BASENAME} $1)-${KIND}
-  fi
+if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
+  if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \
+                    && [ "" != "${GREP}" ]     && [ "" != "${SED}" ] \
+                    && [ "" != "${RM}" ];
+  then
+    HERE=$(cd $(dirname $0); pwd -P)
+    if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+      export TRAVIS_BUILD_DIR=${HERE}/..
+    fi
+    if [ "" != "${TESTID}" ]; then
+      ID=${TESTID}
+    fi
+    if [ "" = "${ID}" ]; then
+      ID=${COVID}
+    fi
+    if [ "" != "${ID}" ]; then
+      RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
+    else
+      RPTNAME=$(${BASENAME} $1)-${KIND}
+    fi
 
-  DIR=${TRAVIS_BUILD_DIR}/${RPT}
-  ${RM} -rf ${DIR}/${ID}
+    DIR=${TRAVIS_BUILD_DIR}/${RPT}
+    ${RM} -rf ${DIR}/${ID}
 
-  ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
-  RESULT=$?
+    ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
+    RESULT=$?
 
-  if [ "0" = "${RESULT}" ]; then
-    ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
-    RESULT2=$?
+    if [ "0" = "${RESULT}" ]; then
+      ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
+      RESULT2=$?
 
-    if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
-      if [ "" = "${TOOL_FILTER}" ] || \
-         [ "" != "$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt   | \
-                    ${SED} -e 's/..* Function \(..*\):..*/\1/' | \
-                    ${GREP} ${TOOL_FILTER})" ];
-      then
-        RESULT=${RESULT2}
+      if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
+        if [ "" = "${TOOL_FILTER}" ] || \
+           [ "" != "$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt   | \
+                      ${SED} -e 's/..* Function \(..*\):..*/\1/' | \
+                      ${GREP} ${TOOL_FILTER})" ];
+        then
+          RESULT=${RESULT2}
+        fi
       fi
     fi
+    exit ${RESULT}
+  else
+    $*
   fi
-  exit ${RESULT}
 else
   $*
 fi
