@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#if defined(__TBBMALLOC)
+#if defined(__TBB)
 # include <tbb/scalable_allocator.h>
 #endif
 #if defined(_WIN32)
@@ -180,7 +180,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* loc
     void* internal_allocator = 0;
     libxsmm_malloc_function internal_malloc_fn;
     libxsmm_free_function internal_free_fn;
-#if defined(__TBBMALLOC)
+#if defined(__TBB)
     internal_allocator = 0;
     internal_malloc_fn.function = scalable_malloc;
     internal_free_fn.function = scalable_free;

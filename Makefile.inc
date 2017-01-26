@@ -162,6 +162,12 @@ ifeq (0,$(BLAS))
 endif
 endif
 
+# TBB enabled (1) or disabled (0)
+# availability depends on TBBROOT
+TBB ?= 1
+# TBB runtime compatible with oldest supported GCC
+TBB_OLDRTL ?= 0
+
 # C Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
   XGROUP_BEGIN = -Wl,--start-group
@@ -399,6 +405,22 @@ ifeq (1,$(GCC))
         GCC = 3
       endif
     endif
+  endif
+endif
+
+# Make GCC version number available even when not using GCC
+ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
+  GXX_VERSION_STRING = $(CXX_VERSION_STRING)
+  GXX_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
+  GXX_VERSION_MINOR = $(CXX_VERSION_MINOR)
+  GXX_VERSION_PATCH = $(CXX_VERSION_PATCH)
+else
+  GXX = $(notdir $(shell which gcc 2> /dev/null))
+  ifneq (,$(strip $(GXX)))
+    GXX_VERSION_STRING = $(shell $(GXX) --version 2> /dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+    GXX_VERSION_MAJOR = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f1)
+    GXX_VERSION_MINOR = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f2)
+    GXX_VERSION_PATCH = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f3)
   endif
 endif
 
@@ -979,6 +1001,30 @@ ifneq (,$(OMPLIBFILE))
 endif
 endif
 
+ifneq (0,$(TBB))
+ifneq (,$(TBBROOT))
+  ifneq (Windows_NT,$(UNAME))
+    TBBLIB_DIR = $(TBBROOT)/lib/intel64
+    TBBLIB_DIRGCC = gcc$(GXX_VERSION_MAJOR).$(GXX_VERSION_MINOR)
+    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+    ifeq (,$(TBBLIB_MALLOC))
+      ifneq (0,$(TBB_OLDRTL))
+        TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | cut -d" " -f1)
+      else
+        TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | rev | cut -d" " -f2 | rev)
+      endif
+      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+    endif
+    ifneq (,$(TBBLIB_MALLOC))
+      IFLAGS += -I$(TBBROOT)/include
+      DFLAGS += -D__TBB
+      LDFLAGS += $(XLIB_BEGIN) $(call abslib,$(TBBLIB_MALLOC)) $(XLIB_END)
+    endif
+  else # TODO: Windows support
+  endif
+endif
+endif
+
 MAKE_ILP64 = 0
 ifneq (,$(strip $(ILP64)))
 ifneq (0,$(ILP64))
@@ -1149,6 +1195,9 @@ LDFLAGS := $(strip $(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
 CLDFLAGS := $(strip $(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 DFLAGS := $(strip $(NOBLAS_DFLAGS) $(BLAS_DFLAGS))
 IFLAGS := $(strip $(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
+# more cleanup
+LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
+CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
