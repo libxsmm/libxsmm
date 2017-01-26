@@ -365,7 +365,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_i
   return result;
 #else /* calculate checksum over info */
   return (0 != result && result->hash == libxsmm_crc32(result, /* info size minus actual hash value */
-    ((char*)&result->hash) - ((char*)result), LIBXSMM_MALLOC_SEED)) ? result : 0;
+    (unsigned int)(((char*)&result->hash) - ((char*)result)), LIBXSMM_MALLOC_SEED)) ? result : 0;
 #endif
 }
 
@@ -658,7 +658,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         info->flags = flags;
 #if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
         info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-          ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
+          (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
 #endif
         *memory = aligned;
       }
@@ -860,7 +860,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           info->reloc = 0;
 # if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
+            (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
 # endif
           /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
@@ -870,7 +870,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         else { /* malloc-based fall-back */
 # if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
+            (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
 # endif
           /* treat memory protection errors as soft error; ignore return value */
           mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
