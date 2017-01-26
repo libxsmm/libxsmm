@@ -388,7 +388,8 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const void* memory, size_t* size,
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
+          fprintf(stderr, "LIBXSMM: checksum error for %s buffer %p!\n",
+            0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? "executable" : "memory", memory);
         }
 #endif
         result = EXIT_FAILURE;
@@ -891,7 +892,8 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", *memory);
+      fprintf(stderr, "LIBXSMM: checksum error for %s buffer %p!\n",
+        0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? "executable" : "memory", memory);
     }
 #endif
     result = EXIT_FAILURE;
