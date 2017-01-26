@@ -894,7 +894,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM: checksum error for %s buffer %p!\n",
-        0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? "executable" : "memory", memory);
+        0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? "executable" : "memory", *memory);
     }
 #endif
     result = EXIT_FAILURE;
