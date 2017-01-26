@@ -331,7 +331,12 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
 # endif
   {
 # if !defined(NDEBUG) && (LIBXSMM_X86_SSE4 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
-    fprintf(stderr, "LIBXSMM: CRC32 instructions are not accessible due to the compiler used!\n");
+    static int error_once = 0;
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: unable to access CRC32 instructions due to the compiler used!\n");
+    }
 # endif
     internal_hash_function = libxsmm_crc32_sse4;
   }
