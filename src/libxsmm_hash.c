@@ -32,15 +32,13 @@
 #define LIBXSMM_HASH_C
 
 #include "libxsmm_hash.h"
+#include "libxsmm_main.h"
 #include <libxsmm_intrinsics_x86.h>
-#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -140,17 +138,19 @@
 typedef uint32_t internal_crc32_entry_type[256];
 LIBXSMM_EXTERN_C const LIBXSMM_RETARGETABLE internal_crc32_entry_type* internal_crc32_table;
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_hash_function internal_hash_function /*= libxsmm_crc32_sw*/;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_hash_function internal_hash_function;
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(unsigned int seed, unsigned int n, unsigned char value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(
+  unsigned int seed, unsigned int n, unsigned char value)
 {
   LIBXSMM_UNUSED(n);
   return internal_crc32_table[0][(seed^value)&0xFF] ^ (seed >> 8);
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int seed, unsigned int n, unsigned short value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(
+  unsigned int seed, unsigned int n, unsigned short value)
 {
   seed = internal_crc32_u8(seed, n, (uint8_t)value);
   seed = internal_crc32_u8(seed, n, (uint8_t)(value << 8));
@@ -158,7 +158,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(unsigned int
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int seed, unsigned int n, unsigned int value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(
+  unsigned int seed, unsigned int n, unsigned int value)
 {
   const unsigned int s = seed ^ value;
   const uint32_t c0 = internal_crc32_table[0][(s>>24)&0xFF];
@@ -170,7 +171,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(unsigned int
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(unsigned int seed, unsigned int n, unsigned long long value)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(
+  unsigned int seed, unsigned int n, unsigned long long value)
 {
   seed = internal_crc32_u32(seed, n, (uint32_t)(value));
   seed = internal_crc32_u32(seed, n, (uint32_t)(value << 32));
@@ -330,14 +332,6 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
   if (LIBXSMM_X86_SSE4 <= target_arch)
 # endif
   {
-# if !defined(NDEBUG) && (LIBXSMM_X86_SSE4 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM: unable to access CRC32 instructions due to the compiler used!\n");
-    }
-# endif
     internal_hash_function = libxsmm_crc32_sse4;
   }
 #endif
@@ -364,7 +358,8 @@ LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32(const void* data, unsigne
 LIBXSMM_HASH_API_DEFINITION unsigned int libxsmm_crc32_sw(const void* data, unsigned int size, unsigned int seed)
 {
   assert(0 != data || 0 == size);
-  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
+  LIBXSMM_HASH(internal_crc32_u64, internal_crc32_u32, internal_crc32_u16, internal_crc32_u8,
+    data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 }
 
 
@@ -372,16 +367,19 @@ LIBXSMM_HASH_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE4)
 unsigned int libxsmm_crc32_sse4(const void* data, unsigned int size, unsigned int seed)
 {
   assert(0 != data || 0 == size);
-#if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-  LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8, data, size, seed, LIBXSMM_HASH_UNBOUNDED);
+#if !defined(LIBXSMM_INTRINSICS_NONE) && ( \
+     (!defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_SSE4 <= LIBXSMM_MAX_STATIC_TARGET_ARCH)) \
+  || (defined(__clang__) && LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH))
+  LIBXSMM_HASH(LIBXSMM_HASH_CRC32_U64, LIBXSMM_HASH_CRC32_U32, LIBXSMM_HASH_CRC32_U16, LIBXSMM_HASH_CRC32_U8,
+    data, size, seed, LIBXSMM_HASH_UNBOUNDED);
 #else
-# if !defined(NDEBUG)
   { static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: unable to enter SSE4 code path!\n");
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: unable to access CRC32 instructions due to the compiler used!\n");
     }
   }
-# endif
   return libxsmm_crc32_sw(data, size, seed);
 #endif
 }
