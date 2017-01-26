@@ -164,7 +164,7 @@ endif
 
 # TBB enabled (1) or disabled (0)
 # availability depends on TBBROOT
-TBB ?= 1
+TBB ?= 0
 # TBB runtime compatible with oldest supported GCC
 TBB_OLDRTL ?= 0
 
