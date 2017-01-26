@@ -357,13 +357,13 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_allocator(void** context,
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_info(const void* memory)
 {
-  internal_malloc_info_type* result = (internal_malloc_info_type*)
+  internal_malloc_info_type *const result = (internal_malloc_info_type*)
     (0 != memory ? (((const char*)memory) - sizeof(internal_malloc_info_type)) : 0);
 #if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
   return (0 != result && result->hash == libxsmm_crc32(result, /* info size minus actual hash value */
-    sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED)) ? result : 0;
+    ((char*)&result->hash) - ((char*)result), LIBXSMM_MALLOC_SEED)) ? result : 0;
 #endif
 }
 
@@ -385,7 +385,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const void* memory, size_t* size,
     else {
       if (0 != memory) {
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
           fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
         }
 #endif
@@ -654,7 +656,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         info->flags = flags;
 #if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
         info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-          sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
+          ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
 #endif
         *memory = aligned;
       }
@@ -744,13 +746,17 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
   }
   else if (0 != memory) {
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
     }
 #endif
     result = EXIT_FAILURE;
   }
+# if defined(LIBXSMM_MALLOC_NOCRC)
   assert(EXIT_SUCCESS == result);
+# endif
   return result;
 }
 
@@ -852,7 +858,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
           info->reloc = 0;
 # if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
+            ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
 # endif
           /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
@@ -862,7 +868,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
         else { /* malloc-based fall-back */
 # if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            sizeof(internal_malloc_info_type) - sizeof(unsigned int), LIBXSMM_MALLOC_SEED);
+            ((char*)&info->hash) - ((char*)info), LIBXSMM_MALLOC_SEED);
 # endif
           /* treat memory protection errors as soft error; ignore return value */
           mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
@@ -882,7 +888,9 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
   else {
     assert(0 != memory && 0 != *memory);
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", *memory);
     }
 #endif
