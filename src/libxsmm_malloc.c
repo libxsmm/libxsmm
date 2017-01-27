@@ -934,9 +934,10 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
+LIBXSMM_API_DEFINITION void libxsmm_release_scratch(size_t* npending)
 {
   /* TODO: to be implemented */
+  LIBXSMM_UNUSED(npending);
 }
 
 

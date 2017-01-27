@@ -458,9 +458,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
     }
   }
   {
+    size_t n = 0;
+    /* release scratch memory pool */
+    libxsmm_release_scratch(&n);
+    if (0 < n && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM: pending scratch-memory allocations discovered!\n");
+    }
 #if !defined(LIBXSMM_NO_SYNC) /* release locks */
-    int i;
-    for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_DESTROY(internal_reglock + i);
+    for (n = 0; n < INTERNAL_REGLOCK_COUNT; ++n) LIBXSMM_LOCK_DESTROY(internal_reglock + n);
     LIBXSMM_LOCK_DESTROY(&libxsmm_lock_global);
 #endif
   }
@@ -664,7 +669,6 @@ void libxsmm_finalize(void);
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
   libxsmm_code_pointer* registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
-
   if (0 != registry) {
     int i;
 #if !defined(LIBXSMM_NO_SYNC)
@@ -737,6 +741,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
 #endif
   }
+  /* release scratch memory pool */
+  libxsmm_release_scratch(0);
 }
 
 
