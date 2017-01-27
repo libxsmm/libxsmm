@@ -89,8 +89,6 @@
 #if !defined(LIBXSMM_MALLOC_NOCRC)
 # if defined(NDEBUG)
 #   define LIBXSMM_MALLOC_NOCRC
-# elif defined(LIBXSMM_VTUNE)
-#   define LIBXSMM_MALLOC_NOCRC
 # elif !defined(LIBXSMM_BUILD)
 #   define LIBXSMM_MALLOC_NOCRC
 # endif
@@ -402,14 +400,14 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_info(const void* memory, size_t* size,
   }
 #if !defined(NDEBUG)
   else {
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: attachment error for memory buffer %p!\n", memory);
     }
     result = EXIT_FAILURE;
   }
-# if defined(LIBXSMM_MALLOC_NOCRC)
   assert(EXIT_SUCCESS == result);
-# endif
 #endif
   return result;
 }
@@ -477,9 +475,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       /* ATOMIC END: this region should be atomic */
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0, *reloc = 0;
-#if !defined(NDEBUG)
       static int error_once = 0;
-#endif
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
         context = libxsmm_scratch_allocator_context;
         malloc_fn = libxsmm_scratch_malloc_fn;
@@ -663,12 +659,12 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         *memory = aligned;
       }
       else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
           fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n",
             (unsigned long long)alloc_size, flags);
         }
-#endif
         result = EXIT_FAILURE;
       }
     }
@@ -676,11 +672,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       *memory = 0;
     }
   }
-#if !defined(NDEBUG)
   else if (0 != size) {
     result = EXIT_FAILURE;
   }
-#endif
   assert(EXIT_SUCCESS == result);
   return result;
 }
@@ -690,9 +684,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
   int result = EXIT_SUCCESS;
-# if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
-#endif
   if (0 != info) {
     void *const buffer = info->pointer;
     assert((0 != buffer || 0 == info->size));
@@ -720,26 +712,26 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
         void *const reloc = info->reloc;
         const int flags = info->flags;
         if (0 != munmap(buffer, alloc_size)) {
-# if !defined(NDEBUG) /* library code is expected to be mute */
-          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
             const char *const error_message = strerror(errno);
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
               error_message, errno, buffer, (unsigned long long)alloc_size);
           }
-# endif
           result = EXIT_FAILURE;
         }
         if (0 != (LIBXSMM_MALLOC_FLAG_X & flags) && EXIT_SUCCESS == result
          && 0 != reloc && MAP_FAILED != reloc && buffer != reloc
          && 0 != munmap(reloc, alloc_size))
         {
-# if !defined(NDEBUG) /* library code is expected to be mute */
-          if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
             const char *const error_message = strerror(errno);
             fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
               error_message, errno, reloc, (unsigned long long)alloc_size);
           }
-# endif
           result = EXIT_FAILURE;
         }
       }
@@ -756,9 +748,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
 #endif
     result = EXIT_FAILURE;
   }
-# if defined(LIBXSMM_MALLOC_NOCRC)
   assert(EXIT_SUCCESS == result);
-# endif
   return result;
 }
 
@@ -790,9 +780,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 {
   internal_malloc_info_type *const info = 0 != memory ? internal_malloc_info(*memory) : 0;
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
-#endif
   if (0 != info) {
     void *const buffer = info->pointer;
     const size_t size = info->size;
@@ -880,11 +868,11 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     }
   }
   else if (0 == memory || 0 == *memory) {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: libxsmm_malloc_attrib failed because NULL cannot be attributed!\n");
     }
-#endif
     result = EXIT_FAILURE;
   }
   else {
