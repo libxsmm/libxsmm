@@ -934,6 +934,12 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 }
 
 
+LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
+{
+  /* TODO: to be implemented */
+}
+
+
 LIBXSMM_API_DEFINITION size_t libxsmm_malloc_size(const void* memory)
 {
   size_t size = 0;

@@ -224,11 +224,15 @@ Without further claims on the properties of the memory allocation (e.g., thread 
 **NOTE**: Only `libxsmm_free` is supported in order to deallocate the memory.
 
 ```C
-void* libxsmm_aligned_malloc(size_t size, int alignment);
+void* libxsmm_aligned_malloc(size_t size, size_t alignment);
 void* libxsmm_malloc(size_t size);
 void libxsmm_free(const volatile void* memory);
 size_t libxsmm_malloc_size(const volatile void* memory);
+void* libxsmm_aligned_scratch(size_t size, size_t alignment);
 ```
+
+The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. In contrast to the default memory allocation techniques, the scratch memory allocation is meant to establish a watermark for buffers which would be repeatedly allocated and deallocated. By establishing a (remaining) pool of "temporary" memory, the cost of repeated allocation and deallocation is avoided at some point (once the watermark is reached during execution).  
+**NOTE**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
 ## Build Instructions
 ### Classic Library (ABI)

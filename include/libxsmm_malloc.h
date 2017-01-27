@@ -120,6 +120,12 @@ LIBXSMM_API void* libxsmm_malloc(size_t size);
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const void* memory);
 
+/**
+ * Release the scratch memory pool i.e., scratch memory
+ * for which libxsmm_free has been called.
+ */
+LIBXSMM_API void libxsmm_release_scratch(void);
+
 /** Get the size of the allocated memory; zero in case of an error. */
 LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 
