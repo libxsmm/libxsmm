@@ -47,6 +47,7 @@
 /* mute warning about target attribute; KNC/native plus JIT is disabled below! */
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <stdio.h>
 #include <math.h>
 #if !defined(NDEBUG)
@@ -530,7 +531,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
       }
 #if !defined(NDEBUG)
       else {
-        libxsmm_verbosity = 1; /* quiet -> verbose */
+        libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
       }
 #endif
     }
