@@ -150,30 +150,39 @@ conv_desc.N = ...
 handle = libxsmm_dnn_create_conv_layer(conv_desc, &status);
 ```
 
-Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution can be executed in a threading environment of choice (error checks are omitted for brevity):
+Next activation and filter buffers need to be linked, initialized and bound to the handle. Afterwards the convolution can be executed in a threading environment of choice (error checks are omitted for brevity):
 
 ```C
-libxsmm_dnn_buffer* libxsmm_input;
-libxsmm_dnn_buffer* libxsmm_output;
-libxsmm_dnn_filter* libxsmm_filter;
+float *input, *output, *filter;
+libxsmm_dnn_buffer* libxsmm_reg_input;
+libxsmm_dnn_buffer* libxsmm_reg_output;
+libxsmm_dnn_filter* libxsmm_reg_filter;
 
-/* setup LIBXSMM layer information */
-libxsmm_input = libxsmm_dnn_create_input_buffer_check(libxsmm_handle, &status);
-libxsmm_output = libxsmm_dnn_create_output_buffer_check(libxsmm_handle, &status);
-libxsmm_filter = libxsmm_dnn_create_filter_check(libxsmm_handle, &status);
+/* allocate data */
+input = (float*)libxsmm_aligned_malloc(...);
+output = ...;
+
+/* link data to buffers */
+libxsmm_reg_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+libxsmm_reg_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+libxsmm_reg_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
 
 /* copy in data to LIBXSMM format: naive format is: */
 /* (mini-batch)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
 /* and the naive format for filters is: */
 /* (number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
-libxsmm_dnn_copyin_buffer(libxsmm_input, (void*)naive_input);
-libxsmm_dnn_zero_buffer(libxsmm_output);
-libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter);
+libxsmm_dnn_copyin_buffer(libxsmm_reg_input, (void*)naive_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
+libxsmm_dnn_zero_buffer(libxsmm_reg_output);
+libxsmm_dnn_copyin_filter(libxsmm_reg_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS);
 
 /* bind layer to handle */
-libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_input);
-libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_output);
-libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter);
+libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_reg_input, LIBXSMM_DNN_REGULAR_INPUT);
+libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_reg_output, LIBXSMM_DNN_REGULAR_OUTPUT);
+libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_reg_filter, LIBXSMM_DNN_REGULAR_FILTER);
+
+/* let's allocate and bind scratch */
+scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status ), 2097152);
+libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch );
 
 /* run the convolution */
 #pragma omp parallel
@@ -183,7 +192,15 @@ libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter);
 }
 
 /* copy out data */
-libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output);
+libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW );
+
+/* clean up */
+libxsmm_dnn_release_scratch(...);
+libxsmm_dnn_release_buffer(...);
+...
+libxsmm_dnn_destroy_buffer(...);
+...
+libxsmm_dnn_destroy_conv_layer(...);
 ```
 
 ## Service Functions
