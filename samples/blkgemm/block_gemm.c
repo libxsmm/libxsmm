@@ -64,9 +64,9 @@ typedef struct libxsmm_blkgemm_handle {
   libxsmm_smmfunction kernel;
 } libxsmm_blkgemm_handle;
 
-void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
-                              real* libxsmm_mat_dst,
-                              real* colmaj_mat_src ) {
+LIBXSMM_INLINE void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src ) {
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bk, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, kb, bm, bk;
@@ -83,9 +83,9 @@ void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
   }
 }
 
-void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
-                              real* libxsmm_mat_dst,
-                              real* colmaj_mat_src ) {
+LIBXSMM_INLINE void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src ) {
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->kb, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->k);
   int kb, nb, bk, bn;
@@ -102,9 +102,9 @@ void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
   }
 }
 
-void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
-                              real* libxsmm_mat_dst,
-                              real* colmaj_mat_src ) {
+LIBXSMM_INLINE void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src ) {
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
@@ -121,9 +121,9 @@ void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
   }
 }
 
-void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
-                               real* libxsmm_mat_dst,
-                               real* colmaj_mat_src ) {
+LIBXSMM_INLINE void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
+                                              real* libxsmm_mat_dst,
+                                              real* colmaj_mat_src ) {
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
@@ -147,18 +147,17 @@ void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
       }
     }
   }
-
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
-void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
-                            const char transA,
-                            const char transB,
-                            const real* alpha,
-                            const real* a,
-                            const real* b,
-                            const real* beta,
-                            real* c ) {
+LIBXSMM_INLINE void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
+                                           const char transA,
+                                           const char transB,
+                                           const real* alpha,
+                                           const real* a,
+                                           const real* b,
+                                           const real* beta,
+                                           real* c ) {
   LIBXSMM_VLA_DECL(4, const real, a_t, a, handle->mb, handle->bk, handle->bm);
   LIBXSMM_VLA_DECL(4, const real, b_t, b, handle->kb, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(4,       real, c_t, c, handle->mb, handle->bn, handle->bm);
@@ -167,7 +166,11 @@ void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
   int nr = 8;
   int kr = 4;
 
-  if ( (*beta != (real)1.0) || (*alpha != (real)1.0) ) {
+  /* TODO: take transpose into account */
+  LIBXSMM_UNUSED(transA);
+  LIBXSMM_UNUSED(transB);
+
+  if ( !(LIBXSMM_FEQ(*beta, (real)1.0) && LIBXSMM_FEQ(*alpha, (real)1.0)) ) {
     printf(" alpha and beta need to be 1.0\n" );
     exit(-1);
   }

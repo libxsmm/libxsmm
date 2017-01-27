@@ -36,7 +36,7 @@
 
 static unsigned int g_jit_code_reps = 0;
 
-void print_help(void) {
+LIBXSMM_INLINE void print_help(void) {
   printf("\n\n");
   printf("Usage (dense*dense=dense):\n");
   printf("    M\n");
@@ -55,6 +55,7 @@ void print_help(void) {
   printf("\n\n");
 }
 
+LIBXSMM_INLINE
 void init_double( double*                         io_a,
                   double*                         io_b,
                   double*                         io_c,
@@ -63,26 +64,27 @@ void init_double( double*                         io_a,
   unsigned int l_i, l_j;
 
   /* touch A */
-  for ( l_i = 0; l_i < i_xgemm_desc->lda; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->k; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->lda; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->k; l_j++) {
       io_a[(l_j * i_xgemm_desc->lda) + l_i] = (double)drand48();
     }
   }
   /* touch B */
-  for ( l_i = 0; l_i < i_xgemm_desc->ldb; l_i++ ) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++ ) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldb; l_i++ ) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++ ) {
       io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (double)drand48();
     }
   }
   /* touch C */
-  for ( l_i = 0; l_i < i_xgemm_desc->ldc; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
       io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (double)0.0;
       io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (double)0.0;
     }
   }
 }
 
+LIBXSMM_INLINE
 void init_float( float*                          io_a,
                  float*                          io_b,
                  float*                          io_c,
@@ -91,26 +93,27 @@ void init_float( float*                          io_a,
   unsigned int l_i, l_j;
 
   /* touch A */
-  for ( l_i = 0; l_i < i_xgemm_desc->lda; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->k; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->lda; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->k; l_j++) {
       io_a[(l_j * i_xgemm_desc->lda) + l_i] = (float)drand48();
     }
   }
   /* touch B */
-  for ( l_i = 0; l_i < i_xgemm_desc->ldb; l_i++ ) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++ ) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldb; l_i++ ) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++ ) {
       io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (float)drand48();
     }
   }
   /* touch C */
-  for ( l_i = 0; l_i < i_xgemm_desc->ldc; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
       io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (float)0.0;
       io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (float)0.0;
     }
   }
 }
 
+LIBXSMM_INLINE
 void run_gold_double( const double*                   i_a,
                       const double*                   i_b,
                       double*                         o_c,
@@ -121,9 +124,9 @@ void run_gold_double( const double*                   i_a,
   const unsigned long long l_start = libxsmm_timer_tick();
 
   for ( l_t = 0; l_t < g_jit_code_reps; l_t++  ) {
-    for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++  ) {
-      for ( l_k = 0; l_k < i_xgemm_desc->k; l_k++  ) {
-        for ( l_m = 0; l_m < i_xgemm_desc->m; l_m++ ) {
+    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++  ) {
+      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++  ) {
+        for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
           o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
         }
       }
@@ -136,7 +139,7 @@ void run_gold_double( const double*                   i_a,
   printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
-
+LIBXSMM_INLINE
 void run_gold_float( const float*                   i_a,
                      const float*                   i_b,
                      float*                         o_c,
@@ -147,9 +150,9 @@ void run_gold_float( const float*                   i_a,
   const unsigned long long l_start = libxsmm_timer_tick();
 
   for ( l_t = 0; l_t < g_jit_code_reps; l_t++  ) {
-    for ( l_n = 0; l_n < i_xgemm_desc->n; l_n++  ) {
-      for ( l_k = 0; l_k < i_xgemm_desc->k; l_k++  ) {
-        for ( l_m = 0; l_m < i_xgemm_desc->m; l_m++ ) {
+    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++  ) {
+      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++  ) {
+        for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
           o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
         }
       }
@@ -162,6 +165,7 @@ void run_gold_float( const float*                   i_a,
   printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
+LIBXSMM_INLINE
 void run_jit_double( const double*                    i_a,
                      const double*                    i_b,
                      double*                          o_c,
@@ -189,7 +193,7 @@ void run_jit_double( const double*                    i_a,
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_dmmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("function pointer address: %llx\n", (size_t)l_test_jit);
+  printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
 
   l_start = libxsmm_timer_tick();
 
@@ -210,6 +214,7 @@ void run_jit_double( const double*                    i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 
+LIBXSMM_INLINE
 void run_jit_float( const float*                     i_a,
                     const float*                     i_b,
                     float*                           o_c,
@@ -225,11 +230,11 @@ void run_jit_float( const float*                     i_a,
   unsigned long long l_start;
   unsigned int l_t;
 
-  if ( l_beta != 0.0f && l_beta != 1.0f ) {
+  if ( !(LIBXSMM_FEQ(l_beta, 0.0f) || LIBXSMM_FEQ(l_beta, 1.0f)) ) {
     fprintf(stderr, "JIT float: beta needs to be 0.0 or 1.0!\n");
     exit(-1);
   }
-  if ( l_alpha != 1.0f ) {
+  if ( !LIBXSMM_FEQ(l_alpha, 1.0f) ) {
     fprintf(stderr, "JIT float: alpha needs to be 1.0!\n");
     exit(-1);
   }
@@ -237,7 +242,7 @@ void run_jit_float( const float*                     i_a,
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_smmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-  printf("function pointer address: %llx\n", (size_t)l_test_jit);
+  printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
 
   l_start = libxsmm_timer_tick();
 
@@ -258,6 +263,7 @@ void run_jit_float( const float*                     i_a,
   printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 
+LIBXSMM_INLINE
 void max_error_double( const double*                   i_c,
                        const double*                   i_c_gold,
                        const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -277,6 +283,7 @@ void max_error_double( const double*                   i_c,
   printf("max. error: %f\n", l_max_error);
 }
 
+LIBXSMM_INLINE
 void max_error_float( const float*                    i_c,
                       const float*                    i_c_gold,
                       const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -297,7 +304,6 @@ void max_error_float( const float*                    i_c,
 }
 
 int main(int argc, char* argv []) {
-  char* l_arch = NULL;
   char* l_precision = NULL;
   int l_m = 0;
   int l_n = 0;

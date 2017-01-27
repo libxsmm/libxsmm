@@ -43,7 +43,8 @@
 # define srand48 srand
 #endif
 
-void edge_sparse_csr_reader( const char*             i_csr_file_in,
+LIBXSMM_INLINE
+void edge_sparse_csr_reader( const char*           i_csr_file_in,
                              unsigned int**        o_row_idx,
                              unsigned int**        o_column_idx,
                              double**              o_values,
@@ -207,13 +208,13 @@ int main(int argc, char* argv[])
   printf("\n");
 
   i = 1;
-  if (argc > i) mat_a = argv[i++];
-  if (argc > i) mat_b = argv[i++];
-  if (argc > i) mat_c = argv[i++];
-  if (argc > i) mat_st = argv[i++];
-  if (argc > i) num_modes = atoi(argv[i++]);
-  if (argc > i) num_elems = atoi(argv[i++]);
-  if (argc > i) num_reps = atoi(argv[i++]);
+  if (argc > (int)i) mat_a = argv[i++];
+  if (argc > (int)i) mat_b = argv[i++];
+  if (argc > (int)i) mat_c = argv[i++];
+  if (argc > (int)i) mat_st = argv[i++];
+  if (argc > (int)i) num_modes = atoi(argv[i++]);
+  if (argc > (int)i) num_elems = atoi(argv[i++]);
+  if (argc > (int)i) num_reps = atoi(argv[i++]);
   elem_size = num_modes*num_quants*num_cfr;
 
   /* read matrices */

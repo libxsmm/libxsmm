@@ -107,6 +107,7 @@ LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, long size, int initPos, i
   for (i = 0; i < size; ++i) {
     buf[i] = (unsigned char)((initOne != 0) ? 1 : (rand()%3));
   }
+  LIBXSMM_UNUSED(initPos);
 }
 
 LIBXSMM_INLINE void set_zeropad_nchw_uint8(unsigned char* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
