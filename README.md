@@ -92,63 +92,65 @@ The main concept in LIBXSMM's frontend is that everything is circled around `lib
 
 /** Structure which describes the input and output of data (DNN). */
 typedef struct libxsmm_dnn_conv_desc {
-  int N;                                  /* number of images in mini-batch */
-  int C;                                  /* number of input feature maps */
-  int H;                                  /* height of input image */
-  int W;                                  /* width of input image */
-  int K;                                  /* number of output feature maps */
-  int R;                                  /* height of filter kernel */
-  int S;                                  /* width of filter kernel */
-  int u;                                  /* vertical stride */
-  int v;                                  /* horizontal stride */
-  int pad_h_in;                           /* height of physical zero-padding in input buffer, ignored */
-  int pad_w_in;                           /* width of physical zero-padding in input buffer, ignored */
-  int pad_h_out;                          /* height of physical zero-padding in output buffer */
-  int pad_w_out;                          /* width of pyhsical zero-padding in output buffer */
-  libxsmm_dnn_conv_algo algo;             /* convolution algorithm used */
-  libxsmm_dnn_conv_format buffer_format;  /* format which is for buffer buffers */
-  libxsmm_dnn_conv_format filter_format;  /* format which is for filter buffers */
-  libxsmm_dnn_conv_fuse_ops fuse_ops;     /* used ops into convolutions */
-  libxsmm_dnn_conv_option options;        /* additional options */
-  libxsmm_dnn_datatype datatype_in;       /* datatypes use for all buffers */
-  libxsmm_dnn_datatype datatype_ou;       /* datatypes use for all buffers */
+  int N;                                    /* number of images in mini-batch */
+  int C;                                    /* number of input feature maps */
+  int H;                                    /* height of input image */
+  int W;                                    /* width of input image */
+  int K;                                    /* number of output feature maps */
+  int R;                                    /* height of filter kernel */
+  int S;                                    /* width of filter kernel */
+  int u;                                    /* vertical stride */
+  int v;                                    /* horizontal stride */
+  int pad_h;                                /* height of logical rim padding to input for adjusting output height */
+  int pad_w;                                /* width of logical rim padding to input for adjusting output width */
+  int pad_h_in;                             /* height of zero-padding in input buffer, must equal to pad_h for direct conv */
+  int pad_w_in;                             /* width of zero-padding in input buffer, must equal to pad_w for direct conv */
+  int pad_h_out;                            /* height of zero-padding in output buffer */
+  int pad_w_out;                            /* width of zero-padding in output buffer */
+  int threads;                              /* number of threads to use when running convolution */
+  libxsmm_dnn_datatype datatype;            /* datatypes use for all input and outputs */
+  libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
+  libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
+  libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */
+  libxsmm_dnn_conv_option options;          /* additional options */
+  libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
 } libxsmm_dnn_conv_desc;
 
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
+  /** let the library decide */
+  LIBXSMM_DNN_CONV_ALGO_AUTO,   /* ignored for now */
   /** direct convolution. */
   LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
 
 /** Denotes the element/pixel type of an image/channel. */
-typedef enum libxsmm_dnn_conv_datatype {
-  LIBXSMM_DNN_DATATYPE_F32
+typedef enum libxsmm_dnn_datatype {
+  LIBXSMM_DNN_DATATYPE_F32,
+  LIBXSMM_DNN_DATATYPE_I32,
+  LIBXSMM_DNN_DATATYPE_I16,
+  LIBXSMM_DNN_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
-libxsmm_dnn_conv_handle* libxsmm_dnn_create_conv_handle_check(
-  libxsmm_dnn_conv_desc   conv_desc,
-  libxsmm_dnn_datatype    conv_datatype,
-  libxsmm_dnn_conv_algo   conv_algo,
-  libxsmm_dnn_err_t*      status);
+libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
+  libxsmm_dnn_conv_desc conv_desc, libxsmm_dnn_err_t* status);
+libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(
+  const libxsmm_dnn_layer* handle);
 ```
 
-Therefore, a sample call looks like:
+A sample call looks like (without error checks):
 ```C
-/** Macro to check for an error. */
-#define CHKERR_LIBXSMM_DNN(A) if (A != LIBXSMM_DNN_SUCCESS) \
-  fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A));
 /* declare LIBXSMM variables */
 libxsmm_dnn_conv_desc conv_desc;
 libxsmm_dnn_err_t status;
-libxsmm_dnn_conv_handle* libxsmm_handle;
+libxsmm_dnn_layer* handle;
 /* setting conv_desc values.... */
 conv_desc.N = ...
 /* create handle */
-libxsmm_handle = libxsmm_dnn_create_conv_handle_check(conv_desc, &status);
-CHKERR_LIBXSMM_DNN(status);
+handle = libxsmm_dnn_create_conv_layer(conv_desc, &status);
 ```
 
-Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution could be executed by a threading environment of choice:
+Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution can be executed in a threading environment of choice (error checks are omitted for bravity):
 
 ```C
 libxsmm_dnn_buffer* libxsmm_input;
@@ -157,34 +159,31 @@ libxsmm_dnn_filter* libxsmm_filter;
 
 /* setup LIBXSMM layer information */
 libxsmm_input = libxsmm_dnn_create_input_buffer_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_DNN(status);
 libxsmm_output = libxsmm_dnn_create_output_buffer_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_DNN(status);
 libxsmm_filter = libxsmm_dnn_create_filter_check(libxsmm_handle, &status);
-CHKERR_LIBXSMM_DNN(status);
 
 /* copy in data to LIBXSMM format: naive format is: */
 /* (mini-batch)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
 /* and the naive format for filters is: */
 /* (number-output-featuremaps)(number-input-featuremaps)(kernel-height)(kernel-width) */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_buffer(libxsmm_input, (void*)naive_input));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_zero_buffer(libxsmm_output));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter));
+libxsmm_dnn_copyin_buffer(libxsmm_input, (void*)naive_input);
+libxsmm_dnn_zero_buffer(libxsmm_output);
+libxsmm_dnn_copyin_filter(libxsmm_filter, (void*)naive_filter);
 
 /* bind layer to handle */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_input));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_output));
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter));
+libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_input);
+libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_output);
+libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_filter);
 
 /* run the convolution */
 #pragma omp parallel
 {
-  CHKERR_LIBXSMM_DNN(libxsmm_dnn_convolve_st(libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0,
-    omp_get_thread_num(), omp_get_num_threads()));
+  libxsmm_dnn_convolve_st(libxsmm_handle, LIBXSMM_DNN_CONV_KIND_FWD, 0,
+    omp_get_thread_num(), omp_get_num_threads());
 }
 
 /* copy out data */
-CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output));
+libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output);
 ```
 
 ## Service Functions
