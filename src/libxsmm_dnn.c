@@ -113,7 +113,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
     case LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH:
       return "LIBXSMM DNN Error: Unsupported architecture!";
     case LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED:
-      return "LIBXSMM DNN Error: scratch binding failed sas scratch was not allocated!";
+      return "LIBXSMM DNN Error: scratch binding failed as scratch was not allocated!";
     case LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE:
       return "LIBXSMM DNN Error: an unknown buffer type was provided!";
     case LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE:
