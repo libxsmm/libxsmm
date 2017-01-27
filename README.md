@@ -83,12 +83,12 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 A variety of overloaded function signatures is provided allowing to omit arguments not deviating from the configured defaults. In C++, a type `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction for the numeric type in `libxsmm_?mmdispatch`. Similarly in FORTRAN, when calling the generic interface (`libxsmm_mmdispatch`) the given `LIBXSMM_?MMFUNCTION` is dispatched such that `libxsmm_call` can be used to actually perform the function call using the PROCEDURE POINTER wrapped by `LIBXSMM_?MMFUNCTION`. Beside of dispatching code, one can also call a specific kernel (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included for statically generated kernels.
 
 ## Interface for Convolutions
-To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout has to be used. As this layout depends on several architectural parameters, the goal of LIBXSMM interface is to hide this complexity from the user by providing copy-in and copy-out routines. These happen on custom datatype which themselves are later bound to a convolution operation. The interface is available for C.
+To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout has to be used. As this layout depends on several architectural parameters, the goal of the LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types which themselves are later bound to a convolution operation. The interface is available for C.
 
-The main concept in LIBXSMM's frontend is that everything is circled around `libxsmm_dnn_conv_handle` which will define all properties of a layer operation. A handle can be created by describing the convolutional layer and calling a create function:
+The concept of the interface is circled around a few handle types: `libxsmm_dnn_layer`, `libxsmm_dnn_buffer`, `libxsmm_dnn_bias`, and `libxsmm_dnn_filter`. A handle is setup by calling a create-function:
 
 ```C
-/** simplified LIBXSMM types which are needed to create a handle */
+/** Simplified LIBXSMM types which are needed to create a handle. */
 
 /** Structure which describes the input and output of data (DNN). */
 typedef struct libxsmm_dnn_conv_desc {
@@ -101,13 +101,18 @@ typedef struct libxsmm_dnn_conv_desc {
   int S;                                    /* width of filter kernel */
   int u;                                    /* vertical stride */
   int v;                                    /* horizontal stride */
-  int pad_h;                                /* height of logical rim padding to input for adjusting output height */
-  int pad_w;                                /* width of logical rim padding to input for adjusting output width */
-  int pad_h_in;                             /* height of zero-padding in input buffer, must equal to pad_h for direct conv */
-  int pad_w_in;                             /* width of zero-padding in input buffer, must equal to pad_w for direct conv */
+  int pad_h;                                /* height of logical rim padding to input
+                                               for adjusting output height */
+  int pad_w;                                /* width of logical rim padding to input
+                                               for adjusting output width */
+  int pad_h_in;                             /* height of zero-padding in input buffer,
+                                               must equal to pad_h for direct conv */
+  int pad_w_in;                             /* width of zero-padding in input buffer,
+                                               must equal to pad_w for direct conv */
   int pad_h_out;                            /* height of zero-padding in output buffer */
   int pad_w_out;                            /* width of zero-padding in output buffer */
-  int threads;                              /* number of threads to use when running convolution */
+  int threads;                              /* number of threads to use when running
+                                               convolution */
   libxsmm_dnn_datatype datatype;            /* datatypes use for all input and outputs */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
   libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
@@ -163,9 +168,12 @@ input = (float*)libxsmm_aligned_malloc(...);
 output = ...;
 
 /* link data to buffers */
-libxsmm_reg_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
-libxsmm_reg_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
-libxsmm_reg_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
+libxsmm_reg_input = libxsmm_dnn_link_buffer(  libxsmm_handle, LIBXSMM_DNN_INPUT, input,
+                                              LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
+libxsmm_reg_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output,
+                                              LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
+libxsmm_reg_filter = libxsmm_dnn_link_filter( libxsmm_handle, LIBXSMM_DNN_FILTER, filter,
+                                              LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
 
 /* copy in data to LIBXSMM format: naive format is: */
 /* (mini-batch)(number-featuremaps)(featuremap-height)(featuremap-width) for layers, */
@@ -180,9 +188,10 @@ libxsmm_dnn_bind_input_buffer(libxsmm_handle, libxsmm_reg_input, LIBXSMM_DNN_REG
 libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_reg_output, LIBXSMM_DNN_REGULAR_OUTPUT);
 libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_reg_filter, LIBXSMM_DNN_REGULAR_FILTER);
 
-/* let's allocate and bind scratch */
-scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status ), 2097152);
-libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch );
+/* allocate and bind scratch */
+scratch = (void*)libxsmm_aligned_malloc(libxsmm_dnn_get_scratch_size(
+  libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status), 2097152);
+libxsmm_dnn_bind_scratch(libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch);
 
 /* run the convolution */
 #pragma omp parallel
@@ -192,7 +201,8 @@ libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch 
 }
 
 /* copy out data */
-libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW );
+libxsmm_dnn_copyout_buffer(libxsmm_output, (void*)naive_libxsmm_output,
+  LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
 
 /* clean up */
 libxsmm_dnn_release_scratch(...);

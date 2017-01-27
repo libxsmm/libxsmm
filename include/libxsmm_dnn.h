@@ -180,13 +180,18 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int S;                                    /* width of filter kernel */
   int u;                                    /* vertical stride */
   int v;                                    /* horizontal stride */
-  int pad_h;                                /* height of logical rim padding to input for adjusting output height */
-  int pad_w;                                /* width of logical rim padding to input for adjusting output width */
-  int pad_h_in;                             /* height of zero-padding in input buffer, must equal to pad_h for direct conv */
-  int pad_w_in;                             /* width of zero-padding in input buffer, must equal to pad_w for direct conv */
+  int pad_h;                                /* height of logical rim padding to input
+                                               for adjusting output height */
+  int pad_w;                                /* width of logical rim padding to input
+                                               for adjusting output width */
+  int pad_h_in;                             /* height of zero-padding in input buffer,
+                                               must equal to pad_h for direct conv */
+  int pad_w_in;                             /* width of zero-padding in input buffer,
+                                               must equal to pad_w for direct conv */
   int pad_h_out;                            /* height of zero-padding in output buffer */
   int pad_w_out;                            /* width of zero-padding in output buffer */
-  int threads;                              /* number of threads to use when running convolution */
+  int threads;                              /* number of threads to use when running
+                                               convolution */
   libxsmm_dnn_datatype datatype;            /* datatypes use for all input and outputs */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
   libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
