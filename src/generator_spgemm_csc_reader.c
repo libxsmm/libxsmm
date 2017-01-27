@@ -72,6 +72,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 
 
@@ -158,7 +159,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         (*o_row_idx)[l_i] = l_row;
         (*o_values)[l_i] = l_value;
         l_i++;
-        /* handle columns, set id to onw for this column, yeah we need to handle empty columns */
+        /* handle columns, set id to own for this column, yeah we need to handle empty columns */
         l_column_idx_id[l_column] = 1;
         (*o_column_idx)[l_column+1] = l_i;
       }
@@ -174,7 +175,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
     return;
   }
 
-  /* let's handle empty colums */
+  /* let's handle empty columns */
+  assert(NULL != l_column_idx_id);
   for ( l_i = 0; l_i < (*o_column_count); l_i++) {
     if ( l_column_idx_id[l_i] == 0 ) {
       (*o_column_idx)[l_i+1] = (*o_column_idx)[l_i];

@@ -48,26 +48,26 @@
 #endif
 
 #define LIBXSMM_HASH_U64(FN, SEED, N, BEGIN, END) { \
-  for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { \
+  for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { assert(0 != (BEGIN)); \
     SEED = (uint32_t)FN(SEED, N, *(const uint64_t*)(BEGIN)); \
   } \
 }
 #define LIBXSMM_HASH_U32(FN, SEED, N, BEGIN, END) { \
   const unsigned char *const next = (BEGIN) + 4; \
-  if (next <= (END)) { \
+  if (next <= (END)) { assert(0 != (BEGIN)); \
     SEED = FN(SEED, N, *(const uint32_t*)(BEGIN)); \
     BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U16(FN, SEED, N, BEGIN, END) { \
   const unsigned char *const next = (BEGIN) + 2; \
-  if (next <= (END)) { \
+  if (next <= (END)) { assert(0 != (BEGIN)); \
     SEED = FN(SEED, N, *(const uint16_t*)(BEGIN)); \
     BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U8(FN, SEED, N, BEGIN, END) { \
-  if ((BEGIN) < (END)) { \
+  if ((BEGIN) < (END)) { assert(0 != (BEGIN)); \
     SEED = FN(SEED, N, *(BEGIN)); \
     ++(BEGIN); \
   } \
@@ -86,8 +86,8 @@
     N, (uint32_t)((VALUE) << 32))
 #endif
 
-#define LIBXSMM_HASH_NGEN(SEED, NGEN, VALUE) ((((SEED) << 5) + (VALUE)) % (NGEN))
-#define LIBXSMM_HASH_NPOT(SEED, NPOT, VALUE) LIBXSMM_MOD2(((SEED) << 5) + (VALUE), NPOT)
+#define LIBXSMM_HASH_NGEN(SEED, NGEN, VALUE) (((((unsigned long long)(SEED)) << 5) + (VALUE)) % (NGEN))
+#define LIBXSMM_HASH_NPOT(SEED, NPOT, VALUE) LIBXSMM_MOD2((((unsigned long long)(SEED)) << 5) + (VALUE), NPOT)
 
 #define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
   const unsigned char *begin = (const unsigned char*)(DATA); \

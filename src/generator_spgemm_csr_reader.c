@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 
 
@@ -119,7 +120,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
         (*o_column_idx)[l_i] = l_column;
         (*o_values)[l_i] = l_value;
         l_i++;
-        /* handle columns, set id to onw for this column, yeah we need to handle empty columns */
+        /* handle columns, set id to own for this column, yeah we need to handle empty columns */
         l_row_idx_id[l_row] = 1;
         (*o_row_idx)[l_row+1] = l_i;
       }
@@ -136,6 +137,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
   }
 
   /* let's handle empty rows */
+  assert(NULL != l_row_idx_id);
   for ( l_i = 0; l_i < (*o_row_count); l_i++) {
     if ( l_row_idx_id[l_i] == 0 ) {
       (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
