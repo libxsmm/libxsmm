@@ -1291,6 +1291,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
 
   if (scratch == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+    if ( (kind == LIBXSMM_DNN_COMPUTE_KIND_FWD) && (handle->datatype == handle->datatype_itm) ) {
+      status = LIBXSMM_DNN_SUCCESS;
+    }
     return status;
   }
 
