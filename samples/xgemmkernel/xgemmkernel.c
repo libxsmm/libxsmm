@@ -181,11 +181,11 @@ void run_jit_double( const double*                    i_a,
   unsigned long long l_start;
   unsigned int l_t;
 
-  if ( l_beta != 0.0 && l_beta != 1.0 ) {
+  if ( !(LIBXSMM_FEQ(l_beta, 0.0) || LIBXSMM_FEQ(l_beta, 1.0)) ) {
     fprintf(stderr, "JIT double: beta needs to be 0.0 or 1.0!\n");
     exit(-1);
   }
-  if ( l_alpha != 1.0 ) {
+  if ( !LIBXSMM_FEQ(l_alpha, 1.0) ) {
     fprintf(stderr, "JIT double: alpha needs to be 1.0!\n");
     exit(-1);
   }
@@ -270,8 +270,8 @@ void max_error_double( const double*                   i_c,
   unsigned int l_i, l_j;
   double l_max_error = 0.0;
 
-  for ( l_i = 0; l_i < i_xgemm_desc->m; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->m; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
 #if 0
       printf("Entries in row %i, column %i, gold: %f, jit: %f\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
 #endif
@@ -290,8 +290,8 @@ void max_error_float( const float*                    i_c,
   unsigned int l_i, l_j;
   double l_max_error = 0.0;
 
-  for ( l_i = 0; l_i < i_xgemm_desc->m; l_i++) {
-    for ( l_j = 0; l_j < i_xgemm_desc->n; l_j++) {
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->m; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
 #if 0
       printf("Entries in row %i, column %i, gold: %f, jit: %f\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
 #endif
@@ -316,7 +316,7 @@ int main(int argc, char* argv []) {
   int l_alpha = 0;
   int l_beta = 0;
   int l_single_precision = 0;
-  libxsmm_gemm_prefetch_type l_prefetch = 0;
+  libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_PREFETCH_NONE;
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
