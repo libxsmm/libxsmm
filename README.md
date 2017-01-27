@@ -150,7 +150,7 @@ conv_desc.N = ...
 handle = libxsmm_dnn_create_conv_layer(conv_desc, &status);
 ```
 
-Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution can be executed in a threading environment of choice (error checks are omitted for bravity):
+Next activation and filter buffers need to be created, initialized and bound to the handle. Afterwards the convolution can be executed in a threading environment of choice (error checks are omitted for brevity):
 
 ```C
 libxsmm_dnn_buffer* libxsmm_input;
