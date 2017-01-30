@@ -362,4 +362,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   } \
 }
 
+/**
+ * Utility function, which either prints information about the GEMM call
+ * or dumps (FILE/ostream=0) all input and output data into MHD files.
+ * The Meta Image Format (MHD) is suitable for visual inspection using e.g.,
+ * ITK-SNAP or ParaView.
+ */
+LIBXSMM_API void libxsmm_gemm_print(void* ostream,
+  libxsmm_gemm_precision precision, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+
 #endif /*LIBXSMM_FRONTEND_H*/
