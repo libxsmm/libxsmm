@@ -422,6 +422,11 @@
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
 # endif
+# if defined(LIBXSMM_BUILD)
+#   if !defined(__STATIC) && !defined(_WINDLL)
+#     define __STATIC
+#   endif
+# endif
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
