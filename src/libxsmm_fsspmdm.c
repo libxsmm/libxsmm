@@ -124,6 +124,11 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
       }
     }
   }
+
+  /* free CSR */
+  free( a_csr_values );
+  free( a_csr_rowptr );
+  free( a_csr_colidx );
   
   return new_handle;
 }
