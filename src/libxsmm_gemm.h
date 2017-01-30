@@ -365,6 +365,13 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
+/** Structure to hold basic statistical information. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_stat_info { double sum; } libxsmm_stat_info;
+
+/** Utility function to calculate basic statistical information. */
+LIBXSMM_API int libxsmm_gemm_stat(libxsmm_gemm_precision precision, const void* matrix,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_stat_info* stat);
+
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
