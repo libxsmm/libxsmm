@@ -114,7 +114,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
     new_handle->N_chunksize = vlen;
   /* attempt to JIT dense kernel as sparse_reg failed */  
   } else {
-    new_handle->kernel = libxsmm_dmmdispatch(N, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, LIBXSMM_PREFETCH_NONE);
+    new_handle->kernel = libxsmm_dmmdispatch(N, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
     new_handle->N_chunksize = N;
     /* copy A over */
     new_handle->a_dense = (double*)libxsmm_aligned_malloc(M*K*sizeof(double), 64);
@@ -159,7 +159,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   if (handle->a_dense != 0) {
     libxsmm_free(handle->a_dense);
   } else {
-    libxsmm_release_kernel(handle->kernel);
+    libxsmm_release_kernel((const void*)handle->kernel);
   }
 
   free(handle);
